@@ -26,6 +26,7 @@
     },
     "esmodules": [
         "scripts/const.js",
+        "scripts/helpers.js",
         "scripts/squire.js",
         "scripts/panel-manager.js",
         "scripts/panel-spells.js",
