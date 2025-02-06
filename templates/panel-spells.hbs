@@ -1,15 +1,21 @@
 <div class="spells-panel">
+    {{#if (eq position "left")}}
+    <div class="section-header">
+        <i class="fas fa-magic"></i> Spells
+    </div>
+    {{/if}}
     <div class="spell-controls">
         <input type="text" class="spell-search" placeholder="Search spells...">
         <select class="spell-filter">
-            <option value="all">All Levels</option>
-            <option value="cantrip">Cantrips</option>
+            <option value="all">All</option>
+            <option value="cantrip">C</option>
             {{#each spellSlots}}
-            <option value="{{this.level}}">Level {{this.level}}</option>
+            <option value="{{this.level}}">L{{this.level}}</option>
             {{/each}}
         </select>
     </div>
 
+    {{#if (eq position "bottom")}}
     <div class="spell-slots">
         {{#each spellSlots}}
         <div class="slot-group">
@@ -24,30 +30,91 @@
         </div>
         {{/each}}
     </div>
+    {{/if}}
 
     <div class="spells-list">
-        {{#each spells}}
-        <div class="spell-item {{#if this.prepared}}prepared{{/if}}" data-spell-id="{{this.id}}">
-            <div class="spell-row">
-                <div class="spell-image-container">
-                    <img class="spell-image" src="{{this.img}}" alt="{{this.name}}"/>
-                    <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+        {{#if (eq position "left")}}
+            {{!-- Cantrips --}}
+            {{#if (some spells "spell" "spell.level" 0)}}
+            <div class="level-header">Cantrips</div>
+            {{#each spells as |spell|}}
+                {{#if (eq spell.level 0)}}
+                <div class="spell-item {{#if spell.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
+                    <div class="spell-row">
+                        <div class="spell-image-container">
+                            <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                            <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+                        </div>
+                        <div class="spell-name">{{spell.name}}</div>
+                        <div class="spell-controls">
+                            <a class="spell-info" title="Spell Details">
+                                <i class="fas fa-feather"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="spell-name">{{this.name}}</div>
-                <div class="spell-level">
-                    {{#if (eq this.level 0)}}
-                    C
-                    {{else}}
-                    {{this.level}}
-                    {{/if}}
-                </div>
-                <div class="spell-controls">
-                    <a class="spell-info" title="Spell Details">
-                        <i class="fas fa-feather"></i>
-                    </a>
+                {{/if}}
+            {{/each}}
+            {{/if}}
+
+            {{!-- Leveled Spells --}}
+            {{#each spellSlots as |slot|}}
+            {{#if (some ../spells "spell" (concat "spell.level === " slot.level))}}
+            <div class="level-header">
+                <span>Level {{slot.level}}</span>
+                <div class="slot-pips">
+                    {{#times slot.max}}
+                    <div class="slot-pip {{#if (lte @index ../value)}}filled{{/if}}" 
+                         data-level="{{../level}}" 
+                         data-index="{{@index}}"></div>
+                    {{/times}}
                 </div>
             </div>
-        </div>
-        {{/each}}
+            {{#each ../spells as |spell|}}
+                {{#if (eq spell.level ../slot.level)}}
+                <div class="spell-item {{#if spell.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
+                    <div class="spell-row">
+                        <div class="spell-image-container">
+                            <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                            <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+                        </div>
+                        <div class="spell-name">{{spell.name}}</div>
+                        <div class="spell-controls">
+                            <a class="spell-info" title="Spell Details">
+                                <i class="fas fa-feather"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {{/if}}
+            {{/each}}
+            {{/if}}
+            {{/each}}
+        {{else}}
+            {{!-- Bottom position: original flat list --}}
+            {{#each spells}}
+            <div class="spell-item {{#if this.prepared}}prepared{{/if}}" data-spell-id="{{this.id}}">
+                <div class="spell-row">
+                    <div class="spell-image-container">
+                        <img class="spell-image" src="{{this.img}}" alt="{{this.name}}"/>
+                        <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+                    </div>
+                    <div class="spell-name">{{this.name}}</div>
+                    <div class="spell-level">
+                        {{#if (eq this.level 0)}}
+                        C
+                        {{else}}
+                        {{this.level}}
+                        {{/if}}
+                    </div>
+                    <div class="spell-controls">
+                        <a class="spell-info" title="Spell Details">
+                            <i class="fas fa-feather"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+        {{/if}}
     </div>
 </div> 

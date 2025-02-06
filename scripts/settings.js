@@ -24,11 +24,9 @@ export const registerSettings = function() {
         config: true,
         type: String,
         choices: {
-            'bottom': 'Bottom',
-            'left': 'Left Side',
-            'right': 'Right Side'
+            'left': 'Left Side'
         },
-        default: 'bottom',
+        default: 'left',
         onChange: value => {
             // Update tray position in real-time
             const tray = document.querySelector('.squire-tray');

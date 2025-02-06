@@ -22,7 +22,8 @@ export class WeaponsPanel {
                 img: weapon.img || 'icons/svg/sword.svg',
                 quantity: weapon.system.quantity || 1,
                 equipped: weapon.system.equipped
-            }))
+            })),
+            position: game.settings.get(MODULE.ID, 'trayPosition')
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_WEAPONS, weaponData);

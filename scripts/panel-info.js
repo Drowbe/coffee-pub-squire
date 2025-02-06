@@ -19,7 +19,8 @@ export class InfoPanel {
             movement: this.actor.system.attributes.movement,
             abilities: this._getAbilityScores(),
             resources: this._getResources(),
-            proficiencyBonus: this.actor.system.attributes.prof
+            proficiencyBonus: this.actor.system.attributes.prof,
+            position: game.settings.get(MODULE.ID, 'trayPosition')
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_INFO, infoData);
@@ -49,6 +50,39 @@ export class InfoPanel {
     }
 
     _activateListeners(html) {
+        // Death toggle
+        html.find('.death-toggle').click(async () => {
+            const isDead = this.actor.system.attributes.hp.value <= 0;
+            await this.actor.update({
+                'system.attributes.hp.value': isDead ? 1 : 0,
+                'system.attributes.death.failure': isDead ? 0 : 3
+            });
+        });
+
+        // HP up/down
+        html.find('.hp-up, .hp-down').click(async (event) => {
+            const isIncrease = event.currentTarget.classList.contains('hp-up');
+            const hp = this.actor.system.attributes.hp;
+            const inputValue = parseInt(html.find('.hp-amount').val()) || 1;
+            const change = isIncrease ? inputValue : -inputValue;
+            
+            await this.actor.update({
+                'system.attributes.hp.value': Math.clamped(
+                    hp.value + change,
+                    0,
+                    hp.max
+                )
+            });
+        });
+
+        // Full heal
+        html.find('.hp-full').click(async () => {
+            const hp = this.actor.system.attributes.hp;
+            await this.actor.update({
+                'system.attributes.hp.value': hp.max
+            });
+        });
+
         // Ability checks
         html.find('.ability-check').click(async (event) => {
             const ability = event.currentTarget.dataset.ability;
@@ -77,20 +111,6 @@ export class InfoPanel {
                 );
                 await this.actor.update({ 'system.resources': resources });
             }
-        });
-
-        // HP management
-        html.find('.hp-adjust').click(async (event) => {
-            const change = parseInt(event.currentTarget.dataset.change);
-            const hp = duplicate(this.actor.system.attributes.hp);
-            
-            hp.value = Math.clamped(
-                hp.value + change,
-                0,
-                hp.max + (hp.temp || 0)
-            );
-            
-            await this.actor.update({ 'system.attributes.hp': hp });
         });
     }
 } 

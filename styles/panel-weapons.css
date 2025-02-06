@@ -17,6 +17,11 @@
     border-radius: 3px;
 }
 
+.weapon-item.equipped {
+    background: rgba(74, 144, 226, 0.1);
+    border-color: #4a90e2;
+}
+
 .weapon-image-container {
     position: relative;
     flex: 0 0 24px;
@@ -38,6 +43,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #eee;
 }
 
 .weapon-quantity {

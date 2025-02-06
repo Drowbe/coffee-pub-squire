@@ -1,4 +1,9 @@
 <div class="weapons-panel">
+    {{#if (eq position "left")}}
+    <div class="section-header">
+        <i class="fas fa-sword"></i> Weapons
+    </div>
+    {{/if}}
     <div class="weapons-list">
         {{#each weapons}}
         <div class="weapon-item {{#if this.equipped}}equipped{{/if}}" data-weapon-id="{{this.id}}">
@@ -8,7 +13,6 @@
                     <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
                 </div>
                 <div class="weapon-name">{{this.name}}</div>
-                <div class="weapon-quantity">{{this.quantity}}</div>
                 <div class="weapon-controls">
                     <a class="weapon-info" title="Weapon Details">
                         <i class="fas fa-feather"></i>

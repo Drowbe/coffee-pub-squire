@@ -1,93 +1,218 @@
-/* Tray Layout */
+/* Common Tray Styles */
 .squire-tray {
     position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 800px;
     z-index: 100;
-}
-
-/* Tray Handle */
-.tray-handle {
     background: rgba(30, 30, 30, 0.95);
     border: 1px solid #444;
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding: 0.5rem;
-    color: #aaa;
+    display: block;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Left Position */
+.squire-tray[data-position="left"] {
+    top: 50%;
+    left: 0;
+    transform: translateX(-300px) translateY(-50%);
+    width: 300px;
+    height: 80vh;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+}
+
+.squire-tray[data-position="left"].expanded {
+    transform: translateX(0) translateY(-50%);
+}
+
+.squire-tray[data-position="left"] .tray-handle {
+    width: 40px;
+    height: 100%;
+    background: rgba(30, 30, 30, 0.95);
+    border-left: 1px solid #444;
+    border-radius: 0 8px 8px 0;
     cursor: pointer;
-    transition: all 0.2s ease;
-    height: 30px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    padding: 1rem 0;
+    color: #aaa;
+    flex: none;
+    order: 2;
 }
 
-.handle-left {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex: 1;
+.squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
+    transform: rotate(0deg);
+    margin-bottom: auto;
+    margin-top: 0;
+    order: 1;
 }
 
-.handle-left span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.tray-handle:hover {
-    color: #fff;
-    background: rgba(40, 40, 40, 0.95);
-}
-
-.tray-handle i {
-    transition: transform 0.2s ease;
-}
-
-.squire-tray.expanded .tray-handle i.fa-chevron-up {
+.squire-tray[data-position="left"].expanded .tray-handle i.fa-chevron-right {
     transform: rotate(180deg);
 }
 
+.squire-tray[data-position="left"] .handle-left {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    order: 2;
+}
+
+.squire-tray[data-position="left"] .pin-button {
+    order: 3;
+    margin-top: auto;
+}
+
+.squire-tray[data-position="left"] .tray-content {
+    width: 300px;
+    flex: none;
+    display: block;
+    background: rgba(30, 30, 30, 0.95);
+    order: 1;
+    height: 100%;
+    overflow: hidden;
+}
+
+.squire-tray[data-position="left"] .panel-containers {
+    height: calc(100% - 180px);
+    padding: 0;
+    overflow-y: auto;
+}
+
+/* Section Headers for Left Position */
+.squire-tray[data-position="left"] .section-header {
+    background: #000000;
+    color: #9f9275;
+    padding: 4px 8px;
+    font-size: 1.4em;
+    font-weight: 900;
+    border-bottom: 1px solid #444;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+/* Section Header Icons for Left Position */
+.squire-tray[data-position="left"] .section-header i {
+    font-size:  .85em;
+    margin-right: 4px;
+	padding-top: 3px;
+
+}
+
+/* Level Headers */
+.squire-tray[data-position="left"] .level-header {
+    background: #451d24;
+    padding: 4px 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.squire-tray[data-position="left"] .level-header .slot-pips {
+    display: flex;
+    gap: 2px;
+}
+
+.squire-tray[data-position="left"] .slot-pip {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: 1px solid #4a90e2;
+    background: transparent;
+}
+
+.squire-tray[data-position="left"] .slot-pip.filled {
+    background: #4a90e2;
+}
+
+/* Spell Items in Left Position */
+.squire-tray[data-position="left"] .spell-item {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 2px;
+}
+
+.squire-tray[data-position="left"] .spell-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.squire-tray[data-position="left"] .spell-row {
+    gap: 8px;
+}
+
+/* Search Controls in Left Position */
+.squire-tray[data-position="left"] .spell-controls {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.squire-tray[data-position="left"] .spell-search {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 13px;
+    min-width: 100px;
+}
+
+.squire-tray[data-position="left"] .spell-filter {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.squire-tray[data-position="left"] .prepared-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.squire-tray[data-position="left"] .prepared-toggle input {
+    margin: 0;
+}
+
+/* Hide the separate spell slots section in left position */
+.squire-tray[data-position="left"] .spell-slots {
+    display: none;
+}
+
+/* Common Pin Button Styles */
 .pin-button {
     background: none;
     border: none;
-    color: #aaa;
+    color: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     padding: 4px 8px;
     transition: color 0.2s ease;
-    margin-left: 0.5rem;
+    outline: none;
 }
 
 .pin-button:hover {
-    color: #fff;
-}
-
-.pin-button:focus {
-    outline: none;
-    box-shadow: none;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .squire-tray.pinned .pin-button {
-    color: #4a90e2;
-}
-
-/* Tray Content */
-.tray-content {
-    background: rgba(30, 30, 30, 0.95);
-    border: 1px solid #444;
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
-}
-
-.squire-tray.expanded .tray-content {
-    max-height: 400px;
+    color: #fff;
 }
 
 /* Tabs */
@@ -127,17 +252,57 @@
     margin-right: 0.5rem;
 }
 
-/* Panel Containers */
-.panel-containers {
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #666 #2a2a2a;
+/* Spell/Weapon Items */
+.spell-item, .weapon-item {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-.squire-tray.expanded .panel-containers {
-    max-height: 400px;
+.spell-item.prepared {
+    border-color: #4a90e2;
 }
 
+.spell-row, .weapon-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.spell-image-container, .weapon-image-container {
+    width: 24px;
+    height: 24px;
+    position: relative;
+}
+
+.spell-image, .weapon-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 2px;
+}
+
+.spell-name, .weapon-name {
+    flex: 1;
+    color: #eee;
+    font-size: 1rem;
+}
+
+.spell-level, .weapon-quantity {
+    color: #aaa;
+    font-size: 0.9rem;
+    min-width: 24px;
+    text-align: center;
+}
+
+.spell-controls, .weapon-controls {
+    display: flex;
+    gap: 0.25rem;
+}
+
+/* Scrollbar Styling */
 .panel-containers::-webkit-scrollbar {
     width: 8px;
 }
@@ -150,6 +315,11 @@
     background-color: #666;
     border-radius: 4px;
     border: 2px solid #2a2a2a;
+}
+
+/* Hide tabs in left position */
+.squire-tray[data-position="left"] .tray-tabs {
+    display: none;
 }
 
 /* Animations */
@@ -200,4 +370,272 @@
     .panel-containers {
         max-height: 300px;
     }
+}
+
+/* Character Summary */
+.character-summary {
+    background: #1a1a1a;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid #444;
+}
+
+.portrait-and-stats {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.character-portrait {
+    width: 96px;
+    height: 96px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 2px solid #444;
+    flex-shrink: 0;
+}
+
+.character-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.stat-boxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.stat-row {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+}
+
+.stat-box {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
+    border: 1px solid #666;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 44px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.75em;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.2em;
+    line-height: 1;
+    font-weight: bold;
+    color: #fff;
+}
+
+.bar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bar-title {
+    color: #9f9275;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+}
+
+.squire-tray[data-position="left"] .exp-bar {
+    height: 16px !important;
+    background: #000000 !important;
+    border-radius: 6px !important;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #666666 !important;
+}
+
+.squire-tray[data-position="left"] .exp-fill {
+    height: 100%;
+    background: #451d24 !important;
+    border: 2px solid #000000 !important;
+    transition: none !important;
+}
+
+.squire-tray[data-position="left"] .hp-bar {
+    height: 32px !important;
+    background: #000000 !important;
+    border-radius: 6px !important;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #666666 !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+}
+
+.squire-tray[data-position="left"] .hp-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: #1d4521 !important;
+    z-index: 1;
+    border-radius: 4px !important;
+    border: 2px solid #000000 !important;
+    transition: none !important;
+}
+
+.hp-current, .hp-max {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 2;
+}
+
+.hp-max {
+    margin-left: auto;
+}
+
+.hp-label {
+    color: #aaa;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hp-value {
+    color: #fff;
+    font-size: 1em;
+    font-weight: 500;
+}
+
+.squire-tray[data-position="left"] .panel-container {
+    display: block;
+    height: auto;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.squire-tray[data-position="left"] .hp-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 4px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.squire-tray[data-position="left"] .hp-btn {
+    background: #2a2a2a;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 32px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.squire-tray[data-position="left"] .hp-btn:hover {
+    background: #3a3a3a;
+    border-color: #888;
+}
+
+.squire-tray[data-position="left"] .hp-amount {
+    width: 75px;
+    min-width: 60px;
+    text-align: center;
+    background: #1a1a1a;
+    border: 1px solid #666;
+    color: #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 16px;
+}
+
+.squire-tray[data-position="left"] .death-toggle {
+    color: #ff4444;
+}
+
+.squire-tray[data-position="left"] .hp-full {
+    color: #44ff44;
+}
+
+.squire-tray[data-position="left"] .ability-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.squire-tray[data-position="left"] .ability-btn {
+    flex: 1;
+    background: #2a2a2a;
+    border: 1px solid #666;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    text-align: center;
+    min-width: 40px;
+}
+
+.squire-tray[data-position="left"] .ability-btn:hover {
+    background: #3a3a3a;
+    border-color: #888;
+}
+
+.squire-tray[data-position="left"] .ability-btn .ability-label {
+    color: #9f9275;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.squire-tray[data-position="left"] .ability-btn .ability-mod {
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.squire-tray[data-position="left"] .ability-btn .ability-value {
+    color: #aaa;
+    font-size: 0.8em;
+}
+
+.squire-tray[data-position="left"] .character-name {
+    color: #9f9275;
+    font-size: 1.4em;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    padding: 4px;
+    background: #000000;
+    border-bottom: 1px solid #444;
 } 

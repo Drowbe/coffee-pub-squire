@@ -1,47 +1,10 @@
 <div class="info-panel">
+    {{#if (eq position "left")}}
+    <div class="section-header">
+        <i class="fas fa-user"></i> Character
+    </div>
+    {{/if}}
     <div class="info-grid">
-        <!-- HP Section -->
-        <div class="character-stats">
-            <div class="stat-header">Hit Points</div>
-            <div class="hp-section">
-                <div class="hp-bar">
-                    <div class="hp-fill" style="width: {{multiply (divide hp.value hp.max) 100}}%"></div>
-                    <div class="hp-text">
-                        {{hp.value}}/{{hp.max}}
-                        {{#if hp.temp}}
-                        (+{{hp.temp}})
-                        {{/if}}
-                    </div>
-                </div>
-                <div class="hp-controls">
-                    <button class="hp-adjust hp-decrease" data-change="-1">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <button class="hp-adjust hp-increase" data-change="1">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ability Scores -->
-        <div class="character-stats">
-            <div class="stat-header">Abilities</div>
-            <div class="ability-scores">
-                {{#each abilities}}
-                <div class="ability-item">
-                    <div class="ability-label">{{this.label}}</div>
-                    <div class="ability-value">{{this.value}}</div>
-                    <div class="ability-mod">{{numberFormat this.mod sign=true}}</div>
-                    <div class="ability-controls">
-                        <button class="ability-check" data-ability="{{this.key}}">Check</button>
-                        <button class="ability-save" data-ability="{{this.key}}">Save</button>
-                    </div>
-                </div>
-                {{/each}}
-            </div>
-        </div>
-
         <!-- Resources -->
         <div class="character-stats">
             <div class="stat-header">Resources</div>

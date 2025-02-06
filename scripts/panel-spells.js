@@ -20,7 +20,8 @@ export class SpellsPanel {
                 img: spell.img || 'icons/svg/spell.svg',
                 prepared: spell.system.preparation?.prepared || false
             })),
-            spellSlots: this._getSpellSlots()
+            spellSlots: this._getSpellSlots(),
+            position: game.settings.get(MODULE.ID, 'trayPosition')
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
@@ -85,9 +86,12 @@ export class SpellsPanel {
         // Search and filter
         const searchInput = html.find('.spell-search');
         const filterSelect = html.find('.spell-filter');
+        const preparedToggle = html.find('.prepared-only');
+        
         const updateVisibility = () => {
             const searchTerm = searchInput.val().toLowerCase();
             const filterValue = filterSelect.val();
+            const showOnlyPrepared = preparedToggle.prop('checked');
             
             html.find('.spell-item').each((i, el) => {
                 const $item = $(el);
@@ -98,12 +102,14 @@ export class SpellsPanel {
                 const levelMatch = filterValue === 'all' || 
                     (filterValue === 'cantrip' && spell.system.level === 0) ||
                     (filterValue === spell.system.level.toString());
+                const preparedMatch = !showOnlyPrepared || spell.system.preparation?.prepared;
 
-                $item.toggle(nameMatch && levelMatch);
+                $item.toggle(nameMatch && levelMatch && preparedMatch);
             });
         };
 
         searchInput.on('input', updateVisibility);
         filterSelect.on('change', updateVisibility);
+        preparedToggle.on('change', updateVisibility);
     }
 } 
