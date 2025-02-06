@@ -129,10 +129,13 @@
 
 /* Panel Containers */
 .panel-containers {
-    max-height: 400px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: #666 #2a2a2a;
+}
+
+.squire-tray.expanded .panel-containers {
+    max-height: 400px;
 }
 
 .panel-containers::-webkit-scrollbar {

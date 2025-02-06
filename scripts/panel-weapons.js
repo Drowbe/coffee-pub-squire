@@ -19,11 +19,8 @@ export class WeaponsPanel {
             weapons: this.weapons.map(weapon => ({
                 id: weapon.id,
                 name: weapon.name,
-                type: weapon.system.weaponType,
-                damage: weapon.system.damage?.parts?.[0]?.[0] || '',
-                damageType: weapon.system.damage?.parts?.[0]?.[1] || '',
-                properties: weapon.system.properties || {},
-                quantity: weapon.system.quantity,
+                img: weapon.img || 'icons/svg/sword.svg',
+                quantity: weapon.system.quantity || 1,
                 equipped: weapon.system.equipped
             }))
         };
@@ -34,12 +31,24 @@ export class WeaponsPanel {
     }
 
     _activateListeners(html) {
-        // Weapon attacks
-        html.find('.weapon-attack').click(async (event) => {
-            const weaponId = event.currentTarget.dataset.weaponId;
+        // Weapon info click
+        html.find('.weapon-info').click(async (event) => {
+            const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
-                await weapon.roll();
+                weapon.sheet.render(true);
+            }
+        });
+
+        // Weapon roll click (image overlay)
+        html.find('.weapon-image-container').click(async (event) => {
+            // Only handle click if on the overlay
+            if ($(event.target).hasClass('weapon-roll-overlay')) {
+                const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
+                const weapon = this.actor.items.get(weaponId);
+                if (weapon) {
+                    await weapon.use({}, { event });
+                }
             }
         });
 

@@ -106,7 +106,16 @@ export class PanelManager extends Application {
             if (!PanelManager.isPinned) {
                 // Open on hover
                 handle.hover(
-                    () => !PanelManager.isPinned && tray.addClass('expanded'),
+                    () => {
+                        if (!PanelManager.isPinned) {
+                            tray.addClass('expanded');
+                            // Set active panel if none is active
+                            if (!tray.find('.tab-item.tab-active').length) {
+                                const defaultPanel = game.settings.get(MODULE.ID, 'defaultPanel');
+                                this._switchPanel(defaultPanel);
+                            }
+                        }
+                    },
                     () => {
                         // Only close if we're not hovering the content and not pinned
                         if (!PanelManager.isPinned && !tray.find('.tray-content:hover').length) {
@@ -117,7 +126,16 @@ export class PanelManager extends Application {
 
                 // Keep open while hovering content
                 tray.find('.tray-content').hover(
-                    () => !PanelManager.isPinned && tray.addClass('expanded'),
+                    () => {
+                        if (!PanelManager.isPinned) {
+                            tray.addClass('expanded');
+                            // Set active panel if none is active
+                            if (!tray.find('.tab-item.tab-active').length) {
+                                const defaultPanel = game.settings.get(MODULE.ID, 'defaultPanel');
+                                this._switchPanel(defaultPanel);
+                            }
+                        }
+                    },
                     () => !PanelManager.isPinned && tray.removeClass('expanded')
                 );
             }
