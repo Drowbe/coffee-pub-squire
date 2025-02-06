@@ -1,0 +1,49 @@
+{
+    "coffee-pub-squire": {
+        "settings": {
+            "defaultPanel": {
+                "name": "Default Panel",
+                "hint": "Which panel should be active when opening the tray"
+            },
+            "trayPosition": {
+                "name": "Tray Position",
+                "hint": "Where should the tray appear on the screen"
+            },
+            "rememberLastPanel": {
+                "name": "Remember Last Panel",
+                "hint": "Remember which panel was last active and restore it next time"
+            },
+            "autoHide": {
+                "name": "Auto-hide Tray",
+                "hint": "Automatically hide the tray when clicking outside of it"
+            },
+            "panelHeight": {
+                "name": "Panel Height",
+                "hint": "Maximum height of the panel in pixels (min: 200, max: 800)"
+            },
+            "theme": {
+                "name": "Color Theme",
+                "hint": "Color scheme for the tray interface"
+            },
+            "customThemeColors": {
+                "name": "Custom Theme Colors",
+                "hint": "JSON object defining custom theme colors"
+            }
+        },
+        "panels": {
+            "spells": "Spells",
+            "weapons": "Weapons",
+            "info": "Info"
+        },
+        "positions": {
+            "bottom": "Bottom",
+            "left": "Left Side",
+            "right": "Right Side"
+        },
+        "themes": {
+            "dark": "Dark Theme",
+            "light": "Light Theme",
+            "custom": "Custom Theme"
+        }
+    }
+} 

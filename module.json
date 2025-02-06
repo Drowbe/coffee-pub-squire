@@ -15,13 +15,15 @@
             "github": "Drowbe"
         }
     ],
-
-    "dependencies": [
-        {
-            "name": "coffee-pub-blacksmith",
-            "type": "module"
-        }
-    ],
+    "relationships": {
+        "requires": [
+            {
+                "id": "coffee-pub-blacksmith",
+                "type": "module",
+                "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json"
+            }
+        ]
+    },
     "esmodules": [
         "scripts/const.js",
         "scripts/squire.js",
