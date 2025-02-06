@@ -1,0 +1,59 @@
+<div class="weapons-panel">
+    <div class="weapons-list">
+        {{#each weapons}}
+        <div class="weapon-item {{#if this.equipped}}equipped{{/if}}">
+            <div class="weapon-header">
+                <span class="weapon-name">{{this.name}}</span>
+                <span class="weapon-type">{{this.type}}</span>
+            </div>
+
+            <div class="weapon-stats">
+                <div class="weapon-stat">
+                    <span class="stat-label">Damage:</span>
+                    <span>{{this.damage}} {{this.damageType}}</span>
+                </div>
+                {{#if this.quantity}}
+                <div class="weapon-stat">
+                    <span class="stat-label">Quantity:</span>
+                    <span>{{this.quantity}}</span>
+                </div>
+                {{/if}}
+            </div>
+
+            <div class="weapon-properties">
+                {{#each this.properties}}
+                {{#if this}}
+                <span class="weapon-property">{{@key}}</span>
+                {{/if}}
+                {{/each}}
+            </div>
+
+            <div class="weapon-actions">
+                <button class="weapon-btn weapon-attack" data-weapon-id="{{this.id}}">
+                    <i class="fas fa-crosshairs"></i> Attack
+                </button>
+                <button class="weapon-btn weapon-damage" data-weapon-id="{{this.id}}">
+                    <i class="fas fa-tint"></i> Damage
+                </button>
+                <button class="weapon-btn weapon-equip" data-weapon-id="{{this.id}}">
+                    {{#if this.equipped}}
+                    <i class="fas fa-times"></i> Unequip
+                    {{else}}
+                    <i class="fas fa-check"></i> Equip
+                    {{/if}}
+                </button>
+            </div>
+
+            {{#if this.quantity}}
+            <div class="ammo-counter">
+                <span class="ammo-label">Ammunition:</span>
+                <span class="ammo-value">{{this.quantity}}</span>
+                <button class="ammo-decrease" data-weapon-id="{{this.id}}">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+</div>

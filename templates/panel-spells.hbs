@@ -1,0 +1,52 @@
+<div class="spells-panel">
+    <div class="spell-controls">
+        <input type="text" class="spell-search" placeholder="Search spells...">
+        <select class="spell-filter">
+            <option value="all">All Levels</option>
+            <option value="cantrip">Cantrips</option>
+            {{#each spellSlots}}
+            <option value="{{this.level}}">Level {{this.level}}</option>
+            {{/each}}
+        </select>
+    </div>
+
+    <div class="spell-slots">
+        {{#each spellSlots}}
+        <div class="slot-group">
+            <div class="slot-label">Level {{this.level}}</div>
+            <div class="slot-pips">
+                {{#times this.max}}
+                <div class="slot-pip {{#if (lte @index ../value)}}filled{{/if}}" 
+                     data-level="{{../level}}" 
+                     data-index="{{@index}}"></div>
+                {{/times}}
+            </div>
+        </div>
+        {{/each}}
+    </div>
+
+    <div class="spell-list">
+        {{#each spells}}
+        <div class="spell-item {{#if this.prepared}}prepared{{/if}}">
+            <div class="spell-header">
+                <span class="spell-name">{{this.name}}</span>
+                <span class="spell-level">
+                    {{#if (eq this.level 0)}}
+                    Cantrip
+                    {{else}}
+                    Level {{this.level}}
+                    {{/if}}
+                </span>
+            </div>
+            <div class="spell-description">
+                {{{this.description}}}
+            </div>
+            <div class="spell-actions">
+                <button class="cast-spell" data-spell-id="{{this.id}}">
+                    <i class="fas fa-magic"></i> Cast
+                </button>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div> 

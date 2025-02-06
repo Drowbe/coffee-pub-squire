@@ -1,0 +1,88 @@
+/* Main Squire Styles */
+.squire-tray {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 800px;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid #444;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    display: none;
+}
+
+/* Common Panel Styles */
+.panel-container {
+    display: none;
+    padding: 1rem;
+    color: #eee;
+}
+
+.panel-container.panel-visible {
+    display: block;
+}
+
+/* Button Styles */
+.squire-btn {
+    background: #4a4a4a;
+    border: 1px solid #666;
+    border-radius: 4px;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.squire-btn:hover {
+    background: #5a5a5a;
+}
+
+.squire-btn:active {
+    background: #3a3a3a;
+}
+
+/* Grid Layout */
+.squire-grid {
+    display: grid;
+    grid-gap: 1rem;
+    margin: 0.5rem 0;
+}
+
+.squire-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.squire-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Resource Bars */
+.resource-bar {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    height: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.resource-bar-fill {
+    background: #4a90e2;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; } 

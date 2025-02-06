@@ -1,0 +1,27 @@
+<div class="squire-tray">
+    <div class="tray-tabs">
+        <div class="tab-item" data-tab="spells">
+            <i class="fas fa-magic"></i>
+            <span>Spells</span>
+        </div>
+        <div class="tab-item" data-tab="weapons">
+            <i class="fas fa-sword"></i>
+            <span>Weapons</span>
+        </div>
+        <div class="tab-item" data-tab="info">
+            <i class="fas fa-info-circle"></i>
+            <span>Info</span>
+        </div>
+    </div>
+    <div class="tray-content">
+        <div class="panel-container" data-panel="spells">
+            {{> "modules/coffee-pub-squire/templates/panel-spells.hbs"}}
+        </div>
+        <div class="panel-container" data-panel="weapons">
+            {{> "modules/coffee-pub-squire/templates/panel-weapons.hbs"}}
+        </div>
+        <div class="panel-container" data-panel="info">
+            {{> "modules/coffee-pub-squire/templates/panel-info.hbs"}}
+        </div>
+    </div>
+</div> 

@@ -1,0 +1,53 @@
+{
+    "id": "coffee-pub-squire",
+    "title": "Coffee Pub Squire",
+    "description": "Quick access to character-specific combat information through a sliding tray interface.",
+    "version": "1.0.0",
+    "compatibility": {
+        "minimum": "12",
+        "verified": "12",
+        "maximum": "13"
+    },
+    "authors": [
+        {
+            "name": "Drowbe",
+            "discord": "drowbe",
+            "github": "Drowbe"
+        }
+    ],
+
+    "dependencies": [
+        {
+            "name": "coffee-pub-blacksmith",
+            "type": "module"
+        }
+    ],
+    "esmodules": [
+        "scripts/const.js",
+        "scripts/squire.js",
+        "scripts/panel-manager.js",
+        "scripts/panel-spells.js",
+        "scripts/panel-weapons.js",
+        "scripts/panel-info.js"
+    ],
+    "styles": [
+        "styles/squire.css",
+        "styles/tray.css",
+        "styles/panel-spells.css",
+        "styles/panel-weapons.css",
+        "styles/panel-info.css"
+    ],
+    "languages": [
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "lang/en.json"
+        }
+    ],
+    "url": "https://github.com/Drowbe/coffee-pub-squire",
+    "manifest": "https://github.com/Drowbe/coffee-pub-squire/releases/latest/download/module.json",
+    "download": "https://github.com/Drowbe/coffee-pub-squire/releases/latest/download/module.zip",
+    "changelog": "CHANGELOG.md",
+    "license": "LICENSE",
+    "readme": "README.md"
+} 
