@@ -69,5 +69,30 @@ export class FavoritesPanel {
                 item.sheet.render(true);
             }
         });
+
+        // Remove from favorites
+        html.find('.favorite-item .fa-heart').click(async (event) => {
+            const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
+            await this._toggleFavorite(itemId);
+
+            // Find the original item's heart icon in other panels and update it
+            const panelManager = ui.windows[Object.keys(ui.windows).find(key => 
+                ui.windows[key].constructor.name === 'PanelManager' && 
+                ui.windows[key].actor?.id === this.actor.id
+            )];
+
+            if (panelManager) {
+                // Update both spells and weapons panels
+                const spellHeart = panelManager.element.find(`.spell-item[data-spell-id="${itemId}"] .fa-heart`);
+                const weaponHeart = panelManager.element.find(`.weapon-item[data-weapon-id="${itemId}"] .fa-heart`);
+                
+                if (spellHeart.length) {
+                    spellHeart.addClass('faded');
+                }
+                if (weaponHeart.length) {
+                    weaponHeart.addClass('faded');
+                }
+            }
+        });
     }
 } 

@@ -1,4 +1,5 @@
-import { MODULE, TEMPLATES, PANELS, CSS_CLASSES } from './const.js';
+import { MODULE, TEMPLATES, CSS_CLASSES } from './const.js';
+import { CharacterPanel } from './panel-character.js';
 import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
 import { FavoritesPanel } from './panel-favorites.js';
@@ -11,6 +12,7 @@ export class PanelManager extends Application {
     constructor(actor) {
         super();
         this.actor = actor;
+        this.characterPanel = new CharacterPanel(actor);
         this.favoritesPanel = new FavoritesPanel(actor);
         this.spellsPanel = new SpellsPanel(actor);
         this.weaponsPanel = new WeaponsPanel(actor);
@@ -38,13 +40,6 @@ export class PanelManager extends Application {
             PanelManager.instance.spellsPanel = new SpellsPanel(actor);
             PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
             await PanelManager.instance.render(true);
-            
-            // Set active panel after updating
-            const rememberLast = game.settings.get(MODULE.ID, 'rememberLastPanel');
-            const panelId = rememberLast ? 
-                game.settings.get(MODULE.ID, 'lastActivePanel') : 
-                game.settings.get(MODULE.ID, 'defaultPanel');
-            PanelManager.instance._switchPanel(panelId);
             return;
         }
 
@@ -55,13 +50,6 @@ export class PanelManager extends Application {
         
         // Apply initial settings
         PanelManager.instance._applySettings();
-        
-        // Set initial active panel
-        const rememberLast = game.settings.get(MODULE.ID, 'rememberLastPanel');
-        const panelId = rememberLast ? 
-            game.settings.get(MODULE.ID, 'lastActivePanel') : 
-            game.settings.get(MODULE.ID, 'defaultPanel');
-        PanelManager.instance._switchPanel(panelId);
 
         // Register this application with the actor
         if (actor.apps) {
@@ -84,18 +72,10 @@ export class PanelManager extends Application {
         this.element.attr('data-position', position);
         
         // Render all panels
+        await this.characterPanel.render(this.element);
         await this.favoritesPanel.render(this.element);
         await this.spellsPanel.render(this.element);
         await this.weaponsPanel.render(this.element);
-
-        // Set initial active panel if none is visible
-        if (!this.element.find('.panel-container.panel-visible').length) {
-            const rememberLast = game.settings.get(MODULE.ID, 'rememberLastPanel');
-            const panelId = rememberLast ? 
-                game.settings.get(MODULE.ID, 'lastActivePanel') : 
-                game.settings.get(MODULE.ID, 'defaultPanel');
-            this._switchPanel(panelId);
-        }
 
         // Log current state for debugging
         console.log(`${MODULE.TITLE} | Tray rendered with position:`, position);
@@ -108,6 +88,14 @@ export class PanelManager extends Application {
         const handle = tray.find('.tray-handle');
         
         console.log(`${MODULE.TITLE} | Activating listeners with position:`, 'left');
+        
+        // Keep tray open for any interaction within tray content
+        tray.find('.tray-content').on('click', (event) => {
+            if (!PanelManager.isPinned) {
+                tray.addClass('expanded');
+            }
+            // Don't prevent default or stop propagation to allow other click handlers to work
+        });
         
         // HP Controls
         tray.find('.death-toggle').click(async () => {
@@ -169,67 +157,34 @@ export class PanelManager extends Application {
             
             if (PanelManager.isPinned) {
                 tray.addClass('expanded');
-            } else {
-                tray.removeClass('expanded');
             }
         });
 
-        // Handle click on handle
+        // Handle click on handle (collapse chevron)
         handle.click((event) => {
             if ($(event.target).closest('.pin-button').length) return;
-            this.constructor.toggleTray();
+            
+            // Toggle expanded state on click
+            tray.toggleClass('expanded');
         });
 
-        // Only apply hover behavior if not pinned
-        let hoverTimeout;
-        const clearHoverTimeout = () => {
-            if (hoverTimeout) {
-                clearTimeout(hoverTimeout);
-                hoverTimeout = null;
-            }
-        };
-
+        // Mouse enter/leave behavior
         const handleMouseEnter = () => {
-            clearHoverTimeout();
-            if (!PanelManager.isPinned) {
+            const openOnHover = game.settings.get(MODULE.ID, 'openOnHover');
+            if (openOnHover && !PanelManager.isPinned) {
                 tray.addClass('expanded');
             }
         };
 
-        const handleMouseLeave = (event) => {
-            clearHoverTimeout();
+        const handleMouseLeave = () => {
             if (!PanelManager.isPinned) {
-                hoverTimeout = setTimeout(() => {
-                    if (!tray[0].contains(document.activeElement) && !tray[0].matches(':hover')) {
-                        tray.removeClass('expanded');
-                    }
-                }, 100);
+                tray.removeClass('expanded');
             }
         };
 
-        if (!PanelManager.isPinned) {
-            tray.on('mouseenter', handleMouseEnter);
-            tray.on('mouseleave', handleMouseLeave);
-        }
-    }
-
-    _switchPanel(panelId) {
-        const html = this.element;
-        if (!html) return;  // Guard against missing element
-        
-        console.log(`${MODULE.TITLE} | Switching to panel:`, panelId);
-
-        // Update panel visibility
-        html.find('.panel-container').removeClass(CSS_CLASSES.PANEL_VISIBLE);
-        const targetPanel = html.find(`.panel-container[data-panel="${panelId}"]`);
-        targetPanel.addClass(CSS_CLASSES.PANEL_VISIBLE);
-        
-        // Verify panel visibility
-        console.log(`${MODULE.TITLE} | Panel visibility:`, {
-            panelId,
-            isVisible: targetPanel.hasClass(CSS_CLASSES.PANEL_VISIBLE),
-            panel: targetPanel[0]
-        });
+        // Apply hover behaviors
+        tray.on('mouseenter', handleMouseEnter);
+        tray.on('mouseleave', handleMouseLeave);
     }
 
     _applySettings() {
@@ -239,9 +194,6 @@ export class PanelManager extends Application {
         // Apply position
         tray.attr('data-position', 'left');
         console.log(`${MODULE.TITLE} | Applying position: left`);
-        
-        // Apply height
-        content.css('max-height', '80vh');
         
         // Apply theme
         const theme = game.settings.get(MODULE.ID, 'theme');
@@ -276,7 +228,6 @@ export class PanelManager extends Application {
 
     getData() {
         return {
-            panels: PANELS,
             actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition')
         };

@@ -1,0 +1,76 @@
+<div class="character-panel">
+    <div class="character-name">{{actor.name}}</div>
+    <div class="portrait-and-stats">
+        <div class="character-portrait">
+            <img src="{{actor.img}}" alt="{{actor.name}}">
+        </div>
+        <div class="stat-boxes">
+            <div class="stat-row">
+                <div class="stat-box">
+                    <span class="stat-label">LEVEL</span>
+                    <span class="stat-value">{{actor.system.details.level}}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">AC</span>
+                    <span class="stat-value">{{actor.system.attributes.ac.value}}</span>
+                </div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-box">
+                    <span class="stat-label">WALK</span>
+                    <span class="stat-value">{{actor.system.attributes.movement.walk}}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">PROF</span>
+                    <span class="stat-value">+{{actor.system.attributes.prof}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bars">
+        <div class="bar-section">
+            <div class="bar-title">XP {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
+            <div class="exp-bar">
+                <div class="exp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
+            </div>
+        </div>
+        <div class="bar-section">
+            <div class="bar-title">HIT POINTS</div>
+            <div class="hp-bar">
+                <div class="hp-current">
+                    <span class="hp-label">HP</span>
+                    <span class="hp-value">{{actor.system.attributes.hp.value}}</span>
+                </div>
+                <div class="hp-fill" style="width: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
+                <div class="hp-max">
+                    <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
+                    <span class="hp-label">MAX</span>
+                </div>
+            </div>
+            <div class="hp-controls">
+                <button class="hp-btn death-toggle" title="Toggle Dead Status">
+                    <i class="fas fa-skull"></i>
+                </button>
+                <button class="hp-btn hp-down" title="Decrease HP">
+                    <i class="fas fa-caret-down"></i>
+                </button>
+                <input type="number" class="hp-amount" value="" placeholder="1">
+                <button class="hp-btn hp-up" title="Increase HP">
+                    <i class="fas fa-caret-up"></i>
+                </button>
+                <button class="hp-btn hp-full" title="Full Heal">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+            <div class="ability-row">
+                {{#each actor.system.abilities as |ability key|}}
+                <div class="ability-btn" data-ability="{{toLowerCase key}}" title="Left Click: Ability Check&#10;Right Click: Saving Throw">
+                    <div class="ability-label">{{toUpperCase key}}</div>
+                    <div class="ability-mod">{{numberFormat ability.mod sign=true}}</div>
+                    <div class="ability-value">{{ability.value}}</div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+</div> 

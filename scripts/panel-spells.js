@@ -11,22 +11,28 @@ export class SpellsPanel {
 
     _getSpells() {
         if (!this.actor) return [];
+        
+        // Get current favorites
         const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+        console.log('Current favorites:', favorites);
+        
+        // Get spells
         const spells = this.actor.items.filter(item => item.type === 'spell');
         console.log('Found spells:', spells);
         
+        // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
-            console.log('Processing spell:', spell);
-            const spellData = {
+            const isFavorite = favorites.includes(spell.id);
+            console.log(`Processing spell ${spell.name} (${spell.id}), favorite: ${isFavorite}`);
+            
+            return {
                 id: spell.id,
                 name: spell.name,
                 img: spell.img,
                 system: spell.system,
                 type: spell.type,
-                isFavorite: favorites.includes(spell.id)
+                isFavorite: isFavorite
             };
-            console.log('Processed spell data:', spellData);
-            return spellData;
         });
         
         console.log('Final spells array:', mappedSpells);
@@ -34,33 +40,60 @@ export class SpellsPanel {
     }
 
     async _toggleFavorite(itemId) {
-        const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
-        const newFavorites = favorites.includes(itemId)
-            ? favorites.filter(id => id !== itemId)
-            : [...favorites, itemId];
+        try {
+            // Get current favorites
+            const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+            const newFavorites = favorites.includes(itemId)
+                ? favorites.filter(id => id !== itemId)
+                : [...favorites, itemId];
             
-        await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-        this.spells = this._getSpells();
-        await this.render();
-        
-        // Re-render the favorites panel
-        const favoritesPanel = Object.values(ui.windows).find(w => w instanceof FavoritesPanel && w.actor.id === this.actor.id);
-        if (favoritesPanel) {
-            await favoritesPanel.render();
-        } else {
-            // If we can't find the panel in ui.windows, try to get it from PanelManager
+            // Update the flag
+            await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
+            
+            // Update our local spells data
+            this.spells = this._getSpells();
+            
+            // Find the PanelManager instance
             const panelManager = ui.windows[Object.keys(ui.windows).find(key => 
                 ui.windows[key].constructor.name === 'PanelManager' && 
                 ui.windows[key].actor?.id === this.actor.id
             )];
+
+            // Re-render this panel
+            if (this.element) {
+                await this.render();
+            }
+
+            // Re-render the favorites panel through PanelManager
             if (panelManager?.favoritesPanel) {
                 await panelManager.favoritesPanel.render(panelManager.element);
             }
+
+            // Update the heart icon state immediately
+            const heartIcon = this.element.find(`.spell-item[data-spell-id="${itemId}"] .fa-heart`);
+            if (heartIcon.length) {
+                heartIcon.toggleClass('faded', !newFavorites.includes(itemId));
+            }
+
+            // Force a full refresh of both panels to ensure sync
+            if (panelManager) {
+                await panelManager.render(true);
+            }
+
+        } catch (error) {
+            console.error('Error toggling favorite:', error);
         }
     }
 
     async render(html) {
-        this.element = html;
+        if (html) {
+            this.element = html;
+        }
+        if (!this.element) {
+            console.warn('No element to render to');
+            return;
+        }
+
         const spellData = {
             spells: this.spells,
             spellSlots: this._getSpellSlots(),
@@ -69,15 +102,14 @@ export class SpellsPanel {
         };
         
         console.log('Rendering with spell data:', spellData);
-        console.log('Spells array:', this.spells);
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
-        const spellsPanel = html.find('[data-panel="spells"]');
+        const spellsPanel = this.element.find('[data-panel="spells"]');
         console.log('Found spells panel:', spellsPanel.length);
         spellsPanel.html(template);
         
-        this._activateListeners(html);
-        this._updateVisibility(html);
+        this._activateListeners(this.element);
+        this._updateVisibility(this.element);
     }
 
     _getSpellSlots() {

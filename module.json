@@ -29,8 +29,10 @@
         "scripts/helpers.js",
         "scripts/squire.js",
         "scripts/panel-manager.js",
+        "scripts/panel-character.js",
         "scripts/panel-spells.js",
-        "scripts/panel-weapons.js"
+        "scripts/panel-weapons.js",
+        "scripts/panel-favorites.js"
     ],
     "styles": [
         "styles/squire.css",

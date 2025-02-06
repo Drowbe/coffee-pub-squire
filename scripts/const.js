@@ -6,6 +6,7 @@ export const MODULE = {
 
 export const TEMPLATES = {
     TRAY: `modules/${MODULE.ID}/templates/tray.hbs`,
+    PANEL_CHARACTER: `modules/${MODULE.ID}/templates/panel-character.hbs`,
     PANEL_SPELLS: `modules/${MODULE.ID}/templates/panel-spells.hbs`,
     PANEL_WEAPONS: `modules/${MODULE.ID}/templates/panel-weapons.hbs`,
     PANEL_FAVORITES: `modules/${MODULE.ID}/templates/panel-favorites.hbs`
