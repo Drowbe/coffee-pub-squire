@@ -13,10 +13,24 @@ export class SpellsPanel {
         if (!this.actor) return [];
         const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
         const spells = this.actor.items.filter(item => item.type === 'spell');
-        return spells.map(spell => ({
-            ...spell,
-            isFavorite: favorites.includes(spell.id)
-        }));
+        console.log('Found spells:', spells);
+        
+        const mappedSpells = spells.map(spell => {
+            console.log('Processing spell:', spell);
+            const spellData = {
+                id: spell.id,
+                name: spell.name,
+                img: spell.img,
+                system: spell.system,
+                type: spell.type,
+                isFavorite: favorites.includes(spell.id)
+            };
+            console.log('Processed spell data:', spellData);
+            return spellData;
+        });
+        
+        console.log('Final spells array:', mappedSpells);
+        return mappedSpells;
     }
 
     async _toggleFavorite(itemId) {
@@ -53,9 +67,15 @@ export class SpellsPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyPrepared: this.showOnlyPrepared
         };
+        
+        console.log('Rendering with spell data:', spellData);
+        console.log('Spells array:', this.spells);
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
-        html.find('[data-panel="spells"]').html(template);
+        const spellsPanel = html.find('[data-panel="spells"]');
+        console.log('Found spells panel:', spellsPanel.length);
+        spellsPanel.html(template);
+        
         this._activateListeners(html);
         this._updateVisibility(html);
     }
@@ -81,13 +101,24 @@ export class SpellsPanel {
     }
 
     _updateVisibility(html) {
-        const searchTerm = html.find('.spell-search').val()?.toLowerCase() || '';
+        const searchInput = html.find('.spell-search');
+        const searchTerm = searchInput.val()?.toLowerCase() || '';
         const filterValue = html.find('.spell-filter').val();
         
-        html.find('.spell-item').each((i, el) => {
+        console.log('Updating visibility:', { searchTerm, filterValue, showOnlyPrepared: this.showOnlyPrepared });
+        
+        const spellItems = html.find('.spell-item');
+        console.log('Found spell items:', spellItems.length);
+        
+        spellItems.each((i, el) => {
             const $item = $(el);
-            const spell = this.spells.find(s => s.id === $item.data('spell-id'));
-            if (!spell) return;
+            const spellId = $item.data('spell-id');
+            const spell = this.spells.find(s => s.id === spellId);
+            
+            if (!spell) {
+                console.warn('Spell not found for id:', spellId);
+                return;
+            }
 
             const nameMatch = spell.name.toLowerCase().includes(searchTerm);
             const levelMatch = filterValue === 'all' || 
@@ -95,7 +126,16 @@ export class SpellsPanel {
                 (filterValue === spell.system.level.toString());
             const preparedMatch = !this.showOnlyPrepared || spell.system.preparation?.prepared;
 
-            $item.toggle(nameMatch && levelMatch && preparedMatch);
+            const shouldShow = nameMatch && levelMatch && preparedMatch;
+            console.log('Spell visibility:', {
+                name: spell.name,
+                nameMatch,
+                levelMatch,
+                preparedMatch,
+                shouldShow
+            });
+
+            $item.toggle(shouldShow);
         });
     }
 
@@ -157,8 +197,20 @@ export class SpellsPanel {
         // Search and filter
         const searchInput = html.find('.spell-search');
         const filterSelect = html.find('.spell-filter');
-        
-        searchInput.on('input', () => this._updateVisibility(html));
-        filterSelect.on('change', () => this._updateVisibility(html));
+
+        // Remove any existing event listeners
+        searchInput.off('input keyup change');
+        filterSelect.off('change');
+
+        // Add new event listeners
+        searchInput.on('input keyup change', () => {
+            console.log('Search input event triggered');
+            this._updateVisibility(html);
+        });
+
+        filterSelect.on('change', () => {
+            console.log('Filter select event triggered');
+            this._updateVisibility(html);
+        });
     }
 } 
