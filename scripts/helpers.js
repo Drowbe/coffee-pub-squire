@@ -29,10 +29,19 @@ export const registerHelpers = function() {
     });
 
     // Helper to check if array has any items matching a condition
-    Handlebars.registerHelper('some', function(array, itemName, condition) {
+    Handlebars.registerHelper('some', function(array, itemName, property, value) {
         if (!array || !array.length) return false;
-        const evalCondition = new Function(itemName, `return ${condition}`);
-        return array.some(item => evalCondition(item));
+        return array.some(item => {
+            if (property.includes('.')) {
+                const parts = property.split('.');
+                let current = item;
+                for (const part of parts) {
+                    current = current[part];
+                }
+                return current === value;
+            }
+            return item[property] === value;
+        });
     });
 
     // Helper to concatenate strings

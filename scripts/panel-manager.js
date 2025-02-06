@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, PANELS, CSS_CLASSES } from './const.js';
 import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
-import { InfoPanel } from './panel-info.js';
+import { FavoritesPanel } from './panel-favorites.js';
 
 export class PanelManager extends Application {
     static instance = null;
@@ -11,9 +11,9 @@ export class PanelManager extends Application {
     constructor(actor) {
         super();
         this.actor = actor;
+        this.favoritesPanel = new FavoritesPanel(actor);
         this.spellsPanel = new SpellsPanel(actor);
         this.weaponsPanel = new WeaponsPanel(actor);
-        this.infoPanel = new InfoPanel(actor);
     }
 
     static get defaultOptions() {
@@ -34,9 +34,9 @@ export class PanelManager extends Application {
         if (PanelManager.instance) {
             PanelManager.currentActor = actor;
             PanelManager.instance.actor = actor;
+            PanelManager.instance.favoritesPanel = new FavoritesPanel(actor);
             PanelManager.instance.spellsPanel = new SpellsPanel(actor);
             PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
-            PanelManager.instance.infoPanel = new InfoPanel(actor);
             await PanelManager.instance.render(true);
             
             // Set active panel after updating
@@ -63,8 +63,10 @@ export class PanelManager extends Application {
             game.settings.get(MODULE.ID, 'defaultPanel');
         PanelManager.instance._switchPanel(panelId);
 
-        // Add actor update handler
-        actor.apps.push(PanelManager.instance);
+        // Register this application with the actor
+        if (actor.apps) {
+            actor.apps[PanelManager.instance.appId] = PanelManager.instance;
+        }
     }
 
     static async toggleTray() {
@@ -82,9 +84,9 @@ export class PanelManager extends Application {
         this.element.attr('data-position', position);
         
         // Render all panels
+        await this.favoritesPanel.render(this.element);
         await this.spellsPanel.render(this.element);
         await this.weaponsPanel.render(this.element);
-        await this.infoPanel.render(this.element);
 
         // Set initial active panel if none is visible
         if (!this.element.find('.panel-container.panel-visible').length) {

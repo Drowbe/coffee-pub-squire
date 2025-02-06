@@ -30,15 +30,14 @@
         "scripts/squire.js",
         "scripts/panel-manager.js",
         "scripts/panel-spells.js",
-        "scripts/panel-weapons.js",
-        "scripts/panel-info.js"
+        "scripts/panel-weapons.js"
     ],
     "styles": [
         "styles/squire.css",
         "styles/tray.css",
         "styles/panel-spells.css",
         "styles/panel-weapons.css",
-        "styles/panel-info.css"
+        "styles/panel-favorites.css"
     ],
     "languages": [
         {

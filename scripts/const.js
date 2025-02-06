@@ -8,13 +8,13 @@ export const TEMPLATES = {
     TRAY: `modules/${MODULE.ID}/templates/tray.hbs`,
     PANEL_SPELLS: `modules/${MODULE.ID}/templates/panel-spells.hbs`,
     PANEL_WEAPONS: `modules/${MODULE.ID}/templates/panel-weapons.hbs`,
-    PANEL_INFO: `modules/${MODULE.ID}/templates/panel-info.hbs`
+    PANEL_FAVORITES: `modules/${MODULE.ID}/templates/panel-favorites.hbs`
 };
 
 export const PANELS = {
+    FAVORITES: 'favorites',
     SPELLS: 'spells',
-    WEAPONS: 'weapons',
-    INFO: 'info'
+    WEAPONS: 'weapons'
 };
 
 export const CSS_CLASSES = {

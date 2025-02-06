@@ -1,0 +1,108 @@
+/* Favorites Panel */
+.favorites-panel {
+    padding: 0;
+}
+
+.favorites-list {
+    padding: 0.5rem;
+}
+
+.favorite-item {
+    margin-bottom: 4px;
+}
+
+.favorite-row {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #444;
+    border-radius: 3px;
+}
+
+.favorite-image-container {
+    position: relative;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.favorite-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.favorite-name {
+    flex: 1;
+    margin-right: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #eee;
+}
+
+.favorite-type {
+    color: #aaa;
+    font-size: 0.8em;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    margin-right: 8px;
+    text-transform: capitalize;
+}
+
+.favorite-roll-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: #4a90e2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.favorite-image-container:hover .favorite-roll-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.tray-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-right: 4px;
+}
+
+.tray-buttons i {
+    color: #aaa;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+
+.tray-buttons i:hover {
+    color: #fff;
+}
+
+.tray-buttons .fa-heart {
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.tray-buttons .fa-heart:hover {
+    color: #ff4444;
+}
+
+.tray-buttons .fa-heart.active {
+    color: #ff4444;
+} 

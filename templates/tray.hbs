@@ -1,4 +1,4 @@
-<div class="squire-tray">
+<div class="squire-tray" data-position="left">
     <div class="tray-handle">
         <div class="handle-left">
             <i class="fas fa-chevron-right"></i>
@@ -48,14 +48,14 @@
                 <div class="bar-section">
                     <div class="bar-title">HIT POINTS</div>
                     <div class="hp-bar">
-                        <div class="hp-max">
-                            <span class="hp-label">MAX</span>
-                            <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
-                        </div>
-                        <div class="hp-fill" style="width: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
                         <div class="hp-current">
                             <span class="hp-label">HP</span>
                             <span class="hp-value">{{actor.system.attributes.hp.value}}</span>
+                        </div>
+                        <div class="hp-fill" style="width: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
+                        <div class="hp-max">
+                            <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
+                            <span class="hp-label">MAX</span>
                         </div>
                     </div>
                     <div class="hp-controls">
@@ -86,6 +86,7 @@
             </div>
         </div>
         <div class="panel-containers stacked">
+            <div class="panel-container" data-panel="favorites"></div>
             <div class="panel-container" data-panel="weapons"></div>
             <div class="panel-container" data-panel="spells"></div>
             <div class="panel-container" data-panel="info"></div>

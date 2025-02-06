@@ -1,7 +1,12 @@
 <div class="spells-panel">
     {{#if (eq position "left")}}
     <div class="section-header">
-        <i class="fas fa-magic"></i> Spells
+        <div class="header-left">
+            <i class="fas fa-magic"></i> Spells
+        </div>
+        <div class="header-right">
+            <i class="fas fa-book spell-filter-toggle {{#if showOnlyPrepared}}active{{/if}}" title="Toggle Prepared Spells"></i>
+        </div>
     </div>
     {{/if}}
     <div class="spell-controls">
@@ -35,21 +40,20 @@
     <div class="spells-list">
         {{#if (eq position "left")}}
             {{!-- Cantrips --}}
-            {{#if (some spells "spell" "spell.level" 0)}}
+            {{#if (some spells "spell" "system.level" 0)}}
             <div class="level-header">Cantrips</div>
             {{#each spells as |spell|}}
-                {{#if (eq spell.level 0)}}
-                <div class="spell-item {{#if spell.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
+                {{#if (eq spell.system.level 0)}}
+                <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
                     <div class="spell-row">
                         <div class="spell-image-container">
                             <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                             <i class="fas fa-dice-d20 spell-roll-overlay"></i>
                         </div>
                         <div class="spell-name">{{spell.name}}</div>
-                        <div class="spell-controls">
-                            <a class="spell-info" title="Spell Details">
-                                <i class="fas fa-feather"></i>
-                            </a>
+                        <div class="tray-buttons">
+                            <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                            <i class="fas fa-feather"></i>
                         </div>
                     </div>
                 </div>
@@ -59,7 +63,7 @@
 
             {{!-- Leveled Spells --}}
             {{#each spellSlots as |slot|}}
-            {{#if (some ../spells "spell" (concat "spell.level === " slot.level))}}
+            {{#if (some ../spells "spell" "system.level" slot.level)}}
             <div class="level-header">
                 <span>Level {{slot.level}}</span>
                 <div class="slot-pips">
@@ -71,18 +75,17 @@
                 </div>
             </div>
             {{#each ../spells as |spell|}}
-                {{#if (eq spell.level ../slot.level)}}
-                <div class="spell-item {{#if spell.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
+                {{#if (eq spell.system.level ../slot.level)}}
+                <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
                     <div class="spell-row">
                         <div class="spell-image-container">
                             <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                             <i class="fas fa-dice-d20 spell-roll-overlay"></i>
                         </div>
                         <div class="spell-name">{{spell.name}}</div>
-                        <div class="spell-controls">
-                            <a class="spell-info" title="Spell Details">
-                                <i class="fas fa-feather"></i>
-                            </a>
+                        <div class="tray-buttons">
+                            <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                            <i class="fas fa-feather"></i>
                         </div>
                     </div>
                 </div>
@@ -107,10 +110,9 @@
                         {{this.level}}
                         {{/if}}
                     </div>
-                    <div class="spell-controls">
-                        <a class="spell-info" title="Spell Details">
-                            <i class="fas fa-feather"></i>
-                        </a>
+                    <div class="tray-buttons">
+                        <i class="fas fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
                     </div>
                 </div>
             </div>

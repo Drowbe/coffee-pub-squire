@@ -76,8 +76,25 @@
 }
 
 .squire-tray[data-position="left"] .panel-containers {
-    height: calc(100% - 180px);
+    height: 100%;
     padding: 0;
+    overflow-y: auto;
+}
+
+.squire-tray[data-position="left"] .panel-container {
+    display: block;
+    height: auto;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    overflow-y: auto;
+}
+
+.squire-tray[data-position="left"] .spells-list,
+.squire-tray[data-position="left"] .weapons-list,
+.squire-tray[data-position="left"] .favorites-list {
+    padding: 0 0.5rem;
     overflow-y: auto;
 }
 
@@ -85,13 +102,42 @@
 .squire-tray[data-position="left"] .section-header {
     background: #000000;
     color: #9f9275;
-    padding: 4px 8px;
+    padding: 8px;
     font-size: 1.4em;
     font-weight: 900;
     border-bottom: 1px solid #444;
     margin-bottom: 8px;
     text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
+
+.squire-tray[data-position="left"] .section-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.squire-tray[data-position="left"] .section-header .header-right {
+    display: flex;
+    align-items: center;
+}
+
+.squire-tray[data-position="left"] .section-header .filter-toggle {
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .section-header .filter-toggle:hover {
+    opacity: 0.8;
+}
+
+.squire-tray[data-position="left"] .section-header .filter-toggle.active {
+    opacity: 1;
+}
+
 /* Section Header Icons for Left Position */
 .squire-tray[data-position="left"] .section-header i {
     font-size:  .85em;
@@ -182,13 +228,14 @@
     display: flex;
     gap: 8px;
     align-items: center;
-    margin-right: 4px;
+    margin-right: 8px;
 }
 
 .tray-buttons i {
     color: #aaa;
     transition: color 0.2s ease;
     cursor: pointer;
+    padding: 4px;
 }
 
 .tray-buttons i:hover {
@@ -607,8 +654,28 @@
     z-index: 2;
 }
 
+.hp-current {
+    justify-content: flex-start;
+}
+
 .hp-max {
-    margin-left: auto;
+    justify-content: flex-end;
+}
+
+.hp-current .hp-label {
+    order: 1;
+}
+
+.hp-current .hp-value {
+    order: 2;
+}
+
+.hp-max .hp-value {
+    order: 1;
+}
+
+.hp-max .hp-label {
+    order: 2;
 }
 
 .hp-label {
@@ -622,16 +689,6 @@
     color: #fff;
     font-size: 1em;
     font-weight: 500;
-}
-
-.squire-tray[data-position="left"] .panel-container {
-    display: block;
-    height: auto;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin-bottom: 1rem;
 }
 
 .squire-tray[data-position="left"] .hp-controls {
