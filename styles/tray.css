@@ -2,47 +2,57 @@
 .squire-tray {
     position: fixed;
     z-index: 100;
-    background: rgba(30, 30, 30, 0.95);
-    border: 1px solid #444;
+    background: rgba(30, 30, 30, 0.90);
+    border: 0px solid #444;
     display: block;
     transition: transform 0.3s ease-in-out;
+    box-shadow: 0 0 20px var(--color-shadow-dark);
 }
+
 
 /* Left Position */
 .squire-tray[data-position="left"] {
-    top: 50%;
-    left: 0;
-    transform: translateX(-300px) translateY(-50%);
+    top: 70px;
+    left: 0px;
+    transform: translateX(-280px);
     width: 300px;
-    height: 80vh;
-    border-radius: 0 8px 8px 0;
+    height: calc(100vh - 100px);
+    border-radius: 8px 8px 8px 8px;
     display: flex;
+    padding: 8px;
 }
 
 .squire-tray[data-position="left"].expanded {
-    transform: translateX(0) translateY(-50%);
+    transform: translateX(0);
+    left: 0px;
 }
 
 .squire-tray[data-position="left"] .tray-handle {
-    width: 28px;
     height: 100%;
-    background: rgba(30, 30, 30, 0.95);
-    border-left: 1px solid #444;
-    border-radius: 0 8px 8px 0;
+	width: 19px;
+    background: transparent;
+    border-left: 0px solid #444;
+    border-radius: 0 0 0 0;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem 0;
+    padding-top: 14px;
+    padding-bottom: 0px;
     color: #aaa;
     flex: none;
     order: 2;
+    box-shadow: 0 0 0 var(--color-shadow-dark);
+    text-transform: uppercase;
+    font-size: 1.1em;
+    font-weight: 900;
 }
 
 .squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
     transform: rotate(0deg);
     margin-bottom: auto;
     margin-top: 0;
+    padding-bottom: 8px;
     order: 1;
 }
 
@@ -55,7 +65,7 @@
     transform: rotate(180deg);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 2.0rem;
     white-space: nowrap;
     order: 2;
 }
@@ -63,22 +73,29 @@
 .squire-tray[data-position="left"] .pin-button {
     order: 3;
     margin-top: auto;
+    padding: 0;
+    margin-bottom: 0px;
 }
 
 .squire-tray[data-position="left"] .tray-content {
-    width: 300px;
+    width: 272px;
     flex: none;
     display: block;
-    background: rgba(30, 30, 30, 0.95);
     order: 1;
     height: 100%;
     overflow: hidden;
+    background: rgba(30, 30, 30, 0.90);
+    border: 0px solid #444;
+    border-radius: 0px;
+    margin: 0px;
 }
 
 .squire-tray[data-position="left"] .panel-containers {
-    height: 100%;
-    padding: 0;
+    height: calc(100% - 40px);
+    padding: 0px;
     overflow-y: auto;
+    border: 0px solid #444;
+    border-radius: 0px 0px 0px 0px;
 }
 
 .squire-tray[data-position="left"] .panel-container {
@@ -88,6 +105,12 @@
     border: none;
     border-radius: 0;
     padding: 0;
+    margin-bottom: 10px;
+    overflow-y: auto;
+}
+
+.squire-tray[data-position="left"] .stacked {
+    height: calc(100% - 200px);
     overflow-y: auto;
 }
 
@@ -338,8 +361,14 @@
     color: rgba(255, 255, 255, 0.8);
 }
 
+/* When pinned, make the button fully visible */
 .squire-tray.pinned .pin-button {
     color: #fff;
+}
+
+/* When not pinned, make the button dim */
+.squire-tray:not(.pinned) .pin-button {
+    color: rgba(255, 255, 255, 0.3);
 }
 
 /* Tabs */
@@ -785,13 +814,14 @@
 }
 
 .squire-tray[data-position="left"] .character-name {
-    color: #9f9275;
-    font-size: 1.4em;
-    font-weight: 900;
-    text-align: center;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    padding: 4px;
-    background: #000000;
-    border-bottom: 1px solid #444;
+    display: none;
+}
+
+.squire-tray[data-position="left"] .character-panel {
+    padding: 0;
+}
+
+.squire-tray[data-position="left"] .character-panel .portrait-and-stats,
+.squire-tray[data-position="left"] .character-panel .bars {
+    padding: 0 0.5rem;
 } 

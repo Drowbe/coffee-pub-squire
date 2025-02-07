@@ -11,6 +11,24 @@ Hooks.once('init', async function() {
 
     // Register Handlebars helpers
     registerHelpers();
+
+    // Apply toolbar padding if enabled
+    const moveToolbar = game.settings.get(MODULE.ID, 'moveFoundryToolbar');
+    const moveUIWhenPinned = game.settings.get(MODULE.ID, 'moveUIWhenPinned');
+    const uiLeft = document.querySelector('#ui-left');
+    
+    if (uiLeft) {
+        // Apply initial padding for handle
+        if (moveToolbar) {
+            uiLeft.style.paddingLeft = '15px';
+        }
+        
+        // Apply initial margin if tray is pinned
+        const tray = document.querySelector('.squire-tray');
+        if (moveUIWhenPinned && tray?.classList.contains('pinned')) {
+            uiLeft.style.marginLeft = game.settings.get(MODULE.ID, 'trayWidth');
+        }
+    }
 });
 
 Hooks.once('ready', async function() {

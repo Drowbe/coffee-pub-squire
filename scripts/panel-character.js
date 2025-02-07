@@ -21,6 +21,11 @@ export class CharacterPanel {
     }
 
     _activateListeners(html) {
+        // Character sheet toggle
+        html.find('.character-sheet-toggle').click(() => {
+            this.actor.sheet.render(true);
+        });
+
         // HP Controls
         html.find('.death-toggle').click(async () => {
             const isDead = this.actor.system.attributes.hp.value <= 0;
@@ -43,7 +48,7 @@ export class CharacterPanel {
             const change = isIncrease ? inputValue : -inputValue;
             
             await this.actor.update({
-                'system.attributes.hp.value': Math.clamped(
+                'system.attributes.hp.value': Math.clamp(
                     hp.value + change,
                     0,
                     hp.max

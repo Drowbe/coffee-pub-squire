@@ -19,12 +19,15 @@ export class PanelManager extends Application {
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             id: 'squire-tray',
             template: TEMPLATES.TRAY,
             popOut: false,
             minimizable: false,
-            resizable: false
+            resizable: false,
+            closeOnSubmit: false,
+            submitOnClose: false,
+            submitOnChange: false
         });
     }
 
@@ -36,6 +39,7 @@ export class PanelManager extends Application {
         if (PanelManager.instance) {
             PanelManager.currentActor = actor;
             PanelManager.instance.actor = actor;
+            PanelManager.instance.characterPanel = new CharacterPanel(actor);
             PanelManager.instance.favoritesPanel = new FavoritesPanel(actor);
             PanelManager.instance.spellsPanel = new SpellsPanel(actor);
             PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
@@ -81,76 +85,103 @@ export class PanelManager extends Application {
         console.log(`${MODULE.TITLE} | Tray rendered with position:`, position);
     }
 
+    /** @override */
+    close(options={}) {
+        // Never actually close, just collapse if not pinned
+        if (!PanelManager.isPinned) {
+            this.element?.removeClass('expanded');
+        }
+        return this;
+    }
+
     activateListeners(html) {
         super.activateListeners(html);
 
         const tray = html;
         const handle = tray.find('.tray-handle');
         
-        console.log(`${MODULE.TITLE} | Activating listeners with position:`, 'left');
-        
-        // Keep tray open for any interaction within tray content
-        tray.find('.tray-content').on('click', (event) => {
-            if (!PanelManager.isPinned) {
-                tray.addClass('expanded');
-            }
-            // Don't prevent default or stop propagation to allow other click handlers to work
+        // Prevent ALL interactions within tray content from bubbling up
+        tray.find('.tray-content').on('mousedown mouseup click pointerdown pointerup touchstart touchend', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
         });
+
+        // Prevent document-level click handler
+        $(document).off('click.squire');
         
         // HP Controls
-        tray.find('.death-toggle').click(async () => {
+        tray.find('.death-toggle').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const isDead = this.actor.system.attributes.hp.value <= 0;
             await this.actor.update({
                 'system.attributes.hp.value': isDead ? 1 : 0,
                 'system.attributes.death.failure': isDead ? 0 : 3
             });
             await this._updateHPDisplay();
+            return false;
         });
 
         // Clear HP amount input on click
-        tray.find('.hp-amount').click(function() {
+        tray.find('.hp-amount').on('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
             $(this).val('');
+            return false;
         });
 
-        tray.find('.hp-up, .hp-down').click(async (event) => {
+        tray.find('.hp-up, .hp-down').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const isIncrease = event.currentTarget.classList.contains('hp-up');
             const hp = this.actor.system.attributes.hp;
             const inputValue = parseInt(tray.find('.hp-amount').val()) || 1;
             const change = isIncrease ? inputValue : -inputValue;
             
             await this.actor.update({
-                'system.attributes.hp.value': Math.clamped(
+                'system.attributes.hp.value': Math.clamp(
                     hp.value + change,
                     0,
                     hp.max
                 )
             });
             await this._updateHPDisplay();
+            return false;
         });
 
-        tray.find('.hp-full').click(async () => {
+        tray.find('.hp-full').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const hp = this.actor.system.attributes.hp;
             await this.actor.update({
                 'system.attributes.hp.value': hp.max
             });
             await this._updateHPDisplay();
+            return false;
         });
 
         // Ability Score Buttons
-        tray.find('.ability-btn').click(async (event) => {
+        tray.find('.ability-btn').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const ability = event.currentTarget.dataset.ability;
             await this.actor.rollAbilityTest(ability);
+            return false;
         });
 
-        tray.find('.ability-btn').contextmenu(async (event) => {
+        tray.find('.ability-btn').on('contextmenu', async (event) => {
             event.preventDefault();
+            event.stopPropagation();
             const ability = event.currentTarget.dataset.ability;
             await this.actor.rollAbilitySave(ability);
+            return false;
         });
 
         // Pin button handling
         const pinButton = handle.find('.pin-button');
-        pinButton.click((event) => {
+        pinButton.on('click', (event) => {
+            event.preventDefault();
             event.stopPropagation();
             PanelManager.isPinned = !PanelManager.isPinned;
             tray.toggleClass('pinned');
@@ -158,14 +189,24 @@ export class PanelManager extends Application {
             if (PanelManager.isPinned) {
                 tray.addClass('expanded');
             }
+
+            // Handle UI movement when pinned/unpinned
+            const moveUIWhenPinned = game.settings.get(MODULE.ID, 'moveUIWhenPinned');
+            const uiLeft = document.querySelector('#ui-left');
+            if (uiLeft && moveUIWhenPinned) {
+                uiLeft.style.marginLeft = PanelManager.isPinned ? game.settings.get(MODULE.ID, 'trayWidth') : '0';
+            }
+            return false;
         });
 
         // Handle click on handle (collapse chevron)
-        handle.click((event) => {
+        handle.on('click', (event) => {
             if ($(event.target).closest('.pin-button').length) return;
-            
+            event.preventDefault();
+            event.stopPropagation();
             // Toggle expanded state on click
             tray.toggleClass('expanded');
+            return false;
         });
 
         // Mouse enter/leave behavior
@@ -243,9 +284,57 @@ export class PanelManager extends Application {
         if (hpValue.length && hpMax.length && hpFill.length) {
             hpValue.text(hp.value);
             hpMax.text(hp.max);
-            const percentage = Math.clamped((hp.value / hp.max) * 100, 0, 100);
+            const percentage = Math.clamp((hp.value / hp.max) * 100, 0, 100);
             hpFill.css('width', `${percentage}%`);
         }
+    }
+
+    /** @override */
+    _getHeaderButtons() {
+        return [];
+    }
+
+    /** @override */
+    _canDragStart() {
+        return false;
+    }
+
+    /** @override */
+    _canDragDrop() {
+        return false;
+    }
+
+    /** @override */
+    _onClickDocumentMouse(event) {
+        // Never let the parent Application handle document clicks
+        event.preventDefault();
+        event.stopPropagation();
+
+        // If clicking inside the tray, do nothing
+        if ($(event.target).closest('.squire-tray').length) {
+            return false;
+        }
+        
+        // If pinned, do nothing
+        if (PanelManager.isPinned) {
+            return false;
+        }
+        
+        // If clicking outside and not pinned, just collapse
+        this.element?.removeClass('expanded');
+        return false;
+    }
+
+    /** @override */
+    _shouldClosePanels() {
+        // Never let the Application close panels
+        return false;
+    }
+
+    /** @override */
+    _onClickPanel() {
+        // Never let the Application handle panel clicks
+        return false;
     }
 }
 

@@ -75,6 +75,48 @@ export const registerSettings = function() {
             }
         }
     });
+
+    // Move Foundry Toolbar setting
+    game.settings.register(MODULE.ID, 'moveFoundryToolbar', {
+        name: 'Move Foundry Toolbar',
+        hint: 'Add padding to the left toolbar to make room for the tray handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: value => {
+            const uiLeft = document.querySelector('#ui-left');
+            if (uiLeft) {
+                uiLeft.style.paddingLeft = value ? '15px' : '0';
+            }
+        }
+    });
+
+    // Tray Width setting (not visible in settings menu)
+    game.settings.register(MODULE.ID, 'trayWidth', {
+        name: 'Tray Width',
+        scope: 'client',
+        config: false,
+        type: String,
+        default: '280px'
+    });
+
+    // Move UI when pinned setting
+    game.settings.register(MODULE.ID, 'moveUIWhenPinned', {
+        name: 'Move Toolbars When Pinned Open',
+        hint: 'Move the left toolbar over when the tray is pinned open instead of overlapping',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: false,
+        onChange: value => {
+            const uiLeft = document.querySelector('#ui-left');
+            const tray = document.querySelector('.squire-tray');
+            if (uiLeft && tray?.classList.contains('pinned')) {
+                uiLeft.style.marginLeft = value ? game.settings.get(MODULE.ID, 'trayWidth') : '0';
+            }
+        }
+    });
 };
 
 // Helper function to update custom theme colors
