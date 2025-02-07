@@ -27,7 +27,7 @@
 }
 /* Expanded Position */
 .squire-tray[data-position="left"].expanded {
-    transform: translateX(0);
+    transform: translateX(0) !important;
     left: 0px;
 }
 /* TRAY Handle */
