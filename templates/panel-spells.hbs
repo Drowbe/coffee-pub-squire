@@ -40,7 +40,6 @@
     <div class="spells-list">
         {{#if (eq position "left")}}
             {{!-- Cantrips --}}
-            {{#if (some spells "spell" "system.level" 0)}}
             <div class="level-header">Cantrips</div>
             {{#each spells as |spell|}}
                 {{#if (eq spell.system.level 0)}}
@@ -59,11 +58,10 @@
                 </div>
                 {{/if}}
             {{/each}}
-            {{/if}}
 
             {{!-- Leveled Spells --}}
             {{#each spellSlots as |slot|}}
-            {{#if (some ../spells "spell" "system.level" slot.level)}}
+            {{#if (or (gt slot.max 0) (lookup ../spellsByLevel slot.level))}}
             <div class="level-header">
                 <span>Level {{slot.level}}</span>
                 <div class="slot-pips">
@@ -74,8 +72,7 @@
                     {{/times}}
                 </div>
             </div>
-            {{#each ../spells as |spell|}}
-                {{#if (eq spell.system.level ../slot.level)}}
+            {{#each (lookup ../spellsByLevel slot.level) as |spell|}}
                 <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
                     <div class="spell-row">
                         <div class="spell-image-container">
@@ -89,7 +86,6 @@
                         </div>
                     </div>
                 </div>
-                {{/if}}
             {{/each}}
             {{/if}}
             {{/each}}

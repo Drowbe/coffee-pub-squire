@@ -17,6 +17,16 @@ export class SpellsPanel {
         // Get spells
         const spells = this.actor.items.filter(item => item.type === 'spell');
         
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        // Log raw spells from actor
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Raw spells from actor",
+            spells,
+            true,
+            true,
+            false
+        );
+        
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
@@ -30,6 +40,15 @@ export class SpellsPanel {
                 isFavorite: isFavorite
             };
         });
+        
+        // Log mapped spells
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Mapped spells with favorites",
+            mappedSpells,
+            true,
+            true,
+            false
+        );
         
         return mappedSpells;
     }
@@ -88,12 +107,38 @@ export class SpellsPanel {
             return;
         }
 
+        // Group spells by level
+        const spellsByLevel = {};
+        this.spells.forEach(spell => {
+            const level = spell.system.level;
+            if (!spellsByLevel[level]) {
+                spellsByLevel[level] = [];
+            }
+            spellsByLevel[level].push(spell);
+        });
+
         const spellData = {
             spells: this.spells,
+            spellsByLevel: spellsByLevel,
             spellSlots: this._getSpellSlots(),
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyPrepared: this.showOnlyPrepared
         };
+
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        // Log spell data being sent to template
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Spell data for template",
+            {
+                spellsByLevel: Object.entries(spellsByLevel).map(([level, spells]) => 
+                    `Level ${level}: ${spells.length} spells`
+                ),
+                spellSlots: spellData.spellSlots
+            },
+            true,
+            true,
+            false
+        );
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
         const spellsPanel = this.element.find('[data-panel="spells"]');
