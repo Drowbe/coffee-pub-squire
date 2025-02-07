@@ -2,18 +2,24 @@
     <div class="tray-handle">
         <div class="handle-left">
             <i class="fas fa-chevron-right"></i>
-            <span>{{actor.name}}'s Squire</span>
+            <span>{{#if actor}}{{actor.name}}{{else}}Select a Character{{/if}}</span>
         </div>
         <button class="pin-button" title="Pin Tray">
             <i class="fas fa-thumbtack"></i>
         </button>
     </div>
     <div class="tray-content">
+        {{#if actor}}
         <div class="panel-container" data-panel="character"></div>
         <div class="panel-containers stacked">
             <div class="panel-container" data-panel="favorites"></div>
             <div class="panel-container" data-panel="weapons"></div>
             <div class="panel-container" data-panel="spells"></div>
         </div>
+        {{else}}
+        <div class="no-character-message">
+            Select a character token to view their information
+        </div>
+        {{/if}}
     </div>
 </div> 

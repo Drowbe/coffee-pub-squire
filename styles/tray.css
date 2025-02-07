@@ -824,4 +824,12 @@
 .squire-tray[data-position="left"] .character-panel .portrait-and-stats,
 .squire-tray[data-position="left"] .character-panel .bars {
     padding: 0 0.5rem;
+}
+
+.no-character-message {
+    padding: 2rem;
+    text-align: center;
+    color: #9f9275;
+    font-size: 1.2em;
+    font-style: italic;
 } 

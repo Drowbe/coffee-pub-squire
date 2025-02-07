@@ -6,7 +6,6 @@ export class SpellsPanel {
         this.actor = actor;
         this.spells = this._getSpells();
         this.showOnlyPrepared = false;
-        console.log("Spells loaded:", this.spells); // Debug log
     }
 
     _getSpells() {
@@ -14,16 +13,13 @@ export class SpellsPanel {
         
         // Get current favorites
         const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
-        console.log('Current favorites:', favorites);
         
         // Get spells
         const spells = this.actor.items.filter(item => item.type === 'spell');
-        console.log('Found spells:', spells);
         
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
-            console.log(`Processing spell ${spell.name} (${spell.id}), favorite: ${isFavorite}`);
             
             return {
                 id: spell.id,
@@ -35,7 +31,6 @@ export class SpellsPanel {
             };
         });
         
-        console.log('Final spells array:', mappedSpells);
         return mappedSpells;
     }
 
@@ -90,7 +85,6 @@ export class SpellsPanel {
             this.element = html;
         }
         if (!this.element) {
-            console.warn('No element to render to');
             return;
         }
 
@@ -100,12 +94,9 @@ export class SpellsPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyPrepared: this.showOnlyPrepared
         };
-        
-        console.log('Rendering with spell data:', spellData);
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
         const spellsPanel = this.element.find('[data-panel="spells"]');
-        console.log('Found spells panel:', spellsPanel.length);
         spellsPanel.html(template);
         
         this._activateListeners(this.element);
@@ -115,7 +106,6 @@ export class SpellsPanel {
     _getSpellSlots() {
         if (!this.actor) return [];
         const spellbook = this.actor.system.spells;
-        console.log("Spellbook data:", spellbook); // Debug spellbook
         
         // Convert spellbook data into array format
         const slots = [];
@@ -137,20 +127,14 @@ export class SpellsPanel {
         const searchTerm = searchInput.val()?.toLowerCase() || '';
         const filterValue = html.find('.spell-filter').val();
         
-        console.log('Updating visibility:', { searchTerm, filterValue, showOnlyPrepared: this.showOnlyPrepared });
-        
         const spellItems = html.find('.spell-item');
-        console.log('Found spell items:', spellItems.length);
         
         spellItems.each((i, el) => {
             const $item = $(el);
             const spellId = $item.data('spell-id');
             const spell = this.spells.find(s => s.id === spellId);
             
-            if (!spell) {
-                console.warn('Spell not found for id:', spellId);
-                return;
-            }
+            if (!spell) return;
 
             const nameMatch = spell.name.toLowerCase().includes(searchTerm);
             const levelMatch = filterValue === 'all' || 
@@ -159,13 +143,6 @@ export class SpellsPanel {
             const preparedMatch = !this.showOnlyPrepared || spell.system.preparation?.prepared;
 
             const shouldShow = nameMatch && levelMatch && preparedMatch;
-            console.log('Spell visibility:', {
-                name: spell.name,
-                nameMatch,
-                levelMatch,
-                preparedMatch,
-                shouldShow
-            });
 
             $item.toggle(shouldShow);
         });
@@ -201,7 +178,7 @@ export class SpellsPanel {
                 const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
                 const spell = this.actor.items.get(spellId);
                 if (spell) {
-                    await spell.use();
+                    await spell.use({}, { event, legacy: false });
                 }
             }
         });
@@ -236,12 +213,10 @@ export class SpellsPanel {
 
         // Add new event listeners
         searchInput.on('input keyup change', () => {
-            console.log('Search input event triggered');
             this._updateVisibility(html);
         });
 
         filterSelect.on('change', () => {
-            console.log('Filter select event triggered');
             this._updateVisibility(html);
         });
     }

@@ -31,7 +31,7 @@ export class PanelManager extends Application {
         });
     }
 
-    static async initialize(actor) {
+    static async initialize(actor = null) {
         // If we have an instance and it's for the same actor, just return
         if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
 
@@ -39,15 +39,17 @@ export class PanelManager extends Application {
         if (PanelManager.instance) {
             PanelManager.currentActor = actor;
             PanelManager.instance.actor = actor;
-            PanelManager.instance.characterPanel = new CharacterPanel(actor);
-            PanelManager.instance.favoritesPanel = new FavoritesPanel(actor);
-            PanelManager.instance.spellsPanel = new SpellsPanel(actor);
-            PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
+            if (actor) {
+                PanelManager.instance.characterPanel = new CharacterPanel(actor);
+                PanelManager.instance.favoritesPanel = new FavoritesPanel(actor);
+                PanelManager.instance.spellsPanel = new SpellsPanel(actor);
+                PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
+            }
             await PanelManager.instance.render(true);
             return;
         }
 
-        // Create new instance only if one doesn't exist
+        // Create new instance
         PanelManager.currentActor = actor;
         PanelManager.instance = new PanelManager(actor);
         await PanelManager.instance.render(true);
@@ -55,8 +57,8 @@ export class PanelManager extends Application {
         // Apply initial settings
         PanelManager.instance._applySettings();
 
-        // Register this application with the actor
-        if (actor.apps) {
+        // Register this application with the actor if we have one
+        if (actor?.apps) {
             actor.apps[PanelManager.instance.appId] = PanelManager.instance;
         }
     }
@@ -80,17 +82,15 @@ export class PanelManager extends Application {
         await this.favoritesPanel.render(this.element);
         await this.spellsPanel.render(this.element);
         await this.weaponsPanel.render(this.element);
-
-        // Log current state for debugging
-        console.log(`${MODULE.TITLE} | Tray rendered with position:`, position);
     }
 
     /** @override */
     close(options={}) {
-        // Never actually close, just collapse if not pinned
-        if (!PanelManager.isPinned) {
-            this.element?.removeClass('expanded');
-        }
+        // If pinned, never close
+        if (PanelManager.isPinned) return this;
+        
+        // If not pinned, just collapse
+        this.element?.removeClass('expanded');
         return this;
     }
 
@@ -100,18 +100,15 @@ export class PanelManager extends Application {
         const tray = html;
         const handle = tray.find('.tray-handle');
         
-        // Prevent ALL interactions within tray content from bubbling up
-        tray.find('.tray-content').on('mousedown mouseup click pointerdown pointerup touchstart touchend', (event) => {
+        // Prevent any clicks within tray content from bubbling up
+        tray.find('.tray-content').on('mousedown click', (event) => {
             event.preventDefault();
             event.stopPropagation();
             return false;
         });
-
-        // Prevent document-level click handler
-        $(document).off('click.squire');
         
         // HP Controls
-        tray.find('.death-toggle').on('click', async (event) => {
+        tray.find('.death-toggle').on('mousedown click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             const isDead = this.actor.system.attributes.hp.value <= 0;
@@ -124,14 +121,14 @@ export class PanelManager extends Application {
         });
 
         // Clear HP amount input on click
-        tray.find('.hp-amount').on('click', function(event) {
+        tray.find('.hp-amount').on('mousedown click', function(event) {
             event.preventDefault();
             event.stopPropagation();
             $(this).val('');
             return false;
         });
 
-        tray.find('.hp-up, .hp-down').on('click', async (event) => {
+        tray.find('.hp-up, .hp-down').on('mousedown click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             const isIncrease = event.currentTarget.classList.contains('hp-up');
@@ -150,7 +147,7 @@ export class PanelManager extends Application {
             return false;
         });
 
-        tray.find('.hp-full').on('click', async (event) => {
+        tray.find('.hp-full').on('mousedown click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             const hp = this.actor.system.attributes.hp;
@@ -161,33 +158,19 @@ export class PanelManager extends Application {
             return false;
         });
 
-        // Ability Score Buttons
-        tray.find('.ability-btn').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const ability = event.currentTarget.dataset.ability;
-            await this.actor.rollAbilityTest(ability);
-            return false;
-        });
-
-        tray.find('.ability-btn').on('contextmenu', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const ability = event.currentTarget.dataset.ability;
-            await this.actor.rollAbilitySave(ability);
-            return false;
-        });
-
         // Pin button handling
         const pinButton = handle.find('.pin-button');
         pinButton.on('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
+            
+            // Toggle pin state
             PanelManager.isPinned = !PanelManager.isPinned;
             tray.toggleClass('pinned');
             
-            if (PanelManager.isPinned) {
-                tray.addClass('expanded');
+            if (!PanelManager.isPinned) {
+                // If unpinning, collapse the tray
+                tray.removeClass('expanded');
             }
 
             // Handle UI movement when pinned/unpinned
@@ -202,9 +185,24 @@ export class PanelManager extends Application {
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
             if ($(event.target).closest('.pin-button').length) return;
+            
             event.preventDefault();
             event.stopPropagation();
-            // Toggle expanded state on click
+            
+            // If pinned and clicking handle, unpin and collapse
+            if (PanelManager.isPinned) {
+                PanelManager.isPinned = false;
+                tray.removeClass('pinned');
+                
+                // Update UI margin if needed
+                const moveUIWhenPinned = game.settings.get(MODULE.ID, 'moveUIWhenPinned');
+                const uiLeft = document.querySelector('#ui-left');
+                if (uiLeft && moveUIWhenPinned) {
+                    uiLeft.style.marginLeft = '0';
+                }
+            }
+            
+            // Toggle expanded state
             tray.toggleClass('expanded');
             return false;
         });
@@ -234,7 +232,6 @@ export class PanelManager extends Application {
         
         // Apply position
         tray.attr('data-position', 'left');
-        console.log(`${MODULE.TITLE} | Applying position: left`);
         
         // Apply theme
         const theme = game.settings.get(MODULE.ID, 'theme');
@@ -306,17 +303,11 @@ export class PanelManager extends Application {
 
     /** @override */
     _onClickDocumentMouse(event) {
-        // Never let the parent Application handle document clicks
-        event.preventDefault();
-        event.stopPropagation();
-
+        // If pinned, do nothing
+        if (PanelManager.isPinned) return false;
+        
         // If clicking inside the tray, do nothing
         if ($(event.target).closest('.squire-tray').length) {
-            return false;
-        }
-        
-        // If pinned, do nothing
-        if (PanelManager.isPinned) {
             return false;
         }
         
@@ -339,6 +330,14 @@ export class PanelManager extends Application {
 }
 
 // Update token selection hooks
+Hooks.on('ready', async () => {
+    // Find the first owned token on the canvas
+    const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
+    
+    // Initialize with the owned token's actor, or null for default state
+    await PanelManager.initialize(firstOwnedToken?.actor || null);
+});
+
 Hooks.on('controlToken', (token, controlled) => {
     if (controlled && token.actor) {
         PanelManager.initialize(token.actor);

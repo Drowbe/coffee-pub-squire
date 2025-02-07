@@ -111,7 +111,7 @@ export class WeaponsPanel {
                 const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
                 const weapon = this.actor.items.get(weaponId);
                 if (weapon) {
-                    await weapon.use({}, { event });
+                    await weapon.use({}, { event, legacy: false });
                 }
             }
         });
