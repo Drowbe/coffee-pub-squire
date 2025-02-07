@@ -172,8 +172,10 @@ export class SpellsPanel {
         const searchTerm = searchInput.val()?.toLowerCase() || '';
         const filterValue = html.find('.spell-filter').val();
         
-        const spellItems = html.find('.spell-item');
+        // Track visible spells for each level
+        const visibleSpellsByLevel = new Map();
         
+        const spellItems = html.find('.spell-item');
         spellItems.each((i, el) => {
             const $item = $(el);
             const spellId = $item.data('spell-id');
@@ -185,11 +187,40 @@ export class SpellsPanel {
             const levelMatch = filterValue === 'all' || 
                 (filterValue === 'cantrip' && spell.system.level === 0) ||
                 (filterValue === spell.system.level.toString());
-            const preparedMatch = !this.showOnlyPrepared || spell.system.preparation?.prepared;
+            const preparedMatch = !this.showOnlyPrepared || 
+                spell.system.level === 0 || // Cantrips are always prepared
+                spell.system.preparation?.prepared;
 
             const shouldShow = nameMatch && levelMatch && preparedMatch;
-
             $item.toggle(shouldShow);
+
+            // Track visible spells for this level
+            if (shouldShow) {
+                const level = spell.system.level;
+                visibleSpellsByLevel.set(level, (visibleSpellsByLevel.get(level) || 0) + 1);
+            }
+        });
+
+        // Hide/show level headers based on visible spells
+        html.find('.level-header').each((i, header) => {
+            const $header = $(header);
+            const headerText = $header.find('span').text();
+            
+            // Determine the level this header represents
+            let level;
+            if (headerText.toLowerCase().includes('cantrip')) {
+                level = 0;
+            } else {
+                const match = headerText.match(/Level (\d+)/);
+                if (match) {
+                    level = parseInt(match[1]);
+                }
+            }
+
+            if (level !== undefined) {
+                const hasVisibleSpells = visibleSpellsByLevel.get(level) > 0;
+                $header.toggle(hasVisibleSpells);
+            }
         });
     }
 
@@ -198,7 +229,26 @@ export class SpellsPanel {
         html.find('.spell-filter-toggle').click(async (event) => {
             this.showOnlyPrepared = !this.showOnlyPrepared;
             $(event.currentTarget).toggleClass('active', this.showOnlyPrepared);
+            $(event.currentTarget).toggleClass('faded', !this.showOnlyPrepared);
             this._updateVisibility(html);
+        });
+
+        // Toggle prepared state (cog icon)
+        html.find('.tray-buttons .fa-cog').click(async (event) => {
+            const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+            const spell = this.actor.items.get(spellId);
+            if (spell) {
+                const newPrepared = !spell.system.preparation.prepared;
+                await spell.update({
+                    'system.preparation.prepared': newPrepared
+                });
+                // Update the UI immediately
+                const $item = $(event.currentTarget).closest('.spell-item');
+                $item.toggleClass('prepared', newPrepared);
+                $(event.currentTarget).toggleClass('faded', !newPrepared);
+                // Update visibility in case we're filtering by prepared
+                this._updateVisibility(html);
+            }
         });
 
         // Spell info click (feather icon)
@@ -226,26 +276,6 @@ export class SpellsPanel {
                     await spell.use({}, { event, legacy: false });
                 }
             }
-        });
-
-        // Spell slot tracking
-        html.find('.slot-pip').click(async (event) => {
-            const level = event.currentTarget.dataset.level;
-            const index = parseInt(event.currentTarget.dataset.index);
-            const spells = duplicate(this.actor.system.spells);
-            const slot = spells[`spell${level}`];
-            
-            if (index < slot.value) {
-                // Decrease slots
-                slot.value = index;
-            } else {
-                // Increase slots (if not at max)
-                if (index < slot.max) {
-                    slot.value = index + 1;
-                }
-            }
-            
-            await this.actor.update({ 'system.spells': spells });
         });
 
         // Search and filter

@@ -86,6 +86,7 @@ export class WeaponsPanel {
         html.find('.weapon-filter-toggle').click(async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
+            $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
             this._updateVisibility(html);
         });
 
@@ -121,9 +122,16 @@ export class WeaponsPanel {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
+                const newEquipped = !weapon.system.equipped;
                 await weapon.update({
-                    'system.equipped': !weapon.system.equipped
+                    'system.equipped': newEquipped
                 });
+                // Update the UI immediately
+                const $item = $(event.currentTarget).closest('.weapon-item');
+                $item.toggleClass('prepared', newEquipped);
+                $(event.currentTarget).toggleClass('faded', !newEquipped);
+                // Update visibility in case we're filtering by equipped
+                this._updateVisibility(html);
             }
         });
     }

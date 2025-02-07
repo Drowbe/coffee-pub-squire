@@ -153,12 +153,16 @@
 
 .squire-tray[data-position="left"] .section-header .filter-toggle {
     cursor: pointer;
-    opacity: 0.5;
-    transition: opacity 0.2s ease;
+    color: #aaa;
+    transition: color 0.2s ease;
 }
 
 .squire-tray[data-position="left"] .section-header .filter-toggle:hover {
-    opacity: 0.8;
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .section-header .filter-toggle.faded {
+    opacity: 0.3;
 }
 
 .squire-tray[data-position="left"] .section-header .filter-toggle.active {
@@ -167,10 +171,9 @@
 
 /* Section Header Icons for Left Position */
 .squire-tray[data-position="left"] .section-header i {
-    font-size:  .85em;
+    font-size: .85em;
     margin-right: 4px;
-	padding-top: 3px;
-
+    padding-top: 3px;
 }
 
 /* Level Headers */
@@ -192,15 +195,16 @@
 }
 
 .squire-tray[data-position="left"] .slot-pip {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    border: 1px solid #4a90e2;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    border: 1px solid #9f9275;
     background: transparent;
 }
 
 .squire-tray[data-position="left"] .slot-pip.filled {
-    background: #4a90e2;
+    background: #9f9275;
+    border-color: #9f9275;
 }
 
 /* Spell/Weapon Items in Left Position */

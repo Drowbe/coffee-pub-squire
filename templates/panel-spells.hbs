@@ -5,7 +5,7 @@
             <i class="fas fa-magic"></i> Spells
         </div>
         <div class="header-right">
-            <i class="fas fa-book spell-filter-toggle {{#if showOnlyPrepared}}active{{/if}}" title="Toggle Prepared Spells"></i>
+            <i class="fas fa-cog spell-filter-toggle filter-toggle {{#if showOnlyPrepared}}active{{else}}faded{{/if}}" title="Toggle Prepared Spells"></i>
         </div>
     </div>
     {{/if}}
@@ -27,9 +27,8 @@
             <div class="slot-label">Level {{this.level}}</div>
             <div class="slot-pips">
                 {{#times this.max}}
-                <div class="slot-pip {{#if (lte @index ../value)}}filled{{/if}}" 
-                     data-level="{{../level}}" 
-                     data-index="{{@index}}"></div>
+                <div class="slot-pip {{#if (lt @index ../value)}}filled{{/if}}" 
+                     data-level="{{../level}}"></div>
                 {{/times}}
             </div>
         </div>
@@ -43,14 +42,17 @@
             <div class="level-header">Cantrips</div>
             {{#each spells as |spell|}}
                 {{#if (eq spell.system.level 0)}}
-                <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
+                <div class="spell-item prepared" data-spell-id="{{spell.id}}">
                     <div class="spell-row">
                         <div class="spell-image-container">
                             <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                             <i class="fas fa-dice-d20 spell-roll-overlay"></i>
                         </div>
-                        <div class="spell-name">{{spell.name}}</div>
+                        <div class="spell-name">
+                            {{spell.name}}
+                        </div>
                         <div class="tray-buttons">
+                            <i class="fas fa-cog" title="Always Prepared"></i>
                             <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                             <i class="fas fa-feather"></i>
                         </div>
@@ -66,9 +68,8 @@
                 <span>Level {{slot.level}}</span>
                 <div class="slot-pips">
                     {{#times slot.max}}
-                    <div class="slot-pip {{#if (lte @index ../value)}}filled{{/if}}" 
-                         data-level="{{../level}}" 
-                         data-index="{{@index}}"></div>
+                    <div class="slot-pip {{#if (lt @index ../value)}}filled{{/if}}" 
+                         data-level="{{../level}}"></div>
                     {{/times}}
                 </div>
             </div>
@@ -79,8 +80,11 @@
                             <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                             <i class="fas fa-dice-d20 spell-roll-overlay"></i>
                         </div>
-                        <div class="spell-name">{{spell.name}}</div>
+                        <div class="spell-name">
+                            {{spell.name}}
+                        </div>
                         <div class="tray-buttons">
+                            <i class="fas fa-cog {{#unless spell.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
                             <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                             <i class="fas fa-feather"></i>
                         </div>
@@ -107,6 +111,7 @@
                         {{/if}}
                     </div>
                     <div class="tray-buttons">
+                        <i class="fas fa-cog {{#unless this.prepared}}faded{{/unless}}" title="Prepared"></i>
                         <i class="fas fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>

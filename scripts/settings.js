@@ -21,16 +21,6 @@ export const registerSettings = function() {
         }
     });
 
-    // Open on Hover setting
-    game.settings.register(MODULE.ID, 'openOnHover', {
-        name: 'Open on Hover',
-        hint: 'Open the tray when hovering over it. If disabled, tray only opens on click.',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
     // Theme
     game.settings.register(MODULE.ID, 'theme', {
         name: 'Color Theme',

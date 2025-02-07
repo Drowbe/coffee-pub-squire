@@ -206,24 +206,6 @@ export class PanelManager extends Application {
             tray.toggleClass('expanded');
             return false;
         });
-
-        // Mouse enter/leave behavior
-        const handleMouseEnter = () => {
-            const openOnHover = game.settings.get(MODULE.ID, 'openOnHover');
-            if (openOnHover && !PanelManager.isPinned) {
-                tray.addClass('expanded');
-            }
-        };
-
-        const handleMouseLeave = () => {
-            if (!PanelManager.isPinned) {
-                tray.removeClass('expanded');
-            }
-        };
-
-        // Apply hover behaviors
-        tray.on('mouseenter', handleMouseEnter);
-        tray.on('mouseleave', handleMouseLeave);
     }
 
     _applySettings() {
@@ -336,11 +318,18 @@ Hooks.on('ready', async () => {
     
     // Initialize with the owned token's actor, or null for default state
     await PanelManager.initialize(firstOwnedToken?.actor || null);
+    
+    // Expand the tray if we found an owned token
+    if (firstOwnedToken?.actor) {
+        PanelManager.instance?.element?.addClass('expanded');
+    }
 });
 
 Hooks.on('controlToken', (token, controlled) => {
     if (controlled && token.actor) {
         PanelManager.initialize(token.actor);
+        // Expand the tray when a token is selected
+        PanelManager.instance?.element?.addClass('expanded');
     }
 });
 
