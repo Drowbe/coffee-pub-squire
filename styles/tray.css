@@ -80,7 +80,8 @@
 .squire-tray[data-position="left"] .tray-content {
     width: 272px;
     flex: none;
-    display: block;
+    display: flex;
+    flex-direction: column;
     order: 1;
     height: 100%;
     overflow: hidden;
@@ -91,34 +92,37 @@
 }
 
 .squire-tray[data-position="left"] .panel-containers {
-    height: calc(100% - 40px);
+    flex: 1;
     padding: 0px;
-    overflow-y: auto;
-    border: 0px solid #444;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 2px solid #444;
     border-radius: 0px 0px 0px 0px;
 }
 
 .squire-tray[data-position="left"] .panel-container {
     display: block;
-    height: auto;
     background: transparent;
     border: none;
     border-radius: 0;
     padding: 0;
     margin-bottom: 10px;
-    overflow-y: auto;
 }
 
 .squire-tray[data-position="left"] .stacked {
-    height: calc(100% - 200px);
+    flex: 1;
     overflow-y: auto;
+    border: 2px solid #444;
+    border-radius: 0px;
+    margin: 0 8px 8px 8px;
+    padding-bottom: 8px;
 }
 
 .squire-tray[data-position="left"] .spells-list,
 .squire-tray[data-position="left"] .weapons-list,
 .squire-tray[data-position="left"] .favorites-list {
     padding: 0 0.5rem;
-    overflow-y: auto;
 }
 
 /* Section Headers for Left Position */
