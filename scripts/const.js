@@ -24,3 +24,7 @@ export const CSS_CLASSES = {
     TAB_ACTIVE: 'tab-active',
     PANEL_VISIBLE: 'panel-visible'
 }; 
+
+export const SQUIRE = {
+    TRAY_HANDLE_WIDTH: '20px'
+}; 

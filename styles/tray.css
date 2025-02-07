@@ -1,3 +1,9 @@
+:root {
+    --squire-tray-width: 400px;
+    --squire-tray-content-width: 380px;
+    --squire-tray-transform: translateX(-380px);
+}
+
 /* Common Tray Styles */
 .squire-tray {
     position: fixed;
@@ -5,33 +11,31 @@
     background: rgba(30, 30, 30, 0.90);
     border: 0px solid #444;
     display: block;
-    transition: transform 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out;
     box-shadow: 0 0 20px var(--color-shadow-dark);
+    width: var(--squire-tray-width);
 }
-
-
-/* Left Position */
+/* TRAY Left Position */
 .squire-tray[data-position="left"] {
     top: 70px;
     left: 0px;
-    transform: translateX(-280px);
-    width: 300px;
+    transform: var(--squire-tray-transform);
     height: calc(100vh - 100px);
     border-radius: 8px 8px 8px 8px;
     display: flex;
     padding: 8px;
 }
-
+/* Expanded Position */
 .squire-tray[data-position="left"].expanded {
     transform: translateX(0);
     left: 0px;
 }
-
+/* TRAY Handle */
 .squire-tray[data-position="left"] .tray-handle {
     height: 100%;
-	width: 19px;
+    width: var(--squire-tray-handle-width, 20px);
     background: transparent;
-    border-left: 0px solid #444;
+    border-left: 1px dotted #444;
     border-radius: 0 0 0 0;
     cursor: pointer;
     display: flex;
@@ -47,7 +51,7 @@
     font-size: 1.1em;
     font-weight: 900;
 }
-
+/* TRAY Handle Icon */
 .squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
     transform: rotate(0deg);
     margin-bottom: auto;
@@ -55,11 +59,11 @@
     padding-bottom: 8px;
     order: 1;
 }
-
+/* TRAY Handle Icon Expanded */
 .squire-tray[data-position="left"].expanded .tray-handle i.fa-chevron-right {
     transform: rotate(180deg);
 }
-
+/* TRAY Handle Title */
 .squire-tray[data-position="left"] .handle-left {
     writing-mode: vertical-lr;
     transform: rotate(180deg);
@@ -69,16 +73,16 @@
     white-space: nowrap;
     order: 2;
 }
-
+/* TRAY Handle Pin Button */
 .squire-tray[data-position="left"] .pin-button {
     order: 3;
     margin-top: auto;
     padding: 0;
     margin-bottom: 0px;
 }
-
+/* TRAY Content */
 .squire-tray[data-position="left"] .tray-content {
-    width: 272px;
+    width: var(--squire-tray-content-width);
     flex: none;
     display: flex;
     flex-direction: column;
@@ -87,10 +91,18 @@
     overflow: hidden;
     background: rgba(30, 30, 30, 0.90);
     border: 0px solid #444;
-    border-radius: 0px;
     margin: 0px;
 }
-
+/* TRAY Panel Top Container */
+.squire-tray[data-position="left"] .panel-container {
+    display: block;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 10px;
+    border-radius: 6px;
+}
+/* TRAY Panel Bottom Container */
 .squire-tray[data-position="left"] .panel-containers {
     flex: 1;
     padding: 0px;
@@ -98,18 +110,12 @@
     flex-direction: column;
     overflow: hidden;
     border: 2px solid #444;
-    border-radius: 0px 0px 0px 0px;
+    border-radius: 6px;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
 }
-
-.squire-tray[data-position="left"] .panel-container {
-    display: block;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin-bottom: 10px;
-}
-
 .squire-tray[data-position="left"] .stacked {
     flex: 1;
     overflow-y: auto;
@@ -118,14 +124,13 @@
     margin: 0 8px 8px 8px;
     padding-bottom: 8px;
 }
-
 .squire-tray[data-position="left"] .spells-list,
 .squire-tray[data-position="left"] .weapons-list,
 .squire-tray[data-position="left"] .favorites-list {
     padding: 0 0.5rem;
 }
 
-/* Section Headers for Left Position */
+/* TRAY Panel Section Headers */
 .squire-tray[data-position="left"] .section-header {
     background: #000000;
     color: #9f9275;
@@ -138,45 +143,40 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-radius: 4px 4px 4px 4px;
 }
-
-.squire-tray[data-position="left"] .section-header .header-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.squire-tray[data-position="left"] .section-header .header-right {
-    display: flex;
-    align-items: center;
-}
-
-.squire-tray[data-position="left"] .section-header .filter-toggle {
-    cursor: pointer;
-    color: #aaa;
-    transition: color 0.2s ease;
-}
-
-.squire-tray[data-position="left"] .section-header .filter-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] .section-header .filter-toggle.faded {
-    opacity: 0.3;
-}
-
-.squire-tray[data-position="left"] .section-header .filter-toggle.active {
-    opacity: 1;
-}
-
 /* Section Header Icons for Left Position */
 .squire-tray[data-position="left"] .section-header i {
     font-size: .85em;
     margin-right: 4px;
     padding-top: 3px;
 }
+.squire-tray[data-position="left"] .section-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.squire-tray[data-position="left"] .section-header .header-right {
+    display: flex;
+    align-items: center;
+}
+.squire-tray[data-position="left"] .section-header .filter-toggle {
+    cursor: pointer;
+    color: #aaa;
+    transition: color 0.2s ease;
+}
+.squire-tray[data-position="left"] .section-header .filter-toggle:hover {
+    color: #fff;
+}
+.squire-tray[data-position="left"] .section-header .filter-toggle.faded {
+    opacity: 0.3;
+}
+.squire-tray[data-position="left"] .section-header .filter-toggle.active {
+    opacity: 1;
+}
 
-/* Level Headers */
+
+/* TRAY Secion Headers */
 .squire-tray[data-position="left"] .level-header {
     background: #451d24;
     padding: 4px 8px;
@@ -188,12 +188,10 @@
     align-items: center;
     margin-bottom: 4px;
 }
-
 .squire-tray[data-position="left"] .level-header .slot-pips {
     display: flex;
     gap: 2px;
 }
-
 .squire-tray[data-position="left"] .slot-pip {
     width: 8px;
     height: 8px;
@@ -206,7 +204,6 @@
     background: #9f9275;
     border-color: #9f9275;
 }
-
 /* Spell/Weapon Items in Left Position */
 .squire-tray[data-position="left"] .spell-item,
 .squire-tray[data-position="left"] .weapon-item {
@@ -216,12 +213,10 @@
     padding: 0;
     margin-bottom: 2px;
 }
-
 .squire-tray[data-position="left"] .spell-item:hover,
 .squire-tray[data-position="left"] .weapon-item:hover {
     background: rgba(255, 255, 255, 0.1);
 }
-
 .squire-tray[data-position="left"] .spell-row,
 .squire-tray[data-position="left"] .weapon-row {
     gap: 8px;
@@ -229,7 +224,6 @@
     display: flex;
     align-items: center;
 }
-
 .spell-image-container,
 .weapon-image-container {
     position: relative;
@@ -238,7 +232,6 @@
     height: 24px;
     cursor: pointer;
 }
-
 .spell-image,
 .weapon-image {
     width: 100%;
@@ -246,7 +239,6 @@
     object-fit: cover;
     border-radius: 2px;
 }
-
 .spell-name,
 .weapon-name {
     flex: 1;
@@ -254,29 +246,26 @@
     font-size: 1rem;
     margin-right: 4px;
 }
-
+/* TRAY Section ContentButtons */
 .tray-buttons {
     display: flex;
     gap: 8px;
     align-items: center;
     margin-right: 8px;
 }
-
 .tray-buttons i {
     color: #aaa;
     transition: color 0.2s ease;
     cursor: pointer;
     padding: 4px;
 }
-
 .tray-buttons i:hover {
     color: #fff;
 }
-
 .tray-buttons i.faded {
     opacity: 0.3;
 }
-
+/* TRAY Section Dice Overlays */
 .spell-roll-overlay,
 .weapon-roll-overlay {
     position: absolute;

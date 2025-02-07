@@ -1,4 +1,4 @@
-import { MODULE, TEMPLATES, CSS_CLASSES } from './const.js';
+import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
 import { CharacterPanel } from './panel-character.js';
 import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
@@ -57,6 +57,13 @@ export class PanelManager extends Application {
         // Apply initial settings
         PanelManager.instance._applySettings();
 
+        // Restore pinned state
+        PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
+        if (PanelManager.isPinned) {
+            PanelManager.instance.element.addClass('pinned expanded');
+            PanelManager.instance._updateUIPosition(true);
+        }
+
         // Register this application with the actor if we have one
         if (actor?.apps) {
             actor.apps[PanelManager.instance.appId] = PanelManager.instance;
@@ -66,6 +73,11 @@ export class PanelManager extends Application {
     static async toggleTray() {
         if (!PanelManager.instance) return;
         const tray = PanelManager.instance.element;
+        
+        if (PanelManager.isPinned) {
+            ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
+            return;
+        }
         
         tray.toggleClass('expanded');
     }
@@ -160,25 +172,26 @@ export class PanelManager extends Application {
 
         // Pin button handling
         const pinButton = handle.find('.pin-button');
-        pinButton.on('click', (event) => {
+        pinButton.on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
             // Toggle pin state
             PanelManager.isPinned = !PanelManager.isPinned;
-            tray.toggleClass('pinned');
             
-            if (!PanelManager.isPinned) {
-                // If unpinning, collapse the tray
-                tray.removeClass('expanded');
+            // Save the pinned state
+            await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
+            
+            if (PanelManager.isPinned) {
+                // When pinning
+                tray.addClass('pinned expanded');
+                this._updateUIPosition(true);
+            } else {
+                // When unpinning
+                tray.removeClass('pinned expanded');
+                this._updateUIPosition(false);
             }
-
-            // Handle UI movement when pinned/unpinned
-            const moveUIWhenPinned = game.settings.get(MODULE.ID, 'moveUIWhenPinned');
-            const uiLeft = document.querySelector('#ui-left');
-            if (uiLeft && moveUIWhenPinned) {
-                uiLeft.style.marginLeft = PanelManager.isPinned ? game.settings.get(MODULE.ID, 'trayWidth') : '0';
-            }
+            
             return false;
         });
 
@@ -189,17 +202,9 @@ export class PanelManager extends Application {
             event.preventDefault();
             event.stopPropagation();
             
-            // If pinned and clicking handle, unpin and collapse
             if (PanelManager.isPinned) {
-                PanelManager.isPinned = false;
-                tray.removeClass('pinned');
-                
-                // Update UI margin if needed
-                const moveUIWhenPinned = game.settings.get(MODULE.ID, 'moveUIWhenPinned');
-                const uiLeft = document.querySelector('#ui-left');
-                if (uiLeft && moveUIWhenPinned) {
-                    uiLeft.style.marginLeft = '0';
-                }
+                ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
+                return false;
             }
             
             // Toggle expanded state
@@ -309,6 +314,21 @@ export class PanelManager extends Application {
         // Never let the Application handle panel clicks
         return false;
     }
+
+    _updateUIPosition(isPinned) {
+        const uiLeft = document.querySelector('#ui-left');
+        if (!uiLeft) return;
+
+        if (isPinned) {
+            // When pinned, move UI by tray width minus handle width
+            const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+            const handleWidth = parseInt(SQUIRE.TRAY_HANDLE_WIDTH);
+            uiLeft.style.marginLeft = `${trayWidth - handleWidth}px`;
+        } else {
+            // When unpinned, always move UI by handle width
+            uiLeft.style.marginLeft = SQUIRE.TRAY_HANDLE_WIDTH;
+        }
+    }
 }
 
 // Update token selection hooks
@@ -318,18 +338,17 @@ Hooks.on('ready', async () => {
     
     // Initialize with the owned token's actor, or null for default state
     await PanelManager.initialize(firstOwnedToken?.actor || null);
-    
-    // Expand the tray if we found an owned token
-    if (firstOwnedToken?.actor) {
-        PanelManager.instance?.element?.addClass('expanded');
-    }
 });
 
-Hooks.on('controlToken', (token, controlled) => {
+Hooks.on('controlToken', async (token, controlled) => {
     if (controlled && token.actor) {
-        PanelManager.initialize(token.actor);
-        // Expand the tray when a token is selected
-        PanelManager.instance?.element?.addClass('expanded');
+        // Initialize the panel manager if needed
+        await PanelManager.initialize(token.actor);
+        
+        // If the tray is pinned, ensure it stays expanded
+        if (PanelManager.isPinned) {
+            PanelManager.instance.element?.addClass('pinned expanded');
+        }
     }
 });
 

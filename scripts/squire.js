@@ -1,4 +1,4 @@
-import { MODULE } from './const.js';
+import { MODULE, SQUIRE } from './const.js';
 import { PanelManager } from './panel-manager.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers } from './helpers.js';
@@ -12,21 +12,24 @@ Hooks.once('init', async function() {
     // Register Handlebars helpers
     registerHelpers();
 
-    // Apply toolbar padding if enabled
-    const moveToolbar = game.settings.get(MODULE.ID, 'moveFoundryToolbar');
-    const moveUIWhenPinned = game.settings.get(MODULE.ID, 'moveUIWhenPinned');
+    // Set initial CSS variables
+    const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_HANDLE_WIDTH);
+    document.documentElement.style.setProperty('--squire-tray-width', `${trayWidth}px`);
+    document.documentElement.style.setProperty('--squire-tray-content-width', `${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px`);
+    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px)`);
+
+    // Set initial UI position
+    const isPinned = game.settings.get(MODULE.ID, 'isPinned');
     const uiLeft = document.querySelector('#ui-left');
     
     if (uiLeft) {
-        // Apply initial padding for handle
-        if (moveToolbar) {
-            uiLeft.style.paddingLeft = '15px';
-        }
-        
-        // Apply initial margin if tray is pinned
-        const tray = document.querySelector('.squire-tray');
-        if (moveUIWhenPinned && tray?.classList.contains('pinned')) {
-            uiLeft.style.marginLeft = game.settings.get(MODULE.ID, 'trayWidth');
+        if (isPinned) {
+            // If pinned, set margin to tray width minus handle width
+            uiLeft.style.marginLeft = `${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px`;
+        } else {
+            // If not pinned, set margin to handle width
+            uiLeft.style.marginLeft = SQUIRE.TRAY_HANDLE_WIDTH;
         }
     }
 });

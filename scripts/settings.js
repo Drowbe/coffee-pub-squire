@@ -1,4 +1,4 @@
-import { MODULE } from './const.js';
+import { MODULE, SQUIRE } from './const.js';
 
 export const registerSettings = function() {
     // Tray Position
@@ -66,45 +66,32 @@ export const registerSettings = function() {
         }
     });
 
-    // Move Foundry Toolbar setting
-    game.settings.register(MODULE.ID, 'moveFoundryToolbar', {
-        name: 'Move Foundry Toolbar',
-        hint: 'Add padding to the left toolbar to make room for the tray handle',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true,
-        onChange: value => {
-            const uiLeft = document.querySelector('#ui-left');
-            if (uiLeft) {
-                uiLeft.style.paddingLeft = value ? '15px' : '0';
-            }
-        }
-    });
-
-    // Tray Width setting (not visible in settings menu)
-    game.settings.register(MODULE.ID, 'trayWidth', {
-        name: 'Tray Width',
+    // Remember pinned state (hidden setting)
+    game.settings.register(MODULE.ID, 'isPinned', {
         scope: 'client',
         config: false,
-        type: String,
-        default: '280px'
+        type: Boolean,
+        default: false
     });
 
-    // Move UI when pinned setting
-    game.settings.register(MODULE.ID, 'moveUIWhenPinned', {
-        name: 'Move Toolbars When Pinned Open',
-        hint: 'Move the left toolbar over when the tray is pinned open instead of overlapping',
+    // Tray Width setting
+    game.settings.register(MODULE.ID, 'trayWidth', {
+        name: 'Tray Width',
+        hint: 'Adjust the width of the tray (in pixels). Default: 400px',
         scope: 'client',
         config: true,
-        type: Boolean,
-        default: false,
+        type: Number,
+        range: {
+            min: 300,
+            max: 600,
+            step: 25
+        },
+        default: 400,
         onChange: value => {
-            const uiLeft = document.querySelector('#ui-left');
-            const tray = document.querySelector('.squire-tray');
-            if (uiLeft && tray?.classList.contains('pinned')) {
-                uiLeft.style.marginLeft = value ? game.settings.get(MODULE.ID, 'trayWidth') : '0';
-            }
+            // Update CSS variables
+            document.documentElement.style.setProperty('--squire-tray-width', `${value}px`);
+            document.documentElement.style.setProperty('--squire-tray-content-width', `${value - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px`);
+            document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px)`);
         }
     });
 };
