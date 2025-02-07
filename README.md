@@ -5,10 +5,12 @@ A FoundryVTT module that provides quick access to character-specific combat info
 ## Features
 
 - Quick access to spells, weapons, and character information
-- Sliding tray interface that can be positioned at the bottom, left, or right of the screen
-- Spell management with spell slot tracking
-- Weapon management with ammunition tracking
-- Character info panel with HP, ability scores, and resource tracking
+- Sliding tray interface that automatically appears on the left side of the screen
+- Automatic character detection on client load
+- Spell management with spell slot tracking and prepared spell filtering
+- Weapon management with equipped weapon filtering
+- Favorites system for quick access to commonly used items
+- Character info panel with HP tracking and ability score rolls
 - Customizable themes and layout
 - Integration with Coffee Pub Blacksmith API
 
@@ -26,24 +28,25 @@ A FoundryVTT module that provides quick access to character-specific combat info
 
 After installation and enabling the module:
 
-1. A new icon will appear in your chat panel toolbar
-2. Click the icon to toggle the Squire tray
-3. Use the tabs to switch between Spells, Weapons, and Info panels
-4. Configure the module settings to customize the appearance and behavior
+1. The tray will automatically appear when you load into a world
+2. If you own a token, it will automatically select that character
+3. Click the handle to expand/collapse the tray
+4. Use the pin button to keep the tray open
+5. Manage your character's spells, weapons, and favorites
+6. Quick access to HP management and ability score rolls
 
 ## Settings
 
-- Default Panel: Choose which panel opens by default
-- Tray Position: Position the tray at the bottom, left, or right of the screen
-- Remember Last Panel: Remember the last active panel between sessions
-- Auto-hide: Automatically hide the tray when clicking outside
-- Panel Height: Customize the height of the tray
+- Tray Position: Left side of the screen
+- Open on Hover: Automatically expand the tray when hovering
 - Theme: Choose between Dark, Light, or Custom themes
 - Custom Theme Colors: Define your own color scheme
+- Move Foundry Toolbar: Add padding to accommodate the tray
+- Move UI When Pinned: Shift the UI when the tray is pinned open
 
 ## License
 
-[LICENSE](LICENSE)
+[MIT License](LICENSE)
 
 ## Support
 
