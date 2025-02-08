@@ -52,7 +52,7 @@
 /* TRAY Handle */
 .squire-tray[data-position="left"] .tray-handle {
     height: 100%;
-    width: var(--squire-tray-handle-width, 20px);
+    width: 14px;
     background: transparent;
     border-left: 1px dotted #444;
     border-radius: 0 0 0 0;

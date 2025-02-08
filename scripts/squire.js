@@ -14,10 +14,10 @@ Hooks.once('init', async function() {
 
     // Set initial CSS variables
     const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
-    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_HANDLE_WIDTH);
+    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_OFFSET_WIDTH);
     document.documentElement.style.setProperty('--squire-tray-width', `${trayWidth}px`);
-    document.documentElement.style.setProperty('--squire-tray-content-width', `${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px`);
-    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px)`);
+    document.documentElement.style.setProperty('--squire-tray-content-width', `${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`);
+    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px)`);
 
     // Set initial UI position
     const isPinned = game.settings.get(MODULE.ID, 'isPinned');
@@ -26,10 +26,10 @@ Hooks.once('init', async function() {
     if (uiLeft) {
         if (isPinned) {
             // If pinned, set margin to tray width minus handle width
-            uiLeft.style.marginLeft = `${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px`;
+            uiLeft.style.marginLeft = `${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
         } else {
             // If not pinned, set margin to handle width
-            uiLeft.style.marginLeft = SQUIRE.TRAY_HANDLE_WIDTH;
+            uiLeft.style.marginLeft = SQUIRE.TRAY_OFFSET_WIDTH;
         }
     }
 });

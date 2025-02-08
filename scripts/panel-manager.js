@@ -100,8 +100,19 @@ export class PanelManager {
             
             if (PanelManager.isPinned) {
                 tray.addClass('pinned expanded');
+                // Update UI margin when pinned
+                const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+                const uiLeft = document.querySelector('#ui-left');
+                if (uiLeft) {
+                    uiLeft.style.marginLeft = `${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                }
             } else {
                 tray.removeClass('pinned expanded');
+                // Reset UI margin when unpinned
+                const uiLeft = document.querySelector('#ui-left');
+                if (uiLeft) {
+                    uiLeft.style.marginLeft = SQUIRE.TRAY_OFFSET_WIDTH;
+                }
             }
             
             return false;

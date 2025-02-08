@@ -90,8 +90,19 @@ export const registerSettings = function() {
         onChange: value => {
             // Update CSS variables
             document.documentElement.style.setProperty('--squire-tray-width', `${value}px`);
-            document.documentElement.style.setProperty('--squire-tray-content-width', `${value - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px`);
-            document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(SQUIRE.TRAY_HANDLE_WIDTH)}px)`);
+            document.documentElement.style.setProperty('--squire-tray-content-width', `${value - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`);
+            document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px)`);
+            
+            // Update UI margin based on pin state
+            const uiLeft = document.querySelector('#ui-left');
+            const isPinned = game.settings.get(MODULE.ID, 'isPinned');
+            if (uiLeft) {
+                if (isPinned) {
+                    uiLeft.style.marginLeft = `${value - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                } else {
+                    uiLeft.style.marginLeft = SQUIRE.TRAY_OFFSET_WIDTH;
+                }
+            }
         }
     });
 };
