@@ -1,7 +1,10 @@
 :root {
     --squire-tray-width: 400px;
-    --squire-tray-content-width: 380px;
-    --squire-tray-transform: translateX(-380px);
+    --squire-tray-handle-width: 30px;
+    --squire-tray-handle-adjustment: 16px;
+    --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
+    --squire-tray-top-offset: 70px;
+    --squire-tray-bottom-offset: 300px;
 }
 
 /* Common Tray Styles */
@@ -17,9 +20,9 @@
 
 /* TRAY Left Position */
 .squire-tray[data-position="left"] {
-    top: 70px;
+    top: var(--squire-tray-top-offset);
     left: 0px;
-    height: calc(100vh - 100px);
+    height: calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset));
     border-radius: 8px 8px 8px 8px;
     display: flex;
     padding: 8px;
@@ -27,7 +30,7 @@
 
 /* Opening Animation */
 @keyframes slideIn {
-    0% { transform: translateX(var(--squire-tray-transform)); }
+    0% { transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment))); }
     100% { transform: translateX(0); }
 }
 
@@ -40,22 +43,46 @@
 @keyframes slideOut {
     0% { transform: translateX(0); }
     15% { transform: translateX(3px); }
-    100% { transform: var(--squire-tray-transform); }
+    100% { transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment))); }
 }
 
 /* Closing Position */
 .squire-tray[data-position="left"]:not(.expanded) {
-    transform: translateX(var(--squire-tray-transform));
+    transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
     animation: slideOut 0.5s ease-in-out forwards;
 }
 
 /* TRAY Handle */
 .squire-tray[data-position="left"] .tray-handle {
     height: 100%;
-    width: 14px;
-    background: transparent;
-    border-left: 1px dotted #444;
-    border-radius: 0 0 0 0;
+    width: var(--squire-tray-handle-width); 
+    flex: none;
+    order: 2;
+    /* Option 1: Subtle Dots */
+    background-image: radial-gradient(#444 1px, transparent 1px);
+    background-size: 2px 2px;
+    
+
+    /* Option 2: Diagonal Lines (uncomment to use)
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        #444 2px,
+        #444 3px
+    );
+    */
+    
+    /* Option 3: Grid Pattern (uncomment to use) 
+    background-image: 
+        linear-gradient(#444 1px, transparent 1px),
+        linear-gradient(90deg, #444 1px, transparent 1px);
+    background-size: 4px 4px;
+    */
+    
+    border: 1px dotted #444;
+    border-radius: 0 6px 6px 0;
+    margin-left: 8px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -63,13 +90,12 @@
     padding-top: 14px;
     padding-bottom: 0px;
     color: #aaa;
-    flex: none;
-    order: 2;
     box-shadow: 0 0 0 var(--color-shadow-dark);
     text-transform: uppercase;
     font-size: 1.1em;
     font-weight: 900;
 }
+
 /* TRAY Handle Icon */
 .squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
     transform: rotate(0deg);
@@ -101,8 +127,8 @@
 }
 /* TRAY Content */
 .squire-tray[data-position="left"] .tray-content {
-    width: var(--squire-tray-content-width);
-    flex: none;
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     order: 1;

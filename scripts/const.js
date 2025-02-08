@@ -26,5 +26,7 @@ export const CSS_CLASSES = {
 }; 
 
 export const SQUIRE = {
-    TRAY_OFFSET_WIDTH: '20px'
+    TRAY_OFFSET_WIDTH: '10px',
+    TRAY_HANDLE_WIDTH: '30px',
+    TRAY_HANDLE_ADJUSTMENT: '16px'
 }; 

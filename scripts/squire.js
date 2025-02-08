@@ -14,10 +14,16 @@ Hooks.once('init', async function() {
 
     // Set initial CSS variables
     const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
-    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_OFFSET_WIDTH);
+    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_HANDLE_WIDTH);
+    document.documentElement.style.setProperty('--squire-tray-handle-adjustment', SQUIRE.TRAY_HANDLE_ADJUSTMENT);
     document.documentElement.style.setProperty('--squire-tray-width', `${trayWidth}px`);
-    document.documentElement.style.setProperty('--squire-tray-content-width', `${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`);
-    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px)`);
+    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
+
+    // Set initial offset variables
+    const topOffset = game.settings.get(MODULE.ID, 'topOffset');
+    const bottomOffset = game.settings.get(MODULE.ID, 'bottomOffset');
+    document.documentElement.style.setProperty('--squire-tray-top-offset', `${topOffset}px`);
+    document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${bottomOffset}px`);
 
     // Set initial UI position
     const isPinned = game.settings.get(MODULE.ID, 'isPinned');
@@ -25,11 +31,11 @@ Hooks.once('init', async function() {
     
     if (uiLeft) {
         if (isPinned) {
-            // If pinned, set margin to tray width minus handle width
-            uiLeft.style.marginLeft = `${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+            // If pinned, set margin to tray width plus offset width (handle is included in tray width)
+            uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
         } else {
-            // If not pinned, set margin to handle width
-            uiLeft.style.marginLeft = SQUIRE.TRAY_OFFSET_WIDTH;
+            // If not pinned, set margin to handle width plus offset width
+            uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
         }
     }
 });

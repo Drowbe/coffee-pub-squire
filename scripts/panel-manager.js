@@ -100,18 +100,18 @@ export class PanelManager {
             
             if (PanelManager.isPinned) {
                 tray.addClass('pinned expanded');
-                // Update UI margin when pinned
+                // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
                 const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
                 const uiLeft = document.querySelector('#ui-left');
                 if (uiLeft) {
-                    uiLeft.style.marginLeft = `${trayWidth - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                    uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                 }
             } else {
                 tray.removeClass('pinned expanded');
-                // Reset UI margin when unpinned
+                // Reset UI margin when unpinned - need both handle width and offset
                 const uiLeft = document.querySelector('#ui-left');
                 if (uiLeft) {
-                    uiLeft.style.marginLeft = SQUIRE.TRAY_OFFSET_WIDTH;
+                    uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                 }
             }
             

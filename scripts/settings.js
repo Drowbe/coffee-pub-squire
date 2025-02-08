@@ -90,19 +90,54 @@ export const registerSettings = function() {
         onChange: value => {
             // Update CSS variables
             document.documentElement.style.setProperty('--squire-tray-width', `${value}px`);
-            document.documentElement.style.setProperty('--squire-tray-content-width', `${value - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`);
-            document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px)`);
+            document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
             
             // Update UI margin based on pin state
             const uiLeft = document.querySelector('#ui-left');
             const isPinned = game.settings.get(MODULE.ID, 'isPinned');
             if (uiLeft) {
                 if (isPinned) {
-                    uiLeft.style.marginLeft = `${value - parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                    uiLeft.style.marginLeft = `${value + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                 } else {
-                    uiLeft.style.marginLeft = SQUIRE.TRAY_OFFSET_WIDTH;
+                    uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                 }
             }
+        }
+    });
+
+    // Top Offset setting
+    game.settings.register(MODULE.ID, 'topOffset', {
+        name: 'Top Offset',
+        hint: 'Distance from the top of the screen (in pixels). Default: 70px',
+        scope: 'client',
+        config: true,
+        type: Number,
+        range: {
+            min: 0,
+            max: 200,
+            step: 5
+        },
+        default: 70,
+        onChange: value => {
+            document.documentElement.style.setProperty('--squire-tray-top-offset', `${value}px`);
+        }
+    });
+
+    // Bottom Offset setting
+    game.settings.register(MODULE.ID, 'bottomOffset', {
+        name: 'Bottom Offset',
+        hint: 'Distance from the bottom of the screen (in pixels). Default: 300px',
+        scope: 'client',
+        config: true,
+        type: Number,
+        range: {
+            min: 0,
+            max: 500,
+            step: 5
+        },
+        default: 300,
+        onChange: value => {
+            document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${value}px`);
         }
     });
 };
