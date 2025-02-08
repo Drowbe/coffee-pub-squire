@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
 import { CharacterPanel } from './panel-character.js';
 import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
+import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
 
 export class PanelManager {
@@ -16,6 +17,7 @@ export class PanelManager {
         this.favoritesPanel = new FavoritesPanel(actor);
         this.spellsPanel = new SpellsPanel(actor);
         this.weaponsPanel = new WeaponsPanel(actor);
+        this.inventoryPanel = new InventoryPanel(actor);
     }
 
     static async initialize(actor = null) {
@@ -33,6 +35,7 @@ export class PanelManager {
             PanelManager.instance.favoritesPanel = new FavoritesPanel(actor);
             PanelManager.instance.spellsPanel = new SpellsPanel(actor);
             PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
+            PanelManager.instance.inventoryPanel = new InventoryPanel(actor);
             await PanelManager.instance.updateTray();
         }
     }
@@ -68,6 +71,7 @@ export class PanelManager {
         await this.favoritesPanel.render(element);
         await this.spellsPanel.render(element);
         await this.weaponsPanel.render(element);
+        await this.inventoryPanel.render(element);
     }
 
     activateListeners(tray) {

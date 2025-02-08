@@ -1,0 +1,47 @@
+<div class="inventory-panel">
+    {{#if (eq position "left")}}
+    <div class="section-header">
+        <div class="header-left">
+            <i class="fas fa-backpack"></i> Inventory
+        </div>
+        <div class="header-right">
+            <i class="fas fa-box inventory-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Items"></i>
+        </div>
+    </div>
+    {{/if}}
+    <div class="inventory-controls">
+        <input type="text" class="inventory-search" placeholder="Search inventory...">
+        <select class="inventory-filter">
+            <option value="all">All</option>
+            <option value="equipment">Equipment</option>
+            <option value="consumable">Consumable</option>
+            <option value="tool">Tool</option>
+            <option value="loot">Loot</option>
+            <option value="backpack">Container</option>
+        </select>
+    </div>
+
+    <div class="inventory-list">
+        {{#each items}}
+        <div class="inventory-item {{#if this.system.equipped}}prepared{{/if}}" data-item-id="{{this.id}}">
+            <div class="inventory-row">
+                <div class="inventory-image-container">
+                    <img class="inventory-image" src="{{this.img}}" alt="{{this.name}}"/>
+                    <i class="fas fa-hand inventory-roll-overlay"></i>
+                </div>
+                <div class="inventory-name">
+                    {{this.name}}
+                    {{#if this.system.quantity}}
+                    <span class="inventory-quantity">({{this.system.quantity}})</span>
+                    {{/if}}
+                </div>
+                <div class="tray-buttons">
+                    <i class="fas fa-box {{#unless this.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                    <i class="fas fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                    <i class="fas fa-feather"></i>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div> 
