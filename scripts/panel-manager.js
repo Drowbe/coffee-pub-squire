@@ -4,6 +4,7 @@ import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { ControlPanel } from './panel-control.js';
 
 export class PanelManager {
     static instance = null;
@@ -14,6 +15,7 @@ export class PanelManager {
     constructor(actor) {
         this.actor = actor;
         this.characterPanel = new CharacterPanel(actor);
+        this.controlPanel = new ControlPanel(actor);
         this.favoritesPanel = new FavoritesPanel(actor);
         this.spellsPanel = new SpellsPanel(actor);
         this.weaponsPanel = new WeaponsPanel(actor);
@@ -32,6 +34,7 @@ export class PanelManager {
         } else {
             PanelManager.instance.actor = actor;
             PanelManager.instance.characterPanel = new CharacterPanel(actor);
+            PanelManager.instance.controlPanel = new ControlPanel(actor);
             PanelManager.instance.favoritesPanel = new FavoritesPanel(actor);
             PanelManager.instance.spellsPanel = new SpellsPanel(actor);
             PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
@@ -68,6 +71,7 @@ export class PanelManager {
 
     async renderPanels(element) {
         await this.characterPanel.render(element);
+        await this.controlPanel.render(element);
         await this.favoritesPanel.render(element);
         await this.spellsPanel.render(element);
         await this.weaponsPanel.render(element);

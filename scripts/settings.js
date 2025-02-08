@@ -190,6 +190,35 @@ export const registerSettings = function() {
         type: Boolean,
         default: true
     });
+
+    // Panel Visibility States (hidden settings)
+    game.settings.register(MODULE.ID, 'showFavoritesPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showWeaponsPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showSpellsPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showInventoryPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
 };
 
 // Helper function to update custom theme colors
