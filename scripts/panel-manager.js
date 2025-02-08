@@ -124,19 +124,8 @@ Hooks.on('controlToken', async (token, controlled) => {
 
     // If not pinned, handle the animation sequence
     if (!PanelManager.isPinned && PanelManager.element) {
-        // Remove expanded class first
         PanelManager.element.removeClass('expanded');
-        
-        // Wait for next frame to ensure the closed state is rendered
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        
-        // Initialize with new actor
         await PanelManager.initialize(token.actor);
-        
-        // Wait for next frame again to ensure initialization is complete
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        
-        // Add expanded class to trigger animation
         PanelManager.element.addClass('expanded');
         return;
     }
