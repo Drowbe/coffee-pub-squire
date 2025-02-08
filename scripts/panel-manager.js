@@ -122,22 +122,27 @@ Hooks.on('controlToken', async (token, controlled) => {
     // Only proceed if it's a GM or the token owner
     if (!game.user.isGM && !token.actor?.isOwner) return;
 
-    // Initialize if needed
-    await PanelManager.initialize(token.actor);
-    
-    // If not pinned, explicitly close then open
+    // If not pinned, handle the animation sequence
     if (!PanelManager.isPinned && PanelManager.element) {
-        // Get transition duration from CSS (default to 300ms if not set)
-        const transitionDuration = parseFloat(getComputedStyle(PanelManager.element[0]).transitionDuration) * 1000 || 300;
-        
-        // First close
+        // Remove expanded class first
         PanelManager.element.removeClass('expanded');
         
-        // Wait for close animation to complete before opening
-        setTimeout(() => {
-            PanelManager.element.addClass('expanded');
-        }, transitionDuration);
+        // Wait for next frame to ensure the closed state is rendered
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        
+        // Initialize with new actor
+        await PanelManager.initialize(token.actor);
+        
+        // Wait for next frame again to ensure initialization is complete
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        
+        // Add expanded class to trigger animation
+        PanelManager.element.addClass('expanded');
+        return;
     }
+
+    // If pinned, just update the data immediately
+    await PanelManager.initialize(token.actor);
 });
 
 // Also handle when tokens are deleted or actors are updated

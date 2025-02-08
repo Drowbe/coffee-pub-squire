@@ -11,25 +11,45 @@
     background: rgba(30, 30, 30, 0.90);
     border: 0px solid #444;
     display: block;
-    transition: all 0.3s ease-in-out;
     box-shadow: 0 0 20px var(--color-shadow-dark);
     width: var(--squire-tray-width);
 }
+
 /* TRAY Left Position */
 .squire-tray[data-position="left"] {
     top: 70px;
     left: 0px;
-    transform: var(--squire-tray-transform);
     height: calc(100vh - 100px);
     border-radius: 8px 8px 8px 8px;
     display: flex;
     padding: 8px;
+    transform: translateX(var(--squire-tray-transform));
 }
+
+/* Opening Animation */
+@keyframes slideIn {
+    0% { transform: translateX(var(--squire-tray-transform)); }
+    85% { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+}
+
 /* Expanded Position */
 .squire-tray[data-position="left"].expanded {
-    transform: translateX(0) !important;
-    left: 0px;
+    animation: slideIn 1s ease-in-out forwards;
 }
+
+/* Closing Animation */
+@keyframes slideOut {
+    0% { transform: translateX(0); }
+    15% { transform: translateX(3px); }
+    100% { transform: var(--squire-tray-transform); }
+}
+
+/* Closing Position */
+.squire-tray[data-position="left"]:not(.expanded) {
+    animation: slideOut 0.5s ease-in-out forwards;
+}
+
 /* TRAY Handle */
 .squire-tray[data-position="left"] .tray-handle {
     height: 100%;
@@ -174,7 +194,6 @@
 .squire-tray[data-position="left"] .section-header .filter-toggle.active {
     opacity: 1;
 }
-
 
 /* TRAY Secion Headers */
 .squire-tray[data-position="left"] .level-header {
