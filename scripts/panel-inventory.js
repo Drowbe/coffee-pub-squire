@@ -4,7 +4,7 @@ export class InventoryPanel {
     constructor(actor) {
         this.actor = actor;
         this.items = this._getItems();
-        this.showOnlyEquipped = false;
+        this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedInventory');
     }
 
     _getItems() {
@@ -115,6 +115,7 @@ export class InventoryPanel {
         // Add filter toggle handler
         html.find('.inventory-filter-toggle').click(async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;
+            await game.settings.set(MODULE.ID, 'showOnlyEquippedInventory', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
             this._updateVisibility(html);

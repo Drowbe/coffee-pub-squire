@@ -5,7 +5,7 @@ export class SpellsPanel {
     constructor(actor) {
         this.actor = actor;
         this.spells = this._getSpells();
-        this.showOnlyPrepared = false;
+        this.showOnlyPrepared = game.settings.get(MODULE.ID, 'showOnlyPreparedSpells');
     }
 
     _getSpells() {
@@ -228,6 +228,7 @@ export class SpellsPanel {
         // Add filter toggle handler
         html.find('.spell-filter-toggle').click(async (event) => {
             this.showOnlyPrepared = !this.showOnlyPrepared;
+            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
             $(event.currentTarget).toggleClass('active', this.showOnlyPrepared);
             $(event.currentTarget).toggleClass('faded', !this.showOnlyPrepared);
             this._updateVisibility(html);

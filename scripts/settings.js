@@ -140,6 +140,56 @@ export const registerSettings = function() {
             document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${value}px`);
         }
     });
+
+    // Filter States
+    game.settings.register(MODULE.ID, 'showOnlyPreparedSpells', {
+        name: 'Remember Prepared Spells Filter',
+        hint: 'Remember if the prepared spells filter was enabled',
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'showOnlyEquippedWeapons', {
+        name: 'Remember Equipped Weapons Filter',
+        hint: 'Remember if the equipped weapons filter was enabled',
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'showOnlyEquippedInventory', {
+        name: 'Remember Equipped Inventory Filter',
+        hint: 'Remember if the equipped inventory filter was enabled',
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    // Favorites Filter States
+    game.settings.register(MODULE.ID, 'showSpellFavorites', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showWeaponFavorites', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showInventoryFavorites', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
 };
 
 // Helper function to update custom theme colors

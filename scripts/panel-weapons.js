@@ -5,7 +5,7 @@ export class WeaponsPanel {
     constructor(actor) {
         this.actor = actor;
         this.weapons = this._getWeapons();
-        this.showOnlyEquipped = false;
+        this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
     }
 
     _getWeapons() {
@@ -85,6 +85,7 @@ export class WeaponsPanel {
         // Add filter toggle handler
         html.find('.weapon-filter-toggle').click(async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;
+            await game.settings.set(MODULE.ID, 'showOnlyEquippedWeapons', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
             this._updateVisibility(html);
