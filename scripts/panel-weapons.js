@@ -23,6 +23,7 @@ export class WeaponsPanel {
             name: weapon.name,
             img: weapon.img || 'icons/svg/sword.svg',
             system: weapon.system,
+            equipped: weapon.system.equipped,
             isFavorite: favorites.includes(weapon.id)
         }));
     }
