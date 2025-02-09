@@ -12,8 +12,8 @@ export class InventoryPanel {
     _getItems() {
         if (!this.actor) return [];
         
-        // Get current favorites
-        const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+        // Get current favorites and filter out null/undefined values
+        const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
         
         // Get inventory items
         const items = this.actor.items.filter(item => 
@@ -52,6 +52,14 @@ export class InventoryPanel {
 
     async _toggleFavorite(itemId) {
         await FavoritesPanel.manageFavorite(this.actor, itemId);
+        // Refresh our local items data to update UI state
+        this.items = this._getItems();
+        // Update the heart icon state immediately
+        const heartIcon = this.element.find(`.inventory-item[data-item-id="${itemId}"] .fa-heart`);
+        if (heartIcon.length) {
+            const isFavorite = this.items.find(i => i.id === itemId)?.isFavorite || false;
+            heartIcon.toggleClass('faded', !isFavorite);
+        }
     }
 
     async render(html) {
