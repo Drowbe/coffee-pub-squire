@@ -149,25 +149,30 @@
     border-radius: 6px;
 }
 /* TRAY Panel Bottom Container */
+
 .squire-tray[data-position="left"] .panel-containers {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 2px solid #444;
-    border-radius: 6px !important;
-    padding-left: 4px;
-    padding-right: 4px;
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
+
 .squire-tray[data-position="left"] .stacked {
+	background: #0000004d;
     flex: 1;
     overflow-y: auto;
-    border: 2px solid #444;
-    border-radius: 0px;
+    border-top: 0px solid #444;
+	border-bottom: 2px solid #444;
+	border-left: 2px solid #444;
+	border-right: 2px solid #444;
+    border-radius: 0px 0px 6px 6px!important;
     margin: 0px 0px 0px 0px;
     padding-bottom: 8px;
+    padding-top: 8px;
 }
 .squire-tray[data-position="left"] .spells-list,
 .squire-tray[data-position="left"] .weapons-list,
@@ -1002,15 +1007,28 @@
     opacity: 1;
 }
 
+
 .squire-tray[data-position="left"] [data-panel="control"] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: #000000;;
+    margin-bottom: 0px;
+
+    border: 2px solid #444;
+    border-radius: 6px 6px 0px 0px !important;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .control-icons {
     display: flex;
     gap: 8px;
     justify-content: center;
     align-items: center;
-    padding: 8px;
-    background: #000000;
-    margin-bottom: 8px;
-    border-radius: 4px;
 }
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-toggle {
@@ -1030,4 +1048,13 @@
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-toggle.active {
     opacity: 1;
+}
+
+/* Panel Visibility */
+.panel-containers.stacked .panel-container[data-panel] {
+    display: none;
+}
+
+.panel-containers.stacked .panel-container[data-panel].visible {
+    display: block;
 } 

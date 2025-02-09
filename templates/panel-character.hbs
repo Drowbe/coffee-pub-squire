@@ -23,13 +23,13 @@
     </div>
     <div class="bars">
         <div class="bar-section">
-            <div class="tray-title-small">XP {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
+            <div class="tray-title-small">XP: {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
             <div class="exp-bar">
                 <div class="exp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
             </div>
         </div>
         <div class="bar-section">
-            <div class="tray-title-small">Hit Points</div>
+            <div class="tray-title-small">HP: {{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}</div>
             <div class="hp-bar">
                 <div class="hp-current">
                     <span class="hp-label">HP</span>
