@@ -37,6 +37,25 @@ export class ControlPanel {
         });
     }
 
+    _handleSearch(searchTerm) {
+        // Convert search term to lowercase for case-insensitive comparison
+        searchTerm = searchTerm.toLowerCase();
+
+        // Get all item rows across all panels
+        const items = this.element.find('.panel-containers.stacked .panel-container.visible .inventory-item, .panel-containers.stacked .panel-container.visible .weapon-item, .panel-containers.stacked .panel-container.visible .spell-item, .panel-containers.stacked .panel-container.visible .item');
+
+        items.each((_, item) => {
+            const $item = $(item);
+            const itemName = $item.find('.inventory-name, .weapon-name, .spell-name, .item-name').text().toLowerCase();
+            
+            if (searchTerm === '' || itemName.includes(searchTerm)) {
+                $item.show();
+            } else {
+                $item.hide();
+            }
+        });
+    }
+
     async _togglePanel(panelType) {
         const settingKey = `show${panelType.charAt(0).toUpperCase() + panelType.slice(1)}Panel`;
         const currentValue = game.settings.get(MODULE.ID, settingKey);
@@ -53,6 +72,11 @@ export class ControlPanel {
         html.find('[data-panel="control"] .control-toggle').click(async (event) => {
             const panelType = $(event.currentTarget).data('toggle-panel');
             await this._togglePanel(panelType);
+        });
+
+        // Add search input listener
+        html.find('[data-panel="control"] .global-search').on('input', (event) => {
+            this._handleSearch(event.target.value);
         });
     }
 } 
