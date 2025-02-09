@@ -78,5 +78,11 @@ export class ControlPanel {
         html.find('[data-panel="control"] .global-search').on('input', (event) => {
             this._handleSearch(event.target.value);
         });
+
+        // Add search clear button listener
+        html.find('[data-panel="control"] .search-clear').click((event) => {
+            const $search = $(event.currentTarget).siblings('.global-search');
+            $search.val('').trigger('input');
+        });
     }
 } 

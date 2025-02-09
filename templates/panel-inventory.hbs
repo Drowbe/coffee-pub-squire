@@ -10,14 +10,15 @@
     </div>
     {{/if}}
     <div class="inventory-controls">
-        <input type="text" class="inventory-search" placeholder="Search inventory...">
+        <div class="search-container">
+            <input type="text" class="inventory-search" placeholder="Search Inventory...">
+            <i class="fas fa-times search-clear" title="Clear Search"></i>
+        </div>
         <select class="inventory-filter">
-            <option value="all">All</option>
-            <option value="equipment">Equipment</option>
-            <option value="consumable">Consumable</option>
-            <option value="tool">Tool</option>
-            <option value="loot">Loot</option>
-            <option value="backpack">Container</option>
+            <option value="all">All Types</option>
+            {{#each itemTypes}}
+            <option value="{{this}}">{{this}}</option>
+            {{/each}}
         </select>
     </div>
 

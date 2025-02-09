@@ -370,39 +370,42 @@
     flex-wrap: wrap;
 }
 
-.squire-tray[data-position="left"] .spell-search {
+.squire-tray[data-position="left"] .search-container {
+    position: relative;
     flex: 1;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #444;
-    border-radius: 3px;
-    color: #fff;
-    padding: 4px 8px;
-    font-size: 13px;
-    min-width: 100px;
 }
 
-.squire-tray[data-position="left"] .spell-filter {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #444;
-    border-radius: 3px;
-    color: #fff;
-    padding: 4px 8px;
-    font-size: 13px;
-}
-
-.squire-tray[data-position="left"] .prepared-toggle {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #fff;
-    font-size: 13px;
-    cursor: pointer;
+.squire-tray[data-position="left"] .spell-search,
+.squire-tray[data-position="left"] .inventory-search {
     width: 100%;
-    margin-top: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px 8px;
+    padding-right: 24px;
+    font-size: 13px;
 }
 
-.squire-tray[data-position="left"] .prepared-toggle input {
-    margin: 0;
+.squire-tray[data-position="left"] .search-container .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9f9275;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .search-container .search-clear:hover {
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .spell-search:not(:placeholder-shown) + .search-clear,
+.squire-tray[data-position="left"] .inventory-search:not(:placeholder-shown) + .search-clear {
+    opacity: 1;
 }
 
 /* Hide the separate spell slots section in left position */
@@ -1052,6 +1055,7 @@
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-search {
     padding: 4px;
+    position: relative;
 }
 
 .squire-tray[data-position="left"] [data-panel="control"] .global-search {
@@ -1061,7 +1065,28 @@
     border-radius: 3px;
     color: #fff;
     padding: 4px 8px;
+    padding-right: 24px;
     font-size: 13px;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9f9275;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .search-clear:hover {
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .global-search:not(:placeholder-shown) + .search-clear {
+    opacity: 1;
 }
 
 /* Panel Visibility */

@@ -29,6 +29,25 @@ export class InventoryPanel {
         }));
     }
 
+    _handleSearch(searchTerm) {
+        // Convert search term to lowercase for case-insensitive comparison
+        searchTerm = searchTerm.toLowerCase();
+        
+        // Get all inventory items
+        const inventoryItems = this.element.find('.inventory-item');
+        
+        inventoryItems.each((_, item) => {
+            const $item = $(item);
+            const itemName = $item.find('.inventory-name').text().toLowerCase();
+            
+            if (searchTerm === '' || itemName.includes(searchTerm)) {
+                $item.show();
+            } else {
+                $item.hide();
+            }
+        });
+    }
+
     async _toggleFavorite(itemId) {
         try {
             // Get current favorites
@@ -175,6 +194,17 @@ export class InventoryPanel {
 
         filterSelect.off('change').on('change', () => {
             this._updateVisibility(html);
+        });
+
+        // Add search input listener
+        html.find('.inventory-search').on('input', (event) => {
+            this._handleSearch(event.target.value);
+        });
+
+        // Add search clear button listener
+        html.find('.search-clear').click((event) => {
+            const $search = $(event.currentTarget).siblings('.inventory-search');
+            $search.val('').trigger('input');
         });
     }
 } 

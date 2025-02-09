@@ -53,6 +53,32 @@ export class SpellsPanel {
         return mappedSpells;
     }
 
+    _handleSearch(searchTerm) {
+        // Convert search term to lowercase for case-insensitive comparison
+        searchTerm = searchTerm.toLowerCase();
+        
+        // Get all spell items
+        const spellItems = this.element.find('.spell-item');
+        
+        spellItems.each((_, item) => {
+            const $item = $(item);
+            const spellName = $item.find('.spell-name').text().toLowerCase();
+            
+            if (searchTerm === '' || spellName.includes(searchTerm)) {
+                $item.show();
+            } else {
+                $item.hide();
+            }
+        });
+
+        // Update level headers visibility
+        this.element.find('.level-header').each((_, header) => {
+            const $header = $(header);
+            const $nextSpells = $header.nextUntil('.level-header', '.spell-item:visible');
+            $header.toggle($nextSpells.length > 0);
+        });
+    }
+
     async _toggleFavorite(itemId) {
         try {
             // Get current favorites
@@ -294,6 +320,17 @@ export class SpellsPanel {
 
         filterSelect.on('change', () => {
             this._updateVisibility(html);
+        });
+
+        // Add search input listener
+        html.find('.spell-search').on('input', (event) => {
+            this._handleSearch(event.target.value);
+        });
+
+        // Add search clear button listener
+        html.find('.search-clear').click((event) => {
+            const $search = $(event.currentTarget).siblings('.spell-search');
+            $search.val('').trigger('input');
         });
     }
 } 

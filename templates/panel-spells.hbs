@@ -10,12 +10,15 @@
     </div>
     {{/if}}
     <div class="spell-controls">
-        <input type="text" class="spell-search" placeholder="Search spells...">
+        <div class="search-container">
+            <input type="text" class="spell-search" placeholder="Search Spells...">
+            <i class="fas fa-times search-clear" title="Clear Search"></i>
+        </div>
         <select class="spell-filter">
-            <option value="all">All</option>
-            <option value="cantrip">C</option>
-            {{#each spellSlots}}
-            <option value="{{this.level}}">L{{this.level}}</option>
+            <option value="all">All Levels</option>
+            <option value="cantrip">Cantrips</option>
+            {{#each spellLevels}}
+            <option value="{{this}}">Level {{this}}</option>
             {{/each}}
         </select>
     </div>
