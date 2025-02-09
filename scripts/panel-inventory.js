@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { PanelManager } from './panel-manager.js';
 
 export class InventoryPanel {
     constructor(actor) {
@@ -62,21 +63,21 @@ export class InventoryPanel {
             // Update our local items data
             this.items = this._getItems();
             
-            // Find the PanelManager instance
-            const panelManager = ui.windows[Object.keys(ui.windows).find(key => 
-                ui.windows[key].constructor.name === 'PanelManager' && 
-                ui.windows[key].actor?.id === this.actor.id
-            )];
-
-            // Re-render this panel
-            if (this.element) {
-                await this.render();
-            }
-
-            // Re-render the favorites panel through PanelManager
-            if (panelManager?.favoritesPanel) {
-                await panelManager.favoritesPanel.render(panelManager.element);
-            }
+            // Get the PanelManager instance directly
+            const panelManager = PanelManager.instance;
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | PanelManager lookup",
+                {
+                    foundDirectly: !!panelManager,
+                    actorId: this.actor.id,
+                    currentActorId: PanelManager.currentActor?.id
+                },
+                true,
+                true,
+                false
+            );
 
             // Update the heart icon state immediately
             const heartIcon = this.element.find(`.inventory-item[data-item-id="${itemId}"] .fa-heart`);
@@ -84,8 +85,54 @@ export class InventoryPanel {
                 heartIcon.toggleClass('faded', !newFavorites.includes(itemId));
             }
 
+            // Re-render this panel
+            if (this.element) {
+                await this.render();
+            }
+
+            // Re-render the favorites panel through PanelManager
+            if (panelManager?.favoritesPanel && PanelManager.element) {
+                await panelManager.favoritesPanel.render(PanelManager.element);
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Favorites panel re-rendered",
+                    {
+                        panelManagerFound: true,
+                        favoritesPanelFound: true,
+                        elementFound: true
+                    },
+                    true,
+                    true,
+                    false
+                );
+            } else {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Could not re-render favorites panel",
+                    {
+                        panelManagerFound: !!panelManager,
+                        favoritesPanelFound: !!panelManager?.favoritesPanel,
+                        elementFound: !!PanelManager.element,
+                        moduleFound: !!game.modules.get(MODULE.ID)
+                    },
+                    true,
+                    true,
+                    false
+                );
+            }
+
+            // Force a full refresh of both panels to ensure sync
+            if (panelManager) {
+                await panelManager.updateTray();
+            }
+
         } catch (error) {
-            console.error('Error toggling favorite:', error);
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Error in _toggleFavorite",
+                error,
+                true,
+                true,
+                true
+            );
         }
     }
 

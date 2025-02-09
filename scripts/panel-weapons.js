@@ -11,8 +11,8 @@ export class WeaponsPanel {
     _getWeapons() {
         if (!this.actor) return [];
         
-        // Get current favorites
-        const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+        // Get current favorites and filter out null values
+        const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null);
         
         // Get weapons
         const weapons = this.actor.items.filter(item => item.type === 'weapon');
@@ -24,6 +24,7 @@ export class WeaponsPanel {
             img: weapon.img || 'icons/svg/sword.svg',
             system: weapon.system,
             equipped: weapon.system.equipped,
+            type: 'weapon',
             isFavorite: favorites.includes(weapon.id)
         }));
     }
@@ -48,28 +49,137 @@ export class WeaponsPanel {
     }
 
     async _toggleFavorite(itemId) {
-        const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
-        const newFavorites = favorites.includes(itemId)
-            ? favorites.filter(id => id !== itemId)
-            : [...favorites, itemId];
+        try {
+            // Get current favorites
+            const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null);
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
             
-        await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-        this.weapons = this._getWeapons();
-        await this.render();
-        
-        // Re-render the favorites panel
-        const favoritesPanel = Object.values(ui.windows).find(w => w instanceof FavoritesPanel && w.actor.id === this.actor.id);
-        if (favoritesPanel) {
-            await favoritesPanel.render();
-        } else {
-            // If we can't find the panel in ui.windows, try to get it from PanelManager
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Current favorites before toggle",
+                favorites,
+                true,
+                true,
+                false
+            );
+            
+            const newFavorites = favorites.includes(itemId)
+                ? favorites.filter(id => id !== itemId)
+                : [...favorites, itemId];
+            
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | New favorites after toggle",
+                newFavorites,
+                true,
+                true,
+                false
+            );
+            
+            // Update the flag
+            await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
+            
+            // Update our local weapons data
+            this.weapons = this._getWeapons();
+            
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Updated weapons data",
+                this.weapons,
+                true,
+                true,
+                false
+            );
+            
+            // Find the PanelManager instance
             const panelManager = ui.windows[Object.keys(ui.windows).find(key => 
                 ui.windows[key].constructor.name === 'PanelManager' && 
                 ui.windows[key].actor?.id === this.actor.id
             )];
+            
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | PanelManager lookup",
+                {
+                    foundViaWindows: !!panelManager,
+                    actorId: this.actor.id
+                },
+                true,
+                true,
+                false
+            );
+
+            // Update the heart icon state immediately
+            const heartIcon = this.element.find(`.weapon-item[data-weapon-id="${itemId}"] .fa-heart`);
+            if (heartIcon.length) {
+                heartIcon.toggleClass('faded', !newFavorites.includes(itemId));
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Heart icon state updated",
+                    {
+                        itemId,
+                        isFavorite: newFavorites.includes(itemId),
+                        heartIconFound: true
+                    },
+                    true,
+                    true,
+                    false
+                );
+            } else {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Heart icon not found",
+                    {
+                        itemId,
+                        isFavorite: newFavorites.includes(itemId),
+                        heartIconFound: false
+                    },
+                    true,
+                    true,
+                    false
+                );
+            }
+
+            // Re-render this panel
+            if (this.element) {
+                await this.render();
+            }
+
+            // Re-render the favorites panel through PanelManager
             if (panelManager?.favoritesPanel) {
                 await panelManager.favoritesPanel.render(panelManager.element);
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Favorites panel re-rendered",
+                    {
+                        panelManagerFound: true,
+                        favoritesPanelFound: true
+                    },
+                    true,
+                    true,
+                    false
+                );
+            } else {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Could not re-render favorites panel",
+                    {
+                        panelManagerFound: !!panelManager,
+                        favoritesPanelFound: false,
+                        moduleFound: !!game.modules.get(MODULE.ID)
+                    },
+                    true,
+                    true,
+                    false
+                );
             }
+
+            // Force a full refresh of both panels to ensure sync
+            if (panelManager) {
+                await panelManager.updateTray();
+            }
+
+        } catch (error) {
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Error in _toggleFavorite",
+                error,
+                true,
+                true,
+                true
+            );
         }
     }
 
@@ -134,7 +244,7 @@ export class WeaponsPanel {
             }
         });
 
-        // Toggle favorite
+        // Toggle favorite (heart icon)
         html.find('.tray-buttons .fa-heart').click(async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             await this._toggleFavorite(weaponId);

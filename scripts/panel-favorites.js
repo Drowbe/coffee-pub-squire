@@ -13,23 +13,43 @@ export class FavoritesPanel {
     _getFavorites() {
         if (!this.actor) return [];
         
-        // Get our module's favorites from flags
-        const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+        // Get our module's favorites from flags and filter out null values
+        const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null);
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Favorites from flag in _getFavorites",
+            favorites,
+            true,
+            true,
+            false
+        );
         
         // Get only favorited items
-        return this.actor.items
+        const favoritedItems = this.actor.items
             .filter(item => favorites.includes(item.id))
             .map(item => ({
                 id: item.id,
                 name: item.name,
                 img: item.img || 'icons/svg/item-bag.svg',
                 type: item.type,
-                system: item.system
+                system: item.system,
+                equipped: item.system.equipped
             }));
+            
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Mapped favorited items",
+            favoritedItems,
+            true,
+            true,
+            false
+        );
+        
+        return favoritedItems;
     }
 
     async _toggleFavorite(itemId) {
-        const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+        const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null);
         const newFavorites = favorites.includes(itemId)
             ? favorites.filter(id => id !== itemId)
             : [...favorites, itemId];
@@ -45,6 +65,9 @@ export class FavoritesPanel {
 
     async render(html) {
         this.element = html;
+        // Refresh favorites data before rendering
+        this.favorites = this._getFavorites();
+        
         const favoritesData = {
             favorites: this.favorites,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
@@ -69,12 +92,9 @@ export class FavoritesPanel {
 
             let shouldShow = false;
             if (item.type === 'spell' && this.showSpells) shouldShow = true;
-            if ((item.type === 'weapon' || 
-                (item.type === 'equipment' && item.system.weaponType)) && 
-                this.showWeapons) shouldShow = true;
+            if (item.type === 'weapon' && this.showWeapons) shouldShow = true;
             if (['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type) && 
-                this.showInventory && item.type !== 'weapon' && 
-                !item.system.weaponType) shouldShow = true;
+                this.showInventory && item.type !== 'weapon') shouldShow = true;
 
             $item.toggle(shouldShow);
         });
