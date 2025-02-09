@@ -1,6 +1,58 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { PanelManager } from './panel-manager.js';
 
 export class FavoritesPanel {
+    static async manageFavorite(actor, itemId) {
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        try {
+            // Ensure we have a valid itemId
+            if (!itemId) {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Invalid item ID in manageFavorite",
+                    { itemId },
+                    true,
+                    true,
+                    true
+                );
+                return;
+            }
+
+            // Get current favorites
+            const favorites = (actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
+            const newFavorites = favorites.includes(itemId)
+                ? favorites.filter(id => id !== itemId)
+                : [...favorites, itemId];
+            
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Managing favorites",
+                { favorites, newFavorites, itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
+                true,
+                true,
+                false
+            );
+
+            // Update the flag
+            await actor.setFlag(MODULE.ID, 'favorites', newFavorites);
+            
+            // Get the PanelManager instance directly and update all panels
+            const panelManager = PanelManager.instance;
+            if (panelManager) {
+                await panelManager.updateTray();
+            }
+
+            return newFavorites.includes(itemId);
+        } catch (error) {
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Error in manageFavorite",
+                error,
+                true,
+                true,
+                true
+            );
+            return false;
+        }
+    }
+
     constructor(actor) {
         this.actor = actor;
         this.favorites = this._getFavorites();
@@ -49,18 +101,7 @@ export class FavoritesPanel {
     }
 
     async _toggleFavorite(itemId) {
-        const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null);
-        const newFavorites = favorites.includes(itemId)
-            ? favorites.filter(id => id !== itemId)
-            : [...favorites, itemId];
-            
-        await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-        this.favorites = this._getFavorites();
-        
-        // Re-render all panels to update favorite status
-        if (this.element) {
-            await this.render(this.element);
-        }
+        await FavoritesPanel.manageFavorite(this.actor, itemId);
     }
 
     async render(html) {
@@ -164,23 +205,74 @@ export class FavoritesPanel {
         // Remove from favorites
         html.find('.favorite-item .fa-heart').click(async (event) => {
             const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
-            await this._toggleFavorite(itemId);
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            
+            try {
+                // Ensure we have a valid itemId
+                if (!itemId) {
+                    blacksmith?.utils.postConsoleAndNotification(
+                        "SQUIRE | Invalid item ID in favorites heart click",
+                        { itemId },
+                        true,
+                        true,
+                        true
+                    );
+                    return;
+                }
 
-            // Find the original item's heart icon in other panels and update it
-            const panelManager = ui.windows[Object.keys(ui.windows).find(key => 
-                ui.windows[key].constructor.name === 'PanelManager' && 
-                ui.windows[key].actor?.id === this.actor.id
-            )];
-
-            if (panelManager) {
-                // Update all panels
-                const spellHeart = panelManager.element.find(`.spell-item[data-spell-id="${itemId}"] .fa-heart`);
-                const weaponHeart = panelManager.element.find(`.weapon-item[data-weapon-id="${itemId}"] .fa-heart`);
-                const inventoryHeart = panelManager.element.find(`.inventory-item[data-item-id="${itemId}"] .fa-heart`);
+                // Get current favorites
+                const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
+                const newFavorites = favorites.includes(itemId)
+                    ? favorites.filter(id => id !== itemId)
+                    : [...favorites, itemId];
                 
-                [spellHeart, weaponHeart, inventoryHeart].forEach(heart => {
-                    if (heart.length) heart.addClass('faded');
-                });
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Favorites before update",
+                    { favorites, newFavorites, itemId },
+                    true,
+                    true,
+                    false
+                );
+
+                // Update the flag
+                await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
+                
+                // Update our local favorites data
+                this.favorites = this._getFavorites();
+                
+                // Get the PanelManager instance directly
+                const panelManager = PanelManager.instance;
+                
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | PanelManager lookup from favorites",
+                    {
+                        foundDirectly: !!panelManager,
+                        actorId: this.actor.id,
+                        currentActorId: PanelManager.currentActor?.id
+                    },
+                    true,
+                    true,
+                    false
+                );
+
+                // Re-render this panel
+                if (this.element) {
+                    await this.render(this.element);
+                }
+
+                // Force a full refresh of all panels to ensure sync
+                if (panelManager) {
+                    await panelManager.updateTray();
+                }
+
+            } catch (error) {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Error in favorites heart click",
+                    error,
+                    true,
+                    true,
+                    true
+                );
             }
         });
     }
