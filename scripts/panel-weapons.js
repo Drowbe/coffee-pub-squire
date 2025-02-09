@@ -10,18 +10,40 @@ export class WeaponsPanel {
 
     _getWeapons() {
         if (!this.actor) return [];
+        
+        // Get current favorites
         const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
-        return this.actor.items.filter(item => 
-            item.type === 'weapon' || 
-            (item.type === 'equipment' && item.system.weaponType)
-        ).map(weapon => ({
+        
+        // Get weapons
+        const weapons = this.actor.items.filter(item => item.type === 'weapon');
+        
+        // Map weapons with favorite state
+        return weapons.map(weapon => ({
             id: weapon.id,
             name: weapon.name,
             img: weapon.img || 'icons/svg/sword.svg',
-            quantity: weapon.system.quantity || 1,
-            equipped: weapon.system.equipped,
+            system: weapon.system,
             isFavorite: favorites.includes(weapon.id)
         }));
+    }
+
+    _handleSearch(searchTerm) {
+        // Convert search term to lowercase for case-insensitive comparison
+        searchTerm = searchTerm.toLowerCase();
+        
+        // Get all weapon items
+        const weaponItems = this.element.find('.weapon-item');
+        
+        weaponItems.each((_, item) => {
+            const $item = $(item);
+            const weaponName = $item.find('.weapon-name').text().toLowerCase();
+            
+            if (searchTerm === '' || weaponName.includes(searchTerm)) {
+                $item.show();
+            } else {
+                $item.hide();
+            }
+        });
     }
 
     async _toggleFavorite(itemId) {
@@ -76,7 +98,7 @@ export class WeaponsPanel {
             
             if (!weapon) return;
             
-            const shouldShow = !this.showOnlyEquipped || weapon.equipped;
+            const shouldShow = !this.showOnlyEquipped || weapon.system.equipped;
             $item.toggle(shouldShow);
         });
     }
@@ -89,6 +111,17 @@ export class WeaponsPanel {
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
             this._updateVisibility(html);
+        });
+
+        // Add search input listener
+        html.find('.weapon-search').on('input', (event) => {
+            this._handleSearch(event.target.value);
+        });
+
+        // Add search clear button listener
+        html.find('.search-clear').click((event) => {
+            const $search = $(event.currentTarget).siblings('.weapon-search');
+            $search.val('').trigger('input');
         });
 
         // Weapon info click (feather icon)

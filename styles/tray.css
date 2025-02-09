@@ -376,7 +376,8 @@
 }
 
 .squire-tray[data-position="left"] .spell-search,
-.squire-tray[data-position="left"] .inventory-search {
+.squire-tray[data-position="left"] .inventory-search,
+.squire-tray[data-position="left"] .weapon-search {
     width: 100%;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid #444;
@@ -404,7 +405,8 @@
 }
 
 .squire-tray[data-position="left"] .spell-search:not(:placeholder-shown) + .search-clear,
-.squire-tray[data-position="left"] .inventory-search:not(:placeholder-shown) + .search-clear {
+.squire-tray[data-position="left"] .inventory-search:not(:placeholder-shown) + .search-clear,
+.squire-tray[data-position="left"] .weapon-search:not(:placeholder-shown) + .search-clear {
     opacity: 1;
 }
 
@@ -1096,4 +1098,13 @@
 
 .panel-containers.stacked .panel-container[data-panel].visible {
     display: block;
+}
+
+/* Add weapon controls styling to match other panels */
+.squire-tray[data-position="left"] .weapon-controls {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 } 

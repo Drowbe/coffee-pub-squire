@@ -5,10 +5,16 @@
             <i class="fas fa-sword"></i> Weapons
         </div>
         <div class="header-right">
-            <i class="fas fa-shield-alt weapon-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped"></i>
+            <i class="fas fa-cog weapon-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Weapons"></i>
         </div>
     </div>
     {{/if}}
+    <div class="weapon-controls">
+        <div class="search-container">
+            <input type="text" class="weapon-search" placeholder="Search Weapons...">
+            <i class="fas fa-times search-clear" title="Clear Search"></i>
+        </div>
+    </div>
     <div class="weapons-list">
         {{#each weapons}}
         <div class="weapon-item {{#if this.equipped}}prepared{{/if}}" data-weapon-id="{{this.id}}">
