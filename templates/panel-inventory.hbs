@@ -5,7 +5,7 @@
             <i class="fas fa-backpack"></i> Inventory
         </div>
         <div class="header-right">
-            <i class="fas fa-cog inventory-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Items"></i>
+            <i class="fas fa-backpack inventory-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Items"></i>
         </div>
     </div>
     {{/if}}
@@ -37,7 +37,7 @@
                     {{/if}}
                 </div>
                 <div class="tray-buttons">
-                    <i class="fas fa-box {{#unless this.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                    <i class="fas fa-backpack {{#unless this.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                     <i class="fas fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                     <i class="fas fa-feather"></i>
                 </div>

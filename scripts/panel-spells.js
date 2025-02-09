@@ -99,6 +99,12 @@ export class SpellsPanel {
                 ui.windows[key].actor?.id === this.actor.id
             )];
 
+            // Update the heart icon state immediately
+            const heartIcon = this.element.find(`.spell-item[data-spell-id="${itemId}"] .fa-heart`);
+            if (heartIcon.length) {
+                heartIcon.toggleClass('faded', !newFavorites.includes(itemId));
+            }
+
             // Re-render this panel
             if (this.element) {
                 await this.render();
@@ -109,15 +115,9 @@ export class SpellsPanel {
                 await panelManager.favoritesPanel.render(panelManager.element);
             }
 
-            // Update the heart icon state immediately
-            const heartIcon = this.element.find(`.spell-item[data-spell-id="${itemId}"] .fa-heart`);
-            if (heartIcon.length) {
-                heartIcon.toggleClass('faded', !newFavorites.includes(itemId));
-            }
-
             // Force a full refresh of both panels to ensure sync
             if (panelManager) {
-                await panelManager.render(true);
+                await panelManager.updateTray();
             }
 
         } catch (error) {

@@ -5,6 +5,7 @@
     --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
     --squire-tray-top-offset: 70px;
     --squire-tray-bottom-offset: 300px;
+    --squire-tray-pinned-offset: 10px;
 }
 
 /* Common Tray Styles */
@@ -26,6 +27,12 @@
     border-radius: 8px 8px 8px 8px;
     display: flex;
     padding: 8px;
+}
+
+/* Pinned state positioning */
+.squire-tray[data-position="left"].pinned {
+    top: var(--squire-tray-pinned-offset);
+    height: calc(100vh - calc(var(--squire-tray-pinned-offset) * 2));
 }
 
 /* Opening Animation */
@@ -273,7 +280,8 @@
 }
 /* Spell/Weapon Items in Left Position */
 .squire-tray[data-position="left"] .spell-item,
-.squire-tray[data-position="left"] .weapon-item {
+.squire-tray[data-position="left"] .weapon-item,
+.squire-tray[data-position="left"] .inventory-item {
     background: transparent;
     border: none;
     border-radius: 0;
@@ -281,11 +289,13 @@
     margin-bottom: 2px;
 }
 .squire-tray[data-position="left"] .spell-item:hover,
-.squire-tray[data-position="left"] .weapon-item:hover {
+.squire-tray[data-position="left"] .weapon-item:hover,
+.squire-tray[data-position="left"] .inventory-item:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 .squire-tray[data-position="left"] .spell-row,
-.squire-tray[data-position="left"] .weapon-row {
+.squire-tray[data-position="left"] .weapon-row,
+.squire-tray[data-position="left"] .inventory-row {
     gap: 4px;
     padding: 4px;
     display: flex;
@@ -356,8 +366,9 @@
     opacity: 1;
 }
 
-.spell-item.prepared,
-.weapon-item.prepared {
+.squire-tray[data-position="left"] .spell-item.prepared,
+.squire-tray[data-position="left"] .weapon-item.prepared,
+.squire-tray[data-position="left"] .inventory-item.prepared {
     background: rgba(74, 144, 226, 0.1);
 }
 
