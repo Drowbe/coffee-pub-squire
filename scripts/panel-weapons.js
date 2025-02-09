@@ -161,6 +161,8 @@ export class WeaponsPanel {
                 await weapon.update({
                     'system.equipped': newEquipped
                 });
+                // Refresh weapons data
+                this.weapons = this._getWeapons();
                 // Update the UI immediately
                 const $item = $(event.currentTarget).closest('.weapon-item');
                 $item.toggleClass('prepared', newEquipped);
