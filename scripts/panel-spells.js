@@ -22,7 +22,7 @@ export class SpellsPanel {
         blacksmith?.utils.postConsoleAndNotification(
             "SQUIRE | Raw spells from actor",
             spells,
-            true,
+            false,
             true,
             false
         );
@@ -45,7 +45,7 @@ export class SpellsPanel {
         blacksmith?.utils.postConsoleAndNotification(
             "SQUIRE | Mapped spells with favorites",
             mappedSpells,
-            true,
+            false,
             true,
             false
         );
@@ -118,7 +118,7 @@ export class SpellsPanel {
                 ),
                 spellSlots: spellData.spellSlots
             },
-            true,
+            false,
             true,
             false
         );
