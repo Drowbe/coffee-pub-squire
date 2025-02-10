@@ -12,8 +12,8 @@ export class WeaponsPanel {
     _getWeapons() {
         if (!this.actor) return [];
         
-        // Get current favorites and filter out null values
-        const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null);
+        // Get current favorites
+        const favorites = FavoritesPanel.getFavorites(this.actor);
         
         // Get weapons
         const weapons = this.actor.items.filter(item => item.type === 'weapon');
@@ -55,6 +55,9 @@ export class WeaponsPanel {
         }
         if (!this.element) return;
         
+        // Refresh weapons data
+        this.weapons = this._getWeapons();
+        
         const weaponData = {
             weapons: this.weapons,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
@@ -65,6 +68,18 @@ export class WeaponsPanel {
         this.element.find('[data-panel="weapons"]').html(template);
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
+
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Weapon data for template",
+            {
+                weapons: this.weapons.map(w => w.name),
+                position: weaponData.position
+            },
+            false,
+            true,
+            false
+        );
     }
 
     _updateVisibility(html) {
@@ -123,7 +138,7 @@ export class WeaponsPanel {
                 const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
                 const weapon = this.actor.items.get(weaponId);
                 if (weapon) {
-                    await weapon.use({}, { event, legacy: false });
+                    await weapon.use({}, { event });
                 }
             }
         });
@@ -137,8 +152,6 @@ export class WeaponsPanel {
                 await weapon.update({
                     'system.equipped': newEquipped
                 });
-                // Refresh weapons data
-                this.weapons = this._getWeapons();
                 // Update the UI immediately
                 const $item = $(event.currentTarget).closest('.weapon-item');
                 $item.toggleClass('prepared', newEquipped);
