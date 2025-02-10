@@ -168,7 +168,7 @@ export class PanelManager {
         
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
-            if ($(event.target).closest('.pin-button').length) return;
+            if ($(event.target).closest('.pin-button').length || $(event.target).closest('.handle-favorite-icon').length) return;
             
             event.preventDefault();
             event.stopPropagation();
