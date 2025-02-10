@@ -990,11 +990,11 @@
 }
 
 .squire-tray[data-position="left"] .death-toggle {
-    color: #ff4444;
+    color: #9c1a1a;
 }
 
 .squire-tray[data-position="left"] .hp-full {
-    color: #44ff44;
+    color: #4d8826;
 }
 
 /* PORTRAIT AND STATS */
