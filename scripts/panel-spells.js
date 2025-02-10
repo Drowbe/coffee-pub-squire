@@ -12,7 +12,7 @@ export class SpellsPanel {
         if (!this.actor) return [];
         
         // Get current favorites
-        const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+        const favorites = FavoritesPanel.getFavorites(this.actor);
         
         // Get spells
         const spells = this.actor.items.filter(item => item.type === 'spell');
@@ -79,52 +79,6 @@ export class SpellsPanel {
         });
     }
 
-    async _toggleFavorite(itemId) {
-        try {
-            // Get current favorites
-            const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
-            const newFavorites = favorites.includes(itemId)
-                ? favorites.filter(id => id !== itemId)
-                : [...favorites, itemId];
-            
-            // Update the flag
-            await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-            
-            // Update our local spells data
-            this.spells = this._getSpells();
-            
-            // Find the PanelManager instance
-            const panelManager = ui.windows[Object.keys(ui.windows).find(key => 
-                ui.windows[key].constructor.name === 'PanelManager' && 
-                ui.windows[key].actor?.id === this.actor.id
-            )];
-
-            // Update the heart icon state immediately
-            const heartIcon = this.element.find(`.spell-item[data-spell-id="${itemId}"] .fa-heart`);
-            if (heartIcon.length) {
-                heartIcon.toggleClass('faded', !newFavorites.includes(itemId));
-            }
-
-            // Re-render this panel
-            if (this.element) {
-                await this.render();
-            }
-
-            // Re-render the favorites panel through PanelManager
-            if (panelManager?.favoritesPanel) {
-                await panelManager.favoritesPanel.render(panelManager.element);
-            }
-
-            // Force a full refresh of both panels to ensure sync
-            if (panelManager) {
-                await panelManager.updateTray();
-            }
-
-        } catch (error) {
-            console.error('Error toggling favorite:', error);
-        }
-    }
-
     async render(html) {
         if (html) {
             this.element = html;
@@ -132,6 +86,9 @@ export class SpellsPanel {
         if (!this.element) {
             return;
         }
+
+        // Refresh spells data
+        this.spells = this._getSpells();
 
         // Group spells by level
         const spellsByLevel = {};
@@ -251,13 +208,15 @@ export class SpellsPanel {
     }
 
     _activateListeners(html) {
-        // Add filter toggle handler
-        html.find('.spell-filter-toggle').click(async (event) => {
-            this.showOnlyPrepared = !this.showOnlyPrepared;
-            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
-            $(event.currentTarget).toggleClass('active', this.showOnlyPrepared);
-            $(event.currentTarget).toggleClass('faded', !this.showOnlyPrepared);
-            this._updateVisibility(html);
+        // Search functionality
+        const $search = html.find('.spell-search');
+        $search.on('input', (event) => {
+            this._handleSearch(event.target.value);
+        });
+
+        // Clear search
+        html.find('.clear-search').click(() => {
+            $search.val('').trigger('input');
         });
 
         // Toggle prepared state (cog icon)
@@ -278,59 +237,45 @@ export class SpellsPanel {
             }
         });
 
-        // Spell info click (feather icon)
-        html.find('.tray-buttons .fa-feather').click(async (event) => {
+        // Remove from favorites
+        html.find('.spell-item .fa-heart').click(async (event) => {
+            const itemId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+            await FavoritesPanel.manageFavorite(this.actor, itemId);
+        });
+
+        // Filter functionality
+        html.find('.spell-filter').change(() => {
+            this._updateVisibility(html);
+        });
+
+        // Toggle prepared spells only
+        html.find('.spell-filter-toggle').click(async (event) => {
+            this.showOnlyPrepared = !this.showOnlyPrepared;
+            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
+            $(event.currentTarget)
+                .toggleClass('active', this.showOnlyPrepared)
+                .toggleClass('faded', !this.showOnlyPrepared);
+            this._updateVisibility(html);
+        });
+
+        // Cast spell
+        html.find('.spell-image-container').click(async (event) => {
+            if ($(event.target).hasClass('spell-roll-overlay')) {
+                const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+                const spell = this.actor.items.get(spellId);
+                if (spell) {
+                    await spell.use({}, { event });
+                }
+            }
+        });
+
+        // View spell details
+        html.find('.spell-item .fa-feather').click(async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 spell.sheet.render(true);
             }
-        });
-
-        // Toggle favorite
-        html.find('.tray-buttons .fa-heart').click(async (event) => {
-            const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
-            await this._toggleFavorite(spellId);
-        });
-
-        // Spell cast click (image overlay)
-        html.find('.spell-image-container').click(async (event) => {
-            // Only handle click if on the overlay
-            if ($(event.target).hasClass('spell-roll-overlay')) {
-                const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
-                const spell = this.actor.items.get(spellId);
-                if (spell) {
-                    await spell.use({}, { event, legacy: false });
-                }
-            }
-        });
-
-        // Search and filter
-        const searchInput = html.find('.spell-search');
-        const filterSelect = html.find('.spell-filter');
-
-        // Remove any existing event listeners
-        searchInput.off('input keyup change');
-        filterSelect.off('change');
-
-        // Add new event listeners
-        searchInput.on('input keyup change', () => {
-            this._updateVisibility(html);
-        });
-
-        filterSelect.on('change', () => {
-            this._updateVisibility(html);
-        });
-
-        // Add search input listener
-        html.find('.spell-search').on('input', (event) => {
-            this._handleSearch(event.target.value);
-        });
-
-        // Add search clear button listener
-        html.find('.search-clear').click((event) => {
-            const $search = $(event.currentTarget).siblings('.spell-search');
-            $search.val('').trigger('input');
         });
     }
 } 

@@ -49,10 +49,6 @@ export class WeaponsPanel {
         });
     }
 
-    async _toggleFavorite(itemId) {
-        await FavoritesPanel.manageFavorite(this.actor, itemId);
-    }
-
     async render(html) {
         if (html) {
             this.element = html;
@@ -117,7 +113,7 @@ export class WeaponsPanel {
         // Toggle favorite (heart icon)
         html.find('.tray-buttons .fa-heart').click(async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
-            await this._toggleFavorite(weaponId);
+            await FavoritesPanel.manageFavorite(this.actor, weaponId);
         });
 
         // Weapon roll click (image overlay)

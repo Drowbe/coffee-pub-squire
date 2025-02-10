@@ -342,6 +342,16 @@
 .tray-buttons i.faded {
     opacity: 0.3;
 }
+
+.tray-buttons .fa-heart-circle-xmark {
+    color: #9f9275;
+}
+.tray-buttons .fa-heart-circle-xmark:hover {
+    color: #fff;
+}
+.tray-buttons .fa-heart-circle-xmark.faded {
+    opacity: 0.3;
+}
 /* TRAY Section Dice Overlays */
 .spell-roll-overlay,
 .weapon-roll-overlay {

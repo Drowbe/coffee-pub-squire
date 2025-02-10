@@ -5,6 +5,9 @@
             <i class="fas fa-heart"></i> Favorites
         </div>
         <div class="header-right">
+            {{#if hasFavorites}}
+            <i class="fas fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
+            {{/if}}
             <i class="fas fa-cog favorites-spell-toggle filter-toggle {{#if showSpells}}active{{else}}faded{{/if}}" title="Toggle Spell Favorites"></i>
             <i class="fas fa-sword favorites-weapon-toggle filter-toggle {{#if showWeapons}}active{{else}}faded{{/if}}" title="Toggle Weapon Favorites"></i>
             <i class="fas fa-backpack favorites-inventory-toggle filter-toggle {{#if showInventory}}active{{else}}faded{{/if}}" title="Toggle Inventory Favorites"></i>
@@ -21,7 +24,7 @@
                 </div>
                 <div class="favorite-name">{{this.name}}</div>
                 <div class="tray-buttons">
-                    <i class="fas fa-heart active" title="Remove from Favorites"></i>
+                    <i class="fas fa-heart" title="Remove from Favorites"></i>
                     <i class="fas fa-feather"></i>
                 </div>
             </div>

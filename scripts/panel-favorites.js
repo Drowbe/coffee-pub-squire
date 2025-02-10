@@ -2,17 +2,38 @@ import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './panel-manager.js';
 
 export class FavoritesPanel {
+    static getFavorites(actor) {
+        return actor.getFlag(MODULE.ID, 'favorites') || [];
+    }
+
+    static async clearFavorites(actor) {
+        await actor.unsetFlag(MODULE.ID, 'favorites');
+        if (PanelManager.instance) {
+            await PanelManager.instance.updateTray();
+        }
+        return [];
+    }
+
     static async manageFavorite(actor, itemId) {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         try {
+            // Log the stack trace to see where this is being called from
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | manageFavorite call stack",
+                new Error().stack,
+                false,
+                true,
+                false
+            );
+
             // Ensure we have a valid itemId
             if (!itemId) {
                 blacksmith?.utils.postConsoleAndNotification(
                     "SQUIRE | Invalid item ID in manageFavorite",
-                    { itemId },
+                    { itemId, stack: new Error().stack },
+                    false,
                     true,
-                    true,
-                    true
+                    false
                 );
                 return;
             }
@@ -26,7 +47,7 @@ export class FavoritesPanel {
             blacksmith?.utils.postConsoleAndNotification(
                 "SQUIRE | Managing favorites - Before Update",
                 { favorites, newFavorites, itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
-                true,
+                false,
                 true,
                 false
             );
@@ -40,7 +61,7 @@ export class FavoritesPanel {
             blacksmith?.utils.postConsoleAndNotification(
                 "SQUIRE | Verifying favorites after update",
                 { verifyFavorites, shouldMatch: newFavorites },
-                true,
+                false,
                 true,
                 false
             );
@@ -48,30 +69,37 @@ export class FavoritesPanel {
             // Get the PanelManager instance directly
             const panelManager = PanelManager.instance;
             if (panelManager) {
-                // Re-render source panels first (inventory, weapons, spells)
-                const sourcePanel = panelManager.inventoryPanel?.element ? panelManager.inventoryPanel :
-                                  panelManager.weaponsPanel?.element ? panelManager.weaponsPanel :
-                                  panelManager.spellsPanel?.element ? panelManager.spellsPanel : null;
-                
-                if (sourcePanel) {
-                    await sourcePanel.render(sourcePanel.element);
-                }
-                
-                // Then render the favorites panel
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Starting panel updates",
+                    { itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
+                    false,
+                    true,
+                    false
+                );
+
+                // First update the favorites panel
                 if (panelManager.favoritesPanel?.element) {
                     await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
                 }
-                
-                // Finally render any remaining panels
-                if (panelManager.inventoryPanel?.element && panelManager.inventoryPanel !== sourcePanel) {
+
+                // Then update all other panels
+                if (panelManager.inventoryPanel?.element) {
                     await panelManager.inventoryPanel.render(panelManager.inventoryPanel.element);
                 }
-                if (panelManager.weaponsPanel?.element && panelManager.weaponsPanel !== sourcePanel) {
+                if (panelManager.weaponsPanel?.element) {
                     await panelManager.weaponsPanel.render(panelManager.weaponsPanel.element);
                 }
-                if (panelManager.spellsPanel?.element && panelManager.spellsPanel !== sourcePanel) {
+                if (panelManager.spellsPanel?.element) {
                     await panelManager.spellsPanel.render(panelManager.spellsPanel.element);
                 }
+
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Panel updates complete",
+                    { itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
+                    false,
+                    true,
+                    false
+                );
             }
 
             return newFavorites.includes(itemId);
@@ -79,9 +107,9 @@ export class FavoritesPanel {
             blacksmith?.utils.postConsoleAndNotification(
                 "SQUIRE | Error in manageFavorite",
                 error,
+                false,
                 true,
-                true,
-                true
+                false
             );
             return false;
         }
@@ -106,7 +134,7 @@ export class FavoritesPanel {
         blacksmith?.utils.postConsoleAndNotification(
             "SQUIRE | Favorites from flag in _getFavorites",
             favorites,
-            true,
+            false,
             true,
             false
         );
@@ -126,7 +154,7 @@ export class FavoritesPanel {
         blacksmith?.utils.postConsoleAndNotification(
             "SQUIRE | Mapped favorited items",
             favoritedItems,
-            true,
+            false,
             true,
             false
         );
@@ -148,7 +176,8 @@ export class FavoritesPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showSpells: this.showSpells,
             showWeapons: this.showWeapons,
-            showInventory: this.showInventory
+            showInventory: this.showInventory,
+            hasFavorites: this.favorites.length > 0
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_FAVORITES, favoritesData);
@@ -263,6 +292,11 @@ export class FavoritesPanel {
         html.find('.favorite-item .fa-heart').click(async (event) => {
             const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
             await FavoritesPanel.manageFavorite(this.actor, itemId);
+        });
+
+        // Add clear all button listener
+        html.find('.favorites-clear-all').click(async () => {
+            await FavoritesPanel.clearFavorites(this.actor);
         });
     }
 } 
