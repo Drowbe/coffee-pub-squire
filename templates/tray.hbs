@@ -1,12 +1,12 @@
 <div class="squire-tray" data-position="left">
     <div class="tray-handle">
-        <div class="handle-left">
-            <i class="fas fa-chevron-right"></i>
-            {{> handle-player}}
-        </div>
         <button class="pin-button" title="Pin Tray">
             <i class="fas fa-thumbtack"></i>
         </button>
+        <i class="fas fa-chevron-right"></i>
+        <div class="handle-left">
+            {{> handle-player}}
+        </div>
     </div>
     <div class="tray-content">
         {{#if actor}}

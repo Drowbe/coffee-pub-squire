@@ -68,25 +68,6 @@
     /* Option 1: Subtle Dots */
     background-image: radial-gradient(#444 1px, transparent 1px);
     background-size: 2px 2px;
-    
-
-    /* Option 2: Diagonal Lines (uncomment to use)
-    background-image: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 2px,
-        #444 2px,
-        #444 3px
-    );
-    */
-    
-    /* Option 3: Grid Pattern (uncomment to use) 
-    background-image: 
-        linear-gradient(#444 1px, transparent 1px),
-        linear-gradient(90deg, #444 1px, transparent 1px);
-    background-size: 4px 4px;
-    */
-    
     border: 1px dotted #444;
     border-radius: 0 6px 6px 0;
     margin-left: 8px;
@@ -94,7 +75,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 14px;
+    padding-top: 8px;
     padding-bottom: 0px;
     color: #aaa;
     box-shadow: 0 0 0 var(--color-shadow-dark);
@@ -103,30 +84,56 @@
     font-weight: 900;
 }
 
+/* Pin Button */
+.squire-tray[data-position="left"] .pin-button {
+    order: 1;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s ease;
+    outline: none;
+    margin-bottom: 8px;
+}
+
 /* TRAY Handle Icon */
 .squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
+    order: 2;
     transform: rotate(0deg);
-    margin-bottom: auto;
+    margin-bottom: 8px;
     margin-top: 0;
-    padding-bottom: 8px;
-    order: 1;
+    padding: 4px 8px;
 }
+
+/* Handle Left Content */
+.squire-tray[data-position="left"] .handle-left {
+    order: 3;
+    flex: 1;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* Pin Button States */
+.pin-button:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.squire-tray.pinned .pin-button {
+    color: #fff;
+}
+
+.squire-tray:not(.pinned) .pin-button {
+    color: rgba(255, 255, 255, 0.3);
+}
+
 /* TRAY Handle Icon Expanded */
 .squire-tray[data-position="left"].expanded .tray-handle i.fa-chevron-right {
     transform: rotate(180deg);
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* TRAY Handle Title */
 .squire-tray[data-position="left"] .handle-left {
@@ -168,19 +175,6 @@
 .squire-tray[data-position="left"] .condition-icon[title="Blessed"] { color: #ffeb3b; }
 .squire-tray[data-position="left"] .condition-icon[title="Invisible"] { color: #90a4ae; }
 
-
-
-/* TRAY Handle Title */
-.squire-tray[data-position="left"] .handle-left {
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    order: 2;
-}
-
-
 /* Handle Stats Styling */
 .squire-tray[data-position="left"] .handle-stats {
     display: flex;
@@ -195,13 +189,6 @@
     color: #aaa;
     font-weight: 900;
 }
-
-
-
-
-
-
-
 
 .squire-tray[data-position="left"] .handle-health-bar {
     height: 50px;
@@ -228,11 +215,6 @@
 	border-radius: 4px;
 }
 
-
-
-
-
-
 .squire-tray[data-position="left"] .tray-handle-label {
     font-size: 0.6em;
 	padding-top: 4px;
@@ -242,14 +224,11 @@
 	color: #aaaaaab4;
 }
 
-
 .squire-tray[data-position="left"] .handle-character {
     font-size: 1.4em;
     color: #ffffff;
     font-weight: 900;
 }
-
-
 
 .squire-tray[data-position="left"] .tray-handle-separator {
     font-weight: 900;
@@ -281,24 +260,11 @@
     vertical-align: middle;
 }
 
-
-
-
-
-
-
-
 /* Ensure the dots are visible and properly spaced */
 .squire-tray[data-position="left"] .handle-stats {
     font-weight: 900;
 }
-/* TRAY Handle Pin Button */
-.squire-tray[data-position="left"] .pin-button {
-    order: 3;
-    margin-top: auto;
-    padding: 0;
-    margin-bottom: 0px;
-}
+
 /* TRAY Content */
 .squire-tray[data-position="left"] .tray-content {
     flex: 1;
@@ -314,12 +280,6 @@
 	padding: 0px;
 }
 
-
-
-
-
-
-
 /* TRAY Panel Top Container */
 .squire-tray[data-position="left"] .panel-container {
     display: block;
@@ -329,8 +289,8 @@
     margin-bottom: 10px;
     border-radius: 6px;
 }
-/* TRAY Panel Bottom Container */
 
+/* TRAY Panel Bottom Container */
 .squire-tray[data-position="left"] .panel-containers {
     flex: 1;
     display: flex;
@@ -355,6 +315,7 @@
     padding-bottom: 8px;
     padding-top: 8px;
 }
+
 .squire-tray[data-position="left"] .spells-list,
 .squire-tray[data-position="left"] .weapons-list,
 .squire-tray[data-position="left"] .favorites-list {
@@ -376,33 +337,40 @@
     align-items: center;
     border-radius: 4px 4px 4px 4px;
 }
+
 /* Section Header Icons for Left Position */
 .squire-tray[data-position="left"] .section-header i {
     font-size: .85em;
     margin-right: 4px;
     padding-top: 3px;
 }
+
 .squire-tray[data-position="left"] .section-header .header-left {
     display: flex;
     align-items: center;
     gap: 8px;
 }
+
 .squire-tray[data-position="left"] .section-header .header-right {
     display: flex;
     align-items: center;
     gap: 6px;
 }
+
 .squire-tray[data-position="left"] .section-header .filter-toggle {
     cursor: pointer;
     color: #aaa;
     transition: color 0.2s ease;
 }
+
 .squire-tray[data-position="left"] .section-header .filter-toggle:hover {
     color: #fff;
 }
+
 .squire-tray[data-position="left"] .section-header .filter-toggle.faded {
     opacity: 0.3;
 }
+
 .squire-tray[data-position="left"] .section-header .filter-toggle.active {
     opacity: 1;
 }
@@ -425,17 +393,16 @@
     opacity: 1;
 }
 
-
 .squire-tray[data-position="left"] .section-header .favorites-clear-all {
     cursor: pointer;
     opacity: 1;
     transition: color 0.2s ease;
     color: #aaa;
 }
+
 .squire-tray[data-position="left"] .section-header .favorites-clear-all:hover {
     color: #ff4444;
 } 
-
 
 /* TRAY Secion Headers */
 .squire-tray[data-position="left"] .level-header {
@@ -449,10 +416,12 @@
     align-items: center;
     margin-bottom: 4px;
 }
+
 .squire-tray[data-position="left"] .level-header .slot-pips {
     display: flex;
     gap: 2px;
 }
+
 .squire-tray[data-position="left"] .slot-pip {
     width: 8px;
     height: 8px;
@@ -465,6 +434,7 @@
     background: #9f9275;
     border-color: #9f9275;
 }
+
 /* Spell/Weapon Items in Left Position */
 .squire-tray[data-position="left"] .spell-item,
 .squire-tray[data-position="left"] .weapon-item,
@@ -475,11 +445,13 @@
     padding: 0;
     margin-bottom: 2px;
 }
+
 .squire-tray[data-position="left"] .spell-item:hover,
 .squire-tray[data-position="left"] .weapon-item:hover,
 .squire-tray[data-position="left"] .inventory-item:hover {
     background: rgba(255, 255, 255, 0.1);
 }
+
 .squire-tray[data-position="left"] .spell-row,
 .squire-tray[data-position="left"] .weapon-row,
 .squire-tray[data-position="left"] .inventory-row {
@@ -488,6 +460,7 @@
     display: flex;
     align-items: center;
 }
+
 .spell-image-container,
 .weapon-image-container {
     position: relative;
@@ -496,6 +469,7 @@
     height: 24px;
     cursor: pointer;
 }
+
 .spell-image,
 .weapon-image {
     width: 100%;
@@ -503,6 +477,7 @@
     object-fit: cover;
     border-radius: 4px;
 }
+
 .spell-name,
 .weapon-name {
     flex: 1;
@@ -510,6 +485,7 @@
     font-size: 1rem;
     margin-right: 4px;
 }
+
 /* TRAY Section ContentButtons */
 .tray-buttons {
     display: flex;
@@ -517,19 +493,21 @@
     align-items: center;
     margin-right: 0px;
 }
+
 .tray-buttons i {
     color: #9f9275;
     transition: color 0.2s ease;
     cursor: pointer;
     padding: 0px;
 }
+
 .tray-buttons i:hover {
     color: #fff;
 }
+
 .tray-buttons i.faded {
     opacity: 0.3;
 }
-
 
 /* TRAY Section Dice Overlays */
 .spell-roll-overlay,
@@ -613,31 +591,6 @@
 /* Hide the separate spell slots section in left position */
 .squire-tray[data-position="left"] .spell-slots {
     display: none;
-}
-
-/* Common Pin Button Styles */
-.pin-button {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    padding: 4px 8px;
-    transition: color 0.2s ease;
-    outline: none;
-}
-
-.pin-button:hover {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* When pinned, make the button fully visible */
-.squire-tray.pinned .pin-button {
-    color: #fff;
-}
-
-/* When not pinned, make the button dim */
-.squire-tray:not(.pinned) .pin-button {
-    color: rgba(255, 255, 255, 0.3);
 }
 
 /* Tabs */
@@ -984,7 +937,6 @@
     font-weight: 500;
 }
 
-
 .squire-tray[data-position="left"] .hp-controls {
     display: flex;
     gap: 6px;
@@ -1038,9 +990,7 @@
     padding: 0 0.0rem;
 }
 
-
 /* ABILITIES */
-
 .squire-tray[data-position="left"] .ability-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1099,10 +1049,7 @@
     padding: 0;
 }
 
-
-
 /* Empty Tray Message */
-
 .no-character-message {
     padding: 2rem;
     text-align: center;
@@ -1211,7 +1158,6 @@
 .inventory-image-container:hover .inventory-roll-overlay {
     opacity: 1;
 }
-
 
 .squire-tray[data-position="left"] [data-panel="control"] {
     display: flex;
