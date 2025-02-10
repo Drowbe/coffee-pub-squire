@@ -61,7 +61,14 @@ export class PanelManager {
     async createTray() {
         // Create the tray if it doesn't exist
         if (!document.getElementById('squire-tray')) {
-            const trayHtml = await renderTemplate(TEMPLATES.TRAY, { actor: this.actor });
+            const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
+                actor: this.actor,
+                showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
+                showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
+                showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
+                showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
+                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
+            });
             const trayElement = $(trayHtml);
             $('body').append(trayElement);
             PanelManager.element = trayElement;
@@ -81,7 +88,14 @@ export class PanelManager {
     async updateTray() {
         if (PanelManager.element) {
             // Re-render the entire tray template
-            const trayHtml = await renderTemplate(TEMPLATES.TRAY, { actor: this.actor });
+            const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
+                actor: this.actor,
+                showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
+                showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
+                showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
+                showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
+                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
+            });
             const newTrayElement = $(trayHtml);
             
             // Preserve expanded/pinned state without animation
@@ -109,7 +123,14 @@ export class PanelManager {
 
     async updateHandle() {
         if (PanelManager.element) {
-            const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, { actor: this.actor });
+            const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
+                actor: this.actor,
+                showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
+                showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
+                showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
+                showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
+                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
+            });
             const handle = PanelManager.element.find('.handle-left');
             handle.html(handleTemplate);
             this.activateListeners(PanelManager.element);

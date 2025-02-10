@@ -176,12 +176,17 @@
 .squire-tray[data-position="left"] .condition-icon[title="Invisible"] { color: #90a4ae; }
 
 /* Handle Stats Styling */
-.squire-tray[data-position="left"] .handle-stats {
+.squire-tray[data-position="left"] .handle-stats-primary,
+.squire-tray[data-position="left"] .handle-stats-secondary {
     display: flex;
     align-items: center;
     font-size: 1.1em;
     color: #aaa;
     font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .handle-stats-secondary {
+    font-size: 1em;  /* Slightly smaller for secondary stats */
 }
 
 .squire-tray[data-position="left"] .tray-handle-content {

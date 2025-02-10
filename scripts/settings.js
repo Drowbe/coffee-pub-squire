@@ -219,6 +219,52 @@ export const registerSettings = function() {
         type: Boolean,
         default: true
     });
+
+    // Handle Display Settings
+    game.settings.register(MODULE.ID, 'showHandleConditions', {
+        name: 'Show Conditions in Handle',
+        hint: 'Display condition icons in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleStatsPrimary', {
+        name: 'Show Primary Stats in Handle',
+        hint: 'Display primary stats (HP, AC, Move) in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleStatsSecondary', {
+        name: 'Show Secondary Stats in Handle',
+        hint: 'Display secondary stats (Initiative, Proficiency) in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleFavorites', {
+        name: 'Show Favorites in Handle',
+        hint: 'Display favorite items in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleHealthBar', {
+        name: 'Show Health Bar in Handle',
+        hint: 'Display health bar visualization in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
 };
 
 // Helper function to update custom theme colors
