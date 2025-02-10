@@ -124,6 +124,7 @@ export class FavoritesPanel {
         // Initialize filter states
         this.showSpells = game.settings.get(MODULE.ID, 'showSpellFavorites');
         this.showWeapons = game.settings.get(MODULE.ID, 'showWeaponFavorites');
+        this.showFeatures = game.settings.get(MODULE.ID, 'showFeaturesFavorites');
         this.showInventory = game.settings.get(MODULE.ID, 'showInventoryFavorites');
     }
 
@@ -179,6 +180,7 @@ export class FavoritesPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showSpells: this.showSpells,
             showWeapons: this.showWeapons,
+            showFeatures: this.showFeatures,
             showInventory: this.showInventory,
             hasFavorites: this.favorites.length > 0
         };
@@ -209,6 +211,7 @@ export class FavoritesPanel {
         panel.find('.fa-feather').off();
         panel.find('.favorites-spell-toggle').off();
         panel.find('.favorites-weapon-toggle').off();
+        panel.find('.favorites-features-toggle').off();
         panel.find('.favorites-inventory-toggle').off();
     }
 
@@ -223,6 +226,7 @@ export class FavoritesPanel {
             let shouldShow = false;
             if (item.type === 'spell' && this.showSpells) shouldShow = true;
             if (item.type === 'weapon' && this.showWeapons) shouldShow = true;
+            if (item.type === 'feat' && this.showFeatures) shouldShow = true;
             if (['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type) && 
                 this.showInventory && item.type !== 'weapon') shouldShow = true;
 
@@ -239,6 +243,10 @@ export class FavoritesPanel {
             case 'weapons':
                 this.showWeapons = !this.showWeapons;
                 await game.settings.set(MODULE.ID, 'showWeaponFavorites', this.showWeapons);
+                break;
+            case 'features':
+                this.showFeatures = !this.showFeatures;
+                await game.settings.set(MODULE.ID, 'showFeaturesFavorites', this.showFeatures);
                 break;
             case 'inventory':
                 this.showInventory = !this.showInventory;
@@ -262,6 +270,13 @@ export class FavoritesPanel {
             $(event.currentTarget)
                 .toggleClass('active', this.showWeapons)
                 .toggleClass('faded', !this.showWeapons);
+        });
+
+        html.find('.favorites-features-toggle').click(async (event) => {
+            await this._toggleFilter('features');
+            $(event.currentTarget)
+                .toggleClass('active', this.showFeatures)
+                .toggleClass('faded', !this.showFeatures);
         });
 
         html.find('.favorites-inventory-toggle').click(async (event) => {

@@ -177,6 +177,13 @@ export const registerSettings = function() {
         default: true
     });
 
+    game.settings.register(MODULE.ID, 'showFeaturesFavorites', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
     game.settings.register(MODULE.ID, 'showWeaponFavorites', {
         scope: 'client',
         config: false,
