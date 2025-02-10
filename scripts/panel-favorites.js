@@ -93,6 +93,9 @@ export class FavoritesPanel {
                     await panelManager.spellsPanel.render(panelManager.spellsPanel.element);
                 }
 
+                // Update the entire tray to refresh handle favorites
+                await panelManager.updateTray();
+
                 blacksmith?.utils.postConsoleAndNotification(
                     "SQUIRE | Panel updates complete",
                     { itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },

@@ -84,9 +84,9 @@ export class PanelManager {
             const trayHtml = await renderTemplate(TEMPLATES.TRAY, { actor: this.actor });
             const newTrayElement = $(trayHtml);
             
-            // Preserve expanded/pinned state
+            // Preserve expanded/pinned state without animation
             if (PanelManager.element.hasClass('expanded')) {
-                newTrayElement.addClass('expanded');
+                newTrayElement.addClass('expanded').css('animation', 'none');
             }
             if (PanelManager.element.hasClass('pinned')) {
                 newTrayElement.addClass('pinned');
@@ -99,6 +99,11 @@ export class PanelManager {
             // Re-attach listeners and render panels
             this.activateListeners(PanelManager.element);
             await this.renderPanels(PanelManager.element);
+
+            // Remove the animation override after a brief delay
+            setTimeout(() => {
+                PanelManager.element.css('animation', '');
+            }, 100);
         }
     }
 
