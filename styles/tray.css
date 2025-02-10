@@ -166,14 +166,22 @@
 }
 
 /* Specific condition colors */
-.squire-tray[data-position="left"] .condition-icon[title="Poisoned"] { color: #4caf50; }
-.squire-tray[data-position="left"] .condition-icon[title="Stunned"] { color: #ffc107; }
-.squire-tray[data-position="left"] .condition-icon[title="Paralyzed"] { color: #2196f3; }
-.squire-tray[data-position="left"] .condition-icon[title="Prone"] { color: #ff5722; }
-.squire-tray[data-position="left"] .condition-icon[title="Targeted"] { color: #f44336; }
-.squire-tray[data-position="left"] .condition-icon[title="Concentrating"] { color: #9c27b0; }
-.squire-tray[data-position="left"] .condition-icon[title="Blessed"] { color: #ffeb3b; }
-.squire-tray[data-position="left"] .condition-icon[title="Invisible"] { color: #90a4ae; }
+.squire-tray[data-position="left"] .condition-icon[title="Poisoned"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Stunned"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Paralyzed"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Prone"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Targeted"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Blessed"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Invisible"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Grappled"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Frightened"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Charmed"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Blinded"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Deafened"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Diseased"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Restrained"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Petrified"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Inaudible"] { color: #aaa; }
 
 /* Handle Stats Styling */
 .squire-tray[data-position="left"] .handle-stats-primary,
@@ -191,7 +199,7 @@
 
 .squire-tray[data-position="left"] .tray-handle-content {
     font-size: 1.1em;
-    color: #aaa;
+    color: #ffffff;
     font-weight: 900;
 }
 
@@ -243,8 +251,8 @@
     color: #aaaaaa4d;
 	font-size: 1.2em;
     content: "•";
-	margin-top: 12px;
-	margin-bottom: 12px;
+	margin-top: 8px;
+	margin-bottom: 8px;
 }
 
 .squire-tray[data-position="left"] .tray-handle-separator.line {
@@ -253,15 +261,15 @@
     width: 18px;
     height: 1px;
     display: inline-block;
-    margin-top: 20px;
-	margin-bottom: 20px;
+    margin-top: 12px;
+	margin-bottom: 12px;
     vertical-align: middle;
 }
 
 .squire-tray[data-position="left"] .tray-handle-separator.spacer {
     width: 0px;
     display: inline-block;
-    margin-top: 16px;
+    margin-top: 12px;
     vertical-align: middle;
 }
 

@@ -39,15 +39,47 @@
 
     {{#if showHandleConditions}}
         <span class="handle-conditions">
-            {{#if actor.system.conditions.poisoned}}<i class="fas fa-skull-crossbones condition-icon" title="Poisoned"></i>{{/if}}
-            {{#if actor.system.conditions.stunned}}<i class="fas fa-dizzy condition-icon" title="Stunned"></i>{{/if}}
-            {{#if actor.system.conditions.paralyzed}}<i class="fas fa-bolt condition-icon" title="Paralyzed"></i>{{/if}}
-            {{#if actor.system.conditions.prone}}<i class="fas fa-arrow-down condition-icon" title="Prone"></i>{{/if}}
-            {{#if actor.system.isTargeted}}<i class="fas fa-bullseye condition-icon" title="Targeted"></i>{{/if}}
-            {{#if actor.system.isConcentrating}}<i class="fas fa-shield-alt condition-icon" title="Concentrating"></i>{{/if}}
-            {{#if actor.system.conditions.blessed}}<i class="fas fa-hand-holding-heart condition-icon" title="Blessed"></i>{{/if}}
-            {{#if actor.system.conditions.invisible}}<i class="fas fa-eye-slash condition-icon" title="Invisible"></i>{{/if}}
+            {{#if (includes effects "Poisoned")}}<i class="fas fa-skull-crossbones condition-icon" title="Poisoned"></i>{{/if}}
+            {{#if (includes effects "Stunned")}}<i class="fas fa-dizzy condition-icon" title="Stunned"></i>{{/if}}
+            {{#if (includes effects "Paralyzed")}}<i class="fas fa-bolt condition-icon" title="Paralyzed"></i>{{/if}}
+            {{#if (includes effects "Prone")}}<i class="fas fa-arrow-down condition-icon" title="Prone"></i>{{/if}}
+
+            {{#if (includes effects "Opportunity Attack")}}
+                {{!-- <i class="fas fa-bullseye condition-icon" title="Targeted"></i> --}}
+            {{/if}}
+
+            {{#if (includes effects "Bless")}}<i class="fas fa-hand-holding-heart condition-icon" title="Blessed"></i>{{/if}}
+
+            {{#if (includes effects "Invisible")}}<i class="fas fa-eye-slash condition-icon" title="Invisible"></i>{{/if}}
+            {{#if (includes effects "Grappled")}}<i class="fas fa-hand-rock condition-icon" title="Grappled"></i>{{/if}}
+            {{#if (includes effects "Frightened")}}<i class="fas fa-ghost condition-icon" title="Frightened"></i>{{/if}}
+            {{#if (includes effects "Charmed")}}<i class="fas fa-heart condition-icon" title="Charmed"></i>{{/if}}
+            {{#if (includes effects "Blinded")}}<i class="fas fa-eye-slash condition-icon" title="Blinded"></i>{{/if}}
+            {{#if (includes effects "Deafened")}}<i class="fas fa-deaf condition-icon" title="Deafened"></i>{{/if}}
+            {{#if (includes effects "Diseased")}}<i class="fas fa-virus condition-icon" title="Diseased"></i>{{/if}}
+            {{#if (includes effects "Restrained")}}<i class="fas fa-link condition-icon" title="Restrained"></i>{{/if}}
+            {{#if (includes effects "Petrified")}}<i class="fas fa-mountain condition-icon" title="Petrified"></i>{{/if}}
+            {{#if (includes effects "Inaudible")}}<i class="fas fa-volume-mute condition-icon" title="Inaudible"></i>{{/if}}
         </span>
+        {{#if (or 
+            (includes effects "Poisoned")
+            (includes effects "Stunned")
+            (includes effects "Paralyzed")
+            (includes effects "Prone")
+            (includes effects "Bless")
+            (includes effects "Invisible")
+            (includes effects "Grappled")
+            (includes effects "Frightened")
+            (includes effects "Charmed")
+            (includes effects "Blinded")
+            (includes effects "Deafened")
+            (includes effects "Diseased")
+            (includes effects "Restrained")
+            (includes effects "Petrified")
+            (includes effects "Inaudible")
+        )}}
+            <span class="tray-handle-separator line"></span>
+        {{/if}}
     {{/if}}
     <div class="handle-character">{{actor.name}}</div>
 {{else}}Select a Character{{/if}} 

@@ -31,10 +31,20 @@ export class PanelManager {
         blacksmith?.utils.postConsoleAndNotification(
             "SQUIRE | Actor Data for Conditions",
             {
-                conditions: actor?.system?.conditions,
-                effects: actor?.effects?.map(e => e.label),
+                actorId: actor?.id,
+                actorName: actor?.name,
+                systemData: actor?.system,
+                effects: actor?.effects?.map(e => ({
+                    id: e.id,
+                    label: e.label,
+                    icon: e.icon,
+                    flags: e.flags,
+                    statuses: e.statuses
+                })),
                 statuses: actor?.statuses,
-                flags: actor?.flags
+                flags: actor?.flags,
+                tempEffects: actor?.temporaryEffects,
+                activeEffects: actor?.effects?.filter(e => !e.disabled).map(e => e.label)
             },
             false,
             true,
@@ -63,6 +73,7 @@ export class PanelManager {
         if (!document.getElementById('squire-tray')) {
             const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
                 actor: this.actor,
+                effects: this.actor.effects?.map(e => e.label) || [],
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -90,6 +101,7 @@ export class PanelManager {
             // Re-render the entire tray template
             const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
                 actor: this.actor,
+                effects: this.actor.effects?.map(e => e.label) || [],
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -125,6 +137,7 @@ export class PanelManager {
         if (PanelManager.element) {
             const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
                 actor: this.actor,
+                effects: this.actor.effects?.map(e => e.label) || [],
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
