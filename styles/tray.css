@@ -59,6 +59,10 @@
 
 }
 
+.squire-tray .tray-content.drop-hover * {
+    pointer-events: none;
+}
+
 /* TRAY Left Position */
 .squire-tray[data-position="left"] {
     top: var(--squire-tray-top-offset);
