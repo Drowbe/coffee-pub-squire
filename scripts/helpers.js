@@ -87,7 +87,19 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('getFavorites', function(actor) {
         const favorites = actor.getFlag('coffee-pub-squire', 'favorites') || [];
         return actor.items
-            .filter(item => favorites.includes(item.id))
+            .filter(item => {
+                if (!favorites.includes(item.id)) return false;
+                
+                // Check if item is equipped/prepared based on type
+                if (item.type === 'spell') {
+                    return item.system.level === 0 || item.system.preparation?.prepared; // Cantrips are always prepared
+                } else if (item.type === 'weapon' || item.type === 'equipment') {
+                    return item.system.equipped;
+                }
+                
+                // For other item types (consumables, etc), always show if favorited
+                return true;
+            })
             .map(item => ({
                 id: item.id,
                 name: item.name,
