@@ -130,6 +130,17 @@ export class PanelManager {
             return false;
         });
 
+        // Handle favorite item clicks
+        handle.find('.handle-favorite-icon').on('click', async (event) => {
+            if ($(event.target).hasClass('handle-favorite-roll-overlay')) {
+                const itemId = $(event.currentTarget).data('item-id');
+                const item = this.actor.items.get(itemId);
+                if (item) {
+                    await item.use({}, { event });
+                }
+            }
+        });
+
         // Pin button handling
         const pinButton = handle.find('.pin-button');
         pinButton.on('click', async (event) => {

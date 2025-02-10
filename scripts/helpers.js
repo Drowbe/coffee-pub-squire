@@ -82,4 +82,16 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('toUpperCase', function(str) {
         return str.toUpperCase();
     });
+
+    // Helper to get favorites from actor
+    Handlebars.registerHelper('getFavorites', function(actor) {
+        const favorites = actor.getFlag('coffee-pub-squire', 'favorites') || [];
+        return actor.items
+            .filter(item => favorites.includes(item.id))
+            .map(item => ({
+                id: item.id,
+                name: item.name,
+                img: item.img || 'icons/svg/item-bag.svg'
+            }));
+    });
 }; 

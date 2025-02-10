@@ -1,5 +1,13 @@
 {{#if actor}}
-
+<div class="handle-favorites">
+    {{#each (getFavorites actor)}}
+    <div class="handle-favorite-icon" data-item-id="{{this.id}}">
+        <img src="{{this.img}}" alt="{{this.name}}"/>
+        <i class="fas fa-dice-d20 handle-favorite-roll-overlay"></i>
+    </div>
+    {{/each}}
+</div>
+<span class="tray-handle-separator line"></span>
 <span class="handle-stats">
     <span class="tray-handle-content">{{actor.system.attributes.hp.value}}</span> <span class="tray-handle-label">HP</span>
     <div class="handle-health-bar">
