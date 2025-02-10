@@ -93,10 +93,20 @@ export class FeaturesPanel {
 
         // Feature info click (feather icon)
         html.find('.tray-buttons .fa-feather').click(async (event) => {
-            const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
-            const feature = this.actor.items.get(featureId);
-            if (feature) {
+            try {
+                const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
+                console.log('Feature ID:', featureId);
+                
+                const feature = this.actor.items.get(featureId);
+                if (!feature) {
+                    console.error('Feature not found:', featureId);
+                    return;
+                }
+
                 feature.sheet.render(true);
+            } catch (error) {
+                console.error('Error rendering feature sheet:', error);
+                ui.notifications.error("Error displaying feature sheet.");
             }
         });
 
