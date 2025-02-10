@@ -26,6 +26,21 @@ export class PanelManager {
         // If we have an instance with the same actor, do nothing
         if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
 
+        // Log actor data for debugging conditions
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Actor Data for Conditions",
+            {
+                conditions: actor?.system?.conditions,
+                effects: actor?.effects?.map(e => e.label),
+                statuses: actor?.statuses,
+                flags: actor?.flags
+            },
+            false,
+            true,
+            false
+        );
+
         // Create or update instance
         PanelManager.currentActor = actor;
         if (!PanelManager.instance) {
@@ -65,6 +80,24 @@ export class PanelManager {
 
     async updateTray() {
         if (PanelManager.element) {
+            // Re-render the entire tray template
+            const trayHtml = await renderTemplate(TEMPLATES.TRAY, { actor: this.actor });
+            const newTrayElement = $(trayHtml);
+            
+            // Preserve expanded/pinned state
+            if (PanelManager.element.hasClass('expanded')) {
+                newTrayElement.addClass('expanded');
+            }
+            if (PanelManager.element.hasClass('pinned')) {
+                newTrayElement.addClass('pinned');
+            }
+            
+            // Replace the old tray with the new one
+            PanelManager.element.replaceWith(newTrayElement);
+            PanelManager.element = newTrayElement;
+            
+            // Re-attach listeners and render panels
+            this.activateListeners(PanelManager.element);
             await this.renderPanels(PanelManager.element);
         }
     }

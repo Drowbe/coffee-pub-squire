@@ -28,8 +28,32 @@ export const registerHelpers = function() {
         return a / b;
     });
 
+    // Helper to check if array includes a value
+    Handlebars.registerHelper('includes', function(array, value) {
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Checking includes",
+            { array, value },
+            false,
+            true,
+            false
+        );
+        
+        if (!array || !Array.isArray(array)) return false;
+        return array.includes(value);
+    });
+
     // Helper to check if array has any items matching a condition
-    Handlebars.registerHelper('some', function(array, itemName, property, value) {
+    Handlebars.registerHelper('some', function(array, property, value) {
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        blacksmith?.utils.postConsoleAndNotification(
+            "SQUIRE | Checking condition",
+            { array, property, value },
+            false,
+            true,
+            false
+        );
+
         if (!array || !array.length) return false;
         return array.some(item => {
             if (property.includes('.')) {

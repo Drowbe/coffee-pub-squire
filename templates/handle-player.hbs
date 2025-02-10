@@ -1,0 +1,29 @@
+{{#if actor}}
+
+<span class="handle-stats">
+    <span class="tray-handle-content">{{actor.system.attributes.hp.value}}</span> <span class="tray-handle-label">HP</span>
+    <span class="tray-handle-separator dot">•</span>
+    <span class="tray-handle-content">{{actor.system.attributes.ac.value}}</span> <span class="tray-handle-label">AC</span>
+    <span class="tray-handle-separator dot">•</span>
+    <span class="tray-handle-content">{{actor.system.attributes.movement.walk}}</span> <span class="tray-handle-label">WALKING</span>
+
+    <span class="tray-handle-separator line"></span>
+
+    <span class="tray-handle-content">{{numberFormat actor.system.attributes.init.total sign=true}}</span> <span class="tray-handle-label">INIT</span>
+    <span class="tray-handle-separator dot">•</span>
+    <span class="tray-handle-content">+{{actor.system.attributes.prof}}</span> <span class="tray-handle-label">PROF</span>
+</span>
+<span class="handle-conditions">
+    {{#if actor.system.conditions.poisoned}}<i class="fas fa-skull-crossbones condition-icon" title="Poisoned"></i>{{/if}}
+    {{#if actor.system.conditions.stunned}}<i class="fas fa-dizzy condition-icon" title="Stunned"></i>{{/if}}
+    {{#if actor.system.conditions.paralyzed}}<i class="fas fa-bolt condition-icon" title="Paralyzed"></i>{{/if}}
+    {{#if actor.system.conditions.prone}}<i class="fas fa-arrow-down condition-icon" title="Prone"></i>{{/if}}
+    {{#if actor.system.isTargeted}}<i class="fas fa-bullseye condition-icon" title="Targeted"></i>{{/if}}
+    {{#if actor.system.isConcentrating}}<i class="fas fa-shield-alt condition-icon" title="Concentrating"></i>{{/if}}
+    {{#if actor.system.conditions.blessed}}<i class="fas fa-hand-holding-heart condition-icon" title="Blessed"></i>{{/if}}
+    {{#if actor.system.conditions.invisible}}<i class="fas fa-eye-slash condition-icon" title="Invisible"></i>{{/if}}
+</span>
+<span class="tray-handle-separator line"></span>
+<div class="handle-character">{{actor.name}}</div>
+<span class="tray-handle-separator spacer"></span>
+{{else}}Select a Character{{/if}} 

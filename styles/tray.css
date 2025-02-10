@@ -115,15 +115,147 @@
 .squire-tray[data-position="left"].expanded .tray-handle i.fa-chevron-right {
     transform: rotate(180deg);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* TRAY Handle Title */
 .squire-tray[data-position="left"] .handle-left {
     writing-mode: vertical-lr;
     transform: rotate(180deg);
     display: flex;
     align-items: center;
-    gap: 2.0rem;
     white-space: nowrap;
     order: 2;
+}
+
+/* Handle Conditions */
+.squire-tray[data-position="left"] .handle-conditions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+}
+
+.squire-tray[data-position="left"] .condition-icon {
+    font-size: 0.9em;
+    color: #9f9275;
+    cursor: help;
+    transition: color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .condition-icon:hover {
+    color: #fff;
+}
+
+/* Specific condition colors */
+.squire-tray[data-position="left"] .condition-icon[title="Poisoned"] { color: #4caf50; }
+.squire-tray[data-position="left"] .condition-icon[title="Stunned"] { color: #ffc107; }
+.squire-tray[data-position="left"] .condition-icon[title="Paralyzed"] { color: #2196f3; }
+.squire-tray[data-position="left"] .condition-icon[title="Prone"] { color: #ff5722; }
+.squire-tray[data-position="left"] .condition-icon[title="Targeted"] { color: #f44336; }
+.squire-tray[data-position="left"] .condition-icon[title="Concentrating"] { color: #9c27b0; }
+.squire-tray[data-position="left"] .condition-icon[title="Blessed"] { color: #ffeb3b; }
+.squire-tray[data-position="left"] .condition-icon[title="Invisible"] { color: #90a4ae; }
+
+
+
+/* TRAY Handle Title */
+.squire-tray[data-position="left"] .handle-left {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    order: 2;
+}
+
+
+/* Handle Stats Styling */
+.squire-tray[data-position="left"] .handle-stats {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+    color: #aaa;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .tray-handle-content {
+    font-size: 1.1em;
+    color: #aaa;
+    font-weight: 900;
+}
+
+
+
+
+
+
+
+.squire-tray[data-position="left"] .tray-handle-label {
+    font-size: 0.6em;
+	padding-top: 4px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+	padding-right: 0px;
+}
+
+.squire-tray[data-position="left"] .handle-character {
+    font-size: 0.8em;
+    color: #aaa;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator {
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator.dot {
+    color: #aaaaaa4d;
+	font-size: 1.1em;
+    content: "•";
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator.line {
+    font-size: 0.8em;
+    border-top: 2px dotted #aaaaaa4d;
+    width: 18px;
+    height: 1px;
+    display: inline-block;
+    margin-top: 4px;
+	margin-bottom: 4px;
+    vertical-align: middle;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator.spacer {
+    width: 0px;
+    display: inline-block;
+    margin-top: 4px;
+    vertical-align: middle;
+}
+
+
+
+
+
+
+
+
+/* Ensure the dots are visible and properly spaced */
+.squire-tray[data-position="left"] .handle-stats {
+    font-weight: 900;
 }
 /* TRAY Handle Pin Button */
 .squire-tray[data-position="left"] .pin-button {
@@ -146,6 +278,13 @@
     margin: 0px;
 	padding: 0px;
 }
+
+
+
+
+
+
+
 /* TRAY Panel Top Container */
 .squire-tray[data-position="left"] .panel-container {
     display: block;

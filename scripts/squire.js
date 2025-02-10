@@ -38,6 +38,10 @@ Hooks.once('init', async function() {
             uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
         }
     }
+
+    // Add this near the top of the initialization code
+    const handlePlayerTemplate = await fetch('modules/coffee-pub-squire/templates/handle-player.hbs').then(response => response.text());
+    Handlebars.registerPartial('handle-player', handlePlayerTemplate);
 });
 
 Hooks.once('ready', async function() {
