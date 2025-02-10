@@ -5,6 +5,7 @@ import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { ControlPanel } from './panel-control.js';
+import { FeaturesPanel } from './panel-features.js';
 
 export class PanelManager {
     static instance = null;
@@ -20,6 +21,7 @@ export class PanelManager {
         this.spellsPanel = new SpellsPanel(actor);
         this.weaponsPanel = new WeaponsPanel(actor);
         this.inventoryPanel = new InventoryPanel(actor);
+        this.featuresPanel = new FeaturesPanel(actor);
     }
 
     static async initialize(actor = null) {
@@ -64,6 +66,7 @@ export class PanelManager {
             PanelManager.instance.spellsPanel = new SpellsPanel(actor);
             PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
             PanelManager.instance.inventoryPanel = new InventoryPanel(actor);
+            PanelManager.instance.featuresPanel = new FeaturesPanel(actor);
             await PanelManager.instance.updateTray();
         }
     }
@@ -157,6 +160,7 @@ export class PanelManager {
         await this.spellsPanel.render(element);
         await this.weaponsPanel.render(element);
         await this.inventoryPanel.render(element);
+        await this.featuresPanel.render(element);
     }
 
     activateListeners(tray) {

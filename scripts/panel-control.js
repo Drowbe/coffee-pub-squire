@@ -24,7 +24,7 @@ export class ControlPanel {
     }
 
     _updateVisibility() {
-        ['favorites', 'weapons', 'spells', 'inventory'].forEach(panel => {
+        ['favorites', 'weapons', 'spells', 'features', 'inventory'].forEach(panel => {
             const isVisible = game.settings.get(MODULE.ID, `show${panel.charAt(0).toUpperCase() + panel.slice(1)}Panel`);
             // Update icon state
             this.element.find(`[data-panel="control"] .control-toggle[data-toggle-panel="${panel}"]`)
@@ -42,11 +42,11 @@ export class ControlPanel {
         searchTerm = searchTerm.toLowerCase();
 
         // Get all item rows across all panels
-        const items = this.element.find('.panel-containers.stacked .panel-container.visible .inventory-item, .panel-containers.stacked .panel-container.visible .weapon-item, .panel-containers.stacked .panel-container.visible .spell-item, .panel-containers.stacked .panel-container.visible .item');
+        const items = this.element.find('.panel-containers.stacked .panel-container.visible .inventory-item, .panel-containers.stacked .panel-container.visible .weapon-item, .panel-containers.stacked .panel-container.visible .spell-item, .panel-containers.stacked .panel-container.visible .feature-item, .panel-containers.stacked .panel-container.visible .item');
 
         items.each((_, item) => {
             const $item = $(item);
-            const itemName = $item.find('.inventory-name, .weapon-name, .spell-name, .item-name').text().toLowerCase();
+            const itemName = $item.find('.inventory-name, .weapon-name, .spell-name, .feature-name, .item-name').text().toLowerCase();
             
             if (searchTerm === '' || itemName.includes(searchTerm)) {
                 $item.show();

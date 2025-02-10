@@ -12,6 +12,7 @@ export const TEMPLATES = {
     PANEL_WEAPONS: `modules/${MODULE.ID}/templates/panel-weapons.hbs`,
     PANEL_INVENTORY: `modules/${MODULE.ID}/templates/panel-inventory.hbs`,
     PANEL_FAVORITES: `modules/${MODULE.ID}/templates/panel-favorites.hbs`,
+    PANEL_FEATURES: `modules/${MODULE.ID}/templates/panel-features.hbs`,
     HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`
 };
 
@@ -19,7 +20,8 @@ export const PANELS = {
     FAVORITES: 'favorites',
     SPELLS: 'spells',
     WEAPONS: 'weapons',
-    INVENTORY: 'inventory'
+    INVENTORY: 'inventory',
+    FEATURES: 'features'
 };
 
 export const CSS_CLASSES = {

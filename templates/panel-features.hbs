@@ -1,0 +1,48 @@
+<div class="features-panel">
+    {{#if (eq position "left")}}
+    <div class="section-header">
+        <div class="header-left">
+            <i class="fas fa-stars"></i> Features
+        </div>
+        <div class="header-right">
+            {{!-- Add any additional header controls here if needed --}}
+        </div>
+    </div>
+    {{/if}}
+    <div class="weapon-controls">
+        <div class="search-container">
+            <input type="text" class="weapon-search" placeholder="Search Features...">
+            <i class="fas fa-times search-clear" title="Clear Search"></i>
+        </div>
+    </div>
+    <div class="weapons-list">
+        {{#each features}}
+        <div class="weapon-item" data-feature-id="{{this.id}}">
+            <div class="weapon-row">
+                <div class="weapon-image-container">
+                    <img class="weapon-image" src="{{this.img}}" alt="{{this.name}}"/>
+                    <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+                </div>
+                <div class="weapon-name">
+                    {{this.name}}
+                    {{#if this.actionType}}
+                        <span class="weapon-quantity">
+                            {{#if (eq this.actionType "action")}}<i class="fas fa-circle-a"></i>
+                            {{else if (eq this.actionType "bonus")}}<i class="fas fa-circle-b"></i>
+                            {{else if (eq this.actionType "reaction")}}<i class="fas fa-circle-r"></i>
+                            {{else if (eq this.actionType "special")}}<i class="fas fa-circle-s"></i>{{/if}}
+                        </span>
+                    {{/if}}
+                    {{#if (and this.system.uses this.system.uses.max)}}
+                        <span class="weapon-quantity">({{this.system.uses.value}}/{{this.system.uses.max}})</span>
+                    {{/if}}
+                </div>
+                <div class="tray-buttons">
+                    <i class="fas fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                    <i class="fas fa-feather"></i>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div> 
