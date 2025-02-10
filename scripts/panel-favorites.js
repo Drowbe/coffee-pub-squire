@@ -93,8 +93,8 @@ export class FavoritesPanel {
                     await panelManager.spellsPanel.render(panelManager.spellsPanel.element);
                 }
 
-                // Update the entire tray to refresh handle favorites
-                await panelManager.updateTray();
+                // Update just the handle to refresh favorites
+                await panelManager.updateHandle();
 
                 blacksmith?.utils.postConsoleAndNotification(
                     "SQUIRE | Panel updates complete",

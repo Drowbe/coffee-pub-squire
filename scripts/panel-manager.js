@@ -107,6 +107,15 @@ export class PanelManager {
         }
     }
 
+    async updateHandle() {
+        if (PanelManager.element) {
+            const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, { actor: this.actor });
+            const handle = PanelManager.element.find('.handle-left');
+            handle.html(handleTemplate);
+            this.activateListeners(PanelManager.element);
+        }
+    }
+
     async renderPanels(element) {
         await this.characterPanel.render(element);
         await this.controlPanel.render(element);
