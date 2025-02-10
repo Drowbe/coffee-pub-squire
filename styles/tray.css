@@ -19,6 +19,75 @@
     width: var(--squire-tray-width);
 }
 
+/* Drop Zone Styles */
+.squire-tray .tray-content.drop-hover {
+    position: relative;
+    outline: 2px dashed #9f9275;
+    outline-offset: -8px;
+    border-radius: 4px;
+}
+
+.squire-tray .tray-content.drop-hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 100;
+    pointer-events: none;
+    border: 2px dashed #9f9275;
+    border-radius: 4px;
+}
+
+.squire-tray .tray-content.drop-hover::after {
+    content: attr(data-drop-message, "Drop to Add");
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+    pointer-events: none;
+}
+
+/* Custom colors for different drop types */
+.squire-tray .tray-content.drop-hover[data-drop-type="item"] {
+    outline-color: #4a90e2;
+}
+.squire-tray .tray-content.drop-hover[data-drop-type="item"]::before {
+    border-color: #4a90e2;
+}
+.squire-tray .tray-content.drop-hover[data-drop-type="item"]::after {
+    color: #4a90e2;
+}
+
+.squire-tray .tray-content.drop-hover[data-drop-type="itemdirectory"] {
+    outline-color: #9f9275;
+}
+.squire-tray .tray-content.drop-hover[data-drop-type="itemdirectory"]::before {
+    border-color: #9f9275;
+}
+.squire-tray .tray-content.drop-hover[data-drop-type="itemdirectory"]::after {
+    color: #9f9275;
+}
+
+.squire-tray .tray-content.drop-hover[data-drop-type="actor"] {
+    outline-color: #4d8826;
+}
+.squire-tray .tray-content.drop-hover[data-drop-type="actor"]::before {
+    border-color: #4d8826;
+}
+.squire-tray .tray-content.drop-hover[data-drop-type="actor"]::after {
+    color: #4d8826;
+}
+
 /* TRAY Left Position */
 .squire-tray[data-position="left"] {
     top: var(--squire-tray-top-offset);

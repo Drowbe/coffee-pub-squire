@@ -221,6 +221,104 @@ export class PanelManager {
             
             return false;
         });
+
+        // Add drop handling
+        const trayContent = tray.find('.tray-content');
+        
+        // Drag enter/leave events for visual feedback
+        trayContent.on('dragenter', (event) => {
+            event.preventDefault();
+            try {
+                const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
+                const dropType = data.type;
+                let dropMessage = "Drop to Add";
+                
+                // Customize message based on type
+                switch(dropType) {
+                    case 'Item':
+                        dropMessage = `Drop to Add ${data.name || 'Item'}`;
+                        break;
+                    case 'ItemDirectory':
+                        dropMessage = `Drop to Add from Compendium`;
+                        break;
+                    case 'Actor':
+                        dropMessage = `Drop to Add from Character`;
+                        break;
+                }
+                
+                trayContent.addClass('drop-hover');
+                trayContent.attr('data-drop-type', dropType.toLowerCase());
+                trayContent.attr('data-drop-message', dropMessage);
+            } catch (error) {
+                // If we can't parse the data, use default message
+                trayContent.addClass('drop-hover');
+            }
+        });
+
+        trayContent.on('dragleave', (event) => {
+            event.preventDefault();
+            if (!event.relatedTarget?.closest('.tray-content')) {
+                trayContent.removeClass('drop-hover');
+                trayContent.removeAttr('data-drop-type');
+                trayContent.removeAttr('data-drop-message');
+            }
+        });
+
+        // Handle drops
+        trayContent.on('drop', async (event) => {
+            event.preventDefault();
+            trayContent.removeClass('drop-hover');
+
+            try {
+                const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Drop data received",
+                    data,
+                    false,
+                    true,
+                    false
+                );
+
+                if (!this.actor) {
+                    ui.notifications.warn("Please select a character before dropping items.");
+                    return;
+                }
+
+                // Handle different drop types
+                let item;
+                switch (data.type) {
+                    case 'Item':
+                        item = await Item.implementation.fromDropData(data);
+                        if (!item) return;
+                        // Create the item on the actor
+                        await this.actor.createEmbeddedDocuments('Item', [item.toObject()]);
+                        break;
+
+                    case 'ItemDirectory':
+                        const itemData = game.items.get(data.uuid)?.toObject();
+                        if (itemData) {
+                            await this.actor.createEmbeddedDocuments('Item', [itemData]);
+                        }
+                        break;
+
+                    // Add more cases as needed for other drop types
+                }
+
+                // Update the tray display
+                await this.updateTray();
+
+            } catch (error) {
+                console.error(`${MODULE.TITLE} | Error handling drop:`, error);
+            }
+        });
+
+        // Prevent default drag over behavior
+        trayContent.on('dragover', (event) => {
+            event.preventDefault();
+            event.originalEvent.dataTransfer.dropEffect = 'copy';
+        });
     }
 }
 
