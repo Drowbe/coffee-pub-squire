@@ -202,19 +202,54 @@
 
 
 
+
+.squire-tray[data-position="left"] .handle-health-bar {
+    height: 50px;
+    width: 18px;
+    background: #000000;
+    border: 1px solid #aaaaaab4;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+    writing-mode: vertical-lr;
+    position: relative;
+}
+
+.squire-tray[data-position="left"] .handle-health-fill {
+    width: 100%;
+    background: #1d4521;
+    transition: height 0.3s ease;
+    position: absolute;
+    top: 0;
+	border: 2px solid #000000;
+	border-radius: 4px;
+}
+
+
+
+
+
+
 .squire-tray[data-position="left"] .tray-handle-label {
     font-size: 0.6em;
 	padding-top: 4px;
 	padding-bottom: 0px;
 	padding-left: 0px;
 	padding-right: 0px;
+	color: #aaaaaab4;
 }
 
+
 .squire-tray[data-position="left"] .handle-character {
-    font-size: 0.8em;
-    color: #aaa;
+    font-size: 1.4em;
+    color: #ffffff;
     font-weight: 900;
 }
+
+
 
 .squire-tray[data-position="left"] .tray-handle-separator {
     font-weight: 900;
@@ -222,10 +257,10 @@
 
 .squire-tray[data-position="left"] .tray-handle-separator.dot {
     color: #aaaaaa4d;
-	font-size: 1.1em;
+	font-size: 1.2em;
     content: "•";
-	margin-top: 4px;
-	margin-bottom: 4px;
+	margin-top: 12px;
+	margin-bottom: 12px;
 }
 
 .squire-tray[data-position="left"] .tray-handle-separator.line {
@@ -234,15 +269,15 @@
     width: 18px;
     height: 1px;
     display: inline-block;
-    margin-top: 4px;
-	margin-bottom: 4px;
+    margin-top: 20px;
+	margin-bottom: 20px;
     vertical-align: middle;
 }
 
 .squire-tray[data-position="left"] .tray-handle-separator.spacer {
     width: 0px;
     display: inline-block;
-    margin-top: 4px;
+    margin-top: 16px;
     vertical-align: middle;
 }
 

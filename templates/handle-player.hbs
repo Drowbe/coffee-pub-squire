@@ -2,10 +2,13 @@
 
 <span class="handle-stats">
     <span class="tray-handle-content">{{actor.system.attributes.hp.value}}</span> <span class="tray-handle-label">HP</span>
+    <div class="handle-health-bar">
+        <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
+    </div>
     <span class="tray-handle-separator dot">•</span>
     <span class="tray-handle-content">{{actor.system.attributes.ac.value}}</span> <span class="tray-handle-label">AC</span>
     <span class="tray-handle-separator dot">•</span>
-    <span class="tray-handle-content">{{actor.system.attributes.movement.walk}}</span> <span class="tray-handle-label">WALKING</span>
+    <span class="tray-handle-content">{{actor.system.attributes.movement.walk}}</span> <span class="tray-handle-label">MOVE</span>
 
     <span class="tray-handle-separator line"></span>
 
