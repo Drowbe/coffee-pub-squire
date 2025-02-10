@@ -105,7 +105,7 @@ export class InventoryPanel {
         });
 
         // Toggle equipped state (box icon)
-        html.find('.tray-buttons .fa-box').click(async (event) => {
+        html.find('.tray-buttons .fa-shield-alt').click(async (event) => {
             const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
             const item = this.actor.items.get(itemId);
             if (item) {
