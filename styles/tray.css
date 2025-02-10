@@ -216,6 +216,7 @@
 .squire-tray[data-position="left"] .section-header .header-right {
     display: flex;
     align-items: center;
+    gap: 6px;
 }
 .squire-tray[data-position="left"] .section-header .filter-toggle {
     cursor: pointer;
@@ -249,6 +250,18 @@
 .squire-tray[data-position="left"] .section-header .control-toggle.active {
     opacity: 1;
 }
+
+
+.squire-tray[data-position="left"] .section-header .favorites-clear-all {
+    cursor: pointer;
+    opacity: 1;
+    transition: color 0.2s ease;
+    color: #aaa;
+}
+.squire-tray[data-position="left"] .section-header .favorites-clear-all:hover {
+    color: #ff4444;
+} 
+
 
 /* TRAY Secion Headers */
 .squire-tray[data-position="left"] .level-header {
@@ -343,15 +356,7 @@
     opacity: 0.3;
 }
 
-.tray-buttons .fa-heart-circle-xmark {
-    color: #9f9275;
-}
-.tray-buttons .fa-heart-circle-xmark:hover {
-    color: #fff;
-}
-.tray-buttons .fa-heart-circle-xmark.faded {
-    opacity: 0.3;
-}
+
 /* TRAY Section Dice Overlays */
 .spell-roll-overlay,
 .weapon-roll-overlay {
@@ -1128,4 +1133,5 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-} 
+}
+

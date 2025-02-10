@@ -220,7 +220,7 @@ export class SpellsPanel {
         });
 
         // Toggle prepared state (cog icon)
-        html.find('.tray-buttons .fa-cog').click(async (event) => {
+        html.find('.tray-buttons .fa-sun').click(async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
