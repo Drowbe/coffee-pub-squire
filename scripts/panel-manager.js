@@ -184,7 +184,7 @@ export class PanelManager {
                 const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
                 if (blacksmith) {
                     const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
             }
             
@@ -216,7 +216,7 @@ export class PanelManager {
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
             if (blacksmith) {
                 const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
-                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
             }
             
             if (PanelManager.isPinned) {
@@ -254,7 +254,7 @@ export class PanelManager {
                 const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
                 if (blacksmith) {
                     const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
                 
                 // Customize message based on type
@@ -300,7 +300,7 @@ export class PanelManager {
                 // Play drop sound
                 if (blacksmith) {
                     const sound = game.settings.get(MODULE.ID, 'dropSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
                 
                 blacksmith?.utils.postConsoleAndNotification(
@@ -328,25 +328,25 @@ export class PanelManager {
                         
                         // Debug log the UUID generation
                         const itemUUID = this._getItemUUID(createdItem[0], data);
-                        blacksmith?.utils.postConsoleAndNotification(
-                            "SQUIRE | Generated UUID for Item drop",
-                            {
-                                data,
-                                createdItem: createdItem[0],
-                                generatedUUID: itemUUID
-                            },
-                            false,
-                            true,
-                            false,
-                            MODULE.TITLE
-                        );
+                        // blacksmith?.utils.postConsoleAndNotification(
+                        //     "SQUIRE | Generated UUID for Item drop",
+                        //     {
+                        //         data,
+                        //         createdItem: createdItem[0],
+                        //         generatedUUID: itemUUID
+                        //     },
+                        //     false,
+                        //     true,
+                        //     false,
+                        //     MODULE.TITLE
+                        // );
                         
                         // Send chat notification
                         const chatData = {
                             isPublic: true,
                             strCardIcon: this._getDropIcon(item.type),
                             strCardTitle: this._getDropTitle(item.type),
-                            strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p><p>${itemUUID}</p>`
+                            strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>`
                         };
                         const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
                         await ChatMessage.create({
@@ -380,7 +380,7 @@ export class PanelManager {
                                 isPublic: true,
                                 strCardIcon: this._getDropIcon(itemData.type),
                                 strCardTitle: this._getDropTitle(itemData.type),
-                                strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p><p>${dirItemUUID}</p>`
+                                strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p>`
                             };
                             const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, dirItemChatData);
                             await ChatMessage.create({
@@ -422,10 +422,10 @@ export class PanelManager {
     _getItemUUID(item, data) {
         // For compendium items
         if (data.pack) {
-            return `@UUID[Compendium.${data.pack}.Item.${data.id}]{${item.name}}`;
+            return `@UUID[Compendium.${data.pack}.Item.${item._id}]{${item.name}}`;
         }
         // For regular items
-        return `@UUID[Item.${item.id}]{${item.name}}`;
+        return `@UUID[Item.${item._id}]{${item.name}}`;
     }
 
     // Helper method to get the appropriate title based on item type
@@ -456,6 +456,14 @@ Hooks.on('controlToken', async (token, controlled) => {
     if (!PanelManager.isPinned && PanelManager.element) {
         PanelManager.element.removeClass('expanded');
         await PanelManager.initialize(token.actor);
+        
+        // Play tray open sound
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        if (blacksmith) {
+            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
+            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+        }
+        
         PanelManager.element.addClass('expanded');
         return;
     }

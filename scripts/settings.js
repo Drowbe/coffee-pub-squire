@@ -292,7 +292,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: false,
         type: String,
-        default: 'modules/coffee-pub-blacksmith/sounds/interface-button-01.mp3'
+        default: 'modules/coffee-pub-blacksmith/sounds/book-flip-02.mp3'
     });
 
     game.settings.register(MODULE.ID, 'dropSound', {
