@@ -280,6 +280,43 @@ export const registerSettings = function() {
         default: true
     });
 
+    // Character Panel Section Settings
+    game.settings.register(MODULE.ID, 'showCharacterSection', {
+        name: 'Show Character Section',
+        hint: 'Display character portrait and abilities in the character panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showXPSection', {
+        name: 'Show XP Section',
+        hint: 'Display experience bar and level in the character panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHPSection', {
+        name: 'Show HP Section',
+        hint: 'Display health bar and controls in the character panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showStatsSection', {
+        name: 'Show Stats Section',
+        hint: 'Display character stats in the character panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
     // Sound Settings
     game.settings.register(MODULE.ID, 'dragEnterSound', {
         scope: 'client',

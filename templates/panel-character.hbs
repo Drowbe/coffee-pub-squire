@@ -7,6 +7,7 @@
             <i class="fas fa-feather character-sheet-toggle" title="Open Character Sheet"></i>
         </div>
     </div>
+    {{#if showCharacterSection}}
     <div class="character-top">
         <div class="character-portrait">
             <img src="{{actor.img}}" alt="{{actor.name}}">
@@ -21,13 +22,17 @@
             {{/each}}
         </div>
     </div>
+    {{/if}}
     <div class="bars">
+        {{#if showXPSection}}
         <div class="bar-section">
             <div class="tray-title-small">XP: {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
             <div class="exp-bar">
                 <div class="exp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
             </div>
         </div>
+        {{/if}}
+        {{#if showHPSection}}
         <div class="bar-section">
             <div class="tray-title-small">HP: {{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}</div>
             <div class="hp-bar">
@@ -41,6 +46,7 @@
                     <span class="hp-label">DEFICIT</span>
                 </div>
             </div>
+            {{#if isGM}}
             <div class="hp-controls">
                 <button class="hp-btn death-toggle" title="Toggle Dead Status">
                     <i class="fas fa-skull"></i>
@@ -56,24 +62,28 @@
                     <i class="fas fa-heart"></i>
                 </button>
             </div>
-            <div class="stat-boxes">
-                <div class="stat-box">
-                    <i class="fas fa-gear"></i>
-                    <span class="stat-value">{{actor.system.details.level}}</span>
-                </div>
-                <div class="stat-box">
-                    <i class="fas fa-paw"></i>
-                    <span class="stat-value">{{actor.system.attributes.movement.walk}}</span>
-                </div>
-                <div class="stat-box">
-                    <i class="fas fa-shield"></i>
-                    <span class="stat-value">{{actor.system.attributes.ac.value}}</span>
-                </div>
-                <div class="stat-box">
-                    <i class="fas fa-plus-circle"></i>
-                    <span class="stat-value">+{{actor.system.attributes.prof}}</span>
-                </div>
+            {{/if}}
+        </div>
+        {{/if}}
+        {{#if showStatsSection}}
+        <div class="stat-boxes">
+            <div class="stat-box">
+                <i class="fas fa-gear"></i>
+                <span class="stat-value">{{actor.system.details.level}}</span>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-paw"></i>
+                <span class="stat-value">{{actor.system.attributes.movement.walk}}</span>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-shield"></i>
+                <span class="stat-value">{{actor.system.attributes.ac.value}}</span>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-plus-circle"></i>
+                <span class="stat-value">+{{actor.system.attributes.prof}}</span>
             </div>
         </div>
+        {{/if}}
     </div>
 </div> 

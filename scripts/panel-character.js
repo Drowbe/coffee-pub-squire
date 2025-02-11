@@ -13,7 +13,12 @@ export class CharacterPanel {
 
         const template = await renderTemplate(TEMPLATES.PANEL_CHARACTER, {
             actor: this.actor,
-            position: game.settings.get(MODULE.ID, 'trayPosition')
+            position: game.settings.get(MODULE.ID, 'trayPosition'),
+            isGM: game.user.isGM,
+            showCharacterSection: game.settings.get(MODULE.ID, 'showCharacterSection'),
+            showXPSection: game.settings.get(MODULE.ID, 'showXPSection'),
+            showHPSection: game.settings.get(MODULE.ID, 'showHPSection'),
+            showStatsSection: game.settings.get(MODULE.ID, 'showStatsSection')
         });
         
         this.element.find('[data-panel="character"]').html(template);
