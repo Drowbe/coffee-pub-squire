@@ -265,6 +265,30 @@ export class FavoritesPanel {
         this._updateVisibility(this.element);
     }
 
+    _handleSearch(searchTerm) {
+        // Convert search term to lowercase for case-insensitive comparison
+        searchTerm = searchTerm.toLowerCase();
+        
+        // Get all favorite items
+        const favoriteItems = this.element.find('.favorite-item');
+        let visibleItems = 0;
+        
+        favoriteItems.each((_, item) => {
+            const $item = $(item);
+            const itemName = $item.find('.favorite-name').text().toLowerCase();
+            
+            if (searchTerm === '' || itemName.includes(searchTerm)) {
+                $item.show();
+                visibleItems++;
+            } else {
+                $item.hide();
+            }
+        });
+
+        // Show/hide no matches message
+        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
+    }
+
     _activateListeners(html) {
         // Filter toggles
         html.find('.favorites-spell-toggle').click(async (event) => {
@@ -293,6 +317,17 @@ export class FavoritesPanel {
             $(event.currentTarget)
                 .toggleClass('active', this.showInventory)
                 .toggleClass('faded', !this.showInventory);
+        });
+
+        // Add search input listener
+        html.find('.favorite-search').on('input', (event) => {
+            this._handleSearch(event.target.value);
+        });
+
+        // Add search clear button listener
+        html.find('.search-clear').click((event) => {
+            const $search = $(event.currentTarget).siblings('.favorite-search');
+            $search.val('').trigger('input');
         });
 
         // Roll/Use item

@@ -36,6 +36,7 @@ export class WeaponsPanel {
         
         // Get all weapon items
         const weaponItems = this.element.find('.weapon-item');
+        let visibleItems = 0;
         
         weaponItems.each((_, item) => {
             const $item = $(item);
@@ -43,10 +44,14 @@ export class WeaponsPanel {
             
             if (searchTerm === '' || weaponName.includes(searchTerm)) {
                 $item.show();
+                visibleItems++;
             } else {
                 $item.hide();
             }
         });
+
+        // Show/hide no matches message
+        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
     }
 
     async render(html) {

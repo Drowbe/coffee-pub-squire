@@ -61,6 +61,7 @@ export class SpellsPanel {
         
         // Get all spell items
         const spellItems = this.element.find('.spell-item');
+        let visibleItems = 0;
         
         spellItems.each((_, item) => {
             const $item = $(item);
@@ -68,10 +69,14 @@ export class SpellsPanel {
             
             if (searchTerm === '' || spellName.includes(searchTerm)) {
                 $item.show();
+                visibleItems++;
             } else {
                 $item.hide();
             }
         });
+
+        // Show/hide no matches message
+        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
 
         // Update level headers visibility
         this.element.find('.level-header').each((_, header) => {

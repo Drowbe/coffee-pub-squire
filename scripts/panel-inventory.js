@@ -37,6 +37,7 @@ export class InventoryPanel {
         
         // Get all inventory items
         const inventoryItems = this.element.find('.inventory-item');
+        let visibleItems = 0;
         
         inventoryItems.each((_, item) => {
             const $item = $(item);
@@ -44,10 +45,14 @@ export class InventoryPanel {
             
             if (searchTerm === '' || itemName.includes(searchTerm)) {
                 $item.show();
+                visibleItems++;
             } else {
                 $item.hide();
             }
         });
+
+        // Show/hide no matches message
+        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
     }
 
     async render(html) {

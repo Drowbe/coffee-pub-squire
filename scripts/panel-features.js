@@ -46,6 +46,7 @@ export class FeaturesPanel {
         
         // Get all feature items using weapon classes
         const featureItems = this.element.find('.weapon-item[data-feature-id]');
+        let visibleItems = 0;
         
         featureItems.each((_, item) => {
             const $item = $(item);
@@ -53,10 +54,14 @@ export class FeaturesPanel {
             
             if (searchTerm === '' || featureName.includes(searchTerm)) {
                 $item.show();
+                visibleItems++;
             } else {
                 $item.hide();
             }
         });
+
+        // Show/hide no matches message
+        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
     }
 
     async render(html) {
