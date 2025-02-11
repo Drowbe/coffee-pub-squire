@@ -16,6 +16,7 @@
         </div>
     </div>
     <div class="weapons-list">
+        {{#if weapons}}
         {{#each weapons}}
         <div class="weapon-item {{#if this.equipped}}prepared{{/if}}" data-weapon-id="{{this.id}}">
             <div class="weapon-row">
@@ -32,5 +33,8 @@
             </div>
         </div>
         {{/each}}
+        {{else}}
+        <div class="tray-title-small" style="text-align: center; padding: 10px;">No weapons available</div>
+        {{/if}}
     </div>
 </div>

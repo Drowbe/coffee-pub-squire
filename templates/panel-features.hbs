@@ -16,6 +16,7 @@
         </div>
     </div>
     <div class="weapons-list">
+        {{#if features}}
         {{#each features}}
         <div class="weapon-item" data-feature-id="{{this.id}}">
             <div class="weapon-row">
@@ -44,5 +45,8 @@
             </div>
         </div>
         {{/each}}
+        {{else}}
+        <div class="tray-title-small" style="text-align: center; padding: 10px;">No features available</div>
+        {{/if}}
     </div>
 </div> 

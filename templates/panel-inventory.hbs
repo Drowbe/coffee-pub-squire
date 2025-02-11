@@ -23,6 +23,7 @@
     </div>
 
     <div class="inventory-list">
+        {{#if items}}
         {{#each items}}
         <div class="inventory-item {{#if this.system.equipped}}prepared{{/if}}" data-item-id="{{this.id}}">
             <div class="inventory-row">
@@ -44,5 +45,8 @@
             </div>
         </div>
         {{/each}}
+        {{else}}
+        <div class="tray-title-small" style="text-align: center; padding: 10px;">No items available</div>
+        {{/if}}
     </div>
 </div> 
