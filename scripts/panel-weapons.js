@@ -7,6 +7,7 @@ export class WeaponsPanel {
         this.actor = actor;
         this.weapons = this._getWeapons();
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
+        this.hiddenCategories = new Set(); // Track which categories are hidden
     }
 
     _getWeapons() {
@@ -18,16 +19,61 @@ export class WeaponsPanel {
         // Get weapons
         const weapons = this.actor.items.filter(item => item.type === 'weapon');
         
-        // Map weapons with favorite state
-        return weapons.map(weapon => ({
+        // Map weapons with favorite state and additional data
+        const mappedWeapons = weapons.map(weapon => ({
             id: weapon.id,
             name: weapon.name,
             img: weapon.img || 'icons/svg/sword.svg',
             system: weapon.system,
             equipped: weapon.system.equipped,
+            weaponType: this._getWeaponType(weapon),
             type: 'weapon',
             isFavorite: favorites.includes(weapon.id)
         }));
+
+        // Group weapons by type
+        const weaponsByType = {
+            simpleM: mappedWeapons.filter(w => w.weaponType === 'simpleM'),
+            martialM: mappedWeapons.filter(w => w.weaponType === 'martialM'),
+            simpleR: mappedWeapons.filter(w => w.weaponType === 'simpleR'),
+            martialR: mappedWeapons.filter(w => w.weaponType === 'martialR'),
+            natural: mappedWeapons.filter(w => w.weaponType === 'natural')
+        };
+
+        return {
+            all: mappedWeapons,
+            byType: weaponsByType
+        };
+    }
+
+    _getWeaponType(weapon) {
+        // Get the base weapon type from the system data
+        const weaponType = weapon.system.type?.value;
+        
+        // If it's explicitly marked as a natural weapon
+        if (weaponType === 'natural') return 'natural';
+        
+        // Get the weapon properties
+        const properties = weapon.system.properties || {};
+        const isRanged = properties.amm || properties.fir || properties.thr; // ammunition, firearm, or thrown
+        
+        // Determine if it's simple or martial
+        const baseType = weapon.system.baseItem; // This should give us the base weapon type
+        const isSimple = baseType?.includes('simple') || weaponType?.includes('simple');
+        const isMartial = baseType?.includes('martial') || weaponType?.includes('martial');
+        
+        // Categorize based on combination of simple/martial and melee/ranged
+        if (isSimple) {
+            return isRanged ? 'simpleR' : 'simpleM';
+        } else if (isMartial) {
+            return isRanged ? 'martialR' : 'martialM';
+        }
+        
+        // If we can't determine the exact category but know it's ranged
+        if (isRanged) return 'simpleR';
+        
+        // Default to simple melee if we can't determine the category
+        return 'simpleM';
     }
 
     _handleSearch(searchTerm) {
@@ -41,13 +87,26 @@ export class WeaponsPanel {
         weaponItems.each((_, item) => {
             const $item = $(item);
             const weaponName = $item.find('.weapon-name').text().toLowerCase();
+            const weaponId = $item.data('weapon-id');
+            const weapon = this.weapons.all.find(w => w.id === weaponId);
             
-            if (searchTerm === '' || weaponName.includes(searchTerm)) {
+            // Check if the weapon's category is hidden
+            const isCategoryHidden = weapon && this.hiddenCategories.has(weapon.weaponType);
+            const equippedMatch = !this.showOnlyEquipped || weapon.equipped;
+            
+            if (!isCategoryHidden && equippedMatch && (searchTerm === '' || weaponName.includes(searchTerm))) {
                 $item.show();
                 visibleItems++;
             } else {
                 $item.hide();
             }
+        });
+
+        // Update headers visibility
+        this.element.find('.level-header').each((_, header) => {
+            const $header = $(header);
+            const $nextItems = $header.nextUntil('.level-header', '.weapon-item:visible');
+            $header.toggle($nextItems.length > 0);
         });
 
         // Show/hide no matches message
@@ -64,7 +123,8 @@ export class WeaponsPanel {
         this.weapons = this._getWeapons();
         
         const weaponData = {
-            weapons: this.weapons,
+            weapons: this.weapons.all,
+            weaponsByType: this.weapons.byType,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyEquipped: this.showOnlyEquipped
         };
@@ -78,7 +138,7 @@ export class WeaponsPanel {
         blacksmith?.utils.postConsoleAndNotification(
             "SQUIRE | Weapon data for template",
             {
-                weapons: this.weapons.map(w => w.name),
+                weapons: this.weapons.all.map(w => w.name),
                 position: weaponData.position
             },
             false,
@@ -92,16 +152,40 @@ export class WeaponsPanel {
         html.find('.weapon-item').each((i, el) => {
             const $item = $(el);
             const weaponId = $item.data('weapon-id');
-            const weapon = this.weapons.find(w => w.id === weaponId);
+            const weapon = this.weapons.all.find(w => w.id === weaponId);
             
             if (!weapon) return;
             
-            const shouldShow = !this.showOnlyEquipped || weapon.system.equipped;
-            $item.toggle(shouldShow);
+            const isCategoryHidden = this.hiddenCategories.has(weapon.weaponType);
+            const equippedMatch = !this.showOnlyEquipped || weapon.equipped;
+            $item.toggle(!isCategoryHidden && equippedMatch);
+        });
+
+        // Update headers visibility
+        html.find('.level-header').each((_, header) => {
+            const $header = $(header);
+            const $nextItems = $header.nextUntil('.level-header', '.weapon-item:visible');
+            $header.toggle($nextItems.length > 0);
         });
     }
 
     _activateListeners(html) {
+        // Category filter toggles
+        html.find('.category-filter').click((event) => {
+            const $filter = $(event.currentTarget);
+            const type = $filter.data('type');
+            
+            $filter.toggleClass('active');
+            
+            if ($filter.hasClass('active')) {
+                this.hiddenCategories.delete(type);
+            } else {
+                this.hiddenCategories.add(type);
+            }
+            
+            this._updateVisibility(html);
+        });
+
         // Add filter toggle handler
         html.find('.weapon-filter-toggle').click(async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;

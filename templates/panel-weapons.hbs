@@ -15,27 +15,124 @@
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
     </div>
+    <div class="category-filters">
+        {{#if (lookup weaponsByType "simpleM")}}<i class="fas fa-hand-fist category-filter active" data-type="simpleM" title="Toggle Simple Melee Weapons"></i>{{/if}}
+        {{#if (lookup weaponsByType "martialM")}}<i class="fas fa-sword category-filter active" data-type="martialM" title="Toggle Martial Melee Weapons"></i>{{/if}}
+        {{#if (lookup weaponsByType "simpleR")}}<i class="fas fa-bow category-filter active" data-type="simpleR" title="Toggle Simple Ranged Weapons"></i>{{/if}}
+        {{#if (lookup weaponsByType "martialR")}}<i class="fas fa-bow-arrow category-filter active" data-type="martialR" title="Toggle Martial Ranged Weapons"></i>{{/if}}
+        {{#if (lookup weaponsByType "natural")}}<i class="fas fa-hand-claws category-filter active" data-type="natural" title="Toggle Natural Weapons"></i>{{/if}}
+    </div>
+
     <div class="weapons-list">
         {{#if weapons}}
-        {{#each weapons}}
-        <div class="weapon-item {{#if this.equipped}}prepared{{/if}}" data-weapon-id="{{this.id}}">
-            <div class="weapon-row">
-                <div class="weapon-image-container">
-                    <img class="weapon-image" src="{{this.img}}" alt="{{this.name}}"/>
-                    <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
-                </div>
-                <div class="weapon-name">{{this.name}}</div>
-                <div class="tray-buttons">
-                    <i class="fas fa-shield-alt {{#unless this.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-                    <i class="fas fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                    <i class="fas fa-feather"></i>
+            {{!-- Simple Melee Weapons --}}
+            {{#if (lookup weaponsByType "simpleM")}}
+            <div class="level-header">Simple Melee Weapons</div>
+            {{#each (lookup weaponsByType "simpleM") as |weapon|}}
+            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+                <div class="weapon-row">
+                    <div class="weapon-image-container">
+                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
+                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+                    </div>
+                    <div class="weapon-name">{{weapon.name}}</div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
                 </div>
             </div>
-        </div>
-        {{/each}}
-        <div class="tray-title-small no-matches" style="text-align: center; padding: 10px; display: none;">No matches found</div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Martial Melee Weapons --}}
+            {{#if (lookup weaponsByType "martialM")}}
+            <div class="level-header">Martial Melee Weapons</div>
+            {{#each (lookup weaponsByType "martialM") as |weapon|}}
+            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+                <div class="weapon-row">
+                    <div class="weapon-image-container">
+                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
+                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+                    </div>
+                    <div class="weapon-name">{{weapon.name}}</div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Simple Ranged Weapons --}}
+            {{#if (lookup weaponsByType "simpleR")}}
+            <div class="level-header">Simple Ranged Weapons</div>
+            {{#each (lookup weaponsByType "simpleR") as |weapon|}}
+            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+                <div class="weapon-row">
+                    <div class="weapon-image-container">
+                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
+                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+                    </div>
+                    <div class="weapon-name">{{weapon.name}}</div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Martial Ranged Weapons --}}
+            {{#if (lookup weaponsByType "martialR")}}
+            <div class="level-header">Martial Ranged Weapons</div>
+            {{#each (lookup weaponsByType "martialR") as |weapon|}}
+            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+                <div class="weapon-row">
+                    <div class="weapon-image-container">
+                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
+                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+                    </div>
+                    <div class="weapon-name">{{weapon.name}}</div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Natural Weapons --}}
+            {{#if (lookup weaponsByType "natural")}}
+            <div class="level-header">Natural Weapons</div>
+            {{#each (lookup weaponsByType "natural") as |weapon|}}
+            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+                <div class="weapon-row">
+                    <div class="weapon-image-container">
+                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
+                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+                    </div>
+                    <div class="weapon-name">{{weapon.name}}</div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            <div class="tray-title-small no-matches" style="text-align: center; padding: 10px; display: none;">No matches found</div>
         {{else}}
-        <div class="tray-title-small" style="text-align: center; padding: 10px;">No weapons available</div>
+            <div class="tray-title-small" style="text-align: center; padding: 10px;">No weapons available</div>
         {{/if}}
     </div>
 </div>
