@@ -6,6 +6,7 @@ export class SpellsPanel {
         this.actor = actor;
         this.spells = this._getSpells();
         this.showOnlyPrepared = game.settings.get(MODULE.ID, 'showOnlyPreparedSpells');
+        this.hiddenLevels = new Set(); // Track which levels are hidden
     }
 
     _getSpells() {
@@ -161,7 +162,6 @@ export class SpellsPanel {
     _updateVisibility(html) {
         const searchInput = html.find('.spell-search');
         const searchTerm = searchInput.val()?.toLowerCase() || '';
-        const filterValue = html.find('.spell-filter').val();
         
         // Track visible spells for each level
         const visibleSpellsByLevel = new Map();
@@ -175,9 +175,7 @@ export class SpellsPanel {
             if (!spell) return;
 
             const nameMatch = spell.name.toLowerCase().includes(searchTerm);
-            const levelMatch = filterValue === 'all' || 
-                (filterValue === 'cantrip' && spell.system.level === 0) ||
-                (filterValue === spell.system.level.toString());
+            const levelMatch = !this.hiddenLevels.has(spell.system.level.toString());
             const preparedMatch = !this.showOnlyPrepared || 
                 spell.system.level === 0 || // Cantrips are always prepared
                 spell.system.preparation?.prepared;
@@ -192,7 +190,7 @@ export class SpellsPanel {
             }
         });
 
-        // Hide/show level headers based on visible spells
+        // Hide/show level headers based on visible spells and level filters
         html.find('.level-header').each((i, header) => {
             const $header = $(header);
             const headerText = $header.find('span').text();
@@ -210,9 +208,21 @@ export class SpellsPanel {
 
             if (level !== undefined) {
                 const hasVisibleSpells = visibleSpellsByLevel.get(level) > 0;
-                $header.toggle(hasVisibleSpells);
+                const levelNotHidden = !this.hiddenLevels.has(level.toString());
+                const isCantripsHeader = level === 0 && !headerText.includes('Level');
+                
+                // Special handling for cantrips header
+                if (isCantripsHeader) {
+                    $header.toggle(hasVisibleSpells && levelNotHidden);
+                } else {
+                    $header.toggle(hasVisibleSpells && levelNotHidden);
+                }
             }
         });
+
+        // Show/hide no matches message
+        const hasVisibleSpells = Array.from(visibleSpellsByLevel.values()).some(count => count > 0);
+        html.find('.no-matches').toggle(!hasVisibleSpells && searchTerm !== '');
     }
 
     _activateListeners(html) {
@@ -284,6 +294,22 @@ export class SpellsPanel {
             if (spell) {
                 spell.sheet.render(true);
             }
+        });
+
+        // Level filter toggles
+        html.find('.level-filter').click((event) => {
+            const $filter = $(event.currentTarget);
+            const level = $filter.data('level').toString();
+            
+            $filter.toggleClass('active');
+            
+            if ($filter.hasClass('active')) {
+                this.hiddenLevels.delete(level);
+            } else {
+                this.hiddenLevels.add(level);
+            }
+            
+            this._updateVisibility(html);
         });
     }
 } 

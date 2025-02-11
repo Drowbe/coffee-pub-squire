@@ -221,4 +221,30 @@
 
 .cast-spell:hover {
     background: #357abd;
+}
+
+.level-filters {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+	margin-top: 0px;
+	margin-bottom: 6px;
+    border-top: 0px solid rgba(0, 0, 0, 0.5);
+}
+
+.level-filter {
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    font-size: 1.2em;
+}
+
+.level-filter:hover {
+    opacity: 1;
+}
+
+.level-filter.active {
+    opacity: .8;
 } 

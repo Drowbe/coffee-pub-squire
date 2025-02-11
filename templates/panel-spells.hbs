@@ -14,13 +14,16 @@
             <input type="text" class="spell-search" placeholder="Search Spells...">
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
-        <select class="spell-filter">
-            <option value="all">All Levels</option>
-            <option value="cantrip">Cantrips</option>
-            {{#each spellLevels}}
-            <option value="{{this}}">Level {{this}}</option>
-            {{/each}}
-        </select>
+    </div>
+    <div class="level-filters">
+        {{#if (lookup spellsByLevel 0)}}
+        <i class="fas fa-square-0 level-filter active" data-level="0" title="Toggle Cantrips"></i>
+        {{/if}}
+        {{#each spellSlots}}
+        {{#if (or (gt this.max 0) (lookup ../spellsByLevel this.level))}}
+        <i class="fas fa-square-{{this.level}} level-filter active" data-level="{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
+        {{/if}}
+        {{/each}}
     </div>
 
     {{#if (eq position "bottom")}}
