@@ -41,61 +41,67 @@
 
     <div class="spells-list">
         {{#if (eq position "left")}}
-            {{!-- Cantrips --}}
-            <div class="level-header">Cantrips</div>
-            {{#each spells as |spell|}}
-                {{#if (eq spell.system.level 0)}}
-                <div class="spell-item prepared" data-spell-id="{{spell.id}}">
-                    <div class="spell-row">
-                        <div class="spell-image-container">
-                            <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
-                            <i class="fas fa-dice-d20 spell-roll-overlay"></i>
-                        </div>
-                        <div class="spell-name">
-                            {{spell.name}}
-                        </div>
-                        <div class="tray-buttons">
-                            <i class="fas fa-sun" title="Always Prepared"></i>
-                            <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                            <i class="fas fa-feather"></i>
+            {{#if spells}}
+                {{!-- Cantrips --}}
+                {{#if (lookup spellsByLevel 0)}}
+                <div class="level-header">Cantrips</div>
+                {{#each spells as |spell|}}
+                    {{#if (eq spell.system.level 0)}}
+                    <div class="spell-item prepared" data-spell-id="{{spell.id}}">
+                        <div class="spell-row">
+                            <div class="spell-image-container">
+                                <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                                <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+                            </div>
+                            <div class="spell-name">
+                                {{spell.name}}
+                            </div>
+                            <div class="tray-buttons">
+                                <i class="fas fa-sun" title="Always Prepared"></i>
+                                <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                                <i class="fas fa-feather"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {{/if}}
+                {{/each}}
                 {{/if}}
-            {{/each}}
 
-            {{!-- Leveled Spells --}}
-            {{#each spellSlots as |slot|}}
-            {{#if (or (gt slot.max 0) (lookup ../spellsByLevel slot.level))}}
-            <div class="level-header">
-                <span>Level {{slot.level}}</span>
-                <div class="slot-pips">
-                    {{#times slot.max}}
-                    <div class="slot-pip {{#if (lt @index ../value)}}filled{{/if}}" 
-                         data-level="{{../level}}"></div>
-                    {{/times}}
-                </div>
-            </div>
-            {{#each (lookup ../spellsByLevel slot.level) as |spell|}}
-                <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
-                    <div class="spell-row">
-                        <div class="spell-image-container">
-                            <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
-                            <i class="fas fa-dice-d20 spell-roll-overlay"></i>
-                        </div>
-                        <div class="spell-name">
-                            {{spell.name}}
-                        </div>
-                        <div class="tray-buttons">
-                            <i class="fas fa-sun {{#unless spell.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
-                            <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                            <i class="fas fa-feather"></i>
+                {{!-- Leveled Spells --}}
+                {{#each spellSlots as |slot|}}
+                    {{#if (or (gt slot.max 0) (lookup ../spellsByLevel slot.level))}}
+                    <div class="level-header">
+                        <span>Level {{slot.level}}</span>
+                        <div class="slot-pips">
+                            {{#times slot.max}}
+                            <div class="slot-pip {{#if (lt @index ../value)}}filled{{/if}}" 
+                                data-level="{{../level}}"></div>
+                            {{/times}}
                         </div>
                     </div>
-                </div>
-            {{/each}}
+                    {{#each (lookup ../spellsByLevel slot.level) as |spell|}}
+                        <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
+                            <div class="spell-row">
+                                <div class="spell-image-container">
+                                    <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                                    <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+                                </div>
+                                <div class="spell-name">
+                                    {{spell.name}}
+                                </div>
+                                <div class="tray-buttons">
+                                    <i class="fas fa-sun {{#unless spell.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
+                                    <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                                    <i class="fas fa-feather"></i>
+                                </div>
+                            </div>
+                        </div>
+                    {{/each}}
+                    {{/if}}
+                {{/each}}
+            {{else}}
+                <div class="tray-title-small" style="text-align: center; padding: 10px;">No spells available</div>
             {{/if}}
-            {{/each}}
         {{else}}
             {{!-- Bottom position: original flat list --}}
             {{#each spells}}
