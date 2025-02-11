@@ -7,12 +7,13 @@ export class InventoryPanel {
         this.actor = actor;
         this.items = this._getItems();
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedInventory');
+        this.hiddenCategories = new Set(); // Track which categories are hidden
     }
 
     _getItems() {
         if (!this.actor) return [];
         
-        // Get current favorites and filter out null/undefined values
+        // Get current favorites
         const favorites = FavoritesPanel.getFavorites(this.actor);
         
         // Get inventory items
@@ -21,7 +22,7 @@ export class InventoryPanel {
         );
         
         // Map items with favorite state
-        return items.map(item => ({
+        const mappedItems = items.map(item => ({
             id: item.id,
             name: item.name,
             img: item.img || 'icons/svg/item-bag.svg',
@@ -29,6 +30,20 @@ export class InventoryPanel {
             system: item.system,
             isFavorite: favorites.includes(item.id)
         }));
+
+        // Group items by type
+        const itemsByType = {};
+        mappedItems.forEach(item => {
+            if (!itemsByType[item.type]) {
+                itemsByType[item.type] = [];
+            }
+            itemsByType[item.type].push(item);
+        });
+
+        return {
+            all: mappedItems,
+            byType: itemsByType
+        };
     }
 
     _handleSearch(searchTerm) {
@@ -42,13 +57,24 @@ export class InventoryPanel {
         inventoryItems.each((_, item) => {
             const $item = $(item);
             const itemName = $item.find('.inventory-name').text().toLowerCase();
+            const itemType = this.items.all.find(i => i.id === $item.data('item-id'))?.type;
             
-            if (searchTerm === '' || itemName.includes(searchTerm)) {
+            // Check if the item's category is hidden
+            const isCategoryHidden = itemType && this.hiddenCategories.has(itemType);
+            
+            if (!isCategoryHidden && (searchTerm === '' || itemName.includes(searchTerm))) {
                 $item.show();
                 visibleItems++;
             } else {
                 $item.hide();
             }
+        });
+
+        // Update headers visibility
+        this.element.find('.level-header').each((_, header) => {
+            const $header = $(header);
+            const $nextItems = $header.nextUntil('.level-header', '.inventory-item:visible');
+            $header.toggle($nextItems.length > 0);
         });
 
         // Show/hide no matches message
@@ -65,7 +91,8 @@ export class InventoryPanel {
         this.items = this._getItems();
 
         const itemData = {
-            items: this.items,
+            items: this.items.all,
+            itemsByType: this.items.byType,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyEquipped: this.showOnlyEquipped
         };
@@ -80,22 +107,26 @@ export class InventoryPanel {
     _updateVisibility(html) {
         const searchInput = html.find('.inventory-search');
         const searchTerm = searchInput.val()?.toLowerCase() || '';
-        const filterValue = html.find('.inventory-filter').val();
         
-        const inventoryItems = html.find('.inventory-item');
-        inventoryItems.each((i, el) => {
+        html.find('.inventory-item').each((i, el) => {
             const $item = $(el);
             const itemId = $item.data('item-id');
-            const item = this.items.find(i => i.id === itemId);
+            const item = this.items.all.find(i => i.id === itemId);
             
             if (!item) return;
 
-            const nameMatch = item.name.toLowerCase().includes(searchTerm);
-            const typeMatch = filterValue === 'all' || filterValue === item.type;
+            const isCategoryHidden = this.hiddenCategories.has(item.type);
             const equippedMatch = !this.showOnlyEquipped || item.system.equipped;
-
-            const shouldShow = nameMatch && typeMatch && equippedMatch;
+            const shouldShow = !isCategoryHidden && equippedMatch;
+            
             $item.toggle(shouldShow);
+        });
+
+        // Update headers visibility
+        html.find('.level-header').each((_, header) => {
+            const $header = $(header);
+            const $nextItems = $header.nextUntil('.level-header', '.inventory-item:visible');
+            $header.toggle($nextItems.length > 0);
         });
     }
 
@@ -109,22 +140,31 @@ export class InventoryPanel {
             this._updateVisibility(html);
         });
 
-        // Toggle equipped state (box icon)
-        html.find('.tray-buttons .fa-shield-alt').click(async (event) => {
-            const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
-            const item = this.actor.items.get(itemId);
-            if (item) {
-                const newEquipped = !item.system.equipped;
-                await item.update({
-                    'system.equipped': newEquipped
-                });
-                // Update the UI immediately
-                const $item = $(event.currentTarget).closest('.inventory-item');
-                $item.toggleClass('prepared', newEquipped);
-                $(event.currentTarget).toggleClass('faded', !newEquipped);
-                // Update visibility in case we're filtering by equipped
-                this._updateVisibility(html);
+        // Category filter toggles
+        html.find('.category-filter').click((event) => {
+            const $filter = $(event.currentTarget);
+            const type = $filter.data('type');
+            
+            $filter.toggleClass('active');
+            
+            if ($filter.hasClass('active')) {
+                this.hiddenCategories.delete(type);
+            } else {
+                this.hiddenCategories.add(type);
             }
+            
+            this._updateVisibility(html);
+        });
+
+        // Add search input listener
+        html.find('.inventory-search').on('input', (event) => {
+            this._handleSearch(event.target.value);
+        });
+
+        // Add search clear button listener
+        html.find('.search-clear').click((event) => {
+            const $search = $(event.currentTarget).siblings('.inventory-search');
+            $search.val('').trigger('input');
         });
 
         // Item info click (feather icon)
@@ -153,27 +193,22 @@ export class InventoryPanel {
             }
         });
 
-        // Search and filter
-        const searchInput = html.find('.inventory-search');
-        const filterSelect = html.find('.inventory-filter');
-
-        searchInput.off('input keyup change').on('input keyup change', () => {
-            this._updateVisibility(html);
-        });
-
-        filterSelect.off('change').on('change', () => {
-            this._updateVisibility(html);
-        });
-
-        // Add search input listener
-        html.find('.inventory-search').on('input', (event) => {
-            this._handleSearch(event.target.value);
-        });
-
-        // Add search clear button listener
-        html.find('.search-clear').click((event) => {
-            const $search = $(event.currentTarget).siblings('.inventory-search');
-            $search.val('').trigger('input');
+        // Toggle equip state (shield icon)
+        html.find('.tray-buttons .fa-shield-alt').click(async (event) => {
+            const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                const newEquipped = !item.system.equipped;
+                await item.update({
+                    'system.equipped': newEquipped
+                });
+                // Update the UI immediately
+                const $item = $(event.currentTarget).closest('.inventory-item');
+                $item.toggleClass('prepared', newEquipped);
+                $(event.currentTarget).toggleClass('faded', !newEquipped);
+                // Update visibility in case we're filtering by equipped
+                this._updateVisibility(html);
+            }
         });
     }
 } 

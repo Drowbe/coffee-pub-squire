@@ -14,40 +14,147 @@
             <input type="text" class="inventory-search" placeholder="Search Inventory...">
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
-        <select class="inventory-filter">
-            <option value="all">All Types</option>
-            {{#each itemTypes}}
-            <option value="{{this}}">{{this}}</option>
-            {{/each}}
-        </select>
+    </div>
+    <div class="category-filters">
+        {{#if (lookup itemsByType "equipment")}}<i class="fas fa-shirt category-filter active" data-type="equipment" title="Toggle Equipment"></i>{{/if}}
+        {{#if (lookup itemsByType "tool")}}<i class="fas fa-tools category-filter active" data-type="tool" title="Toggle Tools"></i>{{/if}}
+        {{#if (lookup itemsByType "consumable")}}<i class="fas fa-flask category-filter active" data-type="consumable" title="Toggle Consumables"></i>{{/if}}
+        {{#if (lookup itemsByType "loot")}}<i class="fas fa-coins category-filter active" data-type="loot" title="Toggle Loot"></i>{{/if}}
+        {{#if (lookup itemsByType "backpack")}}<i class="fas fa-suitcase category-filter active" data-type="backpack" title="Toggle Containers"></i>{{/if}}
     </div>
 
     <div class="inventory-list">
         {{#if items}}
-        {{#each items}}
-        <div class="inventory-item {{#if this.system.equipped}}prepared{{/if}}" data-item-id="{{this.id}}">
-            <div class="inventory-row">
-                <div class="inventory-image-container">
-                    <img class="inventory-image" src="{{this.img}}" alt="{{this.name}}"/>
-                    <i class="fas fa-hand inventory-roll-overlay"></i>
-                </div>
-                <div class="inventory-name">
-                    {{this.name}}
-                    {{#if this.system.quantity}}
-                    <span class="inventory-quantity">({{this.system.quantity}})</span>
-                    {{/if}}
-                </div>
-                <div class="tray-buttons">
-                    <i class="fas fa-shield-alt {{#unless this.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-                    <i class="fas fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                    <i class="fas fa-feather"></i>
+            {{!-- Equipment --}}
+            {{#if (lookup itemsByType "equipment")}}
+            <div class="level-header">Equipment</div>
+            {{#each (lookup itemsByType "equipment") as |item|}}
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
+                <div class="inventory-row">
+                    <div class="inventory-image-container">
+                        <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
+                        <i class="fas fa-hand inventory-roll-overlay"></i>
+                    </div>
+                    <div class="inventory-name">
+                        {{item.name}}
+                        {{#if item.system.quantity}}
+                        <span class="inventory-quantity">({{item.system.quantity}})</span>
+                        {{/if}}
+                    </div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless item.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-heart {{#unless item.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
                 </div>
             </div>
-        </div>
-        {{/each}}
-        <div class="tray-title-small no-matches" style="text-align: center; padding: 10px; display: none;">No matches found</div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Tools --}}
+            {{#if (lookup itemsByType "tool")}}
+            <div class="level-header">Tools</div>
+            {{#each (lookup itemsByType "tool") as |item|}}
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
+                <div class="inventory-row">
+                    <div class="inventory-image-container">
+                        <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
+                        <i class="fas fa-hand inventory-roll-overlay"></i>
+                    </div>
+                    <div class="inventory-name">
+                        {{item.name}}
+                        {{#if item.system.quantity}}
+                        <span class="inventory-quantity">({{item.system.quantity}})</span>
+                        {{/if}}
+                    </div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless item.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-heart {{#unless item.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Consumables --}}
+            {{#if (lookup itemsByType "consumable")}}
+            <div class="level-header">Consumables</div>
+            {{#each (lookup itemsByType "consumable") as |item|}}
+            <div class="inventory-item" data-item-id="{{item.id}}">
+                <div class="inventory-row">
+                    <div class="inventory-image-container">
+                        <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
+                        <i class="fas fa-hand inventory-roll-overlay"></i>
+                    </div>
+                    <div class="inventory-name">
+                        {{item.name}}
+                        {{#if item.system.quantity}}
+                        <span class="inventory-quantity">({{item.system.quantity}})</span>
+                        {{/if}}
+                    </div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-heart {{#unless item.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Loot --}}
+            {{#if (lookup itemsByType "loot")}}
+            <div class="level-header">Loot</div>
+            {{#each (lookup itemsByType "loot") as |item|}}
+            <div class="inventory-item" data-item-id="{{item.id}}">
+                <div class="inventory-row">
+                    <div class="inventory-image-container">
+                        <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
+                        <i class="fas fa-hand inventory-roll-overlay"></i>
+                    </div>
+                    <div class="inventory-name">
+                        {{item.name}}
+                        {{#if item.system.quantity}}
+                        <span class="inventory-quantity">({{item.system.quantity}})</span>
+                        {{/if}}
+                    </div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-heart {{#unless item.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{!-- Containers --}}
+            {{#if (lookup itemsByType "backpack")}}
+            <div class="level-header">Containers</div>
+            {{#each (lookup itemsByType "backpack") as |item|}}
+            <div class="inventory-item" data-item-id="{{item.id}}">
+                <div class="inventory-row">
+                    <div class="inventory-image-container">
+                        <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
+                        <i class="fas fa-hand inventory-roll-overlay"></i>
+                    </div>
+                    <div class="inventory-name">
+                        {{item.name}}
+                        {{#if item.system.quantity}}
+                        <span class="inventory-quantity">({{item.system.quantity}})</span>
+                        {{/if}}
+                    </div>
+                    <div class="tray-buttons">
+                        <i class="fas fa-heart {{#unless item.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                        <i class="fas fa-feather"></i>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+            {{/if}}
+
+            <div class="tray-title-small no-matches" style="text-align: center; padding: 10px; display: none;">No matches found</div>
         {{else}}
-        <div class="tray-title-small" style="text-align: center; padding: 10px;">No items available</div>
+            <div class="tray-title-small" style="text-align: center; padding: 10px;">No items available</div>
         {{/if}}
     </div>
 </div> 
