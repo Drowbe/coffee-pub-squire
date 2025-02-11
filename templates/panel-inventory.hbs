@@ -81,7 +81,7 @@
             {{#if (lookup itemsByType "consumable")}}
             <div class="level-header">Consumables</div>
             {{#each (lookup itemsByType "consumable") as |item|}}
-            <div class="inventory-item" data-item-id="{{item.id}}">
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
                 <div class="inventory-row">
                     <div class="inventory-image-container">
                         <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
@@ -94,6 +94,7 @@
                         {{/if}}
                     </div>
                     <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless item.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                         <i class="fas fa-heart {{#unless item.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>
@@ -106,7 +107,7 @@
             {{#if (lookup itemsByType "loot")}}
             <div class="level-header">Loot</div>
             {{#each (lookup itemsByType "loot") as |item|}}
-            <div class="inventory-item" data-item-id="{{item.id}}">
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
                 <div class="inventory-row">
                     <div class="inventory-image-container">
                         <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
@@ -119,6 +120,7 @@
                         {{/if}}
                     </div>
                     <div class="tray-buttons">
+                        <i class="fas fa-shield-alt {{#unless item.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                         <i class="fas fa-heart {{#unless item.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>
