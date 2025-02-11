@@ -41,6 +41,9 @@ export class ControlPanel {
         // Convert search term to lowercase for case-insensitive comparison
         searchTerm = searchTerm.toLowerCase();
 
+        // Toggle visibility of individual search boxes based on global search state
+        this.element.find('.panel-containers.stacked .panel-container .search-container').toggle(searchTerm === '');
+
         // Track visible items for each panel
         const visibleCounts = {
             favorites: 0,
@@ -83,6 +86,11 @@ export class ControlPanel {
                 const $nextSpells = $header.nextUntil('.level-header', '.spell-item:visible');
                 $header.toggle($nextSpells.length > 0);
             });
+        }
+
+        // Clear individual search boxes when global search is cleared
+        if (searchTerm === '') {
+            this.element.find('.panel-containers.stacked .panel-container .search-container input').val('');
         }
     }
 
