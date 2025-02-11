@@ -512,7 +512,7 @@ export class PanelManager {
      * @private
      */
     _updateHeadersVisibility(panel) {
-        const headers = panel.querySelectorAll('.weapons-header, .features-header, .inventory-header, .level-header');
+        const headers = panel.querySelectorAll('.category-header');
         
         headers.forEach(header => {
             const categoryId = header.dataset.categoryId;
@@ -521,7 +521,7 @@ export class PanelManager {
                 return;
             }
 
-            const items = panel.querySelectorAll(`[data-category-id="${categoryId}"]:not(.weapons-header):not(.features-header):not(.inventory-header):not(.level-header)`);
+            const items = panel.querySelectorAll(`[data-category-id="${categoryId}"]:not(.category-header)`);
             let hasVisibleItems = false;
 
             items.forEach(item => {
@@ -569,10 +569,26 @@ export class PanelManager {
 
 // Hooks
 Hooks.on('ready', async () => {
+    // Wait a brief moment for the canvas to be fully ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Find the first owned token or get the default character
     const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
-    await PanelManager.initialize(firstOwnedToken?.actor || null);
+    const defaultCharacter = game.user.character;
+    const initialActor = firstOwnedToken?.actor || defaultCharacter || null;
+    
+    // Initialize with the found actor
+    if (initialActor) {
+        await PanelManager.initialize(initialActor);
+        
+        // Force a re-render of all panels to ensure proper setup
+        if (PanelManager.instance) {
+            await PanelManager.instance.renderPanels(PanelManager.element);
+        }
+    }
 });
 
+// Also handle when tokens are selected
 Hooks.on('controlToken', async (token, controlled) => {
     // Only care about token selection, not deselection
     if (!controlled) return;
@@ -601,15 +617,33 @@ Hooks.on('controlToken', async (token, controlled) => {
 });
 
 // Also handle when tokens are deleted or actors are updated
-Hooks.on('deleteToken', (token) => {
+Hooks.on('deleteToken', async (token) => {
     if (PanelManager.currentActor?.id === token.actor?.id) {
         PanelManager.instance = null;
         PanelManager.currentActor = null;
+        
+        // Try to find another token to display
+        const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
+        if (nextToken) {
+            await PanelManager.initialize(nextToken.actor);
+        }
     }
 });
 
-Hooks.on('updateActor', (actor) => {
+Hooks.on('updateActor', async (actor) => {
     if (PanelManager.currentActor?.id === actor.id) {
-        PanelManager.initialize(actor);
+        await PanelManager.initialize(actor);
+        
+        // Force a re-render of all panels
+        if (PanelManager.instance) {
+            await PanelManager.instance.renderPanels(PanelManager.element);
+        }
+    }
+});
+
+// Add a hook for when the game is paused/unpaused to ensure panels stay responsive
+Hooks.on('pauseGame', async (paused) => {
+    if (!paused && PanelManager.instance && PanelManager.element) {
+        await PanelManager.instance.renderPanels(PanelManager.element);
     }
 }); 

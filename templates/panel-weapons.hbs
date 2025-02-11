@@ -27,7 +27,7 @@
         {{#if weapons}}
             {{!-- Simple Melee Weapons --}}
             {{#if (lookup weaponsByType "simple-melee")}}
-            <div class="weapons-header" data-category-id="category-weapon-simple-melee">Simple Melee Weapons</div>
+            <div class="category-header" data-category-id="category-weapon-simple-melee">Simple Melee Weapons</div>
             {{#each (lookup weaponsByType "simple-melee") as |weapon|}}
             <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-simple-melee">
                 <div class="weapon-row">
@@ -48,7 +48,7 @@
 
             {{!-- Martial Melee Weapons --}}
             {{#if (lookup weaponsByType "martial-melee")}}
-            <div class="weapons-header" data-category-id="category-weapon-martial-melee">Martial Melee Weapons</div>
+            <div class="category-header" data-category-id="category-weapon-martial-melee">Martial Melee Weapons</div>
             {{#each (lookup weaponsByType "martial-melee") as |weapon|}}
             <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-martial-melee">
                 <div class="weapon-row">
@@ -69,7 +69,7 @@
 
             {{!-- Simple Ranged Weapons --}}
             {{#if (lookup weaponsByType "simple-ranged")}}
-            <div class="weapons-header" data-category-id="category-weapon-simple-ranged">Simple Ranged Weapons</div>
+            <div class="category-header" data-category-id="category-weapon-simple-ranged">Simple Ranged Weapons</div>
             {{#each (lookup weaponsByType "simple-ranged") as |weapon|}}
             <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-simple-ranged">
                 <div class="weapon-row">
@@ -90,7 +90,7 @@
 
             {{!-- Martial Ranged Weapons --}}
             {{#if (lookup weaponsByType "martial-ranged")}}
-            <div class="weapons-header" data-category-id="category-weapon-martial-ranged">Martial Ranged Weapons</div>
+            <div class="category-header" data-category-id="category-weapon-martial-ranged">Martial Ranged Weapons</div>
             {{#each (lookup weaponsByType "martial-ranged") as |weapon|}}
             <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-martial-ranged">
                 <div class="weapon-row">
@@ -111,7 +111,7 @@
 
             {{!-- Natural Weapons --}}
             {{#if (lookup weaponsByType "natural")}}
-            <div class="weapons-header" data-category-id="category-weapon-natural">Natural Weapons</div>
+            <div class="category-header" data-category-id="category-weapon-natural">Natural Weapons</div>
             {{#each (lookup weaponsByType "natural") as |weapon|}}
             <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-natural">
                 <div class="weapon-row">

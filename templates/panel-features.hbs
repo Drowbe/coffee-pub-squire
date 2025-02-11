@@ -27,7 +27,7 @@
         {{#if features}}
             {{!-- Class Features --}}
             {{#if (lookup featuresByType "class")}}
-            <div class="features-header" data-category-id="category-feature-class">Class Features</div>
+            <div class="category-header" data-category-id="category-feature-class">Class Features</div>
             {{#each (lookup featuresByType "class") as |feature|}}
             <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-class">
                 <div class="weapon-row">
@@ -60,7 +60,7 @@
 
             {{!-- Subclass Features --}}
             {{#if (lookup featuresByType "subclass")}}
-            <div class="features-header" data-category-id="category-feature-subclass">Subclass Features</div>
+            <div class="category-header" data-category-id="category-feature-subclass">Subclass Features</div>
             {{#each (lookup featuresByType "subclass") as |feature|}}
             <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-subclass">
                 <div class="weapon-row">
@@ -93,7 +93,7 @@
 
             {{!-- Racial Features --}}
             {{#if (lookup featuresByType "race")}}
-            <div class="features-header" data-category-id="category-feature-race">Racial Features</div>
+            <div class="category-header" data-category-id="category-feature-race">Racial Features</div>
             {{#each (lookup featuresByType "race") as |feature|}}
             <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-race">
                 <div class="weapon-row">
@@ -126,7 +126,7 @@
 
             {{!-- Background Features --}}
             {{#if (lookup featuresByType "background")}}
-            <div class="features-header" data-category-id="category-feature-background">Background Features</div>
+            <div class="category-header" data-category-id="category-feature-background">Background Features</div>
             {{#each (lookup featuresByType "background") as |feature|}}
             <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-background">
                 <div class="weapon-row">
@@ -159,7 +159,7 @@
 
             {{!-- Feats --}}
             {{#if (lookup featuresByType "feat")}}
-            <div class="features-header" data-category-id="category-feature-feat">Feats</div>
+            <div class="category-header" data-category-id="category-feature-feat">Feats</div>
             {{#each (lookup featuresByType "feat") as |feature|}}
             <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-feat">
                 <div class="weapon-row">

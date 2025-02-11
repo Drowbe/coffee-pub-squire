@@ -47,7 +47,7 @@
             {{#if spells}}
                 {{!-- Cantrips --}}
                 {{#if (lookup spellsByLevel 0)}}
-                <div class="level-header" data-category-id="category-spell-level-0">Cantrips</div>
+                <div class="category-header" data-category-id="category-spell-level-0">Cantrips</div>
                 {{#each spells as |spell|}}
                     {{#if (eq spell.system.level 0)}}
                     <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-level-0">
@@ -73,7 +73,7 @@
                 {{!-- Leveled Spells --}}
                 {{#each spellSlots as |slot|}}
                     {{#if (or (gt slot.max 0) (lookup ../spellsByLevel slot.level))}}
-                    <div class="level-header" data-category-id="category-spell-level-{{slot.level}}">
+                    <div class="category-header" data-category-id="category-spell-level-{{slot.level}}">
                         <span>Level {{slot.level}}</span>
                         <div class="slot-pips">
                             {{#times slot.max}}

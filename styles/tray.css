@@ -1355,3 +1355,19 @@
     opacity: 1;
 }
 
+.squire-tray[data-position="left"] .category-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    margin-top: 8px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.squire-tray[data-position="left"] .category-header .slot-pips {
+    display: flex;
+    gap: 2px;
+    margin-left: 8px;
+}
+
