@@ -123,15 +123,18 @@ export class WeaponsPanel {
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
+        // Use event delegation for all handlers
+        const panel = html.find('[data-panel="weapons"]');
+
         // Category filter toggles
-        html.find('.weapons-category-filter').click((event) => {
+        panel.on('click', '.weapons-category-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, html[0]);
+            this.panelManager.toggleCategory(categoryId, panel[0]);
         });
 
         // Add filter toggle handler
-        html.find('.weapon-filter-toggle').click(async (event) => {
+        panel.on('click', '.weapon-filter-toggle', async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;
             await game.settings.set(MODULE.ID, 'showOnlyEquippedWeapons', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
@@ -140,18 +143,18 @@ export class WeaponsPanel {
         });
 
         // Add search input listener
-        html.find('.weapon-search').on('input', (event) => {
+        panel.on('input', '.weapon-search', (event) => {
             this._handleSearch(event.target.value);
         });
 
         // Add search clear button listener
-        html.find('.search-clear').click((event) => {
+        panel.on('click', '.search-clear', (event) => {
             const $search = $(event.currentTarget).siblings('.weapon-search');
             $search.val('').trigger('input');
         });
 
         // Weapon info click (feather icon)
-        html.find('.tray-buttons .fa-feather').click(async (event) => {
+        panel.on('click', '.tray-buttons .fa-feather', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
@@ -160,24 +163,22 @@ export class WeaponsPanel {
         });
 
         // Toggle favorite
-        html.find('.tray-buttons .fa-heart').click(async (event) => {
+        panel.on('click', '.tray-buttons .fa-heart', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
         });
 
         // Weapon use click (image overlay)
-        html.find('.weapon-image-container').click(async (event) => {
-            if ($(event.target).hasClass('weapon-roll-overlay')) {
-                const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
-                const weapon = this.actor.items.get(weaponId);
-                if (weapon) {
-                    await weapon.use({}, { event });
-                }
+        panel.on('click', '.weapon-image-container .weapon-roll-overlay', async (event) => {
+            const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
+            const weapon = this.actor.items.get(weaponId);
+            if (weapon) {
+                await weapon.use({}, { event });
             }
         });
 
         // Toggle equip state (shield icon)
-        html.find('.tray-buttons .fa-shield-alt').click(async (event) => {
+        panel.on('click', '.tray-buttons .fa-shield-alt', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {

@@ -132,26 +132,28 @@ export class SpellsPanel {
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
+        // Use event delegation for all handlers
+        const panel = html.find('[data-panel="spells"]');
+
         // Level filter toggles
-        html.find('.spell-level-filter').click((event) => {
+        panel.on('click', '.spell-level-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, html[0]);
+            this.panelManager.toggleCategory(categoryId, panel[0]);
         });
 
         // Search functionality
-        const $search = html.find('.spell-search');
-        $search.on('input', (event) => {
+        panel.on('input', '.spell-search', (event) => {
             this._handleSearch(event.target.value);
         });
 
         // Clear search
-        html.find('.clear-search').click(() => {
-            $search.val('').trigger('input');
+        panel.on('click', '.clear-search', () => {
+            panel.find('.spell-search').val('').trigger('input');
         });
 
         // Toggle prepared state (sun icon)
-        html.find('.tray-buttons .fa-sun').click(async (event) => {
+        panel.on('click', '.tray-buttons .fa-sun', async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
@@ -169,7 +171,7 @@ export class SpellsPanel {
         });
 
         // Toggle prepared spells only
-        html.find('.spell-filter-toggle').click(async (event) => {
+        panel.on('click', '.spell-filter-toggle', async (event) => {
             this.showOnlyPrepared = !this.showOnlyPrepared;
             await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
             $(event.currentTarget)
@@ -179,24 +181,22 @@ export class SpellsPanel {
         });
 
         // Remove from favorites
-        html.find('.spell-item .fa-heart').click(async (event) => {
+        panel.on('click', '.spell-item .fa-heart', async (event) => {
             const itemId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             await FavoritesPanel.manageFavorite(this.actor, itemId);
         });
 
         // Cast spell
-        html.find('.spell-image-container').click(async (event) => {
-            if ($(event.target).hasClass('spell-roll-overlay')) {
-                const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
-                const spell = this.actor.items.get(spellId);
-                if (spell) {
-                    await spell.use({}, { event });
-                }
+        panel.on('click', '.spell-image-container .spell-roll-overlay', async (event) => {
+            const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+            const spell = this.actor.items.get(spellId);
+            if (spell) {
+                await spell.use({}, { event });
             }
         });
 
         // View spell details
-        html.find('.spell-item .fa-feather').click(async (event) => {
+        panel.on('click', '.spell-item .fa-feather', async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {

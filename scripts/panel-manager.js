@@ -57,48 +57,47 @@ export class PanelManager {
 
         // Create or update instance
         PanelManager.currentActor = actor;
-        if (!PanelManager.instance) {
-            PanelManager.instance = new PanelManager(actor);
-            await PanelManager.instance.createTray();
-        } else {
-            PanelManager.instance.actor = actor;
-            PanelManager.instance.characterPanel = new CharacterPanel(actor);
-            PanelManager.instance.controlPanel = new ControlPanel(actor);
-            PanelManager.instance.favoritesPanel = new FavoritesPanel(actor);
-            PanelManager.instance.spellsPanel = new SpellsPanel(actor);
-            PanelManager.instance.weaponsPanel = new WeaponsPanel(actor);
-            PanelManager.instance.inventoryPanel = new InventoryPanel(actor);
-            PanelManager.instance.featuresPanel = new FeaturesPanel(actor);
-            await PanelManager.instance.updateTray();
-        }
+        
+        // Always create a new instance to ensure clean state
+        PanelManager.instance = new PanelManager(actor);
+
+        // Remove any existing trays first
+        $('.squire-tray').remove();
+        
+        // Create the tray
+        await PanelManager.instance.createTray();
+        
+        // Force a complete refresh after a brief delay
+        setTimeout(async () => {
+            if (PanelManager.instance) {
+                await PanelManager.instance.updateTray();
+            }
+        }, 100);
     }
 
     async createTray() {
-        // Create the tray if it doesn't exist
-        if (!document.getElementById('squire-tray')) {
-            const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
-                actor: this.actor,
-                effects: this.actor.effects?.map(e => e.label) || [],
-                showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
-                showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
-                showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
-                showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
-                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
-            });
-            const trayElement = $(trayHtml);
-            $('body').append(trayElement);
-            PanelManager.element = trayElement;
-            
-            // Set initial position and restore pin state
-            trayElement.attr('data-position', 'left');
-            PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
-            if (PanelManager.isPinned) {
-                trayElement.addClass('pinned expanded');
-            }
-
-            this.activateListeners(trayElement);
-            await this.renderPanels(trayElement);
+        const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
+            actor: this.actor,
+            effects: this.actor.effects?.map(e => e.label) || [],
+            showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
+            showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
+            showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
+            showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
+            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
+        });
+        const trayElement = $(trayHtml);
+        $('body').append(trayElement);
+        PanelManager.element = trayElement;
+        
+        // Set initial position and restore pin state
+        trayElement.attr('data-position', 'left');
+        PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
+        if (PanelManager.isPinned) {
+            trayElement.addClass('pinned expanded');
         }
+
+        this.activateListeners(trayElement);
+        await this.renderPanels(trayElement);
     }
 
     async updateTray() {
@@ -126,9 +125,29 @@ export class PanelManager {
             // Replace the old tray with the new one
             PanelManager.element.replaceWith(newTrayElement);
             PanelManager.element = newTrayElement;
-            
+
             // Re-attach listeners and render panels
             this.activateListeners(PanelManager.element);
+
+            // Create new panel instances with updated element references
+            this.characterPanel = new CharacterPanel(this.actor);
+            this.controlPanel = new ControlPanel(this.actor);
+            this.favoritesPanel = new FavoritesPanel(this.actor);
+            this.spellsPanel = new SpellsPanel(this.actor);
+            this.weaponsPanel = new WeaponsPanel(this.actor);
+            this.inventoryPanel = new InventoryPanel(this.actor);
+            this.featuresPanel = new FeaturesPanel(this.actor);
+
+            // Update panel element references
+            this.characterPanel.element = PanelManager.element;
+            this.controlPanel.element = PanelManager.element;
+            this.favoritesPanel.element = PanelManager.element;
+            this.spellsPanel.element = PanelManager.element;
+            this.weaponsPanel.element = PanelManager.element;
+            this.inventoryPanel.element = PanelManager.element;
+            this.featuresPanel.element = PanelManager.element;
+
+            // Render all panels
             await this.renderPanels(PanelManager.element);
 
             // Remove the animation override after a brief delay
@@ -568,23 +587,101 @@ export class PanelManager {
 }
 
 // Hooks
-Hooks.on('ready', async () => {
-    // Wait a brief moment for the canvas to be fully ready
-    await new Promise(resolve => setTimeout(resolve, 100));
+Hooks.on('canvasReady', async () => {
+    // Debug log the available tokens and ownership
+    console.log("SQUIRE | Canvas Ready Token Debug", {
+        availableTokens: canvas.tokens?.placeables.map(t => ({
+            name: t.name,
+            actorId: t.actor?.id,
+            isOwner: t.actor?.isOwner,
+            isControlled: t.controlled,
+            type: t.actor?.type
+        })),
+        defaultCharacter: game.user.character?.name,
+        userId: game.user.id
+    });
+
+    // Try to find a suitable actor in this order:
+    // 1. Currently controlled token
+    // 2. User's default character
+    // 3. First owned character-type token
+    // 4. Any owned token
+    let initialActor = null;
+    let selectionReason = "";
     
-    // Find the first owned token or get the default character
-    const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
-    const defaultCharacter = game.user.character;
-    const initialActor = firstOwnedToken?.actor || defaultCharacter || null;
+    // 1. Check for controlled token
+    initialActor = canvas.tokens?.controlled[0]?.actor;
+    if (initialActor) {
+        selectionReason = "controlled token";
+        console.log("SQUIRE | Using controlled token:", initialActor.name);
+    }
+    
+    // 2. Try default character if no controlled token
+    if (!initialActor) {
+        initialActor = game.user.character;
+        if (initialActor) {
+            selectionReason = "default character";
+            console.log("SQUIRE | Using default character:", initialActor.name);
+        }
+    }
+    
+    // 3. Try to find first owned character token
+    if (!initialActor) {
+        const characterToken = canvas.tokens?.placeables.find(token => 
+            token.actor?.isOwner && token.actor?.type === 'character'
+        );
+        initialActor = characterToken?.actor;
+        if (initialActor) {
+            selectionReason = "first owned character token";
+            console.log("SQUIRE | Using first owned character token:", initialActor.name);
+        }
+    }
+    
+    // 4. Fall back to any owned token
+    if (!initialActor) {
+        const anyToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
+        initialActor = anyToken?.actor;
+        if (initialActor) {
+            selectionReason = "first owned token";
+            console.log("SQUIRE | Using first owned token:", initialActor.name);
+        }
+    }
     
     // Initialize with the found actor
     if (initialActor) {
+        console.log("SQUIRE | Selected Initial Actor", {
+            name: initialActor.name,
+            id: initialActor.id,
+            type: initialActor.type,
+            isOwner: initialActor.isOwner,
+            selectionReason: selectionReason
+        });
+
+        if (PanelManager.element) {
+            PanelManager.element.removeClass('expanded');
+        }
+        
         await PanelManager.initialize(initialActor);
         
-        // Force a re-render of all panels to ensure proper setup
+        // Force a complete tray refresh
         if (PanelManager.instance) {
-            await PanelManager.instance.renderPanels(PanelManager.element);
+            await PanelManager.instance.updateTray();
         }
+        
+        // Play tray open sound
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        if (blacksmith) {
+            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
+            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+        }
+        
+        if (PanelManager.element) {
+            PanelManager.element.addClass('expanded');
+        }
+    } else {
+        console.log("SQUIRE | No Initial Actor Found", {
+            reason: "Could not find any suitable token or character"
+        });
     }
 });
 

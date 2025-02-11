@@ -133,26 +133,29 @@ export class FeaturesPanel {
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
+        // Use event delegation for all handlers
+        const panel = html.find('[data-panel="features"]');
+
         // Category filter toggles
-        html.find('.features-category-filter').click((event) => {
+        panel.on('click', '.features-category-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, html[0]);
+            this.panelManager.toggleCategory(categoryId, panel[0]);
         });
 
         // Add search input listener
-        html.find('.weapon-search').on('input', (event) => {
+        panel.on('input', '.weapon-search', (event) => {
             this._handleSearch(event.target.value);
         });
 
         // Add search clear button listener
-        html.find('.search-clear').click((event) => {
+        panel.on('click', '.search-clear', (event) => {
             const $search = $(event.currentTarget).siblings('.weapon-search');
             $search.val('').trigger('input');
         });
 
         // Feature info click (feather icon)
-        html.find('.tray-buttons .fa-feather').click(async (event) => {
+        panel.on('click', '.tray-buttons .fa-feather', async (event) => {
             try {
                 const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
                 const feature = this.actor.items.get(featureId);
@@ -169,19 +172,17 @@ export class FeaturesPanel {
         });
 
         // Toggle favorite
-        html.find('.tray-buttons .fa-heart').click(async (event) => {
+        panel.on('click', '.tray-buttons .fa-heart', async (event) => {
             const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
             await FavoritesPanel.manageFavorite(this.actor, featureId);
         });
 
         // Feature use click (image overlay)
-        html.find('.weapon-image-container').click(async (event) => {
-            if ($(event.target).hasClass('weapon-roll-overlay')) {
-                const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
-                const feature = this.actor.items.get(featureId);
-                if (feature) {
-                    await feature.use({}, { event });
-                }
+        panel.on('click', '.weapon-image-container .weapon-roll-overlay', async (event) => {
+            const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
+            const feature = this.actor.items.get(featureId);
+            if (feature) {
+                await feature.use({}, { event });
             }
         });
     }
