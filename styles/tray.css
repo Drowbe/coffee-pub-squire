@@ -150,15 +150,15 @@
     padding: 4px 8px;
 }
 
-/* Handle Left Content */
+/* TRAY Handle Title */
 .squire-tray[data-position="left"] .handle-left {
-    order: 3;
     flex: 1;
     writing-mode: vertical-lr;
     transform: rotate(180deg);
     display: flex;
     align-items: center;
     white-space: nowrap;
+    order: 2;
 }
 
 /* Pin Button States */
@@ -179,15 +179,7 @@
     transform: rotate(180deg);
 }
 
-/* TRAY Handle Title */
-.squire-tray[data-position="left"] .handle-left {
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    order: 2;
-}
+
 
 /* Handle Conditions */
 .squire-tray[data-position="left"] .handle-conditions {
