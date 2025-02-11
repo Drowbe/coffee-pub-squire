@@ -15,13 +15,13 @@
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
     </div>
-    <div class="level-filters">
+    <div class="spell-level-filters">
         {{#if (lookup spellsByLevel 0)}}
-        <i class="fas fa-square-0 level-filter active" data-level="0" title="Toggle Cantrips"></i>
+        <i class="fas fa-square-0 spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
         {{/if}}
         {{#each spellSlots}}
         {{#if (or (gt this.max 0) (lookup ../spellsByLevel this.level))}}
-        <i class="fas fa-square-{{this.level}} level-filter active" data-level="{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
+        <i class="fas fa-square-{{this.level}} spell-level-filter active" data-filter-id="category-spell-level-{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
         {{/if}}
         {{/each}}
     </div>
@@ -47,10 +47,10 @@
             {{#if spells}}
                 {{!-- Cantrips --}}
                 {{#if (lookup spellsByLevel 0)}}
-                <div class="level-header">Cantrips</div>
+                <div class="level-header" data-category-id="category-spell-level-0">Cantrips</div>
                 {{#each spells as |spell|}}
                     {{#if (eq spell.system.level 0)}}
-                    <div class="spell-item prepared" data-spell-id="{{spell.id}}">
+                    <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-level-0">
                         <div class="spell-row">
                             <div class="spell-image-container">
                                 <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
@@ -73,7 +73,7 @@
                 {{!-- Leveled Spells --}}
                 {{#each spellSlots as |slot|}}
                     {{#if (or (gt slot.max 0) (lookup ../spellsByLevel slot.level))}}
-                    <div class="level-header">
+                    <div class="level-header" data-category-id="category-spell-level-{{slot.level}}">
                         <span>Level {{slot.level}}</span>
                         <div class="slot-pips">
                             {{#times slot.max}}
@@ -83,7 +83,9 @@
                         </div>
                     </div>
                     {{#each (lookup ../spellsByLevel slot.level) as |spell|}}
-                        <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" data-spell-id="{{spell.id}}">
+                        <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" 
+                             data-spell-id="{{spell.id}}" 
+                             data-category-id="category-spell-level-{{slot.level}}">
                             <div class="spell-row">
                                 <div class="spell-image-container">
                                     <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>

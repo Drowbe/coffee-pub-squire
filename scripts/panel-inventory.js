@@ -7,7 +7,7 @@ export class InventoryPanel {
         this.actor = actor;
         this.items = this._getItems();
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedInventory');
-        this.hiddenCategories = new Set(); // Track which categories are hidden
+        this.panelManager = PanelManager.instance;
     }
 
     _getItems() {
@@ -28,7 +28,8 @@ export class InventoryPanel {
             img: item.img || 'icons/svg/item-bag.svg',
             type: item.type,
             system: item.system,
-            isFavorite: favorites.includes(item.id)
+            isFavorite: favorites.includes(item.id),
+            categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`
         }));
 
         // Group items by type
@@ -47,38 +48,8 @@ export class InventoryPanel {
     }
 
     _handleSearch(searchTerm) {
-        // Convert search term to lowercase for case-insensitive comparison
-        searchTerm = searchTerm.toLowerCase();
-        
-        // Get all inventory items
-        const inventoryItems = this.element.find('.inventory-item');
-        let visibleItems = 0;
-        
-        inventoryItems.each((_, item) => {
-            const $item = $(item);
-            const itemName = $item.find('.inventory-name').text().toLowerCase();
-            const itemType = this.items.all.find(i => i.id === $item.data('item-id'))?.type;
-            
-            // Check if the item's category is hidden
-            const isCategoryHidden = itemType && this.hiddenCategories.has(itemType);
-            
-            if (!isCategoryHidden && (searchTerm === '' || itemName.includes(searchTerm))) {
-                $item.show();
-                visibleItems++;
-            } else {
-                $item.hide();
-            }
-        });
-
-        // Update headers visibility
-        this.element.find('.level-header').each((_, header) => {
-            const $header = $(header);
-            const $nextItems = $header.nextUntil('.level-header', '.inventory-item:visible');
-            $header.toggle($nextItems.length > 0);
-        });
-
-        // Show/hide no matches message
-        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
+        if (!this.element || !this.panelManager) return;
+        this.panelManager.updateSearchVisibility(searchTerm, this.element[0], '.inventory-item');
     }
 
     async render(html) {
@@ -98,61 +69,57 @@ export class InventoryPanel {
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_INVENTORY, itemData);
-        this.element.find('[data-panel="inventory"]').html(template);
+        const inventoryPanel = this.element.find('[data-panel="inventory"]');
+        inventoryPanel.html(template);
+        
+        // Reset all categories to visible initially
+        if (this.panelManager) {
+            this.panelManager.resetCategories(inventoryPanel[0]);
+        }
         
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
     }
 
     _updateVisibility(html) {
-        const searchInput = html.find('.inventory-search');
-        const searchTerm = searchInput.val()?.toLowerCase() || '';
+        if (!html || !this.panelManager) return;
         
-        html.find('.inventory-item').each((i, el) => {
-            const $item = $(el);
+        const items = html.find('.inventory-item');
+        items.each((_, item) => {
+            const $item = $(item);
             const itemId = $item.data('item-id');
-            const item = this.items.all.find(i => i.id === itemId);
+            const inventoryItem = this.items.all.find(i => i.id === itemId);
             
-            if (!item) return;
-
-            const isCategoryHidden = this.hiddenCategories.has(item.type);
-            const equippedMatch = !this.showOnlyEquipped || item.system.equipped;
-            const shouldShow = !isCategoryHidden && equippedMatch;
+            if (!inventoryItem) return;
             
-            $item.toggle(shouldShow);
+            const categoryId = inventoryItem.categoryId;
+            const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
+            const equippedMatch = !this.showOnlyEquipped || inventoryItem.system.equipped;
+            
+            $item.toggle(!isCategoryHidden && equippedMatch);
         });
 
-        // Update headers visibility
-        html.find('.level-header').each((_, header) => {
-            const $header = $(header);
-            const $nextItems = $header.nextUntil('.level-header', '.inventory-item:visible');
-            $header.toggle($nextItems.length > 0);
-        });
+        // Update headers visibility using PanelManager
+        this.panelManager._updateHeadersVisibility(html[0]);
+        this.panelManager._updateEmptyMessage(html[0]);
     }
 
     _activateListeners(html) {
+        if (!html || !this.panelManager) return;
+
+        // Category filter toggles
+        html.find('.inventory-category-filter').click((event) => {
+            const $filter = $(event.currentTarget);
+            const categoryId = $filter.data('filter-id');
+            this.panelManager.toggleCategory(categoryId, html[0]);
+        });
+
         // Add filter toggle handler
         html.find('.inventory-filter-toggle').click(async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;
             await game.settings.set(MODULE.ID, 'showOnlyEquippedInventory', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
-            this._updateVisibility(html);
-        });
-
-        // Category filter toggles
-        html.find('.category-filter').click((event) => {
-            const $filter = $(event.currentTarget);
-            const type = $filter.data('type');
-            
-            $filter.toggleClass('active');
-            
-            if ($filter.hasClass('active')) {
-                this.hiddenCategories.delete(type);
-            } else {
-                this.hiddenCategories.add(type);
-            }
-            
             this._updateVisibility(html);
         });
 

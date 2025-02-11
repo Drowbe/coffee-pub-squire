@@ -1,11 +1,12 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { PanelManager } from './panel-manager.js';
 
 export class FeaturesPanel {
     constructor(actor) {
         this.actor = actor;
         this.features = this._getFeatures();
-        this.hiddenCategories = new Set(); // Track which categories are hidden
+        this.panelManager = PanelManager.instance;
     }
 
     _getFeatures() {
@@ -25,7 +26,8 @@ export class FeaturesPanel {
             system: feature.system,
             actionType: this._getActionType(feature),
             featureType: this._getFeatureType(feature),
-            isFavorite: favorites.includes(feature.id)
+            isFavorite: favorites.includes(feature.id),
+            categoryId: `category-feature-${this._getFeatureType(feature)}`
         }));
 
         // Group features by type
@@ -74,39 +76,8 @@ export class FeaturesPanel {
     }
 
     _handleSearch(searchTerm) {
-        // Convert search term to lowercase for case-insensitive comparison
-        searchTerm = searchTerm.toLowerCase();
-        
-        // Get all feature items
-        const featureItems = this.element.find('.weapon-item');
-        let visibleItems = 0;
-        
-        featureItems.each((_, item) => {
-            const $item = $(item);
-            const featureName = $item.find('.weapon-name').text().toLowerCase();
-            const featureId = $item.data('feature-id');
-            const feature = this.features.all.find(f => f.id === featureId);
-            
-            // Check if the feature's category is hidden
-            const isCategoryHidden = feature && this.hiddenCategories.has(feature.featureType);
-            
-            if (!isCategoryHidden && (searchTerm === '' || featureName.includes(searchTerm))) {
-                $item.show();
-                visibleItems++;
-            } else {
-                $item.hide();
-            }
-        });
-
-        // Update headers visibility
-        this.element.find('.level-header').each((_, header) => {
-            const $header = $(header);
-            const $nextItems = $header.nextUntil('.level-header', '.weapon-item:visible');
-            $header.toggle($nextItems.length > 0);
-        });
-
-        // Show/hide no matches message
-        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
+        if (!this.element || !this.panelManager) return;
+        this.panelManager.updateSearchVisibility(searchTerm, this.element[0], '.weapon-item');
     }
 
     async render(html) {
@@ -125,47 +96,48 @@ export class FeaturesPanel {
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_FEATURES, featureData);
-        this.element.find('[data-panel="features"]').html(template);
+        const featuresPanel = this.element.find('[data-panel="features"]');
+        featuresPanel.html(template);
+        
+        // Reset all categories to visible initially
+        if (this.panelManager) {
+            this.panelManager.resetCategories(featuresPanel[0]);
+        }
         
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
     }
 
     _updateVisibility(html) {
-        html.find('.weapon-item').each((i, el) => {
-            const $item = $(el);
+        if (!html || !this.panelManager) return;
+        
+        const items = html.find('.weapon-item');
+        items.each((_, item) => {
+            const $item = $(item);
             const featureId = $item.data('feature-id');
             const feature = this.features.all.find(f => f.id === featureId);
             
             if (!feature) return;
             
-            const isCategoryHidden = this.hiddenCategories.has(feature.featureType);
+            const categoryId = feature.categoryId;
+            const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
+            
             $item.toggle(!isCategoryHidden);
         });
 
-        // Update headers visibility
-        html.find('.level-header').each((_, header) => {
-            const $header = $(header);
-            const $nextItems = $header.nextUntil('.level-header', '.weapon-item:visible');
-            $header.toggle($nextItems.length > 0);
-        });
+        // Update headers visibility using PanelManager
+        this.panelManager._updateHeadersVisibility(html[0]);
+        this.panelManager._updateEmptyMessage(html[0]);
     }
 
     _activateListeners(html) {
+        if (!html || !this.panelManager) return;
+
         // Category filter toggles
-        html.find('.category-filter').click((event) => {
+        html.find('.features-category-filter').click((event) => {
             const $filter = $(event.currentTarget);
-            const type = $filter.data('type');
-            
-            $filter.toggleClass('active');
-            
-            if ($filter.hasClass('active')) {
-                this.hiddenCategories.delete(type);
-            } else {
-                this.hiddenCategories.add(type);
-            }
-            
-            this._updateVisibility(html);
+            const categoryId = $filter.data('filter-id');
+            this.panelManager.toggleCategory(categoryId, html[0]);
         });
 
         // Add search input listener

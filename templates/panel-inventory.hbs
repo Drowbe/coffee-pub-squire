@@ -15,21 +15,21 @@
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
     </div>
-    <div class="category-filters">
-        {{#if (lookup itemsByType "equipment")}}<i class="fas fa-shirt category-filter active" data-type="equipment" title="Toggle Equipment"></i>{{/if}}
-        {{#if (lookup itemsByType "tool")}}<i class="fas fa-tools category-filter active" data-type="tool" title="Toggle Tools"></i>{{/if}}
-        {{#if (lookup itemsByType "consumable")}}<i class="fas fa-flask category-filter active" data-type="consumable" title="Toggle Consumables"></i>{{/if}}
-        {{#if (lookup itemsByType "loot")}}<i class="fas fa-coins category-filter active" data-type="loot" title="Toggle Loot"></i>{{/if}}
-        {{#if (lookup itemsByType "backpack")}}<i class="fas fa-suitcase category-filter active" data-type="backpack" title="Toggle Containers"></i>{{/if}}
+    <div class="inventory-category-filters">
+        {{#if (lookup itemsByType "equipment")}}<i class="fas fa-shirt inventory-category-filter active" data-filter-id="category-inventory-equipment" title="Toggle Equipment"></i>{{/if}}
+        {{#if (lookup itemsByType "tool")}}<i class="fas fa-tools inventory-category-filter active" data-filter-id="category-inventory-tool" title="Toggle Tools"></i>{{/if}}
+        {{#if (lookup itemsByType "consumable")}}<i class="fas fa-flask inventory-category-filter active" data-filter-id="category-inventory-consumable" title="Toggle Consumables"></i>{{/if}}
+        {{#if (lookup itemsByType "loot")}}<i class="fas fa-coins inventory-category-filter active" data-filter-id="category-inventory-loot" title="Toggle Loot"></i>{{/if}}
+        {{#if (lookup itemsByType "backpack")}}<i class="fas fa-suitcase inventory-category-filter active" data-filter-id="category-inventory-container" title="Toggle Containers"></i>{{/if}}
     </div>
 
     <div class="inventory-list">
         {{#if items}}
             {{!-- Equipment --}}
             {{#if (lookup itemsByType "equipment")}}
-            <div class="level-header">Equipment</div>
+            <div class="inventory-header" data-category-id="category-inventory-equipment">Equipment</div>
             {{#each (lookup itemsByType "equipment") as |item|}}
-            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}" data-category-id="category-inventory-equipment">
                 <div class="inventory-row">
                     <div class="inventory-image-container">
                         <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
@@ -53,9 +53,9 @@
 
             {{!-- Tools --}}
             {{#if (lookup itemsByType "tool")}}
-            <div class="level-header">Tools</div>
+            <div class="inventory-header" data-category-id="category-inventory-tool">Tools</div>
             {{#each (lookup itemsByType "tool") as |item|}}
-            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}" data-category-id="category-inventory-tool">
                 <div class="inventory-row">
                     <div class="inventory-image-container">
                         <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
@@ -79,9 +79,9 @@
 
             {{!-- Consumables --}}
             {{#if (lookup itemsByType "consumable")}}
-            <div class="level-header">Consumables</div>
+            <div class="inventory-header" data-category-id="category-inventory-consumable">Consumables</div>
             {{#each (lookup itemsByType "consumable") as |item|}}
-            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}" data-category-id="category-inventory-consumable">
                 <div class="inventory-row">
                     <div class="inventory-image-container">
                         <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
@@ -105,9 +105,9 @@
 
             {{!-- Loot --}}
             {{#if (lookup itemsByType "loot")}}
-            <div class="level-header">Loot</div>
+            <div class="inventory-header" data-category-id="category-inventory-loot">Loot</div>
             {{#each (lookup itemsByType "loot") as |item|}}
-            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}">
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}" data-category-id="category-inventory-loot">
                 <div class="inventory-row">
                     <div class="inventory-image-container">
                         <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>
@@ -131,9 +131,9 @@
 
             {{!-- Containers --}}
             {{#if (lookup itemsByType "backpack")}}
-            <div class="level-header">Containers</div>
+            <div class="inventory-header" data-category-id="category-inventory-container">Containers</div>
             {{#each (lookup itemsByType "backpack") as |item|}}
-            <div class="inventory-item" data-item-id="{{item.id}}">
+            <div class="inventory-item {{#if item.system.equipped}}prepared{{/if}}" data-item-id="{{item.id}}" data-category-id="category-inventory-container">
                 <div class="inventory-row">
                     <div class="inventory-image-container">
                         <img class="inventory-image" src="{{item.img}}" alt="{{item.name}}"/>

@@ -1,12 +1,13 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { PanelManager } from './panel-manager.js';
 
 export class SpellsPanel {
     constructor(actor) {
         this.actor = actor;
         this.spells = this._getSpells();
         this.showOnlyPrepared = game.settings.get(MODULE.ID, 'showOnlyPreparedSpells');
-        this.hiddenLevels = new Set(); // Track which levels are hidden
+        this.panelManager = PanelManager.instance;
     }
 
     _getSpells() {
@@ -21,6 +22,7 @@ export class SpellsPanel {
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
+            const level = spell.system.level;
             
             return {
                 id: spell.id,
@@ -28,7 +30,8 @@ export class SpellsPanel {
                 img: spell.img,
                 system: spell.system,
                 type: spell.type,
-                isFavorite: isFavorite
+                isFavorite: isFavorite,
+                categoryId: `category-spell-level-${level}`
             };
         });
         
@@ -36,34 +39,8 @@ export class SpellsPanel {
     }
 
     _handleSearch(searchTerm) {
-        // Convert search term to lowercase for case-insensitive comparison
-        searchTerm = searchTerm.toLowerCase();
-        
-        // Get all spell items
-        const spellItems = this.element.find('.spell-item');
-        let visibleItems = 0;
-        
-        spellItems.each((_, item) => {
-            const $item = $(item);
-            const spellName = $item.find('.spell-name').text().toLowerCase();
-            
-            if (searchTerm === '' || spellName.includes(searchTerm)) {
-                $item.show();
-                visibleItems++;
-            } else {
-                $item.hide();
-            }
-        });
-
-        // Show/hide no matches message
-        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
-
-        // Update level headers visibility
-        this.element.find('.level-header').each((_, header) => {
-            const $header = $(header);
-            const $nextSpells = $header.nextUntil('.level-header', '.spell-item:visible');
-            $header.toggle($nextSpells.length > 0);
-        });
+        if (!this.element || !this.panelManager) return;
+        this.panelManager.updateSearchVisibility(searchTerm, this.element[0], '.spell-item');
     }
 
     async render(html) {
@@ -99,6 +76,11 @@ export class SpellsPanel {
         const spellsPanel = this.element.find('[data-panel="spells"]');
         spellsPanel.html(template);
         
+        // Reset all categories to visible initially
+        if (this.panelManager) {
+            this.panelManager.resetCategories(spellsPanel[0]);
+        }
+        
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
     }
@@ -123,72 +105,40 @@ export class SpellsPanel {
     }
 
     _updateVisibility(html) {
-        const searchInput = html.find('.spell-search');
-        const searchTerm = searchInput.val()?.toLowerCase() || '';
+        if (!html || !this.panelManager) return;
         
-        // Track visible spells for each level
-        const visibleSpellsByLevel = new Map();
-        
-        const spellItems = html.find('.spell-item');
-        spellItems.each((i, el) => {
-            const $item = $(el);
+        const items = html.find('.spell-item');
+        items.each((_, item) => {
+            const $item = $(item);
             const spellId = $item.data('spell-id');
             const spell = this.spells.find(s => s.id === spellId);
             
             if (!spell) return;
-
-            const nameMatch = spell.name.toLowerCase().includes(searchTerm);
-            const levelMatch = !this.hiddenLevels.has(spell.system.level.toString());
+            
+            const categoryId = spell.categoryId;
+            const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             const preparedMatch = !this.showOnlyPrepared || 
                 spell.system.level === 0 || // Cantrips are always prepared
                 spell.system.preparation?.prepared;
-
-            const shouldShow = nameMatch && levelMatch && preparedMatch;
-            $item.toggle(shouldShow);
-
-            // Track visible spells for this level
-            if (shouldShow) {
-                const level = spell.system.level;
-                visibleSpellsByLevel.set(level, (visibleSpellsByLevel.get(level) || 0) + 1);
-            }
-        });
-
-        // Hide/show level headers based on visible spells and level filters
-        html.find('.level-header').each((i, header) => {
-            const $header = $(header);
-            const headerText = $header.find('span').text();
             
-            // Determine the level this header represents
-            let level;
-            if (headerText.toLowerCase().includes('cantrip')) {
-                level = 0;
-            } else {
-                const match = headerText.match(/Level (\d+)/);
-                if (match) {
-                    level = parseInt(match[1]);
-                }
-            }
-
-            if (level !== undefined) {
-                const hasVisibleSpells = visibleSpellsByLevel.get(level) > 0;
-                const levelNotHidden = !this.hiddenLevels.has(level.toString());
-                const isCantripsHeader = level === 0 && !headerText.includes('Level');
-                
-                // Special handling for cantrips header
-                if (isCantripsHeader) {
-                    $header.toggle(hasVisibleSpells && levelNotHidden);
-                } else {
-                    $header.toggle(hasVisibleSpells && levelNotHidden);
-                }
-            }
+            $item.toggle(!isCategoryHidden && preparedMatch);
         });
 
-        // Show/hide no matches message
-        const hasVisibleSpells = Array.from(visibleSpellsByLevel.values()).some(count => count > 0);
-        html.find('.no-matches').toggle(!hasVisibleSpells && searchTerm !== '');
+        // Update headers visibility using PanelManager
+        this.panelManager._updateHeadersVisibility(html[0]);
+        this.panelManager._updateEmptyMessage(html[0]);
     }
 
     _activateListeners(html) {
+        if (!html || !this.panelManager) return;
+
+        // Level filter toggles
+        html.find('.spell-level-filter').click((event) => {
+            const $filter = $(event.currentTarget);
+            const categoryId = $filter.data('filter-id');
+            this.panelManager.toggleCategory(categoryId, html[0]);
+        });
+
         // Search functionality
         const $search = html.find('.spell-search');
         $search.on('input', (event) => {
@@ -200,7 +150,7 @@ export class SpellsPanel {
             $search.val('').trigger('input');
         });
 
-        // Toggle prepared state (cog icon)
+        // Toggle prepared state (sun icon)
         html.find('.tray-buttons .fa-sun').click(async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
@@ -218,17 +168,6 @@ export class SpellsPanel {
             }
         });
 
-        // Remove from favorites
-        html.find('.spell-item .fa-heart').click(async (event) => {
-            const itemId = $(event.currentTarget).closest('.spell-item').data('spell-id');
-            await FavoritesPanel.manageFavorite(this.actor, itemId);
-        });
-
-        // Filter functionality
-        html.find('.spell-filter').change(() => {
-            this._updateVisibility(html);
-        });
-
         // Toggle prepared spells only
         html.find('.spell-filter-toggle').click(async (event) => {
             this.showOnlyPrepared = !this.showOnlyPrepared;
@@ -237,6 +176,12 @@ export class SpellsPanel {
                 .toggleClass('active', this.showOnlyPrepared)
                 .toggleClass('faded', !this.showOnlyPrepared);
             this._updateVisibility(html);
+        });
+
+        // Remove from favorites
+        html.find('.spell-item .fa-heart').click(async (event) => {
+            const itemId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+            await FavoritesPanel.manageFavorite(this.actor, itemId);
         });
 
         // Cast spell
@@ -257,22 +202,6 @@ export class SpellsPanel {
             if (spell) {
                 spell.sheet.render(true);
             }
-        });
-
-        // Level filter toggles
-        html.find('.level-filter').click((event) => {
-            const $filter = $(event.currentTarget);
-            const level = $filter.data('level').toString();
-            
-            $filter.toggleClass('active');
-            
-            if ($filter.hasClass('active')) {
-                this.hiddenLevels.delete(level);
-            } else {
-                this.hiddenLevels.add(level);
-            }
-            
-            this._updateVisibility(html);
         });
     }
 } 

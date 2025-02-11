@@ -223,33 +223,7 @@
     background: #357abd;
 }
 
-.level-filters {
-    display: flex;
-    gap: 8px;
-    padding: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-	margin-top: 0px;
-	margin-bottom: 6px;
-    border-top: 0px solid rgba(0, 0, 0, 0.5);
-}
-
-.level-filter {
-    cursor: pointer;
-    opacity: 0.3;
-    transition: all 0.2s ease;
-    font-size: 1.2em;
-}
-
-.level-filter:hover {
-    opacity: 1;
-}
-
-.level-filter.active {
-    opacity: .8;
-}
-
-.category-filters {
+.spell-level-filters {
     display: flex;
     gap: 8px;
     padding: 8px;
@@ -260,17 +234,95 @@
     border-top: 0px solid rgba(0, 0, 0, 0.5);
 }
 
-.category-filter {
+.spell-level-filters .spell-level-filter {
     cursor: pointer;
     opacity: 0.3;
     transition: all 0.2s ease;
     font-size: 1.2em;
 }
 
-.category-filter:hover {
+.spell-level-filters .spell-level-filter:hover {
     opacity: 1;
 }
 
-.category-filter.active {
+.spell-level-filters .spell-level-filter.active {
+    opacity: .8;
+}
+
+.inventory-category-filters {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0px;
+    margin-bottom: 6px;
+    border-top: 0px solid rgba(0, 0, 0, 0.5);
+}
+
+.inventory-category-filter {
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    font-size: 1.2em;
+}
+
+.inventory-category-filter:hover {
+    opacity: 1;
+}
+
+.inventory-category-filter.active {
+    opacity: .8;
+}
+
+.features-category-filters {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0px;
+    margin-bottom: 6px;
+    border-top: 0px solid rgba(0, 0, 0, 0.5);
+}
+
+.features-category-filters .features-category-filter {
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    font-size: 1.2em;
+}
+
+.features-category-filters .features-category-filter:hover {
+    opacity: 1;
+}
+
+.features-category-filters .features-category-filter.active {
+    opacity: .8;
+}
+
+.weapons-category-filters {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0px;
+    margin-bottom: 6px;
+    border-top: 0px solid rgba(0, 0, 0, 0.5);
+}
+
+.weapons-category-filters .weapons-category-filter {
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    font-size: 1.2em;
+}
+
+.weapons-category-filters .weapons-category-filter:hover {
+    opacity: 1;
+}
+
+.weapons-category-filters .weapons-category-filter.active {
     opacity: .8;
 } 

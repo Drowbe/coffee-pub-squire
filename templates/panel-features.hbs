@@ -15,21 +15,21 @@
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
     </div>
-    <div class="category-filters">
-        {{#if (lookup featuresByType "class")}}<i class="fas fa-graduation-cap category-filter active" data-type="class" title="Toggle Class Features"></i>{{/if}}
-        {{#if (lookup featuresByType "subclass")}}<i class="fas fa-award category-filter active" data-type="subclass" title="Toggle Subclass Features"></i>{{/if}}
-        {{#if (lookup featuresByType "race")}}<i class="fas fa-user category-filter active" data-type="race" title="Toggle Racial Features"></i>{{/if}}
-        {{#if (lookup featuresByType "background")}}<i class="fas fa-scroll category-filter active" data-type="background" title="Toggle Background Features"></i>{{/if}}
-        {{#if (lookup featuresByType "feat")}}<i class="fas fa-medal category-filter active" data-type="feat" title="Toggle Feats"></i>{{/if}}
+    <div class="features-category-filters">
+        {{#if (lookup featuresByType "class")}}<i class="fas fa-graduation-cap features-category-filter active" data-filter-id="category-feature-class" title="Toggle Class Features"></i>{{/if}}
+        {{#if (lookup featuresByType "subclass")}}<i class="fas fa-book-sparkles features-category-filter active" data-filter-id="category-feature-subclass" title="Toggle Subclass Features"></i>{{/if}}
+        {{#if (lookup featuresByType "race")}}<i class="fas fa-users features-category-filter active" data-filter-id="category-feature-race" title="Toggle Racial Features"></i>{{/if}}
+        {{#if (lookup featuresByType "background")}}<i class="fas fa-scroll features-category-filter active" data-filter-id="category-feature-background" title="Toggle Background Features"></i>{{/if}}
+        {{#if (lookup featuresByType "feat")}}<i class="fas fa-hand-sparkles features-category-filter active" data-filter-id="category-feature-feat" title="Toggle Feats"></i>{{/if}}
     </div>
 
     <div class="weapons-list">
         {{#if features}}
             {{!-- Class Features --}}
             {{#if (lookup featuresByType "class")}}
-            <div class="level-header">Class Features</div>
+            <div class="features-header" data-category-id="category-feature-class">Class Features</div>
             {{#each (lookup featuresByType "class") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}">
+            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-class">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
@@ -60,9 +60,9 @@
 
             {{!-- Subclass Features --}}
             {{#if (lookup featuresByType "subclass")}}
-            <div class="level-header">Subclass Features</div>
+            <div class="features-header" data-category-id="category-feature-subclass">Subclass Features</div>
             {{#each (lookup featuresByType "subclass") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}">
+            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-subclass">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
@@ -93,9 +93,9 @@
 
             {{!-- Racial Features --}}
             {{#if (lookup featuresByType "race")}}
-            <div class="level-header">Racial Features</div>
+            <div class="features-header" data-category-id="category-feature-race">Racial Features</div>
             {{#each (lookup featuresByType "race") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}">
+            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-race">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
@@ -126,9 +126,9 @@
 
             {{!-- Background Features --}}
             {{#if (lookup featuresByType "background")}}
-            <div class="level-header">Background Features</div>
+            <div class="features-header" data-category-id="category-feature-background">Background Features</div>
             {{#each (lookup featuresByType "background") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}">
+            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-background">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
@@ -159,9 +159,9 @@
 
             {{!-- Feats --}}
             {{#if (lookup featuresByType "feat")}}
-            <div class="level-header">Feats</div>
+            <div class="features-header" data-category-id="category-feature-feat">Feats</div>
             {{#each (lookup featuresByType "feat") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}">
+            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-feat">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>

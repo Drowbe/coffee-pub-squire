@@ -22,6 +22,7 @@ export class PanelManager {
         this.weaponsPanel = new WeaponsPanel(actor);
         this.inventoryPanel = new InventoryPanel(actor);
         this.featuresPanel = new FeaturesPanel(actor);
+        this.hiddenCategories = new Set();
     }
 
     static async initialize(actor = null) {
@@ -436,6 +437,133 @@ export class PanelManager {
             case 'feat': return 'New Feature Added';
             default: return 'New Item Added';
         }
+    }
+
+    /**
+     * Toggle visibility of a category
+     * @param {string} categoryId - The ID of the category to toggle
+     * @param {HTMLElement} panel - The panel element containing the category
+     * @param {boolean} [active] - Optional force state (true = show, false = hide)
+     */
+    toggleCategory(categoryId, panel, active = null) {
+        const filter = panel.querySelector(`[data-filter-id="${categoryId}"]`);
+        const items = panel.querySelectorAll(`[data-category-id="${categoryId}"]`);
+        
+        // If active is not provided, toggle based on current state
+        const shouldBeActive = active !== null ? active : !filter?.classList.contains('active');
+        
+        // Update filter button state
+        if (filter) {
+            if (shouldBeActive) {
+                filter.classList.add('active');
+                this.hiddenCategories.delete(categoryId);
+            } else {
+                filter.classList.remove('active');
+                this.hiddenCategories.add(categoryId);
+            }
+        }
+
+        // Update visibility of items and headers
+        items.forEach(item => {
+            if (shouldBeActive) {
+                item.style.removeProperty('display');
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Update visibility of empty sections
+        this._updateEmptyMessage(panel);
+    }
+
+    /**
+     * Update visibility of items based on search text
+     * @param {string} searchText - The text to search for
+     * @param {HTMLElement} panel - The panel element containing the items
+     * @param {string} itemSelector - The selector for items (e.g., '.spell-item', '.weapon-item')
+     */
+    updateSearchVisibility(searchText, panel, itemSelector) {
+        const items = panel.querySelectorAll(itemSelector);
+        const normalizedSearch = searchText.toLowerCase().trim();
+        let hasVisibleItems = false;
+
+        items.forEach(item => {
+            const name = item.querySelector('.weapon-name, .spell-name, .inventory-name')?.textContent.toLowerCase() || '';
+            const categoryId = item.dataset.categoryId;
+            const matchesSearch = !normalizedSearch || name.includes(normalizedSearch);
+            const categoryVisible = !this.hiddenCategories.has(categoryId);
+
+            if (matchesSearch && categoryVisible) {
+                item.style.removeProperty('display');
+                hasVisibleItems = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Update headers visibility
+        this._updateHeadersVisibility(panel);
+        this._updateEmptyMessage(panel, hasVisibleItems);
+    }
+
+    /**
+     * Update visibility of category headers based on visible items
+     * @param {HTMLElement} panel - The panel element
+     * @private
+     */
+    _updateHeadersVisibility(panel) {
+        const headers = panel.querySelectorAll('.weapons-header, .features-header, .inventory-header, .level-header');
+        
+        headers.forEach(header => {
+            const categoryId = header.dataset.categoryId;
+            if (this.hiddenCategories.has(categoryId)) {
+                header.style.display = 'none';
+                return;
+            }
+
+            const items = panel.querySelectorAll(`[data-category-id="${categoryId}"]:not(.weapons-header):not(.features-header):not(.inventory-header):not(.level-header)`);
+            let hasVisibleItems = false;
+
+            items.forEach(item => {
+                if (item.style.display !== 'none') {
+                    hasVisibleItems = true;
+                }
+            });
+
+            header.style.display = hasVisibleItems ? '' : 'none';
+        });
+    }
+
+    /**
+     * Update visibility of the "no matches" message
+     * @param {HTMLElement} panel - The panel element
+     * @param {boolean} hasVisibleItems - Whether there are any visible items
+     * @private
+     */
+    _updateEmptyMessage(panel, hasVisibleItems = null) {
+        const noMatchesMsg = panel.querySelector('.no-matches');
+        if (!noMatchesMsg) return;
+
+        if (hasVisibleItems === null) {
+            // Calculate if there are visible items
+            const items = panel.querySelectorAll('.weapon-item, .spell-item, .inventory-item');
+            hasVisibleItems = Array.from(items).some(item => item.style.display !== 'none');
+        }
+
+        noMatchesMsg.style.display = hasVisibleItems ? 'none' : 'block';
+    }
+
+    /**
+     * Reset all categories to visible
+     * @param {HTMLElement} panel - The panel element
+     */
+    resetCategories(panel) {
+        this.hiddenCategories.clear();
+        const filters = panel.querySelectorAll('[data-filter-id]');
+        filters.forEach(filter => {
+            filter.classList.add('active');
+            this.toggleCategory(filter.dataset.filterId, panel, true);
+        });
     }
 }
 

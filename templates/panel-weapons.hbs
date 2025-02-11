@@ -15,21 +15,21 @@
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
     </div>
-    <div class="category-filters">
-        {{#if (lookup weaponsByType "simpleM")}}<i class="fas fa-hand-fist category-filter active" data-type="simpleM" title="Toggle Simple Melee Weapons"></i>{{/if}}
-        {{#if (lookup weaponsByType "martialM")}}<i class="fas fa-sword category-filter active" data-type="martialM" title="Toggle Martial Melee Weapons"></i>{{/if}}
-        {{#if (lookup weaponsByType "simpleR")}}<i class="fas fa-bow category-filter active" data-type="simpleR" title="Toggle Simple Ranged Weapons"></i>{{/if}}
-        {{#if (lookup weaponsByType "martialR")}}<i class="fas fa-bow-arrow category-filter active" data-type="martialR" title="Toggle Martial Ranged Weapons"></i>{{/if}}
-        {{#if (lookup weaponsByType "natural")}}<i class="fas fa-hand-claws category-filter active" data-type="natural" title="Toggle Natural Weapons"></i>{{/if}}
+    <div class="weapons-category-filters">
+        {{#if (lookup weaponsByType "simple-melee")}}<i class="fas fa-hand-fist weapons-category-filter active" data-filter-id="category-weapon-simple-melee" title="Toggle Simple Melee"></i>{{/if}}
+        {{#if (lookup weaponsByType "martial-melee")}}<i class="fas fa-sword weapons-category-filter active" data-filter-id="category-weapon-martial-melee" title="Toggle Martial Melee"></i>{{/if}}
+        {{#if (lookup weaponsByType "simple-ranged")}}<i class="fas fa-bow-arrow weapons-category-filter active" data-filter-id="category-weapon-simple-ranged" title="Toggle Simple Ranged"></i>{{/if}}
+        {{#if (lookup weaponsByType "martial-ranged")}}<i class="fas fa-crosshairs weapons-category-filter active" data-filter-id="category-weapon-martial-ranged" title="Toggle Martial Ranged"></i>{{/if}}
+        {{#if (lookup weaponsByType "natural")}}<i class="fas fa-paw weapons-category-filter active" data-filter-id="category-weapon-natural" title="Toggle Natural Weapons"></i>{{/if}}
     </div>
 
     <div class="weapons-list">
         {{#if weapons}}
             {{!-- Simple Melee Weapons --}}
-            {{#if (lookup weaponsByType "simpleM")}}
-            <div class="level-header">Simple Melee Weapons</div>
-            {{#each (lookup weaponsByType "simpleM") as |weapon|}}
-            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+            {{#if (lookup weaponsByType "simple-melee")}}
+            <div class="weapons-header" data-category-id="category-weapon-simple-melee">Simple Melee Weapons</div>
+            {{#each (lookup weaponsByType "simple-melee") as |weapon|}}
+            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-simple-melee">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
@@ -37,7 +37,7 @@
                     </div>
                     <div class="weapon-name">{{weapon.name}}</div>
                     <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                         <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>
@@ -47,10 +47,10 @@
             {{/if}}
 
             {{!-- Martial Melee Weapons --}}
-            {{#if (lookup weaponsByType "martialM")}}
-            <div class="level-header">Martial Melee Weapons</div>
-            {{#each (lookup weaponsByType "martialM") as |weapon|}}
-            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+            {{#if (lookup weaponsByType "martial-melee")}}
+            <div class="weapons-header" data-category-id="category-weapon-martial-melee">Martial Melee Weapons</div>
+            {{#each (lookup weaponsByType "martial-melee") as |weapon|}}
+            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-martial-melee">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
@@ -58,7 +58,7 @@
                     </div>
                     <div class="weapon-name">{{weapon.name}}</div>
                     <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                         <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>
@@ -68,10 +68,10 @@
             {{/if}}
 
             {{!-- Simple Ranged Weapons --}}
-            {{#if (lookup weaponsByType "simpleR")}}
-            <div class="level-header">Simple Ranged Weapons</div>
-            {{#each (lookup weaponsByType "simpleR") as |weapon|}}
-            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+            {{#if (lookup weaponsByType "simple-ranged")}}
+            <div class="weapons-header" data-category-id="category-weapon-simple-ranged">Simple Ranged Weapons</div>
+            {{#each (lookup weaponsByType "simple-ranged") as |weapon|}}
+            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-simple-ranged">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
@@ -79,7 +79,7 @@
                     </div>
                     <div class="weapon-name">{{weapon.name}}</div>
                     <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                         <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>
@@ -89,10 +89,10 @@
             {{/if}}
 
             {{!-- Martial Ranged Weapons --}}
-            {{#if (lookup weaponsByType "martialR")}}
-            <div class="level-header">Martial Ranged Weapons</div>
-            {{#each (lookup weaponsByType "martialR") as |weapon|}}
-            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+            {{#if (lookup weaponsByType "martial-ranged")}}
+            <div class="weapons-header" data-category-id="category-weapon-martial-ranged">Martial Ranged Weapons</div>
+            {{#each (lookup weaponsByType "martial-ranged") as |weapon|}}
+            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-martial-ranged">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
@@ -100,7 +100,7 @@
                     </div>
                     <div class="weapon-name">{{weapon.name}}</div>
                     <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                         <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>
@@ -111,9 +111,9 @@
 
             {{!-- Natural Weapons --}}
             {{#if (lookup weaponsByType "natural")}}
-            <div class="level-header">Natural Weapons</div>
+            <div class="weapons-header" data-category-id="category-weapon-natural">Natural Weapons</div>
             {{#each (lookup weaponsByType "natural") as |weapon|}}
-            <div class="weapon-item {{#if weapon.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}">
+            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-natural">
                 <div class="weapon-row">
                     <div class="weapon-image-container">
                         <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
@@ -121,7 +121,7 @@
                     </div>
                     <div class="weapon-name">{{weapon.name}}</div>
                     <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
                         <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fas fa-feather"></i>
                     </div>
