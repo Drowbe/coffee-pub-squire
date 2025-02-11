@@ -18,17 +18,6 @@ export class SpellsPanel {
         // Get spells
         const spells = this.actor.items.filter(item => item.type === 'spell');
         
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        // Log raw spells from actor
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Raw spells from actor",
-            spells,
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
-        
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
@@ -42,16 +31,6 @@ export class SpellsPanel {
                 isFavorite: isFavorite
             };
         });
-        
-        // Log mapped spells
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Mapped spells with favorites",
-            mappedSpells,
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
         
         return mappedSpells;
     }
@@ -115,22 +94,6 @@ export class SpellsPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyPrepared: this.showOnlyPrepared
         };
-
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        // Log spell data being sent to template
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Spell data for template",
-            {
-                spellsByLevel: Object.entries(spellsByLevel).map(([level, spells]) => 
-                    `Level ${level}: ${spells.length} spells`
-                ),
-                spellSlots: spellData.spellSlots
-            },
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
         const spellsPanel = this.element.find('[data-panel="spells"]');

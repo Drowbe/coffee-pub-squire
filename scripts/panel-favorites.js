@@ -3,6 +3,7 @@ import { PanelManager } from './panel-manager.js';
 
 export class FavoritesPanel {
     static getFavorites(actor) {
+        if (!actor) return [];
         return actor.getFlag(MODULE.ID, 'favorites') || [];
     }
 

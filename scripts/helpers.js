@@ -38,16 +38,6 @@ export const registerHelpers = function() {
 
     // Helper to check if array has any items matching a condition
     Handlebars.registerHelper('some', function(array, property, value) {
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Checking condition",
-            { array, property, value },
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
-
         if (!array || !array.length) return false;
         return array.some(item => {
             if (property.includes('.')) {

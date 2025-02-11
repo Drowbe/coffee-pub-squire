@@ -133,19 +133,6 @@ export class WeaponsPanel {
         this.element.find('[data-panel="weapons"]').html(template);
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
-
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Weapon data for template",
-            {
-                weapons: this.weapons.all.map(w => w.name),
-                position: weaponData.position
-            },
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
     }
 
     _updateVisibility(html) {
