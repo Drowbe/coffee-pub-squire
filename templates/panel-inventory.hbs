@@ -5,6 +5,11 @@
             <i class="fas fa-backpack"></i> Inventory
         </div>
         <div class="header-right">
+            {{#if (lookup itemsByType "equipment")}}<i class="fas fa-shirt inventory-category-filter active" data-filter-id="category-inventory-equipment" title="Toggle Equipment"></i>{{/if}}
+            {{#if (lookup itemsByType "tool")}}<i class="fas fa-tools inventory-category-filter active" data-filter-id="category-inventory-tool" title="Toggle Tools"></i>{{/if}}
+            {{#if (lookup itemsByType "consumable")}}<i class="fas fa-flask inventory-category-filter active" data-filter-id="category-inventory-consumable" title="Toggle Consumables"></i>{{/if}}
+            {{#if (lookup itemsByType "loot")}}<i class="fas fa-coins inventory-category-filter active" data-filter-id="category-inventory-loot" title="Toggle Loot"></i>{{/if}}
+            {{#if (lookup itemsByType "backpack")}}<i class="fas fa-suitcase inventory-category-filter active" data-filter-id="category-inventory-container" title="Toggle Containers"></i>{{/if}}
             <i class="fas fa-shield-halved inventory-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Items"></i>
         </div>
     </div>
@@ -15,14 +20,6 @@
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
     </div>
-    <div class="inventory-category-filters">
-        {{#if (lookup itemsByType "equipment")}}<i class="fas fa-shirt inventory-category-filter active" data-filter-id="category-inventory-equipment" title="Toggle Equipment"></i>{{/if}}
-        {{#if (lookup itemsByType "tool")}}<i class="fas fa-tools inventory-category-filter active" data-filter-id="category-inventory-tool" title="Toggle Tools"></i>{{/if}}
-        {{#if (lookup itemsByType "consumable")}}<i class="fas fa-flask inventory-category-filter active" data-filter-id="category-inventory-consumable" title="Toggle Consumables"></i>{{/if}}
-        {{#if (lookup itemsByType "loot")}}<i class="fas fa-coins inventory-category-filter active" data-filter-id="category-inventory-loot" title="Toggle Loot"></i>{{/if}}
-        {{#if (lookup itemsByType "backpack")}}<i class="fas fa-suitcase inventory-category-filter active" data-filter-id="category-inventory-container" title="Toggle Containers"></i>{{/if}}
-    </div>
-
     <div class="inventory-list">
         {{#if items}}
             {{!-- Equipment --}}

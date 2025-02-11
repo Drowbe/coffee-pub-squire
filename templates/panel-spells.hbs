@@ -5,6 +5,14 @@
             <i class="fas fa-sparkles"></i> Spells
         </div>
         <div class="header-right">
+            {{#if (lookup spellsByLevel 0)}}
+            <i class="fas fa-square-0 spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
+            {{/if}}
+            {{#each spellSlots}}
+            {{#if (or (gt this.max 0) (lookup ../spellsByLevel this.level))}}
+            <i class="fas fa-square-{{this.level}} spell-level-filter active" data-filter-id="category-spell-level-{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
+            {{/if}}
+            {{/each}}
             <i class="fas fa-sun spell-filter-toggle filter-toggle {{#if showOnlyPrepared}}active{{else}}faded{{/if}}" title="Toggle Prepared Spells"></i>
         </div>
     </div>
@@ -14,16 +22,6 @@
             <input type="text" class="spell-search" placeholder="Search Spells...">
             <i class="fas fa-times search-clear" title="Clear Search"></i>
         </div>
-    </div>
-    <div class="spell-level-filters">
-        {{#if (lookup spellsByLevel 0)}}
-        <i class="fas fa-square-0 spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
-        {{/if}}
-        {{#each spellSlots}}
-        {{#if (or (gt this.max 0) (lookup ../spellsByLevel this.level))}}
-        <i class="fas fa-square-{{this.level}} spell-level-filter active" data-filter-id="category-spell-level-{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
-        {{/if}}
-        {{/each}}
     </div>
 
     {{#if (eq position "bottom")}}

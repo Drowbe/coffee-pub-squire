@@ -408,16 +408,54 @@
     gap: 8px;
 }
 
+.squire-tray[data-position="left"] .section-header .header-left i {
+    color: #9f9275;
+}
+
 .squire-tray[data-position="left"] .section-header .header-right {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
+    flex: 1;
+    justify-content: flex-end;
 }
 
+.squire-tray[data-position="left"] .section-header .header-right i {
+    color: #9f9275;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 0.85em;
+}
+
+.squire-tray[data-position="left"] .section-header .header-right i:hover {
+    color: #fff;
+}
+
+/* Category Filter Icons */
+.squire-tray[data-position="left"] .section-header .weapons-category-filter,
+.squire-tray[data-position="left"] .section-header .spell-level-filter,
+.squire-tray[data-position="left"] .section-header .inventory-category-filter,
+.squire-tray[data-position="left"] .section-header .features-category-filter {
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 0.85em;
+}
+
+.squire-tray[data-position="left"] .section-header .weapons-category-filter:not(.active),
+.squire-tray[data-position="left"] .section-header .spell-level-filter:not(.active),
+.squire-tray[data-position="left"] .section-header .inventory-category-filter:not(.active),
+.squire-tray[data-position="left"] .section-header .features-category-filter:not(.active) {
+    opacity: 0.3;
+}
+
+/* Filter Toggle */
 .squire-tray[data-position="left"] .section-header .filter-toggle {
     cursor: pointer;
-    color: #aaa;
+    color: #9f9275;
     transition: color 0.2s ease;
+    border-left: 1px solid #444;
+    padding-left: 8px;
+    margin-left: 4px;
 }
 
 .squire-tray[data-position="left"] .section-header .filter-toggle:hover {
@@ -429,7 +467,19 @@
 }
 
 .squire-tray[data-position="left"] .section-header .filter-toggle.active {
-    opacity: 1;
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .favorites-panel .section-header .fa-heart {
+    border-right: 1px solid #444;
+    padding-right: 8px;
+    margin-right: 4px;
+}
+
+.squire-tray[data-position="left"] .favorites-panel .section-header .filter-toggle {
+    border-left: none;
+    padding-left: 0;
+    margin-left: 0;
 }
 
 .squire-tray[data-position="left"] .section-header .control-toggle {
