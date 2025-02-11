@@ -50,7 +50,8 @@ export class PanelManager {
             },
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
 
         // Create or update instance
@@ -178,6 +179,15 @@ export class PanelManager {
                 return false;
             }
             
+            // Play tray open sound when expanding
+            if (!tray.hasClass('expanded')) {
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+                }
+            }
+            
             tray.toggleClass('expanded');
             return false;
         });
@@ -201,6 +211,13 @@ export class PanelManager {
             
             PanelManager.isPinned = !PanelManager.isPinned;
             await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
+            
+            // Play pin/unpin sound
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
+                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+            }
             
             if (PanelManager.isPinned) {
                 tray.addClass('pinned expanded');
@@ -232,6 +249,13 @@ export class PanelManager {
                 const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
                 const dropType = data.type;
                 let dropMessage = "Drop to Add";
+                
+                // Play hover sound
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+                }
                 
                 // Customize message based on type
                 switch(dropType) {
@@ -273,12 +297,19 @@ export class PanelManager {
                 const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
                 const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
                 
+                // Play drop sound
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'dropSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMENORMAL, false, false);
+                }
+                
                 blacksmith?.utils.postConsoleAndNotification(
                     "SQUIRE | Drop data received",
                     data,
                     false,
                     true,
-                    false
+                    false,
+                    MODULE.TITLE
                 );
 
                 if (!this.actor) {
@@ -293,13 +324,69 @@ export class PanelManager {
                         item = await Item.implementation.fromDropData(data);
                         if (!item) return;
                         // Create the item on the actor
-                        await this.actor.createEmbeddedDocuments('Item', [item.toObject()]);
+                        const createdItem = await this.actor.createEmbeddedDocuments('Item', [item.toObject()]);
+                        
+                        // Debug log the UUID generation
+                        const itemUUID = this._getItemUUID(createdItem[0], data);
+                        blacksmith?.utils.postConsoleAndNotification(
+                            "SQUIRE | Generated UUID for Item drop",
+                            {
+                                data,
+                                createdItem: createdItem[0],
+                                generatedUUID: itemUUID
+                            },
+                            false,
+                            true,
+                            false,
+                            MODULE.TITLE
+                        );
+                        
+                        // Send chat notification
+                        const chatData = {
+                            isPublic: true,
+                            strCardIcon: this._getDropIcon(item.type),
+                            strCardTitle: this._getDropTitle(item.type),
+                            strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p><p>${itemUUID}</p>`
+                        };
+                        const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
+                        await ChatMessage.create({
+                            content: chatContent,
+                            speaker: ChatMessage.getSpeaker({ actor: this.actor })
+                        });
                         break;
 
                     case 'ItemDirectory':
                         const itemData = game.items.get(data.uuid)?.toObject();
                         if (itemData) {
-                            await this.actor.createEmbeddedDocuments('Item', [itemData]);
+                            const newItem = await this.actor.createEmbeddedDocuments('Item', [itemData]);
+                            
+                            // Debug log the UUID generation
+                            const dirItemUUID = this._getItemUUID(newItem[0], data);
+                            blacksmith?.utils.postConsoleAndNotification(
+                                "SQUIRE | Generated UUID for ItemDirectory drop",
+                                {
+                                    data,
+                                    newItem: newItem[0],
+                                    generatedUUID: dirItemUUID
+                                },
+                                false,
+                                true,
+                                false,
+                                MODULE.TITLE
+                            );
+                            
+                            // Send chat notification
+                            const dirItemChatData = {
+                                isPublic: true,
+                                strCardIcon: this._getDropIcon(itemData.type),
+                                strCardTitle: this._getDropTitle(itemData.type),
+                                strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p><p>${dirItemUUID}</p>`
+                            };
+                            const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, dirItemChatData);
+                            await ChatMessage.create({
+                                content: dirItemChatContent,
+                                speaker: ChatMessage.getSpeaker({ actor: this.actor })
+                            });
                         }
                         break;
 
@@ -319,6 +406,36 @@ export class PanelManager {
             event.preventDefault();
             event.originalEvent.dataTransfer.dropEffect = 'copy';
         });
+    }
+
+    // Helper method to get the appropriate icon based on item type
+    _getDropIcon(type) {
+        switch(type) {
+            case 'spell': return 'fas fa-stars';
+            case 'weapon': return 'fas fa-swords';
+            case 'feat': return 'fas fa-sparkles';
+            default: return 'fas fa-backpack';
+        }
+    }
+
+    // Helper method to get the appropriate UUID format
+    _getItemUUID(item, data) {
+        // For compendium items
+        if (data.pack) {
+            return `@UUID[Compendium.${data.pack}.Item.${data.id}]{${item.name}}`;
+        }
+        // For regular items
+        return `@UUID[Item.${item.id}]{${item.name}}`;
+    }
+
+    // Helper method to get the appropriate title based on item type
+    _getDropTitle(type) {
+        switch(type) {
+            case 'spell': return 'New Spell Added';
+            case 'weapon': return 'New Weapon Added';
+            case 'feat': return 'New Feature Added';
+            default: return 'New Item Added';
+        }
     }
 }
 

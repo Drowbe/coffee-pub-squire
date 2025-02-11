@@ -9,9 +9,6 @@ Hooks.once('init', async function() {
     // Register module settings
     registerSettings();
 
-    // Register Handlebars helpers
-    registerHelpers();
-
     // Set initial CSS variables
     const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
     document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_HANDLE_WIDTH);
@@ -40,7 +37,7 @@ Hooks.once('init', async function() {
     }
 
     // Add this near the top of the initialization code
-    const handlePlayerTemplate = await fetch('modules/coffee-pub-squire/templates/handle-player.hbs').then(response => response.text());
+    const handlePlayerTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-player.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-player', handlePlayerTemplate);
 });
 
@@ -50,6 +47,26 @@ Hooks.once('ready', async function() {
         console.error(`${MODULE.TITLE} | Required dependency 'coffee-pub-blacksmith' not found!`);
         return;
     }
+    
+    // Register Handlebars helpers
+    registerHelpers();
+    
+    // Debug log for Blacksmith sound choices
+    blacksmith.utils.postConsoleAndNotification(
+        `${MODULE.TITLE} | Blacksmith API`,
+        {
+            api: blacksmith,
+            BLACKSMITH: blacksmith.BLACKSMITH,
+            soundChoices: blacksmith.BLACKSMITH?.arrSoundChoices
+        },
+        false,
+        true,
+        false,
+        MODULE.TITLE
+    );
+
+    const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
+    await PanelManager.initialize(firstOwnedToken?.actor || null);
 });
 
 // Initialize panel when character sheet is rendered

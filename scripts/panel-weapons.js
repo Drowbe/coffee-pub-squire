@@ -78,7 +78,8 @@ export class WeaponsPanel {
             },
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
     }
 

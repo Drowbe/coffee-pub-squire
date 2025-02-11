@@ -24,7 +24,8 @@ export class SpellsPanel {
             spells,
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
         
         // Map spells with favorite state
@@ -47,7 +48,8 @@ export class SpellsPanel {
             mappedSpells,
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
         
         return mappedSpells;
@@ -120,7 +122,8 @@ export class SpellsPanel {
             },
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);

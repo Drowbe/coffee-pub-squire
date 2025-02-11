@@ -279,6 +279,43 @@ export const registerSettings = function() {
         type: Boolean,
         default: true
     });
+
+    // Sound Settings
+    game.settings.register(MODULE.ID, 'dragEnterSound', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3'
+    });
+
+    game.settings.register(MODULE.ID, 'trayOpenSound', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-button-01.mp3'
+    });
+
+    game.settings.register(MODULE.ID, 'dropSound', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3'
+    });
+
+    // Non-user configurable pin/unpin sounds
+    game.settings.register(MODULE.ID, 'pinSound', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
+    });
+
+    game.settings.register(MODULE.ID, 'unpinSound', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
+    });
 };
 
 // Helper function to update custom theme colors

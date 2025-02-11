@@ -1,0 +1,21 @@
+<span style="visibility: hidden">coffeepub-hide-header</span>
+{{#if isPublic}}
+    <div class="blacksmith-card theme-blue">
+        <div class="section-header">
+            <i class="{{strCardIcon}}"></i> {{strCardTitle}}
+        </div>
+        <div class="section-content">
+            {{{strCardContent}}}
+        </div>
+    </div>
+{{else}}
+
+    <div class="blacksmith-card theme-default">
+        <div class="section-header">
+            <i class="{{strCardIcon}}"></i> {{strCardTitle}}
+        </div>
+        <div class="section-content">
+            {{{strCardContent}}}
+        </div>
+    </div>
+{{/if}}

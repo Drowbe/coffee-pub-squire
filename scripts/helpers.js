@@ -1,3 +1,5 @@
+import { MODULE } from './const.js';
+
 export const registerHelpers = function() {
     // Helper for repeating n times
     Handlebars.registerHelper('times', function(n, options) {
@@ -30,15 +32,6 @@ export const registerHelpers = function() {
 
     // Helper to check if array includes a value
     Handlebars.registerHelper('includes', function(array, value) {
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Checking includes",
-            { array, value },
-            false,
-            true,
-            false
-        );
-        
         if (!array || !Array.isArray(array)) return false;
         return array.includes(value);
     });
@@ -51,7 +44,8 @@ export const registerHelpers = function() {
             { array, property, value },
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
 
         if (!array || !array.length) return false;

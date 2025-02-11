@@ -13,7 +13,8 @@ export const TEMPLATES = {
     PANEL_INVENTORY: `modules/${MODULE.ID}/templates/panel-inventory.hbs`,
     PANEL_FAVORITES: `modules/${MODULE.ID}/templates/panel-favorites.hbs`,
     PANEL_FEATURES: `modules/${MODULE.ID}/templates/panel-features.hbs`,
-    HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`
+    HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`,
+    CHAT_CARD: `modules/${MODULE.ID}/templates/chat-cards.hbs`
 };
 
 export const PANELS = {

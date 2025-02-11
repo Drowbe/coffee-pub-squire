@@ -57,12 +57,26 @@ Blacksmith provides a set of shared utility functions that all Coffee Pub module
 ```javascript
 // Instead of using console.log or ui.notifications directly
 blacksmith.utils.postConsoleAndNotification(
-    message,      // The message to display
-    result,       // Optional data to show in console
-    blnDivider,   // Show divider in console
-    blnDebug,     // Is this a debug message
-    blnNotification // Show as UI notification
+    message,           // The message to display (mandatory)
+    result = "",       // Optional data to show in console
+    blnDivider = false,// Show divider in console
+    blnDebug = true,   // Is this a debug message
+    blnNotification = false, // Show as UI notification
+    strModuleTitle = "BLACKSMITH" // Optional module title for styling
 );
+
+// Example usage:
+blacksmith.utils.postConsoleAndNotification(
+    "Initializing module",     // Required message
+    { version: "1.0.0" },      // Optional result data
+    false,                     // No divider
+    true,                      // Debug mode
+    false,                     // No notification
+    "BIBLIOSOPH"              // Custom module title
+);
+
+// Minimal usage (using defaults):
+blacksmith.utils.postConsoleAndNotification("Required message");
 ```
 
 #### Time and Formatting

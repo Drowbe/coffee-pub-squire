@@ -23,7 +23,8 @@ export class FavoritesPanel {
                 new Error().stack,
                 false,
                 true,
-                false
+                false,
+                MODULE.TITLE
             );
 
             // Ensure we have a valid itemId
@@ -33,7 +34,8 @@ export class FavoritesPanel {
                     { itemId, stack: new Error().stack },
                     false,
                     true,
-                    false
+                    false,
+                    MODULE.TITLE
                 );
                 return;
             }
@@ -49,7 +51,8 @@ export class FavoritesPanel {
                 { favorites, newFavorites, itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
                 false,
                 true,
-                false
+                false,
+                MODULE.TITLE
             );
 
             // Update the flag and wait for it to complete
@@ -63,7 +66,8 @@ export class FavoritesPanel {
                 { verifyFavorites, shouldMatch: newFavorites },
                 false,
                 true,
-                false
+                false,
+                MODULE.TITLE
             );
 
             // Get the PanelManager instance directly
@@ -74,7 +78,8 @@ export class FavoritesPanel {
                     { itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
                     false,
                     true,
-                    false
+                    false,
+                    MODULE.TITLE
                 );
 
                 // First update the favorites panel
@@ -101,7 +106,8 @@ export class FavoritesPanel {
                     { itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
                     false,
                     true,
-                    false
+                    false,
+                    MODULE.TITLE
                 );
             }
 
@@ -112,7 +118,8 @@ export class FavoritesPanel {
                 error,
                 false,
                 true,
-                false
+                false,
+                MODULE.TITLE
             );
             return false;
         }
@@ -140,7 +147,8 @@ export class FavoritesPanel {
             favorites,
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
         
         // Get only favorited items
@@ -160,7 +168,8 @@ export class FavoritesPanel {
             favoritedItems,
             false,
             true,
-            false
+            false,
+            MODULE.TITLE
         );
         
         return favoritedItems;
