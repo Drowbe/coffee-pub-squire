@@ -28,6 +28,38 @@
             "customThemeColors": {
                 "name": "Custom Theme Colors",
                 "hint": "JSON object defining custom theme colors"
+            },
+            "trayWidth": {
+                "name": "Tray Width",
+                "hint": "Width of the tray in pixels"
+            },
+            "topOffset": {
+                "name": "Top Offset",
+                "hint": "Distance from the top of the screen in pixels"
+            },
+            "bottomOffset": {
+                "name": "Bottom Offset",
+                "hint": "Distance from the bottom of the screen in pixels"
+            },
+            "showHandleConditions": {
+                "name": "Show Conditions in Handle",
+                "hint": "Display condition icons in the tray handle"
+            },
+            "showHandleStatsPrimary": {
+                "name": "Show Primary Stats in Handle",
+                "hint": "Display HP, AC, and Movement in the tray handle"
+            },
+            "showHandleStatsSecondary": {
+                "name": "Show Secondary Stats in Handle",
+                "hint": "Display Initiative and Proficiency in the tray handle"
+            },
+            "showHandleFavorites": {
+                "name": "Show Favorites in Handle",
+                "hint": "Display favorite items in the tray handle"
+            },
+            "showHandleHealthBar": {
+                "name": "Show Health Bar in Handle",
+                "hint": "Display health bar in the tray handle"
             }
         },
         "panels": {
@@ -44,6 +76,42 @@
             "dark": "Dark Theme",
             "light": "Light Theme",
             "custom": "Custom Theme"
+        }
+    },
+    "COFFEEPUBSQUIRE": {
+        "Settings": {
+            "TrayWidth": {
+                "Name": "Tray Width",
+                "Hint": "Width of the tray in pixels"
+            },
+            "TopOffset": {
+                "Name": "Top Offset",
+                "Hint": "Distance from the top of the screen in pixels"
+            },
+            "BottomOffset": {
+                "Name": "Bottom Offset",
+                "Hint": "Distance from the bottom of the screen in pixels"
+            },
+            "ShowHandleConditions": {
+                "Name": "Show Conditions in Handle",
+                "Hint": "Display condition icons in the tray handle"
+            },
+            "ShowHandleStatsPrimary": {
+                "Name": "Show Primary Stats in Handle",
+                "Hint": "Display HP, AC, and Movement in the tray handle"
+            },
+            "ShowHandleStatsSecondary": {
+                "Name": "Show Secondary Stats in Handle",
+                "Hint": "Display Initiative and Proficiency in the tray handle"
+            },
+            "ShowHandleFavorites": {
+                "Name": "Show Favorites in Handle",
+                "Hint": "Display favorite items in the tray handle"
+            },
+            "ShowHandleHealthBar": {
+                "Name": "Show Health Bar in Handle",
+                "Hint": "Display health bar in the tray handle"
+            }
         }
     }
 } 
