@@ -6,6 +6,7 @@ import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { ControlPanel } from './panel-control.js';
 import { FeaturesPanel } from './panel-features.js';
+import { DiceTrayPanel } from "./panel-dicetray.js";
 
 export class PanelManager {
     static instance = null;
@@ -22,6 +23,7 @@ export class PanelManager {
         this.weaponsPanel = new WeaponsPanel(actor);
         this.inventoryPanel = new InventoryPanel(actor);
         this.featuresPanel = new FeaturesPanel(actor);
+        this.dicetrayPanel = new DiceTrayPanel();
         this.hiddenCategories = new Set();
     }
 
@@ -175,6 +177,7 @@ export class PanelManager {
         await this.weaponsPanel.render(element);
         await this.inventoryPanel.render(element);
         await this.featuresPanel.render(element);
+        await this.dicetrayPanel.render(element);
     }
 
     activateListeners(tray) {

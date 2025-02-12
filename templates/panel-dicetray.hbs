@@ -1,0 +1,33 @@
+{{#if (eq position "left")}}
+<div class="tray-title-small">Dice Tray</div>
+
+<div class="squire-dice-formula">
+    <div class="squire-input-wrapper">
+        <input type="text" class="squire-formula-input" placeholder="Enter dice formula">
+        <i class="fas fa-times squire-clear-button" title="Clear Formula"></i>
+    </div>
+    <i class="fas fa-dice squire-roll-button"></i>
+</div>
+
+<div class="squire-dice-row">
+    <i class="fas fa-coin squire-dice-icon" data-die="d2"></i>
+    <i class="fas fa-dice-d4 squire-dice-icon" data-die="d4"></i>
+    <i class="fas fa-dice-d6 squire-dice-icon" data-die="d6"></i>
+    <i class="fas fa-dice-d8 squire-dice-icon" data-die="d8"></i>
+    <i class="fas fa-dice-d10 squire-dice-icon" data-die="d10"></i>
+    <i class="fas fa-dice-d12 squire-dice-icon" data-die="d12"></i>
+    <i class="fas fa-dice-d20 squire-dice-icon" data-die="d20"></i>
+    <i class="fas fa-hundred-points squire-dice-icon" data-die="d100"></i>
+</div>
+
+<div class="squire-operator-row">
+    <i class="fas fa-plus squire-operator-icon" data-op="+"></i>
+    <i class="fas fa-minus squire-operator-icon" data-op="-"></i>
+    <i class="fas fa-times squire-operator-icon" data-op="*"></i>
+</div>
+
+<div class="squire-dice-history">
+    <h3>Recent Rolls</h3>
+    <div class="squire-history-list"></div>
+</div>
+{{/if}} 

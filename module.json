@@ -32,14 +32,15 @@
         "scripts/panel-character.js",
         "scripts/panel-spells.js",
         "scripts/panel-weapons.js",
-        "scripts/panel-favorites.js"
+        "scripts/panel-favorites.js",
+        "scripts/panel-dicetray.js"
     ],
     "styles": [
-        "styles/squire.css",
         "styles/tray.css",
         "styles/panel-spells.css",
         "styles/panel-weapons.css",
-        "styles/panel-favorites.css"
+        "styles/panel-favorites.css",
+        "styles/panel-dicetray.css"
     ],
     "languages": [
         {
