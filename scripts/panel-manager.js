@@ -66,13 +66,6 @@ export class PanelManager {
         
         // Create the tray
         await PanelManager.instance.createTray();
-        
-        // Force a complete refresh after a brief delay
-        setTimeout(async () => {
-            if (PanelManager.instance) {
-                await PanelManager.instance.updateTray();
-            }
-        }, 100);
     }
 
     async createTray() {
