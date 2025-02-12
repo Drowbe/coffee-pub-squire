@@ -461,12 +461,6 @@
     opacity: 0.8;
 }
 
-.squire-tray[data-position="left"] .favorites-panel .section-header .fa-heart {
-    border-right: 1px solid #444;
-    padding-right: 8px;
-    margin-right: 4px;
-}
-
 .squire-tray[data-position="left"] .favorites-panel .section-header .filter-toggle {
     border-left: none;
     padding-left: 0;
@@ -496,6 +490,9 @@
     opacity: 1;
     transition: color 0.2s ease;
     color: #aaa;
+    border-right: 1px solid #444;
+    padding-right: 8px;
+    margin-right: 4px;
 }
 
 .squire-tray[data-position="left"] .section-header .favorites-clear-all:hover {

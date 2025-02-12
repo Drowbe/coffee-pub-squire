@@ -50,11 +50,18 @@ export class WeaponsPanel {
 
     _getWeaponType(weapon) {
         const weaponData = weapon.system;
-        const isNatural = weaponData.weaponType === 'natural';
-        if (isNatural) return 'natural';
         
-        const isMartial = weaponData.weaponType === 'martial';
-        const isRanged = weaponData.properties?.rng;
+        // Check for natural weapons first
+        if (weaponData.weaponType === 'natural') return 'natural';
+        
+        // Get the weapon type (martial or simple)
+        const baseType = weaponData.baseItem ? weaponData.baseItem : weaponData.weaponType;
+        const isMartial = baseType === 'martial' || weaponData.weaponType === 'martial';
+        
+        // Check if it's ranged by looking at proper properties
+        const isRanged = weaponData.actionType === 'rwak' || 
+                        weaponData.properties?.thr || // Thrown property
+                        weaponData.properties?.amm;   // Ammunition property
         
         if (isMartial) {
             return isRanged ? 'martial-ranged' : 'martial-melee';
