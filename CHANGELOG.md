@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed deprecation warning for Item5e#use method
 - Improved click handling within the tray content
 
+### Added
+- Enhanced tooltips for favorite items in the handle bar showing detailed information based on item type:
+  - Spells: Level, school, materials, damage, and scaling information
+  - Weapons: Attack type, damage, and range
+  - Features: Requirements and description
+
 ## [1.0.0] - 2024-02-06
 
 ### Added

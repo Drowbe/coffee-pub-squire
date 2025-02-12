@@ -1,0 +1,50 @@
+name: Release Creation
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Get version from tag
+      - name: Get Version
+        id: get-version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      # Create zip file
+      - name: Create Zip File
+        run: |
+          # Ensure the zip excludes unnecessary files
+          zip -r module.zip \
+            module.json \
+            CHANGELOG.md \
+            LICENSE \
+            README.md \
+            scripts/ \
+            styles/ \
+            templates/ \
+            -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
+
+      # Create release
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            module.zip
+            module.json
+          draft: false
+          prerelease: false
+          name: Version ${{ steps.get-version.outputs.version }}
+          body_path: CHANGELOG.md 
