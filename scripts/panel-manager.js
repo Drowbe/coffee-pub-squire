@@ -7,6 +7,9 @@ import { FavoritesPanel } from './panel-favorites.js';
 import { ControlPanel } from './panel-control.js';
 import { FeaturesPanel } from './panel-features.js';
 import { DiceTrayPanel } from "./panel-dicetray.js";
+import { ExperiencePanel } from "./panel-experience.js";
+import { HealthPanel } from "./panel-health.js";
+import { StatsPanel } from "./panel-stats.js";
 
 export class PanelManager {
     static instance = null;
@@ -24,6 +27,9 @@ export class PanelManager {
         this.inventoryPanel = new InventoryPanel(actor);
         this.featuresPanel = new FeaturesPanel(actor);
         this.dicetrayPanel = new DiceTrayPanel();
+        this.experiencePanel = new ExperiencePanel(actor);
+        this.healthPanel = new HealthPanel(actor);
+        this.statsPanel = new StatsPanel(actor);
         this.hiddenCategories = new Set();
     }
 
@@ -132,6 +138,9 @@ export class PanelManager {
             this.weaponsPanel = new WeaponsPanel(this.actor);
             this.inventoryPanel = new InventoryPanel(this.actor);
             this.featuresPanel = new FeaturesPanel(this.actor);
+            this.experiencePanel = new ExperiencePanel(this.actor);
+            this.healthPanel = new HealthPanel(this.actor);
+            this.statsPanel = new StatsPanel(this.actor);
 
             // Update panel element references
             this.characterPanel.element = PanelManager.element;
@@ -141,6 +150,9 @@ export class PanelManager {
             this.weaponsPanel.element = PanelManager.element;
             this.inventoryPanel.element = PanelManager.element;
             this.featuresPanel.element = PanelManager.element;
+            this.experiencePanel.element = PanelManager.element;
+            this.healthPanel.element = PanelManager.element;
+            this.statsPanel.element = PanelManager.element;
 
             // Render all panels
             await this.renderPanels(PanelManager.element);
@@ -178,6 +190,9 @@ export class PanelManager {
         await this.inventoryPanel.render(element);
         await this.featuresPanel.render(element);
         await this.dicetrayPanel.render(element);
+        await this.experiencePanel.render(element);
+        await this.healthPanel.render(element);
+        await this.statsPanel.render(element);
     }
 
     activateListeners(tray) {
