@@ -59,7 +59,7 @@ export class WeaponsPanel {
         const isMartial = baseType === 'martial' || weaponData.weaponType === 'martial';
         
         // Check if it's ranged by looking at proper properties
-        const isRanged = weaponData.actionType === 'rwak' || 
+        const isRanged = weaponData.properties?.rng || // Ranged property
                         weaponData.properties?.thr || // Thrown property
                         weaponData.properties?.amm;   // Ammunition property
         

@@ -31,6 +31,21 @@
     justify-content: flex-end;
 }
 
+.squire-tray[data-position="left"] .character-panel .header-right i {
+    color: #9f9275;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 0.85em;
+}
+
+.squire-tray[data-position="left"] .character-panel .header-right i:hover {
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .character-panel .weapons-category-filter:not(.active) {
+    opacity: 0.3;
+}
+
 /* Portrait */
 
 .character-portrait {

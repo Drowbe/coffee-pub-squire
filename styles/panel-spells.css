@@ -90,6 +90,13 @@
     color: #aaa;
 }
 
+
+
+
+
+
+/* are these used? */
+
 .slot-pips {
     display: flex;
     gap: 0.25rem;
@@ -107,6 +114,12 @@
 .slot-pip.filled {
     background: #4a90e2;
 }
+
+
+
+
+
+
 
 /* Spells List */
 .spells-list {

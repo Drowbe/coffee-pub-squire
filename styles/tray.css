@@ -233,19 +233,23 @@
 
 /* TRAY Panel Section Headers */
 .squire-tray[data-position="left"] .section-header {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(69, 29, 36, 0.3) !important;
     color: #9f9275;
-    padding: 8px;
-    font-size: 1.4em;
+    padding: 6px;
+    font-size: 1.2em;
     font-weight: 900;
-    border-bottom: 1px solid #444;
+    border-bottom: 0px solid #444;
+	border-top: 0px solid #444;
     margin-bottom: 8px;
+	margin-left: 0px;
+	margin-right: 0px;
     text-transform: uppercase;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: 4px 4px 4px 4px;
+	border-radius: 4px 4px 4px 4px;
 }
+
 
 /* Section Header Icons for Left Position */
 .squire-tray[data-position="left"] .section-header i {
@@ -257,7 +261,7 @@
 .squire-tray[data-position="left"] .section-header .header-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 2px;
 }
 
 .squire-tray[data-position="left"] .section-header .header-left i {
@@ -395,6 +399,23 @@
     margin-bottom: 4px;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Spell Slots */
+
 .squire-tray[data-position="left"] .level-header .slot-pips {
     display: flex;
     gap: 2px;
@@ -412,6 +433,21 @@
     background: #9f9275;
     border-color: #9f9275;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Spell/Weapon Items in Left Position */
 .squire-tray[data-position="left"] .spell-item,
@@ -839,16 +875,24 @@
     opacity: 1;
 }
 
+
+/* category headers  (in sections) */
+
 .squire-tray[data-position="left"] .category-header {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.9);
     padding: 4px 8px;
     margin-top: 8px;
+	margin-bottom: 8px;
     font-weight: bold;
     display: flex;
     justify-content: space-between;
     align-items: center;
+	color: #9f9275;
+	text-transform: uppercase;
+	border-radius: 4px 4px 4px 4px;
 }
 
+/* there are DUPLICATE/SIMILAR STYLES IN PANEL-SPELLS.CSS */
 .squire-tray[data-position="left"] .category-header .slot-pips {
     display: flex;
     gap: 2px;
