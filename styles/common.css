@@ -1,0 +1,22 @@
+
+
+
+
+/* --- COMMON STYLES --- */
+
+/* used for bars */
+.bar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tray-title-small {
+    color: #9f9275;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    margin-top: 4px;
+    margin-left: 2px;
+}

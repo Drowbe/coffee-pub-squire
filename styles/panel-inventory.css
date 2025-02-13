@@ -1,0 +1,119 @@
+
+
+
+
+/* Inventory Panel Styles */
+.inventory-list {
+    padding: 0 0.5rem;
+}
+
+.inventory-item {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 2px;
+}
+
+.inventory-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.inventory-row {
+    gap: 4px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.inventory-image-container {
+    position: relative;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.inventory-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.inventory-name {
+    flex: 1;
+    color: #eee;
+    font-size: 1rem;
+    margin-right: 4px;
+}
+
+.inventory-quantity {
+    color: #aaa;
+    font-size: 0.9em;
+    margin-left: 4px;
+}
+
+.inventory-controls {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.inventory-search {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 13px;
+    min-width: 100px;
+}
+
+.inventory-filter {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.inventory-roll-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: #4a90e2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border-radius: 2px;
+}
+
+.inventory-image-container:hover .inventory-roll-overlay {
+    opacity: 1;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: #000000;;
+    margin-bottom: 0px;
+    border: 2px solid #444;
+    border-radius: 6px 6px 0px 0px !important;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}

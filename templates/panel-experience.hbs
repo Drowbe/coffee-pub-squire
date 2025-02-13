@@ -1,9 +1,7 @@
 {{#if (eq position "left")}}
-<div class="tray-title-small">Experience</div>
-
+<div class="tray-title-small">Experience: {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
 <div class="bars">
     <div class="bar-section">
-        <div class="tray-title-small">XP: {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
         <div class="exp-bar">
             <div class="exp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
         </div>

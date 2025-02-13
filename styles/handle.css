@@ -1,0 +1,217 @@
+
+
+
+
+
+/* TRAY Handle */
+.squire-tray[data-position="left"] .tray-handle {
+    height: 100%;
+    width: var(--squire-tray-handle-width); 
+    flex: none;
+    order: 2;
+    /* Option 1: Subtle Dots */
+    background-image: radial-gradient(#444 1px, transparent 1px);
+    background-size: 2px 2px;
+    border: 1px dotted #444;
+    border-radius: 0 6px 6px 0;
+    margin-left: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 8px;
+    padding-bottom: 0px;
+    color: #aaa;
+    box-shadow: 0 0 0 var(--color-shadow-dark);
+    text-transform: uppercase;
+    font-size: 1.1em;
+    font-weight: 900;
+}
+
+/* Pin Button */
+.squire-tray[data-position="left"] .pin-button {
+    order: 1;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s ease;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+/* TRAY Handle Icon */
+.squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
+    order: 2;
+    transform: rotate(0deg);
+    margin-bottom: 8px;
+    margin-top: 0;
+    padding: 4px 8px;
+}
+
+/* TRAY Handle Title */
+.squire-tray[data-position="left"] .handle-left {
+    flex: 1;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    order: 2;
+}
+
+/* Pin Button States */
+.pin-button:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.squire-tray.pinned .pin-button {
+    color: #fff;
+}
+
+.squire-tray:not(.pinned) .pin-button {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* TRAY Handle Icon Expanded */
+.squire-tray[data-position="left"].expanded .tray-handle i.fa-chevron-right {
+    transform: rotate(180deg);
+}
+
+
+
+/* Handle Conditions */
+.squire-tray[data-position="left"] .handle-conditions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+}
+
+.squire-tray[data-position="left"] .condition-icon {
+    font-size: 0.9em;
+    color: #9f9275;
+    cursor: help;
+    transition: color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .condition-icon:hover {
+    color: #fff;
+}
+
+/* Specific condition colors */
+.squire-tray[data-position="left"] .condition-icon[title="Poisoned"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Stunned"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Paralyzed"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Prone"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Targeted"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Blessed"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Invisible"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Grappled"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Frightened"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Charmed"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Blinded"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Deafened"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Diseased"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Restrained"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Petrified"] { color: #aaa; }
+.squire-tray[data-position="left"] .condition-icon[title="Inaudible"] { color: #aaa; }
+
+/* Handle Stats Styling */
+.squire-tray[data-position="left"] .handle-stats-primary,
+.squire-tray[data-position="left"] .handle-stats-secondary {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+    color: #aaa;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .handle-stats-secondary {
+    font-size: 1em;  /* Slightly smaller for secondary stats */
+}
+
+.squire-tray[data-position="left"] .tray-handle-content {
+    font-size: 1.1em;
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .handle-health-bar {
+    height: 50px;
+    width: 18px;
+    background: #000000;
+    border: 1px solid #aaaaaab4;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+    writing-mode: vertical-lr;
+    position: relative;
+}
+
+.squire-tray[data-position="left"] .handle-health-fill {
+    width: 100%;
+    background: #1d4521;
+    transition: height 0.3s ease;
+    position: absolute;
+    top: 0;
+	border: 2px solid #000000;
+	border-radius: 4px;
+}
+
+.squire-tray[data-position="left"] .tray-handle-label {
+    font-size: 0.6em;
+	padding-top: 4px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+	padding-right: 0px;
+	color: #aaaaaab4;
+}
+
+.squire-tray[data-position="left"] .handle-character {
+    font-size: 1.2em;
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator {
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator.dot {
+    color: #aaaaaa4d;
+	font-size: 1.2em;
+    content: "•";
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator.line {
+    font-size: 0.8em;
+    border-top: 2px dotted #aaaaaa4d;
+    width: 18px;
+    height: 1px;
+    display: inline-block;
+    margin-top: 12px;
+	margin-bottom: 12px;
+    vertical-align: middle;
+}
+
+.squire-tray[data-position="left"] .tray-handle-separator.spacer {
+    width: 0px;
+    display: inline-block;
+    margin-top: 12px;
+    vertical-align: middle;
+}
+
+/* Ensure the dots are visible and properly spaced */
+.squire-tray[data-position="left"] .handle-stats {
+    font-weight: 900;
+}
+
+

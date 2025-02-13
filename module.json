@@ -33,14 +33,11 @@
         "scripts/panel-spells.js",
         "scripts/panel-weapons.js",
         "scripts/panel-favorites.js",
-        "scripts/panel-dicetray.js"
+        "scripts/panel-dicetray.js",
+        "scripts/panel-abilities.js"
     ],
     "styles": [
-        "styles/tray.css",
-        "styles/panel-spells.css",
-        "styles/panel-weapons.css",
-        "styles/panel-favorites.css",
-        "styles/panel-dicetray.css"
+        "styles/default.css"
     ],
     "languages": [
         {

@@ -1,0 +1,59 @@
+.squire-tray[data-position="left"] [data-panel="abilities"] {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background: #000000;
+    border: 2px solid #444;
+    border-radius: 6px;
+}
+
+.squire-tray[data-position="left"] [data-panel="abilities"] .ability-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(1, 1fr);
+    gap: 5px;
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 0px;
+    width: 100%;
+}
+
+.squire-tray[data-position="left"] [data-panel="abilities"] .ability-btn {
+    background: #2a2a2a;
+    border: 1px solid #666;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.squire-tray[data-position="left"] [data-panel="abilities"] .ability-btn:hover {
+    background: #3a3a3a;
+    border-color: #888;
+}
+
+.squire-tray[data-position="left"] [data-panel="abilities"] .ability-btn .ability-label {
+    color: #9f9275;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.squire-tray[data-position="left"] [data-panel="abilities"] .ability-btn .ability-mod {
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.squire-tray[data-position="left"] [data-panel="abilities"] .ability-btn .ability-value {
+    color: #aaa;
+    font-size: 0.8em;
+} 

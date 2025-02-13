@@ -1,9 +1,8 @@
 {{#if (eq position "left")}}
-<div class="tray-title-small">Health</div>
+<div class="tray-title-small">Health: {{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}</div>
 
 <div class="bars">
     <div class="bar-section">
-        <div class="tray-title-small">HP: {{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}</div>
         <div class="hp-bar">
             <div class="hp-current">
                 <span class="hp-label">REMAINING</span>
@@ -12,7 +11,7 @@
             <div class="hp-fill" style="width: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
             <div class="hp-max">
                 <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
-                <span class="hp-label">DEFICIT</span>
+                <span class="hp-label">MAX</span>
             </div>
         </div>
         {{#if isGM}}

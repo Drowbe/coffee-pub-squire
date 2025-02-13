@@ -10,6 +10,7 @@ import { DiceTrayPanel } from "./panel-dicetray.js";
 import { ExperiencePanel } from "./panel-experience.js";
 import { HealthPanel } from "./panel-health.js";
 import { StatsPanel } from "./panel-stats.js";
+import { AbilitiesPanel } from "./panel-abilities.js";
 
 export class PanelManager {
     static instance = null;
@@ -30,6 +31,7 @@ export class PanelManager {
         this.experiencePanel = new ExperiencePanel(actor);
         this.healthPanel = new HealthPanel(actor);
         this.statsPanel = new StatsPanel(actor);
+        this.abilitiesPanel = new AbilitiesPanel(actor);
         this.hiddenCategories = new Set();
     }
 
@@ -141,6 +143,7 @@ export class PanelManager {
             this.experiencePanel = new ExperiencePanel(this.actor);
             this.healthPanel = new HealthPanel(this.actor);
             this.statsPanel = new StatsPanel(this.actor);
+            this.abilitiesPanel = new AbilitiesPanel(this.actor);
 
             // Update panel element references
             this.characterPanel.element = PanelManager.element;
@@ -153,6 +156,7 @@ export class PanelManager {
             this.experiencePanel.element = PanelManager.element;
             this.healthPanel.element = PanelManager.element;
             this.statsPanel.element = PanelManager.element;
+            this.abilitiesPanel.element = PanelManager.element;
 
             // Render all panels
             await this.renderPanels(PanelManager.element);
@@ -193,6 +197,7 @@ export class PanelManager {
         await this.experiencePanel.render(element);
         await this.healthPanel.render(element);
         await this.statsPanel.render(element);
+        await this.abilitiesPanel.render(element);
     }
 
     activateListeners(tray) {
