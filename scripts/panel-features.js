@@ -63,15 +63,28 @@ export class FeaturesPanel {
     }
 
     _getActionType(feature) {
-        const actionType = feature.system.activation?.type;
-        if (!actionType) return null;
+        // In D&D5E 4.0+, we use the new activity system
+        const activity = feature.system.activity;
+        if (!activity?.type) return null;
         
-        switch(actionType) {
-            case 'action': return 'action';
-            case 'bonus': return 'bonus';
-            case 'reaction': return 'reaction';
-            case 'special': return 'special';
-            default: return null;
+        // Map activity types to our display types
+        switch(activity.type) {
+            case 'action': 
+            case 'attack':
+            case 'cast':
+            case 'damage':
+            case 'heal':
+            case 'utility':
+                return 'action';
+            case 'bonus':
+                return 'bonus';
+            case 'reaction':
+                return 'reaction';
+            case 'special':
+            case 'other':
+                return 'special';
+            default:
+                return null;
         }
     }
 
