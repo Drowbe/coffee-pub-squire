@@ -323,10 +323,40 @@
     order: 1;
     height: 100%;
     overflow: hidden;
-    background: transparent;
+    /* Tbackground: transparent; THOMAS */
     border: 0px solid #444;
     margin: 0px;
-	padding: 0px;
+    padding: 0px;
+    position: relative;
+}
+
+/* Add background image with fade effect */
+.squire-tray[data-position="left"] .tray-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background-image: url('modules/coffee-pub-squire/images/banner-character-dark.webp');
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0.3;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    border-radius: 4px 4px 0 0;
+    z-index: 0;
+}
+
+
+
+
+/* Ensure content stays on top of background */
+.squire-tray[data-position="left"] .tray-content > * {
+    position: relative;
+    z-index: 1;
 }
 
 /* TRAY Panel Top Container */
