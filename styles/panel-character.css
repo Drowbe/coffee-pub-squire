@@ -1,27 +1,40 @@
+/* Character Wrapper */
 
-
-
-
-/* Character Summary */
-.character-summary {
-    background: #1a1a1a;
+.character-panel {
+    background: rgba(0, 0, 0, 0.3);
+    color: #9f9275;
     padding: 8px;
+    font-size: 1.4em;
+    font-weight: 900;
+    border: 2px solid #444;
+    margin-bottom: 0px;
+    text-transform: uppercase;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-bottom: 1px solid #444;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 4px 4px 4px 4px;
 }
 
-.character-top {
+/* Header */
+
+.squire-tray[data-position="left"] .character-panel .header-left {
     display: flex;
-    gap: 4px;
-    width: 100%;
-    min-height: 120px;
-    align-items: stretch;
+    align-items: center;
+    gap: 8px;
 }
+
+.squire-tray[data-position="left"] .character-panel .header-right {
+	display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+/* Portrait */
 
 .character-portrait {
-    width: 35%;
+    width: 25%;
     aspect-ratio: 1;
     border-radius: 4px;
     overflow: hidden;
@@ -35,21 +48,27 @@
     object-fit: cover;
 }
 
-
-
-
-
-
-
-
-
+/* Name */
 
 .squire-tray[data-position="left"] .character-name {
-    display: none;
+    display: block;
+    font-size: 0.8em;
 }
 
-.squire-tray[data-position="left"] .character-panel {
-    padding: 0;
+/* Details */
+
+.squire-tray[data-position="left"] .character-details {
+    display: block;
+	border-top: 1px dotted #444;
+	margin-top: 4px;
+    padding-top: 4px;
 }
 
+.squire-tray[data-position="left"] .details-primary {
+	font-size: 0.5em;
+}
+
+.squire-tray[data-position="left"] .details-secondary {
+	font-size: 0.5em;
+}
 

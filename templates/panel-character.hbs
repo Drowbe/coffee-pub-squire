@@ -1,14 +1,26 @@
 <div class="character-panel">
     <!-- HEADER -->
-    <div class="section-header">
+
         <div class="header-left">
             <div class="character-portrait">
-                <img src="{{actor.img}}" alt="{{actor.name}}">
+                <img src="{{actor.img}}" alt="{{actor.name}}" title="{{actor.name}} {{#if actor.system.details.alignment}} • {{actor.system.details.alignment}}{{/if}}"> 
             </div>
-            <i class="fas fa-user"></i> {{actor.name}}
+            <div class="character-info">
+                <span class="character-name">{{actor.name}}</span>
+                <div class="character-details">
+                    <div class="details-primary">
+                        {{#each actor.items as |item|}}{{#if (eq item.type "class")}}{{item.name}}{{/if}}{{/each}}
+                        {{#each actor.items as |item|}}{{#if (eq item.type "class")}} • {{item.system.levels}}{{/if}}{{/each}}
+                    </div>
+                    <div class="details-secondary">
+                        {{#if actor.system.details.race}}{{actor.system.details.race}}{{/if}}
+                        {{#each actor.items as |item|}}{{#if (eq item.type "class")}} • {{item.system.subclass.name}}{{/if}}{{/each}}
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="header-right">
             <i class="fas fa-feather character-sheet-toggle" title="Open Character Sheet"></i>
         </div>
-    </div>
+
 </div> 
