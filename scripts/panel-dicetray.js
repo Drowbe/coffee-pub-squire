@@ -28,6 +28,15 @@ export class DiceTrayPanel {
         const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
         this.element.find('[data-panel="dicetray"]').html(content);
         
+        // Add initial "No recent rolls" message
+        const historyList = this.element.find('.squire-history-list');
+        if (!historyList.children().length) {
+            const emptyMessage = document.createElement('div');
+            emptyMessage.classList.add('history-entry', 'empty-message');
+            emptyMessage.textContent = 'No recent rolls';
+            historyList.append(emptyMessage);
+        }
+        
         this._activateListeners(this.element);
     }
 
@@ -72,6 +81,27 @@ export class DiceTrayPanel {
         // Formula input
         panel.find('.squire-formula-input').on('input', (ev) => {
             this.currentFormula = ev.target.value;
+        });
+
+        // History toggle
+        panel.find('.history-header').click(() => {
+            const historyList = panel.find('.squire-history-list');
+            const toggle = panel.find('.history-toggle');
+            historyList.toggleClass('collapsed');
+            toggle.css('transform', historyList.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+        });
+
+        // Clear history button
+        panel.find('.history-clear').click((ev) => {
+            ev.stopPropagation(); // Prevent triggering the collapse/expand
+            const historyList = panel.find('.squire-history-list');
+            historyList.empty();
+            
+            // Add the "No recent rolls" message
+            const emptyMessage = document.createElement('div');
+            emptyMessage.classList.add('history-entry', 'empty-message');
+            emptyMessage.textContent = 'No recent rolls';
+            historyList.append(emptyMessage);
         });
     }
 
@@ -368,9 +398,25 @@ export class DiceTrayPanel {
 
     _addToHistory(formula, result) {
         const historyList = this.element.find('.squire-history-list');
+        
+        // Remove empty message if it exists
+        historyList.find('.empty-message').remove();
+        
         const historyEntry = document.createElement('div');
         historyEntry.classList.add('history-entry');
-        historyEntry.innerHTML = `${formula} = ${result}`;
+        historyEntry.innerHTML = `
+            <span class="history-formula">${formula} = ${result}</span>
+            <i class="fas fa-dice reroll-button" title="Re-roll this formula"></i>
+        `;
+
+        // Add click handler for the re-roll button
+        const rerollButton = historyEntry.querySelector('.reroll-button');
+        rerollButton.addEventListener('click', (ev) => {
+            ev.stopPropagation(); // Prevent triggering the collapse/expand
+            this.currentFormula = formula;
+            this.element.find('.squire-formula-input')[0].value = formula;
+            this._onRollClick();
+        });
         
         // Add to the top of the list
         historyList.prepend(historyEntry);
