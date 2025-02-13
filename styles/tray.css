@@ -6,9 +6,13 @@
     --squire-tray-top-offset: 70px;
     --squire-tray-bottom-offset: 300px;
     --squire-tray-pinned-offset: 10px;
+    --squire-tray-banner-image: url('../images/banner-character-dark.webp');
 }
 
 /* Common Tray Styles */
+
+
+/* --- Tray --- */
 .squire-tray {
     position: fixed;
     z-index: 100;
@@ -18,6 +22,31 @@
     box-shadow: 0 0 20px var(--color-shadow-dark);
     width: var(--squire-tray-width);
 }
+
+
+
+/* --- Tray banner image --- */
+.squire-tray::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background-image: var(--squire-tray-banner-image);
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0.3;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    border-radius: 4px 4px 0 0;
+    z-index: 0;
+}
+
+
+
 
 /* Drop Zone Styles */
 .squire-tray .tray-content.drop-hover {
@@ -106,38 +135,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* TRAY Content */
 .squire-tray[data-position="left"] .tray-content {
     flex: 1;
@@ -153,28 +150,6 @@
     padding: 0px;
     position: relative;
 }
-
-/* Add background image with fade effect */
-.squire-tray[data-position="left"] .tray-content::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 300px;
-    background-image: url('modules/coffee-pub-squire/images/banner-character-dark.webp');
-    background-position: top center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    opacity: 0.3;
-    pointer-events: none;
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
-    border-radius: 4px 4px 0 0;
-    z-index: 0;
-}
-
-
 
 
 /* Ensure content stays on top of background */
