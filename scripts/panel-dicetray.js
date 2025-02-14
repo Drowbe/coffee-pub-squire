@@ -1,10 +1,13 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { DiceTrayWindow } from './dice-tray-window.js';
 
 export class DiceTrayPanel {
     constructor(options = {}) {
         this.currentFormula = "";
         this.rollHistory = [];
         this.element = null;
+        this.window = null;
+        this.isPoppedOut = false;
     }
 
     static get defaultOptions() {
@@ -25,6 +28,15 @@ export class DiceTrayPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition')
         };
 
+        // If popped out, only update the window content
+        if (this.isPoppedOut && this.window) {
+            const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
+            this.window.element.find('[data-panel="dicetray"]').html(content);
+            this._activateListeners(this.window.element);
+            return; // Don't render in tray if popped out
+        }
+
+        // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
         this.element.find('[data-panel="dicetray"]').html(content);
         
@@ -44,6 +56,9 @@ export class DiceTrayPanel {
         if (!html) return;
 
         const panel = html.find('[data-panel="dicetray"]');
+
+        // Add pop-out button handler
+        panel.find('.pop-out-button').click(() => this._onPopOut());
 
         // Dice icons with right-click support
         panel.find('.squire-dice-icon').on('click contextmenu', ev => {
@@ -473,5 +488,41 @@ export class DiceTrayPanel {
             console.error("Error processing advantage/disadvantage:", err);
             ui.notifications.error("Invalid formula for advantage/disadvantage");
         }
+    }
+
+    async _onPopOut() {
+        if (this.window) return;
+
+        this.isPoppedOut = true;
+        // Create and render the window
+        this.window = new DiceTrayWindow({ panel: this });
+        await this.window.render(true);
+
+        // Remove only the dice tray panel
+        if (this.element) {
+            this.element.find('[data-panel="dicetray"]').remove();
+        }
+    }
+
+    async returnToTray() {
+        this.window = null;
+        this.isPoppedOut = false;
+        // Re-render in the tray
+        if (this.element) {
+            // First ensure the panel container exists
+            if (!this.element.find('[data-panel="dicetray"]').length) {
+                // Create the panel container if it doesn't exist
+                const container = $('<div class="panel-container" data-panel="dicetray"></div>');
+                // Find the panel-containers and append our new container
+                this.element.find('.panel-containers').append(container);
+            }
+            await this.render(this.element);
+        }
+    }
+
+    // Update the element reference - new method
+    updateElement(html) {
+        this.element = html;
+        this._activateListeners(html);
     }
 } 

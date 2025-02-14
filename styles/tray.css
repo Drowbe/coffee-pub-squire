@@ -9,6 +9,27 @@
     --squire-tray-banner-image: url('../images/banner-character-dark.webp');
 }
 
+/* Common Styles for both Tray and Popout */
+.squire-tray,
+.squire-popout {
+    background: rgba(30, 30, 30, 0.90);
+    border: 0px solid #444;
+    display: block;
+    box-shadow: 0 0 20px var(--color-shadow-dark);
+    width: var(--squire-tray-width);
+}
+
+/* Tray-specific positioning */
+.squire-tray {
+    position: fixed;
+    z-index: 100;
+}
+
+/* Popout-specific styles */
+.squire-popout {
+    height: 100%;
+}
+
 /* Common Tray Styles */
 
 
