@@ -530,43 +530,61 @@ export class DiceTrayPanel {
     async returnToTray() {
         if (!this.isPoppedOut) return; // Don't do anything if not popped out
 
+        // Reset state
         DiceTrayPanel.isWindowOpen = false;
         DiceTrayPanel.activeWindow = null;
         this.window = null;
         this.isPoppedOut = false;
 
-        // Re-render in the tray
-        if (this.element) {
-            // Create the panel container
-            const container = $('<div class="panel-container" data-panel="dicetray"></div>');
-            
-            // Find where to insert the container - after health panel
-            const healthPanel = this.element.find('[data-panel="health"]');
-            if (healthPanel.length) {
-                container.insertAfter(healthPanel);
-            } else {
-                // Fallback - append to panel-containers
-                this.element.find('.panel-containers').append(container);
-            }
+        // Get a fresh reference to the main tray
+        const mainTray = $('.squire-tray');
+        if (!mainTray.length) {
+            console.error(`${MODULE.ID} | Could not find main tray when returning dice tray`);
+            return;
+        }
 
+        // Update our element reference
+        this.element = mainTray;
+
+        // Find the correct insertion point - after health panel
+        const healthPanel = mainTray.find('[data-panel="health"]').closest('.panel-container');
+        const diceTrayContainer = $('<div class="panel-container" data-panel="dicetray"></div>');
+        
+        // Insert after health panel if found, otherwise before the stacked panels
+        if (healthPanel.length) {
+            diceTrayContainer.insertAfter(healthPanel);
+        } else {
+            const stackedPanels = mainTray.find('.panel-containers.stacked');
+            if (stackedPanels.length) {
+                diceTrayContainer.insertBefore(stackedPanels);
+            } else {
+                // Fallback - append to tray content
+                mainTray.find('.tray-content').append(diceTrayContainer);
+            }
+        }
+
+        try {
             // Render the content into the new container
             const templateData = {
                 position: game.settings.get(MODULE.ID, 'trayPosition')
             };
             const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-            container.html(content);
+            diceTrayContainer.html(content);
             
             // Activate listeners on the new content
-            this._activateListeners(this.element);
+            this._activateListeners(mainTray);
             
-            // Add initial "No recent rolls" message
-            const historyList = container.find('.squire-history-list');
+            // Add initial "No recent rolls" message if needed
+            const historyList = diceTrayContainer.find('.squire-history-list');
             if (!historyList.children().length) {
                 const emptyMessage = document.createElement('div');
                 emptyMessage.classList.add('history-entry', 'empty-message');
                 emptyMessage.textContent = 'No recent rolls';
                 historyList.append(emptyMessage);
             }
+        } catch (error) {
+            console.error(`${MODULE.ID} | Error returning dice tray to main tray:`, error);
+            ui.notifications.error("Error returning dice tray to main tray");
         }
     }
 
