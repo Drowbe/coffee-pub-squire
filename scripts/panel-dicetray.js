@@ -26,7 +26,8 @@ export class DiceTrayPanel {
         if (html) {
             this.element = html;
         }
-        if (!this.element) return;
+        // Skip rendering in tray if popped out
+        if (!this.element || this.isPoppedOut) return;
 
         const templateData = {
             position: game.settings.get(MODULE.ID, 'trayPosition')

@@ -86,7 +86,8 @@ export class PanelManager {
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
-            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
+            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+            isDiceTrayPopped: DiceTrayPanel.isWindowOpen
         });
         const trayElement = $(trayHtml);
         $('body').append(trayElement);
@@ -113,7 +114,8 @@ export class PanelManager {
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
                 showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
-                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
+                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+                isDiceTrayPopped: DiceTrayPanel.isWindowOpen
             });
             const newTrayElement = $(trayHtml);
             

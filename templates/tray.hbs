@@ -15,7 +15,9 @@
         <div class="panel-container" data-panel="stats"></div>
         <div class="panel-container" data-panel="experience"></div>
         <div class="panel-container" data-panel="health"></div>
+        {{#unless isDiceTrayPopped}}
         <div class="panel-container" data-panel="dicetray"></div>
+        {{/unless}}
         <div class="panel-container" data-panel="control"></div>
         <div class="panel-containers stacked">
             <div class="panel-container" data-panel="favorites"></div>
