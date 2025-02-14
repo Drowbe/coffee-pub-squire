@@ -4,7 +4,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 8px;
-    background: #000000;
+    background: rgba(0, 0, 0, 0.9);
     border: 2px solid #444;
     border-radius: 6px;
 }
@@ -21,7 +21,7 @@
     flex: 1;
     display: flex;
     align-items: center;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid #444;
     border-radius: 3px;
     padding: 4px 8px;
@@ -69,6 +69,7 @@
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-roll-button:hover,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .squire-roll-button:hover {
     background: rgba(159, 146, 117, 0.4);
+    color: #fff;
 }
 
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-roll-button.advantage,
@@ -108,14 +109,6 @@
     width: 100%;
 }
 
-.squire-tray[data-position="left"] [data-panel="dicetray"] .squire-controls-separator,
-.squire-popout[data-position="left"] [data-panel="dicetray"] .squire-controls-separator {
-    width: 1px;
-    height: 24px;
-    background: #9f9275;
-    margin: 0 4px;
-}
-
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-dice-icon,
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-operator-icon,
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-modifier-icon,
@@ -129,15 +122,10 @@
     flex: 1;
     background: rgba(77, 77, 77, 0.6);
     border: 1px solid #444;
-    border-radius: 4px;
+    border-radius: 3px;
     color: #9f9275;
     cursor: pointer;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    padding-left: 6px;
-    padding-right: 6px;
-    width: auto;
-    height: auto;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -155,8 +143,8 @@
 .squire-popout[data-position="left"] [data-panel="dicetray"] .squire-modifier-icon:hover,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .squire-advantage-button:hover,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .squire-disadvantage-button:hover {
-    background: rgba(219, 159, 30, 0.6);
-    color: #ffffff;
+    background: rgba(159, 146, 117, 0.4);
+    color: #fff;
 }
 
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-dice-history,
@@ -179,11 +167,7 @@
 .squire-tray[data-position="left"] [data-panel="dicetray"] .history-entry,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .history-entry {
     color: #ffffff;
-    padding: 4px 0;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    padding-left: 0px;
-    padding-right: 0px;
+    padding: 2px 0;
     border-bottom: 1px dotted #444;
     display: flex;
     justify-content: space-between;
