@@ -2,12 +2,16 @@ import { MODULE, TEMPLATES } from './const.js';
 import { DiceTrayWindow } from './dice-tray-window.js';
 
 export class DiceTrayPanel {
+    static isWindowOpen = false;
+    static activeWindow = null;
+
     constructor(options = {}) {
         this.currentFormula = "";
         this.rollHistory = [];
         this.element = null;
-        this.window = null;
-        this.isPoppedOut = false;
+        // Check if there's an active window and restore state
+        this.window = DiceTrayPanel.activeWindow;
+        this.isPoppedOut = DiceTrayPanel.isWindowOpen;
     }
 
     static get defaultOptions() {
@@ -28,11 +32,13 @@ export class DiceTrayPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition')
         };
 
-        // If popped out, only update the window content
-        if (this.isPoppedOut && this.window) {
-            const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-            this.window.element.find('[data-panel="dicetray"]').html(content);
-            this._activateListeners(this.window.element);
+        // If popped out, only update the window content and don't render in tray
+        if (this.isPoppedOut) {
+            if (this.window?.element) {
+                const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
+                this.window.element.find('[data-panel="dicetray"]').html(content);
+                this._activateListeners(this.window.element);
+            }
             return; // Don't render in tray if popped out
         }
 
@@ -63,33 +69,33 @@ export class DiceTrayPanel {
         // Dice icons with right-click support
         panel.find('.squire-dice-icon').on('click contextmenu', ev => {
             ev.preventDefault();
-            this._onDieClick(ev);
+            this._onDieClick(ev, panel);
         });
         
         // Operator icons
-        panel.find('.squire-operator-icon').click(ev => this._onOperatorClick(ev));
+        panel.find('.squire-operator-icon').click(ev => this._onOperatorClick(ev, panel));
         
         // Modifier icons with right-click support
         panel.find('.squire-modifier-icon').on('click contextmenu', ev => {
             ev.preventDefault();
-            this._onModifierClick(ev);
+            this._onModifierClick(ev, panel);
         });
         
         // Roll button
         panel.find('.squire-roll-button').click((ev) => {
             const button = ev.currentTarget;
             if (button.classList.contains('advantage')) {
-                this._onAdvantageClick(true);
+                this._onAdvantageClick(true, panel);
             } else if (button.classList.contains('disadvantage')) {
-                this._onAdvantageClick(false);
+                this._onAdvantageClick(false, panel);
             } else {
-                this._onRollClick();
+                this._onRollClick(panel);
             }
         });
         
         // Clear button
         panel.find('.squire-clear-button').click(() => {
-            this.element.find('.squire-formula-input')[0].value = '';
+            panel.find('.squire-formula-input')[0].value = '';
             this.currentFormula = '';
         });
         
@@ -120,9 +126,9 @@ export class DiceTrayPanel {
         });
     }
 
-    _onDieClick(event) {
+    _onDieClick(event, panel) {
         const die = event.currentTarget.dataset.die;
-        const input = this.element.find('.squire-formula-input')[0];
+        const input = panel.find('.squire-formula-input')[0];
         const isRightClick = event.type === 'contextmenu';
         
         // Get the current formula
@@ -177,18 +183,18 @@ export class DiceTrayPanel {
         this.currentFormula = formula;
     }
 
-    _onOperatorClick(event) {
+    _onOperatorClick(event, panel) {
         const op = event.currentTarget.dataset.op;
-        const input = this.element.find('.squire-formula-input')[0];
+        const input = panel.find('.squire-formula-input')[0];
         
         // Add spaces around operators
         input.value += ` ${op} `;
         this.currentFormula = input.value;
     }
 
-    _onModifierClick(event) {
+    _onModifierClick(event, panel) {
         const mod = event.currentTarget.dataset.mod;
-        const input = this.element.find('.squire-formula-input')[0];
+        const input = panel.find('.squire-formula-input')[0];
         const isRightClick = event.type === 'contextmenu';
         
         // Get the current formula
@@ -273,7 +279,7 @@ export class DiceTrayPanel {
         }
     }
 
-    async _onRollClick() {
+    async _onRollClick(panel) {
         if (!this.currentFormula) return;
 
         try {
@@ -402,7 +408,7 @@ export class DiceTrayPanel {
             this._addToHistory(displayFormula, roll.total);
 
             // Clear the input
-            this.element.find('.squire-formula-input')[0].value = '';
+            panel.find('.squire-formula-input')[0].value = '';
             this.currentFormula = '';
 
         } catch (err) {
@@ -412,7 +418,8 @@ export class DiceTrayPanel {
     }
 
     _addToHistory(formula, result) {
-        const historyList = this.element.find('.squire-history-list');
+        const panel = this.isPoppedOut ? this.window.element.find('[data-panel="dicetray"]') : this.element.find('[data-panel="dicetray"]');
+        const historyList = panel.find('.squire-history-list');
         
         // Remove empty message if it exists
         historyList.find('.empty-message').remove();
@@ -429,8 +436,8 @@ export class DiceTrayPanel {
         rerollButton.addEventListener('click', (ev) => {
             ev.stopPropagation(); // Prevent triggering the collapse/expand
             this.currentFormula = formula;
-            this.element.find('.squire-formula-input')[0].value = formula;
-            this._onRollClick();
+            panel.find('.squire-formula-input')[0].value = formula;
+            this._onRollClick(panel);
         });
         
         // Add to the top of the list
@@ -443,7 +450,7 @@ export class DiceTrayPanel {
         }
     }
 
-    _onAdvantageClick(isAdvantage) {
+    _onAdvantageClick(isAdvantage, panel) {
         if (!this.currentFormula) return;
 
         try {
@@ -479,11 +486,11 @@ export class DiceTrayPanel {
             const newFormula = transformedParts.join('').trim() + (bonus ? ` ${bonus}` : '');
             
             // Update the input and current formula
-            this.element.find('.squire-formula-input')[0].value = newFormula;
+            panel.find('.squire-formula-input')[0].value = newFormula;
             this.currentFormula = newFormula;
             
             // Automatically roll
-            this._onRollClick();
+            this._onRollClick(panel);
         } catch (err) {
             console.error("Error processing advantage/disadvantage:", err);
             ui.notifications.error("Invalid formula for advantage/disadvantage");
@@ -491,32 +498,75 @@ export class DiceTrayPanel {
     }
 
     async _onPopOut() {
-        if (this.window) return;
+        if (this.window || this.isPoppedOut) return;
 
+        // Set state before creating window
+        DiceTrayPanel.isWindowOpen = true;
         this.isPoppedOut = true;
+
+        // Remove the entire panel structure first
+        if (this.element) {
+            // Find and remove the panel container
+            const container = this.element.find('[data-panel="dicetray"]').closest('.panel-container');
+            if (container.length) {
+                // Also check for and remove any wrapper divs that might be left behind
+                const wrappers = container.parents().filter(function() {
+                    // Only target empty wrappers that are specific to the dice tray
+                    return ($(this).children().length === 0 || 
+                           ($(this).children().length === 1 && $(this).find('[data-panel="dicetray"]').length > 0)) &&
+                           !$(this).is('.squire-tray'); // Don't remove the main tray
+                });
+                wrappers.remove();
+                container.remove();
+            }
+        }
+
         // Create and render the window
         this.window = new DiceTrayWindow({ panel: this });
+        DiceTrayPanel.activeWindow = this.window;
         await this.window.render(true);
-
-        // Remove only the dice tray panel
-        if (this.element) {
-            this.element.find('[data-panel="dicetray"]').remove();
-        }
     }
 
     async returnToTray() {
+        if (!this.isPoppedOut) return; // Don't do anything if not popped out
+
+        DiceTrayPanel.isWindowOpen = false;
+        DiceTrayPanel.activeWindow = null;
         this.window = null;
         this.isPoppedOut = false;
+
         // Re-render in the tray
         if (this.element) {
-            // First ensure the panel container exists
-            if (!this.element.find('[data-panel="dicetray"]').length) {
-                // Create the panel container if it doesn't exist
-                const container = $('<div class="panel-container" data-panel="dicetray"></div>');
-                // Find the panel-containers and append our new container
+            // Create the panel container
+            const container = $('<div class="panel-container" data-panel="dicetray"></div>');
+            
+            // Find where to insert the container - after health panel
+            const healthPanel = this.element.find('[data-panel="health"]');
+            if (healthPanel.length) {
+                container.insertAfter(healthPanel);
+            } else {
+                // Fallback - append to panel-containers
                 this.element.find('.panel-containers').append(container);
             }
-            await this.render(this.element);
+
+            // Render the content into the new container
+            const templateData = {
+                position: game.settings.get(MODULE.ID, 'trayPosition')
+            };
+            const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
+            container.html(content);
+            
+            // Activate listeners on the new content
+            this._activateListeners(this.element);
+            
+            // Add initial "No recent rolls" message
+            const historyList = container.find('.squire-history-list');
+            if (!historyList.children().length) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.classList.add('history-entry', 'empty-message');
+                emptyMessage.textContent = 'No recent rolls';
+                historyList.append(emptyMessage);
+            }
         }
     }
 
