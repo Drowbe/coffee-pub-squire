@@ -15,7 +15,7 @@
 /* ----- WINDOW STRUCTURE ----- */
 
 /* Window Container */
-.dice-tray-window {
+#squire-dicetray-window {
     background: var(--background-color) !important;
     border: 2px solid var(--border-color) !important;
     border-radius: 6px !important;
@@ -37,34 +37,34 @@
 
 /* ----- HEADER ----- */
 
-.dice-tray-window .window-header {
+#squire-dicetray-window .window-header {
     background: rgba(0, 0, 0, 0.9) !important;
     border-bottom: 2px solid var(--border-color) !important;
     color: var(--accent-color) !important;
     font-family: "Signika", sans-serif !important;
 }
 
-.dice-tray-window .window-header .window-title {
+#squire-dicetray-window .window-header .window-title {
     color: var(--accent-color) !important;
     text-transform: uppercase !important;
     font-weight: bold !important;
     font-size: 1.2em !important;
 }
 
-.dice-tray-window .window-header .header-button {
+#squire-dicetray-window .window-header .header-button {
     color: var(--accent-color) !important;
     border: none !important;
     background: none !important;
 }
 
-.dice-tray-window .window-header .header-button:hover {
+#squire-dicetray-window .window-header .header-button:hover {
     color: #fff !important;
     text-shadow: 0 0 8px var(--accent-color) !important;
 }
 
 /* ----- CONTENT ----- */
 
-.dice-tray-window .window-content {
+#squire-dicetray-window .window-content {
     background: none !important;
     color: #fff !important;
     display: flex !important;
@@ -75,14 +75,14 @@
     height: 100% !important;
 }
 
-.dice-tray-window .window-content > * {
+#squire-dicetray-window .window-content > * {
     width: 100% !important;
     min-width: 100% !important;
 }
 
 /* ----- PANEL CONTAINER ----- */
 
-.dice-tray-window .window-content .panel-container {
+#squire-dicetray-window .window-content .panel-container {
     flex: 1 !important;
     width: 100% !important;
     min-width: 100% !important;
@@ -94,7 +94,7 @@
 
 /* ----- DICE TRAY PANEL ----- */
 
-.dice-tray-window .window-content [data-panel="dicetray"] {
+#squire-dicetray-window .window-content [data-panel="dicetray"] {
     width: 100% !important;
     min-width: 100% !important;
     height: 100% !important;
@@ -109,21 +109,21 @@
     padding: var(--container-padding) !important;
 }
 
-.dice-tray-window .window-content [data-panel="dicetray"] > * {
+#squire-dicetray-window .window-content [data-panel="dicetray"] > * {
     width: 100% !important;
     min-width: 100% !important;
 }
 
 /* ----- HISTORY SECTION ----- */
 
-.dice-tray-window .window-content [data-panel="dicetray"] .squire-dice-history {
+#squire-dicetray-window .window-content [data-panel="dicetray"] .squire-dice-history {
     display: flex !important;
     flex-direction: column !important;
     flex: 1 !important;
     min-height: 0 !important;
 }
 
-.dice-tray-window .window-content [data-panel="dicetray"] .squire-history-list {
+#squire-dicetray-window .window-content [data-panel="dicetray"] .squire-history-list {
     flex: 1 !important;
     overflow-y: auto !important;
     min-height: 0 !important;
@@ -133,54 +133,54 @@
 
 /* ----- SCROLLBAR ----- */
 
-.dice-tray-window ::-webkit-scrollbar {
+#squire-dicetray-window ::-webkit-scrollbar {
     width: 6px !important;
 }
 
-.dice-tray-window ::-webkit-scrollbar-track {
+#squire-dicetray-window ::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2) !important;
     border-radius: 3px !important;
 }
 
-.dice-tray-window ::-webkit-scrollbar-thumb {
+#squire-dicetray-window ::-webkit-scrollbar-thumb {
     background: var(--accent-color) !important;
     border-radius: 3px !important;
 }
 
-.dice-tray-window ::-webkit-scrollbar-thumb:hover {
+#squire-dicetray-window ::-webkit-scrollbar-thumb:hover {
     background: #db9f1e !important;
 }
 
 /* ----- RESIZABLE HANDLE ----- */
 
-.dice-tray-window .window-resizable-handle {
+#squire-dicetray-window .window-resizable-handle {
     background: var(--border-color) !important;
     border-radius: 0 0 3px 0 !important;
     opacity: 0.5 !important;
 }
 
-.dice-tray-window .window-resizable-handle:hover {
+#squire-dicetray-window .window-resizable-handle:hover {
     background: var(--accent-color) !important;
     opacity: 1 !important;
 }
 
 /* Prevent collapse on double-click */
-.dice-tray-window.collapsed {
+#squire-dicetray-window.collapsed {
     min-height: var(--dice-tray-min-height) !important;
 }
 
-.dice-tray-window.collapsed .window-content {
+#squire-dicetray-window.collapsed .window-content {
     display: flex !important;
 }
 
 /* Target the app element itself */
-.app.window-app.dice-tray-window {
+.app.window-app#squire-dicetray-window {
     min-width: 300px !important;
     min-height: 210px !important;
 }
 
 /* Target the window wrapper */
-.app.window-app.dice-tray-window > .window-content {
+.app.window-app#squire-dicetray-window > .window-content {
     min-width: 300px !important;
     min-height: 210px !important;
 } 
