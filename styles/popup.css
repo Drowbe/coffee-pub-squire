@@ -1,17 +1,41 @@
 /* Foundry Window Styling */
+#dice-tray-window {
+    min-width: 300px !important;
+    min-height: 210px !important;
+}
+
+/* Prevent collapse on double-click */
+#dice-tray-window.collapsed {
+    min-height: 210px !important;
+}
+
+#dice-tray-window.collapsed .window-content {
+    display: flex !important;
+}
+
 .dice-tray-window {
     background: rgba(0, 0, 0, 0.95) !important;
     border: 2px solid #444 !important;
     border-radius: 6px !important;
     box-shadow: 0 0 20px #000 !important;
-    min-width: 300px !important;
-    min-height: 210px !important;
 }
 
 /* Ensure popout takes full size of its container */
 .squire-popout {
     height: 100% !important;
     width: 100% !important;
+}
+
+/* Target the app element itself */
+.app.window-app.dice-tray-window {
+    min-width: 300px !important;
+    min-height: 210px !important;
+}
+
+/* Target the window wrapper */
+.app.window-app.dice-tray-window > .window-content {
+    min-width: 300px !important;
+    min-height: 210px !important;
 }
 
 .dice-tray-window .window-header {
