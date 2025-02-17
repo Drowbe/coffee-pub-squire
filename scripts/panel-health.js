@@ -188,6 +188,22 @@ export class HealthPanel {
         this._activateListeners(html);
     }
 
+    // Update actor reference and window if needed
+    updateActor(actor) {
+        // Update actor reference
+        this.actor = actor;
+        
+        // Re-register for updates
+        if (actor) {
+            actor.apps[this.id] = this;
+        }
+        
+        // Update window if popped out
+        if (this.isPoppedOut && this.window) {
+            this.window.updateActor(actor);
+        }
+    }
+
     async _onHPChange(direction) {
         const amount = parseInt(this.element.find('.hp-amount').val()) || 1;
         const hp = this.actor.system.attributes.hp;
@@ -215,7 +231,9 @@ export class HealthPanel {
     // Handler for actor updates
     async _onUpdateActor(actor, changes) {
         if (changes.system?.attributes?.hp) {
-            if (!this.isPoppedOut) {
+            if (this.isPoppedOut && this.window) {
+                this.window.render(false);
+            } else {
                 this.render();
             }
         }

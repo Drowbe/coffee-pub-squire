@@ -39,37 +39,26 @@ export class PanelManager {
         // If we have an instance with the same actor, do nothing
         if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
 
-        // Log actor data for debugging conditions
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Actor Data for Conditions",
-            {
-                actorId: actor?.id,
-                actorName: actor?.name,
-                systemData: actor?.system,
-                effects: actor?.effects?.map(e => ({
-                    id: e.id,
-                    name: e.name,
-                    img: e.img,
-                    flags: e.flags,
-                    statuses: e.statuses
-                })),
-                statuses: actor?.statuses,
-                flags: actor?.flags,
-                tempEffects: actor?.temporaryEffects,
-                activeEffects: actor?.effects?.filter(e => !e.disabled).map(e => e.name)
-            },
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
+        // Preserve health window state from old instance
+        const oldHealthPanel = PanelManager.instance?.healthPanel;
+        const hadHealthWindow = oldHealthPanel?.isPoppedOut && oldHealthPanel?.window;
 
         // Create or update instance
         PanelManager.currentActor = actor;
         
         // Always create a new instance to ensure clean state
         PanelManager.instance = new PanelManager(actor);
+
+        // Restore health window state if it was open
+        if (hadHealthWindow) {
+            PanelManager.instance.healthPanel.isPoppedOut = true;
+            PanelManager.instance.healthPanel.window = oldHealthPanel.window;
+            PanelManager.instance.healthPanel.window.panel = PanelManager.instance.healthPanel;
+            HealthPanel.isWindowOpen = true;
+            HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
+            // Update the panel and window with the new actor
+            PanelManager.instance.healthPanel.updateActor(actor);
+        }
 
         // Remove any existing trays first
         $('.squire-tray').remove();
@@ -157,7 +146,18 @@ export class PanelManager {
             this.inventoryPanel = new InventoryPanel(this.actor);
             this.featuresPanel = new FeaturesPanel(this.actor);
             this.experiencePanel = new ExperiencePanel(this.actor);
+
+            // Preserve health panel window state
+            const oldHealthPanel = this.healthPanel;
             this.healthPanel = new HealthPanel(this.actor);
+            if (oldHealthPanel?.isPoppedOut && oldHealthPanel?.window) {
+                this.healthPanel.isPoppedOut = true;
+                this.healthPanel.window = oldHealthPanel.window;
+                this.healthPanel.window.panel = this.healthPanel;
+                HealthPanel.isWindowOpen = true;
+                HealthPanel.activeWindow = this.healthPanel.window;
+            }
+
             this.statsPanel = new StatsPanel(this.actor);
             this.abilitiesPanel = new AbilitiesPanel(this.actor);
 
