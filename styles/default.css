@@ -10,7 +10,8 @@
 
 @import "tray.css"; 
 @import "handle.css";
-@import "popup.css";
+@import "window-dicetray.css";
+@import "window-health.css";
 
 /* --- PrimaryPanels ---------------------- */
 
