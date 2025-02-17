@@ -33,5 +33,15 @@ export class StatsPanel {
 
     _activateListeners(html) {
         if (!html) return;
+
+        const panel = html.find('[data-panel="stats"]');
+
+        // Stats toggle
+        panel.find('.stats-header').click(() => {
+            const statsContent = panel.find('.stats-content');
+            const toggle = panel.find('.stats-toggle');
+            statsContent.toggleClass('collapsed');
+            toggle.css('transform', statsContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+        });
     }
 } 

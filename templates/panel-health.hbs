@@ -1,36 +1,42 @@
 {{#if (eq position "left")}}
-<div class="tray-title-small">Health: {{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}</div>
-
-<div class="bars">
-    <div class="bar-section">
-        <div class="hp-bar">
-            <div class="hp-current">
-                <span class="hp-label">REMAINING</span>
-                <span class="hp-value">{{actor.system.attributes.hp.value}}</span>
+<div class="health-header">
+    <div class="tray-title-small">Health: {{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}</div>
+    <div class="health-controls">
+        <i class="fas fa-chevron-down health-toggle" title="Toggle Health Panel"></i>
+    </div>
+</div>
+<div class="health-content">
+    <div class="bars">
+        <div class="bar-section">
+            <div class="hp-bar">
+                <div class="hp-current">
+                    <span class="hp-label">REMAINING</span>
+                    <span class="hp-value">{{actor.system.attributes.hp.value}}</span>
+                </div>
+                <div class="hp-fill" style="width: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
+                <div class="hp-max">
+                    <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
+                    <span class="hp-label">MAX</span>
+                </div>
             </div>
-            <div class="hp-fill" style="width: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
-            <div class="hp-max">
-                <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
-                <span class="hp-label">MAX</span>
+            {{#if isGM}}
+            <div class="hp-controls">
+                <button class="hp-btn death-toggle" title="Toggle Dead Status">
+                    <i class="fas fa-skull"></i>
+                </button>
+                <button class="hp-btn hp-down" title="Decrease HP">
+                    <i class="fas fa-caret-down"></i>
+                </button>
+                <input type="number" class="hp-amount" value="" placeholder="1">
+                <button class="hp-btn hp-up" title="Increase HP">
+                    <i class="fas fa-caret-up"></i>
+                </button>
+                <button class="hp-btn hp-full" title="Full Heal">
+                    <i class="fas fa-heart"></i>
+                </button>
             </div>
+            {{/if}}
         </div>
-        {{#if isGM}}
-        <div class="hp-controls">
-            <button class="hp-btn death-toggle" title="Toggle Dead Status">
-                <i class="fas fa-skull"></i>
-            </button>
-            <button class="hp-btn hp-down" title="Decrease HP">
-                <i class="fas fa-caret-down"></i>
-            </button>
-            <input type="number" class="hp-amount" value="" placeholder="1">
-            <button class="hp-btn hp-up" title="Increase HP">
-                <i class="fas fa-caret-up"></i>
-            </button>
-            <button class="hp-btn hp-full" title="Full Heal">
-                <i class="fas fa-heart"></i>
-            </button>
-        </div>
-        {{/if}}
     </div>
 </div>
 {{/if}} 

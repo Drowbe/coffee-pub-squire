@@ -36,6 +36,14 @@ export class AbilitiesPanel {
 
         const panel = html.find('[data-panel="abilities"]');
 
+        // Abilities toggle
+        panel.find('.abilities-header').click(() => {
+            const abilitiesContent = panel.find('.abilities-content');
+            const toggle = panel.find('.abilities-toggle');
+            abilitiesContent.toggleClass('collapsed');
+            toggle.css('transform', abilitiesContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+        });
+
         // Ability check and save handlers
         panel.find('.ability-btn').click(async (event) => {
             const ability = event.currentTarget.dataset.ability;

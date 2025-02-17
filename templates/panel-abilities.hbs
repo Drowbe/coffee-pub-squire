@@ -1,13 +1,19 @@
 {{#if (eq position "left")}}
-<div class="tray-title-small">Abilities</div>
-
-<div class="ability-row">
-    {{#each actor.system.abilities as |ability key|}}
-    <div class="ability-btn" data-ability="{{toLowerCase key}}" title="Left Click: Ability Check&#10;Right Click: Saving Throw">
-        <div class="ability-label">{{toUpperCase key}}</div>
-        <div class="ability-mod">{{numberFormat ability.mod sign=true}}</div>
-        <div class="ability-value">{{ability.value}}</div>
+<div class="abilities-header">
+    <div class="tray-title-small">Abilities</div>
+    <div class="abilities-controls">
+        <i class="fas fa-chevron-down abilities-toggle" title="Toggle Abilities Panel"></i>
     </div>
-    {{/each}}
+</div>
+<div class="abilities-content">
+    <div class="ability-row">
+        {{#each actor.system.abilities as |ability key|}}
+        <div class="ability-btn" data-ability="{{toLowerCase key}}" title="Left Click: Ability Check&#10;Right Click: Saving Throw">
+            <div class="ability-label">{{toUpperCase key}}</div>
+            <div class="ability-mod">{{numberFormat ability.mod sign=true}}</div>
+            <div class="ability-value">{{ability.value}}</div>
+        </div>
+        {{/each}}
+    </div>
 </div>
 {{/if}} 

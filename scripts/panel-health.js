@@ -37,6 +37,14 @@ export class HealthPanel {
 
         const panel = html.find('[data-panel="health"]');
 
+        // Health toggle
+        panel.find('.health-header').click(() => {
+            const healthContent = panel.find('.health-content');
+            const toggle = panel.find('.health-toggle');
+            healthContent.toggleClass('collapsed');
+            toggle.css('transform', healthContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+        });
+
         // HP Controls for GM
         if (game.user.isGM) {
             panel.find('.hp-down').click(() => this._onHPChange(-1));

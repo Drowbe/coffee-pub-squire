@@ -1,9 +1,16 @@
 {{#if (eq position "left")}}
-<div class="tray-title-small">Experience: {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
-<div class="bars">
-    <div class="bar-section">
-        <div class="exp-bar">
-            <div class="exp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
+<div class="exp-header">
+    <div class="tray-title-small">Experience: {{actor.system.details.xp.value}} OF {{actor.system.details.xp.max}}</div>
+    <div class="exp-controls">
+        <i class="fas fa-chevron-down exp-toggle" title="Toggle Experience Bar"></i>
+    </div>
+</div>
+<div class="exp-content">
+    <div class="bars">
+        <div class="bar-section">
+            <div class="exp-bar">
+                <div class="exp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
+            </div>
         </div>
     </div>
 </div>

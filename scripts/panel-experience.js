@@ -33,5 +33,15 @@ export class ExperiencePanel {
 
     _activateListeners(html) {
         if (!html) return;
+
+        const panel = html.find('[data-panel="experience"]');
+
+        // Experience toggle
+        panel.find('.exp-header').click(() => {
+            const expContent = panel.find('.exp-content');
+            const toggle = panel.find('.exp-toggle');
+            expContent.toggleClass('collapsed');
+            toggle.css('transform', expContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+        });
     }
 } 

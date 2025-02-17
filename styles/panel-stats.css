@@ -8,36 +8,74 @@
     border-radius: 6px;
 }
 
-.squire-tray[data-position="left"] [data-panel="stats"] .stat-boxes {
+.squire-tray[data-position="left"] [data-panel="stats"] .stats-header {
     display: flex;
-    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.squire-tray[data-position="left"] [data-panel="stats"] .stats-controls {
+    display: flex;
     gap: 8px;
-    margin-top: 0;
+    align-items: center;
+}
+
+.squire-tray[data-position="left"] [data-panel="stats"] .stats-toggle {
+    color: #9f9275;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] [data-panel="stats"] .stats-toggle:hover {
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] [data-panel="stats"] .stats-content {
+    max-height: 200px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+.squire-tray[data-position="left"] [data-panel="stats"] .stats-content.collapsed {
+    max-height: 0;
+}
+
+.squire-tray[data-position="left"] [data-panel="stats"] .stat-boxes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 0px;
 }
 
 .squire-tray[data-position="left"] [data-panel="stats"] .stat-box {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 4px 8px;
-    border-radius: 4px;
+    background: #2a2a2a;
     border: 1px solid #666;
+    border-radius: 4px;
+    padding: 4px;
+    text-align: center;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    gap: 8px;
-    min-height: 32px;
+    align-items: center;
+    gap: 2px;
+}
+
+.squire-tray[data-position="left"] [data-panel="stats"] .stat-box:hover {
+    background: #3a3a3a;
+    border-color: #888;
 }
 
 .squire-tray[data-position="left"] [data-panel="stats"] .stat-box i {
     color: #9f9275;
-    font-size: 0.9em;
-    flex: none;
+    font-size: 1.2em;
 }
 
-.squire-tray[data-position="left"] [data-panel="stats"] .stat-value {
+.squire-tray[data-position="left"] [data-panel="stats"] .stat-box .stat-value {
     color: #fff;
-    font-size: 1.2em;
-    line-height: 1;
+    font-size: 1.1em;
     font-weight: bold;
-    flex: none;
 }
