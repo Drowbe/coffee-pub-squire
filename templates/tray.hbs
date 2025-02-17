@@ -10,15 +10,23 @@
     </div>
     <div class="tray-content">
         {{#if actor}}
-        <div class="panel-container" data-panel="experience"></div>
         <div class="panel-container" data-panel="character"></div>
+        {{#if @root.settings.showExperiencePanel}}
+        <div class="panel-container" data-panel="experience"></div>
+        {{/if}}
+        {{#if @root.settings.showHealthPanel}}
         <div class="panel-container" data-panel="health"></div>
+        {{/if}}
+        {{#if @root.settings.showAbilitiesPanel}}
         <div class="panel-container" data-panel="abilities"></div>
+        {{/if}}
+        {{#if @root.settings.showStatsPanel}}
         <div class="panel-container" data-panel="stats"></div>
-        
-        
+        {{/if}}
         {{#unless isDiceTrayPopped}}
-        <div class="panel-container" data-panel="dicetray"></div>
+            {{#if @root.settings.showDiceTrayPanel}}
+            <div class="panel-container" data-panel="dicetray"></div>
+            {{/if}}
         {{/unless}}
         <div class="panel-container" data-panel="control"></div>
         <div class="panel-containers stacked">

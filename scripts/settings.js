@@ -1,6 +1,12 @@
 import { MODULE, SQUIRE } from './const.js';
 
 export const registerSettings = function() {
+
+
+    // --------------------------------
+    // --- Handle Display Settings ---
+    // --------------------------------
+
     // Tray Position
     game.settings.register(MODULE.ID, 'trayPosition', {
         name: 'Tray Position',
@@ -21,7 +27,7 @@ export const registerSettings = function() {
         }
     });
 
-    // Theme
+    // Theme -- THIS IS NOT USED ANYMORE
     game.settings.register(MODULE.ID, 'theme', {
         name: 'Color Theme',
         hint: 'Color scheme for the tray interface',
@@ -43,37 +49,8 @@ export const registerSettings = function() {
         }
     });
 
-    // Custom Theme Colors (only visible if theme is set to 'custom')
-    game.settings.register(MODULE.ID, 'customThemeColors', {
-        name: 'Custom Theme Colors',
-        hint: 'JSON object defining custom theme colors',
-        scope: 'client',
-        config: true,
-        type: String,
-        default: JSON.stringify({
-            background: 'rgba(30, 30, 30, 0.95)',
-            text: '#ffffff',
-            border: '#444444',
-            accent: '#4a90e2'
-        }, null, 2),
-        onChange: value => {
-            try {
-                const colors = JSON.parse(value);
-                updateCustomTheme(colors);
-            } catch (e) {
-                console.error(`${MODULE.TITLE} | Error parsing custom theme colors:`, e);
-            }
-        }
-    });
 
-    // Remember pinned state (hidden setting)
-    game.settings.register(MODULE.ID, 'isPinned', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
+    
     // Tray Width setting
     game.settings.register(MODULE.ID, 'trayWidth', {
         name: 'Tray Width',
@@ -141,7 +118,174 @@ export const registerSettings = function() {
         }
     });
 
-    // Filter States
+
+    // Panel Visibility Settings
+
+    game.settings.register(MODULE.ID, 'showExperiencePanel', {
+        name: 'Show Experience Panel',
+        hint: 'Display experience and level progress panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+    game.settings.register(MODULE.ID, 'showHealthPanel', {
+        name: 'Show Health Panel',
+        hint: 'Display health tracking panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+    game.settings.register(MODULE.ID, 'showAbilitiesPanel', {
+        name: 'Show Abilities Panel',
+        hint: 'Display ability scores and modifiers panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+    game.settings.register(MODULE.ID, 'showStatsPanel', {
+        name: 'Show Stats Panel',
+        hint: 'Display character stats panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+    game.settings.register(MODULE.ID, 'showDiceTrayPanel', {
+        name: 'Show Dice Tray Panel',
+        hint: 'Display dice rolling panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+
+    // --------------------------------
+    // --- Handle Display Settings ---
+    // --------------------------------
+
+    game.settings.register(MODULE.ID, 'showHandleConditions', {
+        name: 'Show Conditions in Handle',
+        hint: 'Display condition icons in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleStatsPrimary', {
+        name: 'Show Primary Stats in Handle',
+        hint: 'Display primary stats (HP, AC, Move) in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleStatsSecondary', {
+        name: 'Show Secondary Stats in Handle',
+        hint: 'Display secondary stats (Initiative, Proficiency) in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleFavorites', {
+        name: 'Show Favorites in Handle',
+        hint: 'Display favorite items in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleHealthBar', {
+        name: 'Show Health Bar in Handle',
+        hint: 'Display health bar visualization in the handle',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+
+    // ***************************
+    // *** NON-CONFIG SETTINGS ***
+    // ***************************
+
+    // Layout
+
+    // Remember pinned state (hidden setting)
+    game.settings.register(MODULE.ID, 'isPinned', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+
+    // Panel Visibility Settings
+
+    game.settings.register(MODULE.ID, 'showFavoritesPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showWeaponsPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showSpellsPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showInventoryPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showFeaturesPanel', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
+    // --- Filter States ---
+
     game.settings.register(MODULE.ID, 'showOnlyPreparedSpells', {
         name: 'Remember Prepared Spells Filter',
         hint: 'Remember if the prepared spells filter was enabled',
@@ -198,126 +342,8 @@ export const registerSettings = function() {
         default: true
     });
 
-    // Panel Visibility States (hidden settings)
-    game.settings.register(MODULE.ID, 'showFavoritesPanel', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: true
-    });
+    // --- Sound Settings ---
 
-    game.settings.register(MODULE.ID, 'showWeaponsPanel', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showSpellsPanel', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showInventoryPanel', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showFeaturesPanel', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    // Handle Display Settings
-    game.settings.register(MODULE.ID, 'showHandleConditions', {
-        name: 'Show Conditions in Handle',
-        hint: 'Display condition icons in the handle',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showHandleStatsPrimary', {
-        name: 'Show Primary Stats in Handle',
-        hint: 'Display primary stats (HP, AC, Move) in the handle',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showHandleStatsSecondary', {
-        name: 'Show Secondary Stats in Handle',
-        hint: 'Display secondary stats (Initiative, Proficiency) in the handle',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: false
-    });
-
-    game.settings.register(MODULE.ID, 'showHandleFavorites', {
-        name: 'Show Favorites in Handle',
-        hint: 'Display favorite items in the handle',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showHandleHealthBar', {
-        name: 'Show Health Bar in Handle',
-        hint: 'Display health bar visualization in the handle',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    // Character Panel Section Settings
-    game.settings.register(MODULE.ID, 'showCharacterSection', {
-        name: 'Show Character Section',
-        hint: 'Display character portrait and abilities in the character panel',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showXPSection', {
-        name: 'Show XP Section',
-        hint: 'Display experience bar and level in the character panel',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showHPSection', {
-        name: 'Show HP Section',
-        hint: 'Display health bar and controls in the character panel',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showStatsSection', {
-        name: 'Show Stats Section',
-        hint: 'Display character stats in the character panel',
-        scope: 'client',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    // Sound Settings
     game.settings.register(MODULE.ID, 'dragEnterSound', {
         scope: 'client',
         config: false,
@@ -354,6 +380,10 @@ export const registerSettings = function() {
         default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
     });
 };
+
+// ***************************
+// *** FUNCTIONS           ***
+// ***************************
 
 // Helper function to update custom theme colors
 function updateCustomTheme(colors) {

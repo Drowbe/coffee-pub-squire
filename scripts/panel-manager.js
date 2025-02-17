@@ -82,6 +82,13 @@ export class PanelManager {
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             effects: this.actor.effects?.map(e => e.name) || [],
+            settings: {
+                showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
+                showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
+                showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
+                showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
+                showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel')
+            },
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -110,6 +117,13 @@ export class PanelManager {
             const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
                 actor: this.actor,
                 effects: this.actor.effects?.map(e => e.name) || [],
+                settings: {
+                    showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
+                    showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
+                    showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
+                    showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
+                    showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel')
+                },
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
