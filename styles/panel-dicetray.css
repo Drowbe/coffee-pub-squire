@@ -175,12 +175,12 @@
 
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-history-list,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .squire-history-list {
-    color: #fff;
-    margin-top: 4px;
-    padding: 0 8px;
-    max-height: calc(5 * (1.2em + 8px));
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 200px;
     overflow-y: auto;
-    transition: max-height 0.3s ease-in-out;
+    padding-right: 4px;
 }
 
 .squire-tray[data-position="left"] [data-panel="dicetray"] .history-entry,
@@ -270,12 +270,6 @@
 .squire-tray[data-position="left"] [data-panel="dicetray"] .history-toggle:hover,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .history-toggle:hover {
     color: #fff;
-}
-
-.squire-tray[data-position="left"] [data-panel="dicetray"] .squire-history-list.collapsed,
-.squire-popout[data-position="left"] [data-panel="dicetray"] .squire-history-list.collapsed {
-    max-height: 0;
-    overflow: hidden;
 }
 
 /* Scrollbar styling for the history list */
