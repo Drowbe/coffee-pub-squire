@@ -29,6 +29,16 @@ export class StatsPanel {
         this.element.find('[data-panel="stats"]').html(content);
         
         this._activateListeners(this.element);
+
+        // Apply saved collapsed state
+        const panel = this.element.find('[data-panel="stats"]');
+        const isCollapsed = game.settings.get(MODULE.ID, 'isStatsPanelCollapsed');
+        if (isCollapsed) {
+            const statsContent = panel.find('.stats-content');
+            const toggle = panel.find('.stats-toggle');
+            statsContent.addClass('collapsed');
+            toggle.css('transform', 'rotate(-90deg)');
+        }
     }
 
     _activateListeners(html) {
@@ -42,6 +52,8 @@ export class StatsPanel {
             const toggle = panel.find('.stats-toggle');
             statsContent.toggleClass('collapsed');
             toggle.css('transform', statsContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
+            // Save collapsed state
+            game.settings.set(MODULE.ID, 'isStatsPanelCollapsed', statsContent.hasClass('collapsed'));
         });
     }
 } 

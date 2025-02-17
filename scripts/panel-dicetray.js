@@ -57,6 +57,16 @@ export class DiceTrayPanel {
         }
         
         this._activateListeners(this.element);
+
+        // Apply saved collapsed state
+        const panel = this.element.find('[data-panel="dicetray"]');
+        const isCollapsed = game.settings.get(MODULE.ID, 'isDiceTrayPanelCollapsed');
+        if (isCollapsed) {
+            const dicetrayContent = panel.find('.dicetray-content');
+            const toggle = panel.find('.dicetray-toggle');
+            dicetrayContent.addClass('collapsed');
+            toggle.css('transform', 'rotate(-90deg)');
+        }
     }
 
     _activateListeners(html) {
@@ -70,6 +80,8 @@ export class DiceTrayPanel {
             const toggle = panel.find('.dicetray-toggle');
             dicetrayContent.toggleClass('collapsed');
             toggle.css('transform', dicetrayContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
+            // Save collapsed state
+            game.settings.set(MODULE.ID, 'isDiceTrayPanelCollapsed', dicetrayContent.hasClass('collapsed'));
         });
 
         // Add pop-out button handler

@@ -29,6 +29,16 @@ export class ExperiencePanel {
         this.element.find('[data-panel="experience"]').html(content);
         
         this._activateListeners(this.element);
+
+        // Apply saved collapsed state
+        const panel = this.element.find('[data-panel="experience"]');
+        const isCollapsed = game.settings.get(MODULE.ID, 'isExperiencePanelCollapsed');
+        if (isCollapsed) {
+            const expContent = panel.find('.exp-content');
+            const toggle = panel.find('.exp-toggle');
+            expContent.addClass('collapsed');
+            toggle.css('transform', 'rotate(-90deg)');
+        }
     }
 
     _activateListeners(html) {
@@ -42,6 +52,8 @@ export class ExperiencePanel {
             const toggle = panel.find('.exp-toggle');
             expContent.toggleClass('collapsed');
             toggle.css('transform', expContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
+            // Save collapsed state
+            game.settings.set(MODULE.ID, 'isExperiencePanelCollapsed', expContent.hasClass('collapsed'));
         });
     }
 } 

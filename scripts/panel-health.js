@@ -30,6 +30,16 @@ export class HealthPanel {
         this.element.find('[data-panel="health"]').html(content);
         
         this._activateListeners(this.element);
+
+        // Apply saved collapsed state
+        const panel = this.element.find('[data-panel="health"]');
+        const isCollapsed = game.settings.get(MODULE.ID, 'isHealthPanelCollapsed');
+        if (isCollapsed) {
+            const healthContent = panel.find('.health-content');
+            const toggle = panel.find('.health-toggle');
+            healthContent.addClass('collapsed');
+            toggle.css('transform', 'rotate(-90deg)');
+        }
     }
 
     _activateListeners(html) {
@@ -43,6 +53,8 @@ export class HealthPanel {
             const toggle = panel.find('.health-toggle');
             healthContent.toggleClass('collapsed');
             toggle.css('transform', healthContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
+            // Save collapsed state
+            game.settings.set(MODULE.ID, 'isHealthPanelCollapsed', healthContent.hasClass('collapsed'));
         });
 
         // HP Controls for GM

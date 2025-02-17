@@ -246,6 +246,41 @@ export const registerSettings = function() {
         default: false
     });
 
+    // Remember panel collapsed states
+    game.settings.register(MODULE.ID, 'isExperiencePanelCollapsed', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'isHealthPanelCollapsed', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'isAbilitiesPanelCollapsed', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'isStatsPanelCollapsed', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'isDiceTrayPanelCollapsed', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
 
     // Panel Visibility Settings
 

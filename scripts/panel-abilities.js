@@ -29,6 +29,16 @@ export class AbilitiesPanel {
         this.element.find('[data-panel="abilities"]').html(content);
         
         this._activateListeners(this.element);
+
+        // Apply saved collapsed state
+        const panel = this.element.find('[data-panel="abilities"]');
+        const isCollapsed = game.settings.get(MODULE.ID, 'isAbilitiesPanelCollapsed');
+        if (isCollapsed) {
+            const abilitiesContent = panel.find('.abilities-content');
+            const toggle = panel.find('.abilities-toggle');
+            abilitiesContent.addClass('collapsed');
+            toggle.css('transform', 'rotate(-90deg)');
+        }
     }
 
     _activateListeners(html) {
@@ -42,6 +52,8 @@ export class AbilitiesPanel {
             const toggle = panel.find('.abilities-toggle');
             abilitiesContent.toggleClass('collapsed');
             toggle.css('transform', abilitiesContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
+            // Save collapsed state
+            game.settings.set(MODULE.ID, 'isAbilitiesPanelCollapsed', abilitiesContent.hasClass('collapsed'));
         });
 
         // Ability check and save handlers
