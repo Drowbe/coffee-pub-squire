@@ -64,6 +64,14 @@ export class DiceTrayPanel {
 
         const panel = html.find('[data-panel="dicetray"]');
 
+        // Add dice tray toggle handler
+        panel.find('.tray-title-small').click(() => {
+            const dicetrayContent = panel.find('.dicetray-content');
+            const toggle = panel.find('.dicetray-toggle');
+            dicetrayContent.toggleClass('collapsed');
+            toggle.css('transform', dicetrayContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+        });
+
         // Add pop-out button handler
         panel.find('.pop-out-button').click(() => this._onPopOut());
 
