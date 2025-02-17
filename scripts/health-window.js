@@ -4,6 +4,15 @@ export class HealthWindow extends Application {
     constructor(options = {}) {
         super(options);
         this.panel = options.panel;
+        
+        // Register for actor updates
+        if (this.panel?.actor) {
+            this.panel.actor.apps[this.appId] = this;
+        }
+    }
+
+    get appId() {
+        return `squire-health-window-${this.panel.actor.id}`;
     }
 
     static get defaultOptions() {
@@ -29,8 +38,10 @@ export class HealthWindow extends Application {
     }
 
     async _renderInner(data) {
+        // First render the template
         const content = await renderTemplate(this.options.template, data);
         
+        // Create the wrapper structure
         const html = `
             <div class="squire-popout" data-position="left">
                 <div class="tray-content">
@@ -47,12 +58,15 @@ export class HealthWindow extends Application {
     activateListeners(html) {
         super.activateListeners(html);
         
+        // Find the panel container within the window content
         const panelContainer = html.find('[data-panel="health"]').closest('.panel-container');
         
         if (this.panel) {
+            // Update the panel's element reference with the panel container
             this.panel.updateElement(panelContainer);
         }
 
+        // Add close button handler
         html.closest('.app').find('.close').click(ev => {
             ev.preventDefault();
             this.close();
@@ -67,9 +81,21 @@ export class HealthWindow extends Application {
     }
 
     async close(options={}) {
+        // Unregister from actor updates
+        if (this.panel?.actor) {
+            delete this.panel.actor.apps[this.appId];
+        }
+        
         if (this.panel) {
             await this.panel.returnToTray();
         }
         return super.close(options);
+    }
+
+    // Handler for actor updates
+    async _onUpdateActor(actor, changes) {
+        if (changes.system?.attributes?.hp) {
+            this.render(false);
+        }
     }
 } 

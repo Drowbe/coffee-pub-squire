@@ -11,6 +11,15 @@ export class HealthPanel {
         // Check if there's an active window and restore state
         this.window = HealthPanel.activeWindow;
         this.isPoppedOut = HealthPanel.isWindowOpen;
+
+        // Register for actor updates
+        if (this.actor) {
+            this.actor.apps[this.id] = this;
+        }
+    }
+
+    get id() {
+        return `squire-health-${this.actor.id}`;
     }
 
     static get defaultOptions() {
@@ -199,6 +208,15 @@ export class HealthPanel {
             const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
             if (effect) {
                 await this.actor.createEmbeddedDocuments('ActiveEffect', [effect]);
+            }
+        }
+    }
+
+    // Handler for actor updates
+    async _onUpdateActor(actor, changes) {
+        if (changes.system?.attributes?.hp) {
+            if (!this.isPoppedOut) {
+                this.render();
             }
         }
     }
