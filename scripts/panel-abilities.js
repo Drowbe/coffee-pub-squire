@@ -41,7 +41,7 @@ export class AbilitiesPanel {
             const abilitiesContent = panel.find('.abilities-content');
             const toggle = panel.find('.abilities-toggle');
             abilitiesContent.toggleClass('collapsed');
-            toggle.css('transform', abilitiesContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+            toggle.css('transform', abilitiesContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
         });
 
         // Ability check and save handlers

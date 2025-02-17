@@ -42,7 +42,7 @@ export class HealthPanel {
             const healthContent = panel.find('.health-content');
             const toggle = panel.find('.health-toggle');
             healthContent.toggleClass('collapsed');
-            toggle.css('transform', healthContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+            toggle.css('transform', healthContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
         });
 
         // HP Controls for GM

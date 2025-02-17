@@ -41,7 +41,7 @@ export class ExperiencePanel {
             const expContent = panel.find('.exp-content');
             const toggle = panel.find('.exp-toggle');
             expContent.toggleClass('collapsed');
-            toggle.css('transform', expContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+            toggle.css('transform', expContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
         });
     }
 } 

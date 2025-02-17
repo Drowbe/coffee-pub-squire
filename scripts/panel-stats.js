@@ -41,7 +41,7 @@ export class StatsPanel {
             const statsContent = panel.find('.stats-content');
             const toggle = panel.find('.stats-toggle');
             statsContent.toggleClass('collapsed');
-            toggle.css('transform', statsContent.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
+            toggle.css('transform', statsContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
         });
     }
 } 
