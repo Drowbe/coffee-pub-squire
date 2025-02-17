@@ -9,6 +9,25 @@
     border-radius: 6px;
 }
 
+.squire-tray[data-position="left"] [data-panel="dicetray"] .tray-title-small,
+.squire-popout[data-position="left"] [data-panel="dicetray"] .tray-title-small {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.squire-tray[data-position="left"] [data-panel="dicetray"] .pop-out-button,
+.squire-popout[data-position="left"] [data-panel="dicetray"] .pop-out-button {
+    color: #9f9275;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.squire-tray[data-position="left"] [data-panel="dicetray"] .pop-out-button:hover,
+.squire-popout[data-position="left"] [data-panel="dicetray"] .pop-out-button:hover {
+    color: #fff;
+}
+
 .squire-tray[data-position="left"] [data-panel="dicetray"] .squire-dice-formula,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .squire-dice-formula {
     display: flex;
