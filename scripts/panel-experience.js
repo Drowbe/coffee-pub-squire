@@ -37,7 +37,7 @@ export class ExperiencePanel {
         const panel = html.find('[data-panel="experience"]');
 
         // Experience toggle
-        panel.find('.exp-header').click(() => {
+        panel.find('.tray-title-small').click(() => {
             const expContent = panel.find('.exp-content');
             const toggle = panel.find('.exp-toggle');
             expContent.toggleClass('collapsed');

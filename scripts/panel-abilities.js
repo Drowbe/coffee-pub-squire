@@ -37,7 +37,7 @@ export class AbilitiesPanel {
         const panel = html.find('[data-panel="abilities"]');
 
         // Abilities toggle
-        panel.find('.abilities-header').click(() => {
+        panel.find('.tray-title-small').click(() => {
             const abilitiesContent = panel.find('.abilities-content');
             const toggle = panel.find('.abilities-toggle');
             abilitiesContent.toggleClass('collapsed');

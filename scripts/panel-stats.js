@@ -37,7 +37,7 @@ export class StatsPanel {
         const panel = html.find('[data-panel="stats"]');
 
         // Stats toggle
-        panel.find('.stats-header').click(() => {
+        panel.find('.tray-title-small').click(() => {
             const statsContent = panel.find('.stats-content');
             const toggle = panel.find('.stats-toggle');
             statsContent.toggleClass('collapsed');

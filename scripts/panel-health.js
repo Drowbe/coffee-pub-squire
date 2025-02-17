@@ -38,7 +38,7 @@ export class HealthPanel {
         const panel = html.find('[data-panel="health"]');
 
         // Health toggle
-        panel.find('.health-header').click(() => {
+        panel.find('.tray-title-small').click(() => {
             const healthContent = panel.find('.health-content');
             const toggle = panel.find('.health-toggle');
             healthContent.toggleClass('collapsed');
