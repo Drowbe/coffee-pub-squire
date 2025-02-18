@@ -39,9 +39,11 @@ export class PanelManager {
         // If we have an instance with the same actor, do nothing
         if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
 
-        // Preserve health window state from old instance
+        // Preserve window states from old instance
         const oldHealthPanel = PanelManager.instance?.healthPanel;
         const hadHealthWindow = oldHealthPanel?.isPoppedOut && oldHealthPanel?.window;
+        const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
+        const hadDiceTrayWindow = oldDiceTrayPanel?.isPoppedOut && oldDiceTrayPanel?.window;
 
         // Create or update instance
         PanelManager.currentActor = actor;
@@ -58,6 +60,17 @@ export class PanelManager {
             HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
             // Update the panel and window with the new actor
             PanelManager.instance.healthPanel.updateActor(actor);
+        }
+
+        // Restore dice tray window state if it was open
+        if (hadDiceTrayWindow) {
+            PanelManager.instance.dicetrayPanel.isPoppedOut = true;
+            PanelManager.instance.dicetrayPanel.window = oldDiceTrayPanel.window;
+            PanelManager.instance.dicetrayPanel.window.panel = PanelManager.instance.dicetrayPanel;
+            DiceTrayPanel.isWindowOpen = true;
+            DiceTrayPanel.activeWindow = PanelManager.instance.dicetrayPanel.window;
+            // Update the panel and window with the new actor
+            PanelManager.instance.dicetrayPanel.updateActor(actor);
         }
 
         // Remove any existing trays first

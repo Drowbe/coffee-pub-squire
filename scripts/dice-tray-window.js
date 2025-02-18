@@ -95,6 +95,7 @@ export class DiceTrayWindow extends Application {
 
     // Handler for actor updates
     async _onUpdateActor(actor, changes) {
+        // Always re-render when the actor updates
         this.render(false);
     }
 
