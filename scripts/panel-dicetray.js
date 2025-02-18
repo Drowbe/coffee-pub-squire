@@ -9,9 +9,19 @@ export class DiceTrayPanel {
         this.currentFormula = "";
         this.rollHistory = [];
         this.element = null;
+        this.actor = options.actor || game.user.character;
         // Check if there's an active window and restore state
         this.window = DiceTrayPanel.activeWindow;
         this.isPoppedOut = DiceTrayPanel.isWindowOpen;
+
+        // Register for actor updates
+        if (this.actor) {
+            this.actor.apps[this.id] = this;
+        }
+    }
+
+    get id() {
+        return `squire-dicetray-${this.actor?.id || 'no-actor'}`;
     }
 
     static get defaultOptions() {
@@ -30,6 +40,7 @@ export class DiceTrayPanel {
         if (!this.element || this.isPoppedOut) return;
 
         const templateData = {
+            actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             isDiceTrayPopped: this.isPoppedOut
         };
@@ -588,7 +599,9 @@ export class DiceTrayPanel {
         try {
             // Render the content into the new container
             const templateData = {
-                position: game.settings.get(MODULE.ID, 'trayPosition')
+                position: game.settings.get(MODULE.ID, 'trayPosition'),
+                actor: this.actor,
+                isDiceTrayPopped: false
             };
             const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
             diceTrayContainer.html(content);
@@ -614,5 +627,30 @@ export class DiceTrayPanel {
     updateElement(html) {
         this.element = html;
         this._activateListeners(html);
+    }
+
+    // Update actor reference and window if needed
+    updateActor(actor) {
+        // Unregister from old actor
+        if (this.actor) {
+            delete this.actor.apps[this.id];
+        }
+
+        // Update actor reference
+        this.actor = actor || game.user.character;
+        
+        // Register with new actor
+        if (this.actor) {
+            this.actor.apps[this.id] = this;
+        }
+        
+        // Update window if popped out
+        if (this.isPoppedOut && this.window) {
+            this.window.actor = this.actor;
+            this.window.updateActor(this.actor);
+        } else {
+            // Re-render in tray if not popped out
+            this.render();
+        }
     }
 } 

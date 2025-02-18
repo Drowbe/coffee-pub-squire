@@ -4,6 +4,15 @@ export class DiceTrayWindow extends Application {
     constructor(options = {}) {
         super(options);
         this.panel = options.panel;
+        
+        // Register for actor updates
+        if (this.panel?.actor) {
+            this.panel.actor.apps[this.appId] = this;
+        }
+    }
+
+    get appId() {
+        return `squire-dicetray-window-${this.panel.actor?.id || 'no-actor'}`;
     }
 
     static get defaultOptions() {
@@ -22,11 +31,12 @@ export class DiceTrayWindow extends Application {
 
     getData() {
         const data = {
+            actor: this.panel.actor,
             position: "left",
             isDiceTrayPopped: true
         };
         // Update window title with actor name
-        this.options.title = `Dice Tray: ${game.user.character?.name || 'No Character'}`;
+        this.options.title = `Dice Tray: ${this.panel.actor.name}`;
         return data;
     }
 
@@ -72,9 +82,49 @@ export class DiceTrayWindow extends Application {
     }
 
     async close(options={}) {
+        // Unregister from actor updates
+        if (this.panel?.actor) {
+            delete this.panel.actor.apps[this.appId];
+        }
+        
         if (this.panel) {
             await this.panel.returnToTray();
         }
         return super.close(options);
+    }
+
+    // Handler for actor updates
+    async _onUpdateActor(actor, changes) {
+        this.render(false);
+    }
+
+    // Override setPosition to ensure window stays in place when re-rendering
+    setPosition(options={}) {
+        // If we already have a position, preserve it
+        if (this.element && this._position) {
+            options = foundry.utils.mergeObject(this._position, options);
+        }
+        return super.setPosition(options);
+    }
+
+    // Update the panel reference and re-register for updates when the actor changes
+    updateActor(actor) {
+        // Unregister from old actor
+        if (this.panel?.actor) {
+            delete this.panel.actor.apps[this.appId];
+        }
+        
+        // Update panel's actor
+        if (this.panel) {
+            this.panel.actor = actor;
+        }
+        
+        // Register with new actor
+        if (actor) {
+            actor.apps[this.appId] = this;
+        }
+        
+        // Re-render with new actor data
+        this.render(false);
     }
 } 

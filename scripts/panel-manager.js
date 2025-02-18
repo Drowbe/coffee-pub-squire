@@ -27,7 +27,7 @@ export class PanelManager {
         this.weaponsPanel = new WeaponsPanel(actor);
         this.inventoryPanel = new InventoryPanel(actor);
         this.featuresPanel = new FeaturesPanel(actor);
-        this.dicetrayPanel = new DiceTrayPanel();
+        this.dicetrayPanel = new DiceTrayPanel({ actor });
         this.experiencePanel = new ExperiencePanel(actor);
         this.healthPanel = new HealthPanel(actor);
         this.statsPanel = new StatsPanel(actor);
@@ -102,6 +102,21 @@ export class PanelManager {
     }
 
     async updateTray() {
+        if (!this.element) return;
+
+        // Update actor references
+        if (this.actor) {
+            this.characterPanel.actor = this.actor;
+            this.weaponsPanel.actor = this.actor;
+            this.inventoryPanel.actor = this.actor;
+            this.featuresPanel.actor = this.actor;
+            this.dicetrayPanel.updateActor(this.actor);
+            this.experiencePanel.actor = this.actor;
+            this.healthPanel.updateActor(this.actor);
+            this.statsPanel.actor = this.actor;
+            this.abilitiesPanel.actor = this.actor;
+        }
+
         if (PanelManager.element) {
             // Re-render the entire tray template
             const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
