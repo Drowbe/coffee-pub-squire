@@ -83,7 +83,8 @@ export class PanelManager {
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-            isDiceTrayPopped: DiceTrayPanel.isWindowOpen
+            isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
+            isHealthPopped: HealthPanel.isWindowOpen
         });
         const trayElement = $(trayHtml);
         $('body').append(trayElement);
@@ -118,7 +119,8 @@ export class PanelManager {
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
                 showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
                 showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-                isDiceTrayPopped: DiceTrayPanel.isWindowOpen
+                isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
+                isHealthPopped: HealthPanel.isWindowOpen
             });
             const newTrayElement = $(trayHtml);
             
@@ -147,21 +149,15 @@ export class PanelManager {
             this.featuresPanel = new FeaturesPanel(this.actor);
             this.experiencePanel = new ExperiencePanel(this.actor);
 
-            // Preserve health panel window state
-            const oldHealthPanel = this.healthPanel;
-            this.healthPanel = new HealthPanel(this.actor);
-            if (oldHealthPanel?.isPoppedOut && oldHealthPanel?.window) {
-                this.healthPanel.isPoppedOut = true;
-                this.healthPanel.window = oldHealthPanel.window;
-                this.healthPanel.window.panel = this.healthPanel;
-                HealthPanel.isWindowOpen = true;
-                HealthPanel.activeWindow = this.healthPanel.window;
+            // Only create health panel if not popped out
+            if (!HealthPanel.isWindowOpen) {
+                this.healthPanel = new HealthPanel(this.actor);
             }
 
             this.statsPanel = new StatsPanel(this.actor);
             this.abilitiesPanel = new AbilitiesPanel(this.actor);
 
-            // Update panel element references
+            // Update panel element references for non-popped panels
             this.characterPanel.element = PanelManager.element;
             this.controlPanel.element = PanelManager.element;
             this.favoritesPanel.element = PanelManager.element;
@@ -170,7 +166,9 @@ export class PanelManager {
             this.inventoryPanel.element = PanelManager.element;
             this.featuresPanel.element = PanelManager.element;
             this.experiencePanel.element = PanelManager.element;
-            this.healthPanel.element = PanelManager.element;
+            if (!HealthPanel.isWindowOpen) {
+                this.healthPanel.element = PanelManager.element;
+            }
             this.statsPanel.element = PanelManager.element;
             this.abilitiesPanel.element = PanelManager.element;
 
@@ -209,9 +207,13 @@ export class PanelManager {
         await this.weaponsPanel.render(element);
         await this.inventoryPanel.render(element);
         await this.featuresPanel.render(element);
-        await this.dicetrayPanel.render(element);
+        if (!DiceTrayPanel.isWindowOpen) {
+            await this.dicetrayPanel.render(element);
+        }
         await this.experiencePanel.render(element);
-        await this.healthPanel.render(element);
+        if (!HealthPanel.isWindowOpen) {
+            await this.healthPanel.render(element);
+        }
         await this.statsPanel.render(element);
         await this.abilitiesPanel.render(element);
     }

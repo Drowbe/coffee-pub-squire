@@ -14,9 +14,11 @@
         {{#if @root.settings.showExperiencePanel}}
         <div class="panel-container" data-panel="experience"></div>
         {{/if}}
-        {{#if @root.settings.showHealthPanel}}
-        <div class="panel-container" data-panel="health"></div>
-        {{/if}}
+        {{#unless isHealthPopped}}
+            {{#if @root.settings.showHealthPanel}}
+            <div class="panel-container" data-panel="health"></div>
+            {{/if}}
+        {{/unless}}
         {{#if @root.settings.showAbilitiesPanel}}
         <div class="panel-container" data-panel="abilities"></div>
         {{/if}}
