@@ -5,7 +5,6 @@
 /* ----- VARIABLES ----- */
 :root {
     --health-min-width: 300px;
-    --health-min-height: 210px;
     --container-padding: 8px;
     --border-color: #444;
     --accent-color: #9f9275;
@@ -21,12 +20,10 @@
     border-radius: 6px !important;
     box-shadow: 0 0 20px #000 !important;
     min-width: var(--health-min-width) !important;
-    min-height: var(--health-min-height) !important;
 }
 
 /* Ensure popout takes full size of its container */
 .squire-popout {
-    height: 100% !important;
     width: 100% !important;
 }
 
@@ -339,13 +336,11 @@
 /* Target the app element itself */
 .app.window-app#squire-health-window {
     min-width: 300px !important;
-    min-height: 210px !important;
 }
 
 /* Target the window wrapper */
 .app.window-app#squire-health-window > .window-content {
     min-width: 300px !important;
-    min-height: 210px !important;
 }
 
 /* Common styles */

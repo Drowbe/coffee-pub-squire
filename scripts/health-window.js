@@ -23,7 +23,7 @@ export class HealthWindow extends Application {
             width: 400,
             height: "auto",
             minimizable: true,
-            resizable: true,
+            resizable: false,
             popOut: true,
             classes: ["squire-window"]
         });
