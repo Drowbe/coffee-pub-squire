@@ -30,7 +30,8 @@ export class DiceTrayPanel {
         if (!this.element || this.isPoppedOut) return;
 
         const templateData = {
-            position: game.settings.get(MODULE.ID, 'trayPosition')
+            position: game.settings.get(MODULE.ID, 'trayPosition'),
+            isDiceTrayPopped: this.isPoppedOut
         };
 
         // If popped out, only update the window content and don't render in tray

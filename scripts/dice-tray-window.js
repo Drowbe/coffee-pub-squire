@@ -21,9 +21,13 @@ export class DiceTrayWindow extends Application {
     }
 
     getData() {
-        return {
-            position: "left" // We need this to match the template condition
+        const data = {
+            position: "left",
+            isDiceTrayPopped: true
         };
+        // Update window title with actor name
+        this.options.title = `Dice Tray: ${game.user.character?.name || 'No Character'}`;
+        return data;
     }
 
     async _renderInner(data) {
