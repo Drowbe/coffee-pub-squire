@@ -58,16 +58,6 @@ export class DiceTrayPanel {
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
         this.element.find('[data-panel="dicetray"]').html(content);
-        
-        // Add initial "No recent rolls" message
-        const historyList = this.element.find('.squire-history-list');
-        if (!historyList.children().length) {
-            const emptyMessage = document.createElement('div');
-            emptyMessage.classList.add('history-entry', 'empty-message');
-            emptyMessage.textContent = 'No recent rolls';
-            historyList.append(emptyMessage);
-        }
-        
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
@@ -152,10 +142,12 @@ export class DiceTrayPanel {
             historyList.empty();
             
             // Add the "No recent rolls" message
-            const emptyMessage = document.createElement('div');
-            emptyMessage.classList.add('history-entry', 'empty-message');
-            emptyMessage.textContent = 'No recent rolls';
-            historyList.append(emptyMessage);
+            historyList.html('<div class="history-entry empty-message">No recent rolls</div>');
+
+            // If we're in a window, trigger a resize
+            if (this.isPoppedOut && this.window) {
+                this.window.setPosition({height: "auto"});
+            }
         });
     }
 
