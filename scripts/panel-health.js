@@ -40,7 +40,8 @@ export class HealthPanel {
         const templateData = {
             actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
-            isGM: game.user.isGM
+            isGM: game.user.isGM,
+            isHealthPopped: this.isPoppedOut
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);

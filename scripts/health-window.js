@@ -30,11 +30,15 @@ export class HealthWindow extends Application {
     }
 
     getData() {
-        return {
+        const data = {
             actor: this.panel.actor,
             position: "left",
-            isGM: game.user.isGM
+            isGM: game.user.isGM,
+            isHealthPopped: true
         };
+        // Update window title with actor name
+        this.options.title = `Health: ${this.panel.actor.name}`;
+        return data;
     }
 
     async _renderInner(data) {
