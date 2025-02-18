@@ -7,7 +7,6 @@
 /* ----- VARIABLES ----- */
 :root {
     --dice-tray-min-width: 300px;
-    --dice-tray-min-height: 210px;
     --container-padding: 8px;
     --border-color: #444;
     --accent-color: #9f9275;
@@ -23,12 +22,10 @@
     border-radius: 6px !important;
     box-shadow: 0 0 20px #000 !important;
     min-width: var(--dice-tray-min-width) !important;
-    min-height: var(--dice-tray-min-height) !important;
 }
 
 /* Ensure popout takes full size of its container */
 .squire-popout {
-    height: 100% !important;
     width: 100% !important;
 }
 
@@ -74,7 +71,7 @@
     padding: 0 !important;
     width: 100% !important;
     min-width: 100% !important;
-    height: 100% !important;
+    overflow: visible !important;
 }
 
 #squire-dicetray-window .window-content > * {
@@ -85,13 +82,12 @@
 /* ----- PANEL CONTAINER ----- */
 
 #squire-dicetray-window .window-content .panel-container {
-    flex: 1 !important;
+    flex: 0 0 auto !important;
     width: 100% !important;
     min-width: 100% !important;
     margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    height: 100% !important;
 }
 
 /* ----- DICE TRAY PANEL ----- */
@@ -121,36 +117,47 @@
 #squire-dicetray-window .window-content [data-panel="dicetray"] .squire-dice-history {
     display: flex !important;
     flex-direction: column !important;
-    flex: 1 !important;
-    min-height: 0 !important;
+    flex: 0 0 auto !important;
 }
 
 #squire-dicetray-window .window-content [data-panel="dicetray"] .squire-history-list {
-    flex: 1 !important;
+    flex: 0 0 auto !important;
+    max-height: 120px !important; /* Approximately 4 entries worth of height */
     overflow-y: auto !important;
-    min-height: 0 !important;
     margin: 0 !important;
     padding: var(--container-padding) !important;
 }
 
-/* ----- SCROLLBAR ----- */
-
-#squire-dicetray-window ::-webkit-scrollbar {
+/* Scrollbar styles only for history list */
+#squire-dicetray-window .squire-history-list::-webkit-scrollbar {
     width: 6px !important;
 }
 
-#squire-dicetray-window ::-webkit-scrollbar-track {
+#squire-dicetray-window .squire-history-list::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2) !important;
     border-radius: 3px !important;
 }
 
-#squire-dicetray-window ::-webkit-scrollbar-thumb {
+#squire-dicetray-window .squire-history-list::-webkit-scrollbar-thumb {
     background: var(--accent-color) !important;
     border-radius: 3px !important;
 }
 
-#squire-dicetray-window ::-webkit-scrollbar-thumb:hover {
+#squire-dicetray-window .squire-history-list::-webkit-scrollbar-thumb:hover {
     background: #db9f1e !important;
+}
+
+/* Remove general scrollbar styles */
+#squire-dicetray-window ::-webkit-scrollbar,
+#squire-dicetray-window ::-webkit-scrollbar-track,
+#squire-dicetray-window ::-webkit-scrollbar-thumb,
+#squire-dicetray-window ::-webkit-scrollbar-thumb:hover {
+    display: none !important;
+}
+
+/* But allow them for the history list */
+#squire-dicetray-window .squire-history-list::-webkit-scrollbar {
+    display: block !important;
 }
 
 /* ----- RESIZABLE HANDLE ----- */
@@ -178,11 +185,9 @@
 /* Target the app element itself */
 .app.window-app#squire-dicetray-window {
     min-width: 300px !important;
-    min-height: 210px !important;
 }
 
 /* Target the window wrapper */
 .app.window-app#squire-dicetray-window > .window-content {
     min-width: 300px !important;
-    min-height: 210px !important;
 } 

@@ -21,11 +21,11 @@ export class DiceTrayWindow extends Application {
             template: TEMPLATES.PANEL_DICETRAY,
             title: "Dice Tray",
             width: 400,
-            height: 500,
-            resizable: true,
+            height: "auto",
             minimizable: true,
+            resizable: false,
             popOut: true,
-            classes: ["squire-window"] // Add a base class for all our popouts
+            classes: ["squire-window"]
         });
     }
 
