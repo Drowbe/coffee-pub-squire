@@ -96,6 +96,7 @@ export class PanelManager {
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen
         });
@@ -147,6 +148,7 @@ export class PanelManager {
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
                 showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
                 showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+                showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
                 isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
                 isHealthPopped: HealthPanel.isWindowOpen
             });
@@ -219,7 +221,8 @@ export class PanelManager {
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
                 showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
-                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
+                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+                showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray')
             });
             const handle = PanelManager.element.find('.handle-left');
             handle.html(handleTemplate);
@@ -253,7 +256,8 @@ export class PanelManager {
         handle.on('click', (event) => {
             if ($(event.target).closest('.pin-button').length || 
                 $(event.target).closest('.handle-favorite-icon').length ||
-                $(event.target).closest('.handle-health-bar').length) return;
+                $(event.target).closest('.handle-health-bar').length ||
+                $(event.target).closest('.handle-dice-tray').length) return;
             
             event.preventDefault();
             event.stopPropagation();
@@ -274,6 +278,15 @@ export class PanelManager {
             
             tray.toggleClass('expanded');
             return false;
+        });
+
+        // Handle dice tray icon clicks
+        handle.find('.handle-dice-tray').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
+                await this.dicetrayPanel._onPopOut();
+            }
         });
 
         // Handle health bar clicks

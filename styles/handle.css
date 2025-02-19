@@ -1,8 +1,3 @@
-
-
-
-
-
 /* TRAY Handle */
 .squire-tray[data-position="left"] .tray-handle {
     height: 100%;
@@ -48,6 +43,8 @@
     margin-bottom: 8px;
     margin-top: 0;
     padding: 4px 8px;
+    transition: transform 0.2s ease, color 0.2s ease;
+    color: #9f9275;
 }
 
 /* TRAY Handle Title */
@@ -79,7 +76,10 @@
     transform: rotate(180deg);
 }
 
-
+.squire-tray[data-position="left"].expanded .tray-handle:hover i.fa-chevron-right {
+    color: #fff;
+    filter: brightness(1.2);
+}
 
 /* Handle Conditions */
 .squire-tray[data-position="left"] .handle-conditions {
@@ -212,6 +212,31 @@
 /* Ensure the dots are visible and properly spaced */
 .squire-tray[data-position="left"] .handle-stats {
     font-weight: 900;
+}
+
+/* Icon hover effects */
+.squire-tray[data-position="left"] .handle-dice-tray i {
+    transition: transform 0.2s ease, color 0.2s ease;
+    color: #9f9275;
+}
+
+.squire-tray[data-position="left"] .handle-dice-tray:hover i {
+    transform: rotate(360deg);
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .pin-button i {
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .pin-button:hover i {
+    transform: rotate(45deg);
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .tray-handle:hover i.fa-chevron-right {
+    color: #fff;
+    filter: brightness(1.2);
 }
 
 

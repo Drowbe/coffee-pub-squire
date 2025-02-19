@@ -231,6 +231,15 @@ export const registerSettings = function() {
         default: true
     });
 
+    game.settings.register(MODULE.ID, 'showHandleDiceTray', {
+        name: 'Show Dice Tray Icon in Handle',
+        hint: 'Display a dice icon in the handle to quickly access the dice tray',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
 
     // ***************************
     // *** NON-CONFIG SETTINGS ***
