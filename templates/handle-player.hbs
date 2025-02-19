@@ -1,5 +1,7 @@
 {{#if actor}}
     <span class="tray-handle-separator spacer"></span>
+
+    {{!-- FAVORITES --}} 
     {{#if showHandleFavorites}}
         <div class="handle-favorites">
             {{#each (getFavorites actor)}}
@@ -32,15 +34,9 @@
         <span class="tray-handle-separator line"></span>
     {{/if}}
 
+    {{!-- PRIMARY STATS --}} 
     {{#if showHandleStatsPrimary}}
         <span class="handle-stats-primary">
-            <span class="tray-handle-content">{{actor.system.attributes.hp.value}}</span> <span class="tray-handle-label">HP</span>
-            {{#if showHandleHealthBar}}
-            <div class="handle-health-bar">
-                <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
-            </div>
-            {{/if}}
-            <span class="tray-handle-separator dot">•</span>
             <span class="tray-handle-content">{{actor.system.attributes.ac.value}}</span> <span class="tray-handle-label">AC</span>
             <span class="tray-handle-separator dot">•</span>
             <span class="tray-handle-content">{{actor.system.attributes.movement.walk}}</span> <span class="tray-handle-label">MOVE</span>
@@ -48,6 +44,7 @@
         <span class="tray-handle-separator line"></span>
     {{/if}}
 
+    {{!-- SECONDARY STATS --}} 
     {{#if showHandleStatsSecondary}}
         <span class="handle-stats-secondary">
             <span class="tray-handle-content">{{numberFormat actor.system.attributes.init.total sign=true}}</span> <span class="tray-handle-label">INIT</span>
@@ -57,6 +54,16 @@
         <span class="tray-handle-separator line"></span>
     {{/if}}
 
+    {{!-- HEALTH --}} 
+    {{#if showHandleHealthBar}}
+        <span class="tray-handle-content">{{actor.system.attributes.hp.value}}</span> <span class="tray-handle-label">HP</span>
+        <div class="handle-health-bar">
+            <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
+        </div>
+        <span class="tray-handle-separator line"></span>
+    {{/if}}
+
+    {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
         <span class="handle-conditions">
             {{#if (includes effects "Poisoned")}}<i class="fas fa-skull-crossbones condition-icon" title="Poisoned"></i>{{/if}}
@@ -101,5 +108,9 @@
             <span class="tray-handle-separator line"></span>
         {{/if}}
     {{/if}}
+
+    {{!-- CHARACTER NAME --}} 
     <div class="handle-character">{{actor.name}}</div>
-{{else}}Select a Character{{/if}} 
+{{else}}
+    <div class="handle-character">Select a Character</div>
+{{/if}} 
