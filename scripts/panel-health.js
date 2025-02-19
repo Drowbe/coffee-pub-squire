@@ -226,6 +226,8 @@ export class HealthPanel {
             const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
             if (effect) {
                 await this.actor.createEmbeddedDocuments('ActiveEffect', [effect]);
+                // Set HP to 0 when applying dead status
+                await this.actor.update({'system.attributes.hp.value': 0});
             }
         }
     }
