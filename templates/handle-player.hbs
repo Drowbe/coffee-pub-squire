@@ -1,5 +1,11 @@
 {{#if actor}}
     <span class="tray-handle-separator spacer"></span>
+    {{!-- DICETRAY --}} 
+    {{#if showHandleDiceTray}}
+        <div class="handle-dice-tray">
+            <i class="fas fa-dice-d20"></i>
+        </div>
+    {{/if}}
 
     {{!-- FAVORITES --}} 
     {{#if showHandleFavorites}}

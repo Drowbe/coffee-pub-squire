@@ -251,7 +251,9 @@ export class PanelManager {
         
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
-            if ($(event.target).closest('.pin-button').length || $(event.target).closest('.handle-favorite-icon').length) return;
+            if ($(event.target).closest('.pin-button').length || 
+                $(event.target).closest('.handle-favorite-icon').length ||
+                $(event.target).closest('.handle-health-bar').length) return;
             
             event.preventDefault();
             event.stopPropagation();
@@ -272,6 +274,15 @@ export class PanelManager {
             
             tray.toggleClass('expanded');
             return false;
+        });
+
+        // Handle health bar clicks
+        handle.find('.handle-health-bar').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.healthPanel && !this.healthPanel.isPoppedOut) {
+                await this.healthPanel._onPopOut();
+            }
         });
 
         // Handle favorite item clicks
