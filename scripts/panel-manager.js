@@ -789,13 +789,29 @@ Hooks.on('deleteToken', async (token) => {
     }
 });
 
-Hooks.on('updateActor', async (actor) => {
-    if (PanelManager.currentActor?.id === actor.id) {
+// Handle actor updates that require full re-initialization
+Hooks.on('updateActor', async (actor, changes) => {
+    // Only handle major changes that require full re-initialization
+    const needsFullUpdate = changes.name || // Name change
+                           changes.img || // Image change
+                           changes.system?.attributes?.prof || // Proficiency change
+                           changes.system?.details?.level || // Level change
+                           changes.system?.attributes?.ac || // AC change
+                           changes.system?.attributes?.movement; // Movement change
+
+    if (PanelManager.currentActor?.id === actor.id && needsFullUpdate) {
         await PanelManager.initialize(actor);
         
         // Force a re-render of all panels
         if (PanelManager.instance) {
             await PanelManager.instance.renderPanels(PanelManager.element);
+        }
+    }
+    // For health and effects changes, just update the handle
+    else if (PanelManager.currentActor?.id === actor.id && 
+            (changes.system?.attributes?.hp || changes.effects)) {
+        if (PanelManager.instance) {
+            await PanelManager.instance.updateHandle();
         }
     }
 });

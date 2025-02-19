@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { HealthWindow } from './health-window.js';
+import { PanelManager } from './panel-manager.js';
 
 export class HealthPanel {
     static isWindowOpen = false;
