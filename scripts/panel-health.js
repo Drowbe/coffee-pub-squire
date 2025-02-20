@@ -12,6 +12,7 @@ export class HealthPanel {
         // Check if there's an active window and restore state
         this.window = HealthPanel.activeWindow;
         this.isPoppedOut = HealthPanel.isWindowOpen;
+        this.previousSibling = null; // Store reference for position
 
         // Register for actor updates
         if (this.actor) {
@@ -109,6 +110,15 @@ export class HealthPanel {
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
+        // Store position information before removing
+        const container = this.element.find('[data-panel="health"]').closest('.panel-container');
+        if (container.length) {
+            this.previousSibling = container.prev('.panel-container');
+            if (!this.previousSibling.length) {
+                this.previousSibling = container.parent();
+            }
+        }
+
         // Set state before creating window
         HealthPanel.isWindowOpen = true;
         this.isPoppedOut = true;
@@ -116,7 +126,6 @@ export class HealthPanel {
         // Remove the entire panel structure first
         if (this.element) {
             // Find and remove the panel container
-            const container = this.element.find('[data-panel="health"]').closest('.panel-container');
             if (container.length) {
                 // Also check for and remove any wrapper divs that might be left behind
                 const wrappers = container.parents().filter(function() {
@@ -155,14 +164,20 @@ export class HealthPanel {
         // Update our element reference
         this.element = mainTray;
 
-        // Find the correct insertion point - after experience panel
-        const expPanel = mainTray.find('[data-panel="experience"]').closest('.panel-container');
+        // Create the new panel container
         const healthContainer = $('<div class="panel-container" data-panel="health"></div>');
         
-        // Insert after experience panel if found, otherwise at the start
-        if (expPanel.length) {
-            healthContainer.insertAfter(expPanel);
+        // Insert at the stored position
+        if (this.previousSibling && this.previousSibling.length) {
+            if (this.previousSibling.is('.squire-tray')) {
+                // If the previous sibling was the tray itself, we were first
+                this.previousSibling.find('.tray-content').prepend(healthContainer);
+            } else {
+                // Otherwise insert after the stored sibling
+                healthContainer.insertAfter(this.previousSibling);
+            }
         } else {
+            // Fallback to prepending to tray content if no position info
             mainTray.find('.tray-content').prepend(healthContainer);
         }
 
