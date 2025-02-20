@@ -51,17 +51,32 @@ export class WeaponsPanel {
     _getWeaponType(weapon) {
         const weaponData = weapon.system;
         
+        // Debug logging
+        console.log("SQUIRE | Weapon Data Debug:", {
+            name: weapon.name,
+            weaponData: weaponData,
+            type: weaponData.type,
+            properties: weaponData.properties
+        });
+        
         // Check for natural weapons first
-        if (weaponData.weaponType === 'natural') return 'natural';
+        if (weaponData.type.value === 'natural') return 'natural';
         
         // Get the weapon type (martial or simple)
-        const baseType = weaponData.baseItem ? weaponData.baseItem : weaponData.weaponType;
-        const isMartial = baseType === 'martial' || weaponData.weaponType === 'martial';
+        const typeValue = weaponData.type.value || '';
         
-        // Check if it's ranged by looking at proper properties
-        const isRanged = weaponData.properties?.rng || // Ranged property
-                        weaponData.properties?.thr || // Thrown property
-                        weaponData.properties?.amm;   // Ammunition property
+        // Check if it's martial and if it's ranged based on type value
+        const isMartial = typeValue.startsWith('martial');
+        const isRanged = typeValue.endsWith('R'); // DND5E uses 'martialR' for ranged, 'martialM' for melee
+        
+        // Debug logging for classification
+        console.log("SQUIRE | Weapon Classification:", {
+            name: weapon.name,
+            typeValue: typeValue,
+            isMartial: isMartial,
+            isRanged: isRanged,
+            finalCategory: isMartial ? (isRanged ? 'martial-ranged' : 'martial-melee') : (isRanged ? 'simple-ranged' : 'simple-melee')
+        });
         
         if (isMartial) {
             return isRanged ? 'martial-ranged' : 'martial-melee';
