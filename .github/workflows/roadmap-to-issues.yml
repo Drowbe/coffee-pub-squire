@@ -48,16 +48,17 @@ jobs:
                   this.lastHourReset = now;
                 }
                 
-                if (this.requestsThisMinute >= 70) {
+                // Check if we're approaching limits
+                if (this.requestsThisMinute >= 70) { // Buffer of 10 under the 80 limit
                   console.log('Approaching minute limit, waiting for reset...');
                   await new Promise(resolve => setTimeout(resolve, 60000));
                   this.requestsThisMinute = 0;
                   this.lastMinuteReset = Date.now();
                 }
                 
-                if (this.requestsThisHour >= 450) {
+                if (this.requestsThisHour >= 450) { // Buffer of 50 under the 500 limit
                   console.log('Approaching hour limit, waiting for reset...');
-                  await new Promise(resolve => setTimeout(resolve, 300000));
+                  await new Promise(resolve => setTimeout(resolve, 300000)); // Wait 5 minutes
                 }
               },
               
@@ -65,6 +66,7 @@ jobs:
                 await this.checkRateLimits();
                 this.requestsThisMinute++;
                 this.requestsThisHour++;
+                // Add base delay between requests
                 await new Promise(resolve => setTimeout(resolve, 2000));
               },
               
@@ -73,7 +75,7 @@ jobs:
                   throw new Error('Max retries exceeded');
                 }
                 
-                const waitTime = Math.pow(2, retryCount) * 30000;
+                const waitTime = Math.pow(2, retryCount) * 30000; // Exponential backoff: 30s, 60s, 120s
                 console.log(`Rate limited. Waiting ${waitTime/1000} seconds before retry ${retryCount + 1}/3`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 return retryCount + 1;
@@ -85,12 +87,16 @@ jobs:
               { name: 'bug', color: 'd73a4a', description: 'Something isn\'t working' },
               { name: 'enhancement', color: 'a2eeef', description: 'New feature or request' },
               { name: 'documentation', color: '0075ca', description: 'Documentation improvements' },
+              { name: 'timer', color: 'fbca04', description: 'Timer related features' },
               { name: 'ui', color: 'bfdadc', description: 'User interface improvements' },
               { name: 'performance', color: '0e8a16', description: 'Performance improvements' },
-              { name: 'compatibility', color: '1d76db', description: 'Compatibility with systems and modules' },
-              { name: 'feature', color: '0052cc', description: 'Core feature implementation' },
-              { name: 'maintenance', color: 'c5def5', description: 'Maintenance and updates' },
-              { name: 'accessibility', color: 'c2e0c6', description: 'Accessibility improvements' }
+              { name: 'api', color: '1d76db', description: 'API related changes' },
+              { name: 'combat', color: 'd93f0b', description: 'Combat related features' },
+              { name: 'data', color: 'c5def5', description: 'Data management features' },
+              { name: 'planning', color: 'c2e0c6', description: 'Planning phase features' },
+              { name: 'integration', color: 'fef2c0', description: 'Integration features' },
+              { name: 'security', color: 'd93f0b', description: 'Security improvements' },
+              { name: 'feature', color: '0052cc', description: 'New features' }
             ];
             
             for (const label of labels) {
@@ -144,26 +150,29 @@ jobs:
               async checkRateLimits() {
                 const now = Date.now();
                 
+                // Reset minute counter if needed
                 if (now - this.lastMinuteReset >= 60000) {
                   this.requestsThisMinute = 0;
                   this.lastMinuteReset = now;
                 }
                 
+                // Reset hour counter if needed
                 if (now - this.lastHourReset >= 3600000) {
                   this.requestsThisHour = 0;
                   this.lastHourReset = now;
                 }
                 
-                if (this.requestsThisMinute >= 70) {
+                // Check if we're approaching limits
+                if (this.requestsThisMinute >= 70) { // Buffer of 10 under the 80 limit
                   console.log('Approaching minute limit, waiting for reset...');
                   await new Promise(resolve => setTimeout(resolve, 60000));
                   this.requestsThisMinute = 0;
                   this.lastMinuteReset = Date.now();
                 }
                 
-                if (this.requestsThisHour >= 450) {
+                if (this.requestsThisHour >= 450) { // Buffer of 50 under the 500 limit
                   console.log('Approaching hour limit, waiting for reset...');
-                  await new Promise(resolve => setTimeout(resolve, 300000));
+                  await new Promise(resolve => setTimeout(resolve, 300000)); // Wait 5 minutes
                 }
               },
               
@@ -171,6 +180,7 @@ jobs:
                 await this.checkRateLimits();
                 this.requestsThisMinute++;
                 this.requestsThisHour++;
+                // Add base delay between requests
                 await new Promise(resolve => setTimeout(resolve, 2000));
               },
               
@@ -179,7 +189,7 @@ jobs:
                   throw new Error('Max retries exceeded');
                 }
                 
-                const waitTime = Math.pow(2, retryCount) * 30000;
+                const waitTime = Math.pow(2, retryCount) * 30000; // Exponential backoff: 30s, 60s, 120s
                 console.log(`Rate limited. Waiting ${waitTime/1000} seconds before retry ${retryCount + 1}/3`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 return retryCount + 1;
@@ -232,7 +242,7 @@ jobs:
                   owner: context.repo.owner
                 });
               });
-
+              
               // Define project mutations
               const addToProjectMutation = `
                 mutation($projectId: ID!, $contentId: ID!) {
@@ -256,7 +266,7 @@ jobs:
                   }
                 }
               `;
-
+              
               // Get project fields
               const project = projectResult.user.projectV2;
               const statusField = project.fields.nodes.find(field => field.name === 'Status');
@@ -273,20 +283,23 @@ jobs:
                   currentSection = line.substring(3).trim();
                   sections[currentSection] = [];
                 } else if (line.startsWith('- ') && currentSection) {
+                  // Parse the line for title, priority, and labels
                   let title = line.substring(2);
                   let priority = 'P0';
                   let labels = ['squire'];
                   
+                  // Extract priority if present
                   const priorityMatch = title.match(/\[Priority: (P\d+)\]/);
                   if (priorityMatch) {
                     priority = priorityMatch[1];
                     title = title.replace(/\[Priority: P\d+\]/, '').trim();
                   }
                   
+                  // Extract labels if present
                   const labelMatch = title.match(/\[Label: ([^\]]+)\]/);
                   if (labelMatch) {
                     const customLabels = labelMatch[1].split(',').map(l => l.trim());
-                    labels = [...customLabels];
+                    labels = [...customLabels]; // Revert to original simple label handling
                     title = title.replace(/\[Label: [^\]]+\]/, '').trim();
                   }
                   
@@ -300,7 +313,7 @@ jobs:
                 }
               }
               
-              // Get existing issues
+              // Get existing issues with rate limiting
               const existingIssues = await withRetry(async () => {
                 const { data } = await github.rest.issues.listForRepo({
                   owner: context.repo.owner,
@@ -310,7 +323,7 @@ jobs:
                 return data;
               });
               
-              // Process each section
+              // Process each section with rate limiting
               for (const [sectionName, items] of Object.entries(sections)) {
                 console.log(`Processing section: ${sectionName}`);
                 for (const item of items) {
@@ -501,6 +514,7 @@ jobs:
                   }
                 }
                 
+                // Add extra delay between sections
                 console.log(`Completed section ${sectionName}. Waiting before next section...`);
                 await new Promise(resolve => setTimeout(resolve, 10000));
               }
