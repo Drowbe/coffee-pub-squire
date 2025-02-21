@@ -222,7 +222,6 @@ jobs:
                       id
                       fields(first: 20) {
                         nodes {
-                          __typename
                           ... on ProjectV2SingleSelectField {
                             id
                             name
@@ -230,35 +229,6 @@ jobs:
                               id
                               name
                             }
-                          }
-                          ... on ProjectV2Field {
-                            id
-                            name
-                            dataType
-                          }
-                          ... on ProjectV2IterationField {
-                            id
-                            name
-                          }
-                        }
-                      }
-                      field(name: "Status") {
-                        ... on ProjectV2SingleSelectField {
-                          id
-                          name
-                          options {
-                            id
-                            name
-                          }
-                        }
-                      }
-                      field(name: "Priority") {
-                        ... on ProjectV2SingleSelectField {
-                          id
-                          name
-                          options {
-                            id
-                            name
                           }
                         }
                       }
@@ -273,45 +243,31 @@ jobs:
                 });
               });
               
-              // Define project mutations
-              const addToProjectMutation = `
-                mutation($projectId: ID!, $contentId: ID!) {
-                  addProjectV2ItemById(input: {
-                    projectId: $projectId
-                    contentId: $contentId
-                  }) {
-                    item {
-                      id
-                    }
-                  }
-                }
-              `;
-              
-              const issueQuery = `
-                query($owner: String!, $repo: String!, $number: Int!) {
-                  repository(owner: $owner, name: $repo) {
-                    issue(number: $number) {
-                      id
-                    }
-                  }
-                }
-              `;
-              
               // Get project fields
               const project = projectResult.user.projectV2;
-              console.log('Project fields:', JSON.stringify(project.fields.nodes, null, 2));
-              const statusField = project.fields.nodes.find(field => field.name === 'Status' && field.__typename === 'ProjectV2SingleSelectField');
-              const priorityField = project.fields.nodes.find(field => field.name.trim() === 'Priority' && field.__typename === 'ProjectV2SingleSelectField');
+              console.log('All project fields:', project.fields.nodes.map(f => f.name).join(', '));
               
-              if (!statusField || !priorityField) {
-                console.log('Project result:', JSON.stringify(projectResult, null, 2));
-                throw new Error('Status or Priority field not found. Available fields: ' + 
-                  project.fields.nodes.map(f => `${f.name} (${f.__typename})`).join(', '));
+              // Find fields by name, accounting for possible trailing spaces
+              const statusField = project.fields.nodes.find(field => field.name.trim() === 'Status');
+              const priorityField = project.fields.nodes.find(field => field.name.trim() === 'Priority');
+              
+              if (!statusField) {
+                throw new Error(`Status field not found. Available fields: ${project.fields.nodes.map(f => f.name).join(', ')}`);
+              }
+              if (!priorityField) {
+                throw new Error(`Priority field not found. Available fields: ${project.fields.nodes.map(f => f.name).join(', ')}`);
               }
               
-              if (!statusField.options || !priorityField.options) {
-                throw new Error('Status or Priority field missing options');
+              // Validate options exist
+              if (!statusField.options?.length) {
+                throw new Error('Status field has no options');
               }
+              if (!priorityField.options?.length) {
+                throw new Error('Priority field has no options');
+              }
+              
+              console.log('Found Status field:', statusField.name, 'with options:', statusField.options.map(o => o.name).join(', '));
+              console.log('Found Priority field:', priorityField.name, 'with options:', priorityField.options.map(o => o.name).join(', '));
               
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
