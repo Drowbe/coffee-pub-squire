@@ -220,13 +220,9 @@ jobs:
                               name
                             }
                           }
-                          ... on ProjectV2Field {
-                            id
-                            name
-                          }
                         }
                       }
-                      field(name: "Status") {
+                      statusField: field(name: "Status") {
                         ... on ProjectV2SingleSelectField {
                           id
                           name
@@ -236,7 +232,7 @@ jobs:
                           }
                         }
                       }
-                      field(name: "Priority") {
+                      priorityField: field(name: "Priority") {
                         ... on ProjectV2SingleSelectField {
                           id
                           name
@@ -283,8 +279,8 @@ jobs:
               
               // Get project fields
               const project = projectResult.user.projectV2;
-              const statusField = project.field('Status');
-              const priorityField = project.field('Priority');
+              const statusField = project.statusField;
+              const priorityField = project.priorityField;
               
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
