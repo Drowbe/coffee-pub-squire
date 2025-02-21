@@ -11,6 +11,11 @@ export const registerHelpers = function() {
         return result;
     });
 
+    // Helper for providing a default value
+    Handlebars.registerHelper('default', function(value, defaultValue) {
+        return value ?? defaultValue;
+    });
+
     // Helper for addition
     Handlebars.registerHelper('add', function(a, b) {
         return a + b;
@@ -38,6 +43,12 @@ export const registerHelpers = function() {
 
     // Helper to check if array includes a value
     Handlebars.registerHelper('includes', function(array, value) {
+        console.log('SQUIRE | Includes Helper Debug:', {
+            array: array,
+            value: value,
+            isArray: Array.isArray(array),
+            result: Array.isArray(array) && array.includes(value)
+        });
         if (!array || !Array.isArray(array)) return false;
         return array.includes(value);
     });

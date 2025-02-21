@@ -24,11 +24,21 @@ export class SpellsPanel {
             const isFavorite = favorites.includes(spell.id);
             const level = spell.system.level;
             
+            // Debug log for a single spell's data structure
+            if (spell.name === "Aid") {  // Log a specific spell to avoid console spam
+                console.log('SQUIRE | Mapped Spell Data:', {
+                    name: spell.name,
+                    properties: spell.system.properties,
+                    mappedProperties: spell.system.properties || [],
+                    fullSystem: spell.system
+                });
+            }
+            
             return {
                 id: spell.id,
                 name: spell.name,
                 img: spell.img,
-                system: spell.system,
+                system: spell.system,  // Use the entire system object as is
                 type: spell.type,
                 isFavorite: isFavorite,
                 categoryId: `category-spell-level-${level}`

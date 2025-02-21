@@ -157,6 +157,9 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .spell-level {
@@ -338,4 +341,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.spell-components {
+    display: flex;
+    gap: 3px;
+    margin-left: 6px;
+}
+
+.component-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px;
+    line-height: 1;
 } 

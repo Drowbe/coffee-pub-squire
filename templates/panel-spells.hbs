@@ -61,6 +61,13 @@
                             </div>
                             <div class="spell-name">
                                 {{spell.name}}
+                                <div class="spell-components">
+                                    {{#each spell.system.properties}}
+                                        {{#if (eq this "verbal")}}<span class="component-icon" title="Verbal Component">V</span>{{/if}}
+                                        {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
+                                        {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
+                                    {{/each}}
+                                </div>
                             </div>
                             <div class="tray-buttons">
                                 <i class="fas fa-sun active" title="Always Prepared"></i>
@@ -91,6 +98,13 @@
                             </div>
                             <div class="spell-name">
                                 {{spell.name}}
+                                <div class="spell-components">
+                                    {{#each spell.system.properties}}
+                                        {{#if (eq this "verbal")}}<span class="component-icon" title="Verbal Component">V</span>{{/if}}
+                                        {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
+                                        {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
+                                    {{/each}}
+                                </div>
                             </div>
                             <div class="tray-buttons">
                                 <i class="fas fa-sun active" title="Always Available"></i>
@@ -125,6 +139,13 @@
                                 </div>
                                 <div class="spell-name">
                                     {{spell.name}}
+                                    <div class="spell-components">
+                                        {{#each spell.system.properties}}
+                                            {{#if (eq this "verbal")}}<span class="component-icon" title="Verbal Component">V</span>{{/if}}
+                                            {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
+                                            {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
+                                        {{/each}}
+                                    </div>
                                 </div>
                                 <div class="tray-buttons">
                                     <i class="fas fa-sun {{#unless spell.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
