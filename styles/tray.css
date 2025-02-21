@@ -329,43 +329,29 @@
 }
 
 
-.squire-tray[data-position="left"] .section-header .control-toggle {
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
 
-.squire-tray[data-position="left"] .section-header .control-toggle:hover {
-    color: #fff;
-}
 
-.squire-tray[data-position="left"] .section-header .control-toggle.faded {
-    opacity: 0.4;
-}
 
-.squire-tray[data-position="left"] .section-header .control-toggle.active {
-    opacity: 1;
-}
-.control-toggle {
-    cursor: pointer;
-    color: #131210 !important;
-	background-color: #9f9275;
-    transition: color 0.2s ease;
-	border: 1px solid #47402f;
-	outline: 1px solid #9f92757d !important;
-    outline-offset: 1px !important;
-	padding-top: 4px;
-	padding-bottom: 2px;
-	padding-left: 10px;
-	padding-right: 10px;
-	border-radius: 4px;
-	margin-top: 2px;
-	margin-bottom: 4px;
-	margin-left: 4px;
-	margin-right: 4px;
-}
-.control-toggle:hover {
-	background-color: #db9f1e;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -582,48 +568,39 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Panel - Control */
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-icons {
     display: flex;
-    gap: 8px;
-    justify-content: center;
-    align-items: center;
+    width: 100%;
+    gap: 0px;
 }
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-toggle {
-    color: #9f9275;
+    color: #000000 !important;
+	background-color: #9f9275;
+	flex: 1;
+    text-align: center;
+    padding: 4px;
+    border-radius: 2px;
     cursor: pointer;
-    transition: color 0.2s ease;
-    font-size: 1.2em;
+    transition: all 0.2s ease;
+    font-size: .85em;
+	margin: 4px;
 }
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.faded {
-    opacity: 0.3;
+	color: #000000;
+    background-color: #9c1a1a;
 }
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-toggle.active {
-    opacity: 1;
+	opacity: 1;
 }
+.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.faded {
+    opacity: 0.4 !important;
+}
+
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-search {
     padding: 4px;
@@ -660,12 +637,6 @@
 .squire-tray[data-position="left"] [data-panel="control"] .global-search:not(:placeholder-shown) + .search-clear {
     opacity: 1;
 }
-
-
-
-
-
-
 
 
 
