@@ -230,6 +230,14 @@ jobs:
                               name
                             }
                           }
+                          ... on ProjectV2Field {
+                            id
+                            name
+                          }
+                          ... on ProjectV2IterationField {
+                            id
+                            name
+                          }
                         }
                       }
                     }
@@ -272,8 +280,15 @@ jobs:
               console.log('Project fields:', JSON.stringify(project.fields.nodes, null, 2));
               const statusField = project.fields.nodes.find(field => field.name === 'Status');
               const priorityField = project.fields.nodes.find(field => field.name === 'Priority');
-              console.log('Status field:', JSON.stringify(statusField, null, 2));
-              console.log('Priority field:', JSON.stringify(priorityField, null, 2));
+              
+              if (!statusField || !priorityField) {
+                throw new Error('Status or Priority field not found. Available fields: ' + 
+                  project.fields.nodes.map(f => f.name).join(', '));
+              }
+              
+              if (!statusField.options || !priorityField.options) {
+                throw new Error('Status or Priority field missing options');
+              }
               
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
