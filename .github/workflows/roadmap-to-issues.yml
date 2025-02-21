@@ -269,8 +269,11 @@ jobs:
               
               // Get project fields
               const project = projectResult.user.projectV2;
+              console.log('Project fields:', JSON.stringify(project.fields.nodes, null, 2));
               const statusField = project.fields.nodes.find(field => field.name === 'Status');
               const priorityField = project.fields.nodes.find(field => field.name === 'Priority');
+              console.log('Status field:', JSON.stringify(statusField, null, 2));
+              console.log('Priority field:', JSON.stringify(priorityField, null, 2));
               
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
