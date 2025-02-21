@@ -312,4 +312,30 @@
 
 .weapons-category-filters .weapons-category-filter.active {
     opacity: .8;
+}
+
+.at-will-badge {
+    font-size: 0.8em;
+    padding: 2px 4px;
+    margin-left: 4px;
+    background: rgba(74, 144, 226, 0.2);
+    border: 1px solid #4a90e2;
+    border-radius: 3px;
+    color: #4a90e2;
+}
+
+.category-header[data-category-id="category-spell-level-0"] {
+    color: #4a90e2;
+}
+
+.category-header[data-category-id="category-spell-level-0"] .fa-infinity {
+    color: #4a90e2;
+    font-size: 1em;
+    opacity: 0.8;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 } 

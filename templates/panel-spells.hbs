@@ -44,7 +44,12 @@
             {{#if spells}}
                 {{!-- Cantrips --}}
                 {{#if (lookup spellsByLevel 0)}}
-                <div class="category-header" data-category-id="category-spell-level-0">Cantrips</div>
+                <div class="category-header" data-category-id="category-spell-level-0">
+                    <span>Cantrips</span>
+                    <div class="slot-pips">
+                        <i class="fas fa-infinity" title="Cantrips can be cast any number of times"></i>
+                    </div>
+                </div>
                 {{#each spells as |spell|}}
                     {{#if (eq spell.system.level 0)}}
                     <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-level-0">
@@ -57,7 +62,7 @@
                                 {{spell.name}}
                             </div>
                             <div class="tray-buttons">
-                                <i class="fas fa-sun" title="Always Prepared"></i>
+                                <i class="fas fa-sun" title="Always Available"></i>
                                 <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                                 <i class="fas fa-feather"></i>
                             </div>
@@ -89,6 +94,9 @@
                                 </div>
                                 <div class="spell-name">
                                     {{spell.name}}
+                                    {{#if (eq spell.system.preparation.mode "atwill")}}
+                                    <span class="at-will-badge" title="This spell can be cast without using a spell slot">At Will</span>
+                                    {{/if}}
                                 </div>
                                 <div class="tray-buttons">
                                     <i class="fas fa-sun {{#unless spell.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
