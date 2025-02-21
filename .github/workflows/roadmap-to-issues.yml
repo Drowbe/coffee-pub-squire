@@ -220,6 +220,30 @@ jobs:
                               name
                             }
                           }
+                          ... on ProjectV2Field {
+                            id
+                            name
+                          }
+                        }
+                      }
+                      field(name: "Status") {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                      field(name: "Priority") {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
                         }
                       }
                     }
@@ -259,8 +283,8 @@ jobs:
               
               // Get project fields
               const project = projectResult.user.projectV2;
-              const statusField = project.fields.nodes.find(field => field.name === 'Status');
-              const priorityField = project.fields.nodes.find(field => field.name === 'Priority');
+              const statusField = project.field('Status');
+              const priorityField = project.field('Priority');
               
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
