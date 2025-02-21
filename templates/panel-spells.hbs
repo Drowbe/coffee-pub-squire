@@ -8,6 +8,7 @@
             {{#if (lookup spellsByLevel 0)}}
             <i class="fas fa-square-0 spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
             {{/if}}
+            <i class="fas fa-infinity spell-level-filter active" data-filter-id="category-spell-at-will" title="Toggle At-Will Spells"></i>
             {{#each spellSlots}}
             {{#if (or (gt this.max 0) (lookup ../spellsByLevel this.level))}}
             <i class="fas fa-square-{{this.level}} spell-level-filter active" data-filter-id="category-spell-level-{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
@@ -62,7 +63,37 @@
                                 {{spell.name}}
                             </div>
                             <div class="tray-buttons">
-                                <i class="fas fa-sun" title="Always Available"></i>
+                                <i class="fas fa-sun active" title="Always Prepared"></i>
+                                <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                                <i class="fas fa-feather"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                {{/each}}
+                {{/if}}
+
+                {{!-- At-Will Spells --}}
+                {{#if spells}}
+                <div class="category-header" data-category-id="category-spell-at-will">
+                    <span>At-Will</span>
+                    <div class="slot-pips">
+                        <i class="fas fa-infinity" title="These spells can be cast any number of times"></i>
+                    </div>
+                </div>
+                {{#each spells as |spell|}}
+                    {{#if (eq spell.system.preparation.mode "atwill")}}
+                    <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-at-will">
+                        <div class="spell-row">
+                            <div class="spell-image-container">
+                                <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                                <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+                            </div>
+                            <div class="spell-name">
+                                {{spell.name}}
+                            </div>
+                            <div class="tray-buttons">
+                                <i class="fas fa-sun active" title="Always Available"></i>
                                 <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                                 <i class="fas fa-feather"></i>
                             </div>
@@ -94,9 +125,6 @@
                                 </div>
                                 <div class="spell-name">
                                     {{spell.name}}
-                                    {{#if (eq spell.system.preparation.mode "atwill")}}
-                                    <span class="at-will-badge" title="This spell can be cast without using a spell slot">At Will</span>
-                                    {{/if}}
                                 </div>
                                 <div class="tray-buttons">
                                     <i class="fas fa-sun {{#unless spell.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
