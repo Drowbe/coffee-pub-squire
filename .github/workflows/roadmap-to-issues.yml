@@ -222,26 +222,6 @@ jobs:
                           }
                         }
                       }
-                      statusField: field(name: "Status") {
-                        ... on ProjectV2SingleSelectField {
-                          id
-                          name
-                          options {
-                            id
-                            name
-                          }
-                        }
-                      }
-                      priorityField: field(name: "Priority") {
-                        ... on ProjectV2SingleSelectField {
-                          id
-                          name
-                          options {
-                            id
-                            name
-                          }
-                        }
-                      }
                     }
                   }
                 }
@@ -253,34 +233,10 @@ jobs:
                 });
               });
               
-              // Define project mutations
-              const addToProjectMutation = `
-                mutation($projectId: ID!, $contentId: ID!) {
-                  addProjectV2ItemById(input: {
-                    projectId: $projectId
-                    contentId: $contentId
-                  }) {
-                    item {
-                      id
-                    }
-                  }
-                }
-              `;
-              
-              const issueQuery = `
-                query($owner: String!, $repo: String!, $number: Int!) {
-                  repository(owner: $owner, name: $repo) {
-                    issue(number: $number) {
-                      id
-                    }
-                  }
-                }
-              `;
-              
               // Get project fields
               const project = projectResult.user.projectV2;
-              const statusField = project.statusField;
-              const priorityField = project.priorityField;
+              const statusField = project.fields.nodes.find(field => field.name === 'Status');
+              const priorityField = project.fields.nodes.find(field => field.name === 'Priority');
               
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
