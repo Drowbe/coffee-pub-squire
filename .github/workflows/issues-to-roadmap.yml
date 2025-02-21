@@ -29,47 +29,76 @@ jobs:
             const fs = require('fs');
             
             try {
-              // Get all issues with their project data
-              const issuesQuery = `
-                query($owner: String!, $repo: String!) {
-                  repository(owner: $owner, name: $repo) {
-                    issues(first: 100, states: [OPEN, CLOSED]) {
-                      nodes {
-                        id
-                        title
-                        state
-                        number
-                        labels(first: 10) {
+              // Function to handle paginated issue fetching
+              async function getAllIssues() {
+                let hasNextPage = true;
+                let endCursor = null;
+                let allIssues = [];
+                
+                while (hasNextPage) {
+                  const issuesQuery = `
+                    query($owner: String!, $repo: String!, $after: String) {
+                      repository(owner: $owner, name: $repo) {
+                        issues(first: 100, after: $after, states: [OPEN, CLOSED]) {
                           nodes {
-                            name
-                          }
-                        }
-                        projectItems(first: 1) {
-                          nodes {
-                            fieldValues(first: 10) {
+                            id
+                            title
+                            state
+                            number
+                            labels(first: 10) {
                               nodes {
-                                ... on ProjectV2ItemFieldSingleSelectValue {
-                                  name
-                                  field {
-                                    ... on ProjectV2SingleSelectField {
+                                name
+                              }
+                            }
+                            projectItems(first: 1) {
+                              nodes {
+                                fieldValues(first: 10) {
+                                  nodes {
+                                    ... on ProjectV2ItemFieldSingleSelectValue {
                                       name
+                                      field {
+                                        ... on ProjectV2SingleSelectField {
+                                          name
+                                        }
+                                      }
                                     }
                                   }
                                 }
                               }
                             }
                           }
+                          pageInfo {
+                            hasNextPage
+                            endCursor
+                          }
                         }
                       }
                     }
-                  }
+                  `;
+                  
+                  console.log(`Fetching issues${endCursor ? ` after cursor ${endCursor}` : ''}`);
+                  
+                  const result = await github.graphql(issuesQuery, {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    after: endCursor
+                  });
+                  
+                  const newIssues = result.repository.issues.nodes;
+                  allIssues = allIssues.concat(newIssues);
+                  
+                  hasNextPage = result.repository.issues.pageInfo.hasNextPage;
+                  endCursor = result.repository.issues.pageInfo.endCursor;
+                  
+                  console.log(`Fetched ${newIssues.length} issues. Total so far: ${allIssues.length}`);
                 }
-              `;
+                
+                return allIssues;
+              }
               
-              const issuesResult = await github.graphql(issuesQuery, {
-                owner: context.repo.owner,
-                repo: context.repo.repo
-              });
+              // Get all issues with pagination
+              const issues = await getAllIssues();
+              console.log(`Total issues fetched: ${issues.length}`);
               
               // Organize issues by status
               const sections = {
@@ -79,7 +108,7 @@ jobs:
                 'CLOSED': new Map()
               };
               
-              for (const issue of issuesResult.repository.issues.nodes) {
+              for (const issue of issues) {
                 // Get priority and status from project fields
                 let priority = 'P0';
                 let status = issue.state === 'CLOSED' ? 'CLOSED' : 'BACKLOG';
