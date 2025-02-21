@@ -222,6 +222,7 @@ jobs:
                       id
                       fields(first: 20) {
                         nodes {
+                          __typename
                           ... on ProjectV2SingleSelectField {
                             id
                             name
@@ -233,8 +234,29 @@ jobs:
                           ... on ProjectV2Field {
                             id
                             name
+                            dataType
                           }
                           ... on ProjectV2IterationField {
+                            id
+                            name
+                          }
+                        }
+                      }
+                      field(name: "Status") {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                      field(name: "Priority") {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
                             id
                             name
                           }
@@ -278,12 +300,13 @@ jobs:
               // Get project fields
               const project = projectResult.user.projectV2;
               console.log('Project fields:', JSON.stringify(project.fields.nodes, null, 2));
-              const statusField = project.fields.nodes.find(field => field.name === 'Status');
-              const priorityField = project.fields.nodes.find(field => field.name === 'Priority');
+              const statusField = project.fields.nodes.find(field => field.name === 'Status' && field.__typename === 'ProjectV2SingleSelectField');
+              const priorityField = project.fields.nodes.find(field => field.name === 'Priority' && field.__typename === 'ProjectV2SingleSelectField');
               
               if (!statusField || !priorityField) {
+                console.log('Project result:', JSON.stringify(projectResult, null, 2));
                 throw new Error('Status or Priority field not found. Available fields: ' + 
-                  project.fields.nodes.map(f => f.name).join(', '));
+                  project.fields.nodes.map(f => `${f.name} (${f.__typename})`).join(', '));
               }
               
               if (!statusField.options || !priorityField.options) {
@@ -400,148 +423,4 @@ jobs:
                               }
                             }
                           }
-                        `, {
-                          projectId: project.id,
-                          itemId: itemId,
-                          fieldId: statusField.id,
-                          optionId: statusOption.id
-                        });
-                      });
-                    }
-                    
-                    // Set priority
-                    const priorityOption = priorityField.options.find(opt => opt.name === item.priority);
-                    if (priorityOption) {
-                      await withRetry(async () => {
-                        return github.graphql(`
-                          mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-                            updateProjectV2ItemFieldValue(
-                              input: {
-                                projectId: $projectId
-                                itemId: $itemId
-                                fieldId: $fieldId
-                                value: { 
-                                  singleSelectOptionId: $optionId
-                                }
-                              }
-                            ) {
-                              projectV2Item {
-                                id
-                              }
-                            }
-                          }
-                        `, {
-                          projectId: project.id,
-                          itemId: itemId,
-                          fieldId: priorityField.id,
-                          optionId: priorityOption.id
-                        });
-                      });
-                    }
-                  } else {
-                    const newIssue = await withRetry(async () => {
-                      const { data: issue } = await github.rest.issues.create({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        title: item.title,
-                        body: `Priority: ${item.priority}\nCreated from ROADMAP.md`,
-                        labels: item.labels,
-                        state: item.state
-                      });
-                      console.log(`Created new issue: ${item.title}`);
-                      return issue;
-                    });
-                    
-                    // Add to project for new issue
-                    const issueResult = await withRetry(async () => {
-                      return github.graphql(issueQuery, {
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        number: newIssue.number
-                      });
-                    });
-                    
-                    const projectResult = await withRetry(async () => {
-                      return github.graphql(addToProjectMutation, {
-                        projectId: project.id,
-                        contentId: issueResult.repository.issue.id
-                      });
-                    });
-                    
-                    const itemId = projectResult.addProjectV2ItemById.item.id;
-                    
-                    // Set status
-                    const statusOption = statusField.options.find(opt => opt.name === item.status);
-                    if (statusOption) {
-                      await withRetry(async () => {
-                        return github.graphql(`
-                          mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-                            updateProjectV2ItemFieldValue(
-                              input: {
-                                projectId: $projectId
-                                itemId: $itemId
-                                fieldId: $fieldId
-                                value: { 
-                                  singleSelectOptionId: $optionId
-                                }
-                              }
-                            ) {
-                              projectV2Item {
-                                id
-                              }
-                            }
-                          }
-                        `, {
-                          projectId: project.id,
-                          itemId: itemId,
-                          fieldId: statusField.id,
-                          optionId: statusOption.id
-                        });
-                      });
-                    }
-                    
-                    // Set priority
-                    const priorityOption = priorityField.options.find(opt => opt.name === item.priority);
-                    if (priorityOption) {
-                      await withRetry(async () => {
-                        return github.graphql(`
-                          mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-                            updateProjectV2ItemFieldValue(
-                              input: {
-                                projectId: $projectId
-                                itemId: $itemId
-                                fieldId: $fieldId
-                                value: { 
-                                  singleSelectOptionId: $optionId
-                                }
-                              }
-                            ) {
-                              projectV2Item {
-                                id
-                              }
-                            }
-                          }
-                        `, {
-                          projectId: project.id,
-                          itemId: itemId,
-                          fieldId: priorityField.id,
-                          optionId: priorityOption.id
-                        });
-                      });
-                    }
-                  }
-                }
-                
-                // Add extra delay between sections
-                console.log(`Completed section ${sectionName}. Waiting before next section...`);
-                await new Promise(resolve => setTimeout(resolve, 10000));
-              }
-              
-              console.log('Successfully synced ROADMAP.md to issues');
-              
-            } catch (error) {
-              console.error('Error syncing ROADMAP.md to issues:', error);
-              console.error('Full error:', JSON.stringify(error, null, 2));
-              process.exit(1);
-            } 
-              
+                        `
