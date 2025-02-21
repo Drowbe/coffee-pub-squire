@@ -87,16 +87,12 @@ jobs:
               { name: 'bug', color: 'd73a4a', description: 'Something isn\'t working' },
               { name: 'enhancement', color: 'a2eeef', description: 'New feature or request' },
               { name: 'documentation', color: '0075ca', description: 'Documentation improvements' },
-              { name: 'timer', color: 'fbca04', description: 'Timer related features' },
               { name: 'ui', color: 'bfdadc', description: 'User interface improvements' },
               { name: 'performance', color: '0e8a16', description: 'Performance improvements' },
-              { name: 'api', color: '1d76db', description: 'API related changes' },
-              { name: 'combat', color: 'd93f0b', description: 'Combat related features' },
-              { name: 'data', color: 'c5def5', description: 'Data management features' },
-              { name: 'planning', color: 'c2e0c6', description: 'Planning phase features' },
-              { name: 'integration', color: 'fef2c0', description: 'Integration features' },
-              { name: 'security', color: 'd93f0b', description: 'Security improvements' },
-              { name: 'feature', color: '0052cc', description: 'New features' }
+              { name: 'performance', color: '1d76db', description: 'Compatibility with systems and modules' },
+              { name: 'feature', color: '0052cc', description: 'New features' },
+              { name: 'accessibility', color: 'c2e0c6', description: 'Accessibility improvements' },
+              { name: 'api', color: '1d76db', description: 'API related changes' }
             ];
             
             for (const label of labels) {
