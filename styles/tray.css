@@ -499,8 +499,9 @@
 .weapon-name {
     flex: 1;
     color: #eee;
-    font-size: 1rem;
+    font-size: .8rem;
     margin-right: 4px;
+	font-weight: 100 !important;
 }
 
 .spell-level, .weapon-quantity {

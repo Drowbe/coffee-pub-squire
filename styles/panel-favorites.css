@@ -95,12 +95,12 @@
 }
 
 .tray-buttons .fa-heart {
-    color: #666;
+    color: #ff4444;
     transition: color 0.2s ease;
 }
 
 .tray-buttons .fa-heart:hover {
-    color: #ff4444;
+    color: #ff2f2f;
 }
 
 .tray-buttons .fa-heart.active {
