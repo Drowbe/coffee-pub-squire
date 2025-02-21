@@ -5,10 +5,11 @@
             <i class="fas fa-sparkles"></i> Spells
         </div>
         <div class="header-right">
-            {{#if (lookup spellsByLevel 0)}}
-            <i class="fas fa-square-0 spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
+            
+            <i class="fas fa-square-a spell-level-filter active" data-filter-id="category-spell-at-will" title="Toggle At-Will Spells"></i>
+            {{#if (lookup spellsByLevel 0)}} 
+            <i class="fas fa-square-c spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
             {{/if}}
-            <i class="fas fa-infinity spell-level-filter active" data-filter-id="category-spell-at-will" title="Toggle At-Will Spells"></i>
             {{#each spellSlots}}
             {{#if (or (gt this.max 0) (lookup ../spellsByLevel this.level))}}
             <i class="fas fa-square-{{this.level}} spell-level-filter active" data-filter-id="category-spell-level-{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
@@ -43,45 +44,6 @@
     <div class="spells-list">
         {{#if (eq position "left")}}
             {{#if spells}}
-                {{!-- Cantrips --}}
-                {{#if (lookup spellsByLevel 0)}}
-                <div class="category-header" data-category-id="category-spell-level-0">
-                    <span>Cantrips</span>
-                    <div class="slot-pips">
-                        <i class="fas fa-infinity" title="Cantrips can be cast any number of times"></i>
-                    </div>
-                </div>
-                {{#each spells as |spell|}}
-                    {{#if (eq spell.system.level 0)}}
-                    <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-level-0">
-                        <div class="spell-row">
-                            <div class="spell-image-container">
-                                <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
-                                <i class="fas fa-dice-d20 spell-roll-overlay"></i>
-                            </div>
-                            <div class="spell-name">
-                                {{spell.name}}
-                                <div class="spell-components">
-                                    {{#each spell.system.properties}}
-                                        {{#if (eq this "vocal")}}<span class="component-icon" title="Vocal Component">V</span>{{/if}}
-                                        {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
-                                        {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
-                                        {{#if (eq this "concentration")}}<span class="component-icon" title="Concentration Component">C</span>{{/if}}
-                                        {{#if (eq this "ritual")}}<span class="component-icon" title="Concentration Component">R</span>{{/if}}
-                                    {{/each}}
-                                </div>
-                            </div>
-                            <div class="tray-buttons">
-                                <i class="fas fa-sun active" title="Always Prepared"></i>
-                                <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                                <i class="fas fa-feather"></i>
-                            </div>
-                        </div>
-                    </div>
-                    {{/if}}
-                {{/each}}
-                {{/if}}
-
                 {{!-- At-Will Spells --}}
                 {{#if spells}}
                 <div class="category-header" data-category-id="category-spell-at-will">
@@ -110,6 +72,43 @@
                             </div>
                             <div class="tray-buttons">
                                 <i class="fas fa-sun active" title="Always Available"></i>
+                                <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                                <i class="fas fa-feather"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                {{/each}}
+                {{/if}}
+
+                {{!-- Cantrips --}}
+                {{#if (lookup spellsByLevel 0)}}
+                <div class="category-header" data-category-id="category-spell-level-0">
+                    <span>Cantrips</span>
+                    <div class="slot-pips">
+                        <i class="fas fa-infinity" title="Cantrips can be cast any number of times"></i>
+                    </div>
+                </div>
+                {{#each spells as |spell|}}
+                    {{#if (eq spell.system.level 0)}}
+                    <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-level-0">
+                        <div class="spell-row">
+                            <div class="spell-image-container">
+                                <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                                <i class="fas fa-dice-d20 spell-roll-overlay"></i>
+                            </div>
+                            <div class="spell-name">
+                                {{spell.name}}
+                                <div class="spell-components">
+                                    {{#each spell.system.properties}}
+                                        {{#if (eq this "verbal")}}<span class="component-icon" title="Verbal Component">V</span>{{/if}}
+                                        {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
+                                        {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
+                                    {{/each}}
+                                </div>
+                            </div>
+                            <div class="tray-buttons">
+                                <i class="fas fa-sun active" title="Always Prepared"></i>
                                 <i class="fas fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                                 <i class="fas fa-feather"></i>
                             </div>
