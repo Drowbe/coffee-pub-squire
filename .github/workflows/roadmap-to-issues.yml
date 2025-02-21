@@ -208,7 +208,7 @@ jobs:
               const projectQuery = `
                 query($owner: String!) {
                   user(login: $owner) {
-                    projectV2(number: 1) {
+                    projectV2(number: 7) {
                       id
                       fields(first: 20) {
                         nodes {
