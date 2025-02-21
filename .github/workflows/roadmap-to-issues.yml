@@ -301,7 +301,7 @@ jobs:
               const project = projectResult.user.projectV2;
               console.log('Project fields:', JSON.stringify(project.fields.nodes, null, 2));
               const statusField = project.fields.nodes.find(field => field.name === 'Status' && field.__typename === 'ProjectV2SingleSelectField');
-              const priorityField = project.fields.nodes.find(field => field.name === 'Priority' && field.__typename === 'ProjectV2SingleSelectField');
+              const priorityField = project.fields.nodes.find(field => field.name.trim() === 'Priority' && field.__typename === 'ProjectV2SingleSelectField');
               
               if (!statusField || !priorityField) {
                 console.log('Project result:', JSON.stringify(projectResult, null, 2));
