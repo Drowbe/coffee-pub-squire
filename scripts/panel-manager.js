@@ -831,11 +831,21 @@ Hooks.on('updateActor', async (actor, changes) => {
             await PanelManager.instance.renderPanels(PanelManager.element);
         }
     }
-    // For health and effects changes, just update the handle
-    else if (PanelManager.currentActor?.id === actor.id && 
-            (changes.system?.attributes?.hp || changes.effects)) {
+    // For health, effects, and spell slot changes, update appropriately
+    else if (PanelManager.currentActor?.id === actor.id) {
         if (PanelManager.instance) {
-            await PanelManager.instance.updateHandle();
+            // Handle health and effects changes
+            if (changes.system?.attributes?.hp || changes.effects) {
+                await PanelManager.instance.updateHandle();
+            }
+            
+            // Handle spell slot changes
+            if (changes.system?.spells) {
+                // Re-render just the spells panel
+                if (PanelManager.instance.spellsPanel?.element) {
+                    await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                }
+            }
         }
     }
 });

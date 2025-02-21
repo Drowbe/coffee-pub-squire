@@ -64,13 +64,32 @@ export class SpellsPanel {
             spellsByLevel[level].push(spell);
         });
 
+        const spellSlots = this._getSpellSlots();
+        
+        // Debug data being sent to template
+        console.log("SQUIRE | Data for Template:", {
+            spellsByLevel: spellsByLevel,
+            spellSlots: spellSlots,
+            position: game.settings.get(MODULE.ID, 'trayPosition')
+        });
+
+        const position = game.settings.get(MODULE.ID, 'trayPosition');
         const spellData = {
             spells: this.spells,
             spellsByLevel: spellsByLevel,
-            spellSlots: this._getSpellSlots(),
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
+            spellSlots: spellSlots,
+            position: position,
             showOnlyPrepared: this.showOnlyPrepared
         };
+
+        // Debug the exact data and position
+        console.log("SQUIRE | Spell Panel Render Debug:", {
+            position: position,
+            spellSlots: spellSlots,
+            firstLevelSlot: spellSlots.find(s => s.level === 1),
+            spellsByLevel: spellsByLevel,
+            timestamp: new Date().toISOString()
+        });
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
         const spellsPanel = this.element.find('[data-panel="spells"]');
@@ -89,18 +108,47 @@ export class SpellsPanel {
         if (!this.actor) return [];
         const spellbook = this.actor.system.spells;
         
+        // Debug logging for raw spellbook data
+        console.log("SQUIRE | Spellbook Data Debug:", {
+            actor: this.actor.name,
+            actorId: this.actor.id,
+            spellbook: spellbook,
+            pactMagic: spellbook.pact,
+            spellLevels: Object.keys(spellbook).filter(k => k.startsWith('spell')),
+            timestamp: new Date().toISOString()
+        });
+        
         // Convert spellbook data into array format
         const slots = [];
         for (let i = 1; i <= 9; i++) {
             const spellLevelData = spellbook[`spell${i}`];
             if (spellLevelData) {
-                slots.push({
+                const slotData = {
                     level: i,
                     value: spellLevelData.value || 0,
-                    max: spellLevelData.max || 0
+                    max: (spellLevelData.override ?? spellLevelData.max) || 0,
+                    used: ((spellLevelData.override ?? spellLevelData.max) || 0) - (spellLevelData.value || 0)
+                };
+                slots.push(slotData);
+                
+                // Debug logging for each level's data
+                console.log(`SQUIRE | Level ${i} Spell Slots Debug:`, {
+                    raw: spellLevelData,
+                    computed: slotData,
+                    hasOverride: 'override' in spellLevelData,
+                    timestamp: new Date().toISOString()
                 });
             }
         }
+        
+        // Debug final slots array
+        console.log("SQUIRE | Final Slots Array Debug:", {
+            slots: slots,
+            totalSlots: slots.reduce((sum, s) => sum + s.max, 0),
+            usedSlots: slots.reduce((sum, s) => sum + (s.max - s.value), 0),
+            timestamp: new Date().toISOString()
+        });
+        
         return slots;
     }
 

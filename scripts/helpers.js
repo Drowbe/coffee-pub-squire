@@ -5,9 +5,15 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('times', function(n, options) {
         let result = '';
         for (let i = 0; i < n; i++) {
-            result += options.fn({ index: i });
+            options.data.index = i;
+            result += options.fn(this);
         }
         return result;
+    });
+
+    // Helper for addition
+    Handlebars.registerHelper('add', function(a, b) {
+        return a + b;
     });
 
     // Helper for equality comparison

@@ -31,8 +31,7 @@
             <div class="slot-label">Level {{this.level}}</div>
             <div class="slot-pips">
                 {{#times this.max}}
-                <div class="slot-pip {{#if (lt @index ../value)}}filled{{/if}}" 
-                     data-level="{{../level}}"></div>
+                <div class="slot-pip {{#if (lt @index this.used)}}filled{{/if}}" data-level="{{../level}}"></div>
                 {{/times}}
             </div>
         </div>
@@ -75,8 +74,7 @@
                         <span>Level {{slot.level}}</span>
                         <div class="slot-pips">
                             {{#times slot.max}}
-                            <div class="slot-pip {{#if (lt @index ../value)}}filled{{/if}}" 
-                                data-level="{{../level}}"></div>
+                            <div class="slot-pip {{#if (lt @index slot.used)}}filled{{/if}}" data-level="{{slot.level}}" title="Slot {{add @index 1}} {{#if (lt @index slot.used)}}Used{{else}}Unused{{/if}}"></div>
                             {{/times}}
                         </div>
                     </div>
