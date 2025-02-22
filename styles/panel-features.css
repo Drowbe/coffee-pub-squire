@@ -41,12 +41,17 @@
 
 .feature-name {
     flex: 1;
-    color: #eee;
-    font-size: 1rem;
     margin-right: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #eee;
 }
 
-.feature-quantity {
+.feature-uses {
     color: #aaa;
     font-size: 0.9em;
     margin-left: 4px;
@@ -141,13 +146,6 @@
 
 .tray-title-small.no-matches.show {
     display: block !important; /* Only show when explicitly enabled */
-}
-
-.feature-uses {
-    margin-left: 8px;
-    color: #aaa;
-    font-size: 0.9em;
-    opacity: 0.8;
 }
 
 
