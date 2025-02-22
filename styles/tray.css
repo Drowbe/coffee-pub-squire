@@ -230,7 +230,7 @@
 
 /* TRAY Panel Section Headers */
 .squire-tray[data-position="left"] .section-header {
-    background: rgba(69, 29, 36, 0.3) !important;
+    background: rgba(69, 29, 36, 0.6) !important;
     color: #9f9275;
     padding: 6px;
     font-size: 1.2em;

@@ -5,7 +5,9 @@
             <i class="fas fa-sparkles"></i> Spells
         </div>
         <div class="header-right">
+            {{#if (lookup spellsByType "atwill")}}
             <i class="fas fa-square-a spell-level-filter active" data-filter-id="category-spell-at-will" title="Toggle At-Will Spells"></i>
+            {{/if}}
             {{#if (lookup spellsByLevel 0)}} 
             <i class="fas fa-square-c spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
             {{/if}}

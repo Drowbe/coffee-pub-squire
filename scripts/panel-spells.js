@@ -23,6 +23,7 @@ export class SpellsPanel {
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
             const level = spell.system.level;
+            const isAtWill = spell.system.preparation?.mode === 'atwill';
             
             // Debug log for a single spell's data structure
             if (spell.name === "Aid") {  // Log a specific spell to avoid console spam
@@ -42,9 +43,14 @@ export class SpellsPanel {
                 type: spell.type,
                 actionType: this._getActionType(spell),
                 isFavorite: isFavorite,
-                categoryId: `category-spell-level-${level}`
+                categoryId: isAtWill ? 'category-spell-at-will' : `category-spell-level-${level}`
             };
         });
+
+        // Group spells by type (at-will) and level
+        const spellsByType = {
+            atwill: mappedSpells.filter(s => s.system.preparation?.mode === 'atwill')
+        };
         
         return mappedSpells;
     }
@@ -95,12 +101,18 @@ export class SpellsPanel {
 
         // Group spells by level
         const spellsByLevel = {};
+        const spellsByType = {
+            atwill: this.spells.filter(s => s.system.preparation?.mode === 'atwill')
+        };
+
         this.spells.forEach(spell => {
-            const level = spell.system.level;
-            if (!spellsByLevel[level]) {
-                spellsByLevel[level] = [];
+            if (spell.system.preparation?.mode !== 'atwill') {
+                const level = spell.system.level;
+                if (!spellsByLevel[level]) {
+                    spellsByLevel[level] = [];
+                }
+                spellsByLevel[level].push(spell);
             }
-            spellsByLevel[level].push(spell);
         });
 
         const spellSlots = this._getSpellSlots();
@@ -108,6 +120,7 @@ export class SpellsPanel {
         // Debug data being sent to template
         console.log("SQUIRE | Data for Template:", {
             spellsByLevel: spellsByLevel,
+            spellsByType: spellsByType,
             spellSlots: spellSlots,
             position: game.settings.get(MODULE.ID, 'trayPosition')
         });
@@ -116,6 +129,7 @@ export class SpellsPanel {
         const spellData = {
             spells: this.spells,
             spellsByLevel: spellsByLevel,
+            spellsByType: spellsByType,
             spellSlots: spellSlots,
             position: position,
             showOnlyPrepared: this.showOnlyPrepared
