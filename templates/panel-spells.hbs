@@ -96,9 +96,11 @@
                                 {{spell.name}}
                                 <div class="spell-components">
                                     {{#each spell.system.properties}}
-                                        {{#if (eq this "verbal")}}<span class="component-icon" title="Verbal Component">V</span>{{/if}}
+                                        {{#if (eq this "vocal")}}<span class="component-icon" title="Vocal Component">V</span>{{/if}}
                                         {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
                                         {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
+                                        {{#if (eq this "concentration")}}<span class="component-icon" title="Concentration Component">C</span>{{/if}}
+                                        {{#if (eq this "ritual")}}<span class="component-icon" title="Concentration Component">R</span>{{/if}}
                                     {{/each}}
                                 </div>
                             </div>
@@ -137,9 +139,11 @@
                                     {{spell.name}}
                                     <div class="spell-components">
                                         {{#each spell.system.properties}}
-                                            {{#if (eq this "verbal")}}<span class="component-icon" title="Verbal Component">V</span>{{/if}}
+                                            {{#if (eq this "vocal")}}<span class="component-icon" title="Vocal Component">V</span>{{/if}}
                                             {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
                                             {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
+                                            {{#if (eq this "concentration")}}<span class="component-icon" title="Concentration Component">C</span>{{/if}}
+                                            {{#if (eq this "ritual")}}<span class="component-icon" title="Concentration Component">R</span>{{/if}}
                                         {{/each}}
                                     </div>
                                 </div>
