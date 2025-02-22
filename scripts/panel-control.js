@@ -97,27 +97,35 @@ export class ControlPanel {
                     .toLowerCase()
                     .trim();
                 
-                console.log(`SQUIRE | ${panelType} item:`, {
-                    itemName,
-                    hasNameElement: nameElement.length > 0,
-                    rawHtml: nameElement.html(),
-                    shouldShow: searchTerm === '' || itemName.includes(searchTerm)
-                });
-                
                 const shouldShow = searchTerm === '' || itemName.includes(searchTerm);
                 
                 // Toggle item visibility
                 $item.toggle(shouldShow);
                 if (shouldShow) visibleItemsInPanel++;
-
-                // Handle category headers
-                const categoryId = $item.data('category-id');
-                if (categoryId) {
-                    const categoryHeader = panelElement.find(`.category-header[data-category-id="${categoryId}"]`);
-                    const visibleItemsInCategory = panelElement.find(`[data-category-id="${categoryId}"]:visible`).length;
-                    categoryHeader.toggle(visibleItemsInCategory > 0);
-                }
             });
+
+            // Handle ALL category headers in this panel
+            if (searchTerm !== '') {
+                // First hide all headers
+                panelElement.find('.category-header').hide();
+                
+                // Then only show headers that have visible items
+                const visibleItems = panelElement.find(`.${itemClass}-item:visible`);
+                const visibleCategories = new Set();
+                
+                visibleItems.each((_, item) => {
+                    const categoryId = $(item).data('category-id');
+                    if (categoryId) visibleCategories.add(categoryId);
+                });
+                
+                visibleCategories.forEach(categoryId => {
+                    const header = panelElement.find(`.category-header[data-category-id="${categoryId}"]`);
+                    if (header.length) {
+                        console.log(`SQUIRE | ${panelType} showing category:`, categoryId);
+                        header.show();
+                    }
+                });
+            }
 
             console.log(`SQUIRE | ${panelType} panel - Visible items:`, visibleItemsInPanel);
 
@@ -126,12 +134,6 @@ export class ControlPanel {
 
             // Toggle "No matches" message
             const shouldShowNoMatches = visibleItemsInPanel === 0 && searchTerm !== '' && panelElement.hasClass('visible');
-            console.log(`SQUIRE | ${panelType} panel - Should show "No matches":`, shouldShowNoMatches, {
-                visibleItemsInPanel,
-                hasSearchTerm: searchTerm !== '',
-                isPanelVisible: panelElement.hasClass('visible')
-            });
-
             panelElement.find('.no-matches').toggle(shouldShowNoMatches);
         });
 
@@ -142,6 +144,11 @@ export class ControlPanel {
                 const $header = $(header);
                 const categoryId = $header.data('category-id');
                 const $nextSpells = spellsPanel.find(`[data-category-id="${categoryId}"]:visible`);
+                console.log(`SQUIRE | Spells category:`, {
+                    categoryId,
+                    visibleSpells: $nextSpells.length,
+                    headerFound: $header.length > 0
+                });
                 $header.toggle($nextSpells.length > 0);
             });
         }
@@ -149,6 +156,8 @@ export class ControlPanel {
         // Clear individual search boxes when global search is cleared
         if (searchTerm === '') {
             this.element.find('.panel-containers.stacked .panel-container .search-container input').val('');
+            // Show all headers when search is cleared
+            this.element.find('.category-header').show();
         }
     }
 
