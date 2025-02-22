@@ -38,14 +38,48 @@ export class SpellsPanel {
                 id: spell.id,
                 name: spell.name,
                 img: spell.img,
-                system: spell.system,  // Use the entire system object as is
+                system: spell.system,
                 type: spell.type,
+                actionType: this._getActionType(spell),
                 isFavorite: isFavorite,
                 categoryId: `category-spell-level-${level}`
             };
         });
         
         return mappedSpells;
+    }
+
+    _getActionType(spell) {
+        // Debug log the spell data
+        console.log("SQUIRE | Spell Action Type Debug:", {
+            spellName: spell.name,
+            system: spell.system,
+            activation: spell.system.activation,
+            time: spell.system.time
+        });
+
+        // Check activation type
+        if (spell.system.activation?.type) {
+            const type = spell.system.activation.type;
+            switch(type) {
+                case 'action': return 'action';
+                case 'bonus': return 'bonus';
+                case 'reaction': return 'reaction';
+                case 'special': return 'special';
+                default: return 'action'; // Most spells use an action
+            }
+        }
+
+        // If no activation type, check casting time (legacy)
+        if (spell.system.time) {
+            const time = spell.system.time.toLowerCase();
+            if (time.includes('bonus')) return 'bonus';
+            if (time.includes('reaction')) return 'reaction';
+            if (time.includes('special')) return 'special';
+        }
+
+        // Default to action for most spells
+        return 'action';
     }
 
     async render(html) {

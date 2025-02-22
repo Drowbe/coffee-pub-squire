@@ -10,6 +10,40 @@ export class InventoryPanel {
         this.panelManager = PanelManager.instance;
     }
 
+    _getActionType(item) {
+        console.log(`[Coffee Pub Squire] Getting action type for item ${item.name}:`, {
+            activation: item.system.activation,
+            actionType: item.system.actionType,
+            itemType: item.type,
+            system: item.system
+        });
+
+        // First check activation type from the new system
+        if (item.system.activation?.type) {
+            switch (item.system.activation.type) {
+                case 'action': return 'action';
+                case 'bonus': return 'bonus';
+                case 'reaction': return 'reaction';
+                case 'special': return 'special';
+                default: return null;
+            }
+        }
+
+        // Fallback to action type from the old system
+        if (item.system.actionType) {
+            switch (item.system.actionType) {
+                case 'action': return 'action';
+                case 'bonus': return 'bonus';
+                case 'reaction': return 'reaction';
+                case 'special': return 'special';
+                default: return null;
+            }
+        }
+
+        // Most items don't have an action type
+        return null;
+    }
+
     _getItems() {
         if (!this.actor) return [];
         
@@ -21,7 +55,7 @@ export class InventoryPanel {
             ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
         );
         
-        // Map items with favorite state
+        // Map items with favorite state and action type
         const mappedItems = items.map(item => ({
             id: item.id,
             name: item.name,
@@ -29,7 +63,8 @@ export class InventoryPanel {
             type: item.type,
             system: item.system,
             isFavorite: favorites.includes(item.id),
-            categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`
+            categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
+            actionType: this._getActionType(item)
         }));
 
         // Group items by type

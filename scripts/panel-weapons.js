@@ -28,6 +28,7 @@ export class WeaponsPanel {
                 img: weapon.img || 'icons/svg/sword.svg',
                 system: weapon.system,
                 weaponType: weaponType,
+                actionType: this._getActionType(weapon),
                 isFavorite: favorites.includes(weapon.id),
                 categoryId: `category-weapon-${weaponType}`
             };
@@ -83,6 +84,40 @@ export class WeaponsPanel {
         } else {
             return isRanged ? 'simple-ranged' : 'simple-melee';
         }
+    }
+
+    _getActionType(weapon) {
+        console.log(`[Coffee Pub Squire] Getting action type for weapon ${weapon.name}:`, {
+            activation: weapon.system.activation,
+            actionType: weapon.system.actionType,
+            weaponType: weapon.system.weaponType,
+            system: weapon.system
+        });
+
+        // First check activation type from the new system
+        if (weapon.system.activation?.type) {
+            switch (weapon.system.activation.type) {
+                case 'action': return 'action';
+                case 'bonus': return 'bonus';
+                case 'reaction': return 'reaction';
+                case 'special': return 'special';
+                default: return null;
+            }
+        }
+
+        // Fallback to action type from the old system
+        if (weapon.system.actionType) {
+            switch (weapon.system.actionType) {
+                case 'action': return 'action';
+                case 'bonus': return 'bonus';
+                case 'reaction': return 'reaction';
+                case 'special': return 'special';
+                default: return null;
+            }
+        }
+
+        // Default to action for most weapons if no specific type is set
+        return 'action';
     }
 
     async render(html) {

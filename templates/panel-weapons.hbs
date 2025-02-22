@@ -1,3 +1,30 @@
+{{#*inline "weapon-item"}}
+<div class="weapon-item {{#if system.equipped}}prepared{{/if}}" data-weapon-id="{{id}}" data-category-id="{{categoryId}}">
+    <div class="weapon-row">
+        <div class="weapon-image-container">
+            <img class="weapon-image" src="{{img}}" alt="{{name}}"/>
+            <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+        </div>
+        <div class="weapon-name">
+            {{name}}
+            {{#if actionType}}
+            <span class="action-type">
+                {{#if (eq actionType "action")}}<i class="fas fa-circle-a" title="Action"></i>
+                {{else if (eq actionType "bonus")}}<i class="fas fa-circle-b" title="Bonus Action"></i>
+                {{else if (eq actionType "reaction")}}<i class="fas fa-circle-r" title="Reaction"></i>
+                {{else if (eq actionType "special")}}<i class="fas fa-circle-s" title="Special"></i>{{/if}}
+            </span>
+            {{/if}}
+        </div>
+        <div class="tray-buttons">
+            <i class="fas fa-shield-alt {{#unless system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+            <i class="fas fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+            <i class="fas fa-feather"></i>
+        </div>
+    </div>
+</div>
+{{/inline}}
+
 <div class="weapons-panel">
     {{#if (eq position "left")}}
     <div class="section-header">
@@ -20,20 +47,14 @@
             {{#if (lookup weaponsByType "simple-melee")}}
             <div class="category-header" data-category-id="category-weapon-simple-melee">Simple Melee Weapons</div>
             {{#each (lookup weaponsByType "simple-melee") as |weapon|}}
-            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-simple-melee">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
-                    </div>
-                    <div class="weapon-name">{{weapon.name}}</div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> weapon-item 
+                id=weapon.id 
+                img=weapon.img 
+                name=weapon.name 
+                actionType=weapon.actionType 
+                system=weapon.system 
+                isFavorite=weapon.isFavorite 
+                categoryId="category-weapon-simple-melee"}}
             {{/each}}
             {{/if}}
 
@@ -41,20 +62,14 @@
             {{#if (lookup weaponsByType "martial-melee")}}
             <div class="category-header" data-category-id="category-weapon-martial-melee">Martial Melee Weapons</div>
             {{#each (lookup weaponsByType "martial-melee") as |weapon|}}
-            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-martial-melee">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
-                    </div>
-                    <div class="weapon-name">{{weapon.name}}</div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> weapon-item 
+                id=weapon.id 
+                img=weapon.img 
+                name=weapon.name 
+                actionType=weapon.actionType 
+                system=weapon.system 
+                isFavorite=weapon.isFavorite 
+                categoryId="category-weapon-martial-melee"}}
             {{/each}}
             {{/if}}
 
@@ -62,20 +77,14 @@
             {{#if (lookup weaponsByType "simple-ranged")}}
             <div class="category-header" data-category-id="category-weapon-simple-ranged">Simple Ranged Weapons</div>
             {{#each (lookup weaponsByType "simple-ranged") as |weapon|}}
-            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-simple-ranged">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
-                    </div>
-                    <div class="weapon-name">{{weapon.name}}</div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> weapon-item 
+                id=weapon.id 
+                img=weapon.img 
+                name=weapon.name 
+                actionType=weapon.actionType 
+                system=weapon.system 
+                isFavorite=weapon.isFavorite 
+                categoryId="category-weapon-simple-ranged"}}
             {{/each}}
             {{/if}}
 
@@ -83,20 +92,14 @@
             {{#if (lookup weaponsByType "martial-ranged")}}
             <div class="category-header" data-category-id="category-weapon-martial-ranged">Martial Ranged Weapons</div>
             {{#each (lookup weaponsByType "martial-ranged") as |weapon|}}
-            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-martial-ranged">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
-                    </div>
-                    <div class="weapon-name">{{weapon.name}}</div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> weapon-item 
+                id=weapon.id 
+                img=weapon.img 
+                name=weapon.name 
+                actionType=weapon.actionType 
+                system=weapon.system 
+                isFavorite=weapon.isFavorite 
+                categoryId="category-weapon-martial-ranged"}}
             {{/each}}
             {{/if}}
 
@@ -104,20 +107,14 @@
             {{#if (lookup weaponsByType "natural")}}
             <div class="category-header" data-category-id="category-weapon-natural">Natural Weapons</div>
             {{#each (lookup weaponsByType "natural") as |weapon|}}
-            <div class="weapon-item {{#if weapon.system.equipped}}prepared{{/if}}" data-weapon-id="{{weapon.id}}" data-category-id="category-weapon-natural">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{weapon.img}}" alt="{{weapon.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
-                    </div>
-                    <div class="weapon-name">{{weapon.name}}</div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-shield-alt {{#unless weapon.system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-                        <i class="fas fa-heart {{#unless weapon.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> weapon-item 
+                id=weapon.id 
+                img=weapon.img 
+                name=weapon.name 
+                actionType=weapon.actionType 
+                system=weapon.system 
+                isFavorite=weapon.isFavorite 
+                categoryId="category-weapon-natural"}}
             {{/each}}
             {{/if}}
 
