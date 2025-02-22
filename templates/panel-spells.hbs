@@ -188,4 +188,16 @@
             {{/each}}
         {{/if}}
     </div>
-</div> 
+</div>
+
+{{#*inline "spell-item"}}
+<div class="spell-item" data-item-id="{{id}}">
+    <img src="{{img}}" alt="{{name}}" class="spell-icon">
+    <span class="spell-name">{{name}}</span>
+    {{> "modules/coffee-pub-squire/templates/partials/action-type"}}
+    <div class="spell-controls">
+        <a class="spell-favorite {{#if isFavorite}}active{{/if}}"><i class="fas fa-star"></i></a>
+        {{#if isPrepared}}<i class="fas fa-book-open" title="Prepared"></i>{{/if}}
+    </div>
+</div>
+{{/inline}} 

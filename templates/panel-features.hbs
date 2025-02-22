@@ -1,3 +1,34 @@
+{{#*inline "feature-item"}}
+<div class="feature-item" data-feature-id="{{id}}" data-category-id="{{categoryId}}">
+    <div class="feature-row">
+        <div class="feature-image-container">
+            <img class="feature-image" src="{{img}}" alt="{{name}}"/>
+            <i class="fas fa-dice-d20 feature-roll-overlay"></i>
+        </div>
+        <div class="feature-name">
+            {{name}}
+            {{#if actionType}}
+            <span class="action-type">
+                {{#if (eq actionType "action")}}<i class="fas fa-circle-a" title="Action"></i>
+                {{else if (eq actionType "bonus")}}<i class="fas fa-circle-b" title="Bonus Action"></i>
+                {{else if (eq actionType "reaction")}}<i class="fas fa-circle-r" title="Reaction"></i>
+                {{else if (eq actionType "special")}}<i class="fas fa-circle-s" title="Special"></i>{{/if}}
+            </span>
+            {{/if}}
+            {{#if uses}}
+            {{#if (or uses.max uses.value)}}
+                <span class="feature-uses">({{uses.value}}/{{uses.max}})</span>
+            {{/if}}
+            {{/if}}
+        </div>
+        <div class="tray-buttons">
+            <i class="fas fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+            <i class="fas fa-feather"></i>
+        </div>
+    </div>
+</div>
+{{/inline}}
+
 <div class="features-panel">
     {{#if (eq position "left")}}
     <div class="section-header">
@@ -19,32 +50,14 @@
             {{#if (lookup featuresByType "class")}}
             <div class="category-header" data-category-id="category-feature-class">Class Features</div>
             {{#each (lookup featuresByType "class") as |feature|}}
-            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-class">
-                <div class="feature-row">
-                    <div class="feature-image-container">
-                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
-                    </div>
-                    <div class="feature-name">
-                        {{feature.name}}
-                        {{#if feature.actionType}}
-                            <span class="feature-quantity">
-                                {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
-                                {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
-                                {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
-                                {{else if (eq feature.actionType "special")}}<i class="fas fa-circle-s"></i>{{/if}}
-                            </span>
-                        {{/if}}
-                        {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
-                        {{/if}}
-                    </div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-heart {{#unless feature.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> feature-item 
+                id=feature.id 
+                img=feature.img 
+                name=feature.name 
+                actionType=feature.actionType 
+                uses=feature.system.uses 
+                isFavorite=feature.isFavorite 
+                categoryId="category-feature-class"}}
             {{/each}}
             {{/if}}
 
@@ -52,32 +65,14 @@
             {{#if (lookup featuresByType "subclass")}}
             <div class="category-header" data-category-id="category-feature-subclass">Subclass Features</div>
             {{#each (lookup featuresByType "subclass") as |feature|}}
-            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-subclass">
-                <div class="feature-row">
-                    <div class="feature-image-container">
-                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
-                    </div>
-                    <div class="feature-name">
-                        {{feature.name}}
-                        {{#if feature.actionType}}
-                            <span class="feature-quantity">
-                                {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
-                                {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
-                                {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
-                                {{else if (eq feature.actionType "special")}}<i class="fas fa-circle-s"></i>{{/if}}
-                            </span>
-                        {{/if}}
-                        {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
-                        {{/if}}
-                    </div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-heart {{#unless feature.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> feature-item 
+                id=feature.id 
+                img=feature.img 
+                name=feature.name 
+                actionType=feature.actionType 
+                uses=feature.system.uses 
+                isFavorite=feature.isFavorite 
+                categoryId="category-feature-subclass"}}
             {{/each}}
             {{/if}}
 
@@ -85,32 +80,14 @@
             {{#if (lookup featuresByType "race")}}
             <div class="category-header" data-category-id="category-feature-race">Racial Features</div>
             {{#each (lookup featuresByType "race") as |feature|}}
-            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-race">
-                <div class="feature-row">
-                    <div class="feature-image-container">
-                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
-                    </div>
-                    <div class="feature-name">
-                        {{feature.name}}
-                        {{#if feature.actionType}}
-                            <span class="feature-quantity">
-                                {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
-                                {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
-                                {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
-                                {{else if (eq feature.actionType "special")}}<i class="fas fa-circle-s"></i>{{/if}}
-                            </span>
-                        {{/if}}
-                        {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
-                        {{/if}}
-                    </div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-heart {{#unless feature.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> feature-item 
+                id=feature.id 
+                img=feature.img 
+                name=feature.name 
+                actionType=feature.actionType 
+                uses=feature.system.uses 
+                isFavorite=feature.isFavorite 
+                categoryId="category-feature-race"}}
             {{/each}}
             {{/if}}
 
@@ -118,32 +95,14 @@
             {{#if (lookup featuresByType "background")}}
             <div class="category-header" data-category-id="category-feature-background">Background Features</div>
             {{#each (lookup featuresByType "background") as |feature|}}
-            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-background">
-                <div class="feature-row">
-                    <div class="feature-image-container">
-                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
-                    </div>
-                    <div class="feature-name">
-                        {{feature.name}}
-                        {{#if feature.actionType}}
-                            <span class="feature-quantity">
-                                {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
-                                {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
-                                {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
-                                {{else if (eq feature.actionType "special")}}<i class="fas fa-circle-s"></i>{{/if}}
-                            </span>
-                        {{/if}}
-                        {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
-                        {{/if}}
-                    </div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-heart {{#unless feature.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> feature-item 
+                id=feature.id 
+                img=feature.img 
+                name=feature.name 
+                actionType=feature.actionType 
+                uses=feature.system.uses 
+                isFavorite=feature.isFavorite 
+                categoryId="category-feature-background"}}
             {{/each}}
             {{/if}}
 
@@ -151,32 +110,14 @@
             {{#if (lookup featuresByType "feat")}}
             <div class="category-header" data-category-id="category-feature-feat">Feats</div>
             {{#each (lookup featuresByType "feat") as |feature|}}
-            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-feat">
-                <div class="feature-row">
-                    <div class="feature-image-container">
-                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
-                    </div>
-                    <div class="feature-name">
-                        {{feature.name}}
-                        {{#if feature.actionType}}
-                            <span class="feature-quantity">
-                                {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
-                                {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
-                                {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
-                                {{else if (eq feature.actionType "special")}}<i class="fas fa-circle-s"></i>{{/if}}
-                            </span>
-                        {{/if}}
-                        {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
-                        {{/if}}
-                    </div>
-                    <div class="tray-buttons">
-                        <i class="fas fa-heart {{#unless feature.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                        <i class="fas fa-feather"></i>
-                    </div>
-                </div>
-            </div>
+            {{> feature-item 
+                id=feature.id 
+                img=feature.img 
+                name=feature.name 
+                actionType=feature.actionType 
+                uses=feature.system.uses 
+                isFavorite=feature.isFavorite 
+                categoryId="category-feature-feat"}}
             {{/each}}
             {{/if}}
 

@@ -1,0 +1,14 @@
+/* Action Type Indicators */
+.action-type {
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.action-type i {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.action-type i:hover {
+    color: #000;
+} 

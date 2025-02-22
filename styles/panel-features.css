@@ -101,10 +101,33 @@
 }
 
 /* Action Type Icons */
-.feature-quantity i {
-    margin-left: 4px;
-    font-size: 0.9em;
-    opacity: 0.8;
+.action-type {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+}
+
+.action-type i {
+    font-size: 12px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(120, 100, 82, 0.15);
+    color: #eee;
+}
+
+.action-type i.fa-circle-a { color: #ff6b6b; }
+.action-type i.fa-circle-b { color: #ffd93d; }
+.action-type i.fa-circle-r { color: #4dabf7; }
+.action-type i.fa-circle-s { color: #da77f2; }
+
+.action-type i:hover {
+    background: rgba(120, 100, 82, 0.3);
+    transform: scale(1.15);
+    transition: all 0.2s ease;
 }
 
 /* No Matches Message */
@@ -118,6 +141,13 @@
 
 .tray-title-small.no-matches.show {
     display: block !important; /* Only show when explicitly enabled */
+}
+
+.feature-uses {
+    margin-left: 8px;
+    color: #aaa;
+    font-size: 0.9em;
+    opacity: 0.8;
 }
 
 

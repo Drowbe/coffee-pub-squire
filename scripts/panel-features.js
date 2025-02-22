@@ -63,28 +63,58 @@ export class FeaturesPanel {
     }
 
     _getActionType(feature) {
-        // In D&D5E 4.0+, we use the new activity system
-        const activity = feature.system.activity;
-        if (!activity?.type) return null;
+        // In D&D5E 4.0+, we use the new activities system (plural)
+        const activities = feature.system.activities;
         
-        // Map activity types to our display types
-        switch(activity.type) {
-            case 'action': 
-            case 'attack':
-            case 'cast':
-            case 'damage':
-            case 'heal':
-            case 'utility':
-                return 'action';
-            case 'bonus':
-                return 'bonus';
-            case 'reaction':
-                return 'reaction';
-            case 'special':
-            case 'other':
-                return 'special';
-            default:
-                return null;
+        // Debug log the full feature data
+        console.log("SQUIRE | Feature Action Type Debug:", {
+            featureName: feature.name,
+            rawSystem: feature.system,
+            activities: activities,
+            activation: feature.system.activation,
+            cost: feature.system.activation?.cost,
+            type: feature.system.activation?.type
+        });
+
+        // First check the activation directly (for backwards compatibility)
+        if (feature.system.activation?.type) {
+            const type = feature.system.activation.type;
+            console.log(`SQUIRE | ${feature.name} - Found activation type:`, type);
+            switch(type) {
+                case 'action': return 'action';
+                case 'bonus': return 'bonus';
+                case 'reaction': return 'reaction';
+                case 'special': return 'special';
+                default: break;
+            }
+        }
+
+        // Then check activities (new system)
+        if (!activities) return null;
+        
+        // Get the first activity (usually there's only one)
+        const activity = Object.values(activities)[0];
+        
+        // Debug log the activity data
+        console.log("SQUIRE | Activity Data:", {
+            featureName: feature.name,
+            firstActivity: activity,
+            activationType: activity?.activation?.type,
+            allActivities: activities
+        });
+        
+        if (!activity?.activation?.type) return null;
+        
+        // Check the activation type
+        const activationType = activity.activation.type;
+        console.log(`SQUIRE | ${feature.name} - Found activity activation type:`, activationType);
+        
+        switch(activationType) {
+            case 'action': return 'action';
+            case 'bonus': return 'bonus';
+            case 'reaction': return 'reaction';
+            case 'special': return 'special';
+            default: return null;
         }
     }
 
