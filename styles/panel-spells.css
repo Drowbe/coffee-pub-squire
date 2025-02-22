@@ -340,4 +340,17 @@
     font-size: 8px;
     font-weight: 900;
     padding: 1px;
+}
+
+/* No Matches Message */
+.tray-title-small.no-matches {
+    display: none !important; /* Hide by default */
+    text-align: center;
+    padding: 10px;
+    color: #888;
+    font-style: italic;
+}
+
+.tray-title-small.no-matches.show {
+    display: block !important; /* Only show when explicitly enabled */
 } 

@@ -132,9 +132,14 @@ export class ControlPanel {
             // Update panel counter
             visibleCounts[panelType] = visibleItemsInPanel;
 
-            // Toggle "No matches" message
-            const shouldShowNoMatches = visibleItemsInPanel === 0 && searchTerm !== '' && panelElement.hasClass('visible');
-            panelElement.find('.no-matches').toggle(shouldShowNoMatches);
+            // Toggle "No matches" message - only show during search with no results
+            const noMatchesElement = panelElement.find('.no-matches');
+            if (searchTerm === '') {
+                noMatchesElement.removeClass('show').hide();
+            } else {
+                const shouldShowNoMatches = visibleItemsInPanel === 0 && panelElement.hasClass('visible');
+                noMatchesElement.toggleClass('show', shouldShowNoMatches).toggle(shouldShowNoMatches);
+            }
         });
 
         // Handle spell level headers separately since they're structured differently
@@ -158,6 +163,8 @@ export class ControlPanel {
             this.element.find('.panel-containers.stacked .panel-container .search-container input').val('');
             // Show all headers when search is cleared
             this.element.find('.category-header').show();
+            // Hide all "No matches" messages
+            this.element.find('.no-matches').removeClass('show').hide();
         }
     }
 
