@@ -40,6 +40,7 @@ export class ControlPanel {
     _handleSearch(searchTerm) {
         // Convert search term to lowercase for case-insensitive comparison
         searchTerm = searchTerm.toLowerCase();
+        console.log('SQUIRE | Search term:', searchTerm);
 
         // Toggle visibility of individual search boxes based on global search state
         this.element.find('.panel-containers.stacked .panel-container .search-container').toggle(searchTerm === '');
@@ -53,23 +54,56 @@ export class ControlPanel {
             inventory: 0
         };
 
+        // Map panel types to their item class names
+        const itemClassMap = {
+            favorites: 'favorite',
+            weapons: 'weapon',
+            spells: 'spell',
+            features: 'feature',
+            inventory: 'inventory'
+        };
+
         // Process each visible panel separately
         Object.keys(visibleCounts).forEach(panelType => {
             const panelElement = this.element.find(`[data-panel="${panelType}"]`);
             if (!panelElement.hasClass('visible')) return;
 
-            // Find all items in this panel
-            const items = panelType === 'features' 
-                ? panelElement.find('.feature-item')  // Use feature-item class
-                : panelElement.find(`.${panelType.slice(0, -1)}-item`);  // Others use panel-specific classes
-            let visibleItemsInPanel = 0;
+            // Find all items in this panel using the correct class name
+            const itemClass = itemClassMap[panelType];
+            const items = panelElement.find(`.${itemClass}-item`);
+            
+            console.log(`SQUIRE | ${panelType} panel - Selector:`, `.${itemClass}-item`);
+            console.log(`SQUIRE | ${panelType} panel - Total items found:`, items.length);
 
-            console.log(`${panelType} panel - Total items found:`, items.length);
+            let visibleItemsInPanel = 0;  // Initialize counter for this panel
 
             // Process items
             items.each((_, item) => {
                 const $item = $(item);
-                const itemName = $item.find('.inventory-name, .weapon-name, .spell-name, .feature-name, .favorite-name').text().toLowerCase();
+                const nameElement = $item.find(`.${itemClass}-name`);
+                
+                // Skip if no name element found
+                if (nameElement.length === 0) {
+                    console.log(`SQUIRE | ${panelType} item: No name element found`);
+                    return;
+                }
+
+                const itemName = nameElement
+                    .clone()
+                    .children()
+                    .remove()
+                    .end()
+                    .text()
+                    .toLowerCase()
+                    .trim();
+                
+                console.log(`SQUIRE | ${panelType} item:`, {
+                    itemName,
+                    hasNameElement: nameElement.length > 0,
+                    rawHtml: nameElement.html(),
+                    shouldShow: searchTerm === '' || itemName.includes(searchTerm)
+                });
+                
                 const shouldShow = searchTerm === '' || itemName.includes(searchTerm);
                 
                 // Toggle item visibility
@@ -85,14 +119,14 @@ export class ControlPanel {
                 }
             });
 
-            console.log(`${panelType} panel - Visible items:`, visibleItemsInPanel);
+            console.log(`SQUIRE | ${panelType} panel - Visible items:`, visibleItemsInPanel);
 
             // Update panel counter
             visibleCounts[panelType] = visibleItemsInPanel;
 
             // Toggle "No matches" message
             const shouldShowNoMatches = visibleItemsInPanel === 0 && searchTerm !== '' && panelElement.hasClass('visible');
-            console.log(`${panelType} panel - Should show "No matches":`, shouldShowNoMatches, {
+            console.log(`SQUIRE | ${panelType} panel - Should show "No matches":`, shouldShowNoMatches, {
                 visibleItemsInPanel,
                 hasSearchTerm: searchTerm !== '',
                 isPanelVisible: panelElement.hasClass('visible')
