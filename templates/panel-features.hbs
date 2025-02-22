@@ -13,22 +13,22 @@
         </div>
     </div>
     {{/if}}
-    <div class="weapons-list">
+    <div class="features-list">
         {{#if features}}
             {{!-- Class Features --}}
             {{#if (lookup featuresByType "class")}}
             <div class="category-header" data-category-id="category-feature-class">Class Features</div>
             {{#each (lookup featuresByType "class") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-class">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-class">
+                <div class="feature-row">
+                    <div class="feature-image-container">
+                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
+                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
                     </div>
-                    <div class="weapon-name">
+                    <div class="feature-name">
                         {{feature.name}}
                         {{#if feature.actionType}}
-                            <span class="weapon-quantity">
+                            <span class="feature-quantity">
                                 {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
                                 {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
                                 {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
@@ -36,7 +36,7 @@
                             </span>
                         {{/if}}
                         {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="weapon-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
+                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
                         {{/if}}
                     </div>
                     <div class="tray-buttons">
@@ -52,16 +52,16 @@
             {{#if (lookup featuresByType "subclass")}}
             <div class="category-header" data-category-id="category-feature-subclass">Subclass Features</div>
             {{#each (lookup featuresByType "subclass") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-subclass">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-subclass">
+                <div class="feature-row">
+                    <div class="feature-image-container">
+                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
+                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
                     </div>
-                    <div class="weapon-name">
+                    <div class="feature-name">
                         {{feature.name}}
                         {{#if feature.actionType}}
-                            <span class="weapon-quantity">
+                            <span class="feature-quantity">
                                 {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
                                 {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
                                 {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
@@ -69,7 +69,7 @@
                             </span>
                         {{/if}}
                         {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="weapon-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
+                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
                         {{/if}}
                     </div>
                     <div class="tray-buttons">
@@ -81,20 +81,20 @@
             {{/each}}
             {{/if}}
 
-            {{!-- Racial Features --}}
+            {{!-- Race Features --}}
             {{#if (lookup featuresByType "race")}}
             <div class="category-header" data-category-id="category-feature-race">Racial Features</div>
             {{#each (lookup featuresByType "race") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-race">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-race">
+                <div class="feature-row">
+                    <div class="feature-image-container">
+                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
+                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
                     </div>
-                    <div class="weapon-name">
+                    <div class="feature-name">
                         {{feature.name}}
                         {{#if feature.actionType}}
-                            <span class="weapon-quantity">
+                            <span class="feature-quantity">
                                 {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
                                 {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
                                 {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
@@ -102,7 +102,7 @@
                             </span>
                         {{/if}}
                         {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="weapon-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
+                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
                         {{/if}}
                     </div>
                     <div class="tray-buttons">
@@ -118,16 +118,16 @@
             {{#if (lookup featuresByType "background")}}
             <div class="category-header" data-category-id="category-feature-background">Background Features</div>
             {{#each (lookup featuresByType "background") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-background">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-background">
+                <div class="feature-row">
+                    <div class="feature-image-container">
+                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
+                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
                     </div>
-                    <div class="weapon-name">
+                    <div class="feature-name">
                         {{feature.name}}
                         {{#if feature.actionType}}
-                            <span class="weapon-quantity">
+                            <span class="feature-quantity">
                                 {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
                                 {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
                                 {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
@@ -135,7 +135,7 @@
                             </span>
                         {{/if}}
                         {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="weapon-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
+                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
                         {{/if}}
                     </div>
                     <div class="tray-buttons">
@@ -151,16 +151,16 @@
             {{#if (lookup featuresByType "feat")}}
             <div class="category-header" data-category-id="category-feature-feat">Feats</div>
             {{#each (lookup featuresByType "feat") as |feature|}}
-            <div class="weapon-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-feat">
-                <div class="weapon-row">
-                    <div class="weapon-image-container">
-                        <img class="weapon-image" src="{{feature.img}}" alt="{{feature.name}}"/>
-                        <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+            <div class="feature-item" data-feature-id="{{feature.id}}" data-category-id="category-feature-feat">
+                <div class="feature-row">
+                    <div class="feature-image-container">
+                        <img class="feature-image" src="{{feature.img}}" alt="{{feature.name}}"/>
+                        <i class="fas fa-dice-d20 feature-roll-overlay"></i>
                     </div>
-                    <div class="weapon-name">
+                    <div class="feature-name">
                         {{feature.name}}
                         {{#if feature.actionType}}
-                            <span class="weapon-quantity">
+                            <span class="feature-quantity">
                                 {{#if (eq feature.actionType "action")}}<i class="fas fa-circle-a"></i>
                                 {{else if (eq feature.actionType "bonus")}}<i class="fas fa-circle-b"></i>
                                 {{else if (eq feature.actionType "reaction")}}<i class="fas fa-circle-r"></i>
@@ -168,7 +168,7 @@
                             </span>
                         {{/if}}
                         {{#if (and feature.system.uses feature.system.uses.max)}}
-                            <span class="weapon-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
+                            <span class="feature-quantity">({{feature.system.uses.value}}/{{feature.system.uses.max}})</span>
                         {{/if}}
                     </div>
                     <div class="tray-buttons">

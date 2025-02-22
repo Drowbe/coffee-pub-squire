@@ -119,7 +119,7 @@ export class FeaturesPanel {
     _updateVisibility(html) {
         if (!html || !this.panelManager) return;
         
-        const items = html.find('.weapon-item');
+        const items = html.find('.feature-item');
         items.each((_, item) => {
             const $item = $(item);
             const featureId = $item.data('feature-id');
@@ -154,7 +154,7 @@ export class FeaturesPanel {
         // Feature info click (feather icon)
         panel.on('click', '.tray-buttons .fa-feather', async (event) => {
             try {
-                const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
+                const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
                 const feature = this.actor.items.get(featureId);
                 if (!feature) {
                     console.error('Feature not found:', featureId);
@@ -170,13 +170,13 @@ export class FeaturesPanel {
 
         // Toggle favorite
         panel.on('click', '.tray-buttons .fa-heart', async (event) => {
-            const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
+            const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
             await FavoritesPanel.manageFavorite(this.actor, featureId);
         });
 
         // Feature use click (image overlay)
-        panel.on('click', '.weapon-image-container .weapon-roll-overlay', async (event) => {
-            const featureId = $(event.currentTarget).closest('.weapon-item').data('feature-id');
+        panel.on('click', '.feature-image-container .feature-roll-overlay', async (event) => {
+            const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
             const feature = this.actor.items.get(featureId);
             if (feature) {
                 await feature.use({}, { event });

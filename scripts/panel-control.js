@@ -60,7 +60,7 @@ export class ControlPanel {
 
             // Find all items in this panel
             const items = panelType === 'features' 
-                ? panelElement.find('.weapon-item')  // Features panel uses weapon-item class
+                ? panelElement.find('.feature-item')  // Use feature-item class
                 : panelElement.find(`.${panelType.slice(0, -1)}-item`);  // Others use panel-specific classes
             let visibleItemsInPanel = 0;
 

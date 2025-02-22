@@ -1,6 +1,111 @@
-
-
 /* features is currently using weapon classes for some reason */
+
+/* Features Panel Styles */
+.features-list {
+    padding: 0 0.5rem;
+}
+
+.feature-item {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 2px;
+}
+
+.feature-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.feature-row {
+    gap: 4px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.feature-image-container {
+    position: relative;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.feature-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.feature-name {
+    flex: 1;
+    color: #eee;
+    font-size: 1rem;
+    margin-right: 4px;
+}
+
+.feature-quantity {
+    color: #aaa;
+    font-size: 0.9em;
+    margin-left: 4px;
+}
+
+.feature-roll-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: #4a90e2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border-radius: 2px;
+}
+
+.feature-image-container:hover .feature-roll-overlay {
+    opacity: 1;
+}
+
+/* Category Filters */
+.features-category-filters {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0px;
+    margin-bottom: 6px;
+    border-top: 0px solid rgba(0, 0, 0, 0.5);
+}
+
+.features-category-filter {
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    font-size: 1.2em;
+}
+
+.features-category-filter:hover {
+    opacity: 1;
+}
+
+.features-category-filter.active {
+    opacity: .8;
+}
+
+/* Action Type Icons */
+.feature-quantity i {
+    margin-left: 4px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
 
 
 
