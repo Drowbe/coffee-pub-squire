@@ -85,11 +85,6 @@ export class WeaponsPanel {
         }
     }
 
-    _handleSearch(searchTerm) {
-        if (!this.element || !this.panelManager) return;
-        this.panelManager.updateSearchVisibility(searchTerm, this.element[0], '.weapon-item');
-    }
-
     async render(html) {
         if (html) {
             this.element = html;
@@ -164,17 +159,6 @@ export class WeaponsPanel {
             this._updateVisibility(html);
         });
 
-        // Add search input listener
-        panel.on('input', '.weapon-search', (event) => {
-            this._handleSearch(event.target.value);
-        });
-
-        // Add search clear button listener
-        panel.on('click', '.search-clear', (event) => {
-            const $search = $(event.currentTarget).siblings('.weapon-search');
-            $search.val('').trigger('input');
-        });
-
         // Weapon info click (feather icon)
         panel.on('click', '.tray-buttons .fa-feather', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
@@ -216,5 +200,25 @@ export class WeaponsPanel {
                 this._updateVisibility(html);
             }
         });
+    }
+
+    _toggleCategory(categoryId) {
+        // Implementation of _toggleCategory method
+    }
+
+    _onWeaponRoll(event) {
+        // Implementation of _onWeaponRoll method
+    }
+
+    _onToggleEquipped(event) {
+        // Implementation of _onToggleEquipped method
+    }
+
+    _onToggleFavorite(event) {
+        // Implementation of _onToggleFavorite method
+    }
+
+    _onShowDetails(event) {
+        // Implementation of _onShowDetails method
     }
 } 

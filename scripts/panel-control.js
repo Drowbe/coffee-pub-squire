@@ -53,37 +53,61 @@ export class ControlPanel {
             inventory: 0
         };
 
-        // Get all item rows across all panels
-        const items = this.element.find('.panel-containers.stacked .panel-container.visible .inventory-item, .panel-containers.stacked .panel-container.visible .weapon-item, .panel-containers.stacked .panel-container.visible .spell-item, .panel-containers.stacked .panel-container.visible .feature-item, .panel-containers.stacked .panel-container.visible .favorite-item');
+        // Process each visible panel separately
+        Object.keys(visibleCounts).forEach(panelType => {
+            const panelElement = this.element.find(`[data-panel="${panelType}"]`);
+            if (!panelElement.hasClass('visible')) return;
 
-        items.each((_, item) => {
-            const $item = $(item);
-            const itemName = $item.find('.inventory-name, .weapon-name, .spell-name, .feature-name, .favorite-name').text().toLowerCase();
-            const shouldShow = searchTerm === '' || itemName.includes(searchTerm);
-            $item.toggle(shouldShow);
+            // Find all items in this panel
+            const items = panelType === 'features' 
+                ? panelElement.find('.weapon-item')  // Features panel uses weapon-item class
+                : panelElement.find(`.${panelType.slice(0, -1)}-item`);  // Others use panel-specific classes
+            let visibleItemsInPanel = 0;
 
-            if (shouldShow) {
-                // Increment the appropriate counter based on which panel the item belongs to
-                if ($item.closest('[data-panel="favorites"]').length) visibleCounts.favorites++;
-                if ($item.closest('[data-panel="weapons"]').length) visibleCounts.weapons++;
-                if ($item.closest('[data-panel="spells"]').length) visibleCounts.spells++;
-                if ($item.closest('[data-panel="features"]').length) visibleCounts.features++;
-                if ($item.closest('[data-panel="inventory"]').length) visibleCounts.inventory++;
-            }
+            console.log(`${panelType} panel - Total items found:`, items.length);
+
+            // Process items
+            items.each((_, item) => {
+                const $item = $(item);
+                const itemName = $item.find('.inventory-name, .weapon-name, .spell-name, .feature-name, .favorite-name').text().toLowerCase();
+                const shouldShow = searchTerm === '' || itemName.includes(searchTerm);
+                
+                // Toggle item visibility
+                $item.toggle(shouldShow);
+                if (shouldShow) visibleItemsInPanel++;
+
+                // Handle category headers
+                const categoryId = $item.data('category-id');
+                if (categoryId) {
+                    const categoryHeader = panelElement.find(`.category-header[data-category-id="${categoryId}"]`);
+                    const visibleItemsInCategory = panelElement.find(`[data-category-id="${categoryId}"]:visible`).length;
+                    categoryHeader.toggle(visibleItemsInCategory > 0);
+                }
+            });
+
+            console.log(`${panelType} panel - Visible items:`, visibleItemsInPanel);
+
+            // Update panel counter
+            visibleCounts[panelType] = visibleItemsInPanel;
+
+            // Toggle "No matches" message
+            const shouldShowNoMatches = visibleItemsInPanel === 0 && searchTerm !== '' && panelElement.hasClass('visible');
+            console.log(`${panelType} panel - Should show "No matches":`, shouldShowNoMatches, {
+                visibleItemsInPanel,
+                hasSearchTerm: searchTerm !== '',
+                isPanelVisible: panelElement.hasClass('visible')
+            });
+
+            panelElement.find('.no-matches').toggle(shouldShowNoMatches);
         });
 
-        // Show/hide no matches message for each panel
-        Object.entries(visibleCounts).forEach(([panel, count]) => {
-            const panelElement = this.element.find(`[data-panel="${panel}"]`);
-            panelElement.find('.no-matches').toggle(count === 0 && searchTerm !== '' && panelElement.hasClass('visible'));
-        });
-
-        // Update level headers visibility in spells panel if it exists
+        // Handle spell level headers separately since they're structured differently
         const spellsPanel = this.element.find('[data-panel="spells"]');
-        if (spellsPanel.length) {
-            spellsPanel.find('.level-header').each((_, header) => {
+        if (spellsPanel.length && spellsPanel.hasClass('visible')) {
+            spellsPanel.find('.category-header').each((_, header) => {
                 const $header = $(header);
-                const $nextSpells = $header.nextUntil('.level-header', '.spell-item:visible');
+                const categoryId = $header.data('category-id');
+                const $nextSpells = spellsPanel.find(`[data-category-id="${categoryId}"]:visible`);
                 $header.toggle($nextSpells.length > 0);
             });
         }

@@ -48,11 +48,6 @@ export class SpellsPanel {
         return mappedSpells;
     }
 
-    _handleSearch(searchTerm) {
-        if (!this.element || !this.panelManager) return;
-        this.panelManager.updateSearchVisibility(searchTerm, this.element[0], '.spell-item');
-    }
-
     async render(html) {
         if (html) {
             this.element = html;
@@ -198,16 +193,6 @@ export class SpellsPanel {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
             this.panelManager.toggleCategory(categoryId, panel[0]);
-        });
-
-        // Search functionality
-        panel.on('input', '.spell-search', (event) => {
-            this._handleSearch(event.target.value);
-        });
-
-        // Clear search
-        panel.on('click', '.clear-search', () => {
-            panel.find('.spell-search').val('').trigger('input');
         });
 
         // Toggle prepared state (sun icon)

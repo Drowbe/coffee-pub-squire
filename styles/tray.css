@@ -760,18 +760,6 @@
     flex: 1;
 }
 
-.squire-tray[data-position="left"] .spell-search,
-.squire-tray[data-position="left"] .inventory-search,
-.squire-tray[data-position="left"] .weapon-search {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #444;
-    border-radius: 3px;
-    color: #fff;
-    padding: 4px 8px;
-    padding-right: 24px;
-    font-size: 13px;
-}
 
 .squire-tray[data-position="left"] .search-container .search-clear {
     position: absolute;
@@ -787,12 +775,6 @@
 
 .squire-tray[data-position="left"] .search-container .search-clear:hover {
     color: #fff;
-}
-
-.squire-tray[data-position="left"] .spell-search:not(:placeholder-shown) + .search-clear,
-.squire-tray[data-position="left"] .inventory-search:not(:placeholder-shown) + .search-clear,
-.squire-tray[data-position="left"] .weapon-search:not(:placeholder-shown) + .search-clear {
-    opacity: 1;
 }
 
 /* Hide the separate spell slots section in left position */

@@ -50,15 +50,6 @@
     padding: 0.5rem;
 }
 
-.spell-search {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid #444;
-    border-radius: 3px;
-    padding: 0.25rem 0.5rem;
-    color: #fff;
-}
-
 .spell-filter {
     background: rgba(0, 0, 0, 0.1);
     border: 1px solid #444;
@@ -90,13 +81,6 @@
     color: #aaa;
 }
 
-
-
-
-
-
-/* are these used? */
-
 .slot-pips {
     display: flex;
     gap: 0.25rem;
@@ -114,12 +98,6 @@
 .slot-pip.filled {
     background: #4a90e2;
 }
-
-
-
-
-
-
 
 /* Spells List */
 .spells-list {

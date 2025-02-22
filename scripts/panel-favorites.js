@@ -320,16 +320,6 @@ export class FavoritesPanel {
                 .toggleClass('faded', !this.showInventory);
         });
 
-        // Add search input listener
-        html.find('.favorite-search').on('input', (event) => {
-            this._handleSearch(event.target.value);
-        });
-
-        // Add search clear button listener
-        html.find('.search-clear').click((event) => {
-            const $search = $(event.currentTarget).siblings('.favorite-search');
-            $search.val('').trigger('input');
-        });
 
         // Roll/Use item
         html.find('.favorite-image-container').click(async (event) => {

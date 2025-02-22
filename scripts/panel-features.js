@@ -88,11 +88,6 @@ export class FeaturesPanel {
         }
     }
 
-    _handleSearch(searchTerm) {
-        if (!this.element || !this.panelManager) return;
-        this.panelManager.updateSearchVisibility(searchTerm, this.element[0], '.weapon-item');
-    }
-
     async render(html) {
         if (html) {
             this.element = html;
@@ -154,17 +149,6 @@ export class FeaturesPanel {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
             this.panelManager.toggleCategory(categoryId, panel[0]);
-        });
-
-        // Add search input listener
-        panel.on('input', '.weapon-search', (event) => {
-            this._handleSearch(event.target.value);
-        });
-
-        // Add search clear button listener
-        panel.on('click', '.search-clear', (event) => {
-            const $search = $(event.currentTarget).siblings('.weapon-search');
-            $search.val('').trigger('input');
         });
 
         // Feature info click (feather icon)

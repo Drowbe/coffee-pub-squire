@@ -47,11 +47,6 @@ export class InventoryPanel {
         };
     }
 
-    _handleSearch(searchTerm) {
-        if (!this.element || !this.panelManager) return;
-        this.panelManager.updateSearchVisibility(searchTerm, this.element[0], '.inventory-item');
-    }
-
     async render(html) {
         if (html) {
             this.element = html;
@@ -121,17 +116,6 @@ export class InventoryPanel {
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
             this._updateVisibility(html);
-        });
-
-        // Add search input listener
-        html.find('.inventory-search').on('input', (event) => {
-            this._handleSearch(event.target.value);
-        });
-
-        // Add search clear button listener
-        html.find('.search-clear').click((event) => {
-            const $search = $(event.currentTarget).siblings('.inventory-search');
-            $search.val('').trigger('input');
         });
 
         // Item info click (feather icon)
