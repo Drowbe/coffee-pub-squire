@@ -73,6 +73,7 @@
     {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
         <span class="handle-conditions">
+            <img class="condition-icon add-effect-icon" src="icons/svg/aura.svg" title="Add Effect"/>
             {{!-- Core D&D 5e Conditions --}}
             {{#each effects as |effect|}}
                 <img class="condition-icon" src="{{effect.icon}}" title="{{effect.name}}"/>
