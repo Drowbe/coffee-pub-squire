@@ -494,6 +494,48 @@ export class FavoritesPanel {
             await FavoritesPanel.manageFavorite(this.actor, itemId);
         });
 
+        // Toggle prepared state (sun icon)
+        panel.on('click', '.tray-buttons .fa-sun', async (event) => {
+            const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                const newPrepared = !item.system.preparation.prepared;
+                await item.update({
+                    'system.preparation.prepared': newPrepared
+                });
+                // Update the UI immediately
+                const $item = $(event.currentTarget).closest('.favorite-item');
+                $item.toggleClass('prepared', newPrepared);
+                $(event.currentTarget).toggleClass('faded', !newPrepared);
+
+                // Update the handle to reflect the new prepared state
+                if (PanelManager.instance) {
+                    await PanelManager.instance.updateHandle();
+                }
+            }
+        });
+
+        // Toggle equip state (shield icon)
+        panel.on('click', '.tray-buttons .fa-shield-alt', async (event) => {
+            const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                const newEquipped = !item.system.equipped;
+                await item.update({
+                    'system.equipped': newEquipped
+                });
+                // Update the UI immediately
+                const $item = $(event.currentTarget).closest('.favorite-item');
+                $item.toggleClass('prepared', newEquipped);
+                $(event.currentTarget).toggleClass('faded', !newEquipped);
+
+                // Update the handle to reflect the new equipped state
+                if (PanelManager.instance) {
+                    await PanelManager.instance.updateHandle();
+                }
+            }
+        });
+
         // Add clear all button listener
         html.find('.favorites-clear-all').click(async () => {
             await FavoritesPanel.clearFavorites(this.actor);
