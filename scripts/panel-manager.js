@@ -515,6 +515,9 @@ export class PanelManager {
 
         // Handle condition icon clicks
         tray.find('.condition-icon').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
             console.log("SQUIRE | Condition icon clicked");
             const conditionName = event.currentTarget.title;
             console.log("SQUIRE | Condition name:", conditionName);
