@@ -73,11 +73,16 @@
 /* Drop Zone Styles */
 .squire-tray .tray-content.drop-hover {
     position: relative;
-	font-weight: 900;
-	text-align: center;
-	border-radius: 0px;
-	
+    font-weight: 900;
+    text-align: center;
+    border-radius: 0px;
 }
+
+/* Prevent text centering during favorites reordering */
+.squire-tray.reordering-favorites .tray-content.drop-hover {
+    text-align: left;
+}
+
 .squire-tray .tray-content.drop-hover::before {
     content: '';
     position: absolute;
@@ -90,12 +95,12 @@
     -webkit-backdrop-filter: blur(7px);
     z-index: 100;
     pointer-events: none;
-	outline: 2px dashed #9f9275 !important;
+    outline: 2px dashed #9f9275 !important;
     outline-offset: -6px !important;
-	border: 0px;
+    border: 0px;
     border-radius: 8px;
-	
 }
+
 .squire-tray .tray-content.drop-hover::after {
     content: 'ADD TO CHARACTER';
     position: absolute;
@@ -107,7 +112,12 @@
     text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
     z-index: 101;
     pointer-events: none;
+}
 
+/* Hide drop zone elements during favorites reordering */
+.squire-tray.reordering-favorites .tray-content.drop-hover::before,
+.squire-tray.reordering-favorites .tray-content.drop-hover::after {
+    display: none;
 }
 
 .squire-tray .tray-content.drop-hover * {
@@ -851,3 +861,13 @@
 }
 
 /* --------------------------- CLEAN CODE ABOVE???? --------------------- */
+
+/* Disable tray drop zone during favorites reordering */
+.squire-tray.reordering-favorites .tray-content.drop-hover::before,
+.squire-tray.reordering-favorites .tray-content.drop-hover::after {
+    display: none;
+}
+
+.squire-tray.reordering-favorites .tray-content.drop-hover {
+    background: none;
+}
