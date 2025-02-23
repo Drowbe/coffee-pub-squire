@@ -154,6 +154,12 @@ export class HealthPanel {
         this.window = null;
         this.isPoppedOut = false;
 
+        // Check if health panel is enabled in settings
+        const isHealthEnabled = game.settings.get(MODULE.ID, 'showHealthPanel');
+        if (!isHealthEnabled) {
+            return; // Don't return to tray if panel is disabled
+        }
+
         // Get a fresh reference to the main tray
         const mainTray = $('.squire-tray');
         if (!mainTray.length) {

@@ -561,6 +561,12 @@ export class DiceTrayPanel {
         this.window = null;
         this.isPoppedOut = false;
 
+        // Check if dice tray panel is enabled in settings
+        const isDiceTrayEnabled = game.settings.get(MODULE.ID, 'showDiceTrayPanel');
+        if (!isDiceTrayEnabled) {
+            return; // Don't return to tray if panel is disabled
+        }
+
         // Get a fresh reference to the main tray
         const mainTray = $('.squire-tray');
         if (!mainTray.length) {
