@@ -198,16 +198,7 @@
     font-weight: 900;
 }
 
-/* Icon hover effects */
-.squire-tray[data-position="left"] .handle-dice-tray i {
-    transition: transform 0.2s ease, color 0.2s ease;
-    color: #9f9275;
-}
 
-.squire-tray[data-position="left"] .handle-dice-tray:hover i {
-    transform: rotate(360deg);
-    color: #fff;
-}
 
 .squire-tray[data-position="left"] .pin-button i {
     transition: transform 0.2s ease, color 0.2s ease;
@@ -242,6 +233,27 @@
     font-size: 14px;
     line-height: 1.5;
     margin-top: 10px;
+}
+
+/* Dice Tray Icon */
+
+/* Icon hover effects */
+
+.squire-tray[data-position="left"] .dice-tray-icon {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+.squire-tray[data-position="left"] .dice-tray-icon:hover {
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 10px var(--color-shadow-highlight);
+    transform: rotate(180deg);
 }
 
 
