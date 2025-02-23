@@ -73,27 +73,21 @@
     {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
         <span class="handle-conditions">
-            {{#if (includes effects "Poisoned")}}<i class="fas fa-skull-crossbones condition-icon" title="Poisoned"></i>{{/if}}
-            {{#if (includes effects "Stunned")}}<i class="fas fa-dizzy condition-icon" title="Stunned"></i>{{/if}}
-            {{#if (includes effects "Paralyzed")}}<i class="fas fa-bolt condition-icon" title="Paralyzed"></i>{{/if}}
-            {{#if (includes effects "Prone")}}<i class="fas fa-arrow-down condition-icon" title="Prone"></i>{{/if}}
-
-            {{#if (includes effects "Opportunity Attack")}}
-                {{!-- <i class="fas fa-bullseye condition-icon" title="Targeted"></i> --}}
-            {{/if}}
-
-            {{#if (includes effects "Bless")}}<i class="fas fa-hand-holding-heart condition-icon" title="Blessed"></i>{{/if}}
-
-            {{#if (includes effects "Invisible")}}<i class="fas fa-eye-slash condition-icon" title="Invisible"></i>{{/if}}
-            {{#if (includes effects "Grappled")}}<i class="fas fa-hand-rock condition-icon" title="Grappled"></i>{{/if}}
-            {{#if (includes effects "Frightened")}}<i class="fas fa-ghost condition-icon" title="Frightened"></i>{{/if}}
-            {{#if (includes effects "Charmed")}}<i class="fas fa-heart condition-icon" title="Charmed"></i>{{/if}}
-            {{#if (includes effects "Blinded")}}<i class="fas fa-eye-slash condition-icon" title="Blinded"></i>{{/if}}
-            {{#if (includes effects "Deafened")}}<i class="fas fa-deaf condition-icon" title="Deafened"></i>{{/if}}
-            {{#if (includes effects "Diseased")}}<i class="fas fa-virus condition-icon" title="Diseased"></i>{{/if}}
-            {{#if (includes effects "Restrained")}}<i class="fas fa-link condition-icon" title="Restrained"></i>{{/if}}
-            {{#if (includes effects "Petrified")}}<i class="fas fa-mountain condition-icon" title="Petrified"></i>{{/if}}
-            {{#if (includes effects "Inaudible")}}<i class="fas fa-volume-mute condition-icon" title="Inaudible"></i>{{/if}}
+            {{#if (includes effects "Poisoned")}}<img class="condition-icon" src="icons/svg/poison.svg" title="Poisoned"/>{{/if}}
+            {{#if (includes effects "Stunned")}}<img class="condition-icon" src="icons/svg/daze.svg" title="Stunned"/>{{/if}}
+            {{#if (includes effects "Paralyzed")}}<img class="condition-icon" src="icons/svg/paralysis.svg" title="Paralyzed"/>{{/if}}
+            {{#if (includes effects "Prone")}}<img class="condition-icon" src="icons/svg/falling.svg" title="Prone"/>{{/if}}
+            {{#if (includes effects "Bless")}}<img class="condition-icon" src="icons/svg/heal.svg" title="Blessed"/>{{/if}}
+            {{#if (includes effects "Invisible")}}<img class="condition-icon" src="icons/svg/invisible.svg" title="Invisible"/>{{/if}}
+            {{#if (includes effects "Grappled")}}<img class="condition-icon" src="icons/svg/net.svg" title="Grappled"/>{{/if}}
+            {{#if (includes effects "Frightened")}}<img class="condition-icon" src="icons/svg/terror.svg" title="Frightened"/>{{/if}}
+            {{#if (includes effects "Charmed")}}<img class="condition-icon" src="icons/svg/charm.svg" title="Charmed"/>{{/if}}
+            {{#if (includes effects "Blinded")}}<img class="condition-icon" src="icons/svg/blind.svg" title="Blinded"/>{{/if}}
+            {{#if (includes effects "Deafened")}}<img class="condition-icon" src="icons/svg/deaf.svg" title="Deafened"/>{{/if}}
+            {{#if (includes effects "Diseased")}}<img class="condition-icon" src="icons/svg/biohazard.svg" title="Diseased"/>{{/if}}
+            {{#if (includes effects "Restrained")}}<img class="condition-icon" src="icons/svg/trap.svg" title="Restrained"/>{{/if}}
+            {{#if (includes effects "Petrified")}}<img class="condition-icon" src="icons/svg/statue.svg" title="Petrified"/>{{/if}}
+            {{#if (includes effects "Inaudible")}}<img class="condition-icon" src="icons/svg/silenced.svg" title="Inaudible"/>{{/if}}
         </span>
         {{#if (or 
             (includes effects "Poisoned")

@@ -91,33 +91,17 @@
 }
 
 .squire-tray[data-position="left"] .condition-icon {
-    font-size: 0.9em;
-    color: #9f9275;
+    width: 24px;
+    height: 24px;
+    filter: brightness(0.7);
     cursor: help;
-    transition: color 0.2s ease;
+    transition: filter 0.2s ease;
+	background-color: #000000;
 }
 
 .squire-tray[data-position="left"] .condition-icon:hover {
-    color: #fff;
+    filter: brightness(1);
 }
-
-/* Specific condition colors */
-.squire-tray[data-position="left"] .condition-icon[title="Poisoned"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Stunned"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Paralyzed"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Prone"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Targeted"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Blessed"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Invisible"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Grappled"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Frightened"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Charmed"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Blinded"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Deafened"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Diseased"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Restrained"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Petrified"] { color: #aaa; }
-.squire-tray[data-position="left"] .condition-icon[title="Inaudible"] { color: #aaa; }
 
 /* Handle Stats Styling */
 .squire-tray[data-position="left"] .handle-stats-primary,
