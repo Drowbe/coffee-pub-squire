@@ -223,4 +223,25 @@
     filter: brightness(1.2);
 }
 
+/* Condition Details Dialog */
+.condition-details {
+    padding: 10px;
+}
+
+.condition-details h2 {
+    color: #191813;
+    border-bottom: 2px solid #782e22;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.condition-details .condition-description {
+    color: #4b4a44;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
 

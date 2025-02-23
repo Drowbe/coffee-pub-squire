@@ -512,6 +512,62 @@ export class PanelManager {
             event.preventDefault();
             event.originalEvent.dataTransfer.dropEffect = 'copy';
         });
+
+        // Handle condition icon clicks
+        tray.find('.condition-icon').click(async (event) => {
+            console.log("SQUIRE | Condition icon clicked");
+            const conditionName = event.currentTarget.title;
+            console.log("SQUIRE | Condition name:", conditionName);
+            
+            // Try to get the condition data from CONFIG.DND5E.conditionTypes
+            let description = "No description available.";
+            try {
+                const conditionData = CONFIG.DND5E.conditionTypes[conditionName.toLowerCase()];
+                console.log("SQUIRE | Condition data:", conditionData);
+
+                if (conditionData?.reference) {
+                    // Parse the reference string: "Compendium.dnd5e.rules.JournalEntry.w7eitkpD7QQTB6j0.JournalEntryPage.0b8N4FymGGfbZGpJ"
+                    const [, system, packName, type, journalId, , pageId] = conditionData.reference.split(".");
+                    const pack = game.packs.get(`${system}.${packName}`);
+                    
+                    if (pack) {
+                        const journal = await pack.getDocument(journalId);
+                        if (journal) {
+                            const page = journal.pages.get(pageId);
+                            if (page) {
+                                description = page.text.content;
+                            }
+                        }
+                    }
+                }
+
+                // Create a dialog showing the condition details
+                const content = `<div class="condition-details">
+                    <h2>${conditionData?.label || conditionName}</h2>
+                    <img src="${conditionData?.icon}" style="width: 36px; height: 36px; margin-bottom: 10px;" />
+                    <div class="condition-description">${description}</div>
+                    ${conditionData?.statuses?.length ? `<div class="condition-statuses">Also applies: ${conditionData.statuses.join(", ")}</div>` : ""}
+                    ${conditionData?.riders?.length ? `<div class="condition-riders">Additional effects: ${conditionData.riders.join(", ")}</div>` : ""}
+                </div>`;
+                
+                new Dialog({
+                    title: `${conditionData?.label || conditionName} Condition`,
+                    content: content,
+                    buttons: {
+                        close: {
+                            icon: '<i class="fas fa-times"></i>',
+                            label: "Close"
+                        }
+                    },
+                    default: "close",
+                    width: 400
+                }).render(true);
+                
+            } catch (error) {
+                console.error("SQUIRE | Error getting condition description:", error);
+                ui.notifications.warn("Could not load condition description.");
+            }
+        });
     }
 
     // Helper method to get the appropriate icon based on item type
