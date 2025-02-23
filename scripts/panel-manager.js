@@ -542,16 +542,22 @@ export class PanelManager {
                 }
 
                 // Create a dialog showing the condition details
-                const content = `<div class="condition-details">
-                    <h2>${conditionData?.label || conditionName}</h2>
-                    <img src="${conditionData?.icon}" style="width: 36px; height: 36px; margin-bottom: 10px;" />
-                    <div class="condition-description">${description}</div>
-                    ${conditionData?.statuses?.length ? `<div class="condition-statuses">Also applies: ${conditionData.statuses.join(", ")}</div>` : ""}
-                    ${conditionData?.riders?.length ? `<div class="condition-riders">Additional effects: ${conditionData.riders.join(", ")}</div>` : ""}
-                </div>`;
+                const content = `
+                    <div class="squire-description-window">
+                        <div class="squire-description-header">
+                            <img src="${conditionData?.icon}"/>
+                            <h1>${conditionData?.label || conditionName}</h1>
+                        </div>
+                        
+                        <div class="squire-description-content">
+                            ${description.split('\n').filter(line => line.trim()).map(line => 
+                                `<p>${line.trim()}</p>`
+                            ).join('')}
+                        </div>
+                    </div>`;
                 
                 new Dialog({
-                    title: `${conditionData?.label || conditionName} Condition`,
+                    title: conditionData?.label || conditionName,
                     content: content,
                     buttons: {
                         close: {
@@ -559,8 +565,11 @@ export class PanelManager {
                             label: "Close"
                         }
                     },
-                    default: "close",
-                    width: 400
+                    default: "close"
+                }, {
+                    classes: ["dnd5e", "dialog", "window-app", "squire-description-dialog"],
+                    width: 400,
+                    height: "auto"
                 }).render(true);
                 
             } catch (error) {

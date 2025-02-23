@@ -1,0 +1,134 @@
+/* ----- VARIABLES ----- */
+:root {
+    --description-min-width: 300px;
+    --container-padding: 8px;
+    --border-color: #000;
+    --accent-color: #9f9275;
+    --background-color: rgb(0, 0, 0);
+    --header-height: 30px;
+}
+
+/* Window styling */
+.squire-description-dialog {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    box-shadow: 0 0 20px #000;
+}
+
+.squire-description-dialog .window-content {
+    background: none;
+    padding: 0;
+}
+
+/* Header styling */
+.squire-description-dialog .window-header {
+    background: linear-gradient(to bottom, #3c3c3c, #222);
+    border-bottom: 1px solid #000;
+    height: var(--header-height);
+    line-height: var(--header-height);
+    padding: 0 8px;
+}
+
+.squire-description-dialog .window-header .window-title {
+    color: #BBB;
+    text-align: left;
+    font-family: 'Signika', sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    text-shadow: 1px 1px 0px #000;
+}
+
+.squire-description-dialog .window-header .header-button {
+    color: #666;
+    width: var(--header-height);
+    height: var(--header-height);
+    line-height: var(--header-height);
+    text-align: center;
+}
+
+.squire-description-dialog .window-header .header-button:hover {
+    color: #FFF;
+    text-shadow: 0 0 3px red;
+}
+
+/* Content styling */
+.squire-description-window {
+    color: #EEE;
+    font-family: 'Signika', sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    min-width: var(--description-min-width);
+}
+
+.squire-description-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 12px;
+}
+
+.squire-description-header img {
+    width: 32px;
+    height: 32px;
+    border: none;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+}
+
+.squire-description-header h1 {
+    color: var(--accent-color);
+    font-size: 1.2em;
+    margin: 0;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-shadow: 1px 1px 0px #000;
+}
+
+.squire-description-content {
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 0 4px;
+    color: #EEE;
+    text-shadow: 1px 1px 0px #000;
+}
+
+.squire-description-content p {
+    margin: 0 0 8px 0;
+}
+
+.squire-description-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Button styling */
+.squire-description-dialog .dialog-buttons {
+    border-top: 1px solid #444;
+    margin: 0;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.squire-description-dialog .dialog-button {
+    background: linear-gradient(to bottom, #4b4b4b, #2b2b2b);
+    border: 1px solid #000;
+    border-radius: 3px;
+    color: #BBB;
+    font-family: 'Signika', sans-serif;
+    font-size: 14px;
+    line-height: 28px;
+    margin: 0;
+    padding: 0 16px;
+    text-shadow: 1px 1px 0px #000;
+}
+
+.squire-description-dialog .dialog-button:hover {
+    background: linear-gradient(to bottom, #6b6b6b, #3b3b3b);
+    border: 1px solid #000;
+    color: #FFF;
+    text-shadow: 0 0 4px red;
+} 
