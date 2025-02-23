@@ -336,7 +336,8 @@
     width: 12px;
     height: 12px;
     border-radius: 3px;
-    background:  rgba(0, 140, 196, 0.8);
+    background:  rgba(8, 21, 27, 0.8);
+    color: rgba(203, 206, 218, 0.904);
     font-size: 8px;
     font-weight: 900;
     padding: 1px;

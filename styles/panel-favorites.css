@@ -130,17 +130,22 @@
 
 .tray-buttons i {
     color: #aaa;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
     cursor: pointer;
 }
 
 .tray-buttons i:hover {
     color: #fff;
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}
+
+.tray-buttons i.faded {
+    opacity: 0.5;
+    filter: grayscale(100%);
 }
 
 .tray-buttons .fa-heart {
     color: #ff4444;
-    transition: color 0.2s ease;
 }
 
 .tray-buttons .fa-heart:hover {
@@ -151,13 +156,26 @@
     color: #ff4444;
 }
 
+.tray-buttons .fa-sun:not(.faded) {
+    color: #a5911e;
+}
+
+.tray-buttons .fa-shield-alt:not(.faded) {
+    color: #367ccc;
+}
+
 /* Drag and Drop Styles */
 .drag-handle {
     cursor: grab;
     color: #666;
+    padding: 0 4px;
     margin-right: 4px;
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
 
 .drag-handle:hover {
     color: #eee;
+    background: rgba(255, 255, 255, 0.1);
 } 
