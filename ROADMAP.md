@@ -46,7 +46,6 @@ P4 - Low Priority/Low Impact
 
 - Regular compatibility updates for Foundry VTT [Priority: P0] [Label: squire, maintenance]
 - Bug fixes and stability improvements [Priority: P0] [Label: squire, bug]
-- Fix "no matches found" issue [Priority: P0] [Label: squire, bug]
 - Documentation updates [Priority: P1] [Label: squire, documentation]
 - Community feature requests [Priority: P1] [Label: squire, enhancement]
 - Implement spell preparation directly from the tray [Priority: P1] [Label: squire, enhancement]
@@ -58,13 +57,13 @@ P4 - Low Priority/Low Impact
 
 ## TESTING
 
-- None currently [Priority: P0] [Label: squire]
 - Add tooltips for spell and weapon details [Priority: P1] [Label: squire, enhancement]
 
 ## CLOSED
 
+- Fixed panel manager initialization and event handling [Priority: P0] [Label: squire, bug]
+- Fixed "no matches found" issue [Priority: P0] [Label: squire, bug]
 - Automatic character detection [Priority: P0] [Label: squire]
-- Improved event handling [Priority: P0] [Label: squire, bug]
 - DnD5e 4.0+ API compatibility [Priority: P0] [Label: squire, compatibility]
 - HP management tools [Priority: P0] [Label: squire]
 - Spell slot tracking [Priority: P0] [Label: squire]
