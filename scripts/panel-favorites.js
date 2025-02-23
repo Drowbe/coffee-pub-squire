@@ -291,6 +291,11 @@ export class FavoritesPanel {
     }
 
     _activateListeners(html) {
+        console.log('SQUIRE | Favorites Panel - Activating Listeners', {
+            html: html ? 'exists' : 'missing',
+            panelExists: html?.find('[data-panel="favorites"]').length > 0
+        });
+
         if (!html) return;
 
         const panel = html.find('[data-panel="favorites"]');
@@ -482,8 +487,9 @@ export class FavoritesPanel {
             }
         });
 
-        // Remove from favorites
-        html.find('.favorite-item .fa-heart').click(async (event) => {
+        // Toggle favorite
+        panel.on('click', '.tray-buttons .fa-heart', async (event) => {
+            console.log('SQUIRE | Favorites Panel - Heart Click Handler Triggered');
             const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
             await FavoritesPanel.manageFavorite(this.actor, itemId);
         });

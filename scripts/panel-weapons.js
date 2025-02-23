@@ -4,10 +4,16 @@ import { PanelManager } from './panel-manager.js';
 
 export class WeaponsPanel {
     constructor(actor) {
+        console.log('SQUIRE | INIT DEBUG | WeaponsPanel constructor:', {
+            actor: !!actor,
+            panelManagerExists: !!PanelManager.instance,
+            timestamp: new Date().toISOString()
+        });
+        
         this.actor = actor;
         this.weapons = this._getWeapons();
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
-        this.panelManager = PanelManager.instance;
+        // Don't set panelManager in constructor
     }
 
     _getWeapons() {
@@ -121,10 +127,24 @@ export class WeaponsPanel {
     }
 
     async render(html) {
+        console.log('SQUIRE | INIT DEBUG | WeaponsPanel render start:', {
+            hasHtml: !!html,
+            hasElement: !!this.element,
+            panelManagerExists: !!PanelManager.instance,
+            timestamp: new Date().toISOString()
+        });
+
         if (html) {
             this.element = html;
         }
         if (!this.element) return;
+
+        // Get panel manager reference at render time
+        this.panelManager = PanelManager.instance;
+        console.log('SQUIRE | INIT DEBUG | Got panel manager:', {
+            panelManagerExists: !!this.panelManager,
+            timestamp: new Date().toISOString()
+        });
 
         // Refresh weapons data
         this.weapons = this._getWeapons();
