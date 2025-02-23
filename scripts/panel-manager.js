@@ -83,7 +83,10 @@ export class PanelManager {
     async createTray() {
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
-            effects: this.actor.effects?.map(e => e.name) || [],
+            effects: this.actor.effects?.map(e => ({
+                name: e.name,
+                icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+            })) || [],
             settings: {
                 showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
                 showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
@@ -135,7 +138,10 @@ export class PanelManager {
             // Re-render the entire tray template
             const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
                 actor: this.actor,
-                effects: this.actor.effects?.map(e => e.name) || [],
+                effects: this.actor.effects?.map(e => ({
+                    name: e.name,
+                    icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+                })) || [],
                 settings: {
                     showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
                     showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
@@ -216,7 +222,10 @@ export class PanelManager {
         if (PanelManager.element) {
             const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
                 actor: this.actor,
-                effects: this.actor.effects?.map(e => e.name) || [],
+                effects: this.actor.effects?.map(e => ({
+                    name: e.name,
+                    icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+                })) || [],
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -528,6 +537,9 @@ export class PanelManager {
                 const conditionData = CONFIG.DND5E.conditionTypes[conditionName.toLowerCase()];
                 console.log("SQUIRE | Condition data:", conditionData);
 
+                // Get the icon path from the clicked element
+                const iconPath = event.currentTarget.src;
+
                 if (conditionData?.reference) {
                     // Parse the reference string: "Compendium.dnd5e.rules.JournalEntry.w7eitkpD7QQTB6j0.JournalEntryPage.0b8N4FymGGfbZGpJ"
                     const [, system, packName, type, journalId, , pageId] = conditionData.reference.split(".");
@@ -548,7 +560,7 @@ export class PanelManager {
                 const content = `
                     <div class="squire-description-window">
                         <div class="squire-description-header">
-                            <img src="${conditionData?.icon}"/>
+                            <img src="${iconPath}"/>
                             <h1>${conditionData?.label || conditionName}</h1>
                         </div>
                         

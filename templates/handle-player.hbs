@@ -74,87 +74,11 @@
     {{#if showHandleConditions}}
         <span class="handle-conditions">
             {{!-- Core D&D 5e Conditions --}}
-            {{#if (includes effects "Poisoned")}}<img class="condition-icon" src="icons/svg/poison.svg" title="Poisoned"/>{{/if}}
-            {{#if (includes effects "Stunned")}}<img class="condition-icon" src="icons/svg/daze.svg" title="Stunned"/>{{/if}}
-            {{#if (includes effects "Paralyzed")}}<img class="condition-icon" src="icons/svg/paralysis.svg" title="Paralyzed"/>{{/if}}
-            {{#if (includes effects "Prone")}}<img class="condition-icon" src="icons/svg/falling.svg" title="Prone"/>{{/if}}
-            {{#if (includes effects "Invisible")}}<img class="condition-icon" src="icons/svg/invisible.svg" title="Invisible"/>{{/if}}
-            {{#if (includes effects "Grappled")}}<img class="condition-icon" src="icons/svg/net.svg" title="Grappled"/>{{/if}}
-            {{#if (includes effects "Frightened")}}<img class="condition-icon" src="icons/svg/terror.svg" title="Frightened"/>{{/if}}
-            {{#if (includes effects "Charmed")}}<img class="condition-icon" src="icons/svg/charm.svg" title="Charmed"/>{{/if}}
-            {{#if (includes effects "Blinded")}}<img class="condition-icon" src="icons/svg/blind.svg" title="Blinded"/>{{/if}}
-            {{#if (includes effects "Deafened")}}<img class="condition-icon" src="icons/svg/deaf.svg" title="Deafened"/>{{/if}}
-            {{#if (includes effects "Restrained")}}<img class="condition-icon" src="icons/svg/trap.svg" title="Restrained"/>{{/if}}
-            {{#if (includes effects "Petrified")}}<img class="condition-icon" src="icons/svg/statue.svg" title="Petrified"/>{{/if}}
-            {{#if (includes effects "Incapacitated")}}<img class="condition-icon" src="icons/svg/stoned.svg" title="Incapacitated"/>{{/if}}
-            {{#if (includes effects "Unconscious")}}<img class="condition-icon" src="icons/svg/unconscious.svg" title="Unconscious"/>{{/if}}
-            {{#if (includes effects "Exhaustion")}}<img class="condition-icon" src="icons/svg/exhausted.svg" title="Exhaustion"/>{{/if}}
-
-            {{!-- Additional Status Effects --}}
-            {{#if (includes effects "Burning")}}<img class="condition-icon" src="icons/svg/fire.svg" title="Burning"/>{{/if}}
-            {{#if (includes effects "Burrowing")}}<img class="condition-icon" src="icons/svg/mountain.svg" title="Burrowing"/>{{/if}}
-            {{#if (includes effects "Concentrating")}}<img class="condition-icon" src="icons/svg/concentration.svg" title="Concentrating"/>{{/if}}
-            {{#if (includes effects "Cursed")}}<img class="condition-icon" src="icons/svg/skull.svg" title="Cursed"/>{{/if}}
-            {{#if (includes effects "Dehydration")}}<img class="condition-icon" src="icons/svg/water.svg" title="Dehydration"/>{{/if}}
-            {{#if (includes effects "Dodging")}}<img class="condition-icon" src="icons/svg/dodge.svg" title="Dodging"/>{{/if}}
-            {{#if (includes effects "Etheral")}}<img class="condition-icon" src="icons/svg/ghost.svg" title="Etheral"/>{{/if}}
-            {{#if (includes effects "Falling")}}<img class="condition-icon" src="icons/svg/falling.svg" title="Falling"/>{{/if}}
-            {{#if (includes effects "Flying")}}<img class="condition-icon" src="icons/svg/wing.svg" title="Flying"/>{{/if}}
-            {{#if (includes effects "Hiding")}}<img class="condition-icon" src="icons/svg/hidden.svg" title="Hiding"/>{{/if}}
-            {{#if (includes effects "Hovering")}}<img class="condition-icon" src="icons/svg/wing.svg" title="Hovering"/>{{/if}}
-            {{#if (includes effects "Malnutrition")}}<img class="condition-icon" src="icons/svg/hunger.svg" title="Malnutrition"/>{{/if}}
-            {{#if (includes effects "Marked")}}<img class="condition-icon" src="icons/svg/target.svg" title="Marked"/>{{/if}}
-            {{#if (includes effects "Silenced")}}<img class="condition-icon" src="icons/svg/silenced.svg" title="Silenced"/>{{/if}}
-            {{#if (includes effects "Sleeping")}}<img class="condition-icon" src="icons/svg/sleep.svg" title="Sleeping"/>{{/if}}
-            {{#if (includes effects "Stable")}}<img class="condition-icon" src="icons/svg/heart.svg" title="Stable"/>{{/if}}
-            {{#if (includes effects "Suffocation")}}<img class="condition-icon" src="icons/svg/air.svg" title="Suffocation"/>{{/if}}
-            {{#if (includes effects "Surprised")}}<img class="condition-icon" src="icons/svg/surprise.svg" title="Surprised"/>{{/if}}
-            {{#if (includes effects "Transformed")}}<img class="condition-icon" src="icons/svg/transform.svg" title="Transformed"/>{{/if}}
-
-            {{!-- Spell Effects --}}
-            {{#if (includes effects "Bless")}}<img class="condition-icon" src="icons/svg/heal.svg" title="Blessed"/>{{/if}}
-            {{#if (includes effects "Diseased")}}<img class="condition-icon" src="icons/svg/biohazard.svg" title="Diseased"/>{{/if}}
-            {{#if (includes effects "Inaudible")}}<img class="condition-icon" src="icons/svg/silenced.svg" title="Inaudible"/>{{/if}}
+            {{#each effects as |effect|}}
+                <img class="condition-icon" src="{{effect.icon}}" title="{{effect.name}}"/>
+            {{/each}}
         </span>
-        {{#if (or 
-            (includes effects "Poisoned")
-            (includes effects "Stunned")
-            (includes effects "Paralyzed")
-            (includes effects "Prone")
-            (includes effects "Invisible")
-            (includes effects "Grappled")
-            (includes effects "Frightened")
-            (includes effects "Charmed")
-            (includes effects "Blinded")
-            (includes effects "Deafened")
-            (includes effects "Restrained")
-            (includes effects "Petrified")
-            (includes effects "Incapacitated")
-            (includes effects "Unconscious")
-            (includes effects "Exhaustion")
-            (includes effects "Burning")
-            (includes effects "Burrowing")
-            (includes effects "Concentrating")
-            (includes effects "Cursed")
-            (includes effects "Dehydration")
-            (includes effects "Dodging")
-            (includes effects "Etheral")
-            (includes effects "Falling")
-            (includes effects "Flying")
-            (includes effects "Hiding")
-            (includes effects "Hovering")
-            (includes effects "Malnutrition")
-            (includes effects "Marked")
-            (includes effects "Silenced")
-            (includes effects "Sleeping")
-            (includes effects "Stable")
-            (includes effects "Suffocation")
-            (includes effects "Surprised")
-            (includes effects "Transformed")
-            (includes effects "Bless")
-            (includes effects "Diseased")
-            (includes effects "Inaudible")
-        )}}
+        {{#if effects.length}}
             <span class="tray-handle-separator line"></span>
         {{/if}}
     {{/if}}
