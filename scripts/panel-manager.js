@@ -579,6 +579,24 @@ export class PanelManager {
                 console.error("SQUIRE | Error getting condition description:", error);
                 ui.notifications.warn("Could not load condition description.");
             }
+        }).on('contextmenu', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const conditionName = event.currentTarget.title;
+            console.log("SQUIRE | Removing condition:", conditionName);
+            
+            try {
+                // Find the effect with this condition name
+                const effect = this.actor.effects.find(e => e.name === conditionName);
+                if (effect) {
+                    await effect.delete();
+                    ui.notifications.info(`Removed ${conditionName} from ${this.actor.name}`);
+                }
+            } catch (error) {
+                console.error("SQUIRE | Error removing condition:", error);
+                ui.notifications.error(`Could not remove ${conditionName}`);
+            }
         });
     }
 
