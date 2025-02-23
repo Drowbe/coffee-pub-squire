@@ -941,4 +941,18 @@ Hooks.on('pauseGame', async (paused) => {
     if (!paused && PanelManager.instance && PanelManager.element) {
         await PanelManager.instance.renderPanels(PanelManager.element);
     }
+});
+
+// Handle active effect creation
+Hooks.on('createActiveEffect', async (effect) => {
+    if (PanelManager.currentActor?.id === effect.parent?.id && PanelManager.instance) {
+        await PanelManager.instance.updateHandle();
+    }
+});
+
+// Handle active effect deletion
+Hooks.on('deleteActiveEffect', async (effect) => {
+    if (PanelManager.currentActor?.id === effect.parent?.id && PanelManager.instance) {
+        await PanelManager.instance.updateHandle();
+    }
 }); 
