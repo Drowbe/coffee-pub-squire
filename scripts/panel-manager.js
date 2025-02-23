@@ -83,6 +83,7 @@ export class PanelManager {
     async createTray() {
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
+            isGM: game.user.isGM,
             effects: this.actor.effects?.map(e => ({
                 name: e.name,
                 icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
@@ -138,6 +139,7 @@ export class PanelManager {
             // Re-render the entire tray template
             const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
                 actor: this.actor,
+                isGM: game.user.isGM,
                 effects: this.actor.effects?.map(e => ({
                     name: e.name,
                     icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
@@ -222,6 +224,7 @@ export class PanelManager {
         if (PanelManager.element) {
             const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
                 actor: this.actor,
+                isGM: game.user.isGM,
                 effects: this.actor.effects?.map(e => ({
                     name: e.name,
                     icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
@@ -529,11 +532,18 @@ export class PanelManager {
             
             // If this is the add effect icon, handle differently
             if ($(event.currentTarget).hasClass('add-effect-icon')) {
+                // Only GMs can add effects
+                if (!game.user.isGM) {
+                    ui.notifications.warn("Only GMs can add effects.");
+                    return;
+                }
+
                 // Get all available conditions from CONFIG.DND5E.conditionTypes
                 const conditions = Object.entries(CONFIG.DND5E.conditionTypes).map(([id, condition]) => ({
                     id,
                     name: condition.label,
-                    icon: condition.icon
+                    icon: condition.icon,
+                    isActive: this.actor.effects.some(e => e.name === condition.label)
                 }));
 
                 // Create a dialog with condition options
@@ -547,7 +557,7 @@ export class PanelManager {
                         <div class="squire-description-content">
                             <div class="effect-grid">
                                 ${conditions.map(condition => `
-                                    <div class="effect-option" data-condition-id="${condition.id}">
+                                    <div class="effect-option ${condition.isActive ? 'active' : ''}" data-condition-id="${condition.id}">
                                         <img src="${condition.icon}" title="${condition.name}"/>
                                         <div class="effect-name">${condition.name}</div>
                                     </div>
@@ -573,11 +583,37 @@ export class PanelManager {
                             background: rgba(255, 255, 255, 0.1);
                             transition: all 0.2s ease;
                             border: 1px solid transparent;
+                            position: relative;
                         }
                         .squire-description-window .effect-option:hover {
                             background: rgba(255, 255, 255, 0.2);
                             border-color: var(--color-border-highlight);
                             box-shadow: 0 0 10px var(--color-shadow-highlight);
+                        }
+                        .squire-description-window .effect-option.active {
+                            background: rgba(var(--color-shadow-primary), 0.5);
+                            border-color: var(--color-border-highlight);
+                            box-shadow: 0 0 10px var(--color-shadow-highlight) inset;
+                        }
+                        .squire-description-window .effect-option.active:hover {
+                            background: rgba(var(--color-shadow-primary), 0.7);
+                        }
+                        .squire-description-window .effect-option.active::after {
+                            content: '✓';
+                            position: absolute;
+                            top: -5px;
+                            right: -5px;
+                            background: var(--color-shadow-primary);
+                            color: var(--color-text-light-highlight);
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 12px;
+                            border: 1px solid var(--color-border-highlight);
+                            box-shadow: 0 0 5px var(--color-shadow-highlight);
                         }
                         .squire-description-window .effect-option img {
                             width: 40px;
@@ -609,21 +645,31 @@ export class PanelManager {
                         html.find('.effect-option').click(async (e) => {
                             const conditionId = e.currentTarget.dataset.conditionId;
                             const condition = CONFIG.DND5E.conditionTypes[conditionId];
+                            const isActive = $(e.currentTarget).hasClass('active');
                             
                             try {
-                                // Create the effect on the actor
-                                await this.actor.createEmbeddedDocuments('ActiveEffect', [{
-                                    name: condition.label,
-                                    icon: condition.icon,
-                                    origin: this.actor.uuid,
-                                    disabled: false
-                                }]);
-                                
-                                ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
-                                dialog.close();
+                                if (isActive) {
+                                    // Remove the effect
+                                    const effect = this.actor.effects.find(e => e.name === condition.label);
+                                    if (effect) {
+                                        await effect.delete();
+                                        $(e.currentTarget).removeClass('active');
+                                        ui.notifications.info(`Removed ${condition.label} from ${this.actor.name}`);
+                                    }
+                                } else {
+                                    // Add the effect
+                                    await this.actor.createEmbeddedDocuments('ActiveEffect', [{
+                                        name: condition.label,
+                                        icon: condition.icon,
+                                        origin: this.actor.uuid,
+                                        disabled: false
+                                    }]);
+                                    $(e.currentTarget).addClass('active');
+                                    ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
+                                }
                             } catch (error) {
-                                console.error("SQUIRE | Error adding condition:", error);
-                                ui.notifications.error(`Could not add ${condition.label}`);
+                                console.error("SQUIRE | Error toggling condition:", error);
+                                ui.notifications.error(`Could not toggle ${condition.label}`);
                             }
                         });
                     }
@@ -679,8 +725,17 @@ export class PanelManager {
                             ${description.split('\n').filter(line => line.trim()).map(line => 
                                 `<p>${line.trim()}</p>`
                             ).join('')}
+                            ${game.user.isGM ? '<p class="gm-note"><i>Right-click to remove this condition.</i></p>' : ''}
                         </div>
-                    </div>`;
+                    </div>
+                    <style>
+                        .gm-note {
+                            margin-top: 1em;
+                            font-size: 0.9em;
+                            color: var(--color-text-dark-secondary);
+                            font-style: italic;
+                        }
+                    </style>`;
                 
                 new Dialog({
                     title: conditionData?.label || conditionName,
@@ -705,6 +760,12 @@ export class PanelManager {
         }).on('contextmenu', async (event) => {
             event.preventDefault();
             event.stopPropagation();
+            
+            // Only GMs can remove effects
+            if (!game.user.isGM) {
+                ui.notifications.warn("Only GMs can remove effects.");
+                return;
+            }
             
             const conditionName = event.currentTarget.title;
             console.log("SQUIRE | Removing condition:", conditionName);

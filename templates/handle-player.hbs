@@ -73,13 +73,15 @@
     {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
         <span class="handle-conditions">
+            {{#if isGM}}
             <img class="condition-icon add-effect-icon" src="icons/svg/aura.svg" title="Add Effect"/>
+            {{/if}}
             {{!-- Core D&D 5e Conditions --}}
             {{#each effects as |effect|}}
                 <img class="condition-icon" src="{{effect.icon}}" title="{{effect.name}}"/>
             {{/each}}
         </span>
-        {{#if effects.length}}
+        {{#if (or effects.length isGM)}}
             <span class="tray-handle-separator line"></span>
         {{/if}}
     {{/if}}
