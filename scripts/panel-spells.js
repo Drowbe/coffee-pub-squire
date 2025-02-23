@@ -13,6 +13,10 @@ export class SpellsPanel {
         this.actor = actor;
         this.spells = this._getSpells();
         this.showOnlyPrepared = game.settings.get(MODULE.ID, 'showOnlyPreparedSpells');
+        console.log('SQUIRE | INIT DEBUG | Initialized showOnlyPrepared:', {
+            value: this.showOnlyPrepared,
+            timestamp: new Date().toISOString()
+        });
         // Don't set panelManager in constructor
     }
 
@@ -148,6 +152,11 @@ export class SpellsPanel {
             showOnlyPrepared: this.showOnlyPrepared
         };
 
+        console.log('SQUIRE | RENDER DEBUG | Rendering with showOnlyPrepared:', {
+            value: this.showOnlyPrepared,
+            timestamp: new Date().toISOString()
+        });
+
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
         
         // Remove old listeners before updating HTML
@@ -244,7 +253,8 @@ export class SpellsPanel {
             htmlExists: !!html,
             panelManagerExists: !!this.panelManager,
             htmlIsJQuery: html instanceof $,
-            foundPanel: html?.find('[data-panel="spells"]').length > 0
+            foundPanel: html?.find('[data-panel="spells"]').length > 0,
+            spellFilterExists: html?.find('.spell-filter-toggle').length > 0
         });
 
         if (!html || !this.panelManager) {
@@ -255,26 +265,43 @@ export class SpellsPanel {
             return;
         }
 
-        // Remove existing listeners first
-        this._removeEventListeners(html);
-
         // Get the panel element
         const panel = html.find('[data-panel="spells"]');
-        console.log('SQUIRE | CLICK DEBUG | Found spells panel:', {
+        
+        // Remove any existing listeners
+        panel.off('click.squireSpells');
+        
+        // Debug the panel element
+        console.log('SQUIRE | CLICK DEBUG | Panel element:', {
             panelExists: panel.length > 0,
+            filterToggleExists: panel.find('.spell-filter-toggle').length > 0,
             panelHtml: panel.html()
         });
 
-        // Add a general click handler to debug all clicks
-        panel.on('click.squireSpells', '*', (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Click detected:', {
-                target: event.target,
-                targetClasses: event.target.className,
-                closestPanel: $(event.target).closest('[data-panel="spells"]').length > 0,
-                closestSpellItem: $(event.target).closest('.spell-item').length > 0,
-                eventType: event.type,
+        // Add direct click handler to the filter toggle
+        const filterToggle = panel.find('.spell-filter-toggle');
+        filterToggle.on('click.squireSpells', async (event) => {
+            console.log('SQUIRE | CLICK DEBUG | Filter toggle clicked:', {
+                currentState: this.showOnlyPrepared,
+                element: event.currentTarget,
+                classes: $(event.currentTarget).attr('class'),
                 timestamp: new Date().toISOString()
             });
+            
+            this.showOnlyPrepared = !this.showOnlyPrepared;
+            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
+            
+            const $target = $(event.currentTarget);
+            $target.toggleClass('active', this.showOnlyPrepared);
+            $target.toggleClass('faded', !this.showOnlyPrepared);
+            
+            console.log('SQUIRE | CLICK DEBUG | After toggle:', {
+                newState: this.showOnlyPrepared,
+                elementClasses: $target.attr('class'),
+                timestamp: new Date().toISOString()
+            });
+            
+            this._updateVisibility(html);
         });
 
         // Level filter toggles
@@ -307,20 +334,6 @@ export class SpellsPanel {
                 $(event.currentTarget).toggleClass('faded', !newPrepared);
                 this._updateVisibility(html);
             }
-        });
-
-        // Filter toggle
-        panel.on('click.squireSpells', '.spell-filter-toggle', async (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Filter toggle clicked:', {
-                currentState: this.showOnlyPrepared,
-                timestamp: new Date().toISOString()
-            });
-            this.showOnlyPrepared = !this.showOnlyPrepared;
-            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
-            $(event.currentTarget)
-                .toggleClass('active', this.showOnlyPrepared)
-                .toggleClass('faded', !this.showOnlyPrepared);
-            this._updateVisibility(html);
         });
 
         // Favorite toggle (heart icon)
