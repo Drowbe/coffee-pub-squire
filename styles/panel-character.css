@@ -42,6 +42,22 @@
     color: #fff;
 }
 
+/* Refresh Icon Animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.squire-tray[data-position="left"] .character-panel .tray-refresh.spinning {
+    animation: spin 1s linear infinite;
+    color: #fff;
+    pointer-events: none;
+}
+
 .squire-tray[data-position="left"] .character-panel .weapons-category-filter:not(.active) {
     opacity: 0.3;
 }

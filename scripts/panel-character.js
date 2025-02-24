@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { PanelManager } from './panel-manager.js';
 
 export class CharacterPanel {
     constructor(actor) {
@@ -25,6 +26,19 @@ export class CharacterPanel {
         // Character sheet toggle
         html.find('.character-sheet-toggle').click(() => {
             this.actor.sheet.render(true);
+        });
+
+        // Refresh tray
+        html.find('.tray-refresh').click(async (event) => {
+            const $refreshIcon = $(event.currentTarget);
+            if (PanelManager.instance && !$refreshIcon.hasClass('spinning')) {
+                try {
+                    $refreshIcon.addClass('spinning');
+                    await PanelManager.instance.updateTray();
+                } finally {
+                    $refreshIcon.removeClass('spinning');
+                }
+            }
         });
 
         // HP Controls
