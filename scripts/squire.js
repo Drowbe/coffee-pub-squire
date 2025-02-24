@@ -4,7 +4,14 @@ import { registerSettings } from './settings.js';
 import { registerHelpers } from './helpers.js';
 
 Hooks.once('init', async function() {
-    console.log(`${MODULE.TITLE} | Initializing ${MODULE.NAME}`);
+    game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification(
+        `${MODULE.TITLE} | Initializing ${MODULE.NAME}`,
+        null,
+        false,
+        true,
+        false,
+        MODULE.TITLE
+    );
     
     // Register module settings
     registerSettings();
