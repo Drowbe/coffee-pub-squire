@@ -167,6 +167,7 @@ export class SpellsPanel {
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             const preparedMatch = !this.showOnlyPrepared || 
                 spell.system.level === 0 || // Cantrips are always prepared
+                spell.system.preparation?.mode === 'atwill' || // At-will spells are always prepared
                 spell.system.preparation?.prepared;
             
             $item.toggle(!isCategoryHidden && preparedMatch);
