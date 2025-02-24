@@ -4,12 +4,6 @@ import { PanelManager } from './panel-manager.js';
 
 export class WeaponsPanel {
     constructor(actor) {
-        console.log('SQUIRE | INIT DEBUG | WeaponsPanel constructor:', {
-            actor: !!actor,
-            panelManagerExists: !!PanelManager.instance,
-            timestamp: new Date().toISOString()
-        });
-        
         this.actor = actor;
         this.weapons = this._getWeapons();
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
@@ -58,14 +52,6 @@ export class WeaponsPanel {
     _getWeaponType(weapon) {
         const weaponData = weapon.system;
         
-        // Debug logging
-        console.log("SQUIRE | Weapon Data Debug:", {
-            name: weapon.name,
-            weaponData: weaponData,
-            type: weaponData.type,
-            properties: weaponData.properties
-        });
-        
         // Check for natural weapons first
         if (weaponData.type.value === 'natural') return 'natural';
         
@@ -76,15 +62,6 @@ export class WeaponsPanel {
         const isMartial = typeValue.startsWith('martial');
         const isRanged = typeValue.endsWith('R'); // DND5E uses 'martialR' for ranged, 'martialM' for melee
         
-        // Debug logging for classification
-        console.log("SQUIRE | Weapon Classification:", {
-            name: weapon.name,
-            typeValue: typeValue,
-            isMartial: isMartial,
-            isRanged: isRanged,
-            finalCategory: isMartial ? (isRanged ? 'martial-ranged' : 'martial-melee') : (isRanged ? 'simple-ranged' : 'simple-melee')
-        });
-        
         if (isMartial) {
             return isRanged ? 'martial-ranged' : 'martial-melee';
         } else {
@@ -93,13 +70,6 @@ export class WeaponsPanel {
     }
 
     _getActionType(weapon) {
-        console.log(`[Coffee Pub Squire] Getting action type for weapon ${weapon.name}:`, {
-            activation: weapon.system.activation,
-            actionType: weapon.system.actionType,
-            weaponType: weapon.system.weaponType,
-            system: weapon.system
-        });
-
         // First check activation type from the new system
         if (weapon.system.activation?.type) {
             switch (weapon.system.activation.type) {
@@ -127,13 +97,6 @@ export class WeaponsPanel {
     }
 
     async render(html) {
-        console.log('SQUIRE | INIT DEBUG | WeaponsPanel render start:', {
-            hasHtml: !!html,
-            hasElement: !!this.element,
-            panelManagerExists: !!PanelManager.instance,
-            timestamp: new Date().toISOString()
-        });
-
         if (html) {
             this.element = html;
         }
@@ -141,10 +104,6 @@ export class WeaponsPanel {
 
         // Get panel manager reference at render time
         this.panelManager = PanelManager.instance;
-        console.log('SQUIRE | INIT DEBUG | Got panel manager:', {
-            panelManagerExists: !!this.panelManager,
-            timestamp: new Date().toISOString()
-        });
 
         // Refresh weapons data
         this.weapons = this._getWeapons();
