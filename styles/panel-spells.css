@@ -16,6 +16,7 @@
 
 .spell-item.prepared {
     border-color: #4a90e2;
+    background: rgba(74, 144, 226, 0.1);
 }
 
 .spell-header {
@@ -191,9 +192,7 @@
     pointer-events: auto;
 }
 
-.spell-item.prepared {
-    background: rgba(74, 144, 226, 0.1);
-}
+
 
 /* Spell Actions */
 .spell-actions {

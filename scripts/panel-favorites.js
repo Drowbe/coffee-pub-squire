@@ -110,11 +110,14 @@ export class FavoritesPanel {
         
         // Get our module's favorites from flags and filter out null values
         const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         
-        // Get only favorited items
-        const favoritedItems = this.actor.items
-            .filter(item => favorites.includes(item.id))
+        // Create a map of items by ID for quick lookup
+        const itemsById = new Map(this.actor.items.map(item => [item.id, item]));
+        
+        // Map favorites in their original order
+        const favoritedItems = favorites
+            .map(id => itemsById.get(id))
+            .filter(item => item) // Remove any undefined items (in case an item was deleted)
             .map(item => ({
                 id: item.id,
                 name: item.name,
@@ -274,47 +277,64 @@ export class FavoritesPanel {
         const self = this; // Store panel instance reference
 
         // Add context menu for reordering
-        new ContextMenu(panel.find('.favorite-item'), {
-            callback: (target) => {
-                const $item = $(target);
-                const itemId = $item.data('item-id');
-                const $items = panel.find('.favorite-item:visible');
-                const currentIndex = $items.index($item);
-                const totalItems = $items.length;
-                
-                const menuItems = [];
-                
-                // Only add "Move Up" if not at top
-                if (currentIndex > 0) {
-                    menuItems.push({
-                        name: "Move to Top",
-                        icon: '<i class="fas fa-angle-double-up"></i>',
-                        callback: () => self._reorderFavorite(itemId, 0)
-                    });
-                    menuItems.push({
-                        name: "Move Up",
-                        icon: '<i class="fas fa-angle-up"></i>',
-                        callback: () => self._reorderFavorite(itemId, currentIndex - 1)
-                    });
-                }
-                
-                // Only add "Move Down" if not at bottom
-                if (currentIndex < totalItems - 1) {
-                    menuItems.push({
-                        name: "Move Down",
-                        icon: '<i class="fas fa-angle-down"></i>',
-                        callback: () => self._reorderFavorite(itemId, currentIndex + 1)
-                    });
-                    menuItems.push({
-                        name: "Move to Bottom",
-                        icon: '<i class="fas fa-angle-double-down"></i>',
-                        callback: () => self._reorderFavorite(itemId, totalItems - 1)
-                    });
-                }
-                
-                return menuItems;
+        new ContextMenu(panel, '.favorite-item', [{
+            name: "Move to Top",
+            icon: '<i class="fas fa-angle-double-up"></i>',
+            condition: target => {
+                const itemId = $(target).data('item-id');
+                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex > 0;
+            },
+            callback: target => {
+                const itemId = $(target).data('item-id');
+                self._reorderFavorite(itemId, 0);
             }
-        });
+        }, {
+            name: "Move Up",
+            icon: '<i class="fas fa-angle-up"></i>',
+            condition: target => {
+                const itemId = $(target).data('item-id');
+                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex > 0;
+            },
+            callback: target => {
+                const itemId = $(target).data('item-id');
+                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                self._reorderFavorite(itemId, currentIndex - 1);
+            }
+        }, {
+            name: "Move Down",
+            icon: '<i class="fas fa-angle-down"></i>',
+            condition: target => {
+                const itemId = $(target).data('item-id');
+                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex < favorites.length - 1;
+            },
+            callback: target => {
+                const itemId = $(target).data('item-id');
+                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                self._reorderFavorite(itemId, currentIndex + 1);
+            }
+        }, {
+            name: "Move to Bottom",
+            icon: '<i class="fas fa-angle-double-down"></i>',
+            condition: target => {
+                const itemId = $(target).data('item-id');
+                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex < favorites.length - 1;
+            },
+            callback: target => {
+                const itemId = $(target).data('item-id');
+                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
+                self._reorderFavorite(itemId, favorites.length - 1);
+            }
+        }]);
 
         // Filter toggles
         html.find('.favorites-spell-toggle').click(async (event) => {
@@ -437,69 +457,45 @@ export class FavoritesPanel {
     }
 
     async _reorderFavorite(itemId, newIndex) {
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        const actor = this.actor;
+        if (!actor) {
+            console.log("SQUIRE | No actor found in _reorderFavorite");
+            return;
+        }
+
+        console.log("SQUIRE | Reordering favorite", { itemId, newIndex });
+
+        // Get the raw favorites array (just IDs) from flags
+        const favoriteIds = actor.getFlag(MODULE.ID, 'favorites') || [];
+        console.log("SQUIRE | Current favorites IDs", favoriteIds);
+        
+        // Find the current index of the item ID
+        const currentIndex = favoriteIds.indexOf(itemId);
+        if (currentIndex === -1) {
+            console.log("SQUIRE | Item not found in favorites", itemId);
+            return;
+        }
+
+        console.log("SQUIRE | Current index", currentIndex);
+
+        // Remove item from current position and insert at new position
+        const [movedId] = favoriteIds.splice(currentIndex, 1);
+        favoriteIds.splice(newIndex, 0, movedId);
+
+        console.log("SQUIRE | New favorites order", favoriteIds);
+
         try {
-            // Get current favorites
-            const currentFavorites = FavoritesPanel.getFavorites(this.actor);
-            if (!Array.isArray(currentFavorites)) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Invalid favorites data structure",
-                    { currentFavorites },
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
-                return;
+            // Update the actor's flags
+            await actor.unsetFlag(MODULE.ID, 'favorites');
+            await actor.setFlag(MODULE.ID, 'favorites', favoriteIds);
+            
+            // Re-render the panel
+            if (this.element) {
+                await this.render(this.element);
             }
-
-            // Find current index of the item
-            const currentIndex = currentFavorites.indexOf(itemId);
-            if (currentIndex === -1) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Could not find item in favorites",
-                    { itemId },
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
-                return;
-            }
-
-            // Reorder the array
-            const newFavorites = [...currentFavorites];
-            const [movedId] = newFavorites.splice(currentIndex, 1);
-            newFavorites.splice(newIndex, 0, movedId);
-
-            // Save new order
-            try {
-                await this.actor.unsetFlag(MODULE.ID, 'favorites');
-                await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-            } catch (flagError) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Error updating favorites flags",
-                    flagError,
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
-                return;
-            }
-
-            // Re-render
-            await this.render(this.element);
-
+            console.log("SQUIRE | Reorder complete");
         } catch (error) {
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Error during favorites reordering",
-                error,
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
+            console.error("SQUIRE | Error reordering favorites", error);
         }
     }
 } 
