@@ -40,7 +40,6 @@ export class ControlPanel {
     _handleSearch(searchTerm) {
         // Convert search term to lowercase for case-insensitive comparison
         searchTerm = searchTerm.toLowerCase();
-        console.log('SQUIRE | Search term:', searchTerm);
 
         // Toggle visibility of individual search boxes based on global search state
         this.element.find('.panel-containers.stacked .panel-container .search-container').toggle(searchTerm === '');
@@ -71,9 +70,6 @@ export class ControlPanel {
             // Find all items in this panel using the correct class name
             const itemClass = itemClassMap[panelType];
             const items = panelElement.find(`.${itemClass}-item`);
-            
-            console.log(`SQUIRE | ${panelType} panel - Selector:`, `.${itemClass}-item`);
-            console.log(`SQUIRE | ${panelType} panel - Total items found:`, items.length);
 
             let visibleItemsInPanel = 0;  // Initialize counter for this panel
 
@@ -84,7 +80,6 @@ export class ControlPanel {
                 
                 // Skip if no name element found
                 if (nameElement.length === 0) {
-                    console.log(`SQUIRE | ${panelType} item: No name element found`);
                     return;
                 }
 
@@ -121,13 +116,10 @@ export class ControlPanel {
                 visibleCategories.forEach(categoryId => {
                     const header = panelElement.find(`.category-header[data-category-id="${categoryId}"]`);
                     if (header.length) {
-                        console.log(`SQUIRE | ${panelType} showing category:`, categoryId);
                         header.show();
                     }
                 });
             }
-
-            console.log(`SQUIRE | ${panelType} panel - Visible items:`, visibleItemsInPanel);
 
             // Update panel counter
             visibleCounts[panelType] = visibleItemsInPanel;
@@ -149,11 +141,6 @@ export class ControlPanel {
                 const $header = $(header);
                 const categoryId = $header.data('category-id');
                 const $nextSpells = spellsPanel.find(`[data-category-id="${categoryId}"]:visible`);
-                console.log(`SQUIRE | Spells category:`, {
-                    categoryId,
-                    visibleSpells: $nextSpells.length,
-                    headerFound: $header.length > 0
-                });
                 $header.toggle($nextSpells.length > 0);
             });
         }
