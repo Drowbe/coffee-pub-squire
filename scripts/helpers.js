@@ -43,12 +43,6 @@ export const registerHelpers = function() {
 
     // Helper to check if array includes a value
     Handlebars.registerHelper('includes', function(array, value) {
-        console.log('SQUIRE | Includes Helper Debug:', {
-            array: array,
-            value: value,
-            isArray: Array.isArray(array),
-            result: Array.isArray(array) && array.includes(value)
-        });
         if (!array || !Array.isArray(array)) return false;
         return array.includes(value);
     });
