@@ -4,19 +4,9 @@ import { PanelManager } from './panel-manager.js';
 
 export class SpellsPanel {
     constructor(actor) {
-        console.log('SQUIRE | INIT DEBUG | SpellsPanel constructor:', {
-            actor: !!actor,
-            panelManagerExists: !!PanelManager.instance,
-            timestamp: new Date().toISOString()
-        });
-        
         this.actor = actor;
         this.spells = this._getSpells();
         this.showOnlyPrepared = game.settings.get(MODULE.ID, 'showOnlyPreparedSpells');
-        console.log('SQUIRE | INIT DEBUG | Initialized showOnlyPrepared:', {
-            value: this.showOnlyPrepared,
-            timestamp: new Date().toISOString()
-        });
         // Don't set panelManager in constructor
     }
 
@@ -34,16 +24,6 @@ export class SpellsPanel {
             const isFavorite = favorites.includes(spell.id);
             const level = spell.system.level;
             const isAtWill = spell.system.preparation?.mode === 'atwill';
-            
-            // Debug log for a single spell's data structure
-            if (spell.name === "Aid") {  // Log a specific spell to avoid console spam
-                console.log('SQUIRE | Mapped Spell Data:', {
-                    name: spell.name,
-                    properties: spell.system.properties,
-                    mappedProperties: spell.system.properties || [],
-                    fullSystem: spell.system
-                });
-            }
             
             return {
                 id: spell.id,
@@ -66,14 +46,6 @@ export class SpellsPanel {
     }
 
     _getActionType(spell) {
-        // Debug log the spell data
-        console.log("SQUIRE | Spell Action Type Debug:", {
-            spellName: spell.name,
-            system: spell.system,
-            activation: spell.system.activation,
-            time: spell.system.time
-        });
-
         // Check activation type
         if (spell.system.activation?.type) {
             const type = spell.system.activation.type;
@@ -99,27 +71,15 @@ export class SpellsPanel {
     }
 
     async render(html) {
-        console.log('SQUIRE | INIT DEBUG | SpellsPanel render start:', {
-            hasHtml: !!html,
-            hasElement: !!this.element,
-            panelManagerExists: !!PanelManager.instance,
-            timestamp: new Date().toISOString()
-        });
-
         if (html) {
             this.element = html;
         }
         if (!this.element) {
-            console.log('SQUIRE | INIT DEBUG | No element to render to');
             return;
         }
 
         // Get panel manager reference at render time
         this.panelManager = PanelManager.instance;
-        console.log('SQUIRE | INIT DEBUG | Got panel manager:', {
-            panelManagerExists: !!this.panelManager,
-            timestamp: new Date().toISOString()
-        });
 
         // Refresh spells data
         this.spells = this._getSpells();
@@ -152,11 +112,6 @@ export class SpellsPanel {
             showOnlyPrepared: this.showOnlyPrepared
         };
 
-        console.log('SQUIRE | RENDER DEBUG | Rendering with showOnlyPrepared:', {
-            value: this.showOnlyPrepared,
-            timestamp: new Date().toISOString()
-        });
-
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
         
         // Remove old listeners before updating HTML
@@ -179,16 +134,6 @@ export class SpellsPanel {
         if (!this.actor) return [];
         const spellbook = this.actor.system.spells;
         
-        // Debug logging for raw spellbook data
-        console.log("SQUIRE | Spellbook Data Debug:", {
-            actor: this.actor.name,
-            actorId: this.actor.id,
-            spellbook: spellbook,
-            pactMagic: spellbook.pact,
-            spellLevels: Object.keys(spellbook).filter(k => k.startsWith('spell')),
-            timestamp: new Date().toISOString()
-        });
-        
         // Convert spellbook data into array format
         const slots = [];
         for (let i = 1; i <= 9; i++) {
@@ -201,24 +146,8 @@ export class SpellsPanel {
                     used: ((spellLevelData.override ?? spellLevelData.max) || 0) - (spellLevelData.value || 0)
                 };
                 slots.push(slotData);
-                
-                // Debug logging for each level's data
-                console.log(`SQUIRE | Level ${i} Spell Slots Debug:`, {
-                    raw: spellLevelData,
-                    computed: slotData,
-                    hasOverride: 'override' in spellLevelData,
-                    timestamp: new Date().toISOString()
-                });
             }
         }
-        
-        // Debug final slots array
-        console.log("SQUIRE | Final Slots Array Debug:", {
-            slots: slots,
-            totalSlots: slots.reduce((sum, s) => sum + s.max, 0),
-            usedSlots: slots.reduce((sum, s) => sum + (s.max - s.value), 0),
-            timestamp: new Date().toISOString()
-        });
         
         return slots;
     }
@@ -249,19 +178,7 @@ export class SpellsPanel {
     }
 
     _activateListeners(html) {
-        console.log('SQUIRE | CLICK DEBUG | Initializing listeners:', {
-            htmlExists: !!html,
-            panelManagerExists: !!this.panelManager,
-            htmlIsJQuery: html instanceof $,
-            foundPanel: html?.find('[data-panel="spells"]').length > 0,
-            spellFilterExists: html?.find('.spell-filter-toggle').length > 0
-        });
-
         if (!html || !this.panelManager) {
-            console.error('SQUIRE | CLICK DEBUG | Missing required objects:', {
-                html: !!html,
-                panelManager: !!this.panelManager
-            });
             return;
         }
 
@@ -270,24 +187,10 @@ export class SpellsPanel {
         
         // Remove any existing listeners
         panel.off('click.squireSpells');
-        
-        // Debug the panel element
-        console.log('SQUIRE | CLICK DEBUG | Panel element:', {
-            panelExists: panel.length > 0,
-            filterToggleExists: panel.find('.spell-filter-toggle').length > 0,
-            panelHtml: panel.html()
-        });
 
         // Add direct click handler to the filter toggle
         const filterToggle = panel.find('.spell-filter-toggle');
         filterToggle.on('click.squireSpells', async (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Filter toggle clicked:', {
-                currentState: this.showOnlyPrepared,
-                element: event.currentTarget,
-                classes: $(event.currentTarget).attr('class'),
-                timestamp: new Date().toISOString()
-            });
-            
             this.showOnlyPrepared = !this.showOnlyPrepared;
             await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
             
@@ -295,22 +198,11 @@ export class SpellsPanel {
             $target.toggleClass('active', this.showOnlyPrepared);
             $target.toggleClass('faded', !this.showOnlyPrepared);
             
-            console.log('SQUIRE | CLICK DEBUG | After toggle:', {
-                newState: this.showOnlyPrepared,
-                elementClasses: $target.attr('class'),
-                timestamp: new Date().toISOString()
-            });
-            
             this._updateVisibility(html);
         });
 
         // Level filter toggles
         panel.on('click.squireSpells', '.spell-level-filter', (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Level filter clicked:', {
-                target: event.currentTarget,
-                filterId: $(event.currentTarget).data('filter-id'),
-                timestamp: new Date().toISOString()
-            });
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
             this.panelManager.toggleCategory(categoryId, panel[0]);
@@ -318,10 +210,6 @@ export class SpellsPanel {
 
         // Prepared toggle (sun icon)
         panel.on('click.squireSpells', '.tray-buttons .fa-sun', async (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Sun icon clicked:', {
-                spellId: $(event.currentTarget).closest('.spell-item').data('spell-id'),
-                timestamp: new Date().toISOString()
-            });
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
@@ -338,20 +226,12 @@ export class SpellsPanel {
 
         // Favorite toggle (heart icon)
         panel.on('click.squireSpells', '.tray-buttons .fa-heart', async (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Heart icon clicked:', {
-                spellId: $(event.currentTarget).closest('.spell-item').data('spell-id'),
-                timestamp: new Date().toISOString()
-            });
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             await FavoritesPanel.manageFavorite(this.actor, spellId);
         });
 
         // Cast spell (roll overlay)
         panel.on('click.squireSpells', '.spell-image-container .spell-roll-overlay', async (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Spell roll overlay clicked:', {
-                spellId: $(event.currentTarget).closest('.spell-item').data('spell-id'),
-                timestamp: new Date().toISOString()
-            });
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
@@ -361,18 +241,12 @@ export class SpellsPanel {
 
         // View spell details (feather icon)
         panel.on('click.squireSpells', '.tray-buttons .fa-feather', async (event) => {
-            console.log('SQUIRE | CLICK DEBUG | Feather icon clicked:', {
-                spellId: $(event.currentTarget).closest('.spell-item').data('spell-id'),
-                timestamp: new Date().toISOString()
-            });
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 spell.sheet.render(true);
             }
         });
-
-        console.log('SQUIRE | CLICK DEBUG | All listeners activated');
     }
 
     _removeEventListeners(panel) {
