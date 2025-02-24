@@ -446,18 +446,6 @@ export class PanelManager {
                         
                         // Debug log the UUID generation
                         const itemUUID = this._getItemUUID(createdItem[0], data);
-                        // blacksmith?.utils.postConsoleAndNotification(
-                        //     "SQUIRE | Generated UUID for Item drop",
-                        //     {
-                        //         data,
-                        //         createdItem: createdItem[0],
-                        //         generatedUUID: itemUUID
-                        //     },
-                        //     false,
-                        //     true,
-                        //     false,
-                        //     MODULE.TITLE
-                        // );
                         
                         // Send chat notification
                         const chatData = {
@@ -684,15 +672,12 @@ export class PanelManager {
             }
             
             // Regular condition icon click handling continues here...
-            console.log("SQUIRE | Condition icon clicked");
             const conditionName = event.currentTarget.title;
-            console.log("SQUIRE | Condition name:", conditionName);
             
             // Try to get the condition data from CONFIG.DND5E.conditionTypes
             let description = "No description available.";
             try {
                 const conditionData = CONFIG.DND5E.conditionTypes[conditionName.toLowerCase()];
-                console.log("SQUIRE | Condition data:", conditionData);
 
                 // Get the icon path from the clicked element
                 const iconPath = event.currentTarget.src;
@@ -768,7 +753,6 @@ export class PanelManager {
             }
             
             const conditionName = event.currentTarget.title;
-            console.log("SQUIRE | Removing condition:", conditionName);
             
             try {
                 // Find the effect with this condition name
@@ -944,19 +928,6 @@ export class PanelManager {
 
 // Hooks
 Hooks.on('canvasReady', async () => {
-    // Debug log the available tokens and ownership
-    console.log("SQUIRE | Canvas Ready Token Debug", {
-        availableTokens: canvas.tokens?.placeables.map(t => ({
-            name: t.name,
-            actorId: t.actor?.id,
-            isOwner: t.actor?.isOwner,
-            isControlled: t.controlled,
-            type: t.actor?.type
-        })),
-        defaultCharacter: game.user.character?.name,
-        userId: game.user.id
-    });
-
     // Try to find a suitable actor in this order:
     // 1. Currently controlled token
     // 2. User's default character
@@ -969,7 +940,6 @@ Hooks.on('canvasReady', async () => {
     initialActor = canvas.tokens?.controlled[0]?.actor;
     if (initialActor) {
         selectionReason = "controlled token";
-        console.log("SQUIRE | Using controlled token:", initialActor.name);
     }
     
     // 2. Try default character if no controlled token
@@ -977,7 +947,6 @@ Hooks.on('canvasReady', async () => {
         initialActor = game.user.character;
         if (initialActor) {
             selectionReason = "default character";
-            console.log("SQUIRE | Using default character:", initialActor.name);
         }
     }
     
@@ -989,7 +958,6 @@ Hooks.on('canvasReady', async () => {
         initialActor = characterToken?.actor;
         if (initialActor) {
             selectionReason = "first owned character token";
-            console.log("SQUIRE | Using first owned character token:", initialActor.name);
         }
     }
     
@@ -999,20 +967,11 @@ Hooks.on('canvasReady', async () => {
         initialActor = anyToken?.actor;
         if (initialActor) {
             selectionReason = "first owned token";
-            console.log("SQUIRE | Using first owned token:", initialActor.name);
         }
     }
-    
+
     // Initialize with the found actor
     if (initialActor) {
-        console.log("SQUIRE | Selected Initial Actor", {
-            name: initialActor.name,
-            id: initialActor.id,
-            type: initialActor.type,
-            isOwner: initialActor.isOwner,
-            selectionReason: selectionReason
-        });
-
         if (PanelManager.element) {
             PanelManager.element.removeClass('expanded');
         }
