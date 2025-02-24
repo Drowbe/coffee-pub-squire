@@ -833,3 +833,8 @@
 .squire-tray.reordering-favorites .tray-content.drop-hover {
     background: none;
 }
+
+.favorite-item .tray-buttons .fa-stars {
+    color: #ffd700;
+    text-shadow: 0 0 3px #ffd700;
+}

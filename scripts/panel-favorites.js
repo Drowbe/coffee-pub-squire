@@ -123,7 +123,8 @@ export class FavoritesPanel {
                 system: item.system,
                 equipped: item.system.equipped,
                 hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type)
+                showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                showStarIcon: item.type === 'feat'
             }));
             
         return favoritedItems;
