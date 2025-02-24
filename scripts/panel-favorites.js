@@ -10,7 +10,24 @@ export class FavoritesPanel {
     static async clearFavorites(actor) {
         await actor.unsetFlag(MODULE.ID, 'favorites');
         if (PanelManager.instance) {
-            await PanelManager.instance.updateTray();
+            // First update the favorites panel
+            if (PanelManager.instance.favoritesPanel?.element) {
+                await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+            }
+
+            // Then update all other panels
+            if (PanelManager.instance.inventoryPanel?.element) {
+                await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+            }
+            if (PanelManager.instance.weaponsPanel?.element) {
+                await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
+            }
+            if (PanelManager.instance.spellsPanel?.element) {
+                await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+            }
+
+            // Update the handle to reflect the cleared favorites
+            await PanelManager.instance.updateHandle();
         }
         return [];
     }
@@ -104,7 +121,8 @@ export class FavoritesPanel {
                 img: item.img || 'icons/svg/item-bag.svg',
                 type: item.type,
                 system: item.system,
-                equipped: item.system.equipped
+                equipped: item.system.equipped,
+                hasEquipToggle: ['weapon', 'equipment', 'tool'].includes(item.type)
             }));
             
         return favoritedItems;
@@ -140,6 +158,17 @@ export class FavoritesPanel {
         
         // Update HTML
         favoritesPanel.html(template);
+        
+        // Add equipped class to equipped items
+        favoritesPanel.find('.favorite-item').each((_, item) => {
+            const $item = $(item);
+            const itemId = $item.data('item-id');
+            const favoriteItem = this.favorites.find(f => f.id === itemId);
+            if (favoriteItem?.equipped) {
+                $item.addClass('equipped');
+                $item.find('.fa-shield-alt').removeClass('faded');
+            }
+        });
         
         // Add new event listeners
         this._activateListeners(html);
