@@ -109,13 +109,13 @@
 .action-type {
     display: inline-flex;
     align-items: center;
-    margin-left: 6px;
+    margin-left: 3px;
 }
 
 .action-type i {
-    font-size: 12px;
-    width: 16px;
-    height: 16px;
+    font-size: 10px;
+    width: 12px;
+    height: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -124,10 +124,10 @@
     color: #eee;
 }
 
-.action-type i.fa-circle-a { color: #ff6b6b; }
-.action-type i.fa-circle-b { color: #ffd93d; }
-.action-type i.fa-circle-r { color: #4dabf7; }
-.action-type i.fa-circle-s { color: #da77f2; }
+.action-type i.fa-circle-a { color: #4fc538; }
+.action-type i.fa-circle-b { color: #ccad32; }
+.action-type i.fa-circle-r { color: #439ce6; }
+.action-type i.fa-circle-s { color: #9c77f2; }
 
 .action-type i:hover {
     background: rgba(120, 100, 82, 0.3);

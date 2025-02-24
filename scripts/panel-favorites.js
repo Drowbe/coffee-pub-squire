@@ -271,123 +271,50 @@ export class FavoritesPanel {
         if (!html) return;
 
         const panel = html.find('[data-panel="favorites"]');
+        const self = this; // Store panel instance reference
 
-        // Drag and drop events for items
-        panel.find('.favorite-item')
-            .on('dragstart', function(event) {
-                const $item = $(this);
-                $item.addClass('dragging');
+        // Add context menu for reordering
+        new ContextMenu(panel.find('.favorite-item'), {
+            callback: (target) => {
+                const $item = $(target);
+                const itemId = $item.data('item-id');
+                const $items = panel.find('.favorite-item:visible');
+                const currentIndex = $items.index($item);
+                const totalItems = $items.length;
                 
-                // Add class to tray to prevent showing drop area
-                $('.squire-tray').addClass('reordering-favorites');
+                const menuItems = [];
                 
-                const dragData = {
-                    type: 'favorite-reorder',
-                    itemId: $item.data('item-id')
-                };
-                
-                // Set drag data and effect
-                event.originalEvent.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-                event.originalEvent.dataTransfer.effectAllowed = 'move';
-                event.originalEvent.dataTransfer.dropEffect = 'move';
-                
-                // Set a custom drag image if needed
-                const dragImage = $item[0].cloneNode(true);
-                dragImage.style.opacity = '0.7';
-                document.body.appendChild(dragImage);
-                event.originalEvent.dataTransfer.setDragImage(dragImage, 0, 0);
-                setTimeout(() => document.body.removeChild(dragImage), 0);
-            })
-            .on('dragend', function(event) {
-                $(this).removeClass('dragging');
-                panel.find('.drag-over').removeClass('drag-over');
-                $('.squire-tray').removeClass('reordering-favorites');
-            })
-            .on('dragenter', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                const $target = $(this);
-                const $dragging = panel.find('.favorite-item.dragging');
-                
-                if ($dragging.length && !$target.is($dragging)) {
-                    $target.addClass('drag-over');
+                // Only add "Move Up" if not at top
+                if (currentIndex > 0) {
+                    menuItems.push({
+                        name: "Move to Top",
+                        icon: '<i class="fas fa-angle-double-up"></i>',
+                        callback: () => self._reorderFavorite(itemId, 0)
+                    });
+                    menuItems.push({
+                        name: "Move Up",
+                        icon: '<i class="fas fa-angle-up"></i>',
+                        callback: () => self._reorderFavorite(itemId, currentIndex - 1)
+                    });
                 }
-            })
-            .on('dragover', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
                 
-                // Always set move effect during dragover
-                event.originalEvent.dataTransfer.dropEffect = 'move';
-                
-                const $target = $(this);
-                const $dragging = panel.find('.favorite-item.dragging');
-                
-                // Only show drop indicator if we're not dragging over the dragged item itself
-                if ($dragging.length && !$target.is($dragging)) {
-                    const targetRect = this.getBoundingClientRect();
-                    const mouseY = event.originalEvent.clientY;
-                    const threshold = targetRect.top + (targetRect.height / 2);
-                    
-                    // Remove drag-over class from all items except current target
-                    panel.find('.drag-over').not($target).removeClass('drag-over');
-                    $target.addClass('drag-over');
+                // Only add "Move Down" if not at bottom
+                if (currentIndex < totalItems - 1) {
+                    menuItems.push({
+                        name: "Move Down",
+                        icon: '<i class="fas fa-angle-down"></i>',
+                        callback: () => self._reorderFavorite(itemId, currentIndex + 1)
+                    });
+                    menuItems.push({
+                        name: "Move to Bottom",
+                        icon: '<i class="fas fa-angle-double-down"></i>',
+                        callback: () => self._reorderFavorite(itemId, totalItems - 1)
+                    });
                 }
-            })
-            .on('dragleave', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
                 
-                $(this).removeClass('drag-over');
-            })
-            .on('drop', async function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                const $target = $(this);
-
-                try {
-                    const dragData = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
-
-                    if (dragData.type !== 'favorite-reorder') {
-                        return;
-                    }
-
-                    const $items = panel.find('.favorite-item:visible');
-                    const $draggedItem = $items.filter(`[data-item-id="${dragData.itemId}"]`);
-                    
-                    if (!$draggedItem.length) {
-                        return;
-                    }
-
-                    const fromIndex = $items.index($draggedItem);
-                    const toIndex = $items.index($target);
-
-                    if (fromIndex === toIndex) {
-                        return;
-                    }
-                    
-                    // Get current favorites and reorder
-                    const currentFavorites = FavoritesPanel.getFavorites(this.actor);
-                    const newFavorites = [...currentFavorites];
-                    const [movedId] = newFavorites.splice(fromIndex, 1);
-                    newFavorites.splice(toIndex, 0, movedId);
-                    
-                    // Save new order
-                    await this.actor.unsetFlag(MODULE.ID, 'favorites');
-                    await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-
-                    // Re-render
-                    await this.render(this.element);
-                } catch (error) {
-                    console.error('SQUIRE | Error during drop:', error);
-                } finally {
-                    // Clean up
-                    $target.removeClass('drag-over');
-                    panel.find('.drag-over').removeClass('drag-over');
-                }
-            });
+                return menuItems;
+            }
+        });
 
         // Filter toggles
         html.find('.favorites-spell-toggle').click(async (event) => {
@@ -507,5 +434,72 @@ export class FavoritesPanel {
         html.find('.favorites-clear-all').click(async () => {
             await FavoritesPanel.clearFavorites(this.actor);
         });
+    }
+
+    async _reorderFavorite(itemId, newIndex) {
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        try {
+            // Get current favorites
+            const currentFavorites = FavoritesPanel.getFavorites(this.actor);
+            if (!Array.isArray(currentFavorites)) {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Invalid favorites data structure",
+                    { currentFavorites },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                return;
+            }
+
+            // Find current index of the item
+            const currentIndex = currentFavorites.indexOf(itemId);
+            if (currentIndex === -1) {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Could not find item in favorites",
+                    { itemId },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                return;
+            }
+
+            // Reorder the array
+            const newFavorites = [...currentFavorites];
+            const [movedId] = newFavorites.splice(currentIndex, 1);
+            newFavorites.splice(newIndex, 0, movedId);
+
+            // Save new order
+            try {
+                await this.actor.unsetFlag(MODULE.ID, 'favorites');
+                await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
+            } catch (flagError) {
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Error updating favorites flags",
+                    flagError,
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                return;
+            }
+
+            // Re-render
+            await this.render(this.element);
+
+        } catch (error) {
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Error during favorites reordering",
+                error,
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+        }
     }
 } 

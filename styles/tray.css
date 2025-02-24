@@ -822,18 +822,6 @@
     margin-left: 8px;
 }
 
-/* --------------------------- CLEAN CODE ABOVE???? --------------------- */
-
-/* Disable tray drop zone during favorites reordering */
-.squire-tray.reordering-favorites .tray-content.drop-hover::before,
-.squire-tray.reordering-favorites .tray-content.drop-hover::after {
-    display: none;
-}
-
-.squire-tray.reordering-favorites .tray-content.drop-hover {
-    background: none;
-}
-
 .favorite-item .tray-buttons .fa-stars {
     color: #ffd700;
     text-shadow: 0 0 3px #ffd700;
