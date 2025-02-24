@@ -18,16 +18,6 @@ export class FavoritesPanel {
     static async manageFavorite(actor, itemId) {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         try {
-            // Log the stack trace to see where this is being called from
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | manageFavorite call stack",
-                new Error().stack,
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
-
             // Ensure we have a valid itemId
             if (!itemId) {
                 blacksmith?.utils.postConsoleAndNotification(
@@ -46,43 +36,14 @@ export class FavoritesPanel {
             const newFavorites = favorites.includes(itemId)
                 ? favorites.filter(id => id !== itemId)
                 : [...favorites, itemId];
-            
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Managing favorites - Before Update",
-                { favorites, newFavorites, itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
 
             // Update the flag and wait for it to complete
             await actor.unsetFlag(MODULE.ID, 'favorites');
             await actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-            
-            // Verify the update
-            const verifyFavorites = actor.getFlag(MODULE.ID, 'favorites') || [];
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Verifying favorites after update",
-                { verifyFavorites, shouldMatch: newFavorites },
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
 
             // Get the PanelManager instance directly
             const panelManager = PanelManager.instance;
             if (panelManager) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Starting panel updates",
-                    { itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
-
                 // First update the favorites panel
                 if (panelManager.favoritesPanel?.element) {
                     await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
@@ -101,15 +62,6 @@ export class FavoritesPanel {
 
                 // Update just the handle to refresh favorites
                 await panelManager.updateHandle();
-
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Panel updates complete",
-                    { itemId, action: favorites.includes(itemId) ? 'remove' : 'add' },
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
             }
 
             return newFavorites.includes(itemId);
@@ -143,15 +95,6 @@ export class FavoritesPanel {
         const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Favorites from flag in _getFavorites",
-            favorites,
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
-        
         // Get only favorited items
         const favoritedItems = this.actor.items
             .filter(item => favorites.includes(item.id))
@@ -164,15 +107,6 @@ export class FavoritesPanel {
                 equipped: item.system.equipped
             }));
             
-        blacksmith?.utils.postConsoleAndNotification(
-            "SQUIRE | Mapped favorited items",
-            favoritedItems,
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
-        
         return favoritedItems;
     }
 
@@ -291,11 +225,6 @@ export class FavoritesPanel {
     }
 
     _activateListeners(html) {
-        console.log('SQUIRE | Favorites Panel - Activating Listeners', {
-            html: html ? 'exists' : 'missing',
-            panelExists: html?.find('[data-panel="favorites"]').length > 0
-        });
-
         if (!html) return;
 
         const panel = html.find('[data-panel="favorites"]');
@@ -314,8 +243,6 @@ export class FavoritesPanel {
                     itemId: $item.data('item-id')
                 };
                 
-                console.log('SQUIRE | Drag started:', dragData);
-                
                 // Set drag data and effect
                 event.originalEvent.dataTransfer.setData('text/plain', JSON.stringify(dragData));
                 event.originalEvent.dataTransfer.effectAllowed = 'move';
@@ -329,7 +256,6 @@ export class FavoritesPanel {
                 setTimeout(() => document.body.removeChild(dragImage), 0);
             })
             .on('dragend', function(event) {
-                console.log('SQUIRE | Drag ended');
                 $(this).removeClass('dragging');
                 panel.find('.drag-over').removeClass('drag-over');
                 $('.squire-tray').removeClass('reordering-favorites');
@@ -342,7 +268,6 @@ export class FavoritesPanel {
                 const $dragging = panel.find('.favorite-item.dragging');
                 
                 if ($dragging.length && !$target.is($dragging)) {
-                    console.log('SQUIRE | Drag entered:', $target.data('item-id'));
                     $target.addClass('drag-over');
                 }
             })
@@ -365,20 +290,12 @@ export class FavoritesPanel {
                     // Remove drag-over class from all items except current target
                     panel.find('.drag-over').not($target).removeClass('drag-over');
                     $target.addClass('drag-over');
-                    
-                    console.log('SQUIRE | Dragging over:', {
-                        itemId: $target.data('item-id'),
-                        position: mouseY < threshold ? 'above' : 'below',
-                        mouseY,
-                        threshold
-                    });
                 }
             })
             .on('dragleave', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
                 
-                console.log('SQUIRE | Drag left:', $(this).data('item-id'));
                 $(this).removeClass('drag-over');
             })
             .on('drop', async function(event) {
@@ -386,32 +303,25 @@ export class FavoritesPanel {
                 event.stopPropagation();
                 
                 const $target = $(this);
-                console.log('SQUIRE | Drop on target:', $target.data('item-id'));
-                
+
                 try {
                     const dragData = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
-                    console.log('SQUIRE | Drop data:', dragData);
-                    
+
                     if (dragData.type !== 'favorite-reorder') {
-                        console.log('SQUIRE | Not a favorite reorder, ignoring drop');
                         return;
                     }
-                    
+
                     const $items = panel.find('.favorite-item:visible');
                     const $draggedItem = $items.filter(`[data-item-id="${dragData.itemId}"]`);
                     
                     if (!$draggedItem.length) {
-                        console.log('SQUIRE | Dragged item not found:', dragData.itemId);
                         return;
                     }
-                    
+
                     const fromIndex = $items.index($draggedItem);
                     const toIndex = $items.index($target);
-                    
-                    console.log('SQUIRE | Reordering:', { fromIndex, toIndex });
-                    
+
                     if (fromIndex === toIndex) {
-                        console.log('SQUIRE | Same position, no reorder needed');
                         return;
                     }
                     
@@ -421,12 +331,10 @@ export class FavoritesPanel {
                     const [movedId] = newFavorites.splice(fromIndex, 1);
                     newFavorites.splice(toIndex, 0, movedId);
                     
-                    console.log('SQUIRE | New favorites order:', newFavorites);
-                    
                     // Save new order
                     await this.actor.unsetFlag(MODULE.ID, 'favorites');
                     await this.actor.setFlag(MODULE.ID, 'favorites', newFavorites);
-                    
+
                     // Re-render
                     await this.render(this.element);
                 } catch (error) {
@@ -489,7 +397,6 @@ export class FavoritesPanel {
 
         // Toggle favorite
         panel.on('click', '.tray-buttons .fa-heart', async (event) => {
-            console.log('SQUIRE | Favorites Panel - Heart Click Handler Triggered');
             const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
             await FavoritesPanel.manageFavorite(this.actor, itemId);
         });
