@@ -20,10 +20,12 @@
             {{/if}}
         </div>
         <div class="tray-buttons">
-            {{#if system.equipped}}
-            <i class="fas fa-shield-alt" title="Toggle Equipped"></i>
-            {{else}}
-            <i class="fas fa-shield-alt faded" title="Toggle Equipped"></i>
+            {{#if (or (eq type "weapon") (eq type "equipment") (eq type "tool") (eq type "consumable"))}}
+                {{#if system.equipped}}
+                <i class="fas fa-shield-alt" title="Toggle Equipped"></i>
+                {{else}}
+                <i class="fas fa-shield-alt faded" title="Toggle Equipped"></i>
+                {{/if}}
             {{/if}}
             {{#if isFavorite}}
             <i class="fas fa-heart" title="Toggle Favorite"></i>
@@ -66,7 +68,8 @@
                 system=item.system 
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
-                categoryId="category-inventory-equipment"}}
+                categoryId="category-inventory-equipment"
+                type=item.type}}
             {{/each}}
             {{/if}}
 
@@ -82,7 +85,8 @@
                 system=item.system 
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
-                categoryId="category-inventory-consumable"}}
+                categoryId="category-inventory-consumable"
+                type=item.type}}
             {{/each}}
             {{/if}}
 
@@ -98,7 +102,8 @@
                 system=item.system 
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
-                categoryId="category-inventory-tool"}}
+                categoryId="category-inventory-tool"
+                type=item.type}}
             {{/each}}
             {{/if}}
 
@@ -114,7 +119,8 @@
                 system=item.system 
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
-                categoryId="category-inventory-loot"}}
+                categoryId="category-inventory-loot"
+                type=item.type}}
             {{/each}}
             {{/if}}
 
@@ -130,7 +136,8 @@
                 system=item.system 
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
-                categoryId="category-inventory-container"}}
+                categoryId="category-inventory-container"
+                type=item.type}}
             {{/each}}
             {{/if}}
 

@@ -186,10 +186,33 @@ export class InventoryPanel {
                 });
                 // Update the UI immediately
                 const $item = $(event.currentTarget).closest('.inventory-item');
-                $item.toggleClass('prepared', newEquipped);
+                $item.toggleClass('equipped', newEquipped);
                 $(event.currentTarget).toggleClass('faded', !newEquipped);
+
                 // Update visibility in case we're filtering by equipped
                 this._updateVisibility(html);
+
+                // Update all panels to reflect the new equipped state
+                if (PanelManager.instance) {
+                    // First update the favorites panel
+                    if (PanelManager.instance.favoritesPanel?.element) {
+                        await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                    }
+
+                    // Then update all other panels
+                    if (PanelManager.instance.inventoryPanel?.element) {
+                        await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                    }
+                    if (PanelManager.instance.weaponsPanel?.element) {
+                        await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
+                    }
+                    if (PanelManager.instance.spellsPanel?.element) {
+                        await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                    }
+
+                    // Update the handle to reflect the new equipped state
+                    await PanelManager.instance.updateHandle();
+                }
             }
         });
     }

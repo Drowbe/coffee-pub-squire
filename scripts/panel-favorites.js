@@ -122,7 +122,8 @@ export class FavoritesPanel {
                 type: item.type,
                 system: item.system,
                 equipped: item.system.equipped,
-                hasEquipToggle: ['weapon', 'equipment', 'tool'].includes(item.type)
+                hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type)
             }));
             
         return favoritedItems;
@@ -159,14 +160,26 @@ export class FavoritesPanel {
         // Update HTML
         favoritesPanel.html(template);
         
-        // Add equipped class to equipped items
+        // Add equipped class and handle shield icon visibility for equipped items
         favoritesPanel.find('.favorite-item').each((_, item) => {
             const $item = $(item);
             const itemId = $item.data('item-id');
             const favoriteItem = this.favorites.find(f => f.id === itemId);
-            if (favoriteItem?.equipped) {
-                $item.addClass('equipped');
-                $item.find('.fa-shield-alt').removeClass('faded');
+            
+            if (favoriteItem) {
+                // Handle equipped state
+                if (favoriteItem.equipped) {
+                    $item.addClass('equipped');
+                }
+                
+                // Handle shield icon visibility and state
+                const $shieldIcon = $item.find('.fa-shield-alt');
+                if (favoriteItem.showEquipToggle) {
+                    $shieldIcon.show();
+                    $shieldIcon.toggleClass('faded', !favoriteItem.equipped);
+                } else {
+                    $shieldIcon.hide();
+                }
             }
         });
         
@@ -462,11 +475,28 @@ export class FavoritesPanel {
                 });
                 // Update the UI immediately
                 const $item = $(event.currentTarget).closest('.favorite-item');
-                $item.toggleClass('prepared', newEquipped);
+                $item.toggleClass('equipped', newEquipped);
                 $(event.currentTarget).toggleClass('faded', !newEquipped);
 
                 // Update the handle to reflect the new equipped state
                 if (PanelManager.instance) {
+                    // First update the favorites panel
+                    if (PanelManager.instance.favoritesPanel?.element) {
+                        await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                    }
+
+                    // Then update all other panels
+                    if (PanelManager.instance.inventoryPanel?.element) {
+                        await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                    }
+                    if (PanelManager.instance.weaponsPanel?.element) {
+                        await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
+                    }
+                    if (PanelManager.instance.spellsPanel?.element) {
+                        await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                    }
+
+                    // Update the handle to reflect the new equipped state
                     await PanelManager.instance.updateHandle();
                 }
             }
