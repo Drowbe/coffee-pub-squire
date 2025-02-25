@@ -2,19 +2,26 @@
     <!-- HEADER -->
 
         <div class="header-left">
-            <div class="character-portrait">
-                <img src="{{actor.img}}" alt="{{actor.name}}" title="{{actor.name}} {{#if actor.system.details.alignment}} • {{actor.system.details.alignment}}{{/if}}"> 
+            <div class="character-portrait clickable" title="Click to share portrait with all players">
+                <img src="{{actor.img}}" alt="{{actor.name}}" title="{{actor.name}}"> 
             </div>
             <div class="character-info">
                 <span class="character-name">{{actor.name}}</span>
                 <div class="character-details">
                     <div class="details-primary">
-                        {{#each actor.items as |item|}}{{#if (eq item.type "class")}}{{item.name}}{{/if}}{{/each}}
-                        {{#each actor.items as |item|}}{{#if (eq item.type "class")}} • {{item.system.levels}}{{/if}}{{/each}}
+                        {{#if (eq actor.type "character")}}
+                            {{#each actor.items as |item|}}
+                                {{#if (eq item.type "class")}}
+                                    {{item.name}} • Level {{item.system.levels}}
+                                {{/if}}
+                            {{/each}}
+                        {{else}}
+                            {{#if actor.system.details.cr}}CR {{actor.system.details.cr}}{{/if}}
+                        {{/if}}
+                        {{#if actor.system.details.alignment}} • {{actor.system.details.alignment}}{{/if}}
                     </div>
                     <div class="details-secondary">
-                        {{#if actor.system.details.race}}{{actor.system.details.race}}{{/if}}
-                        {{#each actor.items as |item|}}{{#if (eq item.type "class")}} • {{item.system.subclass.name}}{{/if}}{{/each}}
+                        <!-- HEALTH MAYBE HERE -->
                     </div>
                 </div>
             </div>

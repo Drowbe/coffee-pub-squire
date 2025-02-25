@@ -28,6 +28,16 @@ export class CharacterPanel {
             this.actor.sheet.render(true);
         });
 
+        // Share portrait
+        html.find('.character-portrait').click(() => {
+            const imagePopout = new ImagePopout(this.actor.img, {
+                title: this.actor.name,
+                shareable: true,
+                uuid: this.actor.uuid
+            });
+            imagePopout.render(true);
+        });
+
         // Refresh tray
         html.find('.tray-refresh').click(async (event) => {
             const $refreshIcon = $(event.currentTarget);
