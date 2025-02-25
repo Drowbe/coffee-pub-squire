@@ -11,18 +11,24 @@
         <div class="character-info">
             <div class="character-name">{{token.actor.name}}</div>
             <div class="character-details">
-                {{#if token.actor.system.details.race}}
-                <span class="character-race">{{token.actor.system.details.race}}</span>
-                {{/if}}
-                {{#if token.actor.system.details.class}}
-                <span class="character-class">{{token.actor.system.details.class}}</span>
-                {{/if}}
-                {{#if token.actor.system.details.level}}
-                <span class="character-level">Level {{token.actor.system.details.level}}</span>
-                {{/if}}
-                {{#if token.actor.system.details.alignment}}
-                <span class="character-alignment">{{token.actor.system.details.alignment}}</span>
-                {{/if}}
+                <div class="details-primary">
+                    {{#if (eq token.actor.type "character")}}
+                        {{#each token.actor.items as |item|}}
+                            {{#if (eq item.type "class")}}
+                                {{item.name}} • Level {{item.system.levels}}
+                            {{/if}}
+                        {{/each}}
+                    {{else}}
+                        {{#if token.actor.system.details.cr}}CR {{token.actor.system.details.cr}}{{/if}}
+                    {{/if}}
+                    {{#if token.actor.system.details.alignment}} • {{token.actor.system.details.alignment}}{{/if}}
+                </div>
+                <div class="details-secondary">
+                    {{#if (ne token.actor.type "character")}}
+                        <div>RESISTANCES: {{#if token.actor.system.traits.dr.value}}{{#each token.actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
+                        <div>IMMUNITITES: {{#if token.actor.system.traits.di.value}}{{#each token.actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
+                    {{/if}}
+                </div>
             </div>
         </div>
         <div class="character-actions">
