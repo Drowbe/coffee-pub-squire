@@ -39,6 +39,7 @@
     overflow: hidden;
     border: 0px solid #444;
     flex: none;
+    position: relative;
 }
 
 .character-portrait img {
@@ -48,6 +49,33 @@
     cursor: zoom-in;
 }
 
+.character-portrait .health-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(255, 0, 0, 0.3);
+    transition: height 0.3s ease;
+    pointer-events: none;
+}
+
+.character-portrait .death-skull {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 2em;
+    text-shadow: 0 0 10px #000;
+    pointer-events: none;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+}
 
 /* Icons */
 

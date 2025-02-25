@@ -1,9 +1,46 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './panel-manager.js';
 
+// Register custom Handlebars helper for health percentage
+Handlebars.registerHelper('healthOverlayHeight', function(hp) {
+    if (!hp?.max) return '0%';
+    const percentage = Math.round(100 - ((hp.value / hp.max) * 100));
+    return `${percentage}%`;
+});
+
 export class CharacterPanel {
     constructor(actor) {
         this.actor = actor;
+        
+        // Bind the update method to this instance
+        this._onActorUpdate = this._onActorUpdate.bind(this);
+        
+        // Register hooks for HP updates
+        Hooks.on('updateActor', this._onActorUpdate);
+        Hooks.on('updateToken', this._onActorUpdate);
+    }
+
+    _onActorUpdate(document, change) {
+        // Check if this update is for our actor and if HP changed
+        if (document.id !== this.actor.id) return;
+        if (!hasProperty(change, "system.attributes.hp")) return;
+        
+        // Update the health overlay
+        const hp = this.actor.system.attributes.hp;
+        const percentage = Math.round(100 - ((hp.value / hp.max) * 100));
+        const portraitElement = this.element?.find('.character-portrait');
+        
+        // Update health overlay height
+        portraitElement?.find('.health-overlay').css('height', `${percentage}%`);
+        
+        // Update death skull
+        if (hp.value <= 0) {
+            if (!portraitElement?.find('.death-skull').length) {
+                portraitElement?.append('<i class="fas fa-skull death-skull"></i>');
+            }
+        } else {
+            portraitElement?.find('.death-skull').remove();
+        }
     }
 
     async render(html) {
@@ -140,5 +177,11 @@ export class CharacterPanel {
             const percentage = Math.clamped((hp.value / hp.max) * 100, 0, 100);
             hpFill.css('width', `${percentage}%`);
         }
+    }
+
+    destroy() {
+        // Remove hooks when panel is destroyed
+        Hooks.off('updateActor', this._onActorUpdate);
+        Hooks.off('updateToken', this._onActorUpdate);
     }
 } 
