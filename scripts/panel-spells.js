@@ -37,11 +37,9 @@ export class SpellsPanel {
             };
         });
 
-        // Group spells by type (at-will) and level
-        const spellsByType = {
-            atwill: mappedSpells.filter(s => s.system.preparation?.mode === 'atwill')
-        };
-        
+        // Sort all spells alphabetically
+        mappedSpells.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
         return mappedSpells;
     }
 
@@ -80,10 +78,12 @@ export class SpellsPanel {
         // Refresh spells data
         this.spells = this._getSpells();
 
-        // Group spells by level
+        // Group spells by level and sort each group alphabetically
         const spellsByLevel = {};
         const spellsByType = {
-            atwill: this.spells.filter(s => s.system.preparation?.mode === 'atwill')
+            atwill: this.spells
+                .filter(s => s.system.preparation?.mode === 'atwill')
+                .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
         };
 
         this.spells.forEach(spell => {
@@ -94,6 +94,11 @@ export class SpellsPanel {
                 }
                 spellsByLevel[level].push(spell);
             }
+        });
+
+        // Sort spells within each level
+        Object.values(spellsByLevel).forEach(spells => {
+            spells.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
         });
 
         const spellSlots = this._getSpellSlots();
