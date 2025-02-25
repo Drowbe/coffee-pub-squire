@@ -46,24 +46,20 @@ export class SpellsPanel {
     }
 
     _getActionType(spell) {
-        // Check activation type
-        if (spell.system.activation?.type) {
-            const type = spell.system.activation.type;
-            switch(type) {
-                case 'action': return 'action';
-                case 'bonus': return 'bonus';
-                case 'reaction': return 'reaction';
-                case 'special': return 'special';
-                default: return 'action'; // Most spells use an action
+        // In D&D5E 4.0+, we use the new activities system (plural)
+        const activities = spell.system.activities;
+        if (activities) {
+            // Get the first activity (usually there's only one)
+            const activity = Object.values(activities)[0];
+            if (activity?.activation?.type) {
+                switch (activity.activation.type) {
+                    case 'action': return 'action';
+                    case 'bonus': return 'bonus';
+                    case 'reaction': return 'reaction';
+                    case 'special': return 'special';
+                    default: return 'action'; // Most spells use an action
+                }
             }
-        }
-
-        // If no activation type, check casting time (legacy)
-        if (spell.system.time) {
-            const time = spell.system.time.toLowerCase();
-            if (time.includes('bonus')) return 'bonus';
-            if (time.includes('reaction')) return 'reaction';
-            if (time.includes('special')) return 'special';
         }
 
         // Default to action for most spells

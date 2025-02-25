@@ -86,7 +86,7 @@ export class PanelManager {
             isGM: game.user.isGM,
             effects: this.actor.effects?.map(e => ({
                 name: e.name,
-                icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+                icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
             })) || [],
             settings: {
                 showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
@@ -142,7 +142,7 @@ export class PanelManager {
                 isGM: game.user.isGM,
                 effects: this.actor.effects?.map(e => ({
                     name: e.name,
-                    icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+                    icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
                 settings: {
                     showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
@@ -247,7 +247,7 @@ export class PanelManager {
                 isGM: game.user.isGM,
                 effects: this.actor.effects?.map(e => ({
                     name: e.name,
-                    icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+                    icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
                 favorites: favorites,
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),

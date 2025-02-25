@@ -1,5 +1,47 @@
 import { MODULE } from './const.js';
 
+// Helper function to determine weapon type using activities system
+function getWeaponType(weapon) {
+    if (!weapon || weapon.type !== 'weapon') return null;
+    
+    // In D&D5E 4.0+, we use the new activities system
+    const activities = weapon.system.activities;
+    if (activities) {
+        // Get the first activity (usually there's only one)
+        const activity = Object.values(activities)[0];
+        if (activity?.type === 'rwak') return 'ranged';
+        if (activity?.type === 'mwak') return 'melee';
+    }
+    
+    // If no activities, try to determine from weapon properties
+    if (weapon.system.properties?.thr) return 'ranged';  // Has thrown property
+    if (weapon.system.properties?.rch) return 'melee';   // Has reach property
+    
+    // Default based on weapon range
+    return weapon.system.range?.value > 5 ? 'ranged' : 'melee';
+}
+
+// Helper function to get damage information using activities system
+function getDamageInfo(item) {
+    if (!item) return null;
+    
+    // In D&D5E 4.0+, damage is part of the activities system
+    const activities = item.system.activities;
+    if (activities) {
+        // Get the first activity (usually there's only one)
+        const activity = Object.values(activities)[0];
+        if (activity?.damage?.parts?.length) {
+            return {
+                formula: activity.damage.parts[0][0],
+                type: activity.damage.parts[0][1],
+                scaling: activity.damage.parts[0].scaling || null // Get scaling from damage part
+            };
+        }
+    }
+    
+    return null;
+}
+
 export const registerHelpers = function() {
     // Helper for repeating n times
     Handlebars.registerHelper('times', function(n, options) {
@@ -97,7 +139,9 @@ export const registerHelpers = function() {
                 name: item.name,
                 img: item.img || 'icons/svg/item-bag.svg',
                 type: item.type,
-                system: item.system
+                system: item.system,
+                weaponType: item.type === 'weapon' ? getWeaponType(item) : null,
+                damageInfo: getDamageInfo(item)
             }));
     });
 }; 

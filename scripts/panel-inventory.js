@@ -11,30 +11,24 @@ export class InventoryPanel {
     }
 
     _getActionType(item) {
-        // First check activation type from the new system
-        if (item.system.activation?.type) {
-            switch (item.system.activation.type) {
-                case 'action': return 'action';
-                case 'bonus': return 'bonus';
-                case 'reaction': return 'reaction';
-                case 'special': return 'special';
-                default: return null;
-            }
+        // In D&D5E 4.0+, we use the new activities system (plural)
+        const activities = item.system.activities;
+        if (!activities) return null;
+        
+        // Get the first activity (usually there's only one)
+        const activity = Object.values(activities)[0];
+        if (!activity?.activation?.type) return null;
+        
+        // Check the activation type
+        const activationType = activity.activation.type;
+        
+        switch(activationType) {
+            case 'action': return 'action';
+            case 'bonus': return 'bonus';
+            case 'reaction': return 'reaction';
+            case 'special': return 'special';
+            default: return null;
         }
-
-        // Fallback to action type from the old system
-        if (item.system.actionType) {
-            switch (item.system.actionType) {
-                case 'action': return 'action';
-                case 'bonus': return 'bonus';
-                case 'reaction': return 'reaction';
-                case 'special': return 'special';
-                default: return null;
-            }
-        }
-
-        // Most items don't have an action type
-        return null;
     }
 
     _getItems() {

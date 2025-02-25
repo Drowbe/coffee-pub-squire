@@ -70,25 +70,19 @@ export class WeaponsPanel {
     }
 
     _getActionType(weapon) {
-        // First check activation type from the new system
-        if (weapon.system.activation?.type) {
-            switch (weapon.system.activation.type) {
-                case 'action': return 'action';
-                case 'bonus': return 'bonus';
-                case 'reaction': return 'reaction';
-                case 'special': return 'special';
-                default: return null;
-            }
-        }
-
-        // Fallback to action type from the old system
-        if (weapon.system.actionType) {
-            switch (weapon.system.actionType) {
-                case 'action': return 'action';
-                case 'bonus': return 'bonus';
-                case 'reaction': return 'reaction';
-                case 'special': return 'special';
-                default: return null;
+        // In D&D5E 4.0+, we use the new activities system (plural)
+        const activities = weapon.system.activities;
+        if (activities) {
+            // Get the first activity (usually there's only one)
+            const activity = Object.values(activities)[0];
+            if (activity?.activation?.type) {
+                switch (activity.activation.type) {
+                    case 'action': return 'action';
+                    case 'bonus': return 'bonus';
+                    case 'reaction': return 'reaction';
+                    case 'special': return 'special';
+                    default: return null;
+                }
             }
         }
 

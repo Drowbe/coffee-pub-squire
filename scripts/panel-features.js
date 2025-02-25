@@ -65,25 +65,10 @@ export class FeaturesPanel {
     _getActionType(feature) {
         // In D&D5E 4.0+, we use the new activities system (plural)
         const activities = feature.system.activities;
-
-        // First check the activation directly (for backwards compatibility)
-        if (feature.system.activation?.type) {
-            const type = feature.system.activation.type;
-            switch(type) {
-                case 'action': return 'action';
-                case 'bonus': return 'bonus';
-                case 'reaction': return 'reaction';
-                case 'special': return 'special';
-                default: break;
-            }
-        }
-
-        // Then check activities (new system)
         if (!activities) return null;
         
         // Get the first activity (usually there's only one)
         const activity = Object.values(activities)[0];
-        
         if (!activity?.activation?.type) return null;
         
         // Check the activation type
