@@ -106,6 +106,66 @@ export class FavoritesPanel {
         this.showWeapons = game.settings.get(MODULE.ID, 'showWeaponFavorites');
         this.showFeatures = game.settings.get(MODULE.ID, 'showFeaturesFavorites');
         this.showInventory = game.settings.get(MODULE.ID, 'showInventoryFavorites');
+
+        // Set up the context menu options once
+        this.menuOptions = [{
+            name: "Move to Top",
+            icon: '<i class="fas fa-angle-double-up"></i>',
+            condition: li => {
+                const itemId = $(li).data('item-id');
+                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex > 0;
+            },
+            callback: li => {
+                const itemId = $(li).data('item-id');
+                this._reorderFavorite(itemId, 0);
+            }
+        }, {
+            name: "Move Up",
+            icon: '<i class="fas fa-angle-up"></i>',
+            condition: li => {
+                const itemId = $(li).data('item-id');
+                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex > 0;
+            },
+            callback: li => {
+                const itemId = $(li).data('item-id');
+                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                this._reorderFavorite(itemId, currentIndex - 1);
+            }
+        }, {
+            name: "Move Down",
+            icon: '<i class="fas fa-angle-down"></i>',
+            condition: li => {
+                const itemId = $(li).data('item-id');
+                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex < favorites.length - 1;
+            },
+            callback: li => {
+                const itemId = $(li).data('item-id');
+                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                this._reorderFavorite(itemId, currentIndex + 1);
+            }
+        }, {
+            name: "Move to Bottom",
+            icon: '<i class="fas fa-angle-double-down"></i>',
+            condition: li => {
+                const itemId = $(li).data('item-id');
+                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const currentIndex = favorites.indexOf(itemId);
+                return currentIndex < favorites.length - 1;
+            },
+            callback: li => {
+                const itemId = $(li).data('item-id');
+                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                this._reorderFavorite(itemId, favorites.length - 1);
+            }
+        }];
     }
 
     _getFavorites() {
@@ -206,6 +266,8 @@ export class FavoritesPanel {
         panel.find('.favorites-weapon-toggle').off();
         panel.find('.favorites-features-toggle').off();
         panel.find('.favorites-inventory-toggle').off();
+        
+        // Note: We don't remove the context menu binding since it's on the parent
     }
 
     _updateVisibility(html) {
@@ -277,67 +339,11 @@ export class FavoritesPanel {
         if (!html) return;
 
         const panel = html.find('[data-panel="favorites"]');
-        const self = this; // Store panel instance reference
-
-        // Add context menu for reordering
-        new ContextMenu(panel, '.favorite-item', [{
-            name: "Move to Top",
-            icon: '<i class="fas fa-angle-double-up"></i>',
-            condition: target => {
-                const itemId = $(target).data('item-id');
-                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex > 0;
-            },
-            callback: target => {
-                const itemId = $(target).data('item-id');
-                self._reorderFavorite(itemId, 0);
-            }
-        }, {
-            name: "Move Up",
-            icon: '<i class="fas fa-angle-up"></i>',
-            condition: target => {
-                const itemId = $(target).data('item-id');
-                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex > 0;
-            },
-            callback: target => {
-                const itemId = $(target).data('item-id');
-                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                self._reorderFavorite(itemId, currentIndex - 1);
-            }
-        }, {
-            name: "Move Down",
-            icon: '<i class="fas fa-angle-down"></i>',
-            condition: target => {
-                const itemId = $(target).data('item-id');
-                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex < favorites.length - 1;
-            },
-            callback: target => {
-                const itemId = $(target).data('item-id');
-                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                self._reorderFavorite(itemId, currentIndex + 1);
-            }
-        }, {
-            name: "Move to Bottom",
-            icon: '<i class="fas fa-angle-double-down"></i>',
-            condition: target => {
-                const itemId = $(target).data('item-id');
-                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex < favorites.length - 1;
-            },
-            callback: target => {
-                const itemId = $(target).data('item-id');
-                const favorites = self.actor.getFlag(MODULE.ID, 'favorites') || [];
-                self._reorderFavorite(itemId, favorites.length - 1);
-            }
-        }]);
+        
+        // Create context menu on the stable parent element
+        if (!this._contextMenu) {
+            this._contextMenu = new ContextMenu(panel, '.favorite-item', this.menuOptions);
+        }
 
         // Filter toggles
         html.find('.favorites-spell-toggle').click(async (event) => {
