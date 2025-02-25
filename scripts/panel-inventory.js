@@ -54,13 +54,22 @@ export class InventoryPanel {
             actionType: this._getActionType(item)
         }));
 
-        // Group items by type
+        // Group items by type and sort alphabetically within each type
         const itemsByType = {};
         mappedItems.forEach(item => {
             if (!itemsByType[item.type]) {
                 itemsByType[item.type] = [];
             }
             itemsByType[item.type].push(item);
+        });
+
+        // Sort each category alphabetically by name (removing HTML tags for sorting)
+        Object.values(itemsByType).forEach(items => {
+            items.sort((a, b) => {
+                const nameA = a.name.replace(/<[^>]*>/g, '').toLowerCase();
+                const nameB = b.name.replace(/<[^>]*>/g, '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
         });
 
         return {
