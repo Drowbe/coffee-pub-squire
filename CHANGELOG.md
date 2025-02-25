@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.3] - 2024-03-XX
+## [1.0.3] - 2024-02-25
+
+### Added
+- Added new Party Stats Panel with real-time combat statistics
+- Added collapsible sections for Combat Overview, Individual Contributions, and Session Information
+- Added automatic stat updates using Blacksmith's Stats API
+- Added visual styling to match the tray's aesthetic with section-specific colors
+- Added party view mode toggle in tray handle
+
+### Changed
+- Improved panel organization with dedicated CSS files
+- Enhanced section headers with icons and collapsible functionality
+- Updated stat display with more readable formatting and better visual hierarchy
 
 ### Fixed
 - Fixed context menu functionality for reordering favorites
