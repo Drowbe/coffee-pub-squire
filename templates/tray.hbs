@@ -1,5 +1,8 @@
 <div class="squire-tray" data-position="left">
     <div class="tray-handle">
+        <button class="view-toggle-button" title="Toggle View Mode">
+            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else}}fa-user{{/if}}"></i>
+        </button>
         <button class="pin-button" title="Pin Tray">
             <i class="fas fa-thumbtack"></i>
         </button>
@@ -8,7 +11,8 @@
             {{> handle-player}}
         </div>
     </div>
-    <div class="tray-content">
+
+    <div class="tray-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
         {{#if actor}}
         <div class="panel-container" data-panel="character"></div>
         {{#if @root.settings.showExperiencePanel}}
@@ -43,5 +47,13 @@
             Select a character token to view their information
         </div>
         {{/if}}
+    </div>
+
+    <div class="tray-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
+        <div class="party-view-placeholder">
+            <i class="fas fa-users"></i>
+            <h2>Party View</h2>
+            <p>Coming Soon!</p>
+        </div>
     </div>
 </div> 

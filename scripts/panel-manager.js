@@ -16,6 +16,7 @@ export class PanelManager {
     static instance = null;
     static currentActor = null;
     static isPinned = false;
+    static viewMode = 'player';
     static element = null;
     static newlyAddedItems = new Map();
     static _cleanupInterval = null;
@@ -108,6 +109,7 @@ export class PanelManager {
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel')
             },
+            viewMode: game.settings.get(MODULE.ID, 'viewMode'),
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -165,6 +167,7 @@ export class PanelManager {
                     showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                     showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel')
                 },
+                viewMode: game.settings.get(MODULE.ID, 'viewMode'),
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -307,6 +310,7 @@ export class PanelManager {
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
             if ($(event.target).closest('.pin-button').length || 
+                $(event.target).closest('.view-toggle-button').length ||
                 $(event.target).closest('.handle-favorite-icon').length ||
                 $(event.target).closest('.handle-health-bar').length ||
                 $(event.target).closest('.handle-dice-tray').length) return;
@@ -812,6 +816,21 @@ export class PanelManager {
                 console.error("SQUIRE | Error removing condition:", error);
                 ui.notifications.error(`Could not remove ${conditionName}`);
             }
+        });
+
+        // View toggle button
+        tray.find('.view-toggle-button').click(async () => {
+            const newMode = PanelManager.viewMode === 'player' ? 'party' : 'player';
+            PanelManager.viewMode = newMode;
+            await game.settings.set(MODULE.ID, 'viewMode', newMode);
+            
+            // Update button icon
+            const button = tray.find('.view-toggle-button i');
+            button.removeClass('fa-user fa-users').addClass(newMode === 'party' ? 'fa-users' : 'fa-user');
+            
+            // Toggle view visibility
+            tray.find('.player-view').toggleClass('hidden', newMode !== 'player');
+            tray.find('.party-view').toggleClass('hidden', newMode !== 'party');
         });
     }
 

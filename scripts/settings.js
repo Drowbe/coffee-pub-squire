@@ -386,6 +386,14 @@ export const registerSettings = function() {
         default: true
     });
 
+    // View Mode Setting
+    game.settings.register(MODULE.ID, 'viewMode', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'player'
+    });
+
     // --- Sound Settings ---
 
     game.settings.register(MODULE.ID, 'dragEnterSound', {

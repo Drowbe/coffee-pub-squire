@@ -19,6 +19,11 @@
     width: var(--squire-tray-width);
 }
 
+/* Hidden class for view toggling */
+.hidden {
+    display: none !important;
+}
+
 /* Tray-specific positioning */
 .squire-tray {
     position: fixed;
@@ -825,4 +830,75 @@
 .favorite-item .tray-buttons .fa-stars {
     color: #ffd700;
     text-shadow: 0 0 3px #ffd700;
+}
+
+/* PIN BUTTON */
+.squire-tray[data-position="left"] .pin-button,
+.squire-tray[data-position="left"] .view-toggle-button {
+    order: 1;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s ease;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .pin-button i,
+.squire-tray[data-position="left"] .view-toggle-button i {
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .pin-button:hover i {
+    transform: rotate(45deg);
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .view-toggle-button:hover i {
+    color: #fff;
+}
+
+.pin-button:hover,
+.view-toggle-button:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.squire-tray.pinned .pin-button {
+    color: #fff;
+}
+
+.squire-tray:not(.pinned) .pin-button {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Party View Placeholder */
+.party-view-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #9f9275;
+    text-align: center;
+    padding: 20px;
+}
+
+.party-view-placeholder i {
+    font-size: 3em;
+    margin-bottom: 10px;
+    opacity: 0.6;
+}
+
+.party-view-placeholder h2 {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.party-view-placeholder p {
+    font-size: 1em;
+    opacity: 0.8;
 }
