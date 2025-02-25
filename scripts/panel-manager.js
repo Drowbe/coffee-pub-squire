@@ -314,6 +314,7 @@ export class PanelManager {
         handle.on('click', (event) => {
             if ($(event.target).closest('.pin-button').length || 
                 $(event.target).closest('.view-toggle-button').length ||
+                $(event.target).closest('.tray-refresh').length ||
                 $(event.target).closest('.handle-favorite-icon').length ||
                 $(event.target).closest('.handle-health-bar').length ||
                 $(event.target).closest('.handle-dice-tray').length) return;
@@ -337,6 +338,40 @@ export class PanelManager {
             
             tray.toggleClass('expanded');
             return false;
+        });
+
+        // Handle refresh button clicks
+        handle.find('.tray-refresh').on('click', async (event) => {
+            const $refreshIcon = $(event.currentTarget).find('i');
+            if (!$refreshIcon.hasClass('spinning')) {
+                try {
+                    $refreshIcon.addClass('spinning');
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    blacksmith?.utils.postConsoleAndNotification(
+                        "Starting tray refresh",
+                        { actor: this.actor },
+                        false,
+                        true,
+                        false,
+                        MODULE.TITLE
+                    );
+                    await PanelManager.initialize(this.actor);
+                    // Force a re-render of all panels
+                    if (PanelManager.instance) {
+                        await PanelManager.instance.renderPanels(PanelManager.element);
+                    }
+                    blacksmith?.utils.postConsoleAndNotification(
+                        "Tray Refresh",
+                        "The tray has been refreshed.",
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
+                } finally {
+                    $refreshIcon.removeClass('spinning');
+                }
+            }
         });
 
         // Handle dice tray icon clicks

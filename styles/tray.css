@@ -834,7 +834,8 @@
 
 /* PIN BUTTON */
 .squire-tray[data-position="left"] .pin-button,
-.squire-tray[data-position="left"] .view-toggle-button {
+.squire-tray[data-position="left"] .view-toggle-button,
+.squire-tray[data-position="left"] .tray-refresh {
     order: 1;
     background: none;
     border: none;
@@ -847,8 +848,19 @@
 }
 
 .squire-tray[data-position="left"] .pin-button i,
-.squire-tray[data-position="left"] .view-toggle-button i {
+.squire-tray[data-position="left"] .view-toggle-button i,
+.squire-tray[data-position="left"] .tray-refresh i {
     transition: transform 0.2s ease, color 0.2s ease;
+}
+
+/* Refresh button animation */
+.squire-tray[data-position="left"] .tray-refresh i.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .squire-tray[data-position="left"] .pin-button:hover i {

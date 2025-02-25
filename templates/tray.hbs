@@ -1,12 +1,15 @@
 <div class="squire-tray" data-position="left">
     <div class="tray-handle">
-        <button class="view-toggle-button" title="Toggle View Mode">
-            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else}}fa-user{{/if}}"></i>
-        </button>
         <button class="pin-button" title="Pin Tray">
             <i class="fas fa-thumbtack"></i>
         </button>
         <i class="fas fa-chevron-right"></i>
+        <button class="tray-refresh" title="Refresh Tray">
+            <i class="fas fa-arrows-rotate"></i>
+        </button>
+        <button class="view-toggle-button" title="Toggle View Mode">
+            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else}}fa-user{{/if}}"></i>
+        </button>
         <div class="handle-left">
             {{> handle-player}}
         </div>
