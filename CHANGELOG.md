@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed issue where moving favorites would break tray expand/collapse functionality
 - Fixed pin button functionality after reordering favorites
 - Fixed issue where odd/even number of moves would affect tray functionality
+- Eliminated all deprecation warnings for D&D5e+
+- Readiness for version 13
+- Prep for version 14
 
 ## [1.0.2] - 2024-02-08
 
