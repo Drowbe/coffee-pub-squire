@@ -267,7 +267,13 @@ export class FavoritesPanel {
         panel.find('.favorites-features-toggle').off();
         panel.find('.favorites-inventory-toggle').off();
         
-        // Note: We don't remove the context menu binding since it's on the parent
+        // Properly cleanup context menu
+        if (this._contextMenu) {
+            this._contextMenu.close();
+            this._contextMenu = null;
+        }
+        // Remove any existing context menu bindings
+        panel.find('.favorites-list').off('contextmenu');
     }
 
     _updateVisibility(html) {
@@ -339,12 +345,11 @@ export class FavoritesPanel {
         if (!html) return;
 
         const panel = html.find('[data-panel="favorites"]');
+        const favoritesList = panel.find('.favorites-list');
         
-        // Create context menu on the stable parent element
-        if (!this._contextMenu) {
-            this._contextMenu = new ContextMenu(panel, '.favorite-item', this.menuOptions);
-        }
-
+        // Always create a fresh context menu
+        this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions);
+        
         // Filter toggles
         html.find('.favorites-spell-toggle').click(async (event) => {
             await this._toggleFilter('spells');
@@ -501,18 +506,108 @@ export class FavoritesPanel {
         console.log("SQUIRE | New favorites order", favoriteIds);
 
         try {
-            // Update the actor's flags
+            // Clean up context menu before updates
+            if (this._contextMenu) {
+                this._contextMenu.close();
+                delete this._contextMenu;
+            }
+
+            // Update the actor's flags and wait for it to complete
             await actor.unsetFlag(MODULE.ID, 'favorites');
             await actor.setFlag(MODULE.ID, 'favorites', favoriteIds);
             
-            // Re-render the panel
-            if (this.element) {
-                await this.render(this.element);
-            }
-
-            // Update the handle to reflect the new order
+            // Update panels and handle
             if (PanelManager.instance) {
+                // Get the current tray element and state
+                const tray = PanelManager.element;
+                const wasExpanded = tray.hasClass('expanded');
+                const wasPinned = tray.hasClass('pinned');
+                
+                // First update all panels that need to be refreshed
+                if (PanelManager.instance.favoritesPanel?.element) {
+                    await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                }
+                if (PanelManager.instance.inventoryPanel?.element) {
+                    await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                }
+                if (PanelManager.instance.weaponsPanel?.element) {
+                    await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
+                }
+                if (PanelManager.instance.spellsPanel?.element) {
+                    await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                }
+
+                // Update the handle
                 await PanelManager.instance.updateHandle();
+
+                // Re-bind the handle click event
+                const handle = tray.find('.tray-handle');
+                handle.off('click').on('click', (event) => {
+                    if ($(event.target).closest('.pin-button').length || 
+                        $(event.target).closest('.handle-favorite-icon').length ||
+                        $(event.target).closest('.handle-health-bar').length ||
+                        $(event.target).closest('.handle-dice-tray').length) return;
+                    
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    if (PanelManager.isPinned) {
+                        ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
+                        return false;
+                    }
+                    
+                    // Play tray open sound when expanding
+                    if (!tray.hasClass('expanded')) {
+                        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                        if (blacksmith) {
+                            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
+                            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                        }
+                    }
+                    
+                    tray.toggleClass('expanded');
+                    return false;
+                });
+
+                // Re-bind pin button event
+                const pinButton = handle.find('.pin-button');
+                pinButton.off('click').on('click', async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    PanelManager.isPinned = !PanelManager.isPinned;
+                    await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
+                    
+                    // Play pin/unpin sound
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    if (blacksmith) {
+                        const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
+                        blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                    }
+                    
+                    if (PanelManager.isPinned) {
+                        tray.addClass('pinned expanded');
+                        // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
+                        const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+                        const uiLeft = document.querySelector('#ui-left');
+                        if (uiLeft) {
+                            uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                        }
+                    } else {
+                        tray.removeClass('pinned expanded');
+                        // Reset UI margin when unpinned - need both handle width and offset
+                        const uiLeft = document.querySelector('#ui-left');
+                        if (uiLeft) {
+                            uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                        }
+                    }
+                    
+                    return false;
+                });
+
+                // Restore previous state if needed
+                if (wasExpanded) tray.addClass('expanded');
+                if (wasPinned) tray.addClass('pinned');
             }
 
             console.log("SQUIRE | Reorder complete");
