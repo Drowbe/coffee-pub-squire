@@ -1,0 +1,118 @@
+/* Party Panel */
+.party-view .character-card {
+    background: rgba(0, 0, 0, 0.3);
+    color: #9f9275;
+    padding: 3px;
+    font-size: 1.4em;
+    border: 2px solid #444;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 4px;
+}
+
+/* Portrait */
+.party-view .character-image {
+    width: 70px;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 0px solid #444;
+    flex: none;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Health Overlay */
+.party-view .character-image .health-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(255, 0, 0, 0.3);
+    transition: height 0.3s ease;
+    pointer-events: none;
+}
+
+.party-view .character-image .death-skull {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 2em;
+    text-shadow: 0 0 10px #000;
+    pointer-events: none;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+}
+
+/* Info Section */
+.party-view .character-info {
+    flex: 1;
+    padding: 0 8px;
+}
+
+.party-view .character-name {
+    display: block;
+    font-size: 0.85em;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.party-view .character-details {
+    display: block;
+    border-top: 1px dotted #444;
+    margin-top: 2px;
+    padding-top: 4px;
+}
+
+.party-view .character-details span {
+    text-transform: uppercase;
+    font-size: 0.6em;
+    font-weight: 700;
+}
+
+.party-view .character-details span:not(:last-child)::after {
+    content: " • ";
+    margin: 0 5px;
+    color: #444;
+}
+
+/* Character Actions */
+.party-view .character-actions {
+    display: flex;
+    align-items: center;
+    padding-right: 8px;
+}
+
+.party-view .character-actions i {
+    color: #9f9275;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 0.85em;
+}
+
+.party-view .character-actions i:hover {
+    color: #fff;
+}
+
+/* No Party Message */
+.party-view .no-party-message {
+    text-align: center;
+    padding: 20px;
+    color: #9f9275;
+    font-size: 1.2em;
+    font-style: italic;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #444;
+    border-radius: 4px;
+    margin: 10px 0;
+} 

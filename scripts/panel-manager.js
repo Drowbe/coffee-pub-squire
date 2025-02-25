@@ -11,6 +11,7 @@ import { ExperiencePanel } from "./panel-experience.js";
 import { HealthPanel } from "./panel-health.js";
 import { StatsPanel } from "./panel-stats.js";
 import { AbilitiesPanel } from "./panel-abilities.js";
+import { PartyPanel } from "./panel-party.js";
 
 export class PanelManager {
     static instance = null;
@@ -35,6 +36,7 @@ export class PanelManager {
         this.healthPanel = new HealthPanel(actor);
         this.statsPanel = new StatsPanel(actor);
         this.abilitiesPanel = new AbilitiesPanel(actor);
+        this.partyPanel = new PartyPanel();
         this.hiddenCategories = new Set();
     }
 
@@ -298,6 +300,7 @@ export class PanelManager {
         }
         await this.statsPanel.render(element);
         await this.abilitiesPanel.render(element);
+        await this.partyPanel.render(element);
     }
 
     activateListeners(tray) {

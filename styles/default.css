@@ -34,6 +34,8 @@
 
 @import "panel-abilities.css"; 
 
+@import "panel-party.css"; 
+
 /* --- Stacked Panels ---------------------- */
 
 @import "panel-inventory.css"; 

@@ -1,0 +1,36 @@
+{{#each tokens as |token|}}
+    <div class="character-card" data-actor-id="{{token.actor.id}}">
+        <div class="character-image" style="background-image: url('{{token.actor.img}}')">
+            {{#if token.actor.system.attributes.hp}}
+            <div class="health-overlay" style="height: {{healthOverlayHeight token.actor.system.attributes.hp}}"></div>
+            {{#if (eq token.actor.system.attributes.hp.value 0)}}
+            <i class="fas fa-skull death-skull"></i>
+            {{/if}}
+            {{/if}}
+        </div>
+        <div class="character-info">
+            <div class="character-name">{{token.actor.name}}</div>
+            <div class="character-details">
+                {{#if token.actor.system.details.race}}
+                <span class="character-race">{{token.actor.system.details.race}}</span>
+                {{/if}}
+                {{#if token.actor.system.details.class}}
+                <span class="character-class">{{token.actor.system.details.class}}</span>
+                {{/if}}
+                {{#if token.actor.system.details.level}}
+                <span class="character-level">Level {{token.actor.system.details.level}}</span>
+                {{/if}}
+                {{#if token.actor.system.details.alignment}}
+                <span class="character-alignment">{{token.actor.system.details.alignment}}</span>
+                {{/if}}
+            </div>
+        </div>
+        <div class="character-actions">
+            <i class="fas fa-feather-alt open-sheet" title="Open Character Sheet"></i>
+        </div>
+    </div>
+{{else}}
+    <div class="no-party-message">
+        No player characters found in the current scene
+    </div>
+{{/each}} 
