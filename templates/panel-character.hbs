@@ -1,34 +1,36 @@
 <div class="character-panel">
     <!-- HEADER -->
-
-        <div class="header-left">
-            <div class="character-portrait clickable" title="Click to share portrait with all players">
-                <img src="{{actor.img}}" alt="{{actor.name}}" title="{{actor.name}}"> 
-            </div>
-            <div class="character-info">
-                <span class="character-name">{{actor.name}}</span>
-                <div class="character-details">
-                    <div class="details-primary">
-                        {{#if (eq actor.type "character")}}
-                            {{#each actor.items as |item|}}
-                                {{#if (eq item.type "class")}}
-                                    {{item.name}} • Level {{item.system.levels}}
-                                {{/if}}
-                            {{/each}}
-                        {{else}}
-                            {{#if actor.system.details.cr}}CR {{actor.system.details.cr}}{{/if}}
-                        {{/if}}
-                        {{#if actor.system.details.alignment}} • {{actor.system.details.alignment}}{{/if}}
-                    </div>
-                    <div class="details-secondary">
-                        <!-- HEALTH MAYBE HERE -->
-                    </div>
+    <div class="header-left">
+        <div class="character-portrait clickable" title="Click to share portrait with all players">
+            <img src="{{actor.img}}" alt="{{actor.name}}" title="{{actor.name}}"> 
+        </div>
+        <div class="character-info">
+            <span class="character-name">{{actor.name}}</span>
+            <div class="character-details">
+                <div class="details-primary">
+                    {{#if (eq actor.type "character")}}
+                        {{#each actor.items as |item|}}
+                            {{#if (eq item.type "class")}}
+                                {{item.name}} • Level {{item.system.levels}}
+                            {{/if}}
+                        {{/each}}
+                    {{else}}
+                        {{#if actor.system.details.cr}}CR {{actor.system.details.cr}}{{/if}}
+                    {{/if}}
+                    {{#if actor.system.details.alignment}} • {{actor.system.details.alignment}}{{/if}}
+                </div>
+                <div class="details-secondary">
+                    {{#if (ne actor.type "character")}}
+                        <div>RESISTANCES: {{#if actor.system.traits.dr.value}}{{#each actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
+                        <div>IMMUNITITES: {{#if actor.system.traits.di.value}}{{#each actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
+                    {{/if}}
                 </div>
             </div>
         </div>
-        <div class="header-right">
-            <i class="fas fa-arrows-rotate tray-refresh" title="Refresh Tray"></i>
-            <i class="fas fa-feather character-sheet-toggle" title="Open Character Sheet"></i>
-        </div>
+    </div>
+    <div class="header-right">
+        <i class="fas fa-arrows-rotate tray-refresh" title="Refresh Tray"></i>
+        <i class="fas fa-feather character-sheet-toggle" title="Open Character Sheet"></i>
+    </div>
 
 </div> 
