@@ -30,13 +30,13 @@ export class FeaturesPanel {
             categoryId: `category-feature-${this._getFeatureType(feature)}`
         }));
 
-        // Group features by type
+        // Group features by type and sort each group alphabetically
         const featuresByType = {
-            class: mappedFeatures.filter(f => f.featureType === 'class'),
-            subclass: mappedFeatures.filter(f => f.featureType === 'subclass'),
-            race: mappedFeatures.filter(f => f.featureType === 'race'),
-            background: mappedFeatures.filter(f => f.featureType === 'background'),
-            feat: mappedFeatures.filter(f => f.featureType === 'feat')
+            class: mappedFeatures.filter(f => f.featureType === 'class').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            subclass: mappedFeatures.filter(f => f.featureType === 'subclass').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            race: mappedFeatures.filter(f => f.featureType === 'race').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            background: mappedFeatures.filter(f => f.featureType === 'background').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            feat: mappedFeatures.filter(f => f.featureType === 'feat').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
         };
 
         return {
