@@ -46,7 +46,7 @@ export class CharacterPanel {
                     $refreshIcon.addClass('spinning');
                     const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
                     blacksmith?.utils.postConsoleAndNotification(
-                        "SQUIRE | Starting tray refresh",
+                        "Starting tray refresh",
                         { actor: this.actor },
                         false,
                         true,
@@ -59,10 +59,10 @@ export class CharacterPanel {
                         await PanelManager.instance.renderPanels(PanelManager.element);
                     }
                     blacksmith?.utils.postConsoleAndNotification(
-                        "SQUIRE | Tray refresh complete",
-                        "",
+                        "Tray Refresh",
+                        "The tray has been refreshed.",
                         false,
-                        true,
+                        false,
                         true,
                         MODULE.TITLE
                     );

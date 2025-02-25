@@ -17,6 +17,7 @@ export class PanelManager {
     static currentActor = null;
     static isPinned = false;
     static element = null;
+    static newlyAddedItems = new Map();
 
     constructor(actor) {
         this.actor = actor;
@@ -102,7 +103,8 @@ export class PanelManager {
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-            isHealthPopped: HealthPanel.isWindowOpen
+            isHealthPopped: HealthPanel.isWindowOpen,
+            newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
         });
         const trayElement = $(trayHtml);
         $('body').append(trayElement);
@@ -158,7 +160,8 @@ export class PanelManager {
                 showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
                 showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
                 isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-                isHealthPopped: HealthPanel.isWindowOpen
+                isHealthPopped: HealthPanel.isWindowOpen,
+                newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
             });
             const newTrayElement = $(trayHtml);
             
@@ -285,6 +288,10 @@ export class PanelManager {
     activateListeners(tray) {
         const handle = tray.find('.tray-handle');
         
+        // Clean up existing drop event listeners
+        const trayContent = tray.find('.tray-content');
+        trayContent.off('dragenter dragleave dragover drop');
+        
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
             if ($(event.target).closest('.pin-button').length || 
@@ -378,10 +385,7 @@ export class PanelManager {
             return false;
         });
 
-        // Add drop handling
-        const trayContent = tray.find('.tray-content');
-        
-        // Drag enter/leave events for visual feedback
+        // Handle drop events
         trayContent.on('dragenter', (event) => {
             event.preventDefault();
             try {
@@ -427,7 +431,6 @@ export class PanelManager {
             }
         });
 
-        // Handle drops
         trayContent.on('drop', async (event) => {
             event.preventDefault();
             trayContent.removeClass('drop-hover');
@@ -465,6 +468,13 @@ export class PanelManager {
                         // Create the item on the actor
                         const createdItem = await this.actor.createEmbeddedDocuments('Item', [item.toObject()]);
                         
+                        // Add the item ID with current timestamp
+                        PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
+                        
+                        // Update the tray first
+                        await this.updateTray();
+                        await this.renderPanels(PanelManager.element);
+                        
                         // Debug log the UUID generation
                         const itemUUID = this._getItemUUID(createdItem[0], data);
                         
@@ -486,6 +496,13 @@ export class PanelManager {
                         const itemData = game.items.get(data.uuid)?.toObject();
                         if (itemData) {
                             const newItem = await this.actor.createEmbeddedDocuments('Item', [itemData]);
+                            
+                            // Add the item ID with current timestamp
+                            PanelManager.newlyAddedItems.set(newItem[0].id, Date.now());
+                            
+                            // Update the tray first
+                            await this.updateTray();
+                            await this.renderPanels(PanelManager.element);
                             
                             // Debug log the UUID generation
                             const dirItemUUID = this._getItemUUID(newItem[0], data);
@@ -519,9 +536,6 @@ export class PanelManager {
 
                     // Add more cases as needed for other drop types
                 }
-
-                // Update the tray display
-                await this.updateTray();
 
             } catch (error) {
                 console.error(`${MODULE.TITLE} | Error handling drop:`, error);
@@ -945,6 +959,16 @@ export class PanelManager {
             this.toggleCategory(filter.dataset.filterId, panel, true);
         });
     }
+
+    // Add this new method for cleanup
+    static cleanupNewlyAddedItems() {
+        const fiveMinutesAgo = Date.now() - (5 * 60 * 1000); // 5 minutes in milliseconds
+        for (const [itemId, timestamp] of PanelManager.newlyAddedItems) {
+            if (timestamp < fiveMinutesAgo) {
+                PanelManager.newlyAddedItems.delete(itemId);
+            }
+        }
+    }
 }
 
 // Hooks
@@ -1119,4 +1143,39 @@ Hooks.on('deleteActiveEffect', async (effect) => {
     if (PanelManager.currentActor?.id === effect.parent?.id && PanelManager.instance) {
         await PanelManager.instance.updateHandle();
     }
-}); 
+});
+
+// Handle item creation
+Hooks.on('createItem', async (item) => {
+    if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
+        await PanelManager.instance.updateTray();
+        await PanelManager.instance.renderPanels(PanelManager.element);
+    }
+});
+
+// Handle item updates
+Hooks.on('updateItem', async (item) => {
+    if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
+        await PanelManager.instance.updateTray();
+        await PanelManager.instance.renderPanels(PanelManager.element);
+    }
+});
+
+// Handle item deletion
+Hooks.on('deleteItem', async (item) => {
+    if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
+        await PanelManager.instance.updateTray();
+        await PanelManager.instance.renderPanels(PanelManager.element);
+    }
+});
+
+// Set up periodic cleanup of newly added items
+setInterval(() => {
+    if (PanelManager.instance) {
+        PanelManager.cleanupNewlyAddedItems();
+        // Update the tray if there are any changes
+        if (PanelManager.instance.element) {
+            PanelManager.instance.updateTray();
+        }
+    }
+}, 60000); // Check every minute 
