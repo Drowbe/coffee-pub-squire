@@ -34,13 +34,13 @@ export class WeaponsPanel {
             };
         });
 
-        // Group weapons by type
+        // Group weapons by type and sort each group alphabetically
         const weaponsByType = {
-            'simple-melee': mappedWeapons.filter(w => w.weaponType === 'simple-melee'),
-            'martial-melee': mappedWeapons.filter(w => w.weaponType === 'martial-melee'),
-            'simple-ranged': mappedWeapons.filter(w => w.weaponType === 'simple-ranged'),
-            'martial-ranged': mappedWeapons.filter(w => w.weaponType === 'martial-ranged'),
-            'natural': mappedWeapons.filter(w => w.weaponType === 'natural')
+            'simple-melee': mappedWeapons.filter(w => w.weaponType === 'simple-melee').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            'martial-melee': mappedWeapons.filter(w => w.weaponType === 'martial-melee').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            'simple-ranged': mappedWeapons.filter(w => w.weaponType === 'simple-ranged').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            'martial-ranged': mappedWeapons.filter(w => w.weaponType === 'martial-ranged').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+            'natural': mappedWeapons.filter(w => w.weaponType === 'natural').sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
         };
 
         return {
