@@ -2,7 +2,7 @@
     "id": "coffee-pub-squire",
     "title": "Coffee Pub Squire",
     "description": "Quick access to character-specific combat information through a sliding tray interface.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "compatibility": {
         "minimum": "12",
         "verified": "12",
@@ -47,8 +47,8 @@
         }
     ],
     "url": "https://github.com/Drowbe/coffee-pub-squire",
-    "manifest": "https://raw.githubusercontent.com/Drowbe/coffee-pub-squire/v1.0.2/module.json",
-    "download": "https://github.com/Drowbe/coffee-pub-squire/archive/refs/tags/v1.0.2.zip",
+    "manifest": "https://raw.githubusercontent.com/Drowbe/coffee-pub-squire/v1.0.3/module.json",
+    "download": "https://github.com/Drowbe/coffee-pub-squire/archive/refs/tags/v1.0.3.zip",
     "changelog": "CHANGELOG.md",
     "license": "LICENSE",
     "readme": "README.md"
