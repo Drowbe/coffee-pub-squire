@@ -1,4 +1,4 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './panel-manager.js';
 
 export class FavoritesPanel {
