@@ -144,4 +144,25 @@ export const registerHelpers = function() {
                 damageInfo: getDamageInfo(item)
             }));
     });
+
+    // Helper to format numbers (e.g., 1000 -> 1K, 1000000 -> 1M)
+    Handlebars.registerHelper('formatNumber', function(number) {
+        if (number === undefined || number === null) return '0';
+        
+        // Convert to number if it's a string
+        number = Number(number);
+        
+        // Handle millions
+        if (Math.abs(number) >= 1000000) {
+            return (number / 1000000).toFixed(1) + 'M';
+        }
+        
+        // Handle thousands
+        if (Math.abs(number) >= 1000) {
+            return (number / 1000).toFixed(1) + 'K';
+        }
+        
+        // Add commas for thousands separator
+        return number.toLocaleString();
+    });
 }; 

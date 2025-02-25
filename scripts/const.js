@@ -19,6 +19,7 @@ export const TEMPLATES = {
     PANEL_STATS: `modules/${MODULE.ID}/templates/panel-stats.hbs`,
     PANEL_ABILITIES: `modules/${MODULE.ID}/templates/panel-abilities.hbs`,
     PANEL_PARTY: `modules/${MODULE.ID}/templates/panel-party.hbs`,
+    PANEL_PARTY_STATS: `modules/${MODULE.ID}/templates/panel-party-stats.hbs`,
     HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`,
     CHAT_CARD: `modules/${MODULE.ID}/templates/chat-cards.hbs`
 };
@@ -28,7 +29,8 @@ export const PANELS = {
     SPELLS: 'spells',
     WEAPONS: 'weapons',
     INVENTORY: 'inventory',
-    FEATURES: 'features'
+    FEATURES: 'features',
+    PARTY_STATS: 'party-stats'
 };
 
 export const CSS_CLASSES = {
@@ -42,4 +44,17 @@ export const SQUIRE = {
     TRAY_OFFSET_WIDTH: '10px',
     TRAY_HANDLE_WIDTH: '30px',
     TRAY_HANDLE_ADJUSTMENT: '16px'
+}; 
+
+export const HELPERS = {
+    formatNumber: function(number) {
+        if (number === undefined || number === null) return "0";
+        if (number >= 1000000) {
+            return (number / 1000000).toFixed(1) + "M";
+        } else if (number >= 1000) {
+            return (number / 1000).toFixed(1) + "K";
+        } else {
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    }
 }; 

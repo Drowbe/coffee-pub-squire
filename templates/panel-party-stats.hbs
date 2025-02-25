@@ -1,0 +1,70 @@
+{{!-- Party Stats Panel --}}
+<div class="panel party-stats-panel">
+    {{#each sections}}
+    <div class="section" data-key="{{@key}}">
+        <div class="section-header">
+            <div class="header-left">
+                <i class="fas {{icon}}"></i>
+                <span>{{title}}</span>
+            </div>
+            {{#if collapsible}}
+            <div class="header-right">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            {{/if}}
+        </div>
+        <div class="section-content">
+            {{#if (eq @key "combat")}}
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">TOTAL HITS</div>
+                    <div class="stat-value">{{../totalHits}}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">HIT RATE</div>
+                    <div class="stat-value">{{../hitRate}}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">CRITICAL HITS</div>
+                    <div class="stat-value">{{../criticalHits}}</div>
+                </div>
+            </div>
+            {{/if}}
+            {{#if (eq @key "contributions")}}
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">MOST ACCURATE</div>
+                    <div class="stat-value">{{../mostAccurate.name}}</div>
+                    <div class="stat-detail">{{../mostAccurate.value}} hits</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">CRITICAL MASTER</div>
+                    <div class="stat-value">{{../criticalMaster.name}}</div>
+                    <div class="stat-detail">{{../criticalMaster.value}} crits</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">TOTAL HEALING</div>
+                    <div class="stat-value">{{../totalHealing}}</div>
+                </div>
+            </div>
+            {{/if}}
+            {{#if (eq @key "session")}}
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">SESSION DURATION</div>
+                    <div class="stat-value">{{../sessionDuration}}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">AVERAGE TURN</div>
+                    <div class="stat-value">{{../averageTurnTime}}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">ACTIONS/HOUR</div>
+                    <div class="stat-value">{{../actionsPerHour}}</div>
+                </div>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+    {{/each}}
+</div> 

@@ -12,6 +12,7 @@ import { HealthPanel } from "./panel-health.js";
 import { StatsPanel } from "./panel-stats.js";
 import { AbilitiesPanel } from "./panel-abilities.js";
 import { PartyPanel } from "./panel-party.js";
+import { PartyStatsPanel } from "./panel-party-stats.js";
 
 export class PanelManager {
     static instance = null;
@@ -31,12 +32,13 @@ export class PanelManager {
         this.weaponsPanel = new WeaponsPanel(actor);
         this.inventoryPanel = new InventoryPanel(actor);
         this.featuresPanel = new FeaturesPanel(actor);
-        this.dicetrayPanel = new DiceTrayPanel({ actor });
+        this.dicetrayPanel = new DiceTrayPanel(actor);
         this.experiencePanel = new ExperiencePanel(actor);
         this.healthPanel = new HealthPanel(actor);
         this.statsPanel = new StatsPanel(actor);
         this.abilitiesPanel = new AbilitiesPanel(actor);
         this.partyPanel = new PartyPanel();
+        this.partyStatsPanel = new PartyStatsPanel();
         this.hiddenCategories = new Set();
     }
 
@@ -109,7 +111,8 @@ export class PanelManager {
                 showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
                 showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
-                showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel')
+                showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
+                showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: game.settings.get(MODULE.ID, 'viewMode'),
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
@@ -167,7 +170,8 @@ export class PanelManager {
                     showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
                     showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                     showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
-                    showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel')
+                    showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
+                    showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
                 },
                 viewMode: game.settings.get(MODULE.ID, 'viewMode'),
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
@@ -301,6 +305,7 @@ export class PanelManager {
         await this.statsPanel.render(element);
         await this.abilitiesPanel.render(element);
         await this.partyPanel.render(element);
+        await this.partyStatsPanel.render(element);
     }
 
     activateListeners(tray) {

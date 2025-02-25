@@ -133,6 +133,18 @@ export const registerSettings = function() {
         }
     });
 
+    game.settings.register(MODULE.ID, 'showPartyStatsPanel', {
+        name: 'Show Party Stats Panel',
+        hint: 'Display party statistics and achievements panel',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
     game.settings.register(MODULE.ID, 'showHealthPanel', {
         name: 'Show Health Panel',
         hint: 'Display health tracking panel',

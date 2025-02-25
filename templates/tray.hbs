@@ -54,5 +54,9 @@
 
     <div class="tray-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
         <div class="panel-container" data-panel="party"></div>
+        {{#if @root.settings.showPartyStatsPanel}}
+        <div class="panel-container" data-panel="party-stats"></div>
+        {{/if}}
+        
     </div>
 </div> 

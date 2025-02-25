@@ -34,7 +34,8 @@
         "scripts/panel-weapons.js",
         "scripts/panel-favorites.js",
         "scripts/panel-dicetray.js",
-        "scripts/panel-abilities.js"
+        "scripts/panel-abilities.js",
+        "scripts/panel-party-stats.js"
     ],
     "styles": [
         "styles/default.css"
