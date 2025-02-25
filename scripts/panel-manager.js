@@ -222,20 +222,25 @@ export class PanelManager {
 
     async updateHandle() {
         if (PanelManager.element) {
-            // Get favorites in their correct order
-            const favoriteIds = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+            // Get favorites in their correct order from the FavoritesPanel class
+            const favoriteIds = FavoritesPanel.getFavorites(this.actor);
             const itemsById = new Map(this.actor.items.map(item => [item.id, item]));
             
             // Map favorites in their original order
             const favorites = favoriteIds
-                .map(id => itemsById.get(id))
-                .filter(item => item) // Remove any undefined items
-                .map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    img: item.img || 'icons/svg/item-bag.svg',
-                    type: item.type
-                }));
+                .map((id, index) => {
+                    const item = itemsById.get(id);
+                    if (!item) return null;
+                    return {
+                        id: item.id,
+                        name: item.name,
+                        img: item.img || 'icons/svg/item-bag.svg',
+                        type: item.type,
+                        system: item.system,
+                        sortOrder: index
+                    };
+                })
+                .filter(item => item !== null);
 
             const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
                 actor: this.actor,
@@ -244,7 +249,7 @@ export class PanelManager {
                     name: e.name,
                     icon: e.icon || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
-                favorites: favorites, // Pass the ordered favorites
+                favorites: favorites,
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),

@@ -35,24 +35,27 @@ export class FavoritesPanel {
     static async manageFavorite(actor, itemId) {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         try {
-            // Ensure we have a valid itemId
-            if (!itemId) {
+            // Ensure we have a valid itemId and actor
+            if (!itemId || !actor) {
                 blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Invalid item ID in manageFavorite",
-                    { itemId, stack: new Error().stack },
+                    "SQUIRE | Invalid item ID or actor in manageFavorite",
+                    { itemId, actor, stack: new Error().stack },
                     false,
                     true,
                     false,
                     MODULE.TITLE
                 );
-                return;
+                return false;
             }
 
-            // Get current favorites
-            const favorites = (actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
+            // Get current favorites and ensure it's an array
+            const favorites = Array.isArray(actor.getFlag(MODULE.ID, 'favorites')) ? 
+                actor.getFlag(MODULE.ID, 'favorites') : [];
+            
+            // Filter out any null/undefined values and create new array
             const newFavorites = favorites.includes(itemId)
-                ? favorites.filter(id => id !== itemId)
-                : [...favorites, itemId];
+                ? favorites.filter(id => id !== null && id !== undefined && id !== itemId)
+                : [...favorites.filter(id => id !== null && id !== undefined), itemId];
 
             // Update the flag and wait for it to complete
             await actor.unsetFlag(MODULE.ID, 'favorites');
@@ -387,7 +390,14 @@ export class FavoritesPanel {
 
         // Toggle favorite
         panel.on('click', '.tray-buttons .fa-heart', async (event) => {
-            const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
+            event.preventDefault();
+            event.stopPropagation();
+            const $item = $(event.currentTarget).closest('.favorite-item');
+            const itemId = $item.data('item-id');
+            if (!itemId) {
+                console.error("SQUIRE | No item ID found for favorite toggle");
+                return;
+            }
             await FavoritesPanel.manageFavorite(this.actor, itemId);
         });
 

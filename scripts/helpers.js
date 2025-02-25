@@ -80,9 +80,18 @@ export const registerHelpers = function() {
 
     // Helper to get favorites from actor
     Handlebars.registerHelper('getFavorites', function(actor) {
-        const favorites = actor.getFlag('coffee-pub-squire', 'favorites') || [];
-        return actor.items
-            .filter(item => favorites.includes(item.id))
+        if (!actor) return [];
+        
+        // Get our module's favorites from flags and filter out null values
+        const favorites = (actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
+        
+        // Create a map of items by ID for quick lookup
+        const itemsById = new Map(actor.items.map(item => [item.id, item]));
+        
+        // Map favorites in their original order
+        return favorites
+            .map(id => itemsById.get(id))
+            .filter(item => item) // Remove any undefined items
             .map(item => ({
                 id: item.id,
                 name: item.name,
