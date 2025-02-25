@@ -18,6 +18,7 @@ export class PanelManager {
     static isPinned = false;
     static element = null;
     static newlyAddedItems = new Map();
+    static _cleanupInterval = null;
 
     constructor(actor) {
         this.actor = actor;
@@ -39,6 +40,17 @@ export class PanelManager {
     static async initialize(actor = null) {
         // If we have an instance with the same actor, do nothing
         if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
+
+        // Set up cleanup interval if not already set
+        if (!PanelManager._cleanupInterval) {
+            PanelManager._cleanupInterval = setInterval(() => {
+                PanelManager.cleanupNewlyAddedItems();
+                // Force a re-render of the inventory panel if it exists
+                if (PanelManager.instance?.inventoryPanel?.element) {
+                    PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                }
+            }, 30000); // Check every 30 seconds
+        }
 
         // Preserve window states from old instance
         const oldHealthPanel = PanelManager.instance?.healthPanel;

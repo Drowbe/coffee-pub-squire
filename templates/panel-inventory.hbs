@@ -6,7 +6,7 @@
             <i class="fas fa-dice-d20 inventory-roll-overlay"></i>
         </div>
         <div class="inventory-name">
-            {{name}}
+            {{{name}}}
             {{#if (lookup ../newlyAddedItems id)}}<span class="new-tag">NEW</span>{{/if}}
             {{#if actionType}}
             <span class="action-type">
@@ -70,8 +70,7 @@
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-equipment"
-                type=item.type
-                isNew=(lookup ../newlyAddedItems item.id)}}
+                type=item.type}}
             {{/each}}
             {{/if}}
 
@@ -102,7 +101,7 @@
                 name=item.name 
                 actionType=item.actionType 
                 system=item.system 
-                quantity=item.system.quantity 
+                quantity=item.system.quantity
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-tool"
                 type=item.type}}

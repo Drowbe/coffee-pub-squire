@@ -45,7 +45,7 @@ export class InventoryPanel {
         // Map items with favorite state and action type
         const mappedItems = items.map(item => ({
             id: item.id,
-            name: item.name,
+            name: item.name + (PanelManager.newlyAddedItems.has(item.id) ? ' <span class="new-tag">NEW</span>' : ''),
             img: item.img || 'icons/svg/item-bag.svg',
             type: item.type,
             system: item.system,
@@ -85,7 +85,8 @@ export class InventoryPanel {
             items: this.items.all,
             itemsByType: this.items.byType,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
-            showOnlyEquipped: this.showOnlyEquipped
+            showOnlyEquipped: this.showOnlyEquipped,
+            newlyAddedItems: PanelManager.newlyAddedItems
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_INVENTORY, itemData);
