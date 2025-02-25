@@ -36,6 +36,34 @@ export class PartyPanel {
                 actor.sheet.render(true);
             }
         });
+
+        // Handle portrait clicks
+        html.find('.character-image.clickable').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const actorId = $(event.currentTarget).closest('.character-card').data('actor-id');
+            const actor = game.actors.get(actorId);
+            if (actor) {
+                const imagePopout = new ImagePopout(actor.img, {
+                    title: actor.name,
+                    shareable: true,
+                    uuid: actor.uuid
+                });
+                imagePopout.render(true);
+            }
+        });
+
+        // Handle character card clicks for token selection
+        html.find('.character-card.clickable').click(async (event) => {
+            // Don't handle clicks if they originated from the open-sheet button or portrait
+            if ($(event.target).closest('.open-sheet, .character-image.clickable').length) return;
+
+            const actorId = $(event.currentTarget).data('actor-id');
+            const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+            if (token) {
+                token.control({releaseOthers: true});
+            }
+        });
     }
 
     _onTokenUpdate(token, changes) {

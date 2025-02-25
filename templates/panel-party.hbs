@@ -1,6 +1,6 @@
 {{#each tokens as |token|}}
-    <div class="character-card" data-actor-id="{{token.actor.id}}">
-        <div class="character-image" style="background-image: url('{{token.actor.img}}')">
+    <div class="character-card {{#if token.actor.isOwner}}clickable{{/if}}" data-actor-id="{{token.actor.id}}">
+        <div class="character-image clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">
             {{#if token.actor.system.attributes.hp}}
             <div class="health-overlay" style="height: {{healthOverlayHeight token.actor.system.attributes.hp}}"></div>
             {{#if (eq token.actor.system.attributes.hp.value 0)}}
@@ -32,7 +32,9 @@
             </div>
         </div>
         <div class="character-actions">
+            {{#if token.actor.isOwner}}
             <i class="fas fa-feather-alt open-sheet" title="Open Character Sheet"></i>
+            {{/if}}
         </div>
     </div>
 {{else}}

@@ -12,6 +12,10 @@
     border-radius: 4px;
 }
 
+.party-view .character-card.clickable {
+    cursor: pointer;
+}
+
 /* Portrait */
 .party-view .character-image {
     width: 70px;
@@ -23,6 +27,10 @@
     position: relative;
     background-size: cover;
     background-position: center;
+}
+
+.party-view .character-image.clickable {
+    cursor: zoom-in;
 }
 
 /* Health Overlay */
@@ -74,16 +82,16 @@
     padding-top: 4px;
 }
 
-.party-view .character-details span {
+.party-view .details-primary {
     text-transform: uppercase;
     font-size: 0.6em;
     font-weight: 700;
 }
 
-.party-view .character-details span:not(:last-child)::after {
-    content: " • ";
-    margin: 0 5px;
-    color: #444;
+.party-view .details-secondary {
+    font-size: 0.5em;
+    font-weight: 400;
+    margin-top: 2px;
 }
 
 /* Character Actions */
