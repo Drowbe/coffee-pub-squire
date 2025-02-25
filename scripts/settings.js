@@ -59,7 +59,7 @@ export const registerSettings = function() {
         config: true,
         type: Number,
         range: {
-            min: 300,
+            min: 350,
             max: 600,
             step: 25
         },
@@ -85,7 +85,7 @@ export const registerSettings = function() {
     // Top Offset setting
     game.settings.register(MODULE.ID, 'topOffset', {
         name: 'Top Offset',
-        hint: 'Distance from the top of the screen (in pixels). Default: 70px',
+        hint: 'Distance from the top of the screen (in pixels). Default: 10px',
         scope: 'client',
         config: true,
         type: Number,
@@ -94,7 +94,7 @@ export const registerSettings = function() {
             max: 200,
             step: 5
         },
-        default: 70,
+        default: 10,
         onChange: value => {
             document.documentElement.style.setProperty('--squire-tray-top-offset', `${value}px`);
         }
@@ -103,7 +103,7 @@ export const registerSettings = function() {
     // Bottom Offset setting
     game.settings.register(MODULE.ID, 'bottomOffset', {
         name: 'Bottom Offset',
-        hint: 'Distance from the bottom of the screen (in pixels). Default: 300px',
+        hint: 'Distance from the bottom of the screen (in pixels). Default: 10px',
         scope: 'client',
         config: true,
         type: Number,
@@ -112,7 +112,7 @@ export const registerSettings = function() {
             max: 500,
             step: 5
         },
-        default: 300,
+        default: 10,
         onChange: value => {
             document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${value}px`);
         }

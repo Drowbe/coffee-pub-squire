@@ -34,7 +34,31 @@ export class CharacterPanel {
             if (PanelManager.instance && !$refreshIcon.hasClass('spinning')) {
                 try {
                     $refreshIcon.addClass('spinning');
-                    await PanelManager.instance.updateTray();
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    blacksmith?.utils.postConsoleAndNotification(
+                        "SQUIRE | Starting tray refresh",
+                        { actor: this.actor },
+                        false,
+                        true,
+                        false,
+                        MODULE.TITLE
+                    );
+                    await PanelManager.initialize(this.actor);
+                    // Force a re-render of all panels
+                    if (PanelManager.instance) {
+                        await PanelManager.instance.renderPanels(PanelManager.element);
+                    }
+                    blacksmith?.utils.postConsoleAndNotification(
+                        "SQUIRE | Tray refresh complete",
+                        "",
+                        false,
+                        true,
+                        true,
+                        MODULE.TITLE
+                    );
+                } catch (error) {
+                    console.error("SQUIRE | Error refreshing tray:", error);
+                    ui.notifications.error("Failed to refresh tray");
                 } finally {
                     $refreshIcon.removeClass('spinning');
                 }
