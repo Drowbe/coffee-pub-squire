@@ -503,6 +503,12 @@ export class FavoritesPanel {
             if (this.element) {
                 await this.render(this.element);
             }
+
+            // Update the handle to reflect the new order
+            if (PanelManager.instance) {
+                await PanelManager.instance.updateHandle();
+            }
+
             console.log("SQUIRE | Reorder complete");
         } catch (error) {
             console.error("SQUIRE | Error reordering favorites", error);
