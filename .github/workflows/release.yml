@@ -33,6 +33,7 @@ jobs:
             styles/ \
             templates/ \
             lang/ \
+            images/ \
             -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
 
       # Create release
