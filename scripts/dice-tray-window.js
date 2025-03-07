@@ -36,7 +36,7 @@ export class DiceTrayWindow extends Application {
             isDiceTrayPopped: true
         };
         // Update window title with actor name
-        this.options.title = `Dice Tray: ${this.panel.actor.name}`;
+        this.options.title = `Dice Tray: ${this.panel.actor?.name || 'No Character'}`;
         return data;
     }
 
