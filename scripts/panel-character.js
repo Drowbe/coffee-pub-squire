@@ -23,8 +23,8 @@ export class CharacterPanel {
     _onActorUpdate(document, change) {
         // Check if this update is for our actor and if HP changed
         if (document.id !== this.actor.id) return;
-        if (!hasProperty(change, "system.attributes.hp")) return;
-        
+        if (!foundry.utils.hasProperty(change, "system.attributes.hp")) return;
+
         // Update the health overlay
         const hp = this.actor.system.attributes.hp;
         const percentage = Math.round(100 - ((hp.value / hp.max) * 100));

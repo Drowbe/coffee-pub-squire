@@ -68,14 +68,14 @@ export class PartyPanel {
 
     _onTokenUpdate(token, changes) {
         // Re-render if token position or visibility changes
-        if (hasProperty(changes, "x") || hasProperty(changes, "y") || hasProperty(changes, "hidden")) {
+        if (foundry.utils.hasProperty(changes, "x") || foundry.utils.hasProperty(changes, "y") || foundry.utils.hasProperty(changes, "hidden")) {
             this.render(this.element);
         }
     }
 
     _onActorUpdate(actor, changes) {
         // Re-render if HP changes
-        if (hasProperty(changes, "system.attributes.hp")) {
+        if (foundry.utils.hasProperty(changes, "system.attributes.hp")) {
             this.render(this.element);
         }
     }
