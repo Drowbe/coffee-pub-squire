@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.4] - 2024-03-11
+## [1.0.4] - 2024-02-26
 
 ### Added
-- Added new setting to exclude specific users from seeing the Squire tray
-- Added proper cleanup of CSS variables and UI margins for excluded users
+- New setting to exclude specific users from seeing the Squire tray
+- Proper cleanup of CSS variables and UI margins for excluded users
 
 ### Changed
 - Improved module initialization to handle excluded users properly
@@ -17,32 +17,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced handling of Handlebars partials for excluded users
 
 ### Fixed
-- Fixed issue where UI space was still reserved for excluded users
-- Fixed initialization errors related to user context
-- Fixed Handlebars template errors for excluded users
+- Issues related to UI space reservation for excluded users
+- Initialization errors related to user context
+- Handlebars template errors for excluded users
 
 ## [1.0.3] - 2024-02-25
 
 ### Added
-- Added new Party Stats Panel with real-time combat statistics
-- Added collapsible sections for Combat Overview, Individual Contributions, and Session Information
-- Added automatic stat updates using Blacksmith's Stats API
-- Added visual styling to match the tray's aesthetic with section-specific colors
-- Added party view mode toggle in tray handle
+- Added support for excluding specific users from seeing the Squire tray
+- Added proper cleanup when users are excluded
 
 ### Changed
-- Improved panel organization with dedicated CSS files
-- Enhanced section headers with icons and collapsible functionality
-- Updated stat display with more readable formatting and better visual hierarchy
+- Updated initialization process to better handle user context
+- Improved error handling for template registration
 
 ### Fixed
-- Fixed context menu functionality for reordering favorites
-- Fixed issue where moving favorites would break tray expand/collapse functionality
-- Fixed pin button functionality after reordering favorites
-- Fixed issue where odd/even number of moves would affect tray functionality
-- Eliminated all deprecation warnings for D&D5e+
-- Readiness for version 13
-- Prep for version 14
+- Fixed issues with user visibility and initialization
+- Resolved template registration timing issues
 
 ## [1.0.2] - 2024-02-08
 
