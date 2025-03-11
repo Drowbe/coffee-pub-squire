@@ -25,24 +25,31 @@ export class PanelManager {
 
     constructor(actor) {
         this.actor = actor;
-        this.characterPanel = new CharacterPanel(actor);
-        this.controlPanel = new ControlPanel(actor);
-        this.favoritesPanel = new FavoritesPanel(actor);
-        this.spellsPanel = new SpellsPanel(actor);
-        this.weaponsPanel = new WeaponsPanel(actor);
-        this.inventoryPanel = new InventoryPanel(actor);
-        this.featuresPanel = new FeaturesPanel(actor);
-        this.dicetrayPanel = new DiceTrayPanel(actor);
-        this.experiencePanel = new ExperiencePanel(actor);
-        this.healthPanel = new HealthPanel(actor);
-        this.statsPanel = new StatsPanel(actor);
-        this.abilitiesPanel = new AbilitiesPanel(actor);
-        this.partyPanel = new PartyPanel();
-        this.partyStatsPanel = new PartyStatsPanel();
+        this.element = null;
+        if (actor) {
+            this.characterPanel = new CharacterPanel(actor);
+            this.controlPanel = new ControlPanel(actor);
+            this.favoritesPanel = new FavoritesPanel(actor);
+            this.spellsPanel = new SpellsPanel(actor);
+            this.weaponsPanel = new WeaponsPanel(actor);
+            this.inventoryPanel = new InventoryPanel(actor);
+            this.featuresPanel = new FeaturesPanel(actor);
+            this.dicetrayPanel = new DiceTrayPanel({ actor });
+            this.experiencePanel = new ExperiencePanel(actor);
+            this.healthPanel = new HealthPanel(actor);
+            this.statsPanel = new StatsPanel(actor);
+            this.abilitiesPanel = new AbilitiesPanel(actor);
+            this.partyPanel = new PartyPanel();
+            this.partyStatsPanel = new PartyStatsPanel();
+        }
         this.hiddenCategories = new Set();
     }
 
     static async initialize(actor = null) {
+        // Check if current user is excluded
+        const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());
+        if (excludedUsers.includes(game.user.id)) return;
+
         // If we have an instance with the same actor, do nothing
         if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
 
@@ -70,7 +77,7 @@ export class PanelManager {
         PanelManager.instance = new PanelManager(actor);
 
         // Restore health window state if it was open
-        if (hadHealthWindow) {
+        if (hadHealthWindow && PanelManager.instance.healthPanel) {
             PanelManager.instance.healthPanel.isPoppedOut = true;
             PanelManager.instance.healthPanel.window = oldHealthPanel.window;
             PanelManager.instance.healthPanel.window.panel = PanelManager.instance.healthPanel;
@@ -81,7 +88,7 @@ export class PanelManager {
         }
 
         // Restore dice tray window state if it was open
-        if (hadDiceTrayWindow) {
+        if (hadDiceTrayWindow && PanelManager.instance.dicetrayPanel) {
             PanelManager.instance.dicetrayPanel.isPoppedOut = true;
             PanelManager.instance.dicetrayPanel.window = oldDiceTrayPanel.window;
             PanelManager.instance.dicetrayPanel.window.panel = PanelManager.instance.dicetrayPanel;
@@ -102,7 +109,7 @@ export class PanelManager {
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
-            effects: this.actor.effects?.map(e => ({
+            effects: this.actor?.effects?.map(e => ({
                 name: e.name,
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
             })) || [],
@@ -288,24 +295,27 @@ export class PanelManager {
     }
 
     async renderPanels(element) {
-        await this.characterPanel.render(element);
-        await this.controlPanel.render(element);
-        await this.favoritesPanel.render(element);
-        await this.spellsPanel.render(element);
-        await this.weaponsPanel.render(element);
-        await this.inventoryPanel.render(element);
-        await this.featuresPanel.render(element);
-        if (!DiceTrayPanel.isWindowOpen) {
-            await this.dicetrayPanel.render(element);
+        // Only try to render panels that exist
+        if (this.actor) {
+            this.characterPanel?.render(element);
+            this.controlPanel?.render(element);
+            this.favoritesPanel?.render(element);
+            this.spellsPanel?.render(element);
+            this.weaponsPanel?.render(element);
+            this.inventoryPanel?.render(element);
+            this.featuresPanel?.render(element);
+            if (!DiceTrayPanel.isWindowOpen) {
+                this.dicetrayPanel?.render(element);
+            }
+            this.experiencePanel?.render(element);
+            if (!HealthPanel.isWindowOpen) {
+                this.healthPanel?.render(element);
+            }
+            this.statsPanel?.render(element);
+            this.abilitiesPanel?.render(element);
+            this.partyPanel?.render(element);
+            this.partyStatsPanel?.render(element);
         }
-        await this.experiencePanel.render(element);
-        if (!HealthPanel.isWindowOpen) {
-            await this.healthPanel.render(element);
-        }
-        await this.statsPanel.render(element);
-        await this.abilitiesPanel.render(element);
-        await this.partyPanel.render(element);
-        await this.partyStatsPanel.render(element);
     }
 
     activateListeners(tray) {

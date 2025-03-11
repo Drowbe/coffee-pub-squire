@@ -9,12 +9,12 @@ export class DiceTrayPanel {
         this.currentFormula = "";
         this.rollHistory = [];
         this.element = null;
-        this.actor = options.actor || game.user.character;
+        this.actor = options.actor || null;
         // Check if there's an active window and restore state
         this.window = DiceTrayPanel.activeWindow;
         this.isPoppedOut = DiceTrayPanel.isWindowOpen;
 
-        // Register for actor updates
+        // Only register for actor updates if we have an actor
         if (this.actor) {
             this.actor.apps[this.id] = this;
         }
@@ -635,7 +635,7 @@ export class DiceTrayPanel {
         }
 
         // Update actor reference
-        this.actor = actor || game.user.character;
+        this.actor = actor || null;
         
         // Register with new actor
         if (this.actor) {
