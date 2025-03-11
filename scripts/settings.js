@@ -15,10 +15,62 @@ export const registerSettings = function() {
         config: true,
         type: String,
         default: '',
-        onChange: value => {
+        onChange: async value => {
+            // Only process if game is ready and user exists
+            if (!game.user) return;
+
             // Force a refresh if the current user's status changes
             const currentUserId = game.user.id;
             const isExcluded = value.split(',').map(id => id.trim()).includes(currentUserId);
+            
+            // Handle UI margins and CSS variables
+            const uiLeft = document.querySelector('#ui-left');
+            if (uiLeft) {
+                if (isExcluded) {
+                    // Reset margin if user is excluded
+                    uiLeft.style.marginLeft = '0px';
+                    // Remove the partial if user is excluded
+                    if (Handlebars.partials['handle-player']) {
+                        delete Handlebars.partials['handle-player'];
+                    }
+                    // Reset CSS variables
+                    document.documentElement.style.removeProperty('--squire-tray-handle-width');
+                    document.documentElement.style.removeProperty('--squire-tray-handle-adjustment');
+                    document.documentElement.style.removeProperty('--squire-tray-width');
+                    document.documentElement.style.removeProperty('--squire-tray-transform');
+                    document.documentElement.style.removeProperty('--squire-tray-top-offset');
+                    document.documentElement.style.removeProperty('--squire-tray-bottom-offset');
+                } else {
+                    // Restore margin based on pin state if user is not excluded
+                    const isPinned = game.settings.get(MODULE.ID, 'isPinned');
+                    const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+                    
+                    // Restore CSS variables
+                    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_HANDLE_WIDTH);
+                    document.documentElement.style.setProperty('--squire-tray-handle-adjustment', SQUIRE.TRAY_HANDLE_ADJUSTMENT);
+                    document.documentElement.style.setProperty('--squire-tray-width', `${trayWidth}px`);
+                    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
+                    
+                    // Set offset variables
+                    const topOffset = game.settings.get(MODULE.ID, 'topOffset');
+                    const bottomOffset = game.settings.get(MODULE.ID, 'bottomOffset');
+                    document.documentElement.style.setProperty('--squire-tray-top-offset', `${topOffset}px`);
+                    document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${bottomOffset}px`);
+
+                    if (isPinned) {
+                        uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                    } else {
+                        uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                    }
+                    // Register the partial if user is not excluded
+                    if (!Handlebars.partials['handle-player']) {
+                        const handlePlayerTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-player.hbs`).then(response => response.text());
+                        Handlebars.registerPartial('handle-player', handlePlayerTemplate);
+                    }
+                }
+            }
+
+            // Handle tray visibility
             if (isExcluded && PanelManager.element) {
                 PanelManager.element.remove();
                 PanelManager.element = null;
