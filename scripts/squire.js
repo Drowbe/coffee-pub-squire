@@ -55,6 +55,20 @@ Hooks.once('ready', async function() {
         return;
     }
     
+    // Check if current user is excluded
+    const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());
+    if (excludedUsers.includes(game.user.id)) {
+        blacksmith.utils.postConsoleAndNotification(
+            `${MODULE.TITLE} | User is excluded from seeing the Squire tray`,
+            null,
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
+        return;
+    }
+    
     // Register Handlebars helpers
     registerHelpers();
     
@@ -79,5 +93,10 @@ Hooks.once('ready', async function() {
 // Initialize panel when character sheet is rendered
 Hooks.on('renderActorSheet5e', async (app, html, data) => {
     if (!app.actor) return;
+    
+    // Check if current user is excluded
+    const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());
+    if (excludedUsers.includes(game.user.id)) return;
+    
     await PanelManager.initialize(app.actor);
 }); 

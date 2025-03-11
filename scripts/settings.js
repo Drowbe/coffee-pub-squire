@@ -7,6 +7,27 @@ export const registerSettings = function() {
     // --- Handle Display Settings ---
     // --------------------------------
 
+    // Excluded Users
+    game.settings.register(MODULE.ID, 'excludedUsers', {
+        name: 'Excluded Users',
+        hint: 'List of userIDs that should not see the Squire tray (comma-separated)',
+        scope: 'world',
+        config: true,
+        type: String,
+        default: '',
+        onChange: value => {
+            // Force a refresh if the current user's status changes
+            const currentUserId = game.user.id;
+            const isExcluded = value.split(',').map(id => id.trim()).includes(currentUserId);
+            if (isExcluded && PanelManager.element) {
+                PanelManager.element.remove();
+                PanelManager.element = null;
+            } else if (!isExcluded && !PanelManager.element) {
+                PanelManager.initialize(PanelManager.currentActor);
+            }
+        }
+    });
+
     // Tray Position
     game.settings.register(MODULE.ID, 'trayPosition', {
         name: 'Tray Position',
