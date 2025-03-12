@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.4] - 2024-02-26
+## [1.0.5] - 2024-03-19
+
+### Fixed
+- Fixed critical issue where excluded users would still see the tray
+- Improved handling of user exclusion to prevent any tray elements from displaying
+
+## [1.0.4] - 2024-03-19
 
 ### Added
 - New setting to exclude specific users from seeing the Squire tray
@@ -17,9 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced handling of Handlebars partials for excluded users
 
 ### Fixed
-- Issues related to UI space reservation for excluded users
-- Initialization errors related to user context
-- Handlebars template errors for excluded users
+- Fixed issue where excluded users would still see the tray
+- Improved handling of user exclusion to prevent any tray elements from displaying
 
 ## [1.0.3] - 2024-02-25
 
