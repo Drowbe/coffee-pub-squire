@@ -46,10 +46,6 @@ export class PanelManager {
     }
 
     static async initialize(actor = null) {
-        // Check if current user is excluded
-        const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());
-        if (excludedUsers.includes(game.user.id)) return;
-
         // If we have an instance with the same actor, do nothing
         if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
 
