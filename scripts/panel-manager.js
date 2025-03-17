@@ -877,9 +877,45 @@ export class PanelManager {
             const button = tray.find('.view-toggle-button i');
             button.removeClass('fa-user fa-users').addClass(newMode === 'party' ? 'fa-users' : 'fa-user');
             
+            // Update tab buttons
+            tray.find('.tray-tab-button').removeClass('active');
+            tray.find(`.tray-tab-button[data-view="${newMode}"]`).addClass('active');
+            
             // Toggle view visibility
-            tray.find('.player-view').toggleClass('hidden', newMode !== 'player');
-            tray.find('.party-view').toggleClass('hidden', newMode !== 'party');
+            tray.find('.tray-view-content.player-view').toggleClass('hidden', newMode !== 'player');
+            tray.find('.tray-view-content.party-view').toggleClass('hidden', newMode !== 'party');
+        });
+        
+        // Tab buttons
+        tray.find('.tray-tab-button').click(async (event) => {
+            const $button = $(event.currentTarget);
+            const view = $button.data('view');
+            
+            // Skip if already active
+            if ($button.hasClass('active')) return;
+            
+            // Update active state
+            tray.find('.tray-tab-button').removeClass('active');
+            $button.addClass('active');
+            
+            // Update view mode
+            PanelManager.viewMode = view;
+            await game.settings.set(MODULE.ID, 'viewMode', view);
+            
+            // Update handle button icon
+            const handleButton = tray.find('.view-toggle-button i');
+            handleButton.removeClass('fa-user fa-users').addClass(view === 'party' ? 'fa-users' : 'fa-user');
+            
+            // Toggle view visibility
+            tray.find('.tray-view-content.player-view').toggleClass('hidden', view !== 'player');
+            tray.find('.tray-view-content.party-view').toggleClass('hidden', view !== 'party');
+            
+            // Play a sound effect if blacksmith is available
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const sound = game.settings.get(MODULE.ID, 'tabChangeSound') || 'modules/coffee-pub-blacksmith/sounds/interface-click-01.mp3';
+                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
         });
     }
 

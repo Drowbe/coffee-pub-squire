@@ -15,48 +15,58 @@
         </div>
     </div>
 
-    <div class="tray-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
-        {{#if actor}}
-        <div class="panel-container" data-panel="character"></div>
-        {{#if @root.settings.showExperiencePanel}}
-        <div class="panel-container" data-panel="experience"></div>
-        {{/if}}
-        {{#if @root.settings.showAbilitiesPanel}}
-        <div class="panel-container" data-panel="abilities"></div>
-        {{/if}}
-        {{#unless isHealthPopped}}
-            {{#if @root.settings.showHealthPanel}}
-            <div class="panel-container" data-panel="health"></div>
-            {{/if}}
-        {{/unless}}
-        {{#if @root.settings.showStatsPanel}}
-        <div class="panel-container" data-panel="stats"></div>
-        {{/if}}
-        {{#unless isDiceTrayPopped}}
-            {{#if @root.settings.showDiceTrayPanel}}
-            <div class="panel-container" data-panel="dicetray"></div>
-            {{/if}}
-        {{/unless}}
-        <div class="panel-container" data-panel="control"></div>
-        <div class="panel-containers stacked">
-            <div class="panel-container" data-panel="favorites"></div>
-            <div class="panel-container" data-panel="weapons"></div>
-            <div class="panel-container" data-panel="spells"></div>
-            <div class="panel-container" data-panel="features"></div>
-            <div class="panel-container" data-panel="inventory"></div>
+    <div class="tray-content">
+        <div class="tray-view-tabs">
+            <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player">
+                <i class="fas fa-user"></i> Character
+            </button>
+            <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party">
+                <i class="fas fa-users"></i> Party
+            </button>
         </div>
-        {{else}}
-        <div class="no-character-message">
-            Select a character token to view their information
-        </div>
-        {{/if}}
-    </div>
-
-    <div class="tray-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
-        <div class="panel-container" data-panel="party"></div>
-        {{#if @root.settings.showPartyStatsPanel}}
-        <div class="panel-container" data-panel="party-stats"></div>
-        {{/if}}
         
+        <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
+            {{#if actor}}
+            <div class="panel-container" data-panel="character"></div>
+            {{#if @root.settings.showExperiencePanel}}
+            <div class="panel-container" data-panel="experience"></div>
+            {{/if}}
+            {{#if @root.settings.showAbilitiesPanel}}
+            <div class="panel-container" data-panel="abilities"></div>
+            {{/if}}
+            {{#unless isHealthPopped}}
+                {{#if @root.settings.showHealthPanel}}
+                <div class="panel-container" data-panel="health"></div>
+                {{/if}}
+            {{/unless}}
+            {{#if @root.settings.showStatsPanel}}
+            <div class="panel-container" data-panel="stats"></div>
+            {{/if}}
+            {{#unless isDiceTrayPopped}}
+                {{#if @root.settings.showDiceTrayPanel}}
+                <div class="panel-container" data-panel="dicetray"></div>
+                {{/if}}
+            {{/unless}}
+            <div class="panel-container" data-panel="control"></div>
+            <div class="panel-containers stacked">
+                <div class="panel-container" data-panel="favorites"></div>
+                <div class="panel-container" data-panel="weapons"></div>
+                <div class="panel-container" data-panel="spells"></div>
+                <div class="panel-container" data-panel="features"></div>
+                <div class="panel-container" data-panel="inventory"></div>
+            </div>
+            {{else}}
+            <div class="no-character-message">
+                Select a character token to view their information
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="tray-view-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
+            <div class="panel-container" data-panel="party"></div>
+            {{#if @root.settings.showPartyStatsPanel}}
+            <div class="panel-container" data-panel="party-stats"></div>
+            {{/if}}
+        </div>
     </div>
 </div> 
