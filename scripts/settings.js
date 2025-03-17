@@ -516,6 +516,19 @@ export const registerSettings = function() {
         type: String,
         default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
     });
+
+
+    game.settings.register(MODULE.ID, 'tabChangeSound', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
+    });
+
+
+
+
+
 };
 
 // ***************************

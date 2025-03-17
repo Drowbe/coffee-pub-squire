@@ -1,5 +1,5 @@
 {{#each tokens as |token|}}
-    <div class="character-card {{#if token.actor.isOwner}}clickable{{/if}}" data-actor-id="{{token.actor.id}}">
+    <div class="character-card {{#if token.actor.isOwner}}clickable{{/if}} {{#if (includes ../controlledTokenIds token.actor.id)}}selected{{/if}}" data-actor-id="{{token.actor.id}}">
         <div class="character-image clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">
             {{#if token.actor.system.attributes.hp}}
             <div class="health-overlay" style="height: {{healthOverlayHeight token.actor.system.attributes.hp}}"></div>

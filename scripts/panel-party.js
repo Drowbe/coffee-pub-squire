@@ -5,10 +5,12 @@ export class PartyPanel {
         this.element = null;
         this._onTokenUpdate = this._onTokenUpdate.bind(this);
         this._onActorUpdate = this._onActorUpdate.bind(this);
+        this._onControlToken = this._onControlToken.bind(this);
         
         // Register hooks for updates
         Hooks.on('updateToken', this._onTokenUpdate);
         Hooks.on('updateActor', this._onActorUpdate);
+        Hooks.on('controlToken', this._onControlToken);
     }
 
     async render(element) {
@@ -18,8 +20,16 @@ export class PartyPanel {
 
         // Get all player-owned tokens on the canvas
         const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
+        
+        // Get currently controlled tokens' actor IDs
+        const controlledTokenIds = canvas.tokens.controlled
+            .filter(token => token.actor)
+            .map(token => token.actor.id);
 
-        const html = await renderTemplate(TEMPLATES.PANEL_PARTY, { tokens });
+        const html = await renderTemplate(TEMPLATES.PANEL_PARTY, { 
+            tokens,
+            controlledTokenIds
+        });
         partyContainer.html(html);
 
         this.activateListeners(partyContainer);
@@ -80,9 +90,15 @@ export class PartyPanel {
         }
     }
 
+    _onControlToken(token, isControlled) {
+        // Re-render to highlight the currently selected token
+        this.render(this.element);
+    }
+
     destroy() {
         // Remove hooks when panel is destroyed
         Hooks.off('updateToken', this._onTokenUpdate);
         Hooks.off('updateActor', this._onActorUpdate);
+        Hooks.off('controlToken', this._onControlToken);
     }
 } 
