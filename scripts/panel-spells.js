@@ -249,6 +249,65 @@ export class SpellsPanel {
                 spell.sheet.render(true);
             }
         });
+
+        // Spell slot pip click handlers (GM only)
+        if (game.user.isGM) {
+            // Left click to increase used slots
+            panel.on('click.squireSpells', '.slot-pip', async (event) => {
+                event.preventDefault();
+                const level = $(event.currentTarget).data('level');
+                if (!level) return;
+                
+                // Get current spell slot data
+                const spellLevelKey = `spell${level}`;
+                const spellLevelData = this.actor.system.spells[spellLevelKey];
+                if (!spellLevelData) return;
+                
+                // Calculate new value (decrease available slots = increase used slots)
+                // Ensure value doesn't go below 0
+                const newValue = Math.max(0, spellLevelData.value - 1);
+                
+                // Update the actor
+                const updateData = {};
+                updateData[`system.spells.${spellLevelKey}.value`] = newValue;
+                await this.actor.update(updateData);
+                
+                // Play a sound effect if blacksmith is available
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    blacksmith.utils.playSound('modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3', blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+            });
+            
+            // Right click to decrease used slots
+            panel.on('contextmenu.squireSpells', '.slot-pip', async (event) => {
+                event.preventDefault();
+                const level = $(event.currentTarget).data('level');
+                if (!level) return;
+                
+                // Get current spell slot data
+                const spellLevelKey = `spell${level}`;
+                const spellLevelData = this.actor.system.spells[spellLevelKey];
+                if (!spellLevelData) return;
+                
+                // Calculate new value (increase available slots = decrease used slots)
+                // Max value is either the override value or the max value
+                const maxSlots = spellLevelData.override ?? spellLevelData.max;
+                // Allow going above max as requested
+                const newValue = spellLevelData.value + 1;
+                
+                // Update the actor
+                const updateData = {};
+                updateData[`system.spells.${spellLevelKey}.value`] = newValue;
+                await this.actor.update(updateData);
+                
+                // Play a sound effect if blacksmith is available
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    blacksmith.utils.playSound('modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3', blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+            });
+        }
     }
 
     _removeEventListeners(panel) {
