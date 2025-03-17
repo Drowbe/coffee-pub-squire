@@ -255,6 +255,8 @@ export class SpellsPanel {
             // Left click to increase used slots
             panel.on('click.squireSpells', '.slot-pip', async (event) => {
                 event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
                 const level = $(event.currentTarget).data('level');
                 if (!level) return;
                 
@@ -277,11 +279,15 @@ export class SpellsPanel {
                 if (blacksmith) {
                     blacksmith.utils.playSound('modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3', blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
+                
+                return false; // Ensure no further handling
             });
             
             // Right click to decrease used slots
             panel.on('contextmenu.squireSpells', '.slot-pip', async (event) => {
                 event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
                 const level = $(event.currentTarget).data('level');
                 if (!level) return;
                 
@@ -306,6 +312,8 @@ export class SpellsPanel {
                 if (blacksmith) {
                     blacksmith.utils.playSound('modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3', blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
+                
+                return false; // Ensure no further handling
             });
         }
     }
