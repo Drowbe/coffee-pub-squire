@@ -131,7 +131,14 @@ export class PartyPanel {
             $card.removeClass('drop-target');
             
             try {
-                const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
+                const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
+                // Debug log the raw data transfer
+                console.log("SQUIRE | Party Panel Raw drop data:", dataTransfer);
+                
+                const data = JSON.parse(dataTransfer);
+                
+                // Log the parsed data
+                console.log("SQUIRE | Party Panel Parsed drop data:", data);
                 
                 // Play drop sound
                 const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
@@ -141,61 +148,208 @@ export class PartyPanel {
                 }
                 
                 // Get the actor for this card
-                const actorId = $card.data('actor-id');
-                const actor = game.actors.get(actorId);
+                const targetActorId = $card.data('actor-id');
+                const targetActor = game.actors.get(targetActorId);
                 
-                if (!actor) {
+                if (!targetActor) {
                     ui.notifications.warn("Could not find the character to add the item to.");
                     return;
                 }
                 
                 // Check if the user has permission to modify this actor
-                if (!actor.isOwner) {
-                    ui.notifications.warn(`You don't have permission to modify ${actor.name}.`);
+                if (!targetActor.isOwner) {
+                    ui.notifications.warn(`You don't have permission to modify ${targetActor.name}.`);
                     return;
                 }
-                
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Party card drop data",
-                    { data, actorId, actor: actor.name },
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
                 
                 // Handle different drop types
                 let item;
                 switch (data.type) {
                     case 'Item':
-                        item = await Item.implementation.fromDropData(data);
-                        if (!item) return;
-                        // Create the item on the actor
-                        const createdItem = await actor.createEmbeddedDocuments('Item', [item.toObject()]);
-                        
-                        // Add to newlyAddedItems in PanelManager
-                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                            game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
+                        // This could be either a world item OR a drag from character sheet
+                        // Check for different indicators of a character sheet drag:
+                        // 1. data.actorId + data.data.itemId (standard from older code)
+                        // 2. data.actorId + data.embedId (common format for dnd5e character sheet)
+                        // 3. data.fromInventory flag (indicates drag from inventory)
+                        // 4. data.uuid in format "Actor.actorId.Item.itemId" (common format for dnd5e)
+                        if ((data.actorId && (data.data?.itemId || data.embedId)) || 
+                            data.fromInventory || 
+                            (data.uuid && data.uuid.startsWith("Actor."))) {
+                            
+                            // This is a drag from character sheet
+                            // Get source actor ID based on different data formats
+                            let sourceActorId;
+                            let itemId;
+                            
+                            // Parse from UUID format if present (Actor.actorId.Item.itemId)
+                            if (data.uuid && data.uuid.startsWith("Actor.")) {
+                                const parts = data.uuid.split(".");
+                                if (parts.length >= 4 && parts[2] === "Item") {
+                                    sourceActorId = parts[1];
+                                    itemId = parts[3];
+                                }
+                            } else {
+                                sourceActorId = data.actorId;
+                                itemId = data.data?.itemId || data.embedId || data.uuid?.split('.').pop();
+                            }
+                            
+                            const sourceActor = game.actors.get(sourceActorId);
+                            if (!sourceActor || !itemId) {
+                                ui.notifications.warn("Could not determine the source actor or item.");
+                                
+                                // Try the regular Item import as fallback
+                                item = await Item.implementation.fromDropData(data);
+                                if (!item) return;
+                                const createdItem = await targetActor.createEmbeddedDocuments('Item', [item.toObject()]);
+                                break;
+                            }
+                            
+                            // Get the item from the source actor
+                            const sourceItem = sourceActor.items.get(itemId);
+                            if (!sourceItem) {
+                                ui.notifications.warn("Could not find the item on the source character.");
+                                return;
+                            }
+                            
+                            // Check permissions on source actor
+                            if (!sourceActor.isOwner) {
+                                ui.notifications.warn(`You don't have permission to remove items from ${sourceActor.name}.`);
+                                return;
+                            }
+                            
+                            // Handle quantity logic for stackable items
+                            let quantityToTransfer = 1;
+                            const hasQuantity = sourceItem.system.quantity != null && sourceItem.system.quantity > 1;
+                            
+                            if (hasQuantity) {
+                                // Create a dialog to ask for quantity
+                                const timestamp = Date.now();
+                                const content = `
+                                    <form>
+                                        <div class="form-group">
+                                            <label>${sourceActor.name} is giving ${sourceItem.name} to ${targetActor.name}</label>
+                                            <div class="form-fields">
+                                                <input type="range" name="quantity_${timestamp}" value="1" min="1" max="${sourceItem.system.quantity}" step="1">
+                                                <span class="range-value" id="value_${timestamp}">1</span>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <script>
+                                        (function() {
+                                            const range_${timestamp} = document.querySelector('input[name="quantity_${timestamp}"]');
+                                            const display_${timestamp} = document.querySelector('#value_${timestamp}');
+                                            if (range_${timestamp} && display_${timestamp}) {
+                                                range_${timestamp}.addEventListener('input', (ev) => {
+                                                    display_${timestamp}.textContent = ev.target.value;
+                                                });
+                                            }
+                                        })();
+                                    </script>
+                                `;
+                                
+                                let selectedQuantity = await new Promise(resolve => {
+                                    new Dialog({
+                                        title: "Transfer Item",
+                                        content,
+                                        buttons: {
+                                            transfer: {
+                                                icon: '<i class="fas fa-exchange-alt"></i>',
+                                                label: "Transfer",
+                                                callback: html => {
+                                                    const quantity = Math.clamped(
+                                                        parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
+                                                        1,
+                                                        sourceItem.system.quantity
+                                                    );
+                                                    resolve(quantity);
+                                                }
+                                            },
+                                            cancel: {
+                                                icon: '<i class="fas fa-times"></i>',
+                                                label: "Cancel",
+                                                callback: () => resolve(0)
+                                            }
+                                        },
+                                        default: "transfer",
+                                        close: () => resolve(0)
+                                    }).render(true);
+                                });
+                                
+                                if (selectedQuantity <= 0) return; // User cancelled
+                                quantityToTransfer = selectedQuantity;
+                            }
+                            
+                            // Create a copy of the item data to transfer
+                            const transferData = sourceItem.toObject();
+                            
+                            // Set the correct quantity on the new item
+                            if (hasQuantity) {
+                                transferData.system.quantity = quantityToTransfer;
+                            }
+                            
+                            // Create the item on the target actor
+                            const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+                            
+                            // Reduce quantity or remove the item from source actor
+                            if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
+                                // Just reduce the quantity
+                                await sourceItem.update({
+                                    'system.quantity': sourceItem.system.quantity - quantityToTransfer
+                                });
+                            } else {
+                                // Remove the item entirely
+                                await sourceItem.delete();
+                            }
+                            
+                            // Add to newlyAddedItems in PanelManager
+                            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                                game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
+                            }
+                            
+                            // Send chat notification
+                            const transferChatData = {
+                                isPublic: true,
+                                strCardIcon: this._getDropIcon(sourceItem.type),
+                                strCardTitle: "Item Transferred",
+                                strCardContent: `<p><strong>${sourceActor.name}</strong> gave ${hasQuantity ? `${quantityToTransfer} ${quantityToTransfer > 1 ? 'units of' : 'unit of'}` : ''} <strong>${sourceItem.name}</strong> to <strong>${targetActor.name}</strong>.</p>`
+                            };
+                            const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
+                            await ChatMessage.create({
+                                content: transferChatContent,
+                                speaker: ChatMessage.getSpeaker({ actor: targetActor })
+                            });
+                        } else {
+                            // This is a regular world item
+                            item = await Item.implementation.fromDropData(data);
+                            if (!item) return;
+                            
+                            // Create the item on the actor
+                            const createdItem = await targetActor.createEmbeddedDocuments('Item', [item.toObject()]);
+                            
+                            // Add to newlyAddedItems in PanelManager
+                            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                                game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
+                            }
+                            
+                            // Send chat notification
+                            const chatData = {
+                                isPublic: true,
+                                strCardIcon: this._getDropIcon(item.type),
+                                strCardTitle: this._getDropTitle(item.type),
+                                strCardContent: `<p><strong>${targetActor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>`
+                            };
+                            const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
+                            await ChatMessage.create({
+                                content: chatContent,
+                                speaker: ChatMessage.getSpeaker({ actor: targetActor })
+                            });
                         }
-                        
-                        // Send chat notification
-                        const chatData = {
-                            isPublic: true,
-                            strCardIcon: this._getDropIcon(item.type),
-                            strCardTitle: this._getDropTitle(item.type),
-                            strCardContent: `<p><strong>${actor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>`
-                        };
-                        const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
-                        await ChatMessage.create({
-                            content: chatContent,
-                            speaker: ChatMessage.getSpeaker({ actor })
-                        });
                         break;
 
                     case 'ItemDirectory':
                         const itemData = game.items.get(data.uuid)?.toObject();
                         if (itemData) {
-                            const newItem = await actor.createEmbeddedDocuments('Item', [itemData]);
+                            const newItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
                             
                             // Add to newlyAddedItems in PanelManager
                             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
@@ -207,19 +361,157 @@ export class PartyPanel {
                                 isPublic: true,
                                 strCardIcon: this._getDropIcon(itemData.type),
                                 strCardTitle: this._getDropTitle(itemData.type),
-                                strCardContent: `<p><strong>${actor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p>`
+                                strCardContent: `<p><strong>${targetActor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p>`
                             };
                             const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, dirItemChatData);
                             await ChatMessage.create({
                                 content: dirItemChatContent,
-                                speaker: ChatMessage.getSpeaker({ actor })
+                                speaker: ChatMessage.getSpeaker({ actor: targetActor })
                             });
                         }
+                        break;
+
+                    // Special case: Actor -> Actor item transfer
+                    case 'Actor':
+                        // Extract item data from drop event
+                        const sourceActorId = data.id;
+                        const sourceActor = game.actors.get(sourceActorId);
+                        const itemId = data.data?.itemId || data.uuid?.split('.').pop();
+                        
+                        if (!sourceActor || !itemId) {
+                            ui.notifications.warn("Could not determine the source actor or item.");
+                            return;
+                        }
+                        
+                        // Get the item from the source actor
+                        const sourceItem = sourceActor.items.get(itemId);
+                        if (!sourceItem) {
+                            ui.notifications.warn("Could not find the item on the source character.");
+                            return;
+                        }
+                        
+                        // Check permissions on source actor
+                        if (!sourceActor.isOwner) {
+                            ui.notifications.warn(`You don't have permission to remove items from ${sourceActor.name}.`);
+                            return;
+                        }
+                        
+                        // Handle quantity logic for stackable items
+                        let quantityToTransfer = 1;
+                        const hasQuantity = sourceItem.system.quantity != null && sourceItem.system.quantity > 1;
+                        
+                        if (hasQuantity) {
+                            // Create a dialog to ask for quantity
+                            const timestamp = Date.now();
+                            const content = `
+                                <form>
+                                    <div class="form-group">
+                                        <label>${sourceActor.name} is giving ${sourceItem.name} to ${targetActor.name}</label>
+                                        <div class="form-fields">
+                                            <input type="range" name="quantity_${timestamp}" value="1" min="1" max="${sourceItem.system.quantity}" step="1">
+                                            <span class="range-value" id="value_${timestamp}">1</span>
+                                        </div>
+                                    </div>
+                                </form>
+                                <script>
+                                    (function() {
+                                        const range_${timestamp} = document.querySelector('input[name="quantity_${timestamp}"]');
+                                        const display_${timestamp} = document.querySelector('#value_${timestamp}');
+                                        if (range_${timestamp} && display_${timestamp}) {
+                                            range_${timestamp}.addEventListener('input', (ev) => {
+                                                display_${timestamp}.textContent = ev.target.value;
+                                            });
+                                        }
+                                    })();
+                                </script>
+                            `;
+                            
+                            let selectedQuantity = await new Promise(resolve => {
+                                new Dialog({
+                                    title: "Transfer Item",
+                                    content,
+                                    buttons: {
+                                        transfer: {
+                                            icon: '<i class="fas fa-exchange-alt"></i>',
+                                            label: "Transfer",
+                                            callback: html => {
+                                                const quantity = Math.clamped(
+                                                    parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
+                                                    1,
+                                                    sourceItem.system.quantity
+                                                );
+                                                resolve(quantity);
+                                            }
+                                        },
+                                        cancel: {
+                                            icon: '<i class="fas fa-times"></i>',
+                                            label: "Cancel",
+                                            callback: () => resolve(0)
+                                        }
+                                    },
+                                    default: "transfer",
+                                    close: () => resolve(0)
+                                }).render(true);
+                            });
+                            
+                            if (selectedQuantity <= 0) return; // User cancelled
+                            quantityToTransfer = selectedQuantity;
+                        }
+                        
+                        // Create a copy of the item data to transfer
+                        const transferData = sourceItem.toObject();
+                        
+                        // Set the correct quantity on the new item
+                        if (hasQuantity) {
+                            transferData.system.quantity = quantityToTransfer;
+                        }
+                        
+                        // Create the item on the target actor
+                        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+                        
+                        // Reduce quantity or remove the item from source actor
+                        if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
+                            // Just reduce the quantity
+                            await sourceItem.update({
+                                'system.quantity': sourceItem.system.quantity - quantityToTransfer
+                            });
+                        } else {
+                            // Remove the item entirely
+                            await sourceItem.delete();
+                        }
+                        
+                        // Add to newlyAddedItems in PanelManager
+                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                            game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
+                        }
+                        
+                        // Send chat notification
+                        const transferChatData = {
+                            isPublic: true,
+                            strCardIcon: this._getDropIcon(sourceItem.type),
+                            strCardTitle: "Item Transferred",
+                            strCardContent: `<p><strong>${sourceActor.name}</strong> gave ${hasQuantity ? `${quantityToTransfer} ${quantityToTransfer > 1 ? 'units of' : 'unit of'}` : ''} <strong>${sourceItem.name}</strong> to <strong>${targetActor.name}</strong>.</p>`
+                        };
+                        const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
+                        await ChatMessage.create({
+                            content: transferChatContent,
+                            speaker: ChatMessage.getSpeaker({ actor: targetActor })
+                        });
                         break;
                 }
                 
                 // Re-render the party panel to reflect any changes
                 this.render(this.element);
+                
+                // Also refresh the main tray if the active character was involved
+                const panelManager = game.modules.get('coffee-pub-squire')?.api?.PanelManager;
+                if (panelManager?.instance) {
+                    const currentActorId = panelManager.currentActor?.id;
+                    if (currentActorId === targetActorId || 
+                        (data.type === 'Actor' && data.id === currentActorId)) {
+                        panelManager.instance.updateTray();
+                    }
+                }
                 
             } catch (error) {
                 console.error(`${MODULE.TITLE} | Error handling drop on character card:`, error);
