@@ -19,6 +19,11 @@ Hooks.once('init', async function() {
     // Register handle-player template
     const handlePlayerTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-player.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-player', handlePlayerTemplate);
+    
+    // Set up API to expose PanelManager to other modules
+    game.modules.get(MODULE.ID).api = {
+        PanelManager
+    };
 });
 
 Hooks.once('ready', async function() {

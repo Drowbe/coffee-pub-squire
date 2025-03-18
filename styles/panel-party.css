@@ -133,6 +133,33 @@
     color: #fff;
 }
 
+/* Drop Target - for drag and drop */
+.party-view .character-card.drop-target {
+    border-color: #48a000;
+    box-shadow: 0 0 15px rgba(72, 160, 0, 0.5);
+    background: rgba(72, 160, 0, 0.15);
+    transform: scale(1.02);
+    position: relative;
+    z-index: 100;
+}
+
+.party-view .character-card.drop-target::after {
+    content: 'Drop to Add Item';
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 0.7em;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    border: 1px solid #48a000;
+    z-index: 101;
+}
+
 /* No Party Message */
 .party-view .no-party-message {
     text-align: center;

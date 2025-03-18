@@ -346,137 +346,11 @@ export class PanelManager {
         const trayContent = tray.find('.tray-content');
         trayContent.off('dragenter dragleave dragover drop');
         
-        // Handle click on handle (collapse chevron)
-        handle.on('click', (event) => {
-            if ($(event.target).closest('.pin-button').length || 
-                $(event.target).closest('.view-toggle-button').length ||
-                $(event.target).closest('.tray-refresh').length ||
-                $(event.target).closest('.handle-favorite-icon').length ||
-                $(event.target).closest('.handle-health-bar').length ||
-                $(event.target).closest('.handle-dice-tray').length) return;
-            
-            event.preventDefault();
-            event.stopPropagation();
-            
-            if (PanelManager.isPinned) {
-                ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
-                return false;
-            }
-            
-            // Play tray open sound when expanding
-            if (!tray.hasClass('expanded')) {
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-            }
-            
-            tray.toggleClass('expanded');
-            return false;
-        });
-
-        // Handle refresh button clicks
-        handle.find('.tray-refresh').on('click', async (event) => {
-            const $refreshIcon = $(event.currentTarget).find('i');
-            if (!$refreshIcon.hasClass('spinning')) {
-                try {
-                    $refreshIcon.addClass('spinning');
-                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                    blacksmith?.utils.postConsoleAndNotification(
-                        "Starting tray refresh",
-                        { actor: this.actor },
-                        false,
-                        true,
-                        false,
-                        MODULE.TITLE
-                    );
-                    await PanelManager.initialize(this.actor);
-                    // Force a re-render of all panels
-                    if (PanelManager.instance) {
-                        await PanelManager.instance.renderPanels(PanelManager.element);
-                    }
-                    blacksmith?.utils.postConsoleAndNotification(
-                        "Tray Refresh",
-                        "The tray has been refreshed.",
-                        false,
-                        false,
-                        true,
-                        MODULE.TITLE
-                    );
-                } finally {
-                    $refreshIcon.removeClass('spinning');
-                }
-            }
-        });
-
-        // Handle dice tray icon clicks
-        handle.find('.handle-dice-tray').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
-                await this.dicetrayPanel._onPopOut();
-            }
-        });
-
-        // Handle health bar clicks
-        handle.find('.handle-health-bar').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (this.healthPanel && !this.healthPanel.isPoppedOut) {
-                await this.healthPanel._onPopOut();
-            }
-        });
-
-        // Handle favorite item clicks
-        handle.find('.handle-favorite-icon').on('click', async (event) => {
-            if ($(event.target).hasClass('handle-favorite-roll-overlay')) {
-                const itemId = $(event.currentTarget).data('item-id');
-                const item = this.actor.items.get(itemId);
-                if (item) {
-                    await item.use({}, { event });
-                }
-            }
-        });
-
-        // Pin button handling
-        const pinButton = handle.find('.pin-button');
-        pinButton.on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            PanelManager.isPinned = !PanelManager.isPinned;
-            await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
-            
-            // Play pin/unpin sound
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (blacksmith) {
-                const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
-                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-            }
-            
-            if (PanelManager.isPinned) {
-                tray.addClass('pinned expanded');
-                // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
-                const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
-                const uiLeft = document.querySelector('#ui-left');
-                if (uiLeft) {
-                    uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                }
-            } else {
-                tray.removeClass('pinned expanded');
-                // Reset UI margin when unpinned - need both handle width and offset
-                const uiLeft = document.querySelector('#ui-left');
-                if (uiLeft) {
-                    uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                }
-            }
-            
-            return false;
-        });
-
-        // Handle drop events
+        // Handle drag and drop on the tray content only when in player view
         trayContent.on('dragenter', (event) => {
+            // Skip if in party view
+            if (PanelManager.viewMode === 'party') return;
+            
             event.preventDefault();
             try {
                 const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
@@ -513,6 +387,9 @@ export class PanelManager {
         });
 
         trayContent.on('dragleave', (event) => {
+            // Skip if in party view
+            if (PanelManager.viewMode === 'party') return;
+            
             event.preventDefault();
             if (!event.relatedTarget?.closest('.tray-content')) {
                 trayContent.removeClass('drop-hover');
@@ -522,6 +399,9 @@ export class PanelManager {
         });
 
         trayContent.on('drop', async (event) => {
+            // Skip if in party view
+            if (PanelManager.viewMode === 'party') return;
+            
             event.preventDefault();
             trayContent.removeClass('drop-hover');
 
@@ -632,8 +512,11 @@ export class PanelManager {
             }
         });
 
-        // Prevent default drag over behavior
+        // Prevent default drag over behavior only when in player view
         trayContent.on('dragover', (event) => {
+            // Skip if in party view
+            if (PanelManager.viewMode === 'party') return;
+            
             event.preventDefault();
             event.originalEvent.dataTransfer.dropEffect = 'copy';
         });

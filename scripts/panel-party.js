@@ -77,6 +77,175 @@ export class PartyPanel {
                 token.control({releaseOthers: true});
             }
         });
+        
+        // Add drag and drop functionality to character cards
+        const characterCards = html.find('.character-card');
+        
+        // Remove any existing drag event listeners
+        characterCards.off('dragenter dragleave dragover drop');
+        
+        // Add new drag event listeners
+        characterCards.on('dragenter', (event) => {
+            event.preventDefault();
+            
+            try {
+                const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
+                const dropType = data.type;
+                
+                // Only handle item-related drops
+                if (['Item', 'ItemDirectory', 'Actor'].includes(dropType)) {
+                    // Add drop hover styles
+                    $(event.currentTarget).addClass('drop-target');
+                    
+                    // Play hover sound
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    if (blacksmith) {
+                        const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
+                        blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                    }
+                }
+            } catch (error) {
+                // If we can't parse data, still show hover state
+                $(event.currentTarget).addClass('drop-target');
+            }
+        });
+
+        characterCards.on('dragleave', (event) => {
+            event.preventDefault();
+            // Only remove the style if we're actually leaving the card
+            if (!event.relatedTarget?.closest('.character-card')) {
+                $(event.currentTarget).removeClass('drop-target');
+            }
+        });
+
+        characterCards.on('dragover', (event) => {
+            event.preventDefault();
+            event.originalEvent.dataTransfer.dropEffect = 'copy';
+        });
+
+        characterCards.on('drop', async (event) => {
+            event.preventDefault();
+            
+            // Get the character card and remove hover state
+            const $card = $(event.currentTarget);
+            $card.removeClass('drop-target');
+            
+            try {
+                const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
+                
+                // Play drop sound
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'dropSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+                
+                // Get the actor for this card
+                const actorId = $card.data('actor-id');
+                const actor = game.actors.get(actorId);
+                
+                if (!actor) {
+                    ui.notifications.warn("Could not find the character to add the item to.");
+                    return;
+                }
+                
+                // Check if the user has permission to modify this actor
+                if (!actor.isOwner) {
+                    ui.notifications.warn(`You don't have permission to modify ${actor.name}.`);
+                    return;
+                }
+                
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Party card drop data",
+                    { data, actorId, actor: actor.name },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                
+                // Handle different drop types
+                let item;
+                switch (data.type) {
+                    case 'Item':
+                        item = await Item.implementation.fromDropData(data);
+                        if (!item) return;
+                        // Create the item on the actor
+                        const createdItem = await actor.createEmbeddedDocuments('Item', [item.toObject()]);
+                        
+                        // Add to newlyAddedItems in PanelManager
+                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                            game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
+                        }
+                        
+                        // Send chat notification
+                        const chatData = {
+                            isPublic: true,
+                            strCardIcon: this._getDropIcon(item.type),
+                            strCardTitle: this._getDropTitle(item.type),
+                            strCardContent: `<p><strong>${actor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>`
+                        };
+                        const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
+                        await ChatMessage.create({
+                            content: chatContent,
+                            speaker: ChatMessage.getSpeaker({ actor })
+                        });
+                        break;
+
+                    case 'ItemDirectory':
+                        const itemData = game.items.get(data.uuid)?.toObject();
+                        if (itemData) {
+                            const newItem = await actor.createEmbeddedDocuments('Item', [itemData]);
+                            
+                            // Add to newlyAddedItems in PanelManager
+                            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                                game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(newItem[0].id, Date.now());
+                            }
+                            
+                            // Send chat notification
+                            const dirItemChatData = {
+                                isPublic: true,
+                                strCardIcon: this._getDropIcon(itemData.type),
+                                strCardTitle: this._getDropTitle(itemData.type),
+                                strCardContent: `<p><strong>${actor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p>`
+                            };
+                            const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, dirItemChatData);
+                            await ChatMessage.create({
+                                content: dirItemChatContent,
+                                speaker: ChatMessage.getSpeaker({ actor })
+                            });
+                        }
+                        break;
+                }
+                
+                // Re-render the party panel to reflect any changes
+                this.render(this.element);
+                
+            } catch (error) {
+                console.error(`${MODULE.TITLE} | Error handling drop on character card:`, error);
+                ui.notifications.error("Failed to add item to character.");
+            }
+        });
+    }
+    
+    // Helper method to get the appropriate icon based on item type
+    _getDropIcon(type) {
+        switch(type) {
+            case 'spell': return 'fas fa-stars';
+            case 'weapon': return 'fas fa-swords';
+            case 'feat': return 'fas fa-sparkles';
+            default: return 'fas fa-backpack';
+        }
+    }
+
+    // Helper method to get the appropriate title based on item type
+    _getDropTitle(type) {
+        switch(type) {
+            case 'spell': return 'New Spell Added';
+            case 'weapon': return 'New Weapon Added';
+            case 'feat': return 'New Feature Added';
+            default: return 'New Item Added';
+        }
     }
 
     _onTokenUpdate(token, changes) {
