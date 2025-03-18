@@ -16,6 +16,20 @@ Hooks.once('init', async function() {
     // Register module settings
     registerSettings();
 
+    // Load CSS
+    const cssFiles = [
+        `modules/${MODULE.ID}/styles/window-transfer.css`
+    ];
+    
+    // Add CSS files to head
+    cssFiles.forEach(cssPath => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = cssPath;
+        document.head.appendChild(link);
+    });
+
     // Register handle-player template
     const handlePlayerTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-player.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-player', handlePlayerTemplate);

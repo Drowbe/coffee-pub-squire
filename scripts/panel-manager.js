@@ -658,7 +658,10 @@ export class PanelManager {
                                     default: "transfer",
                                     close: () => resolve(0)
                                 }, {
-                                    classes: ["transfer-item"]
+                                    classes: ["transfer-item"],
+                                    id: `transfer-item-${timestamp}`,
+                                    width: 320,
+                                    height: "auto"
                                 }).render(true);
                             });
                             

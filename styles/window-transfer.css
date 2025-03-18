@@ -1,0 +1,166 @@
+/* ----- VARIABLES ----- */
+:root {
+    --border-color: #222;
+    --accent-color: #9f9275;
+    --background-color: rgba(30, 30, 30, 0.95);
+    --header-background: rgb(0, 0, 0);
+}
+
+/* ----- WINDOW STRUCTURE ----- */
+
+/* Window Container - target by ID */
+[id^="transfer-item-"] {
+    background: var(--background-color) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 20px #000 !important;
+}
+
+/* Window header */
+[id^="transfer-item-"] .window-header {
+    background: var(--header-background) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0 8px !important;
+    height: 30px !important;
+    line-height: 30px !important;
+}
+
+[id^="transfer-item-"] .window-header .window-title {
+    color: #BBB !important;
+    text-align: left !important;
+    font-size: 16px !important;
+    font-weight: normal !important;
+    text-shadow: 1px 1px 0px #000 !important;
+}
+
+/* Window content */
+[id^="transfer-item-"] .window-content {
+    background: rgba(50, 50, 50, 0.8) !important;
+    padding: 0 !important;
+}
+
+/* Dialog content */
+.transfer-dialog {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 10px !important;
+    width: 100% !important;
+}
+
+/* Item header section */
+.transfer-item-header {
+    display: flex !important;
+    margin-bottom: 15px !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.transfer-item-image {
+    width: 48px !important;
+    height: 48px !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+}
+
+.transfer-item-image img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+.transfer-text {
+    flex-grow: 1 !important;
+}
+
+.transfer-dialog .item-title {
+    font-size: 1.2em !important;
+    font-weight: bold !important;
+    color: #e0e0e0 !important;
+    margin-bottom: 5px !important;
+    text-shadow: 1px 1px 0px #000 !important;
+}
+
+.transfer-dialog .item-description {
+    font-size: 0.9em !important;
+    color: #BBB !important;
+    margin: 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Quantity controls */
+.transfer-quantity {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 10px !important;
+    gap: 10px !important;
+}
+
+.transfer-quantity .quantity-label {
+    width: 24px !important;
+    height: 24px !important;
+    line-height: 24px !important;
+    text-align: center !important;
+    font-weight: bold !important;
+    color: #FFF !important;
+    background: rgba(30, 30, 30, 0.8) !important;
+    border-radius: 3px !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.transfer-quantity input[type="range"] {
+    flex-grow: 1 !important;
+    height: 6px !important;
+    background: #333 !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 3px !important;
+    margin: 0 5px !important;
+}
+
+.transfer-quantity .range-value {
+    width: 32px !important;
+    text-align: center !important;
+    font-weight: bold !important;
+    color: #FFF !important;
+    background: rgba(30, 30, 30, 0.8) !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Dialog button styling */
+[id^="transfer-item-"] .dialog-buttons {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 10px !important;
+    margin: 0 !important;
+    background: var(--header-background) !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+[id^="transfer-item-"] .dialog-button {
+    flex: 1 !important;
+    background: rgba(50, 50, 50, 0.8) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 3px !important;
+    color: #e0e0e0 !important;
+    font-size: 14px !important;
+    line-height: 28px !important;
+    text-align: center !important;
+    text-shadow: 1px 1px 0px #000 !important;
+    transition: all 0.2s ease !important;
+    margin: 0 5px !important;
+}
+
+[id^="transfer-item-"] .dialog-button:hover {
+    background: rgba(60, 60, 60, 0.9) !important;
+    color: #FFF !important;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5) !important;
+} 

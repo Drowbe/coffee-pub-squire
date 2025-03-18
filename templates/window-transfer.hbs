@@ -11,24 +11,27 @@
                 </p>
             </div>
         </div>
+        {{#if canAdjustQuantity}}
         <div class="transfer-quantity">
             <span class="quantity-label">1</span>
-            <input type="range" name="quantity_{{timestamp}}" value="1" min="1" max="{{maxQuantity}}" step="1" {{#unless canAdjustQuantity}}disabled{{/unless}}>
+            <input type="range" name="quantity_{{timestamp}}" value="1" min="1" max="{{maxQuantity}}" step="1">
             <span class="range-value">{{maxQuantity}}</span>
         </div>
+        {{/if}}
     </div>
 </form>
 <script>
     (function() {
         // Wait for DOM to be fully loaded
         setTimeout(() => {
-            const rangeEl = document.querySelector('input[name="quantity_{{timestamp}}"]');
-            const displayEl = document.querySelector('.range-value');
-            const labelEl = document.querySelector('.quantity-label');
+            const rangeEl = document.querySelector('#transfer-item-{{timestamp}} input[name="quantity_{{timestamp}}"]');
+            const displayEl = document.querySelector('#transfer-item-{{timestamp}} .range-value');
+            const labelEl = document.querySelector('#transfer-item-{{timestamp}} .quantity-label');
             
             if (rangeEl && displayEl && labelEl) {
                 // Set initial values
                 labelEl.textContent = rangeEl.value;
+                displayEl.textContent = rangeEl.value;
                 
                 // Add event listener
                 rangeEl.addEventListener('input', (ev) => {
