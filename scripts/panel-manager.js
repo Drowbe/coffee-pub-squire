@@ -884,6 +884,9 @@ export class PanelManager {
             // Toggle view visibility
             tray.find('.tray-view-content.player-view').toggleClass('hidden', newMode !== 'player');
             tray.find('.tray-view-content.party-view').toggleClass('hidden', newMode !== 'party');
+            
+            // Toggle toolbar visibility
+            tray.find('.tray-tools-toolbar').toggleClass('hidden', newMode !== 'party');
         });
         
         // Tab buttons
@@ -910,10 +913,116 @@ export class PanelManager {
             tray.find('.tray-view-content.player-view').toggleClass('hidden', view !== 'player');
             tray.find('.tray-view-content.party-view').toggleClass('hidden', view !== 'party');
             
+            // Toggle toolbar visibility
+            tray.find('.tray-tools-toolbar').toggleClass('hidden', view !== 'party');
+            
             // Play a sound effect if blacksmith is available
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
             if (blacksmith) {
                 const sound = game.settings.get(MODULE.ID, 'tabChangeSound') || 'modules/coffee-pub-blacksmith/sounds/interface-click-01.mp3';
+                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
+        });
+        
+        // GM-only buttons
+        if (game.user.isGM) {
+            // Award Button
+            tray.find('.tray-gm-button[data-action="award"]').click(async (event) => {
+                // Check if DnD5e module is available
+                if (!game.dnd5e) {
+                    ui.notifications.error("The DnD5e system is required for the Award functionality.");
+                    return;
+                }
+                
+                try {
+                    // The path might be different between versions, try multiple possibilities
+                    const AwardClass = game.dnd5e.applications?.Award || 
+                                      game.dnd5e.documents?.Award ||
+                                      game.dnd5e.apps?.Award ||
+                                      game.dnd5e.api?.Award;
+                    
+                    if (!AwardClass) {
+                        ui.notifications.warn("Award functionality not found in this version of DnD5e. Please check system version.");
+                        
+                        // Debug log to help identify the correct path
+                        console.log("SQUIRE | Award debug paths:", {
+                            applications: game.dnd5e.applications,
+                            documents: game.dnd5e.documents,
+                            apps: game.dnd5e.apps,
+                            api: game.dnd5e.api,
+                            fullDnd5e: game.dnd5e
+                        });
+                        return;
+                    }
+                    
+                    const tokens = canvas.tokens.controlled;
+                    const actors = tokens.map(t => t.actor).filter(a => a);
+                    
+                    // If no tokens are selected, try to use all party members
+                    if (!actors.length) {
+                        const partyActors = canvas.tokens.placeables
+                            .filter(t => t.actor?.hasPlayerOwner)
+                            .map(t => t.actor);
+                        
+                        if (partyActors.length) {
+                            // Create and render the Award dialog
+                            new AwardClass(partyActors).render(true);
+                        } else {
+                            ui.notifications.warn("Please select at least one token or have party members on the canvas.");
+                        }
+                    } else {
+                        // Create and render the Award dialog with selected tokens
+                        new AwardClass(actors).render(true);
+                    }
+                } catch (error) {
+                    console.error("SQUIRE | Error launching Award dialog:", error);
+                    ui.notifications.error("Error launching Award dialog. See console for details.");
+                }
+                
+                // Play sound
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+            });
+        }
+            
+        // Select Party Button - available to all users
+        tray.find('.tray-tools-button[data-action="select-party"]').click(async (event) => {
+            // Find all player character tokens on the canvas
+            const partyTokens = canvas.tokens.placeables.filter(t => 
+                t.actor?.hasPlayerOwner && t.actor?.type === "character"
+            );
+            
+            if (partyTokens.length === 0) {
+                ui.notifications.warn("No player character tokens found on this scene.");
+                return;
+            }
+            
+            // For players, only select tokens they own
+            const tokensToSelect = game.user.isGM 
+                ? partyTokens 
+                : partyTokens.filter(t => t.actor.isOwner);
+                
+            if (tokensToSelect.length === 0) {
+                ui.notifications.warn("You don't have ownership of any party tokens on this scene.");
+                return;
+            }
+            
+            // Deselect all currently selected tokens
+            canvas.tokens.releaseAll();
+            
+            // Select all appropriate party tokens
+            tokensToSelect.forEach(token => token.control({releaseOthers: false}));
+            
+            // Display notification
+            ui.notifications.info(`Selected ${tokensToSelect.length} party member${tokensToSelect.length !== 1 ? 's' : ''}.`);
+            
+            // Play sound
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
                 blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
             }
         });

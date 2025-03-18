@@ -525,6 +525,12 @@ export const registerSettings = function() {
         default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
     });
 
+    game.settings.register(MODULE.ID, 'toolbarButtonSound', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3'
+    });
 
 
 

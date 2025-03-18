@@ -14,6 +14,9 @@ export class PartyPanel {
     }
 
     async render(element) {
+        // If no element is provided, exit early
+        if (!element) return;
+        
         this.element = element;
         const partyContainer = element.find('[data-panel="party"]');
         if (!partyContainer.length) return;
@@ -77,22 +80,31 @@ export class PartyPanel {
     }
 
     _onTokenUpdate(token, changes) {
-        // Re-render if token position or visibility changes
-        if (foundry.utils.hasProperty(changes, "x") || foundry.utils.hasProperty(changes, "y") || foundry.utils.hasProperty(changes, "hidden")) {
-            this.render(this.element);
+        // Only re-render if the element exists
+        if (this.element) {
+            // Re-render if token position or visibility changes
+            if (foundry.utils.hasProperty(changes, "x") || foundry.utils.hasProperty(changes, "y") || foundry.utils.hasProperty(changes, "hidden")) {
+                this.render(this.element);
+            }
         }
     }
 
     _onActorUpdate(actor, changes) {
-        // Re-render if HP changes
-        if (foundry.utils.hasProperty(changes, "system.attributes.hp")) {
-            this.render(this.element);
+        // Only re-render if the element exists
+        if (this.element) {
+            // Re-render if HP changes
+            if (foundry.utils.hasProperty(changes, "system.attributes.hp")) {
+                this.render(this.element);
+            }
         }
     }
 
     _onControlToken(token, isControlled) {
-        // Re-render to highlight the currently selected token
-        this.render(this.element);
+        // Only re-render if the element exists
+        if (this.element) {
+            // Re-render to highlight the currently selected token
+            this.render(this.element);
+        }
     }
 
     destroy() {

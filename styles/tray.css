@@ -967,3 +967,83 @@
     flex-direction: column;
     overflow: hidden;
 }
+
+/* Tray GM Toolbar */
+.squire-tray .tray-gm-toolbar {
+    display: flex;
+    background: rgba(69, 29, 36, 0.6);
+    padding: 4px;
+    margin-bottom: 8px;
+    border-radius: 0 0 4px 4px;
+    gap: 4px;
+}
+
+.squire-tray .tray-gm-button {
+    flex: 1;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #9f9275;
+    border-radius: 3px;
+    color: #9f9275;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.squire-tray .tray-gm-button:hover {
+    background: rgba(159, 146, 117, 0.2);
+    color: #fff;
+    border-color: #fff;
+}
+
+.squire-tray .tray-gm-button i {
+    margin-right: 5px;
+}
+
+/* Tray View Tabs */
+.squire-tray .tray-view-tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid #444;
+    overflow: hidden;
+    margin-bottom: 8px;
+	border-radius: 8px 8px 0px 0px;
+}
+
+/* Tray Tools Toolbar (for all users) */
+.squire-tray .tray-tools-toolbar {
+    display: flex;
+    background: rgba(42, 42, 42, 0.6);
+    padding: 4px;
+    margin-bottom: 8px;
+    border-radius: 0 0 4px 4px;
+    gap: 4px;
+}
+
+.squire-tray .tray-tools-button {
+    flex: 1;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #9f9275;
+    border-radius: 3px;
+    color: #9f9275;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.squire-tray .tray-tools-button:hover {
+    background: rgba(159, 146, 117, 0.2);
+    color: #fff;
+    border-color: #fff;
+}
+
+.squire-tray .tray-tools-button i {
+    margin-right: 5px;
+}
