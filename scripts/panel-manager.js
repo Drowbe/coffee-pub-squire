@@ -22,6 +22,8 @@ export class PanelManager {
     static element = null;
     static newlyAddedItems = new Map();
     static _cleanupInterval = null;
+    static _initializationInProgress = false;
+    static _lastInitTime = 0;
 
     constructor(actor) {
         this.actor = actor;
@@ -46,59 +48,82 @@ export class PanelManager {
     }
 
     static async initialize(actor = null) {
-        // If we have an instance with the same actor, do nothing
-        if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) return;
-
-        // Set up cleanup interval if not already set
-        if (!PanelManager._cleanupInterval) {
-            PanelManager._cleanupInterval = setInterval(() => {
-                PanelManager.cleanupNewlyAddedItems();
-                // Force a re-render of the inventory panel if it exists
-                if (PanelManager.instance?.inventoryPanel?.element) {
-                    PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
-                }
-            }, 30000); // Check every 30 seconds
+        // Debounce initialization - don't initialize more than once every 100ms
+        const now = Date.now();
+        if (now - PanelManager._lastInitTime < 100) {
+            console.log("SQUIRE | Debouncing initialize call - too soon after previous call");
+            return;
         }
-
-        // Preserve window states from old instance
-        const oldHealthPanel = PanelManager.instance?.healthPanel;
-        const hadHealthWindow = oldHealthPanel?.isPoppedOut && oldHealthPanel?.window;
-        const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
-        const hadDiceTrayWindow = oldDiceTrayPanel?.isPoppedOut && oldDiceTrayPanel?.window;
-
-        // Create or update instance
-        PanelManager.currentActor = actor;
+        PanelManager._lastInitTime = now;
         
-        // Always create a new instance to ensure clean state
-        PanelManager.instance = new PanelManager(actor);
-
-        // Restore health window state if it was open
-        if (hadHealthWindow && PanelManager.instance.healthPanel) {
-            PanelManager.instance.healthPanel.isPoppedOut = true;
-            PanelManager.instance.healthPanel.window = oldHealthPanel.window;
-            PanelManager.instance.healthPanel.window.panel = PanelManager.instance.healthPanel;
-            HealthPanel.isWindowOpen = true;
-            HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
-            // Update the panel and window with the new actor
-            PanelManager.instance.healthPanel.updateActor(actor);
+        // Prevent overlapping initializations 
+        if (PanelManager._initializationInProgress) {
+            console.log("SQUIRE | Initialize already in progress, skipping");
+            return;
         }
-
-        // Restore dice tray window state if it was open
-        if (hadDiceTrayWindow && PanelManager.instance.dicetrayPanel) {
-            PanelManager.instance.dicetrayPanel.isPoppedOut = true;
-            PanelManager.instance.dicetrayPanel.window = oldDiceTrayPanel.window;
-            PanelManager.instance.dicetrayPanel.window.panel = PanelManager.instance.dicetrayPanel;
-            DiceTrayPanel.isWindowOpen = true;
-            DiceTrayPanel.activeWindow = PanelManager.instance.dicetrayPanel.window;
-            // Update the panel and window with the new actor
-            PanelManager.instance.dicetrayPanel.updateActor(actor);
-        }
-
-        // Remove any existing trays first
-        $('.squire-tray').remove();
         
-        // Create the tray
-        await PanelManager.instance.createTray();
+        try {
+            PanelManager._initializationInProgress = true;
+            
+            // If we have an instance with the same actor, do nothing
+            if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) {
+                PanelManager._initializationInProgress = false;
+                return;
+            }
+
+            // Set up cleanup interval if not already set
+            if (!PanelManager._cleanupInterval) {
+                PanelManager._cleanupInterval = setInterval(() => {
+                    PanelManager.cleanupNewlyAddedItems();
+                    // Force a re-render of the inventory panel if it exists
+                    if (PanelManager.instance?.inventoryPanel?.element) {
+                        PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                    }
+                }, 30000); // Check every 30 seconds
+            }
+
+            // Preserve window states from old instance
+            const oldHealthPanel = PanelManager.instance?.healthPanel;
+            const hadHealthWindow = oldHealthPanel?.isPoppedOut && oldHealthPanel?.window;
+            const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
+            const hadDiceTrayWindow = oldDiceTrayPanel?.isPoppedOut && oldDiceTrayPanel?.window;
+
+            // Create or update instance
+            PanelManager.currentActor = actor;
+            
+            // Always create a new instance to ensure clean state
+            PanelManager.instance = new PanelManager(actor);
+
+            // Restore health window state if it was open
+            if (hadHealthWindow && PanelManager.instance.healthPanel) {
+                PanelManager.instance.healthPanel.isPoppedOut = true;
+                PanelManager.instance.healthPanel.window = oldHealthPanel.window;
+                PanelManager.instance.healthPanel.window.panel = PanelManager.instance.healthPanel;
+                HealthPanel.isWindowOpen = true;
+                HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
+                // Update the panel and window with the new actor
+                PanelManager.instance.healthPanel.updateActor(actor);
+            }
+
+            // Restore dice tray window state if it was open
+            if (hadDiceTrayWindow && PanelManager.instance.dicetrayPanel) {
+                PanelManager.instance.dicetrayPanel.isPoppedOut = true;
+                PanelManager.instance.dicetrayPanel.window = oldDiceTrayPanel.window;
+                PanelManager.instance.dicetrayPanel.window.panel = PanelManager.instance.dicetrayPanel;
+                DiceTrayPanel.isWindowOpen = true;
+                DiceTrayPanel.activeWindow = PanelManager.instance.dicetrayPanel.window;
+                // Update the panel and window with the new actor
+                PanelManager.instance.dicetrayPanel.updateActor(actor);
+            }
+
+            // Remove any existing trays first
+            $('.squire-tray').remove();
+            
+            // Create the tray
+            await PanelManager.instance.createTray();
+        } finally {
+            PanelManager._initializationInProgress = false;
+        }
     }
 
     async createTray() {
@@ -1199,17 +1224,28 @@ export class PanelManager {
 // Hooks
 Hooks.on('canvasReady', async () => {
     // Try to find a suitable actor in this order:
-    // 1. Currently controlled token
+    // 1. Currently controlled token(s) - prioritizing player character tokens
     // 2. User's default character
     // 3. First owned character-type token
     // 4. Any owned token
     let initialActor = null;
     let selectionReason = "";
     
-    // 1. Check for controlled token
-    initialActor = canvas.tokens?.controlled[0]?.actor;
-    if (initialActor) {
-        selectionReason = "controlled token";
+    // 1. Check for controlled tokens
+    const controlledTokens = canvas.tokens?.controlled.filter(t => t.actor?.isOwner);
+    if (controlledTokens?.length > 0) {
+        // First check for player character tokens
+        const playerTokens = controlledTokens.filter(t => t.actor?.type === 'character' && t.actor?.hasPlayerOwner);
+        
+        if (playerTokens.length > 0) {
+            // Use the most recent player token (last one in the array)
+            initialActor = playerTokens[playerTokens.length - 1].actor;
+            selectionReason = "most recent player character token";
+        } else {
+            // Use the most recent controlled token
+            initialActor = controlledTokens[controlledTokens.length - 1].actor;
+            selectionReason = "most recent controlled token";
+        }
     }
     
     // 2. Try default character if no controlled token
@@ -1278,10 +1314,29 @@ Hooks.on('controlToken', async (token, controlled) => {
     // Only proceed if it's a GM or the token owner
     if (!game.user.isGM && !token.actor?.isOwner) return;
 
+    // Get a list of all controlled tokens that the user owns
+    const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+    
+    // If no tokens are controlled, return
+    if (!controlledTokens.length) return;
+
+    // Determine which actor to use:
+    // - If the list includes player-owned characters, use the most recent player character
+    // - Otherwise, use the most recently selected token's actor
+    let actorToUse = token.actor; // Default to the current token that triggered the hook
+    
+    // Look for player character tokens
+    const playerTokens = controlledTokens.filter(t => t.actor?.type === 'character' && t.actor?.hasPlayerOwner);
+    
+    if (playerTokens.length > 0) {
+        // Use the most recent player token (last one in the array)
+        actorToUse = playerTokens[playerTokens.length - 1].actor;
+    }
+
     // If not pinned, handle the animation sequence
     if (!PanelManager.isPinned && PanelManager.element) {
         PanelManager.element.removeClass('expanded');
-        await PanelManager.initialize(token.actor);
+        await PanelManager.initialize(actorToUse);
         
         // Play tray open sound
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
@@ -1295,7 +1350,7 @@ Hooks.on('controlToken', async (token, controlled) => {
     }
 
     // If pinned, just update the data immediately
-    await PanelManager.initialize(token.actor);
+    await PanelManager.initialize(actorToUse);
 });
 
 // Also handle when tokens are deleted or actors are updated
