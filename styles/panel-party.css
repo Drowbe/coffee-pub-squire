@@ -134,29 +134,32 @@
 }
 
 /* Drop Target - for drag and drop */
+
 .party-view .character-card.drop-target {
     border-color: #48a000;
-    box-shadow: 0 0 15px rgba(72, 160, 0, 0.5);
+    box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
     background: rgba(72, 160, 0, 0.15);
-    transform: scale(1.02);
+    transform: scale(1.001);
+    filter: grayscale(50%);
+	filter: hue-rotate(290deg);
     position: relative;
     z-index: 100;
 }
 
 .party-view .character-card.drop-target::after {
-    content: 'Drop to Add Item';
+    content: 'DROP ITEM';
     position: absolute;
-    bottom: -20px;
+    bottom: -15px;	
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    padding: 3px 10px;
-    border-radius: 4px;
+    background: #48a000;
+    color: #ffffff;
+    padding: 3px 6px;
+    border-radius: 6px;
     font-size: 0.7em;
     white-space: nowrap;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-    border: 1px solid #48a000;
+    border: 2px solid #48a000;
     z-index: 101;
 }
 
