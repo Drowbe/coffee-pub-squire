@@ -6,16 +6,32 @@
             </div>
             <div class="transfer-text">
                 <div class="item-title">{{sourceItem.name}}</div>
+                
+                {{#if isReceiveRequest}}
+                <p class="item-description">
+                    {{sourceActor.name}} wants to give {{#if hasQuantity}}{{selectedQuantity}} {{/if}}{{sourceItem.name}} to you
+                </p>
+                {{else}}
                 <p class="item-description">
                     {{sourceActor.name}} is giving {{sourceItem.name}} to {{targetActor.name}}
                 </p>
+                {{/if}}
             </div>
         </div>
+        
         {{#if canAdjustQuantity}}
+        {{#unless isReceiveRequest}}
         <div class="transfer-quantity">
             <span class="quantity-label">1</span>
             <input type="range" name="quantity_{{timestamp}}" value="1" min="1" max="{{maxQuantity}}" step="1">
             <span class="range-value">{{maxQuantity}}</span>
+        </div>
+        {{/unless}}
+        {{/if}}
+        
+        {{#if isReceiveRequest}}
+        <div class="transfer-message">
+            <p>{{sourceActor.name}} is requesting to transfer {{#if hasQuantity}}{{selectedQuantity}} {{/if}}{{sourceItem.name}} to you. Do you want to accept?</p>
         </div>
         {{/if}}
     </div>

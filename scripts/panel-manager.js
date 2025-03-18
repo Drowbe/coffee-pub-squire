@@ -65,6 +65,18 @@ export class PanelManager {
         try {
             PanelManager._initializationInProgress = true;
             
+            // Check if this is the first time loading
+            const isFirstLoad = !PanelManager.instance;
+            
+            // Set default viewMode to 'player' only on first load
+            if (isFirstLoad) {
+                PanelManager.viewMode = 'player';
+                await game.settings.set(MODULE.ID, 'viewMode', 'player');
+            } else {
+                // Otherwise, load the saved viewMode
+                PanelManager.viewMode = game.settings.get(MODULE.ID, 'viewMode');
+            }
+            
             // If we have an instance with the same actor, do nothing
             if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) {
                 PanelManager._initializationInProgress = false;
@@ -127,6 +139,9 @@ export class PanelManager {
     }
 
     async createTray() {
+        // Use the current viewMode (which is either default or from settings)
+        const viewMode = PanelManager.viewMode;
+        
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
@@ -142,7 +157,7 @@ export class PanelManager {
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
-            viewMode: game.settings.get(MODULE.ID, 'viewMode'),
+            viewMode: viewMode, // Use the current viewMode
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -170,6 +185,9 @@ export class PanelManager {
 
     async updateTray() {
         if (!this.element) return;
+        
+        // Use the current viewMode (from PanelManager.viewMode)
+        const viewMode = PanelManager.viewMode;
 
         // Update actor references
         if (this.actor) {
@@ -201,7 +219,7 @@ export class PanelManager {
                     showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                     showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
                 },
-                viewMode: game.settings.get(MODULE.ID, 'viewMode'),
+                viewMode: viewMode, // Use current viewMode
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),

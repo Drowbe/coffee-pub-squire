@@ -156,12 +156,10 @@ export class PartyPanel {
                     return;
                 }
                 
-                // Check if the user has permission to modify this actor
-                if (!targetActor.isOwner) {
-                    ui.notifications.warn(`You don't have permission to modify ${targetActor.name}.`);
-                    return;
-                }
-                
+                // We no longer check for direct target permission here
+                // This allows players to initiate transfer requests
+                // to characters they don't own
+
                 // Handle different drop types
                 let item;
                 switch (data.type) {
@@ -225,23 +223,29 @@ export class PartyPanel {
                             // Always create a dialog, even for single items
                             const timestamp = Date.now();
                             
-                            // Prepare template data
-                            const templateData = {
+                            // Check if we have direct permission to modify the target actor
+                            const hasTargetPermission = targetActor.isOwner;
+                            
+                            // Prepare template data for sender's dialog
+                            const senderTemplateData = {
                                 sourceItem,
                                 sourceActor,
                                 targetActor,
                                 maxQuantity,
                                 timestamp,
-                                canAdjustQuantity: hasQuantity && maxQuantity > 1
+                                canAdjustQuantity: hasQuantity && maxQuantity > 1,
+                                isReceiveRequest: false,
+                                hasQuantity
                             };
                             
-                            // Render the transfer dialog template
-                            const content = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, templateData);
+                            // Render the transfer dialog template for the sender
+                            const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
                             
+                            // Initiate the transfer process
                             let selectedQuantity = await new Promise(resolve => {
                                 new Dialog({
                                     title: "Transfer Item",
-                                    content,
+                                    content: senderContent,
                                     buttons: {
                                         transfer: {
                                             icon: '<i class="fas fa-exchange-alt"></i>',
@@ -276,47 +280,31 @@ export class PartyPanel {
                             });
                             
                             if (selectedQuantity <= 0) return; // User cancelled
-                            quantityToTransfer = selectedQuantity;
                             
-                            // Create a copy of the item data to transfer
-                            const transferData = sourceItem.toObject();
-                            
-                            // Set the correct quantity on the new item
-                            if (hasQuantity) {
-                                transferData.system.quantity = quantityToTransfer;
+                            // If we have direct permission, complete the transfer
+                            if (hasTargetPermission) {
+                                await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
+                                return;
                             }
                             
-                            // Create the item on the target actor
-                            const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+                            // Without direct permission, we need to send a request to the target user
+                            // Find the owning user of the target actor
+                            const targetUsers = game.users.filter(u => 
+                                !u.isGM && 
+                                targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+                            );
                             
-                            // Reduce quantity or remove the item from source actor
-                            if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
-                                // Just reduce the quantity
-                                await sourceItem.update({
-                                    'system.quantity': sourceItem.system.quantity - quantityToTransfer
-                                });
-                            } else {
-                                // Remove the item entirely
-                                await sourceItem.delete();
+                            if (!targetUsers.length) {
+                                ui.notifications.warn(`Cannot find a player who owns ${targetActor.name}.`);
+                                return;
                             }
                             
-                            // Add to newlyAddedItems in PanelManager
-                            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                                game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
-                            }
+                            // Create a transfer request
+                            const requestSuccess = await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
                             
-                            // Send chat notification
-                            const transferChatData = {
-                                isPublic: true,
-                                strCardIcon: this._getDropIcon(sourceItem.type),
-                                strCardTitle: "Item Transferred",
-                                strCardContent: `<p><strong>${sourceActor.name}</strong> gave ${hasQuantity ? `${quantityToTransfer} ${quantityToTransfer > 1 ? 'units of' : 'unit of'}` : ''} <strong>${sourceItem.name}</strong> to <strong>${targetActor.name}</strong>.</p>`
-                            };
-                            const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
-                            await ChatMessage.create({
-                                content: transferChatContent,
-                                speaker: ChatMessage.getSpeaker({ actor: targetActor })
-                            });
+                            if (requestSuccess) {
+                                ui.notifications.info(`Sent transfer request to ${targetActor.name}'s owner.`);
+                            }
                         } else {
                             // This is a regular world item
                             item = await Item.implementation.fromDropData(data);
@@ -403,23 +391,29 @@ export class PartyPanel {
                         // Always create a dialog, even for single items
                         const timestamp = Date.now();
                         
-                        // Prepare template data
-                        const templateData = {
+                        // Check if we have direct permission to modify the target actor
+                        const hasTargetPermission = targetActor.isOwner;
+                        
+                        // Prepare template data for sender's dialog
+                        const senderTemplateData = {
                             sourceItem,
                             sourceActor,
                             targetActor,
                             maxQuantity,
                             timestamp,
-                            canAdjustQuantity: hasQuantity && maxQuantity > 1
+                            canAdjustQuantity: hasQuantity && maxQuantity > 1,
+                            isReceiveRequest: false,
+                            hasQuantity
                         };
                         
-                        // Render the transfer dialog template
-                        const content = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, templateData);
+                        // Render the transfer dialog template for the sender
+                        const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
                         
+                        // Initiate the transfer process
                         let selectedQuantity = await new Promise(resolve => {
                             new Dialog({
                                 title: "Transfer Item",
-                                content,
+                                content: senderContent,
                                 buttons: {
                                     transfer: {
                                         icon: '<i class="fas fa-exchange-alt"></i>',
@@ -454,47 +448,31 @@ export class PartyPanel {
                         });
                         
                         if (selectedQuantity <= 0) return; // User cancelled
-                        quantityToTransfer = selectedQuantity;
                         
-                        // Create a copy of the item data to transfer
-                        const transferData = sourceItem.toObject();
-                        
-                        // Set the correct quantity on the new item
-                        if (hasQuantity) {
-                            transferData.system.quantity = quantityToTransfer;
+                        // If we have direct permission, complete the transfer
+                        if (hasTargetPermission) {
+                            await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
+                            return;
                         }
                         
-                        // Create the item on the target actor
-                        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+                        // Without direct permission, we need to send a request to the target user
+                        // Find the owning user of the target actor
+                        const targetUsers = game.users.filter(u => 
+                            !u.isGM && 
+                            targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+                        );
                         
-                        // Reduce quantity or remove the item from source actor
-                        if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
-                            // Just reduce the quantity
-                            await sourceItem.update({
-                                'system.quantity': sourceItem.system.quantity - quantityToTransfer
-                            });
-                        } else {
-                            // Remove the item entirely
-                            await sourceItem.delete();
+                        if (!targetUsers.length) {
+                            ui.notifications.warn(`Cannot find a player who owns ${targetActor.name}.`);
+                            return;
                         }
                         
-                        // Add to newlyAddedItems in PanelManager
-                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                            game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
-                        }
+                        // Create a transfer request
+                        const requestSuccess = await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
                         
-                        // Send chat notification
-                        const transferChatData = {
-                            isPublic: true,
-                            strCardIcon: this._getDropIcon(sourceItem.type),
-                            strCardTitle: "Item Transferred",
-                            strCardContent: `<p><strong>${sourceActor.name}</strong> gave ${hasQuantity ? `${quantityToTransfer} ${quantityToTransfer > 1 ? 'units of' : 'unit of'}` : ''} <strong>${sourceItem.name}</strong> to <strong>${targetActor.name}</strong>.</p>`
-                        };
-                        const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
-                        await ChatMessage.create({
-                            content: transferChatContent,
-                            speaker: ChatMessage.getSpeaker({ actor: targetActor })
-                        });
+                        if (requestSuccess) {
+                            ui.notifications.info(`Sent transfer request to ${targetActor.name}'s owner.`);
+                        }
                         break;
                 }
                 
@@ -571,5 +549,117 @@ export class PartyPanel {
         Hooks.off('updateToken', this._onTokenUpdate);
         Hooks.off('updateActor', this._onActorUpdate);
         Hooks.off('controlToken', this._onControlToken);
+    }
+
+    async _completeItemTransfer(sourceActor, targetActor, sourceItem, quantityToTransfer, hasQuantity) {
+        // Create a copy of the item data to transfer
+        const transferData = sourceItem.toObject();
+        
+        // Set the correct quantity on the new item
+        if (hasQuantity) {
+            transferData.system.quantity = quantityToTransfer;
+        }
+        
+        // Create the item on the target actor
+        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+        
+        // Reduce quantity or remove the item from source actor
+        if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
+            // Just reduce the quantity
+            await sourceItem.update({
+                'system.quantity': sourceItem.system.quantity - quantityToTransfer
+            });
+        } else {
+            // Remove the item entirely
+            await sourceItem.delete();
+        }
+        
+        // Add to newlyAddedItems in PanelManager
+        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+            game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
+        }
+        
+        // Send chat notification
+        const transferChatData = {
+            isPublic: true,
+            strCardIcon: this._getDropIcon(sourceItem.type),
+            strCardTitle: "Item Transferred",
+            strCardContent: `<p><strong>${sourceActor.name}</strong> gave ${hasQuantity ? `${quantityToTransfer} ${quantityToTransfer > 1 ? 'units of' : 'unit of'}` : ''} <strong>${sourceItem.name}</strong> to <strong>${targetActor.name}</strong>.</p>`
+        };
+        const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
+        await ChatMessage.create({
+            content: transferChatContent,
+            speaker: ChatMessage.getSpeaker({ actor: targetActor })
+        });
+    }
+    
+    async _sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp) {
+        // Store transfer data in a game flag for reference
+        const transferData = {
+            sourceActorId: sourceActor.id,
+            targetActorId: targetActor.id,
+            sourceItemId: sourceItem.id,
+            selectedQuantity: selectedQuantity,
+            hasQuantity: hasQuantity,
+            timestamp: timestamp,
+            requester: game.user.id,
+            requesterName: game.user.name,
+            status: 'pending'
+        };
+        
+        // Check if we have permission to set the flag directly
+        if (targetActor.isOwner) {
+            try {
+                // Store the request in a flag on the target actor
+                await targetActor.setFlag(MODULE.ID, `transferRequest_${timestamp}`, transferData);
+            } catch (error) {
+                console.error("SQUIRE | Error setting flag on target actor:", error);
+                ui.notifications.error("Error setting transfer request flag");
+                return false;
+            }
+        } else {
+            // We don't have permission to set the flag directly
+            // Let's try to find a GM to do it for us
+            const gmUsers = game.users.filter(u => u.isGM && u.active);
+            if (gmUsers.length === 0) {
+                ui.notifications.error("No active GM available to process transfer request");
+                return false;
+            }
+            
+            // Use chat message as a fallback since socketlib isn't working
+            const whisperIds = gmUsers.map(u => u.id);
+            await ChatMessage.create({
+                whisper: whisperIds,
+                content: `<p><strong>GM ACTION REQUIRED:</strong> Player ${game.user.name} is trying to transfer an item from ${sourceActor.name} to ${targetActor.name}. 
+                Please set a flag on ${targetActor.name} with the key "transferRequest_${timestamp}" using the following data:</p>
+                <details>
+                <summary>Flag data (click to expand)</summary>
+                <pre>${JSON.stringify(transferData, null, 2)}</pre>
+                </details>`,
+                speaker: ChatMessage.getSpeaker({alias: "System Message"})
+            });
+        }
+        
+        // Get users who own the target character
+        const targetUsers = game.users.filter(u => 
+            !u.isGM && targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+        );
+        
+        // Since socketlib is having issues, we'll use chat messages
+        const whisperIds = targetUsers.map(u => u.id);
+        
+        // Create a whispered chat message
+        if (whisperIds.length > 0) {
+            await ChatMessage.create({
+                whisper: whisperIds,
+                content: `<p><strong>${sourceActor.name}</strong> wants to give you ${hasQuantity && selectedQuantity > 1 ? `${selectedQuantity} units of` : ''} <strong>${sourceItem.name}</strong>. Please check with a GM to complete this transfer.</p>`,
+                speaker: ChatMessage.getSpeaker({alias: "Item Transfer Request"})
+            });
+        }
+        
+        // Also notify the sender that they need to coordinate manually
+        ui.notifications.warn(`Transfer request sent. Please coordinate with the GM to complete the transfer.`);
+        
+        return true;
     }
 } 
