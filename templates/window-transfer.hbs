@@ -31,13 +31,16 @@
             if (rangeEl && displayEl && labelEl) {
                 // Set initial values
                 labelEl.textContent = rangeEl.value;
-                displayEl.textContent = rangeEl.value;
+                displayEl.textContent = {{maxQuantity}};
                 
                 // Add event listener
                 rangeEl.addEventListener('input', (ev) => {
-                    const val = ev.target.value;
-                    displayEl.textContent = val;
-                    labelEl.textContent = val;
+                    const selectedQty = parseInt(ev.target.value);
+                    const remainingQty = {{maxQuantity}} - selectedQty;
+                    
+                    // Update labels: left shows selected amount, right shows remaining
+                    labelEl.textContent = selectedQty;
+                    displayEl.textContent = remainingQty;
                 });
             }
         }, 10);
