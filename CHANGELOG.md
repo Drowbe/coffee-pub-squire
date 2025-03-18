@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2024-06-17
+
+### Added
+- New item transfer system between characters
+- Party panel for managing item transfers and player interactions
+- Support for quantity selection when transferring stackable items
+- Dialog confirmation for item transfer requests
+- Chat message notifications for completed transfers
+- Transfer history tracking with timestamps
+- Flag-based transfer request system for persistent state
+
+### Changed
+- Improved drag and drop handling for items
+- Enhanced user permissions checking for item transfers
+- Added ability for GMs to facilitate transfers between players
+
 ## [1.0.5] - 2024-03-19
 
 ### Fixed
