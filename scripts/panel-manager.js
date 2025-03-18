@@ -609,65 +609,61 @@ export class PanelManager {
                             
                             // Handle quantity logic for stackable items
                             let quantityToTransfer = 1;
-                            const hasQuantity = sourceItem.system.quantity != null && sourceItem.system.quantity > 1;
+                            const hasQuantity = sourceItem.system.quantity != null;
+                            const maxQuantity = hasQuantity ? sourceItem.system.quantity : 1;
                             
-                            if (hasQuantity) {
-                                // Create a dialog to ask for quantity
-                                const timestamp = Date.now();
-                                const content = `
-                                    <form>
-                                        <div class="form-group">
-                                            <label>${sourceActor.name} is giving ${sourceItem.name} to ${this.actor.name}</label>
-                                            <div class="form-fields">
-                                                <input type="range" name="quantity_${timestamp}" value="1" min="1" max="${sourceItem.system.quantity}" step="1">
-                                                <span class="range-value" id="value_${timestamp}">1</span>
-                                            </div>
-                                        </div>
-                                    </form>
-                                    <script>
-                                        (function() {
-                                            const range_${timestamp} = document.querySelector('input[name="quantity_${timestamp}"]');
-                                            const display_${timestamp} = document.querySelector('#value_${timestamp}');
-                                            if (range_${timestamp} && display_${timestamp}) {
-                                                range_${timestamp}.addEventListener('input', (ev) => {
-                                                    display_${timestamp}.textContent = ev.target.value;
-                                                });
-                                            }
-                                        })();
-                                    </script>
-                                `;
-                                
-                                let selectedQuantity = await new Promise(resolve => {
-                                    new Dialog({
-                                        title: "Transfer Item",
-                                        content,
-                                        buttons: {
-                                            transfer: {
-                                                icon: '<i class="fas fa-exchange-alt"></i>',
-                                                label: "Transfer",
-                                                callback: html => {
-                                                    const quantity = Math.clamped(
+                            // Always create a dialog, even for single items
+                            const timestamp = Date.now();
+                            
+                            // Prepare template data
+                            const templateData = {
+                                sourceItem,
+                                sourceActor,
+                                targetActor: this.actor,
+                                maxQuantity,
+                                timestamp,
+                                canAdjustQuantity: hasQuantity && maxQuantity > 1
+                            };
+                            
+                            // Render the transfer dialog template
+                            const content = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, templateData);
+                            
+                            let selectedQuantity = await new Promise(resolve => {
+                                new Dialog({
+                                    title: "Transfer Item",
+                                    content,
+                                    buttons: {
+                                        transfer: {
+                                            icon: '<i class="fas fa-exchange-alt"></i>',
+                                            label: "Transfer",
+                                            callback: html => {
+                                                if (hasQuantity && maxQuantity > 1) {
+                                                    const quantity = Math.clamp(
                                                         parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
                                                         1,
-                                                        sourceItem.system.quantity
+                                                        maxQuantity
                                                     );
                                                     resolve(quantity);
+                                                } else {
+                                                    resolve(1);
                                                 }
-                                            },
-                                            cancel: {
-                                                icon: '<i class="fas fa-times"></i>',
-                                                label: "Cancel",
-                                                callback: () => resolve(0)
                                             }
                                         },
-                                        default: "transfer",
-                                        close: () => resolve(0)
-                                    }).render(true);
-                                });
-                                
-                                if (selectedQuantity <= 0) return; // User cancelled
-                                quantityToTransfer = selectedQuantity;
-                            }
+                                        cancel: {
+                                            icon: '<i class="fas fa-times"></i>',
+                                            label: "Cancel",
+                                            callback: () => resolve(0)
+                                        }
+                                    },
+                                    default: "transfer",
+                                    close: () => resolve(0)
+                                }, {
+                                    classes: ["transfer-item"]
+                                }).render(true);
+                            });
+                            
+                            if (selectedQuantity <= 0) return; // User cancelled
+                            quantityToTransfer = selectedQuantity;
                             
                             // Create a copy of the item data to transfer
                             const transferData = sourceItem.toObject();

@@ -1,0 +1,42 @@
+<form>
+    <div class="form-group transfer-dialog">
+        <div class="transfer-item-header">
+            <div class="transfer-item-image">
+                <img src="{{sourceItem.img}}" alt="{{sourceItem.name}}">
+            </div>
+            <div class="transfer-text">
+                <div class="item-title">{{sourceItem.name}}</div>
+                <p class="item-description">
+                    {{sourceActor.name}} is giving {{sourceItem.name}} to {{targetActor.name}}
+                </p>
+            </div>
+        </div>
+        <div class="transfer-quantity">
+            <span class="quantity-label">1</span>
+            <input type="range" name="quantity_{{timestamp}}" value="1" min="1" max="{{maxQuantity}}" step="1" {{#unless canAdjustQuantity}}disabled{{/unless}}>
+            <span class="range-value">{{maxQuantity}}</span>
+        </div>
+    </div>
+</form>
+<script>
+    (function() {
+        // Wait for DOM to be fully loaded
+        setTimeout(() => {
+            const rangeEl = document.querySelector('input[name="quantity_{{timestamp}}"]');
+            const displayEl = document.querySelector('.range-value');
+            const labelEl = document.querySelector('.quantity-label');
+            
+            if (rangeEl && displayEl && labelEl) {
+                // Set initial values
+                labelEl.textContent = rangeEl.value;
+                
+                // Add event listener
+                rangeEl.addEventListener('input', (ev) => {
+                    const val = ev.target.value;
+                    displayEl.textContent = val;
+                    labelEl.textContent = val;
+                });
+            }
+        }, 10);
+    })();
+</script> 
