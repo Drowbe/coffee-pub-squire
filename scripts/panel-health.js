@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { HealthWindow } from './health-window.js';
+import { HealthWindow } from './window-health.js';
 import { PanelManager } from './panel-manager.js';
 
 export class HealthPanel {

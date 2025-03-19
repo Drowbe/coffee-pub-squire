@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { DiceTrayWindow } from './dice-tray-window.js';
+import { DiceTrayWindow } from './window-dicetray.js';
 
 export class DiceTrayPanel {
     static isWindowOpen = false;
