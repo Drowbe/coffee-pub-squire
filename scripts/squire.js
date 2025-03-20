@@ -42,28 +42,6 @@ Hooks.once('init', async function() {
     
     // Create and store PartyPanel instance
     game.modules.get(MODULE.ID).PartyPanel = new PartyPanel();
-    
-    // Set up socketlib for player-to-player transfers if available
-    if (game.modules.get('socketlib')?.active) {
-        try {
-            const socketlib = game.modules.get('socketlib').api;
-            if (socketlib && typeof socketlib.registerModule === 'function') {
-                const socket = socketlib.registerModule(MODULE.ID);
-                
-                // Register socket functions
-                socket.register('notifyTransferRequest', handleTransferRequest);
-                socket.register('processTransferResponse', processTransferResponse);
-                socket.register('setTransferRequestFlag', setTransferRequestFlag);
-                socket.register('executeItemTransfer', executeItemTransfer);
-                
-                console.log(`SQUIRE | SocketLib integration enabled`);
-            } else {
-                console.warn(`SQUIRE | SocketLib API available but registerModule function not found`);
-            }
-        } catch (error) {
-            console.error(`SQUIRE | Error initializing SocketLib:`, error);
-        }
-    }
 });
 
 Hooks.once('ready', async function() {
@@ -517,4 +495,4 @@ async function executeItemTransfer(transferData, accepted) {
     } catch (error) {
         console.error(`SQUIRE | Error executing item transfer:`, error);
     }
-} 
+}

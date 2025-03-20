@@ -736,67 +736,76 @@ export class PartyPanel {
                     }
                 });
 
-                // If accepted, execute the transfer through the GM
+                // If accepted, either create GM execution message or auto-execute
                 if (isAccept) {
-                    // Create a GM-only message to execute the transfer
-                    const gmExecuteMessage = await ChatMessage.create({
-                        content: `<div class="transfer-execution">
-                            <p>Executing transfer of ${transferData.quantity}x ${transferData.itemName} from ${transferData.sourceActorName} to ${transferData.targetActorName}</p>
-                            <button class="transfer-execute-button" data-transfer-id="${transferId}">Execute Transfer</button>
-                        </div>`,
-                        whisper: game.users.filter(u => u.isGM).map(u => u.id),
-                        flags: {
-                            [MODULE.ID]: {
-                                transferId: transferId,
-                                type: 'transferExecution'
-                            }
-                        }
-                    });
-
-                    // Add click handler for GM execution using Hooks.on
-                    Hooks.on('renderChatMessage', (gmMessage, html) => {
-                        // Only handle our specific GM message
-                        if (gmMessage.getFlag(MODULE.ID, 'transferId') !== transferId) return;
-
-                        // Check if we've already attached handlers
-                        if (html.find('.transfer-execute-button').data('handlers-attached')) return;
-
-                        // Only allow GMs to see and use the execute button
-                        const executeButton = html.find('.transfer-execute-button');
-                        if (!game.user.isGM) {
-                            executeButton.prop('disabled', true).css('opacity', '0.5');
-                            return;
-                        }
-
-                        executeButton.data('handlers-attached', true);
-
-                        executeButton.click(async () => {
-                            try {
-                                console.log("SQUIRE | Execute button clicked, transfer data:", transferData);
-                                const sourceActor = game.actors.get(transferData.sourceActorId);
-                                const targetActor = game.actors.get(transferData.targetActorId);
-                                const sourceItem = sourceActor.items.get(transferData.itemId);
-
-                                if (!sourceActor || !targetActor || !sourceItem) {
-                                    throw new Error("Could not find source actor, target actor, or item");
+                    const transfersGMApproves = game.settings.get(MODULE.ID, 'transfersGMApproves');
+                    
+                    if (transfersGMApproves) {
+                        // Create a GM-only message to execute the transfer
+                        const gmExecuteMessage = await ChatMessage.create({
+                            content: `<div class="transfer-execution">
+                                <p>Executing transfer of ${transferData.quantity}x ${transferData.itemName} from ${transferData.sourceActorName} to ${transferData.targetActorName}</p>
+                                <button class="transfer-execute-button" data-transfer-id="${transferId}">Execute Transfer</button>
+                            </div>`,
+                            whisper: game.users.filter(u => u.isGM).map(u => u.id),
+                            flags: {
+                                [MODULE.ID]: {
+                                    transferId: transferId,
+                                    type: 'transferExecution'
                                 }
-
-                                await this._completeItemTransfer(sourceActor, targetActor, sourceItem, transferData.quantity, transferData.quantity != null);
-                                await gmExecuteMessage.update({
-                                    content: `<div class="transfer-execution">
-                                        <p>Transfer of ${transferData.quantity}x ${transferData.itemName} from ${sourceActor.name} to ${targetActor.name} completed successfully</p>
-                                    </div>`
-                                });
-                            } catch (error) {
-                                console.error("SQUIRE | Error executing transfer:", error);
-                                await gmExecuteMessage.update({
-                                    content: `<div class="transfer-execution error">
-                                        <p>Error executing transfer: ${error.message}</p>
-                                    </div>`
-                                });
                             }
                         });
-                    });
+                    } else {
+                        // Auto-execute the transfer as if GM clicked the button
+                        try {
+                            const sourceActor = game.actors.get(transferData.sourceActorId);
+                            const targetActor = game.actors.get(transferData.targetActorId);
+                            const sourceItem = sourceActor.items.get(transferData.itemId);
+
+                            if (!sourceActor || !targetActor || !sourceItem) {
+                                throw new Error("Could not find source actor, target actor, or item");
+                            }
+
+                            // Find a GM user to execute the transfer
+                            const gmUser = game.users.find(u => u.isGM && u.active);
+                            if (!gmUser) {
+                                throw new Error("No active GM available to execute transfer");
+                            }
+
+                            // Only proceed with transfer if we are the GM
+                            if (game.user.isGM) {
+                                await this._completeItemTransfer(sourceActor, targetActor, sourceItem, transferData.quantity, transferData.quantity != null);
+                                
+                                // Create success message visible to involved parties
+                                await ChatMessage.create({
+                                    content: `<div class="transfer-execution">
+                                        <p>Transfer of ${transferData.quantity}x ${transferData.itemName} from ${transferData.sourceActorName} to ${transferData.targetActorName} completed successfully</p>
+                                    </div>`,
+                                    whisper: [transferData.sourceUserId, ...game.users.filter(u => u.isGM).map(u => u.id)],
+                                    flags: {
+                                        [MODULE.ID]: {
+                                            transferId: transferId,
+                                            type: 'transferComplete'
+                                        }
+                                    }
+                                });
+                            }
+                        } catch (error) {
+                            console.error("SQUIRE | Error auto-executing transfer:", error);
+                            await ChatMessage.create({
+                                content: `<div class="transfer-execution error">
+                                    <p>Error executing transfer: ${error.message}</p>
+                                </div>`,
+                                whisper: [transferData.sourceUserId, ...game.users.filter(u => u.isGM).map(u => u.id)],
+                                flags: {
+                                    [MODULE.ID]: {
+                                        transferId: transferId,
+                                        type: 'transferError'
+                                    }
+                                }
+                            });
+                        }
+                    }
                 }
             });
         }

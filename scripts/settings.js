@@ -7,6 +7,31 @@ export const registerSettings = function() {
     // --- Handle Display Settings ---
     // --------------------------------
 
+
+
+    // *** INTRODUCTION ***
+    // ---------- TITLE ----------
+    game.settings.register(MODULE.ID, "headingH1Squire", {
+        name: 'Introduction',
+        hint: 'A FoundryVTT module from the Coffee Pub suite that provides quick access to character-specific combat information through a sliding tray interface. It features automatic character detection, spell and weapon management with favorites and filtering, HP tracking, ability rolls, an integrated dice tray, quick condition application, and customizable themes. The UI adjusts automatically for better usability and fully integrates with the Coffee Pub Blacksmith API.',
+        scope: "world",
+        config: true,
+        default: "",
+        type: String,
+    });
+    // -------------------------------------
+
+
+	// ---------- Tray Configuration ----------
+	game.settings.register(MODULE.ID, "headingH3TrayConfiguration", {
+		name: 'Tray Configuration',
+		hint: 'Automation of token actions.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
     // Excluded Users
     game.settings.register(MODULE.ID, 'excludedUsers', {
         name: 'Excluded Users',
@@ -80,6 +105,7 @@ export const registerSettings = function() {
         }
     });
 
+
     // Tray Position
     game.settings.register(MODULE.ID, 'trayPosition', {
         name: 'Tray Position',
@@ -123,7 +149,6 @@ export const registerSettings = function() {
     });
 
 
-    
     // Tray Width setting
     game.settings.register(MODULE.ID, 'trayWidth', {
         name: 'Tray Width',
@@ -191,6 +216,15 @@ export const registerSettings = function() {
         }
     });
 
+	// ---------- Tray Configuration ----------
+	game.settings.register(MODULE.ID, "headingH3PanelConfiguration", {
+		name: 'Panel Configuration',
+		hint: 'Panels appear at the top of the tray, above the spells, weapons, and inventory. They can be collapsed or hidden completely. Several of them can be accessed via the handle even if the panel is disabled.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
 
     // Panel Visibility Settings
 
@@ -271,6 +305,18 @@ export const registerSettings = function() {
     // --- Handle Display Settings ---
     // --------------------------------
 
+
+	// ---------- Handle Configuration ----------
+	game.settings.register(MODULE.ID, "headingH3HandleConfiguration", {
+		name: 'Handle Configuration',
+		hint: 'The handle is the bit of the tray that always shows. Many actions can be performed via the handle, even if the panels are disabled.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
+	// ---------- Handle Conditions ----------
     game.settings.register(MODULE.ID, 'showHandleConditions', {
         name: 'Show Conditions in Handle',
         hint: 'Display condition icons in the handle',
@@ -280,6 +326,7 @@ export const registerSettings = function() {
         default: true
     });
 
+	// ---------- Handle Primary Stats ----------
     game.settings.register(MODULE.ID, 'showHandleStatsPrimary', {
         name: 'Show Primary Stats in Handle',
         hint: 'Display primary stats (HP, AC, Move) in the handle',
@@ -288,7 +335,7 @@ export const registerSettings = function() {
         type: Boolean,
         default: true
     });
-
+    // ---------- Handle Secondary Stats ----------
     game.settings.register(MODULE.ID, 'showHandleStatsSecondary', {
         name: 'Show Secondary Stats in Handle',
         hint: 'Display secondary stats (Initiative, Proficiency) in the handle',
@@ -297,10 +344,10 @@ export const registerSettings = function() {
         type: Boolean,
         default: false
     });
-
+    // ---------- Handle Favorites ----------
     game.settings.register(MODULE.ID, 'showHandleFavorites', {
         name: 'Show Favorites in Handle',
-        hint: 'Display favorite items in the handle',
+        hint: 'Display favorite actions and items in the handle',
         scope: 'client',
         config: true,
         type: Boolean,
@@ -316,6 +363,7 @@ export const registerSettings = function() {
         default: true
     });
 
+    // ---------- Handle Dice Tray ----------
     game.settings.register(MODULE.ID, 'showHandleDiceTray', {
         name: 'Show Dice Tray Icon in Handle',
         hint: 'Display a dice icon in the handle to quickly access the dice tray',
@@ -326,6 +374,33 @@ export const registerSettings = function() {
     });
 
 
+    // --------------------------------
+    // --- Transfer Settings ---
+    // --------------------------------
+
+
+	// ---------- Handle Configuration ----------
+	game.settings.register(MODULE.ID, "headingH3TransferConfiguration", {
+		name: 'Transfer Configuration',
+		hint: 'Transfer settings are used to transfer items and artifacts to another user via the tray.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
+    // ---------- Handle Dice Tray ----------
+    game.settings.register(MODULE.ID, 'transfersGMApproves', {
+        name: 'GM Approves Transfers',
+        hint: 'If true, the GM must approve transfers of items and artifacts to another user',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+
+    
     // ***************************
     // *** NON-CONFIG SETTINGS ***
     // ***************************
@@ -473,9 +548,15 @@ export const registerSettings = function() {
 
     // View Mode Setting
     game.settings.register(MODULE.ID, 'viewMode', {
+        name: 'View Mode',
+        hint: 'Switch between player and party view',
         scope: 'client',
         config: false,
         type: String,
+        choices: {
+            'player': 'Player View',
+            'party': 'Party View'
+        },
         default: 'player'
     });
 
