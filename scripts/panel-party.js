@@ -112,9 +112,13 @@ export class PartyPanel {
 
         characterCards.on('dragleave', (event) => {
             event.preventDefault();
-            // Only remove the style if we're actually leaving the card
-            if (!event.relatedTarget?.closest('.character-card')) {
-                $(event.currentTarget).removeClass('drop-target');
+            // Remove the style if we're leaving the card or entering a child element
+            const card = $(event.currentTarget);
+            const relatedTarget = $(event.relatedTarget);
+            
+            // Check if we're actually leaving the card
+            if (!relatedTarget.closest('.character-card').is(card)) {
+                card.removeClass('drop-target');
             }
         });
 
