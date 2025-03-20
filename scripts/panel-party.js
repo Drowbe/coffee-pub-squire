@@ -6,11 +6,13 @@ export class PartyPanel {
         this._onTokenUpdate = this._onTokenUpdate.bind(this);
         this._onActorUpdate = this._onActorUpdate.bind(this);
         this._onControlToken = this._onControlToken.bind(this);
+        this._handleTransferButtons = this._handleTransferButtons.bind(this);
         
         // Register hooks for updates
         Hooks.on('updateToken', this._onTokenUpdate);
         Hooks.on('updateActor', this._onActorUpdate);
         Hooks.on('controlToken', this._onControlToken);
+        Hooks.on('renderChatMessage', this._handleTransferButtons);
     }
 
     async render(element) {
@@ -304,11 +306,8 @@ export class PartyPanel {
                             }
                             
                             // Create a transfer request
-                            const requestSuccess = await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
+                            await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
                             
-                            if (requestSuccess) {
-                                ui.notifications.info(`Sent transfer request to ${targetActor.name}'s owner.`);
-                            }
                         } else {
                             // This is a regular world item
                             item = await Item.implementation.fromDropData(data);
@@ -472,11 +471,7 @@ export class PartyPanel {
                         }
                         
                         // Create a transfer request
-                        const requestSuccess = await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
-                        
-                        if (requestSuccess) {
-                            ui.notifications.info(`Sent transfer request to ${targetActor.name}'s owner.`);
-                        }
+                        await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
                         break;
                 }
                 
@@ -597,73 +592,270 @@ export class PartyPanel {
         });
     }
     
-    async _sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp) {
-        // Store transfer data in a game flag for reference
-        const transferData = {
-            sourceActorId: sourceActor.id,
-            targetActorId: targetActor.id,
-            sourceItemId: sourceItem.id,
-            selectedQuantity: selectedQuantity,
-            hasQuantity: hasQuantity,
-            timestamp: timestamp,
-            requester: game.user.id,
-            requesterName: game.user.name,
-            status: 'pending'
-        };
-        
-        // Check if we have permission to set the flag directly
-        if (targetActor.isOwner) {
-            try {
-                // Store the request in a flag on the target actor
-                await targetActor.setFlag(MODULE.ID, `transferRequest_${timestamp}`, transferData);
-            } catch (error) {
-                console.error("SQUIRE | Error setting flag on target actor:", error);
-                ui.notifications.error("Error setting transfer request flag");
-                return false;
+    async _sendTransferRequest(sourceActor, targetActor, item, quantity = 1, hasQuantity, timestamp) {
+        try {
+            // Create transfer data
+            const transferId = `transfer_${timestamp}`;
+            const transferData = {
+                id: transferId,
+                sourceActorId: sourceActor.id,
+                targetActorId: targetActor.id,
+                itemId: item.id,
+                itemName: item.name,
+                quantity: quantity,
+                status: 'pending',
+                timestamp: timestamp,
+                sourceUserId: game.user.id,
+                sourceActorName: sourceActor.name,
+                targetActorName: targetActor.name
+            };
+
+            // Create hidden message to GM with transfer data
+            await ChatMessage.create({
+                content: `<div class="transfer-request-content">
+                    <p>Transfer request from ${sourceActor.name} to ${targetActor.name}</p>
+                    <p>Item: ${quantity}x ${item.name}</p>
+                </div>`,
+                whisper: game.users.filter(u => u.isGM).map(u => u.id),
+                flags: {
+                    [MODULE.ID]: {
+                        transferId: transferId,
+                        type: 'transferRequest',
+                        data: transferData
+                    }
+                }
+            });
+
+            // Find target users (who own the target character)
+            const targetUsers = game.users.filter(user => 
+                user.character?.id === targetActor.id && 
+                user.active && 
+                !user.isGM
+            );
+
+            if (targetUsers.length === 0) {
+                throw new Error("No active users found for the target character");
             }
-        } else {
-            // We don't have permission to set the flag directly
-            // Let's try to find a GM to do it for us
-            const gmUsers = game.users.filter(u => u.isGM && u.active);
-            if (gmUsers.length === 0) {
-                ui.notifications.error("No active GM available to process transfer request");
-                return false;
-            }
+
+            // Create visible message to target player
+            const messageContent = `
+                <div class="transfer-request-content">
+                    <p>${sourceActor.name} wants to transfer ${quantity}x ${item.name} to ${targetActor.name}</p>
+                    <div class="transfer-request-buttons">
+                        <button class="transfer-request-button accept" data-transfer-id="${transferId}">Accept</button>
+                        <button class="transfer-request-button reject" data-transfer-id="${transferId}">Reject</button>
+                    </div>
+                </div>
+            `;
+
+            // Create visible message - whisper only to target users and GMs
+            await ChatMessage.create({
+                content: messageContent,
+                speaker: {
+                    actor: sourceActor.id,
+                    alias: sourceActor.name
+                },
+                whisper: [...targetUsers.map(u => u.id), ...game.users.filter(u => u.isGM).map(u => u.id)],
+                flags: {
+                    [MODULE.ID]: {
+                        transferId: transferId,
+                        type: 'transferRequest',
+                        targetUsers: targetUsers.map(u => u.id)  // Store target users for permission checking
+                    }
+                }
+            });
+
+            // Notify the source player that the request was sent
+            ui.notifications.info(`Transfer request sent to ${targetActor.name}`);
+
+        } catch (error) {
+            console.error("Error sending transfer request:", error);
+            ui.notifications.error("Failed to send transfer request. Please try again or contact your GM.");
+        }
+    }
+
+    _handleTransferButtons(message, html) {
+        // Handle both transfer request and execution messages
+        if (!message.flags?.[MODULE.ID]?.type) return;
+
+        console.log("SQUIRE | Found message:", message);
+
+        // Handle transfer request buttons
+        if (message.flags[MODULE.ID].type === 'transferRequest') {
+            // Check if we've already attached handlers
+            if (html.find('.transfer-request-button').data('handlers-attached')) return;
+
+            const buttons = html.find('.transfer-request-button');
+            console.log("SQUIRE | Found transfer buttons:", buttons.length);
             
-            // Use chat message as a fallback since socketlib isn't working
-            const whisperIds = gmUsers.map(u => u.id);
-            await ChatMessage.create({
-                whisper: whisperIds,
-                content: `<p><strong>GM ACTION REQUIRED:</strong> Player ${game.user.name} is trying to transfer an item from ${sourceActor.name} to ${targetActor.name}. 
-                Please set a flag on ${targetActor.name} with the key "transferRequest_${timestamp}" using the following data:</p>
-                <details>
-                <summary>Flag data (click to expand)</summary>
-                <pre>${JSON.stringify(transferData, null, 2)}</pre>
-                </details>`,
-                speaker: ChatMessage.getSpeaker({alias: "System Message"})
+            buttons.data('handlers-attached', true);
+            
+            // Disable buttons for the sender
+            const targetUserIds = message.getFlag(MODULE.ID, 'targetUsers') || [];
+            if (game.user.id === message.getFlag(MODULE.ID, 'sourceUserId')) {
+                buttons.prop('disabled', true).css('opacity', '0.5');
+            }
+
+            // Attach click handlers
+            buttons.click(async (event) => {
+                console.log("SQUIRE | Button clicked:", event.currentTarget.className);
+                const button = event.currentTarget;
+                const transferId = button.dataset.transferId;
+                const isAccept = button.classList.contains('accept');
+                
+                // Find the GM message with the transfer data
+                const gmMessage = game.messages.find(m => 
+                    m.getFlag(MODULE.ID, 'transferId') === transferId && 
+                    m.getFlag(MODULE.ID, 'type') === 'transferRequest' &&
+                    m.getFlag(MODULE.ID, 'data')
+                );
+
+                if (!gmMessage) {
+                    ui.notifications.error("Transfer request not found");
+                    return;
+                }
+
+                const transferData = gmMessage.getFlag(MODULE.ID, 'data');
+                
+                // Create a new response message instead of updating the original
+                await ChatMessage.create({
+                    content: `<div class="transfer-request-content">
+                        <p>${message.speaker.alias} wanted to transfer ${transferData.quantity}x ${transferData.itemName} to ${message.speaker.alias}</p>
+                        <p class="transfer-request-status ${isAccept ? 'accepted' : 'rejected'}">
+                            ${isAccept ? 'Accepted' : 'Rejected'} by ${game.user.name}
+                        </p>
+                    </div>`,
+                    whisper: [...game.users.filter(u => u.isGM).map(u => u.id), transferData.sourceUserId],
+                    flags: {
+                        [MODULE.ID]: {
+                            transferId: transferId,
+                            type: 'transferResponse',
+                            response: isAccept ? 'accepted' : 'rejected',
+                            responseUserId: game.user.id
+                        }
+                    }
+                });
+
+                // If accepted, execute the transfer through the GM
+                if (isAccept) {
+                    // Create a GM-only message to execute the transfer
+                    const gmExecuteMessage = await ChatMessage.create({
+                        content: `<div class="transfer-execution">
+                            <p>Executing transfer of ${transferData.quantity}x ${transferData.itemName} from ${transferData.sourceActorName} to ${transferData.targetActorName}</p>
+                            <button class="transfer-execute-button" data-transfer-id="${transferId}">Execute Transfer</button>
+                        </div>`,
+                        whisper: game.users.filter(u => u.isGM).map(u => u.id),
+                        flags: {
+                            [MODULE.ID]: {
+                                transferId: transferId,
+                                type: 'transferExecution'
+                            }
+                        }
+                    });
+
+                    // Add click handler for GM execution using Hooks.on
+                    Hooks.on('renderChatMessage', (gmMessage, html) => {
+                        // Only handle our specific GM message
+                        if (gmMessage.getFlag(MODULE.ID, 'transferId') !== transferId) return;
+
+                        // Check if we've already attached handlers
+                        if (html.find('.transfer-execute-button').data('handlers-attached')) return;
+
+                        // Only allow GMs to see and use the execute button
+                        const executeButton = html.find('.transfer-execute-button');
+                        if (!game.user.isGM) {
+                            executeButton.prop('disabled', true).css('opacity', '0.5');
+                            return;
+                        }
+
+                        executeButton.data('handlers-attached', true);
+
+                        executeButton.click(async () => {
+                            try {
+                                console.log("SQUIRE | Execute button clicked, transfer data:", transferData);
+                                const sourceActor = game.actors.get(transferData.sourceActorId);
+                                const targetActor = game.actors.get(transferData.targetActorId);
+                                const sourceItem = sourceActor.items.get(transferData.itemId);
+
+                                if (!sourceActor || !targetActor || !sourceItem) {
+                                    throw new Error("Could not find source actor, target actor, or item");
+                                }
+
+                                await this._completeItemTransfer(sourceActor, targetActor, sourceItem, transferData.quantity, transferData.quantity != null);
+                                await gmExecuteMessage.update({
+                                    content: `<div class="transfer-execution">
+                                        <p>Transfer of ${transferData.quantity}x ${transferData.itemName} from ${sourceActor.name} to ${targetActor.name} completed successfully</p>
+                                    </div>`
+                                });
+                            } catch (error) {
+                                console.error("SQUIRE | Error executing transfer:", error);
+                                await gmExecuteMessage.update({
+                                    content: `<div class="transfer-execution error">
+                                        <p>Error executing transfer: ${error.message}</p>
+                                    </div>`
+                                });
+                            }
+                        });
+                    });
+                }
             });
         }
         
-        // Get users who own the target character
-        const targetUsers = game.users.filter(u => 
-            !u.isGM && targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
-        );
-        
-        // Since socketlib is having issues, we'll use chat messages
-        const whisperIds = targetUsers.map(u => u.id);
-        
-        // Create a whispered chat message
-        if (whisperIds.length > 0) {
-            await ChatMessage.create({
-                whisper: whisperIds,
-                content: `<p><strong>${sourceActor.name}</strong> wants to give you ${hasQuantity && selectedQuantity > 1 ? `${selectedQuantity} units of` : ''} <strong>${sourceItem.name}</strong>. Please check with a GM to complete this transfer.</p>`,
-                speaker: ChatMessage.getSpeaker({alias: "Item Transfer Request"})
+        // Handle execute button
+        if (message.flags[MODULE.ID].type === 'transferExecution') {
+            // Check if we've already attached handlers
+            if (html.find('.transfer-execute-button').data('handlers-attached')) return;
+
+            const executeButton = html.find('.transfer-execute-button');
+            console.log("SQUIRE | Found execute button:", executeButton.length);
+
+            // Only allow GMs to see and use the execute button
+            if (!game.user.isGM) {
+                executeButton.prop('disabled', true).css('opacity', '0.5');
+                return;
+            }
+
+            executeButton.data('handlers-attached', true);
+
+            executeButton.click(async () => {
+                try {
+                    // Find the original transfer data
+                    const gmMessage = game.messages.find(m => 
+                        m.getFlag(MODULE.ID, 'transferId') === message.getFlag(MODULE.ID, 'transferId') && 
+                        m.getFlag(MODULE.ID, 'type') === 'transferRequest' &&
+                        m.getFlag(MODULE.ID, 'data')
+                    );
+
+                    if (!gmMessage) {
+                        throw new Error("Could not find original transfer request");
+                    }
+
+                    const transferData = gmMessage.getFlag(MODULE.ID, 'data');
+                    console.log("SQUIRE | Execute button clicked, transfer data:", transferData);
+
+                    const sourceActor = game.actors.get(transferData.sourceActorId);
+                    const targetActor = game.actors.get(transferData.targetActorId);
+                    const sourceItem = sourceActor.items.get(transferData.itemId);
+
+                    if (!sourceActor || !targetActor || !sourceItem) {
+                        throw new Error("Could not find source actor, target actor, or item");
+                    }
+
+                    await this._completeItemTransfer(sourceActor, targetActor, sourceItem, transferData.quantity, transferData.quantity != null);
+                    await message.update({
+                        content: `<div class="transfer-execution">
+                            <p>Transfer of ${transferData.quantity}x ${transferData.itemName} from ${sourceActor.name} to ${targetActor.name} completed successfully</p>
+                        </div>`
+                    });
+                } catch (error) {
+                    console.error("SQUIRE | Error executing transfer:", error);
+                    await message.update({
+                        content: `<div class="transfer-execution error">
+                            <p>Error executing transfer: ${error.message}</p>
+                        </div>`
+                    });
+                }
             });
         }
-        
-        // Also notify the sender that they need to coordinate manually
-        ui.notifications.warn(`Transfer request sent. Please coordinate with the GM to complete the transfer.`);
-        
-        return true;
     }
 } 
