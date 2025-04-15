@@ -399,9 +399,12 @@ async function completeItemTransfer(sourceActor, targetActor, sourceItem, quanti
         await sourceItem.delete();
     }
     
-    // Add to newlyAddedItems in PanelManager
+    // Mark the item as new using both systems
     if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+        // Use the static Map for backward compatibility
         game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
+        // Use the new flag system
+        await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
     }
     
     // Send chat notification
@@ -520,3 +523,9 @@ async function executeItemTransfer(transferData, accepted) {
         console.error(`SQUIRE | Error executing item transfer:`, error);
     }
 }
+
+// Add this to your Handlebars helpers
+Handlebars.registerHelper('getFlag', function(flags, itemId, flagName) {
+    if (!flags || !itemId || !flagName) return false;
+    return flags[itemId]?.[flagName] || false;
+});

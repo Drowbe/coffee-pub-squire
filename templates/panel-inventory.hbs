@@ -8,6 +8,7 @@
         <div class="inventory-name">
             {{{name}}}
             {{#if (lookup ../newlyAddedItems id)}}<span class="new-tag">NEW</span>{{/if}}
+            {{#if isNew}}<span class="new-tag">NEW</span>{{/if}}
             {{#if actionType}}
             <span class="action-type">
                 {{#if (eq actionType "action")}}<i class="fas fa-circle-a" title="Action"></i>

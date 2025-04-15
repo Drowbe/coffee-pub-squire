@@ -573,9 +573,12 @@ export class PartyPanel {
             await sourceItem.delete();
         }
         
-        // Add to newlyAddedItems in PanelManager
+        // Mark the item as new using both systems
         if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+            // Use the static Map for backward compatibility
             game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
+            // Use the new flag system
+            await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
         }
         
         // Send chat notification

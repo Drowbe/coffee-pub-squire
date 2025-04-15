@@ -708,6 +708,9 @@ export class PanelManager {
                             // Create the item on the target actor
                             const transferredItem = await this.actor.createEmbeddedDocuments('Item', [transferData]);
                             
+                            // Mark the item as new using the flag system
+                            await PanelManager.markItemAsNew(transferredItem[0].id, this.actor.id);
+                            
                             // Reduce quantity or remove the item from source actor
                             if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
                                 // Just reduce the quantity
@@ -718,9 +721,6 @@ export class PanelManager {
                                 // Remove the item entirely
                                 await sourceItem.delete();
                             }
-                            
-                            // Add to newlyAddedItems in PanelManager
-                            PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
                             
                             // Send chat notification
                             const transferChatData = {
@@ -747,8 +747,8 @@ export class PanelManager {
                         // Create the item on the actor
                         const createdItem = await this.actor.createEmbeddedDocuments('Item', [item.toObject()]);
                         
-                        // Add the item ID with current timestamp
-                        PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
+                        // Mark the item as new using the flag system
+                        await PanelManager.markItemAsNew(createdItem[0].id, this.actor.id);
                         
                         // Update the tray first
                         await this.updateTray();
@@ -776,8 +776,8 @@ export class PanelManager {
                         if (itemData) {
                             const newItem = await this.actor.createEmbeddedDocuments('Item', [itemData]);
                             
-                            // Add the item ID with current timestamp
-                            PanelManager.newlyAddedItems.set(newItem[0].id, Date.now());
+                            // Mark the item as new using the flag system
+                            await PanelManager.markItemAsNew(newItem[0].id, this.actor.id);
                             
                             // Update the tray first
                             await this.updateTray();
@@ -1405,11 +1405,63 @@ export class PanelManager {
     // Add this new method for cleanup
     static cleanupNewlyAddedItems() {
         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000); // 5 minutes in milliseconds
+        
+        // First clean up items in the Map
         for (const [itemId, timestamp] of PanelManager.newlyAddedItems) {
             if (timestamp < fiveMinutesAgo) {
                 PanelManager.newlyAddedItems.delete(itemId);
+                // Also clear the isNew flag
+                const actor = game.actors.get(PanelManager.currentActor?.id);
+                if (actor) {
+                    const item = actor.items.get(itemId);
+                    if (item) {
+                        item.unsetFlag(MODULE.ID, 'isNew');
+                    }
+                }
             }
         }
+
+        // Then check for any items with the isNew flag that aren't in the Map
+        const actor = game.actors.get(PanelManager.currentActor?.id);
+        if (actor) {
+            for (const item of actor.items) {
+                const isNew = item.getFlag(MODULE.ID, 'isNew');
+                if (isNew && !PanelManager.newlyAddedItems.has(item.id)) {
+                    // If the item has the flag but isn't in the Map, clear the flag
+                    item.unsetFlag(MODULE.ID, 'isNew');
+                }
+            }
+        }
+    }
+
+    // Add this new method to mark an item as new
+    static async markItemAsNew(itemId, actorId) {
+        const actor = game.actors.get(actorId);
+        if (!actor) return;
+        
+        const item = actor.items.get(itemId);
+        if (!item) return;
+        
+        // Set a flag on the item to mark it as new
+        await item.setFlag(MODULE.ID, 'isNew', true);
+        
+        // Also update the static Map for backward compatibility
+        PanelManager.newlyAddedItems.set(itemId, Date.now());
+    }
+
+    // Add this new method to clear the new status
+    static async clearNewStatus(itemId, actorId) {
+        const actor = game.actors.get(actorId);
+        if (!actor) return;
+        
+        const item = actor.items.get(itemId);
+        if (!item) return;
+        
+        // Clear the flag
+        await item.unsetFlag(MODULE.ID, 'isNew');
+        
+        // Also update the static Map for backward compatibility
+        PanelManager.newlyAddedItems.delete(itemId);
     }
 }
 

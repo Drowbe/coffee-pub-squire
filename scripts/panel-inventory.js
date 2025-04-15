@@ -45,13 +45,15 @@ export class InventoryPanel {
         // Map items with favorite state and action type
         const mappedItems = items.map(item => ({
             id: item.id,
-            name: item.name + (PanelManager.newlyAddedItems.has(item.id) ? ' <span class="new-tag">NEW</span>' : ''),
+            name: item.name,
             img: item.img || 'icons/svg/item-bag.svg',
             type: item.type,
             system: item.system,
             isFavorite: favorites.includes(item.id),
             categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
-            actionType: this._getActionType(item)
+            actionType: this._getActionType(item),
+            flags: item.flags || {},
+            isNew: item.getFlag(MODULE.ID, 'isNew') || false
         }));
 
         // Group items by type and sort alphabetically within each type
@@ -95,7 +97,11 @@ export class InventoryPanel {
             itemsByType: this.items.byType,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyEquipped: this.showOnlyEquipped,
-            newlyAddedItems: PanelManager.newlyAddedItems
+            newlyAddedItems: PanelManager.newlyAddedItems,
+            flags: this.items.all.reduce((acc, item) => {
+                acc[item.id] = item.flags || {};
+                return acc;
+            }, {})
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_INVENTORY, itemData);
