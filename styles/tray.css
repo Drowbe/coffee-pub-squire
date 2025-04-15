@@ -966,26 +966,32 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding-right: 6px;
 }
 
 .squire-tray .tray-view-content.party-view {
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
 }
 
 /* Custom scrollbar for party view */
 .squire-tray .tray-view-content.party-view::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
 }
 
 .squire-tray .tray-view-content.party-view::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
+    margin: 4px 0;
 }
 
 .squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb:hover {
