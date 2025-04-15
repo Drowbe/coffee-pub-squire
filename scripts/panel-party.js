@@ -775,9 +775,20 @@ export class PartyPanel {
                                 throw new Error("No active GM available to execute transfer");
                             }
 
-                            // Only proceed with transfer if we are the GM
-                            if (game.user.isGM) {
-                                await this._completeItemTransfer(sourceActor, targetActor, sourceItem, transferData.quantity, transferData.quantity != null);
+                            // Use the existing socketlib handler to execute as the found GM
+                            if (game.modules.get('socketlib')?.active) {
+                                const socket = game.modules.get(MODULE.ID).socket;
+                                if (!socket) {
+                                    throw new Error("Socket not initialized");
+                                }
+                                
+                                await socket.executeAsUser('executeItemTransfer', gmUser.id, {
+                                    sourceActorId: sourceActor.id,
+                                    targetActorId: targetActor.id,
+                                    sourceItemId: sourceItem.id,
+                                    quantity: transferData.quantity,
+                                    hasQuantity: transferData.quantity != null
+                                });
                                 
                                 // Create success message visible to involved parties
                                 await ChatMessage.create({
@@ -792,6 +803,8 @@ export class PartyPanel {
                                         }
                                     }
                                 });
+                            } else {
+                                throw new Error("Socketlib module is required for automated transfers");
                             }
                         } catch (error) {
                             console.error("SQUIRE | Error auto-executing transfer:", error);

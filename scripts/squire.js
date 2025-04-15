@@ -4,6 +4,75 @@ import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers } from './helpers.js';
 
+let socket;
+
+// Move socketlib registration to its own hook
+Hooks.once('socketlib.ready', () => {
+    console.log("SQUIRE | Socketlib ready hook fired", {
+        socketlib: game.modules.get('socketlib'),
+        api: game.modules.get('socketlib')?.api,
+        globalSocketlib: typeof socketlib !== 'undefined' ? socketlib : undefined
+    });
+    
+    try {
+        if (typeof socketlib === 'undefined') {
+            throw new Error("Global socketlib variable is not defined");
+        }
+
+        socket = socketlib.registerModule(MODULE.ID);
+        console.log("SQUIRE | Socket registered", { 
+            socket,
+            functions: socket?.functions,
+            socketName: socket?.socketName
+        });
+        
+        if (!socket) {
+            throw new Error("Failed to register socket");
+        }
+        
+        // Store socket in module API for access from other files
+        game.modules.get(MODULE.ID).socket = socket;
+        
+        // Register the executeItemTransfer handler
+        socket.register("executeItemTransfer", async (data) => {
+            console.log("SQUIRE | Executing item transfer", data);
+            const sourceActor = game.actors.get(data.sourceActorId);
+            const targetActor = game.actors.get(data.targetActorId);
+            const sourceItem = sourceActor.items.get(data.sourceItemId);
+            
+            if (!sourceActor || !targetActor || !sourceItem) {
+                throw new Error("Could not find source actor, target actor, or item");
+            }
+            
+            return await game.modules.get(MODULE.ID).PartyPanel._completeItemTransfer(
+                sourceActor, 
+                targetActor, 
+                sourceItem, 
+                data.quantity, 
+                data.hasQuantity
+            );
+        });
+        
+        console.log("SQUIRE | Socket handler registered successfully", {
+            registeredFunctions: socket?.functions ? Array.from(socket.functions.keys()) : []
+        });
+    } catch (error) {
+        console.error("SQUIRE | Error during socketlib initialization:", error);
+    }
+});
+
+// Add a ready hook to verify socket is available
+Hooks.once('ready', () => {
+    console.log("SQUIRE | Checking socket availability:", {
+        socket: game.modules.get(MODULE.ID).socket,
+        socketlib: game.modules.get('socketlib'),
+        api: game.modules.get('socketlib')?.api,
+        globalSocketlib: typeof socketlib !== 'undefined' ? socketlib : undefined,
+        registeredFunctions: game.modules.get(MODULE.ID).socket?.functions ? 
+            Array.from(game.modules.get(MODULE.ID).socket.functions.keys()) : []
+    });
+});
+
 Hooks.once('init', async function() {
     game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification(
         `${MODULE.TITLE} | Initializing ${MODULE.NAME}`,

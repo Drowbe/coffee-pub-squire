@@ -21,9 +21,15 @@
                 "id": "coffee-pub-blacksmith",
                 "type": "module",
                 "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json"
+            },
+            {
+                "id": "socketlib",
+                "type": "module",
+                "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/master/module.json"
             }
         ]
     },
+    "socket": true,
     "esmodules": [
         "scripts/const.js",
         "scripts/helpers.js",
@@ -35,6 +41,7 @@
         "scripts/panel-favorites.js",
         "scripts/panel-dicetray.js",
         "scripts/panel-abilities.js",
+        "scripts/panel-party.js",
         "scripts/panel-party-stats.js"
     ],
     "styles": [
