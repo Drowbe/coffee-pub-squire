@@ -1,6 +1,21 @@
 # Coffee Pub Squire
 
+![Latest Release](https://img.shields.io/github/v/release/Drowbe/coffee-pub-squire)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-squire/release.yml)
+![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-squire/total)
+![MIT License](https://img.shields.io/badge/license-MIT-blue)
+![Foundry v12](https://img.shields.io/badge/foundry-v12-green)
+
+## Disclaimer
+
+This is a personal project created for my FoundryVTT games to introduce various quality-of-life features and functions. 
+
+If you stumble upon this repository and find it useful, feel free to try it out! However, please note that this project is developed for personal use, and I make no guarantees regarding stability, compatibility, or ongoing support.
+
+**Use at your own risk.** I am not responsible for any issues, data loss, or unexpected behavior resulting from using this project.
+
 A FoundryVTT module that provides quick access to character-specific combat information through a sliding tray interface. Part of the Coffee Pub suite of modules.
+
 
 ## Features
 
