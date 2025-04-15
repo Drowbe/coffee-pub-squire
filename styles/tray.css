@@ -968,6 +968,30 @@
     overflow: hidden;
 }
 
+.squire-tray .tray-view-content.party-view {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar for party view */
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar {
+    width: 6px;
+}
+
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
 /* Tray GM Toolbar */
 .squire-tray .tray-gm-toolbar {
     display: flex;
