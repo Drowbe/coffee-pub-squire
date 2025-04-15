@@ -48,6 +48,17 @@ export class PanelManager {
     }
 
     static async initialize(actor = null) {
+        // Check if user is excluded
+        const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());
+        if (excludedUsers.includes(game.user.id)) {
+            // If we have an existing tray, remove it
+            if (PanelManager.element) {
+                PanelManager.element.remove();
+                PanelManager.element = null;
+            }
+            return;
+        }
+
         // Debounce initialization - don't initialize more than once every 100ms
         const now = Date.now();
         if (now - PanelManager._lastInitTime < 100) {

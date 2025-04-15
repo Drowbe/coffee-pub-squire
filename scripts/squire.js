@@ -51,12 +51,36 @@ Hooks.once('ready', async function() {
         return;
     }
 
-    // Check if current user is excluded - do this before setting up the tray
+    // Check if current user is excluded
     const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());
-    if (excludedUsers.includes(game.user.id)) {
-        // Hide the tray with aggressive CSS
+    const currentUserId = game.user.id;
+    const currentUserName = game.user.name;
+    
+    // Check if user is excluded by either ID or name
+    const isExcluded = excludedUsers.some(excluded => 
+        excluded === currentUserId || excluded === currentUserName
+    );
+
+    // Debug log the exclusion status
+    blacksmith.utils.postConsoleAndNotification(
+        `${MODULE.TITLE} | User Exclusion Check`,
+        {
+            currentUserId,
+            currentUserName,
+            isExcluded,
+            excludedUsers,
+            allUsers: game.users.map(u => ({ id: u.id, name: u.name }))
+        },
+        false,
+        true,
+        false,
+        MODULE.TITLE
+    );
+
+    if (isExcluded) {
+        // Simply hide the tray with CSS
         const style = document.createElement('style');
-        style.textContent = '.squire-tray, .squire-tray * { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }';
+        style.textContent = '.squire-tray { display: none !important; }';
         document.head.appendChild(style);
         return;
     }
