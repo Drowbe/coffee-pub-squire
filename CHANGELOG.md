@@ -6,10 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.0.7] - 2025-03-25
+## [1.0.7] - 2025-04-26
 
+### Changed
+- Unified all item transfer chat cards to use a single utility for consistent data and appearance.
+- Updated transfer card types to: `transfer-gm` (GM/compendium/world drops), `transfer-complete` (actor-to-actor transfers), and `transfer-request` (transfer requests with accept/reject).
+- Refactored `panel-party.js` and `panel-manager.js` to use the new card system for all transfer scenarios.
+- Reverted transfer request chat message logic to its original, pre-card-system form for stability and compatibility.
 
-
+### Fixed
+- Fixed duplication of transfer request chat messages in GM and sender clients.
+- Fixed "Transfer request not found" error when accepting/rejecting a transfer.
+- Fixed ReferenceError for `sourceActor` in transfer request button handler by fetching all data from chat message flags.
+- Ensured only the correct clients receive transfer request messages (GM and receiver get the actionable message, sender gets a confirmation).
 
 ## [1.0.6] - 2025-03-17
 
