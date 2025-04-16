@@ -596,6 +596,9 @@ export class PanelManager {
                 switch (data.type) {
                     case 'Item':
                         // Check if this is a drag from character sheet
+                        // **********************************
+                        // *** DROP FROM CHARACTER SHEET ***
+                        // **********************************
                         if ((data.actorId && (data.data?.itemId || data.embedId)) || 
                             data.fromInventory || 
                             (data.uuid && data.uuid.startsWith("Actor."))) {
@@ -723,12 +726,15 @@ export class PanelManager {
                             }
                             
                             // Send chat notification
-                            const transferChatData = {
-                                isPublic: true,
-                                strCardIcon: this._getDropIcon(sourceItem.type),
-                                strCardTitle: "Item Transferred",
-                                strCardContent: `<p><strong>${sourceActor.name}</strong> gave ${hasQuantity ? `${quantityToTransfer} ${quantityToTransfer > 1 ? 'units of' : 'unit of'}` : ''} <strong>${sourceItem.name}</strong> to <strong>${this.actor.name}</strong>.</p>`
-                            };
+                            const transferChatData = this._getTransferCardData({
+                                cardType: "transfer-complete",
+                                sourceActor,
+                                targetActor: this.actor,
+                                item: sourceItem,
+                                quantity: quantityToTransfer,
+                                hasQuantity,
+                                isPlural: quantityToTransfer > 1
+                            });
                             const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
                             await ChatMessage.create({
                                 content: transferChatContent,
@@ -742,6 +748,10 @@ export class PanelManager {
                         }
                         
                         // If not from character sheet, proceed with regular item creation
+
+                        // **********************************
+                        // *** DROP FROM COMPENDIUM ***
+                        // **********************************   
                         item = await Item.implementation.fromDropData(data);
                         if (!item) return;
                         // Create the item on the actor
@@ -758,17 +768,13 @@ export class PanelManager {
                         const itemUUID = this._getItemUUID(createdItem[0], data);
                         
                         // Send chat notification
-                        const chatData = {
-                            isPublic: true,
-                            strCardIcon: this._getDropIcon(item.type),
-                            strCardTitle: this._getDropTitle(item.type),
-                            strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>`
-                        };
+                        const chatData = this._getTransferCardData({ cardType: "transfer-gm", targetActor: this.actor, item });
                         const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
                         await ChatMessage.create({
                             content: chatContent,
                             speaker: ChatMessage.getSpeaker({ actor: this.actor })
                         });
+ 
                         break;
 
                     case 'ItemDirectory':
@@ -799,6 +805,7 @@ export class PanelManager {
                             );
                             
                             // Send chat notification
+                            /* Unused code - transfers are handled by Party Panel
                             const dirItemChatData = {
                                 isPublic: true,
                                 strCardIcon: this._getDropIcon(itemData.type),
@@ -810,6 +817,7 @@ export class PanelManager {
                                 content: dirItemChatContent,
                                 speaker: ChatMessage.getSpeaker({ actor: this.actor })
                             });
+                            */
                         }
                         break;
 
@@ -1462,6 +1470,17 @@ export class PanelManager {
         
         // Also update the static Map for backward compatibility
         PanelManager.newlyAddedItems.delete(itemId);
+    }
+
+    // Add this new method to get the appropriate transfer card data
+    _getTransferCardData(data) {
+        return {
+            isPublic: true,
+            isTransferred: true,
+            strCardIcon: this._getDropIcon(data.item.type),
+            strCardTitle: this._getDropTitle(data.item.type),
+            strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${data.item.name}</strong> via the Squire tray.</p>`
+        };
     }
 }
 

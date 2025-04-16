@@ -322,13 +322,8 @@ export class PartyPanel {
                             }
                             
                             // Send chat notification
-                            const chatData = {
-                                isPublic: true,
-                                strCardIcon: this._getDropIcon(item.type),
-                                strCardTitle: this._getDropTitle(item.type),
-                                strCardContent: `<p><strong>${targetActor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>`
-                            };
-                            const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
+                            const cardDataWorld = this._getTransferCardData({ cardType: "transfer-gm", targetActor, item });
+                            const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataWorld);
                             await ChatMessage.create({
                                 content: chatContent,
                                 speaker: ChatMessage.getSpeaker({ actor: targetActor })
@@ -347,13 +342,8 @@ export class PartyPanel {
                             }
                             
                             // Send chat notification
-                            const dirItemChatData = {
-                                isPublic: true,
-                                strCardIcon: this._getDropIcon(itemData.type),
-                                strCardTitle: this._getDropTitle(itemData.type),
-                                strCardContent: `<p><strong>${targetActor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p>`
-                            };
-                            const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, dirItemChatData);
+                            const cardDataCompendium = this._getTransferCardData({ cardType: "transfer-gm", targetActor, item: itemData });
+                            const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataCompendium);
                             await ChatMessage.create({
                                 content: dirItemChatContent,
                                 speaker: ChatMessage.getSpeaker({ actor: targetActor })
@@ -582,13 +572,8 @@ export class PartyPanel {
         }
         
         // Send chat notification
-        const transferChatData = {
-            isPublic: true,
-            strCardIcon: this._getDropIcon(sourceItem.type),
-            strCardTitle: "Item Transferred",
-            strCardContent: `<p><strong>${sourceActor.name}</strong> gave ${hasQuantity ? `${quantityToTransfer} ${quantityToTransfer > 1 ? 'units of' : 'unit of'}` : ''} <strong>${sourceItem.name}</strong> to <strong>${targetActor.name}</strong>.</p>`
-        };
-        const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
+        const cardDataTransfer = this._getTransferCardData({ cardType: "transfer-complete", sourceActor, targetActor, item: transferredItem[0], quantity: quantityToTransfer, hasQuantity, isPlural: quantityToTransfer > 1 });
+        const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataTransfer);
         await ChatMessage.create({
             content: transferChatContent,
             speaker: ChatMessage.getSpeaker({ actor: targetActor })
@@ -640,20 +625,15 @@ export class PartyPanel {
                 throw new Error("No active users found for the target character");
             }
 
-            // Create visible message to target player
-            const messageContent = `
-                <div class="transfer-request-content">
+            // Create visible message - whisper only to target users and GMs
+            await ChatMessage.create({
+                content: `<div class="transfer-request-content">
                     <p>${sourceActor.name} wants to transfer ${quantity}x ${item.name} to ${targetActor.name}</p>
                     <div class="transfer-request-buttons">
                         <button class="transfer-request-button accept" data-transfer-id="${transferId}">Accept</button>
                         <button class="transfer-request-button reject" data-transfer-id="${transferId}">Reject</button>
                     </div>
-                </div>
-            `;
-
-            // Create visible message - whisper only to target users and GMs
-            await ChatMessage.create({
-                content: messageContent,
+                </div>`,
                 speaker: {
                     actor: sourceActor.id,
                     alias: sourceActor.name
@@ -719,15 +699,15 @@ export class PartyPanel {
                 }
 
                 const transferData = gmMessage.getFlag(MODULE.ID, 'data');
+                const sourceActor = game.actors.get(transferData.sourceActorId);
+                const targetActor = game.actors.get(transferData.targetActorId);
+                const item = sourceActor?.items.get(transferData.itemId);
                 
                 // Create a new response message instead of updating the original
+                const cardDataResponse = this._getTransferCardData({ cardType: "transfer-response", sourceActor, targetActor, item: transferData.item, quantity: transferData.quantity, hasQuantity: true, isPlural: transferData.quantity > 1, responderName: game.user.name, transferStatus: isAccept ? 'accepted' : 'rejected' });
+                const responseChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataResponse);
                 await ChatMessage.create({
-                    content: `<div class="transfer-request-content">
-                        <p>${message.speaker.alias} wanted to transfer ${transferData.quantity}x ${transferData.itemName} to ${message.speaker.alias}</p>
-                        <p class="transfer-request-status ${isAccept ? 'accepted' : 'rejected'}">
-                            ${isAccept ? 'Accepted' : 'Rejected'} by ${game.user.name}
-                        </p>
-                    </div>`,
+                    content: responseChatContent,
                     whisper: [...game.users.filter(u => u.isGM).map(u => u.id), transferData.sourceUserId],
                     flags: {
                         [MODULE.ID]: {
@@ -745,11 +725,10 @@ export class PartyPanel {
                     
                     if (transfersGMApproves) {
                         // Create a GM-only message to execute the transfer
-                        const gmExecuteMessage = await ChatMessage.create({
-                            content: `<div class="transfer-execution">
-                                <p>Executing transfer of ${transferData.quantity}x ${transferData.itemName} from ${transferData.sourceActorName} to ${transferData.targetActorName}</p>
-                                <button class="transfer-execute-button" data-transfer-id="${transferId}">Execute Transfer</button>
-                            </div>`,
+                        const cardDataExecution = this._getTransferCardData({ cardType: "transfer-execution", sourceActor, targetActor, item: transferData.item, quantity: transferData.quantity, hasQuantity: true, isPlural: transferData.quantity > 1, showExecuteButton: true });
+                        const executionChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataExecution);
+                        await ChatMessage.create({
+                            content: executionChatContent,
                             whisper: game.users.filter(u => u.isGM).map(u => u.id),
                             flags: {
                                 [MODULE.ID]: {
@@ -789,25 +768,12 @@ export class PartyPanel {
                                     quantity: transferData.quantity,
                                     hasQuantity: transferData.quantity != null
                                 });
-                                
-                                // Create success message visible to involved parties
-                                await ChatMessage.create({
-                                    content: `<div class="transfer-execution">
-                                        <p>Transfer of ${transferData.quantity}x ${transferData.itemName} from ${transferData.sourceActorName} to ${transferData.targetActorName} completed successfully</p>
-                                    </div>`,
-                                    whisper: [transferData.sourceUserId, ...game.users.filter(u => u.isGM).map(u => u.id)],
-                                    flags: {
-                                        [MODULE.ID]: {
-                                            transferId: transferId,
-                                            type: 'transferComplete'
-                                        }
-                                    }
-                                });
                             } else {
                                 throw new Error("Socketlib module is required for automated transfers");
                             }
                         } catch (error) {
                             console.error("SQUIRE | Error auto-executing transfer:", error);
+                            const cardDataExecutionError = this._getTransferCardData({ cardType: "transfer-execution-error", sourceActor, targetActor, item: transferData.item, quantity: transferData.quantity, hasQuantity: true, isPlural: transferData.quantity > 1, showExecuteButton: true });
                             await ChatMessage.create({
                                 content: `<div class="transfer-execution error">
                                     <p>Error executing transfer: ${error.message}</p>
@@ -882,5 +848,40 @@ export class PartyPanel {
                 }
             });
         }
+    }
+
+    // Utility to generate unified card data for all transfer/chat card types
+    _getTransferCardData({
+        cardType = "generic", // e.g. "compendium-drop", "actor-transfer", "request", "response", "execution"
+        sourceActor = null,
+        targetActor = null,
+        item = null,
+        quantity = 1,
+        hasQuantity = false,
+        isPlural = false,
+        responderName = null,
+        transferStatus = null,
+        showTransferButtons = false,
+        showExecuteButton = false
+    } = {}) {
+        return {
+            cardType,
+            isPublic: cardType === "compendium-drop" || cardType === "world-drop" || cardType === "actor-transfer",
+            strCardIcon: item ? this._getDropIcon(item.type) : "fas fa-backpack",
+            strCardTitle: this._getDropTitle(item?.type),
+            isTransferFromCharacter: cardType === "actor-transfer" || cardType === "request" || cardType === "response" || cardType === "execution",
+            sourceActorName: sourceActor?.name || (cardType === "compendium-drop" ? "Compendium" : null),
+            targetActorName: targetActor?.name || null,
+            itemName: item?.name || null,
+            hasQuantity,
+            quantity,
+            isPlural,
+            responderName,
+            transferStatus,
+            showTransferButtons,
+            showExecuteButton,
+            // For legacy/fallback
+            strCardContent: (cardType === "compendium-drop" || cardType === "world-drop") && targetActor && item ? `<p><strong>${targetActor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>` : undefined
+        };
     }
 } 
