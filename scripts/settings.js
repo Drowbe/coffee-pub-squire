@@ -234,7 +234,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true,
+        default: false,
         onChange: () => {
             if (ui.squire) ui.squire.render();
         }
@@ -246,7 +246,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true,
+        default: false,
         onChange: () => {
             if (ui.squire) ui.squire.render();
         }
@@ -258,7 +258,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true,
+        default: false,
         onChange: () => {
             if (ui.squire) ui.squire.render();
         }
@@ -270,7 +270,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true,
+        default: false,
         onChange: () => {
             if (ui.squire) ui.squire.render();
         }
@@ -282,7 +282,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true,
+        default: false,
         onChange: () => {
             if (ui.squire) ui.squire.render();
         }
@@ -294,7 +294,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true,
+        default: false,
         onChange: () => {
             if (ui.squire) ui.squire.render();
         }
@@ -333,7 +333,7 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true
+        default: false
     });
     // ---------- Handle Secondary Stats ----------
     game.settings.register(MODULE.ID, 'showHandleStatsSecondary', {
@@ -379,7 +379,7 @@ export const registerSettings = function() {
     // --------------------------------
 
 
-	// ---------- Handle Configuration ----------
+	// ---------- Transfer Heading ----------
 	game.settings.register(MODULE.ID, "headingH3TransferConfiguration", {
 		name: 'Transfer Configuration',
 		hint: 'Transfer settings are used to transfer items and artifacts to another user via the tray.',
@@ -389,7 +389,7 @@ export const registerSettings = function() {
 		type: String,
 	});
 
-    // ---------- Handle Dice Tray ----------
+    // ---------- Transfers - GM Approves ----------
     game.settings.register(MODULE.ID, 'transfersGMApproves', {
         name: 'GM Approves Transfers',
         hint: 'If true, the GM must approve transfers of items and artifacts to another user',
