@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.9] - Event Handler Fixes
+
+### Fixed
+- Fixed multiple click events being triggered when using weapons, spells, features, and inventory items
+- Added proper event cleanup and namespacing to prevent event handler accumulation
+- Improved event delegation consistency across all panels
+
 ## [1.0.8] - Bug Fixes
 
 ### Fixed
