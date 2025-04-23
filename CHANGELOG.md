@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.0.7] - 2025-04-26
+## [1.0.8] - Bug Fixes
+
+
+
+
+## [1.0.7] - Unified cards
 
 ### Changed
 - Unified all item transfer chat cards to use a single utility for consistent data and appearance.
@@ -20,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed ReferenceError for `sourceActor` in transfer request button handler by fetching all data from chat message flags.
 - Ensured only the correct clients receive transfer request messages (GM and receiver get the actionable message, sender gets a confirmation).
 
-## [1.0.6] - 2025-03-17
+## [1.0.6] - Transfers
 
 ### Added
 - New item transfer system between characters
@@ -36,16 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced user permissions checking for item transfers
 - Added ability for GMs to facilitate transfers between players
 
-## [1.0.5] - 2024-03-19
+## [1.0.5] - Exclude Users
 
 ### Fixed
 - Fixed critical issue where excluded users would still see the tray
 - Improved handling of user exclusion to prevent any tray elements from displaying
 
-## [1.0.4] - 2024-03-19
+## [1.0.4] - Cleanup
 
 ### Added
-- New setting to exclude specific users from seeing the Squire tray
 - Proper cleanup of CSS variables and UI margins for excluded users
 
 ### Changed
@@ -57,11 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed issue where excluded users would still see the tray
 - Improved handling of user exclusion to prevent any tray elements from displaying
 
-## [1.0.3] - 2024-02-25
-
-### Added
-- Added support for excluding specific users from seeing the Squire tray
-- Added proper cleanup when users are excluded
+## [1.0.3] - Uswer contxt
 
 ### Changed
 - Updated initialization process to better handle user context
@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed issues with user visibility and initialization
 - Resolved template registration timing issues
 
-## [1.0.2] - 2024-02-08
+## [1.0.2] - Improved panels
 
 ### Changed
 - Updated dice tray icon to match the style of condition icons
@@ -89,7 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added AI development guidelines for future maintenance
 - Enhanced logging system for better debugging
 
-## [1.0.1] - 2024-02-07
+## [1.0.1] - Apells, weapons and Items
 
 ### Changed
 - Removed "'s Squire" suffix from character names for cleaner display
@@ -110,7 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Weapons: Attack type, damage, and range
   - Features: Requirements and description
 
-## [1.0.0] - 2024-02-06
+## [1.0.0] - Initial Release
 
 ### Added
 - Initial release
