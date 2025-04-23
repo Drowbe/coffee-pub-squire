@@ -8,8 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.8] - Bug Fixes
 
+### Fixed
+- Fixed tray behavior when switching between tokens to prevent disappearing and re-sliding
+- Resolved issue with panel settings not being properly registered
+- Improved tray state preservation during token switches
+- Fixed animation glitches during tray updates
+- Ensured proper panel instance management during token transitions
 
-
+### Changed
+- Refactored tray update logic to maintain consistent state
+- Improved panel instance handling for better stability
+- Enhanced tray element management to prevent duplicate elements
+- Updated panel visibility settings handling for better reliability
 
 ## [1.0.7] - Unified cards
 
