@@ -145,21 +145,29 @@ export class WeaponsPanel {
         this.panelManager._updateEmptyMessage(html[0]);
     }
 
+    _removeEventListeners(panel) {
+        if (!panel) return;
+        panel.off('.squireWeapons');
+    }
+
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
         // Use event delegation for all handlers
         const panel = html.find('[data-panel="weapons"]');
 
+        // Remove any existing listeners first
+        this._removeEventListeners(panel);
+
         // Category filter toggles
-        panel.on('click', '.weapons-category-filter', (event) => {
+        panel.on('click.squireWeapons', '.weapons-category-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
             this.panelManager.toggleCategory(categoryId, panel[0]);
         });
 
         // Add filter toggle handler
-        panel.on('click', '.weapon-filter-toggle', async (event) => {
+        panel.on('click.squireWeapons', '.weapon-filter-toggle', async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;
             await game.settings.set(MODULE.ID, 'showOnlyEquippedWeapons', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
@@ -168,7 +176,7 @@ export class WeaponsPanel {
         });
 
         // Weapon info click (feather icon)
-        panel.on('click', '.tray-buttons .fa-feather', async (event) => {
+        panel.on('click.squireWeapons', '.tray-buttons .fa-feather', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
@@ -177,13 +185,13 @@ export class WeaponsPanel {
         });
 
         // Toggle favorite
-        panel.on('click', '.tray-buttons .fa-heart', async (event) => {
+        panel.on('click.squireWeapons', '.tray-buttons .fa-heart', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
         });
 
         // Weapon use click (image overlay)
-        panel.on('click', '.weapon-image-container .weapon-roll-overlay', async (event) => {
+        panel.on('click.squireWeapons', '.weapon-image-container .weapon-roll-overlay', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
@@ -192,7 +200,7 @@ export class WeaponsPanel {
         });
 
         // Toggle equip state (shield icon)
-        panel.on('click', '.tray-buttons .fa-shield-alt', async (event) => {
+        panel.on('click.squireWeapons', '.tray-buttons .fa-shield-alt', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {

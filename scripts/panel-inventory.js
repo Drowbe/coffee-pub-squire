@@ -140,18 +140,29 @@ export class InventoryPanel {
         this.panelManager._updateEmptyMessage(html[0]);
     }
 
+    _removeEventListeners(panel) {
+        if (!panel) return;
+        panel.off('.squireInventory');
+    }
+
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
+        // Use event delegation for all handlers
+        const panel = html.find('[data-panel="inventory"]');
+
+        // Remove any existing listeners first
+        this._removeEventListeners(panel);
+
         // Category filter toggles
-        html.find('.inventory-category-filter').click((event) => {
+        panel.on('click.squireInventory', '.inventory-category-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, html[0]);
+            this.panelManager.toggleCategory(categoryId, panel[0]);
         });
 
         // Add filter toggle handler
-        html.find('.inventory-filter-toggle').click(async (event) => {
+        panel.on('click.squireInventory', '.inventory-filter-toggle', async (event) => {
             this.showOnlyEquipped = !this.showOnlyEquipped;
             await game.settings.set(MODULE.ID, 'showOnlyEquippedInventory', this.showOnlyEquipped);
             $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
@@ -160,7 +171,7 @@ export class InventoryPanel {
         });
 
         // Item info click (feather icon)
-        html.find('.tray-buttons .fa-feather').click(async (event) => {
+        panel.on('click.squireInventory', '.tray-buttons .fa-feather', async (event) => {
             const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
             const item = this.actor.items.get(itemId);
             if (item) {
@@ -169,24 +180,22 @@ export class InventoryPanel {
         });
 
         // Toggle favorite
-        html.find('.tray-buttons .fa-heart').click(async (event) => {
+        panel.on('click.squireInventory', '.tray-buttons .fa-heart', async (event) => {
             const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
             await FavoritesPanel.manageFavorite(this.actor, itemId);
         });
 
         // Item use click (image overlay)
-        html.find('.inventory-image-container').click(async (event) => {
-            if ($(event.target).hasClass('inventory-roll-overlay')) {
-                const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
-                const item = this.actor.items.get(itemId);
-                if (item) {
-                    await item.use({}, { event });
-                }
+        panel.on('click.squireInventory', '.inventory-image-container .inventory-roll-overlay', async (event) => {
+            const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                await item.use({}, { event });
             }
         });
 
         // Toggle equip state (shield icon)
-        html.find('.tray-buttons .fa-shield-alt').click(async (event) => {
+        panel.on('click.squireInventory', '.tray-buttons .fa-shield-alt', async (event) => {
             const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
             const item = this.actor.items.get(itemId);
             if (item) {
@@ -196,33 +205,10 @@ export class InventoryPanel {
                 });
                 // Update the UI immediately
                 const $item = $(event.currentTarget).closest('.inventory-item');
-                $item.toggleClass('equipped', newEquipped);
+                $item.toggleClass('prepared', newEquipped);
                 $(event.currentTarget).toggleClass('faded', !newEquipped);
-
                 // Update visibility in case we're filtering by equipped
                 this._updateVisibility(html);
-
-                // Update all panels to reflect the new equipped state
-                if (PanelManager.instance) {
-                    // First update the favorites panel
-                    if (PanelManager.instance.favoritesPanel?.element) {
-                        await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
-                    }
-
-                    // Then update all other panels
-                    if (PanelManager.instance.inventoryPanel?.element) {
-                        await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
-                    }
-                    if (PanelManager.instance.weaponsPanel?.element) {
-                        await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
-                    }
-                    if (PanelManager.instance.spellsPanel?.element) {
-                        await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
-                    }
-
-                    // Update the handle to reflect the new equipped state
-                    await PanelManager.instance.updateHandle();
-                }
             }
         });
     }

@@ -136,21 +136,29 @@ export class FeaturesPanel {
         this.panelManager._updateEmptyMessage(html[0]);
     }
 
+    _removeEventListeners(panel) {
+        if (!panel) return;
+        panel.off('.squireFeatures');
+    }
+
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
         // Use event delegation for all handlers
         const panel = html.find('[data-panel="features"]');
 
+        // Remove any existing listeners first
+        this._removeEventListeners(panel);
+
         // Category filter toggles
-        panel.on('click', '.features-category-filter', (event) => {
+        panel.on('click.squireFeatures', '.features-category-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
             this.panelManager.toggleCategory(categoryId, panel[0]);
         });
 
         // Feature info click (feather icon)
-        panel.on('click', '.tray-buttons .fa-feather', async (event) => {
+        panel.on('click.squireFeatures', '.tray-buttons .fa-feather', async (event) => {
             try {
                 const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
                 const feature = this.actor.items.get(featureId);
@@ -167,7 +175,7 @@ export class FeaturesPanel {
         });
 
         // Toggle favorite
-        panel.on('click', '.tray-buttons .fa-heart', async (event) => {
+        panel.on('click.squireFeatures', '.tray-buttons .fa-heart', async (event) => {
             const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
             await FavoritesPanel.manageFavorite(this.actor, featureId);
             // Re-render to update the UI state
@@ -175,7 +183,7 @@ export class FeaturesPanel {
         });
 
         // Feature use click (image overlay)
-        panel.on('click', '.feature-image-container .feature-roll-overlay', async (event) => {
+        panel.on('click.squireFeatures', '.feature-image-container .feature-roll-overlay', async (event) => {
             const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
             const feature = this.actor.items.get(featureId);
             if (feature) {

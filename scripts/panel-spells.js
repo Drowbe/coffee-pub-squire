@@ -179,54 +179,46 @@ export class SpellsPanel {
         this.panelManager._updateEmptyMessage(html[0]);
     }
 
+    _removeEventListeners(panel) {
+        if (!panel) return;
+        panel.off('.squireSpells');
+    }
+
     _activateListeners(html) {
-        if (!html || !this.panelManager) {
-            return;
-        }
+        if (!html || !this.panelManager) return;
 
-        // Get the panel element
+        // Use event delegation for all handlers
         const panel = html.find('[data-panel="spells"]');
-        
-        // Remove any existing listeners
-        panel.off('click.squireSpells');
 
-        // Add direct click handler to the filter toggle
-        const filterToggle = panel.find('.spell-filter-toggle');
-        filterToggle.on('click.squireSpells', async (event) => {
-            this.showOnlyPrepared = !this.showOnlyPrepared;
-            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
-            
-            const $target = $(event.currentTarget);
-            $target.toggleClass('active', this.showOnlyPrepared);
-            $target.toggleClass('faded', !this.showOnlyPrepared);
-            
-            this._updateVisibility(html);
-        });
+        // Remove any existing listeners first
+        this._removeEventListeners(panel);
 
-        // Level filter toggles
-        panel.on('click.squireSpells', '.spell-level-filter', (event) => {
+        // Category filter toggles
+        panel.on('click.squireSpells', '.spells-category-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
             this.panelManager.toggleCategory(categoryId, panel[0]);
         });
 
-        // Prepared toggle (sun icon)
-        panel.on('click.squireSpells', '.tray-buttons .fa-sun', async (event) => {
+        // Add filter toggle handler
+        panel.on('click.squireSpells', '.spell-filter-toggle', async (event) => {
+            this.showOnlyPrepared = !this.showOnlyPrepared;
+            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
+            $(event.currentTarget).toggleClass('active', this.showOnlyPrepared);
+            $(event.currentTarget).toggleClass('faded', !this.showOnlyPrepared);
+            this._updateVisibility(html);
+        });
+
+        // Spell info click (feather icon)
+        panel.on('click.squireSpells', '.tray-buttons .fa-feather', async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
-                const newPrepared = !spell.system.preparation.prepared;
-                await spell.update({
-                    'system.preparation.prepared': newPrepared
-                });
-                const $item = $(event.currentTarget).closest('.spell-item');
-                $item.toggleClass('prepared', newPrepared);
-                $(event.currentTarget).toggleClass('faded', !newPrepared);
-                this._updateVisibility(html);
+                spell.sheet.render(true);
             }
         });
 
-        // Favorite toggle (heart icon)
+        // Toggle favorite
         panel.on('click.squireSpells', '.tray-buttons .fa-heart', async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             await FavoritesPanel.manageFavorite(this.actor, spellId);
@@ -241,85 +233,22 @@ export class SpellsPanel {
             }
         });
 
-        // View spell details (feather icon)
-        panel.on('click.squireSpells', '.tray-buttons .fa-feather', async (event) => {
+        // Toggle prepared state (sun icon)
+        panel.on('click.squireSpells', '.tray-buttons .fa-sun', async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             const spell = this.actor.items.get(spellId);
             if (spell) {
-                spell.sheet.render(true);
+                const newPrepared = !spell.system.preparation.prepared;
+                await spell.update({
+                    'system.preparation.prepared': newPrepared
+                });
+                // Update the UI immediately
+                const $item = $(event.currentTarget).closest('.spell-item');
+                $item.toggleClass('prepared', newPrepared);
+                $(event.currentTarget).toggleClass('faded', !newPrepared);
+                // Update visibility in case we're filtering by prepared
+                this._updateVisibility(html);
             }
         });
-
-        // Spell slot pip click handlers (GM only)
-        if (game.user.isGM) {
-            // Left click to increase used slots
-            panel.on('click.squireSpells', '.slot-pip', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                const level = $(event.currentTarget).data('level');
-                if (!level) return;
-                
-                // Get current spell slot data
-                const spellLevelKey = `spell${level}`;
-                const spellLevelData = this.actor.system.spells[spellLevelKey];
-                if (!spellLevelData) return;
-                
-                // Calculate new value (decrease available slots = increase used slots)
-                // Ensure value doesn't go below 0
-                const newValue = Math.max(0, spellLevelData.value - 1);
-                
-                // Update the actor
-                const updateData = {};
-                updateData[`system.spells.${spellLevelKey}.value`] = newValue;
-                await this.actor.update(updateData);
-                
-                // Play a sound effect if blacksmith is available
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    blacksmith.utils.playSound('modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3', blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-                
-                return false; // Ensure no further handling
-            });
-            
-            // Right click to decrease used slots
-            panel.on('contextmenu.squireSpells', '.slot-pip', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                const level = $(event.currentTarget).data('level');
-                if (!level) return;
-                
-                // Get current spell slot data
-                const spellLevelKey = `spell${level}`;
-                const spellLevelData = this.actor.system.spells[spellLevelKey];
-                if (!spellLevelData) return;
-                
-                // Calculate new value (increase available slots = decrease used slots)
-                // Max value is either the override value or the max value
-                const maxSlots = spellLevelData.override ?? spellLevelData.max;
-                // Allow going above max as requested
-                const newValue = spellLevelData.value + 1;
-                
-                // Update the actor
-                const updateData = {};
-                updateData[`system.spells.${spellLevelKey}.value`] = newValue;
-                await this.actor.update(updateData);
-                
-                // Play a sound effect if blacksmith is available
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    blacksmith.utils.playSound('modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3', blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-                
-                return false; // Ensure no further handling
-            });
-        }
-    }
-
-    _removeEventListeners(panel) {
-        if (!panel?.length) return;
-        panel.off('.squireSpells');
     }
 } 
