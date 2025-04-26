@@ -197,108 +197,95 @@ export class PanelManager {
     async updateTray() {
         if (!this.element) return;
         
-        // Use the current viewMode (from PanelManager.viewMode)
+        // Store current state
+        const wasExpanded = this.element.hasClass('expanded');
+        const wasPinned = this.element.hasClass('pinned');
+        
+        // Create new tray element
         const viewMode = PanelManager.viewMode;
+        const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
+            actor: this.actor,
+            isGM: game.user.isGM,
+            effects: this.actor.effects?.map(e => ({
+                name: e.name,
+                icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+            })) || [],
+            settings: {
+                showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
+                showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
+                showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
+                showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
+                showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
+                showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
+            },
+            viewMode: viewMode,
+            showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
+            showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
+            showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
+            showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
+            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
+            isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
+            isHealthPopped: HealthPanel.isWindowOpen,
+            newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
+        });
+        const newTrayElement = $(trayHtml);
+        
+        // Preserve expanded/pinned state without animation
+        if (wasExpanded) {
+            newTrayElement.addClass('expanded').css('animation', 'none');
+        }
+        if (wasPinned) {
+            newTrayElement.addClass('pinned expanded').css('animation', 'none');
+        }
+        
+        // Replace the old tray with the new one
+        PanelManager.element.replaceWith(newTrayElement);
+        PanelManager.element = newTrayElement;
 
-        // Update actor references
-        if (this.actor) {
-            this.characterPanel.actor = this.actor;
-            this.weaponsPanel.actor = this.actor;
-            this.inventoryPanel.actor = this.actor;
-            this.featuresPanel.actor = this.actor;
-            this.dicetrayPanel.updateActor(this.actor);
-            this.experiencePanel.actor = this.actor;
-            this.healthPanel.updateActor(this.actor);
-            this.statsPanel.actor = this.actor;
-            this.abilitiesPanel.actor = this.actor;
+        // Re-attach listeners and render panels
+        this.activateListeners(PanelManager.element);
+
+        // Create new panel instances with updated element references
+        this.characterPanel = new CharacterPanel(this.actor);
+        this.controlPanel = new ControlPanel(this.actor);
+        this.favoritesPanel = new FavoritesPanel(this.actor);
+        this.spellsPanel = new SpellsPanel(this.actor);
+        this.weaponsPanel = new WeaponsPanel(this.actor);
+        this.inventoryPanel = new InventoryPanel(this.actor);
+        this.featuresPanel = new FeaturesPanel(this.actor);
+        this.experiencePanel = new ExperiencePanel(this.actor);
+
+        // Only create health panel if not popped out
+        if (!HealthPanel.isWindowOpen) {
+            this.healthPanel = new HealthPanel(this.actor);
         }
 
-        if (PanelManager.element) {
-            // Re-render the entire tray template
-            const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
-                actor: this.actor,
-                isGM: game.user.isGM,
-                effects: this.actor.effects?.map(e => ({
-                    name: e.name,
-                    icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
-                })) || [],
-                settings: {
-                    showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
-                    showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
-                    showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
-                    showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
-                    showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
-                    showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
-                },
-                viewMode: viewMode, // Use current viewMode
-                showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
-                showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
-                showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
-                showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
-                showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-                showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
-                isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-                isHealthPopped: HealthPanel.isWindowOpen,
-                newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
-            });
-            const newTrayElement = $(trayHtml);
-            
-            // Preserve expanded/pinned state without animation
-            if (PanelManager.element.hasClass('expanded')) {
-                newTrayElement.addClass('expanded').css('animation', 'none');
-            }
-            if (PanelManager.element.hasClass('pinned')) {
-                newTrayElement.addClass('pinned');
-            }
-            
-            // Replace the old tray with the new one
-            PanelManager.element.replaceWith(newTrayElement);
-            PanelManager.element = newTrayElement;
+        this.statsPanel = new StatsPanel(this.actor);
+        this.abilitiesPanel = new AbilitiesPanel(this.actor);
 
-            // Re-attach listeners and render panels
-            this.activateListeners(PanelManager.element);
-
-            // Create new panel instances with updated element references
-            this.characterPanel = new CharacterPanel(this.actor);
-            this.controlPanel = new ControlPanel(this.actor);
-            this.favoritesPanel = new FavoritesPanel(this.actor);
-            this.spellsPanel = new SpellsPanel(this.actor);
-            this.weaponsPanel = new WeaponsPanel(this.actor);
-            this.inventoryPanel = new InventoryPanel(this.actor);
-            this.featuresPanel = new FeaturesPanel(this.actor);
-            this.experiencePanel = new ExperiencePanel(this.actor);
-
-            // Only create health panel if not popped out
-            if (!HealthPanel.isWindowOpen) {
-                this.healthPanel = new HealthPanel(this.actor);
-            }
-
-            this.statsPanel = new StatsPanel(this.actor);
-            this.abilitiesPanel = new AbilitiesPanel(this.actor);
-
-            // Update panel element references for non-popped panels
-            this.characterPanel.element = PanelManager.element;
-            this.controlPanel.element = PanelManager.element;
-            this.favoritesPanel.element = PanelManager.element;
-            this.spellsPanel.element = PanelManager.element;
-            this.weaponsPanel.element = PanelManager.element;
-            this.inventoryPanel.element = PanelManager.element;
-            this.featuresPanel.element = PanelManager.element;
-            this.experiencePanel.element = PanelManager.element;
-            if (!HealthPanel.isWindowOpen) {
-                this.healthPanel.element = PanelManager.element;
-            }
-            this.statsPanel.element = PanelManager.element;
-            this.abilitiesPanel.element = PanelManager.element;
-
-            // Render all panels
-            await this.renderPanels(PanelManager.element);
-
-            // Remove the animation override after a brief delay
-            setTimeout(() => {
-                PanelManager.element.css('animation', '');
-            }, 100);
+        // Update panel element references for non-popped panels
+        this.characterPanel.element = PanelManager.element;
+        this.controlPanel.element = PanelManager.element;
+        this.favoritesPanel.element = PanelManager.element;
+        this.spellsPanel.element = PanelManager.element;
+        this.weaponsPanel.element = PanelManager.element;
+        this.inventoryPanel.element = PanelManager.element;
+        this.featuresPanel.element = PanelManager.element;
+        this.experiencePanel.element = PanelManager.element;
+        if (!HealthPanel.isWindowOpen) {
+            this.healthPanel.element = PanelManager.element;
         }
+        this.statsPanel.element = PanelManager.element;
+        this.abilitiesPanel.element = PanelManager.element;
+
+        // Render all panels
+        await this.renderPanels(PanelManager.element);
+
+        // Remove the animation override after a brief delay
+        setTimeout(() => {
+            PanelManager.element.css('animation', '');
+        }, 100);
     }
 
     async updateHandle() {
@@ -387,6 +374,7 @@ export class PanelManager {
             event.preventDefault();
             event.stopPropagation();
             
+            // If pinned, don't allow closing
             if (PanelManager.isPinned) {
                 ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
                 return false;
@@ -485,6 +473,7 @@ export class PanelManager {
             }
             
             if (PanelManager.isPinned) {
+                // When pinning, ensure tray is expanded
                 tray.addClass('pinned expanded');
                 // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
                 const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
@@ -493,7 +482,8 @@ export class PanelManager {
                     uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                 }
             } else {
-                tray.removeClass('pinned expanded');
+                // When unpinning, maintain expanded state but remove pinned class
+                tray.removeClass('pinned');
                 // Reset UI margin when unpinned - need both handle width and offset
                 const uiLeft = document.querySelector('#ui-left');
                 if (uiLeft) {
