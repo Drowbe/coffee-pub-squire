@@ -167,13 +167,13 @@
       <div class="section-content">
         <p>
           {{#if isTransferSender}}
-            You have sent {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.
+            You have sent {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong>.
           {{else if isTransferReceiver}}
-            You have received {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+            You have received {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong>.
           {{else if isGMNotification}}
-            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{else}}
-            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+            The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{/if}}
         </p>
       </div>
@@ -187,11 +187,11 @@
       <div class="section-content">
         <p>
           {{#if isTransferSender}}
-            Your transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong> was rejected.
+            Your transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong> was rejected.
           {{else if isTransferReceiver}}
-            You rejected the transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+            You rejected the transfer of{{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong>.
           {{else}}
-            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> was rejected.
+            The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> was rejected.
           {{/if}}
         </p>
       </div>
@@ -281,13 +281,13 @@
       <div class="section-content">
         <p>
           {{#if isTransferSender}}
-            You have sent {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.
+            You have sent {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong>.
           {{else if isTransferReceiver}}
-            You have received {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+            You have received {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong>.
           {{else if isGMNotification}}
-            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{else}}
-            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+            The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{/if}}
         </p>
       </div>
@@ -301,11 +301,11 @@
       <div class="section-content">
         <p>
           {{#if isTransferSender}}
-            Your transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong> was rejected.
+            Your transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong> was rejected.
           {{else if isTransferReceiver}}
-            You rejected the transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+            You rejected the transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong>.
           {{else}}
-            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> was rejected.
+            The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> was rejected.
           {{/if}}
         </p>
       </div>
