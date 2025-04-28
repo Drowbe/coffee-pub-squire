@@ -33,62 +33,183 @@ Hooks.once('socketlib.ready', () => {
         // Store socket in module API for access from other files
         game.modules.get(MODULE.ID).socket = socket;
         
-        // Register the executeItemTransfer handler
+        // Register socket functions with socket handlers
         socket.register("executeItemTransfer", async (data) => {
-            console.log("SQUIRE | Executing item transfer", data);
-            const sourceActor = game.actors.get(data.sourceActorId);
-            const targetActor = game.actors.get(data.targetActorId);
-            const sourceItem = sourceActor.items.get(data.sourceItemId);
+            if (!game.user.isGM) return;
             
-            if (!sourceActor || !targetActor || !sourceItem) {
-                throw new Error("Could not find source actor, target actor, or item");
+            try {
+                // Get actors and item
+                const sourceActor = game.actors.get(data.sourceActorId);
+                const targetActor = game.actors.get(data.targetActorId);
+                const sourceItem = sourceActor.items.get(data.sourceItemId);
+                
+                if (!sourceActor || !targetActor || !sourceItem) {
+                    console.error(`SQUIRE | Missing actor or item data for transfer`, data);
+                    return;
+                }
+                
+                // Create a copy of the item data to transfer
+                const itemData = sourceItem.toObject();
+                
+                // Set the correct quantity on the new item if applicable
+                if (data.hasQuantity) {
+                    itemData.system.quantity = data.quantity;
+                }
+                
+                // Create the item on the target actor
+                const transferredItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
+                
+                // Reduce quantity or remove the item from source actor
+                if (data.hasQuantity && data.quantity < sourceItem.system.quantity) {
+                    // Just reduce the quantity
+                    await sourceItem.update({
+                        'system.quantity': sourceItem.system.quantity - data.quantity
+                    });
+                } else {
+                    // Remove the item entirely
+                    await sourceItem.delete();
+                }
+                
+                // Mark the item as newly added
+                if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                    game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
+                    await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
+                }
+                
+                console.log(`SQUIRE | Transfer completed successfully:`, {
+                    from: sourceActor.name,
+                    to: targetActor.name,
+                    item: sourceItem.name,
+                    quantity: data.hasQuantity ? data.quantity : 1
+                });
+            } catch (error) {
+                console.error(`SQUIRE | Error executing item transfer:`, error);
             }
-            
-            return await game.modules.get(MODULE.ID).PartyPanel._completeItemTransfer(
-                sourceActor, 
-                targetActor, 
-                sourceItem, 
-                data.quantity, 
-                data.hasQuantity
-            );
         });
         
-        // Add the new handler for creating chat messages as GM
         socket.register("createTransferRequestChat", async (data) => {
             if (!game.user.isGM) return;
             
-            // Get the actors and item
-            const sourceActor = game.actors.get(data.sourceActorId);
-            const targetActor = game.actors.get(data.targetActorId);
-            const sourceItem = sourceActor.items.get(data.itemId);
-
-            await ChatMessage.create({
-                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                    cardType: data.cardType,
-                    sourceActor,
-                    sourceActorName: data.sourceActorName,
-                    targetActor,
-                    targetActorName: data.targetActorName,
-                    item: sourceItem,
-                    itemName: data.itemName,
-                    quantity: data.quantity,
-                    hasQuantity: data.hasQuantity,
-                    isPlural: data.isPlural,
-                    isTransferReceiver: data.isTransferReceiver,
-                    transferId: data.transferId
-                }),
-                speaker: { alias: "System" },
-                whisper: data.receiverIds,
-                flags: {
-                    [MODULE.ID]: {
-                        transferId: data.transferId,
-                        type: 'transferRequest',
-                        isTransferReceiver: data.isTransferReceiver,
-                        targetUsers: data.receiverIds,
-                        data: data.transferData
-                    }
+            try {
+                // Get the actual referenced objects
+                const sourceActor = game.actors.get(data.sourceActorId);
+                const targetActor = game.actors.get(data.targetActorId);
+                
+                if (!sourceActor || !targetActor) {
+                    console.error("SQUIRE | Missing required actors for transfer request message", {data});
+                    return;
                 }
-            });
+
+                // Create the chat message as GM
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-request",
+                        strCardIcon: "fas fa-people-arrows",
+                        strCardTitle: "Transfer Request",
+                        sourceActor,
+                        sourceActorName: data.sourceActorName,
+                        targetActor,
+                        targetActorName: data.targetActorName,
+                        itemName: data.itemName,
+                        quantity: data.quantity,
+                        hasQuantity: data.hasQuantity,
+                        isPlural: data.isPlural,
+                        isTransferReceiver: true,
+                        transferId: data.transferId
+                    }),
+                    speaker: { alias: "System" },
+                    whisper: data.receiverIds,
+                    flags: {
+                        [MODULE.ID]: {
+                            transferId: data.transferId,
+                            type: 'transferRequest',
+                            isTransferReceiver: true,
+                            targetUsers: data.receiverIds,
+                            data: data.transferData
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("SQUIRE | Error creating transfer request message:", error);
+            }
+        });
+        
+        socket.register("setTransferRequestFlag", setTransferRequestFlag);
+        socket.register("processTransferResponse", processTransferResponse);
+        
+        socket.register("createTransferCompleteChat", async (data) => {
+            if (!game.user.isGM) return;
+            
+            try {
+                // Get the actual referenced objects
+                const sourceActor = game.actors.get(data.sourceActorId);
+                const targetActor = game.actors.get(data.targetActorId);
+                
+                if (!sourceActor || !targetActor) {
+                    console.error("SQUIRE | Missing required actors for transfer complete message", {data});
+                    return;
+                }
+                
+                // Create the chat message as GM
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-complete",
+                        strCardIcon: "fas fa-backpack",
+                        strCardTitle: "Transfer Complete",
+                        sourceActor,
+                        sourceActorName: data.sourceActorName,
+                        targetActor,
+                        targetActorName: data.targetActorName,
+                        itemName: data.itemName,
+                        quantity: data.quantity,
+                        hasQuantity: data.hasQuantity,
+                        isPlural: data.isPlural
+                    }),
+                    whisper: data.isTransferSender ? [data.receiverId] : data.receiverIds,
+                    speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
+                });
+            } catch (error) {
+                console.error("SQUIRE | Error creating transfer complete message:", error);
+            }
+        });
+
+        socket.register("createTransferRejectedChat", async (data) => {
+            if (!game.user.isGM) return;
+            
+            try {
+                // Get the actual referenced objects
+                const sourceActor = game.actors.get(data.sourceActorId);
+                const targetActor = game.actors.get(data.targetActorId);
+                
+                if (!sourceActor || !targetActor) {
+                    console.error("SQUIRE | Missing required actors for transfer rejected message", {data});
+                    return;
+                }
+                
+                // Create the chat message as GM
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-rejected",
+                        strCardIcon: "fas fa-times-circle",
+                        strCardTitle: "Transfer Rejected",
+                        sourceActor,
+                        sourceActorName: data.sourceActorName,
+                        targetActor,
+                        targetActorName: data.targetActorName,
+                        itemName: data.itemName,
+                        quantity: data.quantity,
+                        hasQuantity: data.hasQuantity,
+                        isPlural: data.isPlural
+                    }),
+                    whisper: data.isTransferSender ? [data.receiverId] : data.receiverIds,
+                    speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
+                });
+            } catch (error) {
+                console.error("SQUIRE | Error creating transfer rejected message:", error);
+            }
         });
         
         console.log("SQUIRE | Socket handler registered successfully", {
@@ -472,14 +593,21 @@ async function handleTransferRequest(transferData) {
 async function processTransferResponse(responseData) {
     const { accepted, transferData } = responseData;
     
+    // If we have the transfer data, try to get the real actor names
+    const targetActorName = game.actors.get(transferData.targetActorId)?.name || transferData.targetActorName;
+    
     if (accepted) {
-        ui.notifications.info(`${game.actors.get(transferData.targetActorId).name} accepted your item transfer.`);
+        ui.notifications.info(`${targetActorName} accepted your item transfer.`);
     } else {
-        ui.notifications.warn(`${game.actors.get(transferData.targetActorId).name} declined your item transfer.`);
+        ui.notifications.warn(`${targetActorName} declined your item transfer.`);
     }
 }
 
-
+// Register the processTransferResponse handler for socketlib
+socket.register("processTransferResponse", async (responseData) => {
+    // This is used to notify the sender about transfer acceptance/rejection
+    await processTransferResponse(responseData);
+});
 
 /**
  * Helper function to get an icon for item type
@@ -540,6 +668,32 @@ async function executeItemTransfer(transferData, accepted) {
     
     if (!accepted) {
         console.log(`SQUIRE | Transfer request ${transferData.timestamp} rejected`);
+        
+        // Create a rejection chat message as GM
+        if (game.modules.get('socketlib')?.active) {
+            const socketlib = game.modules.get('socketlib').api;
+            const socket = socketlib.getSocketHandler(MODULE.ID);
+            
+            // Prepare the message data
+            const messageData = {
+                sourceActorId: transferData.sourceActorId,
+                sourceActorName: sourceActor.name,
+                targetActorId: transferData.targetActorId,
+                targetActorName: targetActor.name,
+                itemId: transferData.sourceItemId,
+                itemName: sourceItem.name,
+                quantity: transferData.selectedQuantity,
+                hasQuantity: transferData.hasQuantity,
+                isPlural: transferData.isPlural,
+                receiverId: transferData.requester,
+                receiverIds: [transferData.requester, game.user.id],
+                isTransferSender: false
+            };
+            
+            // Create the rejection message as GM
+            socket.executeAsGM('createTransferRejectedChat', messageData);
+        }
+        
         return;
     }
     
@@ -566,24 +720,30 @@ async function executeItemTransfer(transferData, accepted) {
             await sourceItem.delete();
         }
         
-        // Send chat notification
-        const transferChatData = {
-            isPublic: true,
-            isTransferFromCharacter: true,
-            strCardIcon: getIconForItemType(sourceItem.type),
-            strCardTitle: "Transferred",
-            sourceActorName: sourceActor.name,
-            targetActorName: targetActor.name,
-            itemName: sourceItem.name,
-            hasQuantity: transferData.hasQuantity,
-            quantity: transferData.selectedQuantity,
-            isPlural: transferData.selectedQuantity > 1
-        };
-        const transferChatContent = await renderTemplate(`modules/${MODULE.ID}/templates/chat-cards.hbs`, transferChatData);
-        await ChatMessage.create({
-            content: transferChatContent,
-            speaker: ChatMessage.getSpeaker({ alias: "Item Transfer" })
-        });
+        // Create a completion chat message as GM
+        if (game.modules.get('socketlib')?.active) {
+            const socketlib = game.modules.get('socketlib').api;
+            const socket = socketlib.getSocketHandler(MODULE.ID);
+            
+            // Prepare the message data
+            const messageData = {
+                sourceActorId: transferData.sourceActorId,
+                sourceActorName: sourceActor.name,
+                targetActorId: transferData.targetActorId,
+                targetActorName: targetActor.name,
+                itemId: transferData.sourceItemId,
+                itemName: sourceItem.name,
+                quantity: transferData.selectedQuantity,
+                hasQuantity: transferData.hasQuantity,
+                isPlural: transferData.isPlural,
+                receiverId: transferData.requester,
+                receiverIds: [transferData.requester, game.user.id],
+                isTransferSender: false
+            };
+            
+            // Create the completion message as GM
+            socket.executeAsGM('createTransferCompleteChat', messageData);
+        }
         
     } catch (error) {
         console.error(`SQUIRE | Error executing item transfer:`, error);

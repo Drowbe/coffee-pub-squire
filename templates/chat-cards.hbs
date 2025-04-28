@@ -1,4 +1,4 @@
-<span style="visibility: hidden">coffeepub-hide-header</span>
+<span style="visibility: block">coffeepub-hide-header</span>
 
 {{#if isPublic}}
   {{!-- PUBLIC MESSAGES --}}
@@ -166,11 +166,15 @@
       </div>
       <div class="section-content">
         <p>
-          The transfer of
-          {{#if hasQuantity}}
-            {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
+          {{#if isTransferSender}}
+            You have sent {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.
+          {{else if isTransferReceiver}}
+            You have received {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+          {{else if isGMNotification}}
+            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+          {{else}}
+            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{/if}}
-          <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
         </p>
       </div>
     </div>
@@ -178,15 +182,17 @@
   {{else if (eq cardType "transfer-rejected")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
-        <i class="fas fa-times-circle"></i> Transfer Rejected
+        <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
         <p>
-          The transfer of
-          {{#if hasQuantity}}
-            {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
+          {{#if isTransferSender}}
+            Your transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong> was rejected.
+          {{else if isTransferReceiver}}
+            You rejected the transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+          {{else}}
+            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> was rejected.
           {{/if}}
-          <strong>{{itemName}}</strong> was rejected.
         </p>
       </div>
     </div>
@@ -240,7 +246,7 @@
   {{else if (eq cardType "transfer-request")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
-        <i class="{{strCardIcon}}"></i> {{strCardTitle}}
+        <i class="{{strCardIcon}}"></i> {{strCardTitle}} 
       </div>
       <div class="section-content">
         {{#if isTransferSender}}
@@ -274,11 +280,15 @@
       </div>
       <div class="section-content">
         <p>
-          The transfer of
-          {{#if hasQuantity}}
-            {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
+          {{#if isTransferSender}}
+            You have sent {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.
+          {{else if isTransferReceiver}}
+            You have received {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+          {{else if isGMNotification}}
+            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+          {{else}}
+            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{/if}}
-          <strong>{{itemName}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
         </p>
       </div>
     </div>
@@ -286,15 +296,17 @@
   {{else if (eq cardType "transfer-rejected")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
-        <i class="fas fa-times-circle"></i> Transfer Rejected
+        <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
         <p>
-          The transfer of
-          {{#if hasQuantity}}
-            {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
+          {{#if isTransferSender}}
+            Your transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong> was rejected.
+          {{else if isTransferReceiver}}
+            You rejected the transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> from <strong>{{sourceActorName}}</strong>.
+          {{else}}
+            The transfer of {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}{{/if}} <strong>{{itemName}}</strong> was rejected.
           {{/if}}
-          <strong>{{itemName}}</strong> was rejected.
         </p>
       </div>
     </div>
