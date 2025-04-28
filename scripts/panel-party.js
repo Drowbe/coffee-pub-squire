@@ -216,10 +216,7 @@ export class PartyPanel {
                             }
                             
                             // Check permissions on source actor
-                            if (!sourceActor.isOwner) {
-                                ui.notifications.warn(`You don't have permission to remove items from ${sourceActor.name}.`);
-                                return;
-                            }
+                            const hasSourcePermission = sourceActor.isOwner;
                             
                             // Handle quantity logic for stackable items
                             let quantityToTransfer = 1;
@@ -287,26 +284,24 @@ export class PartyPanel {
                             
                             if (selectedQuantity <= 0) return; // User cancelled
                             
-                            // If we have direct permission, complete the transfer
-                            if (hasTargetPermission) {
+                            if (hasSourcePermission && hasTargetPermission) {
                                 await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
                                 return;
-                            }
-                            
-                            // Without direct permission, we need to send a request to the target user
-                            // Find the owning user of the target actor
-                            const targetUsers = game.users.filter(u => 
-                                !u.isGM && 
-                                targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
-                            );
-                            
-                            if (!targetUsers.length) {
-                                ui.notifications.warn(`Cannot find a player who owns ${targetActor.name}.`);
+                            } else {
+                                const socket = game.modules.get(MODULE.ID)?.socket;
+                                if (!socket) {
+                                    ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+                                    return;
+                                }
+                                await socket.executeAsGM('executeItemTransfer', {
+                                    sourceActorId: sourceActor.id,
+                                    targetActorId: targetActor.id,
+                                    sourceItemId: sourceItem.id,
+                                    quantity: selectedQuantity,
+                                    hasQuantity: hasQuantity
+                                });
                                 return;
                             }
-                            
-                            // Create a transfer request
-                            await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
                             
                         } else {
                             // This is a regular world item
@@ -371,10 +366,7 @@ export class PartyPanel {
                         }
                         
                         // Check permissions on source actor
-                        if (!sourceActor.isOwner) {
-                            ui.notifications.warn(`You don't have permission to remove items from ${sourceActor.name}.`);
-                            return;
-                        }
+                        const hasSourcePermission = sourceActor.isOwner;
                         
                         // Handle quantity logic for stackable items
                         let quantityToTransfer = 1;
@@ -442,26 +434,24 @@ export class PartyPanel {
                         
                         if (selectedQuantity <= 0) return; // User cancelled
                         
-                        // If we have direct permission, complete the transfer
-                        if (hasTargetPermission) {
+                        if (hasSourcePermission && hasTargetPermission) {
                             await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
                             return;
-                        }
-                        
-                        // Without direct permission, we need to send a request to the target user
-                        // Find the owning user of the target actor
-                        const targetUsers = game.users.filter(u => 
-                            !u.isGM && 
-                            targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
-                        );
-                        
-                        if (!targetUsers.length) {
-                            ui.notifications.warn(`Cannot find a player who owns ${targetActor.name}.`);
+                        } else {
+                            const socket = game.modules.get(MODULE.ID)?.socket;
+                            if (!socket) {
+                                ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+                                return;
+                            }
+                            await socket.executeAsGM('executeItemTransfer', {
+                                sourceActorId: sourceActor.id,
+                                targetActorId: targetActor.id,
+                                sourceItemId: sourceItem.id,
+                                quantity: selectedQuantity,
+                                hasQuantity: hasQuantity
+                            });
                             return;
                         }
-                        
-                        // Create a transfer request
-                        await this._sendTransferRequest(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, timestamp);
                         break;
                 }
                 
@@ -601,8 +591,11 @@ export class PartyPanel {
                 content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                     cardType: "transfer-request",
                     sourceActor,
+                    sourceActorName: sourceActor.name,
                     targetActor,
+                    targetActorName: targetActor.name,
                     item,
+                    itemName: item.name,
                     quantity,
                     hasQuantity: !!hasQuantity,
                     isPlural: quantity > 1,
@@ -707,50 +700,20 @@ export class PartyPanel {
                 const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
 
                 if (isAccept) {
-                    // Complete the transfer
-                    await this._completeItemTransfer(sourceActor, targetActor, item, transferData.quantity, true);
-                    // Sender: completed message
-                    await ChatMessage.create({
-                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                            cardType: "transfer-complete",
-                            sourceActor,
-                            targetActor,
-                            item,
+                    if (hasSourcePermission && hasTargetPermission) {
+                        await this._completeItemTransfer(sourceActor, targetActor, item, transferData.quantity, true);
+                    } else {
+                        const socket = game.modules.get(MODULE.ID)?.socket;
+                        if (!socket) {
+                            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+                            return;
+                        }
+                        await socket.executeAsGM('executeItemTransfer', {
+                            sourceActorId: sourceActor.id,
+                            targetActorId: targetActor.id,
+                            sourceItemId: item.id,
                             quantity: transferData.quantity,
-                            hasQuantity: true,
-                            isPlural: transferData.quantity > 1
-                        }),
-                        whisper: [senderUser.id],
-                        speaker: { alias: "System Transfer" }
-                    });
-                    // Receiver: completed message
-                    await ChatMessage.create({
-                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                            cardType: "transfer-complete",
-                            sourceActor,
-                            targetActor,
-                            item,
-                            quantity: transferData.quantity,
-                            hasQuantity: true,
-                            isPlural: transferData.quantity > 1
-                        }),
-                        whisper: receiverUsers.map(u => u.id),
-                        speaker: { alias: "System Transfer" }
-                    });
-                    // GM: completed message (only if approval required)
-                    if (gmApprovalRequired && gmUsers.length > 0) {
-                        await ChatMessage.create({
-                            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                                cardType: "transfer-complete",
-                                sourceActor,
-                                targetActor,
-                                item,
-                                quantity: transferData.quantity,
-                                hasQuantity: true,
-                                isPlural: transferData.quantity > 1
-                            }),
-                            whisper: gmUsers.map(u => u.id),
-                            speaker: { alias: "System Transfer" }
+                            hasQuantity: true
                         });
                     }
                 } else {

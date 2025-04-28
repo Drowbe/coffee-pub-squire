@@ -441,60 +441,7 @@ async function processTransferResponse(responseData) {
     }
 }
 
-// /**
-//  * Completes an item transfer between actors
-//  * Fallback function if PartyPanel isn't available
-//  */
-// async function completeItemTransfer(sourceActor, targetActor, sourceItem, quantityToTransfer, hasQuantity) {
-//     // Create a copy of the item data to transfer
-//     const transferData = sourceItem.toObject();
-    
-//     // Set the correct quantity on the new item
-//     if (hasQuantity) {
-//         transferData.system.quantity = quantityToTransfer;
-//     }
-    
-//     // Create the item on the target actor
-//     const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
-    
-//     // Reduce quantity or remove the item from source actor
-//     if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
-//         // Just reduce the quantity
-//         await sourceItem.update({
-//             'system.quantity': sourceItem.system.quantity - quantityToTransfer
-//         });
-//     } else {
-//         // Remove the item entirely
-//         await sourceItem.delete();
-//     }
-    
-//     // Mark the item as new using both systems
-//     if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-//         // Use the static Map for backward compatibility
-//         game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
-//         // Use the new flag system
-//         await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
-//     }
-    
-//     // Send chat notification
-//     const transferChatData = {
-//         isPublic: true,
-//         strCardIcon: getIconForItemType(sourceItem.type),
-//         strCardTitle: "Item Transferred",
-//         isTransfer: true,
-//         sourceActorName: sourceActor.name,
-//         targetActorName: targetActor.name,
-//         itemName: sourceItem.name,
-//         hasQuantity: hasQuantity,
-//         quantity: quantityToTransfer,
-//         isPlural: quantityToTransfer > 1
-//     };
-//     const transferChatContent = await renderTemplate(`modules/${MODULE.ID}/templates/chat-cards.hbs`, transferChatData);
-//     await ChatMessage.create({
-//         content: transferChatContent,
-//         speaker: ChatMessage.getSpeaker({ actor: targetActor })
-//     });
-// }
+
 
 /**
  * Helper function to get an icon for item type
