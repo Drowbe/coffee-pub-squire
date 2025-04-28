@@ -1,4 +1,4 @@
-import { MODULE, SQUIRE } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './panel-manager.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
@@ -51,6 +51,44 @@ Hooks.once('socketlib.ready', () => {
                 data.quantity, 
                 data.hasQuantity
             );
+        });
+        
+        // Add the new handler for creating chat messages as GM
+        socket.register("createTransferRequestChat", async (data) => {
+            if (!game.user.isGM) return;
+            
+            // Get the actors and item
+            const sourceActor = game.actors.get(data.sourceActorId);
+            const targetActor = game.actors.get(data.targetActorId);
+            const sourceItem = sourceActor.items.get(data.itemId);
+
+            await ChatMessage.create({
+                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                    cardType: data.cardType,
+                    sourceActor,
+                    sourceActorName: data.sourceActorName,
+                    targetActor,
+                    targetActorName: data.targetActorName,
+                    item: sourceItem,
+                    itemName: data.itemName,
+                    quantity: data.quantity,
+                    hasQuantity: data.hasQuantity,
+                    isPlural: data.isPlural,
+                    isTransferReceiver: data.isTransferReceiver,
+                    transferId: data.transferId
+                }),
+                speaker: { alias: "System" },
+                whisper: data.receiverIds,
+                flags: {
+                    [MODULE.ID]: {
+                        transferId: data.transferId,
+                        type: 'transferRequest',
+                        isTransferReceiver: data.isTransferReceiver,
+                        targetUsers: data.receiverIds,
+                        data: data.transferData
+                    }
+                }
+            });
         });
         
         console.log("SQUIRE | Socket handler registered successfully", {
