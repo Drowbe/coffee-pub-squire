@@ -598,22 +598,6 @@ export class PartyPanel {
                 targetActorName: targetActor.name
             };
 
-            // Create hidden message to GM with transfer data
-            await ChatMessage.create({
-                content: `<div class="transfer-request-content">
-                    <p>Transfer request from ${sourceActor.name} to ${targetActor.name}</p>
-                    <p>Item: ${quantity}x ${item.name}</p>
-                </div>`,
-                whisper: game.users.filter(u => u.isGM).map(u => u.id),
-                flags: {
-                    [MODULE.ID]: {
-                        transferId: transferId,
-                        type: 'transferRequest',
-                        data: transferData
-                    }
-                }
-            });
-
             // Find target users (who own the target character)
             const targetUsers = game.users.filter(user => 
                 user.character?.id === targetActor.id && 
@@ -625,30 +609,88 @@ export class PartyPanel {
                 throw new Error("No active users found for the target character");
             }
 
-            // Create visible message - whisper only to target users and GMs
+            // Get GM users
+            const gmUsers = game.users.filter(u => u.isGM);
+            
+            // Find an active GM to use as the system speaker
+            const systemSpeaker = {
+                alias: "System Transfer",
+                user: gmUsers[0]?.id || game.user.id
+            };
+
+            // Send "request sent" message to sender only
             await ChatMessage.create({
-                content: `<div class="transfer-request-content">
-                    <p>${sourceActor.name} wants to transfer ${quantity}x ${item.name} to ${targetActor.name}</p>
-                    <div class="transfer-request-buttons">
-                        <button class="transfer-request-button accept" data-transfer-id="${transferId}">Accept</button>
-                        <button class="transfer-request-button reject" data-transfer-id="${transferId}">Reject</button>
-                    </div>
-                </div>`,
-                speaker: {
-                    actor: sourceActor.id,
-                    alias: sourceActor.name
-                },
-                whisper: [...targetUsers.map(u => u.id), ...game.users.filter(u => u.isGM).map(u => u.id)],
+                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                    cardType: "transfer-request",
+                    sourceActor,
+                    targetActor,
+                    item,
+                    quantity,
+                    hasQuantity: !!hasQuantity,
+                    isPlural: quantity > 1,
+                    isTransferSender: true,
+                    transferId
+                }),
+                speaker: systemSpeaker,
+                whisper: [game.user.id],
                 flags: {
                     [MODULE.ID]: {
-                        transferId: transferId,
+                        transferId,
                         type: 'transferRequest',
-                        targetUsers: targetUsers.map(u => u.id)  // Store target users for permission checking
+                        isTransferSender: true,
+                        data: transferData
                     }
                 }
             });
 
-            // Notify the source player that the request was sent
+            // Send actionable message to receiver only
+            await ChatMessage.create({
+                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                    cardType: "transfer-request",
+                    sourceActor,
+                    targetActor,
+                    item,
+                    quantity,
+                    hasQuantity: !!hasQuantity,
+                    isPlural: quantity > 1,
+                    isTransferReceiver: true,
+                    transferId
+                }),
+                speaker: systemSpeaker,
+                whisper: targetUsers.map(u => u.id),
+                flags: {
+                    [MODULE.ID]: {
+                        transferId,
+                        type: 'transferRequest',
+                        isTransferReceiver: true,
+                        targetUsers: targetUsers.map(u => u.id),
+                        data: transferData
+                    }
+                }
+            });
+
+            // Send monitoring message to GMs only
+            if (gmUsers.length > 0) {
+                await ChatMessage.create({
+                    content: `<div class="transfer-request-content">
+                        <p>Transfer request initiated:</p>
+                        <p>From: ${sourceActor.name} (${game.user.name})</p>
+                        <p>To: ${targetActor.name}</p>
+                        <p>Item: ${quantity}x ${item.name}</p>
+                    </div>`,
+                    speaker: systemSpeaker,
+                    whisper: gmUsers.map(u => u.id),
+                    flags: {
+                        [MODULE.ID]: {
+                            transferId,
+                            type: 'transferRequest',
+                            isGMNotification: true,
+                            data: transferData
+                        }
+                    }
+                });
+            }
+
             ui.notifications.info(`Transfer request sent to ${targetActor.name}`);
 
         } catch (error) {

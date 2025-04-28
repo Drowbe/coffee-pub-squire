@@ -127,12 +127,18 @@
                 <i class="{{strCardIcon}}"></i> {{strCardTitle}}
             </div>
             <div class="section-content">
-                <p><strong>{{sourceActorName}}</strong> wants to give {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.</p>
-                <br>
-                <div class="transfer-request-buttons">
-                    <button class="transfer-request-button accept" data-transfer-id="{{transferId}}">Accept</button>
-                    <button class="transfer-request-button reject" data-transfer-id="{{transferId}}">Reject</button>
-                </div>
+                {{#if isTransferSender}}
+                    <p>Request sent to <strong>{{targetActorName}}</strong> for {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong>.</p>
+                {{else if isTransferReceiver}}
+                    <p><strong>{{sourceActorName}}</strong> wants to give {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong> to you.</p>
+                    <br>
+                    <div class="transfer-request-buttons">
+                        <button class="transfer-request-button accept" data-transfer-id="{{transferId}}">Accept</button>
+                        <button class="transfer-request-button reject" data-transfer-id="{{transferId}}">Reject</button>
+                    </div>
+                {{else}}
+                    <p><strong>{{sourceActorName}}</strong> wants to give {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.</p>
+                {{/if}}
             </div>
         </div>
     {{else if (eq cardType "transfer-complete")}}
@@ -195,12 +201,18 @@
                 <i class="{{strCardIcon}}"></i> {{strCardTitle}}
             </div>
             <div class="section-content">
-                <p><strong>{{sourceActorName}}</strong> wants to give {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.</p>
-                <br>
-                <div class="transfer-request-buttons">
-                    <button class="transfer-request-button accept" data-transfer-id="{{transferId}}">Accept</button>
-                    <button class="transfer-request-button reject" data-transfer-id="{{transferId}}">Reject</button>
-                </div>
+                {{#if isTransferSender}}
+                    <p>Request sent to <strong>{{targetActorName}}</strong> for {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong>.</p>
+                {{else if isTransferReceiver}}
+                    <p><strong>{{sourceActorName}}</strong> wants to give {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong> to you.</p>
+                    <br>
+                    <div class="transfer-request-buttons">
+                        <button class="transfer-request-button accept" data-transfer-id="{{transferId}}">Accept</button>
+                        <button class="transfer-request-button reject" data-transfer-id="{{transferId}}">Reject</button>
+                    </div>
+                {{else}}
+                    <p><strong>{{sourceActorName}}</strong> wants to give {{#if hasQuantity}}{{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}} {{/if}}<strong>{{itemName}}</strong> to <strong>{{targetActorName}}</strong>.</p>
+                {{/if}}
             </div>
         </div>
     {{else if (eq cardType "transfer-complete")}}
