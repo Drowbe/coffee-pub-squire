@@ -1,7 +1,8 @@
-<span style="visibility: block">coffeepub-hide-header</span>
-
+<span style="visibility: none">coffeepub-hide-header</span>
 {{#if isPublic}}
   {{!-- PUBLIC MESSAGES --}}
+
+  {{!-- PLANNING START --}}
   {{#if isPlanningStart}}
     <div class="blacksmith-card theme-blue">
       <div class="section-header">
@@ -12,6 +13,7 @@
       </div>
     </div>
 
+  {{!-- PLANNING PAUSED --}}
   {{else if isPlanningPaused}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -22,6 +24,7 @@
       </div>
     </div>
 
+  {{!-- PLANNING RESUMED --}}
   {{else if isPlanningResumed}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -32,6 +35,7 @@
       </div>
     </div>
 
+  {{!-- COMBAT TIMER --}}
   {{else if isTimer}}
     <div class="blacksmith-card {{#if theme}}theme-{{theme}}{{else}}theme-default{{/if}}">
       <div class="section-header">
@@ -74,6 +78,7 @@
       </div>
     </div>
 
+  {{!-- ROUND ANNOUNCEMENT --}}
   {{else if isRoundAnnouncement}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -82,6 +87,7 @@
       <div class="section-content"></div>
     </div>
 
+  {{!-- LOOT DROP --}}
   {{else if isLootDrop}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -92,65 +98,56 @@
       </div>
     </div>
 
+  {{!-- MOVEMENT CHANGE --}}
   {{else if isMovementChange}}
-    <div class="blacksmith-card theme-default">
-      <div class="section-header">
-        <i class="fas {{movementIcon}}"></i> {{movementLabel}} Mode Active
-      </div>
-      <div class="section-content">
-        <p>{{{movementDescription}}}</p>
-        {{#if movementMarchingOrder}}
-          <div class="section-table">
-            {{#each movementMarchingOrder}}
-              <div class="row-label">{{this.position}}</div><div class="row-content">{{this.name}}</div>
-            {{/each}}
+      <div class="blacksmith-card theme-default">
+          <div class="section-header">
+              <i class="fas {{movementIcon}}"></i> {{movementLabel}} Mode Active
           </div>
-          {{#if spacingText}}
-            <p><b>Spacing</b>: {{spacingText}}</p><br>
-          {{/if}}
-        {{/if}}
-        <p>Marching order is determined when the {{movementLabel}} Mode is activated by the relative distance between the leader and each party member.</p>
+          <div class="section-content">
+              <p>{{{movementDescription}}}</p>
+              {{#if movementMarchingOrder}}
+                  <div class="section-table">
+                      {{#each movementMarchingOrder}}
+                          <div class="row-label{{#if isDimmed}} label-dimmed{{/if}}">{{this.position}}</div><div class="row-content">{{this.name}}</div>
+                      {{/each}}
+                  </div>
+                  {{#if spacingText}}
+                      <p><b>Spacing</b>: {{spacingText}}</p><br>
+                  {{/if}}
+                  <p>Marching order is determined when the {{movementLabel}} Mode is activated by the realitive distance between the leader and each party member.</p>
+              {{/if}}
+          </div>
       </div>
-    </div>
 
+  {{!-- LEADER CHANGE --}}
   {{else if isLeaderChange}}
-    <div class="blacksmith-card theme-default">
-      <div class="section-header">
-        <i class="fas fa-crown"></i> {{leaderName}} Appointed
+      <div class="blacksmith-card theme-default">
+          <div class="section-header">
+              <i class="fas fa-crown"></i> {{leaderName}} is Party Leader
+          </div>
+          <div class="section-content">
+              <p>All hail <strong>{{leaderName}}</strong>, party leader for this session!</p>
+              <ul>
+                  <li>{{leaderName}} has access to leader-only tools.</li>
+                  <li>They facilitate decision-making and pace.</li>
+                  <li>They are the Point when movement mode is Follow or Conga.</li>
+              </ul>
+              <p>{{leaderName}} is being played by {{playerName}}).</p>
+          </div>
       </div>
-      <div class="section-content">
-        <p>All hail <strong>{{leaderName}}</strong>, party leader for this session!</p>
-        <ul>
-          <li>{{leaderName}} has access to leader-only tools.</li>
-          <li>They facilitate decision-making and pace.</li>
-          <li>They are the Point when movement mode is Follow or Conga.</li>
-        </ul>
-      </div>
-    </div>
 
-  {{!-- Transfer-related cards --}}
+  {{!-- TRANSFER REQUEST --}}
   {{else if (eq cardType "transfer-request")}}
-    <div class="blacksmith-card theme-default">
+    <div class="blacksmith-card theme-green">
       <div class="section-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
         {{#if isTransferSender}}
-          <p>
-            The transfer of
-            {{#if hasQuantity}}
-              {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
-            {{/if}}
-            <strong>{{itemName}}</strong> has been sent to <strong>{{targetActorName}}</strong>.
-          </p>
+          <p>The request to send {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong>.</p> to <strong>{{targetActorName}}</strong> has been sent.</p>
         {{else if isTransferReceiver}}
-          <p>
-            <strong>{{sourceActorName}}</strong> is sending you
-            {{#if hasQuantity}}
-              {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
-            {{/if}}
-            <strong>{{itemName}}</strong>.
-          </p>
+          <p><strong>{{sourceActorName}}</strong> wants to send you {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong>.</p>
           <div class="transfer-request-buttons">
             <button class="transfer-request-button accept" data-transfer-id="{{transferId}}">Accept</button>
             <button class="transfer-request-button reject" data-transfer-id="{{transferId}}">Reject</button>
@@ -159,6 +156,7 @@
       </div>
     </div>
 
+  {{!-- TRANSFER COMPLETE --}}
   {{else if (eq cardType "transfer-complete")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -179,6 +177,7 @@
       </div>
     </div>
 
+  {{!-- TRANSFER REJECTED --}}
   {{else if (eq cardType "transfer-rejected")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -197,6 +196,7 @@
       </div>
     </div>
 
+  {{!-- TRANSFER GM --}}
   {{else if (eq cardType "transfer-gm")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -207,6 +207,7 @@
       </div>
     </div>
 
+  {{!-- GENERAL & ERROR CONDITION --}}
   {{else}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -228,51 +229,38 @@
 
 {{else}}
   {{!-- PRIVATE MESSAGES --}}
-  {{#if isLeaderChange}}
-    <div class="blacksmith-card theme-default">
-      <div class="section-header">
-        <i class="fas fa-crown"></i> Congratulations, Party Leader!
-      </div>
-      <div class="section-content">
-        <p>The party has chosen you to be their leader, hooray!</p>
-        <ul>
-          <li>Help guide them through decisions, but make the final call.</li>
-          <li>Keep things moving when discussion stalls.</li>
-          <li>You are on Point when movement mode is Follow or Conga.</li>
-        </ul>
-      </div>
-    </div>
 
+  {{!-- LEADER CHANGE --}}
+  {{#if isLeaderChange}}
+      <div class="blacksmith-card theme-red">
+          <div class="section-header">
+              <i class="fas fa-crown"></i> You Are Party Leader!
+          </div>
+          <div class="section-content">
+              <p>The party has chosen {{leaderName}} to be their leader.</p>
+          </div>
+      </div>
+
+  {{!-- TRANSFER REQUEST --}}
   {{else if (eq cardType "transfer-request")}}
-    <div class="blacksmith-card theme-default">
+    <div class="blacksmith-card theme-green">
       <div class="section-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}} 
       </div>
       <div class="section-content">
         {{#if isTransferSender}}
-          <p>
-            The transfer of
-            {{#if hasQuantity}}
-              {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
-            {{/if}}
-            <strong>{{itemName}}</strong> has been sent to <strong>{{targetActorName}}</strong>.
-          </p>
+          <p>The request to send {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong>.</p> to <strong>{{targetActorName}}</strong> has been sent.</p>
         {{else if isTransferReceiver}}
-          <p>
-            <strong>{{sourceActorName}}</strong> is sending you
-            {{#if hasQuantity}}
-              {{quantity}} {{#if isPlural}}units of{{else}}unit of{{/if}}
-            {{/if}}
-            <strong>{{itemName}}</strong>.
-          </p>
-          <div class="transfer-request-buttons">
-            <button class="transfer-request-button accept" data-transfer-id="{{transferId}}">Accept</button>
-            <button class="transfer-request-button reject" data-transfer-id="{{transferId}}">Reject</button>
+          <p><strong>{{sourceActorName}}</strong> wants to send you {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong>.</p>
+          <div class="transfer-request-buttons blacksmith-chat-buttons">
+            <button class="transfer-request-button chat-button accept" data-transfer-id="{{transferId}}"><i class="fas fa-circle-check"></i> Accept</button>
+            <button class="transfer-request-button chat-button reject" data-transfer-id="{{transferId}}"><i class="fas fa-circle-xmark"></i> Reject</button>
           </div>
         {{/if}}
       </div>
     </div>
 
+  {{!-- TRANSFER COMPLETE --}}
   {{else if (eq cardType "transfer-complete")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -293,6 +281,7 @@
       </div>
     </div>
 
+  {{!-- TRANSFER REJECTED --}}
   {{else if (eq cardType "transfer-rejected")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -311,6 +300,7 @@
       </div>
     </div>
 
+  {{!-- TRANSFER GM --}}
   {{else if (eq cardType "transfer-gm")}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
@@ -321,6 +311,7 @@
       </div>
     </div>
 
+  {{!-- GENERAL & ERROR CONDITION --}}  
   {{else}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
