@@ -1,4 +1,5 @@
 import { MODULE, SQUIRE } from './const.js';
+import { PanelManager } from './panel-manager.js';
 
 export const registerSettings = function() {
 
@@ -374,6 +375,38 @@ export const registerSettings = function() {
     });
 
 
+
+    // --------------------------------
+    // ---      NOTES Settings      ---
+    // --------------------------------
+
+	// ---------- Notes Heading ----------
+	game.settings.register(MODULE.ID, "headingH3NotesConfiguration", {
+		name: 'Notes Configuration',
+		hint: 'Settings for the party notes, quests, and other shared data.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
+    // Shared Journal
+    game.settings.register(MODULE.ID, 'notesSharedJournal', {
+        name: 'Shared Journal',
+        hint: 'The journal that will be used for the notes tab. Use the buttons in the notes panel to select a journal.',
+        scope: 'world',
+        config: true,
+        type: String,
+        default: 'none',
+        onChange: () => {
+            // Update the notes panel if it exists
+            if (PanelManager.instance?.notesPanel) {
+                PanelManager.instance.notesPanel.render(PanelManager.element);
+            }
+        }
+    });
+
+    
     // --------------------------------
     // --- Transfer Settings ---
     // --------------------------------

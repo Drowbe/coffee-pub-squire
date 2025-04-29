@@ -1,0 +1,37 @@
+{{#if (eq position "left")}}
+<div class="tray-title-small">
+    <span>
+        {{#if hasJournal}}
+        {{journalName}}
+        {{else}}
+        Shared Notes
+        {{/if}}
+    </span>
+    <div class="notes-controls">
+        {{#if hasJournal}}
+        <i class="fas fa-book-open open-journal-button" title="Open Journal"></i>
+        {{/if}}
+        {{#if isGM}}
+        <i class="fas fa-cog set-journal-button" title="Set Journal"></i>
+        {{/if}}
+        <i class="fas fa-feather character-sheet-toggle" title="Open Character Sheet"></i>
+    </div>
+</div>
+<div class="notes-content">
+    {{#if hasJournal}}
+    <div class="journal-content prose"></div>
+    {{else}}
+    <div class="no-journal-selected">
+        {{#if isGM}}
+        <p>No journal has been selected for notes.</p>
+        <p>Click the <i class="fas fa-cog"></i> icon to select a journal.</p>
+        <button class="set-journal-button-large">
+            <i class="fas fa-book"></i> Select Journal
+        </button>
+        {{else}}
+        <p>No journal has been selected by the GM yet.</p>
+        {{/if}}
+    </div>
+    {{/if}}
+</div>
+{{/if}} 

@@ -13,6 +13,7 @@ import { StatsPanel } from "./panel-stats.js";
 import { AbilitiesPanel } from "./panel-abilities.js";
 import { PartyPanel } from "./panel-party.js";
 import { PartyStatsPanel } from "./panel-party-stats.js";
+import { NotesPanel } from "./panel-notes.js";
 
 export class PanelManager {
     static instance = null;
@@ -43,6 +44,7 @@ export class PanelManager {
             this.abilitiesPanel = new AbilitiesPanel(actor);
             this.partyPanel = new PartyPanel();
             this.partyStatsPanel = new PartyStatsPanel();
+            this.notesPanel = new NotesPanel();
         }
         this.hiddenCategories = new Set();
     }
@@ -263,6 +265,9 @@ export class PanelManager {
 
         this.statsPanel = new StatsPanel(this.actor);
         this.abilitiesPanel = new AbilitiesPanel(this.actor);
+        this.partyPanel = new PartyPanel();
+        this.partyStatsPanel = new PartyStatsPanel();
+        this.notesPanel = new NotesPanel();
 
         // Update panel element references for non-popped panels
         this.characterPanel.element = PanelManager.element;
@@ -352,6 +357,7 @@ export class PanelManager {
             this.abilitiesPanel?.render(element);
             this.partyPanel?.render(element);
             this.partyStatsPanel?.render(element);
+            this.notesPanel?.render(element);
         }
     }
 
@@ -1083,14 +1089,32 @@ export class PanelManager {
         });
 
         // View toggle button
-        tray.find('.view-toggle-button').click(async () => {
-            const newMode = PanelManager.viewMode === 'player' ? 'party' : 'player';
+        tray.find('.view-toggle-button').click(async (event) => {
+            event.preventDefault();
+            
+            // Cycle through the views: player -> party -> notes -> player
+            let newMode;
+            if (PanelManager.viewMode === 'player') {
+                newMode = 'party';
+            } else if (PanelManager.viewMode === 'party') {
+                newMode = 'notes';
+            } else {
+                newMode = 'player';
+            }
+            
             PanelManager.viewMode = newMode;
             await game.settings.set(MODULE.ID, 'viewMode', newMode);
             
             // Update button icon
             const button = tray.find('.view-toggle-button i');
-            button.removeClass('fa-user fa-users').addClass(newMode === 'party' ? 'fa-users' : 'fa-user');
+            button.removeClass('fa-user fa-users fa-sticky-note');
+            if (newMode === 'party') {
+                button.addClass('fa-users');
+            } else if (newMode === 'notes') {
+                button.addClass('fa-sticky-note');
+            } else {
+                button.addClass('fa-user');
+            }
             
             // Update tab buttons
             tray.find('.tray-tab-button').removeClass('active');
@@ -1099,6 +1123,7 @@ export class PanelManager {
             // Toggle view visibility
             tray.find('.tray-view-content.player-view').toggleClass('hidden', newMode !== 'player');
             tray.find('.tray-view-content.party-view').toggleClass('hidden', newMode !== 'party');
+            tray.find('.tray-view-content.notes-view').toggleClass('hidden', newMode !== 'notes');
             
             // Toggle toolbar visibility
             tray.find('.tray-tools-toolbar').toggleClass('hidden', newMode !== 'party');
@@ -1122,11 +1147,19 @@ export class PanelManager {
             
             // Update handle button icon
             const handleButton = tray.find('.view-toggle-button i');
-            handleButton.removeClass('fa-user fa-users').addClass(view === 'party' ? 'fa-users' : 'fa-user');
+            handleButton.removeClass('fa-user fa-users fa-sticky-note');
+            if (view === 'party') {
+                handleButton.addClass('fa-users');
+            } else if (view === 'notes') {
+                handleButton.addClass('fa-sticky-note');
+            } else {
+                handleButton.addClass('fa-user');
+            }
             
             // Toggle view visibility
             tray.find('.tray-view-content.player-view').toggleClass('hidden', view !== 'player');
             tray.find('.tray-view-content.party-view').toggleClass('hidden', view !== 'party');
+            tray.find('.tray-view-content.notes-view').toggleClass('hidden', view !== 'notes');
             
             // Toggle toolbar visibility
             tray.find('.tray-tools-toolbar').toggleClass('hidden', view !== 'party');

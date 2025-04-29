@@ -8,7 +8,7 @@
             <i class="fas fa-arrows-rotate"></i>
         </button>
         <button class="view-toggle-button" title="Toggle View Mode">
-            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else}}fa-user{{/if}}"></i>
+            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else}}fa-user{{/if}}"></i>
         </button>
         <div class="handle-left">
             {{> handle-player}}
@@ -22,6 +22,9 @@
             </button>
             <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party">
                 <i class="fas fa-users"></i> Party
+            </button>
+            <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes">
+                <i class="fas fa-sticky-note"></i> Notes
             </button>
         </div>
         
@@ -79,5 +82,11 @@
             <div class="panel-container" data-panel="party-stats"></div>
             {{/if}}
         </div>
+
+
+        <div class="tray-view-content notes-view {{#unless (eq viewMode 'notes')}}hidden{{/unless}}">
+            <div class="panel-container" data-panel="panel-notes"></div>
+        </div>
+
     </div>
 </div> 

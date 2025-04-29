@@ -264,7 +264,8 @@ Hooks.once('init', async function() {
 
     // Load CSS
     const cssFiles = [
-        `modules/${MODULE.ID}/styles/window-transfer.css`
+        `modules/${MODULE.ID}/styles/window-transfer.css`,
+        `modules/${MODULE.ID}/styles/panel-notes.css`
     ];
     
     // Add CSS files to head

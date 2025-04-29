@@ -25,4 +25,31 @@
         </div>
     </div>
 </div>
+{{else}}
+<div class="tray-title-small">
+    <span>Stats</span>
+    <div class="stats-controls">
+        <i class="fas fa-chevron-down stats-toggle" title="Toggle Stats Panel"></i>
+    </div>
+</div>
+<div class="stats-content">
+    <div class="stat-boxes">
+        <div class="stat-box">
+            <i class="fas fa-helmet-battle"></i>
+            <span class="stat-value">{{actor.system.details.level}}</span>
+        </div>
+        <div class="stat-box">
+            <i class="fas fa-paw"></i>
+            <span class="stat-value">{{actor.system.attributes.movement.walk}}</span>
+        </div>
+        <div class="stat-box">
+            <i class="fas fa-shield"></i>
+            <span class="stat-value">{{actor.system.attributes.ac.value}}</span>
+        </div>
+        <div class="stat-box">
+            <i class="fas fa-plus-circle"></i>
+            <span class="stat-value">+{{actor.system.attributes.prof}}</span>
+        </div>
+    </div>
+</div>
 {{/if}} 
