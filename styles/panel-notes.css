@@ -106,4 +106,152 @@
 .squire-tray[data-position="left"] .set-journal-button-large:hover {
     background: rgba(255, 255, 255, 0.25);
     border-color: var(--color-border-highlight, #ff6400);
+}
+
+/* Notes panel styling */
+.squire-tray .panel-container[data-panel="panel-notes"] {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 50px;
+}
+
+.squire-tray .tray-title-small {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: bold;
+    user-select: none;
+    height: 28px;
+    cursor: pointer;
+}
+
+.squire-tray .notes-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.squire-tray .notes-controls i {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.squire-tray .notes-controls i:hover {
+    opacity: 1;
+    color: var(--color-text-hyperlink);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}
+
+.squire-tray .notes-content {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 600px;
+    font-size: 0.9em;
+    flex: 1;
+}
+
+.squire-tray .notes-content .journal-content {
+    padding-right: 8px;
+}
+
+.squire-tray .notes-content .journal-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.squire-tray .no-journal-selected {
+    text-align: center;
+    color: var(--color-text-dark-inactive);
+    padding: 20px 10px;
+}
+
+.squire-tray .set-journal-button-large {
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--color-text-light-highlight);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.squire-tray .set-journal-button-large:hover {
+    background: rgba(var(--color-shadow-primary), 0.5);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 5px var(--color-shadow-highlight);
+}
+
+/* Page selector styling */
+.squire-tray .notes-page-selector {
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.squire-tray .notes-page-selector .page-select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--color-text-light-highlight);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+}
+
+.squire-tray .notes-page-selector .page-select:focus {
+    outline: none;
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 3px var(--color-shadow-highlight);
+}
+
+.squire-tray .notes-page-selector .page-name {
+    padding: 4px 0;
+    font-size: 0.9em;
+    font-style: italic;
+    color: var(--color-text-light-secondary);
+}
+
+/* Journal Description dialog */
+.squire-description-dialog .window-content {
+    background: var(--color-bg-window);
+}
+
+.squire-description-window .squire-description-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--color-border-highlight-alt);
+    padding-bottom: 10px;
+}
+
+.squire-description-window .squire-description-header img {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+    border: none;
+}
+
+.squire-description-window .squire-description-header h1 {
+    margin: 0;
+    color: var(--color-text-light-highlight);
+    font-size: 1.2em;
+    border: none;
+}
+
+.squire-description-window .squire-description-content {
+    color: var(--color-text-light-primary);
+}
+
+.squire-description-window .squire-description-content p {
+    margin-bottom: 0.5em;
+}
+
+.squire-description-window .squire-description-content p:last-child {
+    margin-bottom: 0;
 } 

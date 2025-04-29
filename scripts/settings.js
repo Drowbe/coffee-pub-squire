@@ -395,7 +395,7 @@ export const registerSettings = function() {
         name: 'Shared Journal',
         hint: 'The journal that will be used for the notes tab. Use the buttons in the notes panel to select a journal.',
         scope: 'world',
-        config: true,
+        config: false,
         type: String,
         default: 'none',
         onChange: () => {
@@ -404,6 +404,16 @@ export const registerSettings = function() {
                 PanelManager.instance.notesPanel.render(PanelManager.element);
             }
         }
+    });
+    
+    // Notes Shared Journal Page setting
+    game.settings.register(MODULE.ID, 'notesSharedJournalPage', {
+        name: 'Notes Shared Journal Page',
+        hint: 'Page within the journal to display in the Notes tab',
+        scope: 'world',
+        config: false,
+        type: String,
+        default: 'none'
     });
 
     
