@@ -210,6 +210,12 @@
     box-shadow: 0 0 3px var(--color-shadow-highlight);
 }
 
+.squire-tray .notes-page-selector .page-select option {
+    background-color: #2a2a2a;
+    color: white;
+    padding: 6px;
+}
+
 .squire-tray .notes-page-selector .page-name {
     padding: 4px 0;
     font-size: 0.9em;

@@ -22,9 +22,14 @@
     {{#if isGM}}
     <select class="page-select">
         {{#if page}}
-        <option value="{{page.id}}">{{pageName}}</option>
+        <option value="{{page.id}}" selected>{{pageName}}</option>
         {{/if}}
-        <option value="select-page">Select Different Page...</option>
+        {{#each pages}}
+        {{#unless (eq id ../page.id)}}
+        <option value="{{id}}">{{name}}</option>
+        {{/unless}}
+        {{/each}}
+        <option value="browse-pages">Browse pages...</option>
     </select>
     {{else}}
     <div class="page-name">{{pageName}}</div>

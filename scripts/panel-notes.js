@@ -21,8 +21,15 @@ export class NotesPanel {
         // Get the selected page ID (defaulting to the first page if not set)
         const pageId = game.settings.get(MODULE.ID, 'notesSharedJournalPage');
         let page = null;
+        let pages = [];
         
         if (journal && journal.pages.size > 0) {
+            // Get all pages for the dropdown
+            pages = journal.pages.contents.map(p => ({
+                id: p.id,
+                name: p.name
+            }));
+            
             if (pageId && pageId !== 'none' && journal.pages.has(pageId)) {
                 page = journal.pages.get(pageId);
             } else {
@@ -42,11 +49,12 @@ export class NotesPanel {
             ui.notifications.warn("The previously selected journal no longer exists. Please select a new one.");
         }
 
-        const html = await renderTemplate(TEMPLATES.PANEL_NOTES, {
+        const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
             hasJournal: !!journal,
             journal: journal,
             journalName: journal?.name || 'No Journal Selected',
             page: page,
+            pages: pages,
             pageName: page?.name || '',
             hasPages: journal?.pages.size > 0,
             isGM: game.user.isGM,
@@ -103,7 +111,7 @@ export class NotesPanel {
             
             const pageId = event.currentTarget.value;
             
-            if (pageId === 'select-page') {
+            if (pageId === 'browse-pages') {
                 // Show page picker dialog
                 this._showPagePicker(journal);
                 return;
