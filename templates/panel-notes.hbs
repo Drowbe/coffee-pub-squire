@@ -32,12 +32,30 @@
         <option value="browse-pages">Browse pages...</option>
     </select>
     {{else}}
+    {{#if hasPages}}
+    <select class="page-select">
+        {{#if page}}
+        <option value="{{page.id}}" selected>{{pageName}}</option>
+        {{/if}}
+        {{#each pages}}
+        {{#unless (eq id ../page.id)}}
+        <option value="{{id}}">{{name}}</option>
+        {{/unless}}
+        {{/each}}
+    </select>
+    {{else}}
     <div class="page-name">{{pageName}}</div>
+    {{/if}}
     {{/if}}
 </div>
 {{/if}}
 <div class="notes-content">
-    {{#if hasJournal}}
+    {{#if hasPermissionIssue}}
+    <div class="permission-error">
+        <i class="fas fa-lock"></i>
+        <p>You don't have permission to view this journal.</p>
+    </div>
+    {{else if hasJournal}}
     <div class="journal-content prose"></div>
     {{else}}
     <div class="no-journal-selected">

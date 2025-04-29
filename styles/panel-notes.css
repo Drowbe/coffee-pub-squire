@@ -260,4 +260,28 @@
 
 .squire-description-window .squire-description-content p:last-child {
     margin-bottom: 0;
+}
+
+/* Add styling for permission errors */
+.squire-tray .permission-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px 15px;
+    color: var(--color-text-dark-inactive);
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.squire-tray .permission-error i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    color: #770000;
+}
+
+.squire-tray .permission-error p {
+    margin: 5px 0;
 } 

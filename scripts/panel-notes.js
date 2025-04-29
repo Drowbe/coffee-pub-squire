@@ -19,25 +19,78 @@ export class NotesPanel {
         const journal = journalId !== 'none' ? game.journal.get(journalId) : null;
 
         // Get the selected page ID (defaulting to the first page if not set)
-        const pageId = game.settings.get(MODULE.ID, 'notesSharedJournalPage');
+        const globalPageId = game.settings.get(MODULE.ID, 'notesSharedJournalPage');
+        
+        // Check for user-specific page preference (for non-GM users)
+        const userPageId = !game.user.isGM ? game.user.getFlag(MODULE.ID, 'userSelectedJournalPage') : null;
+        
+        // Use user-specific page if available, otherwise fall back to global
+        const pageId = userPageId || globalPageId;
+        
         let page = null;
         let pages = [];
+        let canViewJournal = false;
         
-        if (journal && journal.pages.size > 0) {
-            // Get all pages for the dropdown
-            pages = journal.pages.contents.map(p => ({
-                id: p.id,
-                name: p.name
-            }));
-            
-            if (pageId && pageId !== 'none' && journal.pages.has(pageId)) {
-                page = journal.pages.get(pageId);
-            } else {
-                // Default to first page if no valid page is selected
-                page = journal.pages.contents[0];
-                // Save this as the selected page if we didn't have a valid one
-                if (game.user.isGM && (!pageId || !journal.pages.has(pageId))) {
-                    await game.settings.set(MODULE.ID, 'notesSharedJournalPage', page.id);
+        // Define permission levels
+        // In Foundry, these are typically:
+        // NONE = 0, LIMITED = 1, OBSERVER = 2, OWNER = 3
+        const PERMISSION_LEVELS = {
+            NONE: 0,
+            LIMITED: 1,
+            OBSERVER: 2,
+            OWNER: 3
+        };
+        
+        if (journal) {
+            // Check if the user can at least observe the journal
+            canViewJournal = game.user.isGM || journal.testUserPermission(game.user, PERMISSION_LEVELS.OBSERVER);
+
+            if (canViewJournal && journal.pages.size > 0) {
+                // Filter pages based on user permissions
+                const accessiblePages = journal.pages.contents.filter(p => {
+                    // GMs can see all pages
+                    if (game.user.isGM) return true;
+                    
+                    // Get the effective permission for this page for this user
+                    return this._userCanAccessPage(p, game.user, PERMISSION_LEVELS);
+                });
+                
+                // Get all accessible pages for the dropdown
+                pages = accessiblePages.map(p => ({
+                    id: p.id,
+                    name: p.name
+                }));
+                
+                // Check if selected page is accessible, otherwise try to find first accessible page
+                if (pageId && pageId !== 'none' && journal.pages.has(pageId)) {
+                    const selectedPage = journal.pages.get(pageId);
+                    
+                    // Check if user can access this page
+                    const canAccess = game.user.isGM || this._userCanAccessPage(selectedPage, game.user, PERMISSION_LEVELS);
+                                    
+                    if (canAccess) {
+                        page = selectedPage;
+                    } else if (accessiblePages.length > 0) {
+                        // Selected page is not accessible, use first accessible page
+                        page = accessiblePages[0];
+                        // Update the setting if user is GM
+                        if (game.user.isGM) {
+                            await game.settings.set(MODULE.ID, 'notesSharedJournalPage', page.id);
+                        } else {
+                            // Update user flag for non-GM users
+                            await game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', page.id);
+                        }
+                    }
+                } else if (accessiblePages.length > 0) {
+                    // No page selected or invalid page ID, use first accessible page
+                    page = accessiblePages[0];
+                    // Save this as the selected page if GM
+                    if (game.user.isGM && (!pageId || !journal.pages.has(pageId))) {
+                        await game.settings.set(MODULE.ID, 'notesSharedJournalPage', page.id);
+                    } else if (!game.user.isGM) {
+                        // For non-GM users, update their flag
+                        await game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', page.id);
+                    }
                 }
             }
         }
@@ -49,14 +102,47 @@ export class NotesPanel {
             ui.notifications.warn("The previously selected journal no longer exists. Please select a new one.");
         }
 
+        // For debugging
+        if (journal && !game.user.isGM) {
+            console.log(`SQUIRE | Notes Panel Journal Permissions:`, {
+                journal: journal.name,
+                journalId: journal.id,
+                canViewJournal,
+                userLevel: journal.getUserLevel(game.user),
+                permission: journal.permission,
+                ownership: journal.ownership,
+                defaultOwnership: journal.ownership.default,
+                userOwnership: journal.ownership[game.user.id],
+                page: page?.name,
+                pageId: page?.id,
+                accessiblePageCount: pages.length,
+                userIsGM: game.user.isGM
+            });
+            
+            if (page) {
+                console.log(`SQUIRE | Notes Panel Page Permissions:`, {
+                    page: page.name,
+                    pageId: page.id,
+                    canAccess: this._userCanAccessPage(page, game.user, PERMISSION_LEVELS),
+                    userLevel: page.getUserLevel(game.user),
+                    permission: page.permission,
+                    ownership: page.ownership,
+                    defaultOwnership: page.ownership.default,
+                    userOwnership: page.ownership[game.user.id]
+                });
+            }
+        }
+
         const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
-            hasJournal: !!journal,
+            hasJournal: !!journal && canViewJournal,
             journal: journal,
             journalName: journal?.name || 'No Journal Selected',
             page: page,
             pages: pages,
             pageName: page?.name || '',
-            hasPages: journal?.pages.size > 0,
+            hasPages: pages.length > 0,
+            hasPermissionIssue: !!journal && !canViewJournal,
+            canEditPage: page ? (game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER)) : false,
             isGM: game.user.isGM,
             position: "left" // Hard-code position for now as it's always left in current implementation
         });
@@ -65,7 +151,56 @@ export class NotesPanel {
         this.activateListeners(notesContainer, journal, page);
     }
 
+    /**
+     * Checks if a user can access a specific journal page
+     * @param {JournalEntryPage} page - The page to check 
+     * @param {User} user - The user to check permissions for
+     * @param {Object} permLevels - Permission level constants
+     * @returns {boolean} Whether the user can access the page
+     * @private
+     */
+    _userCanAccessPage(page, user, permLevels) {
+        if (!page || !user) return false;
+        
+        // GM always has access
+        if (user.isGM) return true;
+        
+        // Get the page's parent journal
+        const journal = page.parent;
+        if (!journal) return false;
+        
+        // Check direct user permissions on the page
+        const pagePermission = page.testUserPermission(user, permLevels.OBSERVER);
+        if (pagePermission) return true;
+        
+        // If page has explicit permissions that deny access, don't inherit from journal
+        if (page.ownership[user.id] === permLevels.NONE ||
+            (page.ownership.default === permLevels.NONE && !page.ownership[user.id])) {
+            return false;
+        }
+        
+        // Check if page should inherit from journal (no specific permissions)
+        const hasSpecificPermissions = Object.keys(page.ownership).some(id => 
+            id !== "default" && id !== user.id
+        );
+        
+        // If no specific permissions are set, inherit from journal
+        if (!hasSpecificPermissions || page.ownership.default === 0) {
+            return journal.testUserPermission(user, permLevels.OBSERVER);
+        }
+        
+        return false;
+    }
+
     activateListeners(html, journal, page) {
+        // Define permission levels
+        const PERMISSION_LEVELS = {
+            NONE: 0,
+            LIMITED: 1,
+            OBSERVER: 2,
+            OWNER: 3
+        };
+        
         // Add event listeners for notes panel here
         html.find('.character-sheet-toggle').click(async (event) => {
             event.preventDefault();
@@ -107,18 +242,23 @@ export class NotesPanel {
 
         // Page selection dropdown (GM only)
         html.find('.page-select').change(async (event) => {
-            if (!game.user.isGM) return;
-            
             const pageId = event.currentTarget.value;
             
             if (pageId === 'browse-pages') {
-                // Show page picker dialog
-                this._showPagePicker(journal);
+                // Show page picker dialog - GM only option
+                if (game.user.isGM) {
+                    this._showPagePicker(journal);
+                }
                 return;
             }
             
-            // Save the selected page
-            await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
+            if (game.user.isGM) {
+                // Save the selected page globally for all users if GM
+                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
+            } else {
+                // For players, just update locally
+                game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
+            }
             
             // Re-render the notes panel
             this.render(this.element);
@@ -131,10 +271,25 @@ export class NotesPanel {
     }
 
     async _renderJournalContent(html, journal, page) {
+        // Define permission levels
+        const PERMISSION_LEVELS = {
+            NONE: 0,
+            LIMITED: 1,
+            OBSERVER: 2,
+            OWNER: 3
+        };
+        
         const contentContainer = html.find('.journal-content');
         if (!contentContainer.length) return;
         
         if (!page) return;
+        
+        // Verify permission to view this page
+        const canViewPage = game.user.isGM || this._userCanAccessPage(page, game.user, PERMISSION_LEVELS);
+        if (!canViewPage) {
+            contentContainer.html(`<div class="permission-error"><i class="fas fa-lock"></i><p>You don't have permission to view this page.</p></div>`);
+            return;
+        }
         
         // Create the content based on page type
         let content = '';
@@ -253,12 +408,21 @@ export class NotesPanel {
     _showPagePicker(journal) {
         if (!journal || !game.user.isGM) return;
         
+        // Define permission levels
+        const PERMISSION_LEVELS = {
+            NONE: 0,
+            LIMITED: 1,
+            OBSERVER: 2,
+            OWNER: 3
+        };
+        
         // Get all pages from the journal
         const pages = journal.pages.contents.map(p => ({
             id: p.id,
             name: p.name,
             type: p.type,
-            img: p.type === 'image' ? p.src : (p.type === 'text' ? 'icons/svg/book.svg' : 'icons/svg/page.svg')
+            img: p.type === 'image' ? p.src : (p.type === 'text' ? 'icons/svg/book.svg' : 'icons/svg/page.svg'),
+            permissions: this._getPagePermissionLabel(p, PERMISSION_LEVELS)
         }));
         
         // Sort alphabetically
@@ -281,7 +445,10 @@ export class NotesPanel {
                         ${p.type !== 'image' ? `<i class="fas ${p.type === 'text' ? 'fa-book-open' : 'fa-file'}" style="font-size: 2em; color: #666;"></i>` : ''}
                     </div>
                     <div class="page-name" style="margin-top: 5px; font-weight: bold;">${p.name}</div>
-                    <div class="page-type" style="font-size: 0.8em; color: #999; text-transform: capitalize;">${p.type}</div>
+                    <div class="page-info" style="display: flex; justify-content: space-between; font-size: 0.8em; color: #999;">
+                        <span style="text-transform: capitalize;">${p.type}</span>
+                        <span title="Page permissions">${p.permissions}</span>
+                    </div>
                 </div>
                 `).join('')}
             </div>`
@@ -320,5 +487,32 @@ export class NotesPanel {
         });
         
         dialog.render(true);
+    }
+    
+    /**
+     * Get a human-readable label for page permissions
+     * @param {JournalEntryPage} page - The page to check permissions for
+     * @param {Object} permLevels - Permission level constants
+     * @returns {string} A label indicating permission level
+     * @private
+     */
+    _getPagePermissionLabel(page, permLevels) {
+        if (!page) return `<i class="fas fa-question" title="Unknown"></i>`;
+        
+        // Check if page has specific permissions or inherits from journal
+        const hasSpecificPermissions = Object.keys(page.ownership).some(id => id !== "default");
+        const defaultPermission = page.ownership.default;
+        
+        if (!hasSpecificPermissions && defaultPermission === 0) {
+            return `<i class="fas fa-link" title="Inherits journal permissions"></i>`;
+        }
+        
+        if (defaultPermission >= permLevels.OWNER) {
+            return `<i class="fas fa-edit" title="Players can edit"></i>`;
+        } else if (defaultPermission >= permLevels.OBSERVER) {
+            return `<i class="fas fa-eye" title="Players can view"></i>`;
+        } else {
+            return `<i class="fas fa-lock" title="GM only"></i>`;
+        }
     }
 } 
