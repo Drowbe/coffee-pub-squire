@@ -212,6 +212,23 @@ Hooks.once('socketlib.ready', () => {
             }
         });
         
+        // Add socket handler for deleting transfer request messages
+        socket.register("deleteTransferRequestMessage", async (messageId) => {
+            if (!game.user.isGM) return;
+            
+            try {
+                const message = game.messages.get(messageId);
+                if (message) {
+                    await message.delete();
+                    console.log(`SQUIRE | Successfully deleted transfer request message ${messageId}`);
+                } else {
+                    console.warn(`SQUIRE | Could not find message with ID ${messageId} to delete`);
+                }
+            } catch (error) {
+                console.error(`SQUIRE | Error deleting transfer request message:`, error);
+            }
+        });
+        
         console.log("SQUIRE | Socket handler registered successfully", {
             registeredFunctions: socket?.functions ? Array.from(socket.functions.keys()) : []
         });
@@ -602,12 +619,6 @@ async function processTransferResponse(responseData) {
         ui.notifications.warn(`${targetActorName} declined your item transfer.`);
     }
 }
-
-// Register the processTransferResponse handler for socketlib
-socket.register("processTransferResponse", async (responseData) => {
-    // This is used to notify the sender about transfer acceptance/rejection
-    await processTransferResponse(responseData);
-});
 
 /**
  * Helper function to get an icon for item type

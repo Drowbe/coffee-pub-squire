@@ -996,6 +996,11 @@ export class PartyPanel {
                 const gmUsers = game.users.filter(u => u.isGM);
                 const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
 
+                // Disable the buttons immediately to prevent double-clicking
+                html.find('.transfer-request-button').prop('disabled', true);
+                html.find('.transfer-request-button').addClass('disabled');
+                html.find('.transfer-request-buttons').append('<div class="processing-message" style="margin-top: 5px; text-align: center; font-style: italic;">Processing...</div>');
+
                 if (isAccept) {
                     // Execute the transfer first
                     const socket = game.modules.get(MODULE.ID)?.socket;
@@ -1011,10 +1016,8 @@ export class PartyPanel {
                         hasQuantity: true
                     });
 
-
                     console.log("SQUIRE | TRANSFER | Receiver Users:", receiverUsers.map(u => u.name));
                     console.log("SQUIRE | TRANSFER | Sender User:", senderUser.name);
-
 
                     // Single completion message for sender - SEND VIA SOCKETLIB
                     if (!game.user.isGM) {
@@ -1191,6 +1194,48 @@ export class PartyPanel {
                             });
                         }
                     }
+                }
+
+                // Delete the transfer request message after processing
+                try {
+                    // First find the current chat message that has the buttons
+                    const currentMessage = game.messages.get(message.id);
+                    if (currentMessage) {
+                        // If we're the GM, delete directly
+                        if (game.user.isGM) {
+                            await currentMessage.delete();
+                        } else {
+                            // Otherwise use socketlib to have a GM delete it
+                            const socket = game.modules.get(MODULE.ID)?.socket;
+                            if (socket) {
+                                // Create a replacement message for the user
+                                const isAcceptText = isAccept ? "accepted" : "rejected";
+                                const replacementContent = `
+                                    <div class="blacksmith-card theme-default">
+                                      <div class="section-header">
+                                        <i class="${isAccept ? 'fas fa-check-circle' : 'fas fa-times-circle'}"></i> Transfer ${isAcceptText.charAt(0).toUpperCase() + isAcceptText.slice(1)}
+                                      </div>
+                                      <div class="section-content">
+                                        <p>You have ${isAcceptText} the transfer request.</p>
+                                      </div>
+                                    </div>
+                                `;
+                                
+                                // Create a replacement message
+                                await ChatMessage.create({
+                                    content: replacementContent,
+                                    whisper: [game.user.id],
+                                    speaker: ChatMessage.getSpeaker()
+                                });
+                                
+                                // Ask GM to delete the original message
+                                socket.executeAsGM('deleteTransferRequestMessage', currentMessage.id);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error handling transfer request message:", error);
+                    // Don't attempt to update if delete fails - we'll just leave the disabled buttons
                 }
             });
         }
