@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.10] - Transfers and More
+
+### Fixed
+- Fixed issue where players were receiving both sender and receiver transfer messages
+- Resolved permission errors when players attempted to delete or update chat messages
+- Improved handling of socketlib for transfer message management
+- Fixed duplicate chat messages during item transfers between characters
+- Addressed transfer chat messages not being removed after acceptance/rejection
+- Fixed message ordering in chat log to maintain logical conversation flow
+
+### Changed
+- Improved transfer chat messages with personalized text based on sender/receiver status
+- Enhanced the chat templates to properly handle singular/plural item descriptions
+- Restructured socket handlers for more reliable GM-mediated message delivery
+- Improved handling of transfer request buttons to prevent double-clicking
+- Updated chat message flow to ensure logical ordering of acceptance and completion messages
+
+### Added
+- Added GM-mediated message deletion for transfer request cleanup
+- Implemented visual feedback during transfer processing with disabled buttons
+- Added replacement messages for transfer requests after processing
+- Created new socket handler for GM-executed message cleanup
+- Added proper error handling and fallbacks for socket communication
+
 ## [1.0.9] - Event Handler Fixes
 
 ### Fixed

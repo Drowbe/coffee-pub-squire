@@ -22,20 +22,20 @@ A FoundryVTT module that provides quick access to character-specific combat info
 - Quick access to spells, weapons, and character information
 - Sliding tray interface that automatically appears on the left side of the screen
 - Automatic character detection and token-based selection
-- Spell management with:
+- **Spell management** with:
   - Spell slot tracking
   - Prepared spell filtering
   - Spell favorites
   - Component tracking
-- Weapon management with:
+- **Weapon managemen** with:
   - Equipped weapon filtering
   - Weapon favorites
-- Character info panel with:
+- **Character info panel** with:
   - HP tracking
   - Ability score rolls
   - Quick access tools
   - Integrated dice tray
-- Conditions and Effects:
+- **Conditions and Effects**:
   - Baseline condition indicators in handle
   - Quick condition application
 - Favorites system for quick access to commonly used items
