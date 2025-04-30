@@ -149,7 +149,7 @@ export class NotesPanel {
             page: page,
             pages: pages,
             pageName: page?.name || '',
-            hasPages: pages.length > 0,
+            hasPages: pages.length > 1, // Only show selector if more than one page
             hasPermissionIssue: !!journal && !canViewJournal,
             canEditPage: page ? (game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER)) : false,
             isGM: game.user.isGM,
@@ -240,8 +240,8 @@ export class NotesPanel {
             }
         });
 
-        // Edit page button (for owners)
-        html.find('.edit-page-button').click(async (event) => {
+        // Toggle edit mode button
+        html.find('.toggle-edit-mode-button').click(async (event) => {
             event.preventDefault();
             
             if (journal && page) {
@@ -249,19 +249,27 @@ export class NotesPanel {
                 const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
                 
                 if (canEdit) {
-                    // Open the page for editing
-                    if (page.sheet) {
-                        page.sheet.render(true);
-                    } else {
-                        // Fallback to opening journal and navigating to page
-                        journal.sheet.render(true, {pageId: page.id, editable: true});
+                    try {
+                        // For simplicity, we'll just open the journal sheet directly
+                        ui.notifications.info("Opening editor...");
+                        
+                        if (page.sheet) {
+                            await page.sheet.render(true);
+                        } else if (journal.sheet) {
+                            await journal.sheet.render(true, {pageId: page.id, editable: true});
+                        } else {
+                            ui.notifications.error("Could not open the journal editor.");
+                        }
+                    } catch (error) {
+                        console.error("SQUIRE | Error toggling edit mode:", error);
+                        ui.notifications.error("Error opening editor: " + error.message);
                     }
                 } else {
                     ui.notifications.warn("You don't have permission to edit this page.");
                 }
             }
         });
-
+        
         // Set journal button (GM only)
         html.find('.set-journal-button, .set-journal-button-large').click(async (event) => {
             event.preventDefault();
@@ -270,36 +278,6 @@ export class NotesPanel {
             if (game.user.isGM) {
                 this._showJournalPicker();
             }
-        });
-
-        // Page selection dropdown
-        html.find('.page-select').change(async (event) => {
-            const pageId = event.currentTarget.value;
-            
-            if (pageId === 'browse-pages') {
-                // Show page picker dialog - GM only option
-                if (game.user.isGM) {
-                    this._showPagePicker(journal);
-                }
-                return;
-            }
-            
-            // If we have an editor open, clean it up
-            if (this.editor) {
-                this.editor.destroy();
-                this.editor = null;
-            }
-            
-            if (game.user.isGM) {
-                // Save the selected page globally for all users if GM
-                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
-            } else {
-                // For players, just update locally
-                game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
-            }
-            
-            // Re-render the notes panel
-            this.render(this.element);
         });
 
         // Toggle persistent journal (GM only)
@@ -335,6 +313,36 @@ export class NotesPanel {
             this.render(this.element);
         });
 
+        // Page selection dropdown
+        html.find('.page-select').change(async (event) => {
+            const pageId = event.currentTarget.value;
+            
+            if (pageId === 'browse-pages') {
+                // Show page picker dialog - GM only option
+                if (game.user.isGM) {
+                    this._showPagePicker(journal);
+                }
+                return;
+            }
+            
+            // If we have an editor open, clean it up
+            if (this.editor) {
+                this.editor.destroy();
+                this.editor = null;
+            }
+            
+            if (game.user.isGM) {
+                // Save the selected page globally for all users if GM
+                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
+            } else {
+                // For players, just update locally
+                game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
+            }
+            
+            // Re-render the notes panel
+            this.render(this.element);
+        });
+
         // If we have a journal and a page, render the page content
         if (journal && page) {
             this._renderJournalContent(html, journal, page);
@@ -350,58 +358,570 @@ export class NotesPanel {
             OWNER: 3
         };
         
-        const contentContainer = html.find('.journal-content');
-        if (!contentContainer.length) return;
-        
-        if (!page) return;
-        
-        // Verify permission to view this page
-        const canViewPage = game.user.isGM || this._userCanAccessPage(page, game.user, PERMISSION_LEVELS);
-        if (!canViewPage) {
-            contentContainer.html(`<div class="permission-error"><i class="fas fa-lock"></i><p>You don't have permission to view this page.</p></div>`);
-            return;
-        }
-        
-        // Check if user can edit this page
-        const canEditPage = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-        
-        // Create the content based on page type
-        let content = '';
-        
-        if (page.type === 'text') {
-            // For text pages, use the content directly via our helper
-            content = this._getPageContent(page);
+        // Set a global error handler for any unexpected errors in this method
+        try {
+            const contentContainer = html.find('.journal-content');
+            if (!contentContainer.length) {
+                console.error("SQUIRE | Journal content container not found");
+                return;
+            }
             
-            // Log to help debug content issues
-            console.log("SQUIRE | Rendering journal content:", {
+            if (!page) {
+                console.warn("SQUIRE | No page provided to render");
+                return;
+            }
+            
+            // Verify the page is a valid object
+            if (typeof page !== 'object' || page === null) {
+                console.error("SQUIRE | Invalid page object:", page);
+                contentContainer.html(`
+                    <div class="render-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Invalid journal page data.</p>
+                        <p>Click the "Open Journal" button to view it in the full journal viewer.</p>
+                    </div>
+                `);
+                return;
+            }
+            
+            // Verify permission to view this page
+            const canViewPage = game.user.isGM || this._userCanAccessPage(page, game.user, PERMISSION_LEVELS);
+            if (!canViewPage) {
+                contentContainer.html(`<div class="permission-error"><i class="fas fa-lock"></i><p>You don't have permission to view this page.</p></div>`);
+                return;
+            }
+            
+            // Check if user can edit this page
+            const canEditPage = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+            
+            // Clear the container and prepare for rendering
+            contentContainer.empty();
+            
+            console.log("SQUIRE | Rendering journal page:", {
+                journalId: journal.id,
+                journalName: journal.name,
                 pageId: page.id,
                 pageName: page.name,
-                contentLength: content.length,
-                firstChars: content.substring(0, 50)
+                pageType: page.type
             });
             
-            // If content is empty but the page exists, show a helpful message
-            if (!content || content.trim() === '') {
-                content = `<p class="empty-content">${canEditPage ? 
-                    'This page is empty. Click the edit button to add content.' : 
-                    'This page is empty.'}</p>`;
+            // Track if rendering was successful with any approach
+            let renderSuccessful = false;
+            
+            // APPROACH 1: PREFERRED - Use renderContent() (V12/V13 approach)
+            try {
+                if (typeof page.renderContent === 'function') {
+                    console.log("SQUIRE | Using page.renderContent() to render journal content");
+                    
+                    // Debug: Log the full page object for detailed inspection
+                    try {
+                        const pageObj = page.toObject ? page.toObject() : page;
+                        console.log("SQUIRE | Full page object:", pageObj);
+                    } catch (e) {
+                        console.log("SQUIRE | Full page simple:", page);
+                    }
+                    
+                    // Validate page type first - renderContent works best with text/markdown
+                    if (!['text', 'markdown'].includes(page.type)) {
+                        console.warn(`SQUIRE | Unsupported page type for renderContent: ${page.type}`);
+                        // Don't return - let it try but prepare for failure
+                    }
+                    
+                    // Log what's actually inside page.text
+                    console.log("SQUIRE | Page.text raw value:", page.text);
+                    console.log("SQUIRE | Page.text.content:", page.text?.content);
+                    
+                    try {
+                        // Try the standard renderContent approach
+                        let renderedContent = await page.renderContent();
+                        
+                        // Check if content is valid
+                        if (!renderedContent || (typeof renderedContent === 'string' && renderedContent.trim() === '')) {
+                            console.warn("SQUIRE | renderContent returned empty content, trying fallback with manual enrichment");
+                            
+                            // Fallback with Manual Enrichment as suggested
+                            let content = page.text?.content ?? page.text ?? '';
+                            if (content && typeof content === 'string') {
+                                renderedContent = await TextEditor.enrichHTML(content, {
+                                    secrets: game.user.isGM,
+                                    documents: true,
+                                    links: true,
+                                    rolls: true
+                                });
+                                console.log("SQUIRE | Created manually enriched content", renderedContent.substring(0, 100));
+                            } else {
+                                throw new Error("Empty or invalid content");
+                            }
+                        }
+                        
+                        console.log("SQUIRE | Rendered content:", { 
+                            contentType: typeof renderedContent,
+                            length: typeof renderedContent === 'string' ? renderedContent.length : 'not a string',
+                            sample: typeof renderedContent === 'string' ? renderedContent.substring(0, 100) : 'not a string'
+                        });
+                        
+                        // Apply Foundry-like styling to the content
+                        const formattedContent = this._applyFoundryJournalStyling(contentContainer, renderedContent);
+                        
+                        // Add classes to match Foundry's styling
+                        contentContainer.addClass("journal-entry-page journal-page-content prose");
+                        
+                        // Forcibly set styles before content insertion
+                        contentContainer.css({
+                            'display': 'block',
+                            'visibility': 'visible',
+                            'background-color': '#f0f0e0',
+                            'color': '#000',
+                            'min-height': '200px',
+                            'padding': '10px',
+                            'border-radius': '5px'
+                        });
+                        
+                        // Insert the content
+                        contentContainer.html(formattedContent || renderedContent);
+                        
+                        // Activate listeners to enable rollables, links, etc.
+                        if (typeof JournalTextPageSheet !== 'undefined' && JournalTextPageSheet.activateListeners) {
+                            JournalTextPageSheet.activateListeners(contentContainer[0]);
+                        }
+                        
+                        // Add edit button if user has permission
+                        this._createJournalEditButton(contentContainer, journal, page);
+                        
+                        // Check if content was actually rendered
+                        const contentText = contentContainer.text();
+                        const hasContent = contentContainer.children().length > 0 || contentText.trim().length > 0;
+                        
+                        console.log("SQUIRE | renderContent content check:", {
+                            hasChildren: contentContainer.children().length > 0,
+                            textLength: contentText.length,
+                            hasContent: hasContent
+                        });
+                        
+                        // If no content was rendered, add placeholder text
+                        if (!hasContent) {
+                            console.warn("SQUIRE | renderContent didn't produce visible content");
+                            contentContainer.html(`
+                                <div class="empty-page-content">
+                                    <p>${canEditPage ? 
+                                        'This page appears to be empty. You can edit it using the Edit button.' : 
+                                        'This page appears to be empty.'}</p>
+                                </div>
+                            `);
+                            
+                            // Still add edit button for empty content
+                            this._createJournalEditButton(contentContainer, journal, page);
+                        }
+                        
+                        console.log("SQUIRE | Successfully rendered journal content with renderContent method");
+                        renderSuccessful = true;
+                        
+                        // Make all links open in a new tab
+                        contentContainer.find('a').attr('target', '_blank');
+                        return;
+                    } catch (innerError) {
+                        console.error("SQUIRE | Error rendering content:", innerError);
+                        throw innerError; // Rethrow to outer catch block
+                    }
+                }
+            } catch (renderContentError) {
+                console.error("SQUIRE | Error using renderContent method:", renderContentError);
+                // Continue to fallback methods
             }
-        } else if (page.type === 'image') {
-            // For image pages, create an img tag
-            content = `<img src="${page.src}" alt="${page.name}" style="max-width: 100%;">`;
-        } else if (page.type === 'pdf') {
-            // For PDF pages, create a link
-            content = `<p>This journal contains a PDF that cannot be displayed directly. Click the "Open Journal" button to view it.</p>`;
-        } else {
-            // For other types, show a placeholder
-            content = `<p>This journal uses a special page type. Click the "Open Journal" button to view it properly.</p>`;
+            
+            // APPROACH 2: FALLBACK - Try to use the new UI extraction method
+            try {
+                if (!renderSuccessful) {
+                    console.log("SQUIRE | Attempting to extract content from journal UI");
+                    
+                    // Extract content from journal UI
+                    const uiContent = await this._getContentFromJournalUI(journal, page);
+                    
+                    if (uiContent) {
+                        console.log("SQUIRE | Successfully extracted content from journal UI");
+                        
+                        // Add classes for consistent styling
+                        contentContainer.addClass("journal-entry-page journal-page-content");
+                        
+                        // Insert the content
+                        contentContainer.html(uiContent);
+                        
+                        // Apply styling
+                        this._adjustJournalContentStyles(contentContainer);
+                        
+                        renderSuccessful = true;
+                        console.log("SQUIRE | Successfully rendered content from journal UI");
+                        
+                        // Make all links open in a new tab
+                        contentContainer.find('a').attr('target', '_blank');
+                        return;
+                    } else {
+                        console.warn("SQUIRE | Failed to extract content from journal UI");
+                    }
+                }
+            } catch (uiError) {
+                console.warn("SQUIRE | Error using UI extraction method:", uiError);
+                // Continue to fallback methods
+            }
+            
+            // APPROACH 3: FALLBACK - Try to use the native render method
+            try {
+                if (!renderSuccessful && typeof page.render === 'function') {
+                    console.log("SQUIRE | Attempting to use page.render() method");
+                    
+                    // Wrap in a promise with a timeout to prevent hanging
+                    const renderPromise = new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            reject(new Error("Render timeout"));
+                        }, 3000);
+                        
+                        try {
+                            // Check if render returns a Promise - if not, handle it accordingly
+                            const renderResult = page.render(contentContainer[0], { editable: false });
+                            
+                            if (renderResult && typeof renderResult.then === 'function') {
+                                renderResult
+                                    .then(() => {
+                                        clearTimeout(timeout);
+                                        resolve(true);
+                                    })
+                                    .catch(err => {
+                                        clearTimeout(timeout);
+                                        reject(err);
+                                    });
+                            } else {
+                                // If render doesn't return a Promise, resolve immediately
+                                clearTimeout(timeout);
+                                resolve(true);
+                            }
+                        } catch (immediateError) {
+                            clearTimeout(timeout);
+                            reject(immediateError);
+                        }
+                    });
+                    
+                    await renderPromise;
+                    
+                    // If we get here, render was successful
+                    this._adjustJournalContentStyles(contentContainer);
+                    
+                    // Check if content was actually rendered
+                    const contentText = contentContainer.text();
+                    const hasContent = contentContainer.children().length > 0 || contentText.trim().length > 0;
+                    
+                    console.log("SQUIRE | Native render content check:", {
+                        hasChildren: contentContainer.children().length > 0,
+                        textLength: contentText.length,
+                        hasContent: hasContent
+                    });
+                    
+                    // If no content was rendered, add placeholder text
+                    if (!hasContent) {
+                        console.warn("SQUIRE | Native render didn't produce visible content");
+                        contentContainer.html(`
+                            <div class="empty-page-content">
+                                <p>${canEditPage ? 
+                                    'This page appears to be empty. You can edit it in the journal.' : 
+                                    'This page appears to be empty.'}</p>
+                            </div>
+                        `);
+                    }
+                    
+                    renderSuccessful = true;
+                    console.log("SQUIRE | Successfully rendered journal page using Foundry's native renderer");
+                    
+                    // Make all links open in a new tab
+                    contentContainer.find('a').attr('target', '_blank');
+                    return;
+                }
+            } catch (error) {
+                console.warn("SQUIRE | Native render method failed:", error);
+                // Continue to fallback methods
+            }
+            
+            // APPROACH 4: LAST RESORT - Direct content rendering
+            if (!renderSuccessful) {
+                try {
+                    console.log("SQUIRE | Falling back to direct content rendering");
+                    
+                    // First, handle specific page types differently
+                    if (page.type === 'image') {
+                        contentContainer.html(`
+                            <div class="journal-image-container" style="text-align: center; padding: 10px; background: white; border-radius: 5px;">
+                                <img src="${page.src}" alt="${page.name}" style="max-width: 100%; max-height: 500px;">
+                                ${page.title ? `<h3>${page.title}</h3>` : ''}
+                                ${page.caption ? `<div class="image-caption">${page.caption}</div>` : ''}
+                            </div>
+                        `);
+                        renderSuccessful = true;
+                        this._adjustJournalContentStyles(contentContainer);
+                        return;
+                    }
+                    
+                    if (page.type === 'pdf') {
+                        contentContainer.html(`
+                            <div class="pdf-container" style="text-align: center; padding: 20px; background: white; border-radius: 5px;">
+                                <p>This journal contains a PDF file that cannot be displayed directly in the panel.</p>
+                                <button class="open-journal-button" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                                    Open in Journal Viewer
+                                </button>
+                            </div>
+                        `);
+                        
+                        // Add click handler to open journal button
+                        contentContainer.find('.open-journal-button').click(async (event) => {
+                            event.preventDefault();
+                            if (journal) {
+                                journal.sheet.render(true, {pageId: page.id});
+                            }
+                        });
+                        
+                        renderSuccessful = true;
+                        this._adjustJournalContentStyles(contentContainer);
+                        return;
+                    }
+                    
+                    if (!['text', 'markdown'].includes(page.type)) {
+                        contentContainer.html(`
+                            <div class="unsupported-type" style="text-align: center; padding: 20px; background: white; border-radius: 5px;">
+                                <p>This journal page uses a special type (${page.type}) that cannot be displayed directly in the panel.</p>
+                                <button class="open-journal-button" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                                    Open in Journal Viewer
+                                </button>
+                            </div>
+                        `);
+                        
+                        // Add click handler to open journal button
+                        contentContainer.find('.open-journal-button').click(async (event) => {
+                            event.preventDefault();
+                            if (journal) {
+                                journal.sheet.render(true, {pageId: page.id});
+                            }
+                        });
+                        
+                        renderSuccessful = true;
+                        this._adjustJournalContentStyles(contentContainer);
+                        return;
+                    }
+                    
+                    // For text-based pages, try to get content
+                    let content = '';
+                    
+                    // Debug: Log the page structure to help diagnose
+                    try {
+                        const pageObj = page.toObject ? page.toObject() : page;
+                        console.log("SQUIRE | Direct render - page details:", {
+                            type: page.type,
+                            id: page.id,
+                            name: page.name,
+                            textType: page.text ? typeof page.text : 'none',
+                            textContentType: page.text?.content ? typeof page.text.content : 'none',
+                            text: page.text,
+                            textContent: page.text?.content,
+                            fullObject: pageObj
+                        });
+                    } catch (e) {
+                        console.error("SQUIRE | Error logging page details:", e);
+                    }
+                    
+                    // Try different approaches to get the content
+                    if (page.text?.content) {
+                        // Most common format in v12/v13
+                        content = page.text.content;
+                        console.log("SQUIRE | Using page.text.content");
+                    } else if (typeof page.text === 'string') {
+                        // Older format or simple text
+                        content = page.text;
+                        console.log("SQUIRE | Using page.text as string");
+                    } else if (page.content) {
+                        // Alternative location
+                        content = typeof page.content === 'string' ? page.content : JSON.stringify(page.content);
+                        console.log("SQUIRE | Using page.content");
+                    } else {
+                        // Last resort
+                        const directContent = await this._getPageContent(page);
+                        if (directContent) {
+                            content = directContent;
+                            console.log("SQUIRE | Using _getPageContent result");
+                        }
+                    }
+                    
+                    // If we have content, enrich it
+                    if (content && typeof content === 'string') {
+                        console.log("SQUIRE | Raw content sample:", content.substring(0, 100));
+                        
+                        try {
+                            content = await TextEditor.enrichHTML(content, {
+                                secrets: game.user.isGM,
+                                documents: true,
+                                links: true,
+                                rolls: true
+                            });
+                            console.log("SQUIRE | Enriched content sample:", content.substring(0, 100));
+                        } catch (enrichError) {
+                            console.error("SQUIRE | Error enriching content:", enrichError);
+                        }
+                    }
+                    
+                    // If we still don't have content, show empty message
+                    if (!content || (typeof content === 'string' && content.trim() === '')) {
+                        content = `
+                            <div class="empty-page-content" style="text-align: center; padding: 40px 20px; color: #666; font-style: italic; background: white; border-radius: 5px;">
+                                <p>${canEditPage ? 
+                                    'This page appears to be empty. You can edit it in the journal.' : 
+                                    'This page appears to be empty.'}</p>
+                                <p style="margin-top: 10px">
+                                    <button class="open-journal-button" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                                        Open Full Journal
+                                    </button>
+                                </p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Add classes for consistent styling
+                    contentContainer.addClass("journal-entry-page journal-page-content");
+                    
+                    // Apply direct styling before adding content
+                    contentContainer.css({
+                        'display': 'block',
+                        'visibility': 'visible',
+                        'background-color': 'rgba(255, 255, 255, 0.9)',
+                        'color': '#000',
+                        'min-height': '200px',
+                        'height': 'auto',
+                        'max-height': 'none',
+                        'padding': '10px',
+                        'border-radius': '5px',
+                        'overflow-y': 'auto',
+                        'word-wrap': 'break-word'
+                    });
+                    
+                    // Insert the content
+                    contentContainer.html(content);
+                    
+                    // Add click handler to open journal button if there is one
+                    contentContainer.find('.open-journal-button').click(async (event) => {
+                        event.preventDefault();
+                        if (journal) {
+                            if (page) {
+                                journal.sheet.render(true, {pageId: page.id});
+                            } else {
+                                journal.sheet.render(true);
+                            }
+                        }
+                    });
+                    
+                    renderSuccessful = true;
+                    
+                    // Apply additional styling
+                    this._adjustJournalContentStyles(contentContainer);
+                    
+                    // Make all links open in a new tab
+                    contentContainer.find('a:not(.open-journal-button)').attr('target', '_blank');
+                } catch (textError) {
+                    console.error("SQUIRE | Text fallback rendering failed:", textError);
+                }
+            }
+        } catch (globalError) {
+            console.error("SQUIRE | Catastrophic error in _renderJournalContent:", globalError);
+            try {
+                html.find('.journal-content').html(`
+                    <div class="render-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>An unexpected error occurred while rendering the journal.</p>
+                        <p>Error: ${globalError.message || "Unknown error"}</p>
+                        <p>Click the "Open Journal" button to view it in the full journal viewer.</p>
+                    </div>
+                `);
+                
+                // Add click handler to open journal directly
+                html.find('.open-journal-button').click(async (event) => {
+                    event.preventDefault();
+                    if (journal) {
+                        if (page) {
+                            journal.sheet.render(true, {pageId: page.id});
+                        } else {
+                            journal.sheet.render(true);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("SQUIRE | Failed to display error message:", e);
+            }
         }
+    }
+
+    /**
+     * Adjust styles of the journal content to fit in our panel
+     * @param {jQuery} container - The journal content container
+     * @private
+     */
+    _adjustJournalContentStyles(container) {
+        // Log container properties
+        console.log("SQUIRE | Adjusting journal content styles:", {
+            containerWidth: container.width(),
+            containerHeight: container.height(),
+            hasChildren: container.children().length > 0,
+            childrenCount: container.children().length,
+            childrenTypes: Array.from(container.children()).map(el => el.nodeName).join(', '),
+            containerClasses: container.attr('class')
+        });
         
-        // Insert the content
-        contentContainer.html(content);
+        // Add journal-specific classes if they don't exist
+        container.addClass("journal-entry-page journal-page-content");
         
-        // Make links open in a new tab
-        contentContainer.find('a').attr('target', '_blank');
+        // Force display block and proper styling
+        container.css({
+            'display': 'block',
+            'visibility': 'visible',
+            'background-color': 'rgba(255, 255, 255, 0.9)',
+            'color': '#000',
+            'min-height': '200px',
+            'height': 'auto',
+            'max-height': 'none',
+            'padding': '10px',
+            'border-radius': '5px',
+            'overflow-y': 'auto',
+            'word-wrap': 'break-word'
+        });
+        
+        // Adjust journal page content element if it exists
+        container.find('.journal-page-content').css({
+            'height': 'auto',
+            'max-height': 'none',
+            'padding': '0',
+            'border': 'none',
+            'display': 'block',
+            'visibility': 'visible'
+        });
+        
+        // Adjust image sizes
+        container.find('img').css({
+            'max-width': '100%',
+            'height': 'auto',
+            'display': 'block',
+            'margin': '10px auto'
+        });
+        
+        // Make sure links are visible
+        container.find('a').css({
+            'color': '#0066cc',
+            'text-decoration': 'underline'
+        });
+        
+        // Make sure text elements are visible
+        container.find('p, h1, h2, h3, h4, h5, h6, span, div').css({
+            'color': '#000',
+            'visibility': 'visible',
+            'display': 'block'
+        });
+        
+        // Make the content scrollable
+        container.css({
+            'overflow-y': 'auto',
+            'max-height': '600px'
+        });
     }
 
     _showJournalPicker() {
@@ -615,34 +1135,578 @@ export class NotesPanel {
     }
 
     /**
-     * Gets the text content from a journal page safely
+     * Gets the text content from a journal page safely, handling all Promise scenarios
      * @param {JournalEntryPage} page - The journal page
      * @returns {string} The content of the page
      * @private
      */
-    _getPageContent(page) {
+    async _getPageContent(page) {
         if (!page) return '';
         
         try {
-            // Handle different ways content might be stored depending on Foundry version
-            if (page.type === 'text') {
-                // Try different possible locations for the content
-                if (page.text && typeof page.text.content === 'string') {
-                    return page.text.content;
-                } else if (page.text && typeof page.text === 'string') {
-                    return page.text;
-                } else if (page.content && typeof page.content === 'string') {
-                    return page.content;
-                } else if (typeof page.text === 'object' && page.text !== null) {
-                    // Maybe it's stored in a different format
-                    return JSON.stringify(page.text) || '';
+            // Handle if the entire page is a Promise
+            if (page && typeof page.then === 'function') {
+                console.log("SQUIRE | Page is a Promise, resolving");
+                try {
+                    page = await page;
+                } catch (pagePromiseError) {
+                    console.error("SQUIRE | Failed to resolve page promise:", pagePromiseError);
+                    return '';
                 }
             }
-            // For non-text types or if we couldn't find the content
+            
+            // Log the page structure to help diagnose
+            console.log("SQUIRE | Page structure:", {
+                type: page.type,
+                hasText: !!page.text,
+                textType: page.text ? typeof page.text : 'none',
+                hasContent: !!page.content,
+                contentType: page.content ? typeof page.content : 'none',
+                isTextPromise: page.text && typeof page.text.then === 'function',
+                isContentPromise: page.content && typeof page.content.then === 'function'
+            });
+            
+            // Handle different ways content might be stored depending on Foundry version
+            if (page.type === 'text') {
+                let content = null;
+                
+                // CASE 1: Check page.text.content (typical in v13)
+                if (page.text && typeof page.text === 'object' && page.text !== null) {
+                    // Check if text.content is available
+                    if (typeof page.text.content !== 'undefined') {
+                        // Handle Promise
+                        if (typeof page.text.content.then === 'function') {
+                            console.log("SQUIRE | page.text.content is a Promise, resolving");
+                            try {
+                                content = await page.text.content;
+                            } catch (contentPromiseError) {
+                                console.error("SQUIRE | Failed to resolve content promise:", contentPromiseError);
+                            }
+                        } else {
+                            content = page.text.content;
+                        }
+                    }
+                    // If content is null after text.content check, look for other properties
+                    if (content === null && typeof page.text.value !== 'undefined') {
+                        content = page.text.value;
+                    }
+                }
+                
+                // CASE 2: Check page.text as string (typical in v11-v12)
+                if (content === null && page.text) {
+                    if (typeof page.text === 'string') {
+                        content = page.text;
+                    } 
+                    // Handle if page.text is a Promise
+                    else if (typeof page.text.then === 'function') {
+                        console.log("SQUIRE | page.text is a Promise, resolving");
+                        try {
+                            content = await page.text;
+                        } catch (textPromiseError) {
+                            console.error("SQUIRE | Failed to resolve text promise:", textPromiseError);
+                        }
+                    }
+                }
+                
+                // CASE 3: Check page.content (sometimes used)
+                if (content === null && page.content) {
+                    if (typeof page.content === 'string') {
+                        content = page.content;
+                    }
+                    // Handle if page.content is a Promise
+                    else if (typeof page.content.then === 'function') {
+                        console.log("SQUIRE | page.content is a Promise, resolving");
+                        try {
+                            content = await page.content;
+                        } catch (contentPromiseError) {
+                            console.error("SQUIRE | Failed to resolve content promise:", contentPromiseError);
+                        }
+                    }
+                }
+                
+                // CASE 4: Check page.document structure (sometimes in v13)
+                if (content === null && page.document) {
+                    if (typeof page.document.text === 'string') {
+                        content = page.document.text;
+                    }
+                    else if (page.document.text && page.document.text.content) {
+                        if (typeof page.document.text.content.then === 'function') {
+                            console.log("SQUIRE | document.text.content is a Promise, resolving");
+                            try {
+                                content = await page.document.text.content;
+                            } catch (docContentPromiseError) {
+                                console.error("SQUIRE | Failed to resolve document content promise:", docContentPromiseError);
+                            }
+                        } else {
+                            content = page.document.text.content;
+                        }
+                    }
+                }
+                
+                // CASE 5: Check page.data structure (sometimes in v10-v11)
+                if (content === null && page.data) {
+                    if (page.data.content) {
+                        content = page.data.content;
+                    }
+                    else if (page.data.text) {
+                        content = page.data.text;
+                    }
+                }
+                
+                // Final processing - ensure content is a string
+                if (content !== null) {
+                    // If content is a Promise (after all our attempts)
+                    if (content && typeof content.then === 'function') {
+                        try {
+                            console.log("SQUIRE | Final content is still a Promise, resolving");
+                            content = await content;
+                        } catch (finalPromiseError) {
+                            console.error("SQUIRE | Failed to resolve final content promise:", finalPromiseError);
+                            content = '';
+                        }
+                    }
+                    
+                    // Convert content to string
+                    if (content === null || content === undefined) {
+                        content = '';
+                    } else if (typeof content !== 'string') {
+                        try {
+                            content = String(content);
+                        } catch (stringError) {
+                            console.error("SQUIRE | Failed to convert content to string:", stringError);
+                            content = '';
+                        }
+                    }
+                    
+                    return content;
+                }
+                
+                // If we've exhausted all options and found nothing
+                return '';
+            }
+            
+            // For non-text types
             return '';
         } catch (error) {
             console.error("SQUIRE | Error getting page content:", error);
             return '';
+        }
+    }
+
+    /**
+     * Try to get content directly from an open journal sheet
+     * @param {Journal} journal - The journal document
+     * @param {JournalEntryPage} page - The journal page
+     * @returns {string|null} The HTML content or null if not found
+     * @private
+     */
+    _getContentFromJournalUI(journal, page) {
+        if (!journal || !page) return null;
+        
+        try {
+            // Log page type for debugging
+            console.log(`SQUIRE | Getting content from UI for page type: ${page.type}`);
+            
+            // For non-text page types, create appropriate representation
+            if (page.type === 'image') {
+                return `<div class="journal-image-container" style="text-align: center;">
+                    <img src="${page.src}" alt="${page.name}" style="max-width: 100%; max-height: 500px;">
+                    ${page.title ? `<h3>${page.title}</h3>` : ''}
+                    ${page.caption ? `<div class="image-caption">${page.caption}</div>` : ''}
+                </div>`;
+            }
+            
+            if (page.type === 'pdf') {
+                return `<div class="pdf-container" style="text-align: center; padding: 20px;">
+                    <p>This journal contains a PDF file that cannot be displayed directly in the panel.</p>
+                    <button class="open-journal-button" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                        Open in Journal Viewer
+                    </button>
+                </div>`;
+            }
+            
+            if (!['text', 'markdown'].includes(page.type)) {
+                return `<div class="unsupported-type" style="text-align: center; padding: 20px;">
+                    <p>This journal page uses a special type (${page.type}) that cannot be displayed directly in the panel.</p>
+                    <button class="open-journal-button" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
+                        Open in Journal Viewer
+                    </button>
+                </div>`;
+            }
+            
+            // First check if the journal sheet is open
+            if (!journal.sheet || !journal.sheet.element) {
+                // If not, we need to temporarily render it to get content
+                console.log("SQUIRE | Journal sheet not open, temporarily rendering it");
+                
+                // Create a temporary journal sheet to extract content
+                const tempSheet = new JournalSheet(journal);
+                tempSheet.render(true, { pageId: page.id });
+                
+                // Delay slightly to let the rendering complete
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        try {
+                            // Try to extract content from the rendered journal
+                            const pageContent = tempSheet.element.find(`.journal-page-content[data-page-id="${page.id}"]`);
+                            let content = pageContent.html();
+                            
+                            // If we can't get content from the sheet, try a direct enrichment
+                            if (!content) {
+                                console.log("SQUIRE | No content from temp sheet, trying direct enrichment");
+                                
+                                // Get the raw text content
+                                let rawContent = page.text?.content ?? page.text ?? '';
+                                if (rawContent && typeof rawContent === 'string') {
+                                    // Enrich the content
+                                    TextEditor.enrichHTML(rawContent, {
+                                        secrets: game.user.isGM,
+                                        documents: true,
+                                        links: true,
+                                        rolls: true
+                                    }).then(enriched => {
+                                        content = enriched;
+                                        try { tempSheet.close(); } catch (e) {}
+                                        resolve(content);
+                                    });
+                                    return; // Don't resolve yet, wait for enrichment
+                                }
+                            }
+                            
+                            console.log("SQUIRE | Extracted content from temporary journal:", {
+                                found: !!content,
+                                length: content ? content.length : 0,
+                                sample: content ? content.substring(0, 100) : 'no content'
+                            });
+                            
+                            // Close the temporary sheet
+                            tempSheet.close();
+                            
+                            // Return the content
+                            resolve(content || null);
+                        } catch (extractError) {
+                            console.error("SQUIRE | Error extracting content from temporary journal:", extractError);
+                            
+                            // Make sure to close the sheet even if there's an error
+                            try { tempSheet.close(); } catch (e) {}
+                            
+                            resolve(null);
+                        }
+                    }, 100);
+                });
+            } else {
+                // If the journal is already open, extract directly
+                console.log("SQUIRE | Journal sheet is open, extracting content directly");
+                const pageContent = journal.sheet.element.find(`.journal-page-content[data-page-id="${page.id}"]`);
+                const content = pageContent.html();
+                
+                // If we can't get content from the sheet, try a direct enrichment
+                if (!content && ['text', 'markdown'].includes(page.type)) {
+                    console.log("SQUIRE | No content from sheet, trying direct enrichment");
+                    
+                    // Get the raw text content
+                    let rawContent = page.text?.content ?? page.text ?? '';
+                    if (rawContent && typeof rawContent === 'string') {
+                        // Return a promise to match the async pattern
+                        return TextEditor.enrichHTML(rawContent, {
+                            secrets: game.user.isGM,
+                            documents: true,
+                            links: true,
+                            rolls: true
+                        });
+                    }
+                }
+                
+                console.log("SQUIRE | Extracted content from open journal:", {
+                    found: !!content,
+                    length: content ? content.length : 0,
+                    sample: content ? content.substring(0, 100) : 'no content'
+                });
+                
+                return content || null;
+            }
+        } catch (error) {
+            console.error("SQUIRE | Error getting content from journal UI:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Function to style the content to match Foundry's native journal
+     * @param {jQuery} contentContainer - The content container
+     * @param {string} html - The HTML content
+     * @private
+     */
+    _applyFoundryJournalStyling(contentContainer, html) {
+        // Skip if content is empty
+        if (!html) return;
+        
+        try {
+            // Create a temporary div to parse the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Add header section if missing
+            const firstHeader = tempDiv.querySelector('h1, h2, h3');
+            
+            // If the first element is not a header, wrap all content in a section
+            if (!firstHeader || firstHeader !== tempDiv.firstElementChild) {
+                // Create a section to wrap the existing content
+                const section = document.createElement('section');
+                
+                // Move all content to the section
+                while (tempDiv.firstChild) {
+                    section.appendChild(tempDiv.firstChild);
+                }
+                
+                // Add the section back to the temp div
+                tempDiv.appendChild(section);
+            }
+            
+            // Style headings and add Foundry-like structure
+            const headings = tempDiv.querySelectorAll('h1, h2, h3');
+            headings.forEach(heading => {
+                // If heading doesn't have a section after it, wrap all following elements until the next heading
+                if (heading.nextElementSibling && heading.nextElementSibling.tagName !== 'SECTION') {
+                    const section = document.createElement('section');
+                    let nextEl = heading.nextElementSibling;
+                    
+                    while (nextEl && !['H1', 'H2', 'H3'].includes(nextEl.tagName)) {
+                        const toMove = nextEl;
+                        nextEl = nextEl.nextElementSibling;
+                        section.appendChild(toMove);
+                    }
+                    
+                    // Insert the section after the heading
+                    if (heading.nextSibling) {
+                        heading.parentNode.insertBefore(section, heading.nextSibling);
+                    } else {
+                        heading.parentNode.appendChild(section);
+                    }
+                }
+            });
+            
+            // Return the formatted HTML
+            return tempDiv.innerHTML;
+        } catch (e) {
+            console.error("SQUIRE | Error applying Foundry styling:", e);
+            return html;
+        }
+    }
+
+    /**
+     * Create an edit button and editor for journal content
+     * @param {jQuery} contentContainer - The journal content container
+     * @param {JournalEntry} journal - The journal document
+     * @param {JournalEntryPage} page - The journal page
+     * @private
+     */
+    _createJournalEditButton(contentContainer, journal, page) {
+        // Only add edit functionality for users with permission
+        if (!page || !this._canUserEditPage(page)) return;
+        
+        // Create a relative container for the edit button
+        contentContainer.css('position', 'relative');
+        
+        // Add edit button
+        const editButton = $(`
+            <div class="journal-content-edit-button">
+                <i class="fas fa-edit"></i> Edit
+            </div>
+        `);
+        
+        contentContainer.append(editButton);
+        
+        // Create editor container (hidden by default)
+        const editorContainer = $(`
+            <div class="journal-content-editor">
+                <div class="journal-content-editor-toolbar">
+                    <button data-command="bold"><i class="fas fa-bold"></i></button>
+                    <button data-command="italic"><i class="fas fa-italic"></i></button>
+                    <button data-command="h1">H1</button>
+                    <button data-command="h2">H2</button>
+                    <button data-command="h3">H3</button>
+                    <button data-command="ul"><i class="fas fa-list-ul"></i></button>
+                    <button data-command="link"><i class="fas fa-link"></i></button>
+                </div>
+                <textarea class="journal-content-editor-textarea" style="width: 100%; min-height: 250px;"></textarea>
+                <div class="journal-content-edit-controls">
+                    <button class="cancel-edit-button">Cancel</button>
+                    <button class="save-edit-button">Save Changes</button>
+                </div>
+            </div>
+        `);
+        
+        contentContainer.after(editorContainer);
+        
+        // Store the original content
+        const originalContent = contentContainer.html();
+        let rawContent = '';
+        
+        // Get raw content for editing
+        if (page.text?.content) {
+            rawContent = page.text.content;
+        } else if (typeof page.text === 'string') {
+            rawContent = page.text;
+        }
+        
+        // Set the editor content
+        editorContainer.find('.journal-content-editor-textarea').val(rawContent);
+        
+        // Add click handler for edit button
+        editButton.on('click', () => {
+            // Hide content, show editor
+            contentContainer.hide();
+            editorContainer.addClass('active');
+            
+            // Set focus on editor
+            editorContainer.find('.journal-content-editor-textarea').focus();
+        });
+        
+        // Add click handler for toolbar buttons
+        editorContainer.find('.journal-content-editor-toolbar button').on('click', (event) => {
+            const command = $(event.currentTarget).data('command');
+            const textarea = editorContainer.find('.journal-content-editor-textarea');
+            const startPos = textarea[0].selectionStart;
+            const endPos = textarea[0].selectionEnd;
+            const selectedText = textarea.val().substring(startPos, endPos);
+            
+            let insertText = '';
+            
+            switch (command) {
+                case 'bold':
+                    insertText = `<strong>${selectedText}</strong>`;
+                    break;
+                case 'italic':
+                    insertText = `<em>${selectedText}</em>`;
+                    break;
+                case 'h1':
+                    insertText = `<h1>${selectedText}</h1>`;
+                    break;
+                case 'h2':
+                    insertText = `<h2>${selectedText}</h2>`;
+                    break;
+                case 'h3':
+                    insertText = `<h3>${selectedText}</h3>`;
+                    break;
+                case 'ul':
+                    insertText = `<ul>\n<li>${selectedText}</li>\n</ul>`;
+                    break;
+                case 'link':
+                    const url = prompt('Enter URL:', 'https://');
+                    if (url) {
+                        insertText = `<a href="${url}">${selectedText || url}</a>`;
+                    }
+                    break;
+            }
+            
+            if (insertText) {
+                const currentText = textarea.val();
+                const newText = currentText.substring(0, startPos) + insertText + currentText.substring(endPos);
+                textarea.val(newText);
+                
+                // Focus back on textarea
+                textarea.focus();
+            }
+        });
+        
+        // Add click handler for cancel button
+        editorContainer.find('.cancel-edit-button').on('click', () => {
+            // Show content, hide editor
+            contentContainer.show();
+            editorContainer.removeClass('active');
+            
+            // Reset editor content
+            editorContainer.find('.journal-content-editor-textarea').val(rawContent);
+        });
+        
+        // Add click handler for save button
+        editorContainer.find('.save-edit-button').on('click', async () => {
+            // Get the updated content
+            const updatedContent = editorContainer.find('.journal-content-editor-textarea').val();
+            
+            try {
+                // Save the changes to the journal page
+                await this._saveJournalPageContent(page, updatedContent);
+                
+                // Show success message
+                ui.notifications.info(`Journal page "${page.name}" updated successfully.`);
+                
+                // Update the displayed content
+                const enrichedContent = await TextEditor.enrichHTML(updatedContent, {
+                    secrets: game.user.isGM,
+                    documents: true,
+                    links: true,
+                    rolls: true
+                });
+                
+                contentContainer.html(enrichedContent);
+                
+                // Update raw content reference
+                rawContent = updatedContent;
+                
+                // Show content, hide editor
+                contentContainer.show();
+                editorContainer.removeClass('active');
+            } catch (error) {
+                console.error("SQUIRE | Error saving journal content:", error);
+                ui.notifications.error(`Error saving journal content: ${error.message}`);
+            }
+        });
+    }
+
+    /**
+     * Check if the current user can edit a page
+     * @param {JournalEntryPage} page - The journal page
+     * @returns {boolean} Whether the user can edit the page
+     * @private
+     */
+    _canUserEditPage(page) {
+        if (!page) return false;
+        
+        // GM can always edit
+        if (game.user.isGM) return true;
+        
+        // Check page ownership
+        const PERMISSION_LEVELS = {
+            NONE: 0,
+            LIMITED: 1,
+            OBSERVER: 2,
+            OWNER: 3
+        };
+        
+        return page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+    }
+
+    /**
+     * Save journal page content
+     * @param {JournalEntryPage} page - The journal page
+     * @param {string} content - The content to save
+     * @returns {Promise} A promise that resolves when the content is saved
+     * @private
+     */
+    async _saveJournalPageContent(page, content) {
+        if (!page) throw new Error("No page provided");
+        
+        // Different structure in V13 vs V12
+        try {
+            if (page.update) {
+                // Try V13 structure first
+                await page.update({
+                    "text.content": content
+                });
+            } else if (page.parent && page.parent.updateEmbeddedDocuments) {
+                // Try V12 structure
+                await page.parent.updateEmbeddedDocuments("JournalEntryPage", [{
+                    _id: page.id,
+                    text: { content: content }
+                }]);
+            } else {
+                throw new Error("Unable to determine how to update the journal page");
+            }
+        } catch (error) {
+            console.error("SQUIRE | Error updating journal page:", error);
+            throw error;
         }
     }
 } 

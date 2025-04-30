@@ -11,7 +11,7 @@
         {{#if hasJournal}}
         <i class="fas fa-book-open open-journal-button" title="Open Journal"></i>
         {{#if canEditPage}}
-        <i class="fas fa-edit edit-page-button" title="Edit in Journal"></i>
+        <i class="fas fa-edit toggle-edit-mode-button" title="Edit in Journal"></i>
         {{/if}}
         {{/if}}
         {{#if isGM}}
@@ -23,19 +23,6 @@
 </div>
 {{#if hasJournal}}
 <div class="notes-page-selector">
-    {{#if isGM}}
-    <select class="page-select">
-        {{#if page}}
-        <option value="{{page.id}}" selected>{{pageName}}</option>
-        {{/if}}
-        {{#each pages}}
-        {{#unless (eq id ../page.id)}}
-        <option value="{{id}}">{{name}}</option>
-        {{/unless}}
-        {{/each}}
-        <option value="browse-pages">Browse pages...</option>
-    </select>
-    {{else}}
     {{#if hasPages}}
     <select class="page-select">
         {{#if page}}
@@ -46,10 +33,12 @@
         <option value="{{id}}">{{name}}</option>
         {{/unless}}
         {{/each}}
+        {{#if isGM}}
+        <option value="browse-pages">Browse pages...</option>
+        {{/if}}
     </select>
     {{else}}
     <div class="page-name">{{pageName}}</div>
-    {{/if}}
     {{/if}}
 </div>
 {{/if}}

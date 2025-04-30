@@ -274,15 +274,20 @@
 }
 
 /* Empty content styling */
-.squire-tray .empty-content {
-    color: var(--color-text-dark-inactive);
-    font-style: italic;
+.squire-tray .empty-page-content {
     text-align: center;
-    padding: 20px;
+    padding: 40px 20px;
+    color: #666;
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    border: 1px dashed #ccc;
+    margin: 20px 0;
 }
 
 /* Add styling for permission errors */
-.squire-tray .permission-error {
+.squire-tray .permission-error,
+.squire-tray .render-error {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -295,12 +300,350 @@
     margin: 10px 0;
 }
 
-.squire-tray .permission-error i {
+.squire-tray .permission-error i,
+.squire-tray .render-error i {
     font-size: 2em;
     margin-bottom: 10px;
     color: #770000;
 }
 
-.squire-tray .permission-error p {
+.squire-tray .render-error i {
+    color: #aa7700;
+}
+
+.squire-tray .permission-error p,
+.squire-tray .render-error p {
     margin: 5px 0;
+}
+
+/* Journal edit controls */
+.squire-tray .journal-edit-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.squire-tray .journal-edit-controls button {
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    color: white;
+    cursor: pointer;
+}
+
+.squire-tray .journal-edit-controls .save-changes-button {
+    background: rgba(0, 80, 0, 0.3);
+}
+
+.squire-tray .journal-edit-controls .save-changes-button:hover {
+    background: rgba(0, 100, 0, 0.5);
+}
+
+.squire-tray .journal-edit-controls .cancel-edit-button {
+    background: rgba(80, 0, 0, 0.3);
+}
+
+.squire-tray .journal-edit-controls .cancel-edit-button:hover {
+    background: rgba(100, 0, 0, 0.5);
+}
+
+/* Active editor styles */
+.squire-tray .journal-content.edit-mode .journal-page-content {
+    border: 1px solid rgba(0, 100, 200, 0.5) !important;
+    box-shadow: 0 0 5px rgba(0, 100, 200, 0.3) !important;
+    padding: 5px !important;
+}
+
+/* Additional styling for journal content */
+.squire-tray .journal-content.prose {
+    color: #000;
+    background-color: #f0f0e0;
+    padding: 10px;
+    border-radius: 5px;
+    min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
+    font-family: var(--font-primary, 'Signika', sans-serif);
+    line-height: 1.5;
+    border: 1px solid #c0c0c0;
+}
+
+.squire-tray .journal-content.prose img {
+    max-width: 100%;
+    height: auto;
+}
+
+.squire-tray .journal-content.prose a {
+    color: #4b6cc1;
+    text-decoration: none;
+    border-bottom: 1px dotted #4b6cc1;
+}
+
+.squire-tray .journal-content.prose a:hover {
+    text-decoration: none;
+    border-bottom: 1px solid #4b6cc1;
+    color: #5d7ad9;
+}
+
+/* Ensure the journal content area is scrollable if needed */
+.squire-tray .notes-content {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Optimize the styling for rendered journal content */
+.squire-tray .journal-entry-page,
+.squire-tray .journal-page-content {
+    background: transparent !important;
+    color: #000 !important;
+    height: auto !important;
+    min-height: 100px;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Fix for empty content */
+.squire-tray .journal-content:empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #666;
+    font-style: italic;
+}
+
+.squire-tray .journal-content:empty::after {
+    content: "Loading journal content...";
+}
+
+/* Override some troublesome Foundry styles */
+.squire-tray .journal-entry-page .editor-content {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: #000 !important;
+    display: block !important;
+    visibility: visible !important;
+    min-height: 100px;
+}
+
+/* Ensure text is visible */
+.squire-tray .journal-content p,
+.squire-tray .journal-content h1,
+.squire-tray .journal-content h2,
+.squire-tray .journal-content h3,
+.squire-tray .journal-content h4,
+.squire-tray .journal-content h5,
+.squire-tray .journal-content h6,
+.squire-tray .journal-content div,
+.squire-tray .journal-content span,
+.squire-tray .journal-content li {
+    color: #000 !important;
+    visibility: visible !important;
+}
+
+/* Improve error display */
+.squire-tray .render-error {
+    background-color: #fff0f0;
+    border: 1px solid #ffd0d0;
+    border-radius: 5px;
+    color: #800000;
+    text-align: center;
+    padding: 20px;
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.squire-tray .render-error i {
+    font-size: 2.5em;
+    color: #cc6600;
+    margin-bottom: 10px;
+}
+
+.squire-tray .render-error p {
+    margin: 0;
+    color: #800000 !important;
+}
+
+/* Headers to match Foundry journal styling */
+.squire-tray .journal-content h1 {
+    font-size: 1.8em;
+    color: #4b4a44;
+    border-bottom: 1px solid #c0c0c0;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.2em;
+    font-family: var(--font-primary, 'Signika', sans-serif);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.squire-tray .journal-content h2 {
+    font-size: 1.5em;
+    color: #58180d;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-family: var(--font-primary, 'Signika', sans-serif);
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.squire-tray .journal-content h3 {
+    font-size: 1.2em;
+    color: #4b4a44;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-family: var(--font-primary, 'Signika', sans-serif);
+    font-weight: 700;
+}
+
+/* Lists to match Foundry journal styling */
+.squire-tray .journal-content ul {
+    list-style-type: disc;
+    margin-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.squire-tray .journal-content li {
+    margin-bottom: 0.5em;
+    line-height: 1.4;
+}
+
+/* Block quotes */
+.squire-tray .journal-content blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 1em;
+    margin-left: 0.5em;
+    font-style: italic;
+    color: #666;
+}
+
+/* Tables - match foundry styling */
+.squire-tray .journal-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.squire-tray .journal-content th {
+    background-color: #58180d;
+    color: white;
+    font-weight: bold;
+    text-align: left;
+    padding: 0.5em;
+}
+
+.squire-tray .journal-content td {
+    border: 1px solid #ddd;
+    padding: 0.5em;
+}
+
+.squire-tray .journal-content tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+/* Section styling */
+.squire-tray .journal-content section {
+    margin-bottom: 1.5em;
+}
+
+/* Edit button styling for future edit functionality */
+.squire-tray .journal-content-edit-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #444;
+    transition: all 0.2s ease;
+}
+
+.squire-tray .journal-content-edit-button:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #000;
+}
+
+/* Editor container - hidden by default, to be shown when editing */
+.squire-tray .journal-content-editor {
+    display: none;
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.squire-tray .journal-content-editor.active {
+    display: block;
+}
+
+/* Editor toolbar */
+.squire-tray .journal-content-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+    padding: 5px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.squire-tray .journal-content-editor-toolbar button {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.squire-tray .journal-content-editor-toolbar button:hover {
+    background-color: #eee;
+}
+
+/* Edit mode buttons */
+.squire-tray .journal-content-edit-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.squire-tray .journal-content-edit-controls button {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.squire-tray .save-edit-button {
+    background-color: #58180d;
+    color: white;
+}
+
+.squire-tray .cancel-edit-button {
+    background-color: #f5f5f5;
 } 
