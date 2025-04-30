@@ -240,7 +240,29 @@ export class NotesPanel {
             }
         });
 
-        // Toggle edit mode button
+        // Edit page button (for owners)
+        html.find('.edit-page-button').click(async (event) => {
+            event.preventDefault();
+
+            if (journal && page) {
+                // Check if user can edit this page
+                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+
+                if (canEdit) {
+                    // Open the page for editing with collaborative mode
+                    if (page.sheet) {
+                        page.sheet.render(true, {editable: true, collaborative: true});
+                    } else {
+                        // Fallback to opening journal and navigating to page
+                        journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
+                    }
+                } else {
+                    ui.notifications.warn("You don't have permission to edit this page.");
+                }
+            }
+        });
+        
+        // Toggle edit mode button 
         html.find('.toggle-edit-mode-button').click(async (event) => {
             event.preventDefault();
             
@@ -250,13 +272,15 @@ export class NotesPanel {
                 
                 if (canEdit) {
                     try {
-                        // For simplicity, we'll just open the journal sheet directly
+                        // Open editor with collaborative mode
                         ui.notifications.info("Opening editor...");
                         
                         if (page.sheet) {
-                            await page.sheet.render(true);
+                            // This is the preferred method in Foundry v12+ - opens the page directly
+                            await page.sheet.render(true, {editable: true, collaborative: true});
                         } else if (journal.sheet) {
-                            await journal.sheet.render(true, {pageId: page.id, editable: true});
+                            // Fallback to journal sheet with page specified
+                            await journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
                         } else {
                             ui.notifications.error("Could not open the journal editor.");
                         }
@@ -325,12 +349,6 @@ export class NotesPanel {
                 return;
             }
             
-            // If we have an editor open, clean it up
-            if (this.editor) {
-                this.editor.destroy();
-                this.editor = null;
-            }
-            
             if (game.user.isGM) {
                 // Save the selected page globally for all users if GM
                 await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
@@ -347,6 +365,53 @@ export class NotesPanel {
         if (journal && page) {
             this._renderJournalContent(html, journal, page);
         }
+
+        // Inline edit toggle (for text pages)
+        html.find('.inline-edit-toggle').click(async (event) => {
+            event.preventDefault();
+
+            if (journal && page && page.type === 'text') {
+                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+
+                if (canEdit) {
+                    // Instead of toggling our custom editor, use Foundry's native editor with collaborative mode
+                    if (page.sheet) {
+                        page.sheet.render(true, {editable: true, collaborative: true});
+                    } else {
+                        // Fallback to opening journal and navigating to page
+                        journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
+                    }
+                } else {
+                    ui.notifications.warn("You don't have permission to edit this page.");
+                }
+            }
+        });
+
+        // Save edit button - not needed with Foundry's editor
+        html.find('.save-edit-button').click(async (event) => {
+            event.preventDefault();
+            // Redirect to Foundry's native editor
+            if (journal && page) {
+                if (page.sheet) {
+                    page.sheet.render(true, {editable: true, collaborative: true});
+                } else {
+                    journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
+                }
+            }
+        });
+
+        // Cancel edit button - not needed with Foundry's editor
+        html.find('.cancel-edit-button').click((event) => {
+            event.preventDefault();
+            // Redirect to Foundry's native editor
+            if (journal && page) {
+                if (page.sheet) {
+                    page.sheet.render(true, {editable: true, collaborative: true});
+                } else {
+                    journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
+                }
+            }
+        });
     }
 
     async _renderJournalContent(html, journal, page) {

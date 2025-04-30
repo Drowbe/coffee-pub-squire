@@ -11,7 +11,7 @@
         {{#if hasJournal}}
         <i class="fas fa-book-open open-journal-button" title="Open Journal"></i>
         {{#if canEditPage}}
-        <i class="fas fa-edit toggle-edit-mode-button" title="Edit in Journal"></i>
+        <i class="fas fa-edit toggle-edit-mode-button" title="Edit with Foundry's Collaborative Editor"></i>
         {{/if}}
         {{/if}}
         {{#if isGM}}
@@ -50,6 +50,13 @@
     </div>
     {{else if hasJournal}}
     <div class="journal-content prose"></div>
+    {{#if canEditPage}}
+    <div class="edit-controls" style="text-align: right; margin-top: 10px;">
+        <button class="edit-page-button" style="background: rgba(0,0,0,0.2); border: 1px solid #ccc; padding: 3px 8px; border-radius: 3px;">
+            <i class="fas fa-edit"></i> Edit with Foundry
+        </button>
+    </div>
+    {{/if}}
     {{else}}
     <div class="no-journal-selected">
         {{#if isGM}}
