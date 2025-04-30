@@ -284,4 +284,89 @@
 
 .squire-tray .permission-error p {
     margin: 5px 0;
+}
+
+/* Inline editor styles */
+.squire-tray .journal-editor-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.squire-tray .journal-editor {
+    min-height: 200px;
+    border: 1px solid var(--color-border-highlight-alt);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 5px;
+}
+
+.squire-tray .journal-editor .editor-content {
+    min-height: 200px;
+    padding: 8px;
+}
+
+/* Make sure ProseMirror editor is visible */
+.squire-tray .journal-editor .ProseMirror {
+    min-height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-light-primary);
+    padding: 8px;
+    border-radius: 3px;
+}
+
+/* Make sure the cursor is visible */
+.squire-tray .journal-editor .ProseMirror-focused {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--color-border-highlight);
+}
+
+/* Empty content styling */
+.squire-tray .empty-content {
+    color: var(--color-text-dark-inactive);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.squire-tray .editor-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 5px;
+}
+
+.squire-tray .editor-controls button {
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--color-text-light-highlight);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.squire-tray .editor-controls button:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: var(--color-border-highlight);
+}
+
+.squire-tray .editor-controls .save-edit-button {
+    background: rgba(0, 80, 0, 0.3);
+}
+
+.squire-tray .editor-controls .save-edit-button:hover {
+    background: rgba(0, 100, 0, 0.5);
+}
+
+.squire-tray .editor-controls .cancel-edit-button {
+    background: rgba(80, 0, 0, 0.3);
+}
+
+.squire-tray .editor-controls .cancel-edit-button:hover {
+    background: rgba(100, 0, 0, 0.5);
 } 

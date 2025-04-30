@@ -4,9 +4,16 @@ export class NotesPanel {
     constructor() {
         this.element = null;
         this.journalSheet = null;
+        this.editor = null;
     }
 
     async render(element) {
+        // If we're re-rendering and have an editor, destroy it first
+        if (this.editor) {
+            this.editor.destroy();
+            this.editor = null;
+        }
+
         // If no element is provided, exit early
         if (!element) return;
         
@@ -143,6 +150,7 @@ export class NotesPanel {
             hasPages: pages.length > 0,
             hasPermissionIssue: !!journal && !canViewJournal,
             canEditPage: page ? (game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER)) : false,
+            isTextPage: page?.type === 'text',
             isGM: game.user.isGM,
             position: "left" // Hard-code position for now as it's always left in current implementation
         });
@@ -230,6 +238,149 @@ export class NotesPanel {
             }
         });
 
+        // Edit page button (for owners)
+        html.find('.edit-page-button').click(async (event) => {
+            event.preventDefault();
+            
+            if (journal && page) {
+                // Check if user can edit this page
+                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+                
+                if (canEdit) {
+                    // Open the page for editing
+                    if (page.sheet) {
+                        page.sheet.render(true);
+                    } else {
+                        // Fallback to opening journal and navigating to page
+                        journal.sheet.render(true, {pageId: page.id, editable: true});
+                    }
+                } else {
+                    ui.notifications.warn("You don't have permission to edit this page.");
+                }
+            }
+        });
+
+        // Inline edit toggle (for text pages)
+        html.find('.inline-edit-toggle').click(async (event) => {
+            event.preventDefault();
+            
+            if (journal && page && page.type === 'text') {
+                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+                
+                if (canEdit) {
+                    // Toggle between view and edit mode
+                    const contentDiv = html.find('.journal-content');
+                    const editorDiv = html.find('.journal-editor-container');
+                    
+                    if (editorDiv.is(':visible')) {
+                        // Already in edit mode, switch back to view
+                        contentDiv.show();
+                        editorDiv.hide();
+                    } else {
+                        // Switch to edit mode
+                        contentDiv.hide();
+                        editorDiv.show();
+                        
+                        // Make sure we have the latest content using our helper
+                        const pageContent = this._getPageContent(page);
+                        
+                        // Initialize editor if not already done
+                        if (!this.editor) {
+                            const target = editorDiv.find('.journal-editor')[0];
+                            
+                            // Create editor with the page content
+                            this.editor = await this._createEditor(target, pageContent);
+                            
+                            // Log for debugging
+                            console.log("SQUIRE | Created editor with content:", {
+                                contentLength: pageContent.length,
+                                firstChars: pageContent.substring(0, 50)
+                            });
+                        } else {
+                            // Update existing editor with the page content
+                            this.editor.setContent(pageContent);
+                            
+                            // Log for debugging
+                            console.log("SQUIRE | Updated editor with content:", {
+                                contentLength: pageContent.length,
+                                firstChars: pageContent.substring(0, 50)
+                            });
+                        }
+                    }
+                }
+            }
+        });
+
+        // Save edit button
+        html.find('.save-edit-button').click(async (event) => {
+            event.preventDefault();
+            
+            if (this.editor && journal && page) {
+                try {
+                    let content = '';
+                    
+                    // Make sure we get the content correctly
+                    try {
+                        content = this.editor.getContent();
+                    } catch (e) {
+                        console.error("SQUIRE | Error getting editor content:", e);
+                        
+                        // Try alternative ways to get the content
+                        if (this.editor.getData) {
+                            content = this.editor.getData();
+                        } else if (this.editor.root && this.editor.root.innerHTML) {
+                            content = this.editor.root.innerHTML;
+                        } else if (this.editor instanceof HTMLTextAreaElement) {
+                            content = this.editor.value;
+                        }
+                    }
+                    
+                    console.log("SQUIRE | Saving content:", {
+                        contentLength: content.length,
+                        firstChars: content.substring(0, 50)
+                    });
+                    
+                    // If the content is empty or just a blank paragraph, use a space to ensure
+                    // Foundry doesn't reject the update
+                    const safeContent = (content === '' || content === '<p></p>') ? ' ' : content;
+                    
+                    // Save the edited content
+                    await page.update({
+                        text: { content: safeContent }
+                    });
+                    
+                    // Update the displayed content
+                    const contentDiv = html.find('.journal-content');
+                    contentDiv.html(safeContent);
+                    
+                    // Switch back to view mode
+                    contentDiv.show();
+                    html.find('.journal-editor-container').hide();
+                    
+                    ui.notifications.info("Journal page updated successfully.");
+                    
+                    // If we just saved from a blank editor but had actual content, re-render
+                    // to ensure everything is displayed correctly
+                    if ((content === '' || content === '<p></p>') && page.text.content.length > 10) {
+                        ui.notifications.warn("Editor content may have been incomplete. Refreshing view...");
+                        setTimeout(() => this.render(this.element), 500);
+                    }
+                } catch (error) {
+                    console.error("SQUIRE | Error saving page content:", error);
+                    ui.notifications.error("Failed to save journal page: " + error.message);
+                }
+            }
+        });
+
+        // Cancel edit button
+        html.find('.cancel-edit-button').click((event) => {
+            event.preventDefault();
+            
+            // Switch back to view mode without saving
+            html.find('.journal-content').show();
+            html.find('.journal-editor-container').hide();
+        });
+
         // Set journal button (GM only)
         html.find('.set-journal-button, .set-journal-button-large').click(async (event) => {
             event.preventDefault();
@@ -250,6 +401,12 @@ export class NotesPanel {
                     this._showPagePicker(journal);
                 }
                 return;
+            }
+            
+            // If we have an editor open, clean it up
+            if (this.editor) {
+                this.editor.destroy();
+                this.editor = null;
             }
             
             if (game.user.isGM) {
@@ -291,12 +448,30 @@ export class NotesPanel {
             return;
         }
         
+        // Check if user can edit this page
+        const canEditPage = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+        
         // Create the content based on page type
         let content = '';
         
         if (page.type === 'text') {
-            // For text pages, use the content directly
-            content = page.text.content;
+            // For text pages, use the content directly via our helper
+            content = this._getPageContent(page);
+            
+            // Log to help debug content issues
+            console.log("SQUIRE | Rendering journal content:", {
+                pageId: page.id,
+                pageName: page.name,
+                contentLength: content.length,
+                firstChars: content.substring(0, 50)
+            });
+            
+            // If content is empty but the page exists, show a helpful message
+            if (!content || content.trim() === '') {
+                content = `<p class="empty-content">${canEditPage ? 
+                    'This page is empty. Click the edit button to add content.' : 
+                    'This page is empty.'}</p>`;
+            }
         } else if (page.type === 'image') {
             // For image pages, create an img tag
             content = `<img src="${page.src}" alt="${page.name}" style="max-width: 100%;">`;
@@ -513,6 +688,93 @@ export class NotesPanel {
             return `<i class="fas fa-eye" title="Players can view"></i>`;
         } else {
             return `<i class="fas fa-lock" title="GM only"></i>`;
+        }
+    }
+
+    /**
+     * Creates a ProseMirror editor instance for editing journal text
+     * @param {HTMLElement} target - The element to attach the editor to
+     * @param {string} content - The initial content for the editor
+     * @returns {Promise<object>} - A promise that resolves to the editor instance
+     * @private
+     */
+    async _createEditor(target, content) {
+        // Make sure we have valid content
+        const safeContent = content || '';
+        
+        try {
+            // Use Foundry's built-in TextEditor to create a compatible editor
+            const editor = await TextEditor.create({
+                target: target,
+                content: safeContent,
+                collaborate: false,
+                editable: true
+            });
+            
+            // Ensure the editor has the content (sometimes it might not load properly)
+            if (editor && editor.setContent && safeContent.length > 0) {
+                // Small delay to ensure the editor is fully initialized
+                setTimeout(() => {
+                    if (editor.getContent() === '' || editor.getContent() === '<p></p>') {
+                        console.log("SQUIRE | Editor content was empty, setting it manually");
+                        editor.setContent(safeContent);
+                    }
+                }, 100);
+            }
+            
+            return editor;
+        } catch (error) {
+            console.error("SQUIRE | Error creating editor:", error);
+            // Fallback to a basic textarea if the editor fails
+            const textarea = document.createElement('textarea');
+            textarea.value = safeContent;
+            textarea.style.width = '100%';
+            textarea.style.height = '200px';
+            textarea.style.padding = '8px';
+            target.appendChild(textarea);
+            
+            // Return a basic interface that mimics the editor
+            return {
+                getContent: () => textarea.value,
+                setContent: (text) => textarea.value = text,
+                destroy: () => {
+                    if (target.contains(textarea)) {
+                        target.removeChild(textarea);
+                    }
+                }
+            };
+        }
+    }
+
+    /**
+     * Gets the text content from a journal page safely
+     * @param {JournalEntryPage} page - The journal page
+     * @returns {string} The content of the page
+     * @private
+     */
+    _getPageContent(page) {
+        if (!page) return '';
+        
+        try {
+            // Handle different ways content might be stored depending on Foundry version
+            if (page.type === 'text') {
+                // Try different possible locations for the content
+                if (page.text && typeof page.text.content === 'string') {
+                    return page.text.content;
+                } else if (page.text && typeof page.text === 'string') {
+                    return page.text;
+                } else if (page.content && typeof page.content === 'string') {
+                    return page.content;
+                } else if (typeof page.text === 'object' && page.text !== null) {
+                    // Maybe it's stored in a different format
+                    return JSON.stringify(page.text) || '';
+                }
+            }
+            // For non-text types or if we couldn't find the content
+            return '';
+        } catch (error) {
+            console.error("SQUIRE | Error getting page content:", error);
+            return '';
         }
     }
 } 

@@ -10,6 +10,12 @@
     <div class="notes-controls">
         {{#if hasJournal}}
         <i class="fas fa-book-open open-journal-button" title="Open Journal"></i>
+        {{#if canEditPage}}
+        <i class="fas fa-edit edit-page-button" title="Edit in Journal"></i>
+        {{#if isTextPage}}
+        <i class="fas fa-pen inline-edit-toggle" title="Quick Edit"></i>
+        {{/if}}
+        {{/if}}
         {{/if}}
         {{#if isGM}}
         <i class="fas fa-cog set-journal-button" title="Set Journal"></i>
@@ -57,6 +63,15 @@
     </div>
     {{else if hasJournal}}
     <div class="journal-content prose"></div>
+    {{#if canEditPage}}
+    <div class="journal-editor-container" style="display: none;">
+        <div class="journal-editor"></div>
+        <div class="editor-controls">
+            <button class="save-edit-button"><i class="fas fa-save"></i> Save</button>
+            <button class="cancel-edit-button"><i class="fas fa-times"></i> Cancel</button>
+        </div>
+    </div>
+    {{/if}}
     {{else}}
     <div class="no-journal-selected">
         {{#if isGM}}
