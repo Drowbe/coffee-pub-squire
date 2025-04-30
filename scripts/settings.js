@@ -390,7 +390,39 @@ export const registerSettings = function() {
 		type: String,
 	});
 
-    // Shared Journal
+    // Persistent Journal for Players
+    game.settings.register(MODULE.ID, 'notesPersistentJournal', {
+        name: 'Persistent Journal for Players',
+        hint: 'Journal that is always visible to players in the notes panel',
+        scope: 'world',
+        config: false,
+        type: String,
+        default: 'none',
+        onChange: () => {
+            // Update the notes panel if it exists
+            if (PanelManager.instance?.notesPanel) {
+                PanelManager.instance.notesPanel.render(PanelManager.element);
+            }
+        }
+    });
+    
+    // GM's Selected Journal
+    game.settings.register(MODULE.ID, 'notesGMJournal', {
+        name: 'GM\'s Selected Journal',
+        hint: 'Journal currently selected by the GM for their own view',
+        scope: 'world',
+        config: false,
+        type: String,
+        default: 'none',
+        onChange: () => {
+            // Update the notes panel if it exists
+            if (PanelManager.instance?.notesPanel) {
+                PanelManager.instance.notesPanel.render(PanelManager.element);
+            }
+        }
+    });
+    
+    // Shared Journal (legacy - keeping for backwards compatibility)
     game.settings.register(MODULE.ID, 'notesSharedJournal', {
         name: 'Shared Journal',
         hint: 'The journal that will be used for the notes tab. Use the buttons in the notes panel to select a journal.',
@@ -415,6 +447,14 @@ export const registerSettings = function() {
         type: String,
         default: 'none'
     });
+
+    
+
+
+
+
+
+
 
     
     // --------------------------------
@@ -690,4 +730,19 @@ function updateCustomTheme(colors) {
     `;
 
     style.textContent = css;
-} 
+}
+
+export const initializeNoteSettings = function() {
+    // Migrate from old notes setting if needed
+    if (game.settings.get(MODULE.ID, 'notesPersistentJournal') === 'none' && 
+        game.settings.get(MODULE.ID, 'notesGMJournal') === 'none') {
+        
+        const oldJournalId = game.settings.get(MODULE.ID, 'notesSharedJournal');
+        if (oldJournalId !== 'none') {
+            // Copy the old journal ID to both new settings
+            game.settings.set(MODULE.ID, 'notesPersistentJournal', oldJournalId);
+            game.settings.set(MODULE.ID, 'notesGMJournal', oldJournalId);
+            console.log(`SQUIRE | Migrated notes journal settings from old value: ${oldJournalId}`);
+        }
+    }
+}; 

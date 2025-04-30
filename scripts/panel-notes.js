@@ -4,16 +4,9 @@ export class NotesPanel {
     constructor() {
         this.element = null;
         this.journalSheet = null;
-        this.editor = null;
     }
 
     async render(element) {
-        // If we're re-rendering and have an editor, destroy it first
-        if (this.editor) {
-            this.editor.destroy();
-            this.editor = null;
-        }
-
         // If no element is provided, exit early
         if (!element) return;
         
@@ -22,7 +15,16 @@ export class NotesPanel {
         if (!notesContainer.length) return;
 
         // Get the selected journal ID
-        const journalId = game.settings.get(MODULE.ID, 'notesSharedJournal');
+        const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');
+        
+        // For GMs, they can view a different journal than the persistent one
+        const gmJournalId = game.user.isGM ? game.settings.get(MODULE.ID, 'notesGMJournal') : null;
+        
+        // Determine which journal to display
+        // - If user is GM and has a selected journal, use that
+        // - Otherwise use the persistent journal
+        const journalId = (game.user.isGM && gmJournalId !== 'none') ? gmJournalId : persistentJournalId;
+        
         const journal = journalId !== 'none' ? game.journal.get(journalId) : null;
 
         // Get the selected page ID (defaulting to the first page if not set)
@@ -150,8 +152,8 @@ export class NotesPanel {
             hasPages: pages.length > 0,
             hasPermissionIssue: !!journal && !canViewJournal,
             canEditPage: page ? (game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER)) : false,
-            isTextPage: page?.type === 'text',
             isGM: game.user.isGM,
+            isPersistent: game.user.isGM && persistentJournalId === journalId && journalId !== 'none',
             position: "left" // Hard-code position for now as it's always left in current implementation
         });
         notesContainer.html(html);
@@ -260,127 +262,6 @@ export class NotesPanel {
             }
         });
 
-        // Inline edit toggle (for text pages)
-        html.find('.inline-edit-toggle').click(async (event) => {
-            event.preventDefault();
-            
-            if (journal && page && page.type === 'text') {
-                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-                
-                if (canEdit) {
-                    // Toggle between view and edit mode
-                    const contentDiv = html.find('.journal-content');
-                    const editorDiv = html.find('.journal-editor-container');
-                    
-                    if (editorDiv.is(':visible')) {
-                        // Already in edit mode, switch back to view
-                        contentDiv.show();
-                        editorDiv.hide();
-                    } else {
-                        // Switch to edit mode
-                        contentDiv.hide();
-                        editorDiv.show();
-                        
-                        // Make sure we have the latest content using our helper
-                        const pageContent = this._getPageContent(page);
-                        
-                        // Initialize editor if not already done
-                        if (!this.editor) {
-                            const target = editorDiv.find('.journal-editor')[0];
-                            
-                            // Create editor with the page content
-                            this.editor = await this._createEditor(target, pageContent);
-                            
-                            // Log for debugging
-                            console.log("SQUIRE | Created editor with content:", {
-                                contentLength: pageContent.length,
-                                firstChars: pageContent.substring(0, 50)
-                            });
-                        } else {
-                            // Update existing editor with the page content
-                            this.editor.setContent(pageContent);
-                            
-                            // Log for debugging
-                            console.log("SQUIRE | Updated editor with content:", {
-                                contentLength: pageContent.length,
-                                firstChars: pageContent.substring(0, 50)
-                            });
-                        }
-                    }
-                }
-            }
-        });
-
-        // Save edit button
-        html.find('.save-edit-button').click(async (event) => {
-            event.preventDefault();
-            
-            if (this.editor && journal && page) {
-                try {
-                    let content = '';
-                    
-                    // Make sure we get the content correctly
-                    try {
-                        content = this.editor.getContent();
-                    } catch (e) {
-                        console.error("SQUIRE | Error getting editor content:", e);
-                        
-                        // Try alternative ways to get the content
-                        if (this.editor.getData) {
-                            content = this.editor.getData();
-                        } else if (this.editor.root && this.editor.root.innerHTML) {
-                            content = this.editor.root.innerHTML;
-                        } else if (this.editor instanceof HTMLTextAreaElement) {
-                            content = this.editor.value;
-                        }
-                    }
-                    
-                    console.log("SQUIRE | Saving content:", {
-                        contentLength: content.length,
-                        firstChars: content.substring(0, 50)
-                    });
-                    
-                    // If the content is empty or just a blank paragraph, use a space to ensure
-                    // Foundry doesn't reject the update
-                    const safeContent = (content === '' || content === '<p></p>') ? ' ' : content;
-                    
-                    // Save the edited content
-                    await page.update({
-                        text: { content: safeContent }
-                    });
-                    
-                    // Update the displayed content
-                    const contentDiv = html.find('.journal-content');
-                    contentDiv.html(safeContent);
-                    
-                    // Switch back to view mode
-                    contentDiv.show();
-                    html.find('.journal-editor-container').hide();
-                    
-                    ui.notifications.info("Journal page updated successfully.");
-                    
-                    // If we just saved from a blank editor but had actual content, re-render
-                    // to ensure everything is displayed correctly
-                    if ((content === '' || content === '<p></p>') && page.text.content.length > 10) {
-                        ui.notifications.warn("Editor content may have been incomplete. Refreshing view...");
-                        setTimeout(() => this.render(this.element), 500);
-                    }
-                } catch (error) {
-                    console.error("SQUIRE | Error saving page content:", error);
-                    ui.notifications.error("Failed to save journal page: " + error.message);
-                }
-            }
-        });
-
-        // Cancel edit button
-        html.find('.cancel-edit-button').click((event) => {
-            event.preventDefault();
-            
-            // Switch back to view mode without saving
-            html.find('.journal-content').show();
-            html.find('.journal-editor-container').hide();
-        });
-
         // Set journal button (GM only)
         html.find('.set-journal-button, .set-journal-button-large').click(async (event) => {
             event.preventDefault();
@@ -391,7 +272,7 @@ export class NotesPanel {
             }
         });
 
-        // Page selection dropdown (GM only)
+        // Page selection dropdown
         html.find('.page-select').change(async (event) => {
             const pageId = event.currentTarget.value;
             
@@ -415,6 +296,39 @@ export class NotesPanel {
             } else {
                 // For players, just update locally
                 game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
+            }
+            
+            // Re-render the notes panel
+            this.render(this.element);
+        });
+
+        // Toggle persistent journal (GM only)
+        html.find('.toggle-persistent-button').click(async (event) => {
+            event.preventDefault();
+            
+            if (!game.user.isGM) return;
+            
+            if (!journal) {
+                ui.notifications.warn("No journal selected. Please select a journal first.");
+                return;
+            }
+            
+            // Get current persistent and GM journal IDs
+            const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');
+            const gmJournalId = game.settings.get(MODULE.ID, 'notesGMJournal');
+            
+            if (persistentJournalId === journal.id) {
+                // Journal is already persistent, unpin it
+                await game.settings.set(MODULE.ID, 'notesPersistentJournal', 'none');
+                ui.notifications.info(`Journal "${journal.name}" unpinned from players view.`);
+            } else {
+                // Make this journal persistent
+                await game.settings.set(MODULE.ID, 'notesPersistentJournal', journal.id);
+                
+                // Also update the GM journal to match
+                await game.settings.set(MODULE.ID, 'notesGMJournal', journal.id);
+                
+                ui.notifications.info(`Journal "${journal.name}" pinned for all players.`);
             }
             
             // Re-render the notes panel
@@ -502,6 +416,9 @@ export class NotesPanel {
         // Sort alphabetically
         journals.sort((a, b) => a.name.localeCompare(b.name));
         
+        // Get current persistent journal
+        const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');
+        
         // Create a more visual journal picker with journal covers
         const content = `
         <h2 style="text-align: center; margin-bottom: 15px;">Select a Journal for Notes</h2>
@@ -522,6 +439,7 @@ export class NotesPanel {
                 <div class="journal-item" data-id="${j.id}" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
                     <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center; background-size: contain; background-position: center; background-repeat: no-repeat; background-image: url('${j.img}');">
                         ${!j.img ? `<i class="fas fa-book" style="font-size: 3em; color: #666;"></i>` : ''}
+                        ${j.id === persistentJournalId ? `<i class="fas fa-thumbtack" style="position: absolute; top: 10px; right: 10px; color: gold; font-size: 1.2em;" title="Pinned for players"></i>` : ''}
                     </div>
                     <div class="journal-name" style="margin-top: 5px; font-weight: bold;">${j.name}</div>
                     <div class="journal-pages" style="font-size: 0.8em; color: #999;">${j.pages} page${j.pages !== 1 ? 's' : ''}</div>
@@ -529,6 +447,10 @@ export class NotesPanel {
                 `).join('')}
             </div>`
         }
+        <div style="margin-bottom: 10px; padding: 10px; background: rgba(50, 50, 80, 0.3); border-radius: 5px;">
+            <p style="margin-bottom: 5px; color: #ddd;"><i class="fas fa-info-circle" style="color: #88f;"></i> As GM, you can select a journal for your own viewing without changing what players see.</p>
+            <p style="color: #ddd;">Use the <i class="fas fa-thumbtack" style="color: gold;"></i> button to set what journal players will see.</p>
+        </div>
         <div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;">
             <button class="cancel-button" style="flex: 1; margin-right: 5px;">Cancel</button>
             <button class="refresh-button" style="flex: 1; margin-left: 5px;">Refresh List</button>
@@ -543,10 +465,11 @@ export class NotesPanel {
                 // Handle journal item clicks
                 html.find('.journal-item').click(async event => {
                     const journalId = event.currentTarget.dataset.id;
-                    await game.settings.set(MODULE.ID, 'notesSharedJournal', journalId);
                     
-                    // When selecting a new journal, reset the page selection
-                    await game.settings.set(MODULE.ID, 'notesSharedJournalPage', 'none');
+                    // For GMs, update their personal view first
+                    if (game.user.isGM) {
+                        await game.settings.set(MODULE.ID, 'notesGMJournal', journalId);
+                    }
                     
                     ui.notifications.info(`Journal ${journalId === 'none' ? 'selection cleared' : 'selected'}.`);
                     dialog.close();
@@ -688,61 +611,6 @@ export class NotesPanel {
             return `<i class="fas fa-eye" title="Players can view"></i>`;
         } else {
             return `<i class="fas fa-lock" title="GM only"></i>`;
-        }
-    }
-
-    /**
-     * Creates a ProseMirror editor instance for editing journal text
-     * @param {HTMLElement} target - The element to attach the editor to
-     * @param {string} content - The initial content for the editor
-     * @returns {Promise<object>} - A promise that resolves to the editor instance
-     * @private
-     */
-    async _createEditor(target, content) {
-        // Make sure we have valid content
-        const safeContent = content || '';
-        
-        try {
-            // Use Foundry's built-in TextEditor to create a compatible editor
-            const editor = await TextEditor.create({
-                target: target,
-                content: safeContent,
-                collaborate: false,
-                editable: true
-            });
-            
-            // Ensure the editor has the content (sometimes it might not load properly)
-            if (editor && editor.setContent && safeContent.length > 0) {
-                // Small delay to ensure the editor is fully initialized
-                setTimeout(() => {
-                    if (editor.getContent() === '' || editor.getContent() === '<p></p>') {
-                        console.log("SQUIRE | Editor content was empty, setting it manually");
-                        editor.setContent(safeContent);
-                    }
-                }, 100);
-            }
-            
-            return editor;
-        } catch (error) {
-            console.error("SQUIRE | Error creating editor:", error);
-            // Fallback to a basic textarea if the editor fails
-            const textarea = document.createElement('textarea');
-            textarea.value = safeContent;
-            textarea.style.width = '100%';
-            textarea.style.height = '200px';
-            textarea.style.padding = '8px';
-            target.appendChild(textarea);
-            
-            // Return a basic interface that mimics the editor
-            return {
-                getContent: () => textarea.value,
-                setContent: (text) => textarea.value = text,
-                destroy: () => {
-                    if (target.contains(textarea)) {
-                        target.removeChild(textarea);
-                    }
-                }
-            };
         }
     }
 
