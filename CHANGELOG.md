@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated chat message flow to ensure logical ordering of acceptance and completion messages
 
 ### Added
+- Added notes in the tray... very alpha
 - Added GM-mediated message deletion for transfer request cleanup
 - Implemented visual feedback during transfer processing with disabled buttons
 - Added replacement messages for transfer requests after processing
