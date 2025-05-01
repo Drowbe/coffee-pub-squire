@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.11] - Notes Panel
+
+### Added
+- New journal notes panel in the tray for easy access to journal entries
+- Read-only journal content display with proper formatting
+- Journal page selection dropdown for multi-page journals
+- Custom toolbar with edit and open buttons to access Foundry's native journal editor
+- Live content updates when journal entries are modified
+- Visual overlay indicating when content is being edited by any user
+- Proper hooks integration to refresh content when journal pages are updated
+
+### Fixed
+- Fixed scrollbar issues to ensure only one scrollbar appears in the notes panel
+- Resolved content refresh issues when journal entries are edited
+- Fixed critical hook function naming issue that was preventing content updates
+- Improved CSS styling for better integration with Foundry's UI
+- Consolidated duplicate CSS to improve maintainability
 
 ## [1.0.10] - Transfers and More
 
