@@ -8,12 +8,6 @@
         {{/if}}
     </span>
     <div class="notes-controls">
-        {{#if hasJournal}}
-        <i class="fas fa-book-open open-journal-button" title="Open Journal"></i>
-        {{#if canEditPage}}
-        <i class="fas fa-edit toggle-edit-mode-button" title="Edit with Foundry's Collaborative Editor"></i>
-        {{/if}}
-        {{/if}}
         {{#if isGM}}
         <i class="fas fa-cog set-journal-button" title="Set Journal"></i>
         <i class="fas {{#if isPersistent}}fa-thumbtack{{else}}fa-thumbtack unpinned{{/if}} toggle-persistent-button" title="{{#if isPersistent}}Journal is pinned for players{{else}}Pin this journal for players{{/if}}"></i>
@@ -41,7 +35,20 @@
     <div class="page-name">{{pageName}}</div>
     {{/if}}
 </div>
+
+{{#if page}}
+<div class="notes-toolbar">
+    <span>{{pageName}}</span>
+    <div class="notes-controls">
+        {{#if canEditPage}}
+        <i class="fas fa-edit toggle-edit-mode-button" title="Edit with Foundry's Collaborative Editor"></i>
+        {{/if}}
+        <i class="fas fa-book-open open-journal-button" title="Open in Journal Viewer"></i>
+    </div>
+</div>
 {{/if}}
+{{/if}}
+
 <div class="notes-content">
     {{#if hasPermissionIssue}}
     <div class="permission-error">
@@ -49,14 +56,7 @@
         <p>You don't have permission to view this journal.</p>
     </div>
     {{else if hasJournal}}
-    <div class="journal-content prose"></div>
-    {{#if canEditPage}}
-    <div class="edit-controls" style="text-align: right; margin-top: 10px;">
-        <button class="edit-page-button" style="background: rgba(0,0,0,0.2); border: 1px solid #ccc; padding: 3px 8px; border-radius: 3px;">
-            <i class="fas fa-edit"></i> Edit with Foundry
-        </button>
-    </div>
-    {{/if}}
+    <div class="prose journal-content journal-entry-content journal-entry-pages single-page journal-entry-page text level1 dnd5e2-journal journal-page-content"></div>
     {{else}}
     <div class="no-journal-selected">
         {{#if isGM}}

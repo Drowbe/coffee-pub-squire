@@ -3,7 +3,26 @@ import { MODULE, TEMPLATES } from './const.js';
 export class NotesPanel {
     constructor() {
         this.element = null;
-        this.journalSheet = null;
+        // Initialize Hooks when the class is constructed
+        this._setupGlobalHooks();
+    }
+
+    /**
+     * Sets up global hooks for journal updates
+     * @private
+     */
+    _setupGlobalHooks() {
+        // Register for journal page updates to refresh content
+        Hooks.on("updateJournalEntryPage", (page, changes, options, userId) => {
+            // When any journal page is updated, check if we need to refresh
+            if (this.element) {
+                const currentPageId = this.element.find('.journal-content').data('page-id');
+                if (currentPageId === page.id) {
+                    console.log("SQUIRE | Journal page updated, refreshing notes panel");
+                    this.render(this.element);
+                }
+            }
+        });
     }
 
     async render(element) {
@@ -249,13 +268,8 @@ export class NotesPanel {
                 const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
 
                 if (canEdit) {
-                    // Open the page for editing with collaborative mode
-                    if (page.sheet) {
-                        page.sheet.render(true, {editable: true, collaborative: true});
-                    } else {
-                        // Fallback to opening journal and navigating to page
-                        journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
-                    }
+                    // Use our helper method to embed the editor
+                    await this._embedEditor(html, journal, page);
                 } else {
                     ui.notifications.warn("You don't have permission to edit this page.");
                 }
@@ -271,23 +285,8 @@ export class NotesPanel {
                 const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
                 
                 if (canEdit) {
-                    try {
-                        // Open editor with collaborative mode
-                        ui.notifications.info("Opening editor...");
-                        
-                        if (page.sheet) {
-                            // This is the preferred method in Foundry v12+ - opens the page directly
-                            await page.sheet.render(true, {editable: true, collaborative: true});
-                        } else if (journal.sheet) {
-                            // Fallback to journal sheet with page specified
-                            await journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
-                        } else {
-                            ui.notifications.error("Could not open the journal editor.");
-                        }
-                    } catch (error) {
-                        console.error("SQUIRE | Error toggling edit mode:", error);
-                        ui.notifications.error("Error opening editor: " + error.message);
-                    }
+                    // Use our helper method to embed the editor
+                    await this._embedEditor(html, journal, page);
                 } else {
                     ui.notifications.warn("You don't have permission to edit this page.");
                 }
@@ -349,6 +348,28 @@ export class NotesPanel {
                 return;
             }
             
+            // If we have an active editor, ask if they want to close it
+            if (this.journalSheet) {
+                // Ask the user if they want to switch away from editing
+                let confirmSwitch = await Dialog.confirm({
+                    title: "Switch Page While Editing?",
+                    content: "<p>You're currently editing a page. Switching to another page will close the editor.</p><p>Any changes you've made will be saved automatically.</p>",
+                    yes: () => true,
+                    no: () => false,
+                    defaultYes: true
+                });
+                
+                if (!confirmSwitch) {
+                    // Reset the dropdown to current page
+                    html.find('.page-select').val(page.id);
+                    return;
+                }
+                
+                // Close the editor
+                this.journalSheet.close();
+                this.journalSheet = null;
+            }
+            
             if (game.user.isGM) {
                 // Save the selected page globally for all users if GM
                 await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
@@ -374,41 +395,42 @@ export class NotesPanel {
                 const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
 
                 if (canEdit) {
-                    // Instead of toggling our custom editor, use Foundry's native editor with collaborative mode
-                    if (page.sheet) {
-                        page.sheet.render(true, {editable: true, collaborative: true});
-                    } else {
-                        // Fallback to opening journal and navigating to page
-                        journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
-                    }
+                    // Use our helper method to embed the editor
+                    await this._embedEditor(html, journal, page);
                 } else {
                     ui.notifications.warn("You don't have permission to edit this page.");
                 }
             }
         });
 
-        // Save edit button - not needed with Foundry's editor
+        // Save edit button - now just triggers the done button 
         html.find('.save-edit-button').click(async (event) => {
             event.preventDefault();
-            // Redirect to Foundry's native editor
-            if (journal && page) {
-                if (page.sheet) {
-                    page.sheet.render(true, {editable: true, collaborative: true});
-                } else {
-                    journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
+            
+            // If we have an active editor, trigger the done button
+            if (this.journalSheet) {
+                html.find('.done-embedded-edit').click();
+            } else if (journal && page) {
+                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+                if (canEdit) {
+                    await this._embedEditor(html, journal, page);
                 }
             }
         });
 
-        // Cancel edit button - not needed with Foundry's editor
+        // Cancel edit button 
         html.find('.cancel-edit-button').click((event) => {
             event.preventDefault();
-            // Redirect to Foundry's native editor
-            if (journal && page) {
-                if (page.sheet) {
-                    page.sheet.render(true, {editable: true, collaborative: true});
-                } else {
-                    journal.sheet.render(true, {pageId: page.id, editable: true, collaborative: true});
+            
+            // If we have an active editor sheet, close it
+            if (this.journalSheet) {
+                this.journalSheet.close();
+                this.journalSheet = null;
+                this.render(this.element);
+            } else if (journal && page) {
+                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+                if (canEdit) {
+                    this._embedEditor(html, journal, page);
                 }
             }
         });
@@ -435,6 +457,9 @@ export class NotesPanel {
                 console.warn("SQUIRE | No page provided to render");
                 return;
             }
+            
+            // Store the page ID in a data attribute for reference by hooks
+            contentContainer.attr('data-page-id', page.id);
             
             // Verify the page is a valid object
             if (typeof page !== 'object' || page === null) {
@@ -550,9 +575,6 @@ export class NotesPanel {
                             JournalTextPageSheet.activateListeners(contentContainer[0]);
                         }
                         
-                        // Add edit button if user has permission
-                        this._createJournalEditButton(contentContainer, journal, page);
-                        
                         // Check if content was actually rendered
                         const contentText = contentContainer.text();
                         const hasContent = contentContainer.children().length > 0 || contentText.trim().length > 0;
@@ -569,13 +591,10 @@ export class NotesPanel {
                             contentContainer.html(`
                                 <div class="empty-page-content">
                                     <p>${canEditPage ? 
-                                        'This page appears to be empty. You can edit it using the Edit button.' : 
+                                        'This page appears to be empty. Click the edit button to add content.' : 
                                         'This page appears to be empty.'}</p>
                                 </div>
                             `);
-                            
-                            // Still add edit button for empty content
-                            this._createJournalEditButton(contentContainer, journal, page);
                         }
                         
                         console.log("SQUIRE | Successfully rendered journal content with renderContent method");
@@ -1560,218 +1579,78 @@ export class NotesPanel {
     }
 
     /**
-     * Create an edit button and editor for journal content
-     * @param {jQuery} contentContainer - The journal content container
+     * Opens the native Foundry journal page for editing instead of embedding an editor
+     * @param {jQuery} html - The panel HTML element
      * @param {JournalEntry} journal - The journal document
-     * @param {JournalEntryPage} page - The journal page
+     * @param {JournalEntryPage} page - The journal page to edit
      * @private
      */
-    _createJournalEditButton(contentContainer, journal, page) {
-        // Only add edit functionality for users with permission
-        if (!page || !this._canUserEditPage(page)) return;
-        
-        // Create a relative container for the edit button
-        contentContainer.css('position', 'relative');
-        
-        // Add edit button
-        const editButton = $(`
-            <div class="journal-content-edit-button">
-                <i class="fas fa-edit"></i> Edit
-            </div>
-        `);
-        
-        contentContainer.append(editButton);
-        
-        // Create editor container (hidden by default)
-        const editorContainer = $(`
-            <div class="journal-content-editor">
-                <div class="journal-content-editor-toolbar">
-                    <button data-command="bold"><i class="fas fa-bold"></i></button>
-                    <button data-command="italic"><i class="fas fa-italic"></i></button>
-                    <button data-command="h1">H1</button>
-                    <button data-command="h2">H2</button>
-                    <button data-command="h3">H3</button>
-                    <button data-command="ul"><i class="fas fa-list-ul"></i></button>
-                    <button data-command="link"><i class="fas fa-link"></i></button>
-                </div>
-                <textarea class="journal-content-editor-textarea" style="width: 100%; min-height: 250px;"></textarea>
-                <div class="journal-content-edit-controls">
-                    <button class="cancel-edit-button">Cancel</button>
-                    <button class="save-edit-button">Save Changes</button>
-                </div>
-            </div>
-        `);
-        
-        contentContainer.after(editorContainer);
-        
-        // Store the original content
-        const originalContent = contentContainer.html();
-        let rawContent = '';
-        
-        // Get raw content for editing
-        if (page.text?.content) {
-            rawContent = page.text.content;
-        } else if (typeof page.text === 'string') {
-            rawContent = page.text;
-        }
-        
-        // Set the editor content
-        editorContainer.find('.journal-content-editor-textarea').val(rawContent);
-        
-        // Add click handler for edit button
-        editButton.on('click', () => {
-            // Hide content, show editor
-            contentContainer.hide();
-            editorContainer.addClass('active');
-            
-            // Set focus on editor
-            editorContainer.find('.journal-content-editor-textarea').focus();
-        });
-        
-        // Add click handler for toolbar buttons
-        editorContainer.find('.journal-content-editor-toolbar button').on('click', (event) => {
-            const command = $(event.currentTarget).data('command');
-            const textarea = editorContainer.find('.journal-content-editor-textarea');
-            const startPos = textarea[0].selectionStart;
-            const endPos = textarea[0].selectionEnd;
-            const selectedText = textarea.val().substring(startPos, endPos);
-            
-            let insertText = '';
-            
-            switch (command) {
-                case 'bold':
-                    insertText = `<strong>${selectedText}</strong>`;
-                    break;
-                case 'italic':
-                    insertText = `<em>${selectedText}</em>`;
-                    break;
-                case 'h1':
-                    insertText = `<h1>${selectedText}</h1>`;
-                    break;
-                case 'h2':
-                    insertText = `<h2>${selectedText}</h2>`;
-                    break;
-                case 'h3':
-                    insertText = `<h3>${selectedText}</h3>`;
-                    break;
-                case 'ul':
-                    insertText = `<ul>\n<li>${selectedText}</li>\n</ul>`;
-                    break;
-                case 'link':
-                    const url = prompt('Enter URL:', 'https://');
-                    if (url) {
-                        insertText = `<a href="${url}">${selectedText || url}</a>`;
-                    }
-                    break;
-            }
-            
-            if (insertText) {
-                const currentText = textarea.val();
-                const newText = currentText.substring(0, startPos) + insertText + currentText.substring(endPos);
-                textarea.val(newText);
-                
-                // Focus back on textarea
-                textarea.focus();
-            }
-        });
-        
-        // Add click handler for cancel button
-        editorContainer.find('.cancel-edit-button').on('click', () => {
-            // Show content, hide editor
-            contentContainer.show();
-            editorContainer.removeClass('active');
-            
-            // Reset editor content
-            editorContainer.find('.journal-content-editor-textarea').val(rawContent);
-        });
-        
-        // Add click handler for save button
-        editorContainer.find('.save-edit-button').on('click', async () => {
-            // Get the updated content
-            const updatedContent = editorContainer.find('.journal-content-editor-textarea').val();
-            
-            try {
-                // Save the changes to the journal page
-                await this._saveJournalPageContent(page, updatedContent);
-                
-                // Show success message
-                ui.notifications.info(`Journal page "${page.name}" updated successfully.`);
-                
-                // Update the displayed content
-                const enrichedContent = await TextEditor.enrichHTML(updatedContent, {
-                    secrets: game.user.isGM,
-                    documents: true,
-                    links: true,
-                    rolls: true
-                });
-                
-                contentContainer.html(enrichedContent);
-                
-                // Update raw content reference
-                rawContent = updatedContent;
-                
-                // Show content, hide editor
-                contentContainer.show();
-                editorContainer.removeClass('active');
-            } catch (error) {
-                console.error("SQUIRE | Error saving journal content:", error);
-                ui.notifications.error(`Error saving journal content: ${error.message}`);
-            }
-        });
-    }
-
-    /**
-     * Check if the current user can edit a page
-     * @param {JournalEntryPage} page - The journal page
-     * @returns {boolean} Whether the user can edit the page
-     * @private
-     */
-    _canUserEditPage(page) {
-        if (!page) return false;
-        
-        // GM can always edit
-        if (game.user.isGM) return true;
-        
-        // Check page ownership
-        const PERMISSION_LEVELS = {
-            NONE: 0,
-            LIMITED: 1,
-            OBSERVER: 2,
-            OWNER: 3
-        };
-        
-        return page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-    }
-
-    /**
-     * Save journal page content
-     * @param {JournalEntryPage} page - The journal page
-     * @param {string} content - The content to save
-     * @returns {Promise} A promise that resolves when the content is saved
-     * @private
-     */
-    async _saveJournalPageContent(page, content) {
-        if (!page) throw new Error("No page provided");
-        
-        // Different structure in V13 vs V12
+    async _embedEditor(html, journal, page) {
         try {
-            if (page.update) {
-                // Try V13 structure first
-                await page.update({
-                    "text.content": content
-                });
-            } else if (page.parent && page.parent.updateEmbeddedDocuments) {
-                // Try V12 structure
-                await page.parent.updateEmbeddedDocuments("JournalEntryPage", [{
-                    _id: page.id,
-                    text: { content: content }
-                }]);
+            if (!journal || !page) return null;
+            
+            // Get the content container
+            const contentContainer = html.find('.journal-content');
+            if (!contentContainer.length) return;
+            
+            // Add an overlay to indicate the page is being edited
+            contentContainer.addClass('being-edited');
+            contentContainer.append(`
+                <div class="journal-edit-overlay">
+                    <div class="edit-message">
+                        <i class="fas fa-edit"></i>
+                        <span>Being Edited</span>
+                    </div>
+                </div>
+            `);
+            
+            // Open the native journal sheet directly to this page
+            if (page.sheet) {
+                page.sheet.render(true);
             } else {
-                throw new Error("Unable to determine how to update the journal page");
+                journal.sheet.render(true, {pageId: page.id});
             }
+            
+            // Setup a hook to refresh the content when the journal page is updated
+            // Safely remove any existing hooks with the same name to avoid duplicates
+            try {
+                // In some versions of Foundry, Hooks might not have an 'off' method
+                if (Hooks.events && Hooks.events.updateJournalEntryPage) {
+                    // Find and remove the specific handler
+                    const existingHooks = Hooks.events.updateJournalEntryPage || [];
+                    for (let i = existingHooks.length - 1; i >= 0; i--) {
+                        if (existingHooks[i].name === "squire-notes-panel") {
+                            existingHooks.splice(i, 1);
+                        }
+                    }
+                } else if (typeof Hooks.off === 'function') {
+                    // If Hooks.off exists, use it
+                    Hooks.off("updateJournalEntryPage.squire-notes-panel");
+                }
+                // If neither method works, we'll just add a new hook
+            } catch (hookError) {
+                console.warn("SQUIRE | Non-critical error removing hook:", hookError);
+                // Continue execution, this error is not critical
+            }
+            
+            // Add hook for journal updates
+            Hooks.on("updateJournalEntryPage", function squireNotesPanelHook(updatedPage, changes, options, userId) {
+                // Give the hook a name for future reference
+                squireNotesPanelHook.name = "squire-notes-panel";
+                
+                // Check if this is the page we're currently viewing
+                if (updatedPage.id === page.id) {
+                    console.log("SQUIRE | Journal page updated, refreshing notes panel");
+                    // Re-render the content after a slight delay to ensure changes are processed
+                    setTimeout(() => this.render(this.element), 100);
+                }
+            }.bind(this));
+            
+            return true;
         } catch (error) {
-            console.error("SQUIRE | Error updating journal page:", error);
-            throw error;
+            console.error("SQUIRE | Error opening journal page:", error);
+            ui.notifications.error("Error opening journal page: " + error.message);
+            return null;
         }
     }
 } 

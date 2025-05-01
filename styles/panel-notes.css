@@ -2,56 +2,45 @@
 .squire-tray[data-position="left"] .notes-content {
     flex: 1;
     overflow-y: auto;
-    padding: 10px;
+    overflow-x: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
     background: rgba(240, 233, 230, 0.7);
     border-radius: 4px;
     margin-top: 10px;
 }
 
+
+
+
+
+
+
 .squire-tray[data-position="left"] .journal-content {
-    font-size: 14px;
-    line-height: 1.4;
+    flex: 1;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+
 }
+
+
+
+
 
 .squire-tray[data-position="left"] .journal-content img {
     max-width: 100%;
     height: auto;
-    display: block;
-    margin: 10px auto;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
 }
 
-.squire-tray[data-position="left"] .journal-content p {
-    margin-bottom: 1em;
-}
 
-.squire-tray[data-position="left"] .journal-content h1,
-.squire-tray[data-position="left"] .journal-content h2,
-.squire-tray[data-position="left"] .journal-content h3 {
-    margin: 1em 0 0.5em;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-    padding-bottom: 0.2em;
-}
 
-.squire-tray[data-position="left"] .journal-content h1 {
-    font-size: 1.5em;
-}
 
-.squire-tray[data-position="left"] .journal-content h2 {
-    font-size: 1.3em;
-}
 
-.squire-tray[data-position="left"] .journal-content h3 {
-    font-size: 1.1em;
-}
 
-.squire-tray[data-position="left"] .journal-content a {
-    color: var(--color-border-highlight, #ff6400);
-    text-decoration: none;
-}
-
-.squire-tray[data-position="left"] .journal-content a:hover {
-    text-decoration: underline;
-}
 
 .squire-tray[data-position="left"] .notes-controls {
     display: flex;
@@ -108,14 +97,67 @@
     border-color: var(--color-border-highlight, #ff6400);
 }
 
+/* Journal edit overlay */
+.squire-tray[data-position="left"] .journal-content.being-edited {
+    position: relative;
+    pointer-events: none;
+    filter: brightness(0.8);
+}
+
+.squire-tray[data-position="left"] .journal-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.squire-tray[data-position="left"] .edit-message {
+    background-color: rgba(50, 50, 60, 0.85);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Journal toolbar - styled like titlebar */
+.squire-tray[data-position="left"] .notes-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: bold;
+    user-select: none;
+    height: 28px;
+    color: white;
+}
+
+
+
+
+
 /* Notes panel styling */
 .squire-tray .panel-container[data-panel="panel-notes"] {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: auto;
-    min-height: 50px;
+
 }
+
+
+
 
 .squire-tray .tray-title-small {
     display: flex;
@@ -158,22 +200,24 @@
     color: var(--color-text-dark-secondary);
 }
 
+
+
+
+
+
+
+
+
 .squire-tray .notes-content {
     padding: 10px;
     overflow-y: auto;
-    max-height: 600px;
-    font-size: 0.9em;
-    flex: 1;
+
 }
 
-.squire-tray .notes-content .journal-content {
-    padding-right: 8px;
-}
 
-.squire-tray .notes-content .journal-content img {
-    max-width: 100%;
-    height: auto;
-}
+
+
+
 
 .squire-tray .no-journal-selected {
     text-align: center;
@@ -197,6 +241,10 @@
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 5px var(--color-shadow-highlight);
 }
+
+
+
+
 
 /* Page selector styling */
 .squire-tray .notes-page-selector {
@@ -234,57 +282,6 @@
     color: var(--color-text-light-secondary);
 }
 
-/* Journal Description dialog */
-.squire-description-dialog .window-content {
-    background: var(--color-bg-window);
-}
-
-.squire-description-window .squire-description-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    border-bottom: 1px solid var(--color-border-highlight-alt);
-    padding-bottom: 10px;
-}
-
-.squire-description-window .squire-description-header img {
-    width: 32px;
-    height: 32px;
-    margin-right: 10px;
-    border: none;
-}
-
-.squire-description-window .squire-description-header h1 {
-    margin: 0;
-    color: var(--color-text-light-highlight);
-    font-size: 1.2em;
-    border: none;
-}
-
-.squire-description-window .squire-description-content {
-    color: var(--color-text-light-primary);
-}
-
-.squire-description-window .squire-description-content p {
-    margin-bottom: 0.5em;
-}
-
-.squire-description-window .squire-description-content p:last-child {
-    margin-bottom: 0;
-}
-
-/* Empty content styling */
-.squire-tray .empty-page-content {
-    text-align: center;
-    padding: 40px 20px;
-    color: #666;
-    font-style: italic;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 5px;
-    border: 1px dashed #ccc;
-    margin: 20px 0;
-}
-
 /* Add styling for permission errors */
 .squire-tray .permission-error,
 .squire-tray .render-error {
@@ -316,141 +313,6 @@
     margin: 5px 0;
 }
 
-/* Journal edit controls */
-.squire-tray .journal-edit-controls {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 10px;
-    padding-top: 5px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.squire-tray .journal-edit-controls button {
-    padding: 5px 10px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    color: white;
-    cursor: pointer;
-}
-
-.squire-tray .journal-edit-controls .save-changes-button {
-    background: rgba(0, 80, 0, 0.3);
-}
-
-.squire-tray .journal-edit-controls .save-changes-button:hover {
-    background: rgba(0, 100, 0, 0.5);
-}
-
-.squire-tray .journal-edit-controls .cancel-edit-button {
-    background: rgba(80, 0, 0, 0.3);
-}
-
-.squire-tray .journal-edit-controls .cancel-edit-button:hover {
-    background: rgba(100, 0, 0, 0.5);
-}
-
-/* Active editor styles */
-.squire-tray .journal-content.edit-mode .journal-page-content {
-    border: 1px solid rgba(0, 100, 200, 0.5) !important;
-    box-shadow: 0 0 5px rgba(0, 100, 200, 0.3) !important;
-    padding: 5px !important;
-}
-
-/* Additional styling for journal content */
-.squire-tray .journal-content.prose {
-    color: #000;
-    background-color: #f0f0e0;
-    padding: 10px;
-    border-radius: 5px;
-    min-height: 200px;
-    max-height: 600px;
-    overflow-y: auto;
-    font-family: var(--font-primary, 'Signika', sans-serif);
-    line-height: 1.5;
-    border: 1px solid #c0c0c0;
-}
-
-.squire-tray .journal-content.prose img {
-    max-width: 100%;
-    height: auto;
-}
-
-.squire-tray .journal-content.prose a {
-    color: #4b6cc1;
-    text-decoration: none;
-    border-bottom: 1px dotted #4b6cc1;
-}
-
-.squire-tray .journal-content.prose a:hover {
-    text-decoration: none;
-    border-bottom: 1px solid #4b6cc1;
-    color: #5d7ad9;
-}
-
-/* Ensure the journal content area is scrollable if needed */
-.squire-tray .notes-content {
-    max-height: 600px;
-    overflow-y: auto;
-}
-
-/* Optimize the styling for rendered journal content */
-.squire-tray .journal-entry-page,
-.squire-tray .journal-page-content {
-    background: transparent !important;
-    color: #000 !important;
-    height: auto !important;
-    min-height: 100px;
-    width: 100% !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-/* Fix for empty content */
-.squire-tray .journal-content:empty {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100px;
-    background: rgba(255, 255, 255, 0.9);
-    color: #666;
-    font-style: italic;
-}
-
-.squire-tray .journal-content:empty::after {
-    content: "Loading journal content...";
-}
-
-/* Override some troublesome Foundry styles */
-.squire-tray .journal-entry-page .editor-content {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    color: #000 !important;
-    display: block !important;
-    visibility: visible !important;
-    min-height: 100px;
-}
-
-/* Ensure text is visible */
-.squire-tray .journal-content p,
-.squire-tray .journal-content h1,
-.squire-tray .journal-content h2,
-.squire-tray .journal-content h3,
-.squire-tray .journal-content h4,
-.squire-tray .journal-content h5,
-.squire-tray .journal-content h6,
-.squire-tray .journal-content div,
-.squire-tray .journal-content span,
-.squire-tray .journal-content li {
-    color: #000 !important;
-    visibility: visible !important;
-}
-
 /* Improve error display */
 .squire-tray .render-error {
     background-color: #fff0f0;
@@ -477,174 +339,81 @@
     color: #800000 !important;
 }
 
-/* Headers to match Foundry journal styling */
-.squire-tray .journal-content h1 {
-    font-size: 1.8em;
-    color: #4b4a44;
-    border-bottom: 1px solid #c0c0c0;
-    margin-bottom: 0.5em;
-    padding-bottom: 0.2em;
-    font-family: var(--font-primary, 'Signika', sans-serif);
-    font-weight: 700;
-    text-transform: uppercase;
+/* Journal edit controls */
+.squire-tray .journal-edit-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.squire-tray .journal-content h2 {
-    font-size: 1.5em;
-    color: #58180d;
-    margin-top: 1em;
-    margin-bottom: 0.5em;
-    font-family: var(--font-primary, 'Signika', sans-serif);
-    font-weight: 700;
-    text-transform: capitalize;
-}
-
-.squire-tray .journal-content h3 {
-    font-size: 1.2em;
-    color: #4b4a44;
-    margin-top: 1em;
-    margin-bottom: 0.5em;
-    font-family: var(--font-primary, 'Signika', sans-serif);
-    font-weight: 700;
-}
-
-/* Lists to match Foundry journal styling */
-.squire-tray .journal-content ul {
-    list-style-type: disc;
-    margin-left: 1.5em;
-    margin-bottom: 1em;
-}
-
-.squire-tray .journal-content li {
-    margin-bottom: 0.5em;
-    line-height: 1.4;
-}
-
-/* Block quotes */
-.squire-tray .journal-content blockquote {
-    border-left: 4px solid #ddd;
-    padding-left: 1em;
-    margin-left: 0.5em;
-    font-style: italic;
-    color: #666;
-}
-
-/* Tables - match foundry styling */
-.squire-tray .journal-content table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1em 0;
-}
-
-.squire-tray .journal-content th {
-    background-color: #58180d;
+.squire-tray .journal-edit-controls button {
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
     color: white;
-    font-weight: bold;
-    text-align: left;
-    padding: 0.5em;
-}
-
-.squire-tray .journal-content td {
-    border: 1px solid #ddd;
-    padding: 0.5em;
-}
-
-.squire-tray .journal-content tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
-/* Section styling */
-.squire-tray .journal-content section {
-    margin-bottom: 1.5em;
-}
-
-/* Edit button styling for future edit functionality */
-.squire-tray .journal-content-edit-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    padding: 2px 5px;
     cursor: pointer;
+}
+
+
+
+
+.squire-tray .journal-edit-controls .save-changes-button {
+    background: rgba(0, 80, 0, 0.3);
+}
+
+.squire-tray .journal-edit-controls .save-changes-button:hover {
+    background: rgba(0, 100, 0, 0.5);
+}
+
+.squire-tray .journal-edit-controls .cancel-edit-button {
+    background: rgba(80, 0, 0, 0.3);
+}
+
+.squire-tray .journal-edit-controls .cancel-edit-button:hover {
+    background: rgba(100, 0, 0, 0.5);
+}
+
+
+
+/* Additional styling for journal content */
+
+
+/* Ensure the journal content area is scrollable if needed */
+.squire-tray .notes-content {
+    overflow-y: auto;
+}
+
+/* Optimize the styling for rendered journal content */
+.squire-tray .journal-entry-page,
+.squire-tray .journal-page-content {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    background: transparent !important;
+    color: #000 !important;
+    border: none !important;
+}
+
+/* Fix for empty content */
+.squire-tray .journal-content:empty {
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-size: 12px;
-    color: #444;
-    transition: all 0.2s ease;
-}
-
-.squire-tray .journal-content-edit-button:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-    color: #000;
-}
-
-/* Editor container - hidden by default, to be shown when editing */
-.squire-tray .journal-content-editor {
-    display: none;
-    width: 100%;
-    height: 100%;
-    min-height: 300px;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10px;
-    margin-top: 10px;
-}
-
-.squire-tray .journal-content-editor.active {
-    display: block;
-}
-
-/* Editor toolbar */
-.squire-tray .journal-content-editor-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 10px;
-    padding: 5px;
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.squire-tray .journal-content-editor-toolbar button {
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    padding: 3px 8px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-.squire-tray .journal-content-editor-toolbar button:hover {
-    background-color: #eee;
-}
-
-/* Edit mode buttons */
-.squire-tray .edit-page-button {
-    background: rgba(50, 50, 80, 0.4) !important;
-    color: white !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 3px;
-    padding: 5px 10px !important;
-    margin-top: 10px;
-    cursor: pointer;
-    font-size: 0.9em;
-    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    transition: all 0.2s ease;
+    min-height: 100px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #666;
+    font-style: italic;
 }
 
-.squire-tray .edit-page-button:hover {
-    background: rgba(70, 70, 120, 0.6) !important;
-    border-color: var(--color-border-highlight) !important;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+.squire-tray .journal-content:empty::after {
+    content: "Loading journal content...";
 }
 
-.squire-tray .edit-page-button i {
-    color: #ddd;
-} 
+
