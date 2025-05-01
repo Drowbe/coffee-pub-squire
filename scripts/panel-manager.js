@@ -119,6 +119,11 @@ export class PanelManager {
             // Always create a new instance to ensure clean state
             PanelManager.instance = new PanelManager(actor);
 
+            // Check if this is a monster/NPC and auto-favorite items
+            if (actor && actor.type !== "character") {
+                await FavoritesPanel.initializeNpcFavorites(actor);
+            }
+            
             // Restore health window state if it was open
             if (hadHealthWindow && PanelManager.instance.healthPanel) {
                 PanelManager.instance.healthPanel.isPoppedOut = true;
@@ -1722,6 +1727,21 @@ Hooks.on('createItem', async (item) => {
 // Handle item updates
 Hooks.on('updateItem', async (item) => {
     if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
+        // Check if this is an NPC/monster and the item is a weapon being equipped
+        // or a spell being prepared
+        if (item.parent.type !== "character") {
+            // For weapons, check if equipped status changed to true
+            if (item.type === "weapon" && item.system.equipped === true) {
+                // Add to favorites if it's now equipped
+                await FavoritesPanel.manageFavorite(item.parent, item.id);
+            }
+            // For spells, check if prepared status changed to true
+            else if (item.type === "spell" && item.system.preparation?.prepared === true) {
+                // Add to favorites if it's now prepared
+                await FavoritesPanel.manageFavorite(item.parent, item.id);
+            }
+        }
+        
         await PanelManager.instance.updateTray();
         await PanelManager.instance.renderPanels(PanelManager.element);
     }

@@ -98,6 +98,102 @@ export class FavoritesPanel {
         }
     }
 
+    /**
+     * Automatically adds equipped weapons and prepared spells to favorites for monster/NPC actors
+     * @param {Actor} actor - The actor to check and update favorites for
+     * @returns {Promise<boolean>} - Returns true if any changes were made
+     */
+    static async initializeNpcFavorites(actor) {
+        if (!actor) return false;
+
+        // Only process for non-player characters (monsters/NPCs)
+        if (actor.type === "character") return false;
+        
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        try {
+            // Get current favorites
+            const currentFavorites = FavoritesPanel.getFavorites(actor);
+            
+            // If favorites already exist, don't override them
+            if (currentFavorites.length > 0) return false;
+            
+            // Get all items from the actor
+            const newFavorites = [];
+            
+            // Add equipped weapons to favorites
+            const weapons = actor.items.filter(item => 
+                item.type === "weapon" && 
+                item.system.equipped === true
+            );
+            
+            // Add prepared spells to favorites
+            const spells = actor.items.filter(item => 
+                item.type === "spell" && 
+                item.system.preparation?.prepared === true
+            );
+            
+            // Get the IDs of all items to favorite
+            const itemsToFavorite = [...weapons, ...spells].map(item => item.id);
+            
+            // If no items to favorite, don't do anything
+            if (itemsToFavorite.length === 0) return false;
+            
+            // Save the new favorites
+            await actor.unsetFlag(MODULE.ID, 'favorites');
+            await actor.setFlag(MODULE.ID, 'favorites', itemsToFavorite);
+            
+            // Log the action
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Auto-favorited items for NPC/Monster",
+                { 
+                    actorName: actor.name, 
+                    actorType: actor.type,
+                    weaponsCount: weapons.length, 
+                    spellsCount: spells.length,
+                    totalFavorites: itemsToFavorite.length 
+                },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            
+            // Refresh the panels if they exist
+            if (PanelManager.instance && PanelManager.currentActor?.id === actor.id) {
+                // First update the favorites panel
+                if (PanelManager.instance.favoritesPanel?.element) {
+                    await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                }
+
+                // Then update all other panels
+                if (PanelManager.instance.inventoryPanel?.element) {
+                    await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                }
+                if (PanelManager.instance.weaponsPanel?.element) {
+                    await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
+                }
+                if (PanelManager.instance.spellsPanel?.element) {
+                    await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                }
+
+                // Update just the handle to refresh favorites
+                await PanelManager.instance.updateHandle();
+            }
+            
+            return true;
+        } catch (error) {
+            blacksmith?.utils.postConsoleAndNotification(
+                "SQUIRE | Error in initializeNpcFavorites",
+                error,
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            return false;
+        }
+    }
+
     constructor(actor) {
         this.actor = actor;
         this.favorites = this._getFavorites();
@@ -166,6 +262,11 @@ export class FavoritesPanel {
                 this._reorderFavorite(itemId, favorites.length - 1);
             }
         }];
+        
+        // Auto-favorite for NPC/Monster
+        if (this.actor && this.actor.type !== "character") {
+            FavoritesPanel.initializeNpcFavorites(this.actor);
+        }
     }
 
     _getFavorites() {
