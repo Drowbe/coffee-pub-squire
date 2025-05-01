@@ -1,33 +1,96 @@
-/* Notes Panel Styles */
+/* Notes Panel - Main Layout */
+.squire-tray[data-position="left"] .panel-container[data-panel="panel-notes"] {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
 .squire-tray[data-position="left"] .notes-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
     background: rgba(240, 233, 230, 0.7);
     border-radius: 4px;
     margin-top: 10px;
+    padding: 8px;
 }
 
+/* Common Title & Toolbar Styles */
+.squire-tray[data-position="left"] .tray-title-small,
+.squire-tray[data-position="left"] .notes-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
 
+.squire-tray[data-position="left"] .tray-title-small {
+    font-weight: bold;
+    height: 28px;
+    cursor: pointer;
+    user-select: none;
+}
 
+/* Control Icons */
+.squire-tray[data-position="left"] .notes-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+}
 
+.squire-tray[data-position="left"] .notes-controls i,
+.squire-tray[data-position="left"] .notes-toolbar i {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
 
+.squire-tray[data-position="left"] .notes-controls i:hover,
+.squire-tray[data-position="left"] .notes-toolbar i:hover {
+    opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}
 
+/* Thumbtack Icon Specific */
+.squire-tray[data-position="left"] .notes-controls .fa-thumbtack {
+    transform: rotate(0deg);
+    color: var(--color-text-hyperlink);
+}
 
+.squire-tray[data-position="left"] .notes-controls .fa-thumbtack.unpinned {
+    transform: rotate(45deg);
+    color: var(--color-text-dark-secondary);
+}
+
+/* Toolbar Page Selection */
+.squire-tray[data-position="left"] .notes-toolbar .notes-toolbar-left {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.squire-tray[data-position="left"] .notes-toolbar .page-select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--color-text-light-highlight);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    height: 28px;
+}
+
+/* Journal Content */
 .squire-tray[data-position="left"] .journal-content {
     flex: 1;
     overflow: visible !important;
     height: auto !important;
     max-height: none !important;
-
 }
-
-
-
-
 
 .squire-tray[data-position="left"] .journal-content img {
     max-width: 100%;
@@ -36,29 +99,32 @@
     border-radius: 4px;
 }
 
+.squire-tray[data-position="left"] .journal-entry-page,
+.squire-tray[data-position="left"] .journal-page-content {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    background: transparent !important;
+    color: #000 !important;
+    border: none !important;
+}
 
-
-
-
-
-
-.squire-tray[data-position="left"] .notes-controls {
+/* Empty Content Placeholder */
+.squire-tray[data-position="left"] .journal-content:empty {
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 10px;
-    flex: 1;
-    justify-content: flex-end;
+    min-height: 100px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #666;
+    font-style: italic;
 }
 
-.squire-tray[data-position="left"] .notes-controls i {
-    cursor: pointer;
-    transition: color 0.2s ease;
+.squire-tray[data-position="left"] .journal-content:empty::after {
+    content: "Loading journal content...";
 }
 
-.squire-tray[data-position="left"] .notes-controls i:hover {
-    color: var(--color-border-highlight, #ff6400);
-}
-
+/* No Journal Selected State */
 .squire-tray[data-position="left"] .no-journal-selected {
     display: flex;
     flex-direction: column;
@@ -77,6 +143,7 @@
     color: var(--color-text-hyperlink);
 }
 
+/* Set Journal Button */
 .squire-tray[data-position="left"] .set-journal-button-large {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -97,7 +164,52 @@
     border-color: var(--color-border-highlight, #ff6400);
 }
 
-/* Journal edit overlay */
+/* Error States */
+.squire-tray[data-position="left"] .permission-error,
+.squire-tray[data-position="left"] .render-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px 15px;
+    color: var(--color-text-dark-inactive);
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.squire-tray[data-position="left"] .permission-error i,
+.squire-tray[data-position="left"] .render-error i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    color: #770000;
+}
+
+.squire-tray[data-position="left"] .render-error i {
+    color: #aa7700;
+}
+
+.squire-tray[data-position="left"] .permission-error p,
+.squire-tray[data-position="left"] .render-error p {
+    margin: 5px 0;
+}
+
+.squire-tray[data-position="left"] .render-error {
+    background-color: #fff0f0;
+    border: 1px solid #ffd0d0;
+    border-radius: 5px;
+    color: #800000;
+    padding: 20px;
+    margin: 20px 0;
+    gap: 10px;
+}
+
+.squire-tray[data-position="left"] .render-error p {
+    color: #800000 !important;
+}
+
+/* Being Edited State */
 .squire-tray[data-position="left"] .journal-content.being-edited {
     position: relative;
     pointer-events: none;
@@ -130,290 +242,10 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-/* Journal toolbar - styled like titlebar */
-.squire-tray[data-position="left"] .notes-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    font-weight: bold;
-    user-select: none;
-    height: 28px;
-    color: white;
-}
 
 
 
 
 
-/* Notes panel styling */
-.squire-tray .panel-container[data-panel="panel-notes"] {
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-
-}
-
-
-
-
-.squire-tray .tray-title-small {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    font-weight: bold;
-    user-select: none;
-    height: 28px;
-    cursor: pointer;
-}
-
-.squire-tray .notes-controls {
-    display: flex;
-    gap: 8px;
-}
-
-.squire-tray .notes-controls i {
-    cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-}
-
-.squire-tray .notes-controls i:hover {
-    opacity: 1;
-    color: var(--color-text-hyperlink);
-    text-shadow: 0 0 8px var(--color-shadow-primary);
-}
-
-/* Thumbtack/pin icon styles */
-.squire-tray .notes-controls .fa-thumbtack {
-    transform: rotate(0deg);
-    color: var(--color-text-hyperlink);
-}
-
-.squire-tray .notes-controls .fa-thumbtack.unpinned {
-    transform: rotate(45deg);
-    color: var(--color-text-dark-secondary);
-}
-
-
-
-
-
-
-
-
-
-.squire-tray .notes-content {
-    padding: 10px;
-    overflow-y: auto;
-
-}
-
-
-
-
-
-
-.squire-tray .no-journal-selected {
-    text-align: center;
-    color: var(--color-text-dark-inactive);
-    padding: 20px 10px;
-}
-
-.squire-tray .set-journal-button-large {
-    margin-top: 15px;
-    background: rgba(0, 0, 0, 0.3);
-    color: var(--color-text-light-highlight);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    padding: 8px 15px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.squire-tray .set-journal-button-large:hover {
-    background: rgba(var(--color-shadow-primary), 0.5);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 5px var(--color-shadow-highlight);
-}
-
-
-
-
-
-/* Page selector styling */
-.squire-tray .notes-page-selector {
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.squire-tray .notes-page-selector .page-select {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    color: var(--color-text-light-highlight);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    padding: 4px 8px;
-    font-size: 0.9em;
-}
-
-.squire-tray .notes-page-selector .page-select:focus {
-    outline: none;
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 3px var(--color-shadow-highlight);
-}
-
-.squire-tray .notes-page-selector .page-select option {
-    background-color: #2a2a2a;
-    color: white;
-    padding: 6px;
-}
-
-.squire-tray .notes-page-selector .page-name {
-    padding: 4px 0;
-    font-size: 0.9em;
-    font-style: italic;
-    color: var(--color-text-light-secondary);
-}
-
-/* Add styling for permission errors */
-.squire-tray .permission-error,
-.squire-tray .render-error {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 30px 15px;
-    color: var(--color-text-dark-inactive);
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-.squire-tray .permission-error i,
-.squire-tray .render-error i {
-    font-size: 2em;
-    margin-bottom: 10px;
-    color: #770000;
-}
-
-.squire-tray .render-error i {
-    color: #aa7700;
-}
-
-.squire-tray .permission-error p,
-.squire-tray .render-error p {
-    margin: 5px 0;
-}
-
-/* Improve error display */
-.squire-tray .render-error {
-    background-color: #fff0f0;
-    border: 1px solid #ffd0d0;
-    border-radius: 5px;
-    color: #800000;
-    text-align: center;
-    padding: 20px;
-    margin: 20px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.squire-tray .render-error i {
-    font-size: 2.5em;
-    color: #cc6600;
-    margin-bottom: 10px;
-}
-
-.squire-tray .render-error p {
-    margin: 0;
-    color: #800000 !important;
-}
-
-/* Journal edit controls */
-.squire-tray .journal-edit-controls {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 10px;
-    padding-top: 5px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.squire-tray .journal-edit-controls button {
-    padding: 5px 10px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    color: white;
-    cursor: pointer;
-}
-
-
-
-
-.squire-tray .journal-edit-controls .save-changes-button {
-    background: rgba(0, 80, 0, 0.3);
-}
-
-.squire-tray .journal-edit-controls .save-changes-button:hover {
-    background: rgba(0, 100, 0, 0.5);
-}
-
-.squire-tray .journal-edit-controls .cancel-edit-button {
-    background: rgba(80, 0, 0, 0.3);
-}
-
-.squire-tray .journal-edit-controls .cancel-edit-button:hover {
-    background: rgba(100, 0, 0, 0.5);
-}
-
-
-
-/* Additional styling for journal content */
-
-
-/* Ensure the journal content area is scrollable if needed */
-.squire-tray .notes-content {
-    overflow-y: auto;
-}
-
-/* Optimize the styling for rendered journal content */
-.squire-tray .journal-entry-page,
-.squire-tray .journal-page-content {
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-    background: transparent !important;
-    color: #000 !important;
-    border: none !important;
-}
-
-/* Fix for empty content */
-.squire-tray .journal-content:empty {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100px;
-    background: rgba(255, 255, 255, 0.9);
-    color: #666;
-    font-style: italic;
-}
-
-.squire-tray .journal-content:empty::after {
-    content: "Loading journal content...";
-}
 
 

@@ -1619,7 +1619,9 @@ export class NotesPanel {
                     // Find and remove the specific handler
                     const existingHooks = Hooks.events.updateJournalEntryPage || [];
                     for (let i = existingHooks.length - 1; i >= 0; i--) {
-                        if (existingHooks[i].name === "squire-notes-panel") {
+                        const hook = existingHooks[i];
+                        // Check if this is our hook by looking at toString() content
+                        if (hook.toString().includes('SQUIRE | Journal page updated')) {
                             existingHooks.splice(i, 1);
                         }
                     }
@@ -1633,18 +1635,21 @@ export class NotesPanel {
                 // Continue execution, this error is not critical
             }
             
-            // Add hook for journal updates
-            Hooks.on("updateJournalEntryPage", function squireNotesPanelHook(updatedPage, changes, options, userId) {
-                // Give the hook a name for future reference
-                squireNotesPanelHook.name = "squire-notes-panel";
-                
+            // Store the current page ID for hook reference
+            const currentPageId = page.id;
+            const self = this;
+            
+            // Add hook for journal updates - using a named function variable instead of trying to name it after creation
+            const hookId = Hooks.on("updateJournalEntryPage", function(updatedPage, changes, options, userId) {
                 // Check if this is the page we're currently viewing
-                if (updatedPage.id === page.id) {
+                if (updatedPage.id === currentPageId) {
                     console.log("SQUIRE | Journal page updated, refreshing notes panel");
                     // Re-render the content after a slight delay to ensure changes are processed
-                    setTimeout(() => this.render(this.element), 100);
+                    setTimeout(() => self.render(self.element), 100);
                 }
-            }.bind(this));
+            });
+            
+            console.log("SQUIRE | Added journal update hook with ID:", hookId);
             
             return true;
         } catch (error) {
