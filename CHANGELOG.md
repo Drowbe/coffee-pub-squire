@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Live content updates when journal entries are modified
 - Visual overlay indicating when content is being edited by any user
 - Proper hooks integration to refresh content when journal pages are updated
+- Auto-favorite equipped weapons and prepared spells for monsters/NPCs when first selected (only if they don't already have favorites)
 
 ### Fixed
 - Fixed scrollbar issues to ensure only one scrollbar appears in the notes panel
