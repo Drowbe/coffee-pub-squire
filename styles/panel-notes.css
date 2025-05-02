@@ -1,4 +1,4 @@
-/* Notes Panel - Main Layout */
+/* === Base Layout & Container Styles === */
 .squire-tray[data-position="left"] .panel-container[data-panel="panel-notes"],
 .squire-tray[data-position="left"] .panel-container[data-panel="panel-codex"] {
     overflow: hidden;
@@ -17,8 +17,7 @@
     padding: 8px;
 }
 
-
-/* Common Title & Toolbar Styles */
+/* === Common Title & Toolbar Styles === */
 .squire-tray[data-position="left"] .tray-title-small,
 .squire-tray[data-position="left"] .notes-toolbar,
 .squire-tray[data-position="left"] .codex-toolbar {
@@ -38,7 +37,7 @@
     user-select: none;
 }
 
-/* Control Icons */
+/* === Common Control Icons === */
 .squire-tray[data-position="left"] .notes-controls,
 .squire-tray[data-position="left"] .codex-controls {
     display: flex;
@@ -47,10 +46,12 @@
     justify-content: flex-end;
 }
 
+/* === Unified Icon Styles === */
 .squire-tray[data-position="left"] .notes-controls i,
 .squire-tray[data-position="left"] .notes-toolbar i,
 .squire-tray[data-position="left"] .codex-controls i,
-.squire-tray[data-position="left"] .codex-toolbar i {
+.squire-tray[data-position="left"] .codex-toolbar i,
+.squire-tray[data-position="left"] .codex-entry-controls i {
     cursor: pointer;
     opacity: 0.7;
     transition: all 0.2s ease;
@@ -59,24 +60,14 @@
 .squire-tray[data-position="left"] .notes-controls i:hover,
 .squire-tray[data-position="left"] .notes-toolbar i:hover,
 .squire-tray[data-position="left"] .codex-controls i:hover,
-.squire-tray[data-position="left"] .codex-toolbar i:hover {
+.squire-tray[data-position="left"] .codex-toolbar i:hover,
+.squire-tray[data-position="left"] .codex-entry-controls i:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
-/* Thumbtack Icon Specific */
-.squire-tray[data-position="left"] .notes-controls .fa-thumbtack {
-    transform: rotate(0deg);
-    color: var(--color-text-hyperlink);
-}
-
-.squire-tray[data-position="left"] .notes-controls .fa-thumbtack.unpinned {
-    transform: rotate(45deg);
-    color: var(--color-text-dark-secondary);
-}
-
-/* Toolbar Page Selection */
+/* === Notes Panel Specific Styles === */
 .squire-tray[data-position="left"] .notes-toolbar .notes-toolbar-left {
     flex: 1;
     margin-right: 10px;
@@ -93,7 +84,7 @@
     height: 28px;
 }
 
-/* Journal Content */
+/* === Journal Content Styles === */
 .squire-tray[data-position="left"] .journal-content {
     flex: 1;
     overflow: visible !important;
@@ -118,7 +109,7 @@
     border: none !important;
 }
 
-/* Empty Content Placeholder */
+/* === Empty Content States === */
 .squire-tray[data-position="left"] .journal-content:empty {
     display: flex;
     justify-content: center;
@@ -133,7 +124,6 @@
     content: "Loading journal content...";
 }
 
-/* No Journal Selected State */
 .squire-tray[data-position="left"] .no-journal-selected {
     display: flex;
     flex-direction: column;
@@ -152,7 +142,7 @@
     color: var(--color-text-hyperlink);
 }
 
-/* Set Journal Button */
+/* === Button Styles === */
 .squire-tray[data-position="left"] .set-journal-button-large {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -173,7 +163,7 @@
     border-color: var(--color-border-highlight, #ff6400);
 }
 
-/* Error States */
+/* === Error States === */
 .squire-tray[data-position="left"] .permission-error,
 .squire-tray[data-position="left"] .render-error {
     display: flex;
@@ -218,7 +208,7 @@
     color: #800000 !important;
 }
 
-/* Being Edited State */
+/* === Edit State Styles === */
 .squire-tray[data-position="left"] .journal-content.being-edited {
     position: relative;
     pointer-events: none;
@@ -251,26 +241,12 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Codex Panel Styles */
+/* === Codex Panel Specific Styles === */
 .squire-tray[data-position="left"] .codex-content {
     background: transparent;
 }
 
-/* Search and Filter Bar */
+/* === Codex Search and Filter Styles === */
 .squire-tray[data-position="left"] .codex-filters {
     padding: 8px;
     background: rgba(0, 0, 0, 0.2);
@@ -297,7 +273,7 @@
 
 .squire-tray[data-position="left"] .codex-search .clear-search {
     position: absolute;
-    right: 36px; /* Adjusted to be more visible */
+    right: 36px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
@@ -346,16 +322,7 @@
     opacity: 1;
 }
 
-.squire-tray[data-position="left"] .codex-tag-filter select {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    color: #fff;
-    padding: 4px;
-}
-
-/* Category Headers */
+/* === Codex Category Styles === */
 .squire-tray[data-position="left"] .codex-section {
     margin-bottom: 8px;
 }
@@ -394,7 +361,7 @@
     display: none;
 }
 
-/* Entry Cards */
+/* === Codex Entry Styles === */
 .squire-tray[data-position="left"] .codex-entries {
     margin-top: 8px;
 }
@@ -413,6 +380,7 @@
     justify-content: space-between;
     gap: 8px;
 }
+
 .squire-tray[data-position="left"] .codex-entry-name {
     flex: 1 1 auto;
     text-align: left;
@@ -426,37 +394,24 @@
     padding-top: 8px;
 }
 
-
-
 .squire-tray[data-position="left"] .codex-entry-image {
     float: left;
     margin: 0 8px 8px 0;
     width: 64px;
     height: 64px;
-
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.2);
-    
-    
-    
-    
 }
 
 .squire-tray[data-position="left"] .codex-entry-image img {
-    
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
-
-
-
-
-
 
 .squire-tray[data-position="left"] .codex-entry-description {
     color: #ccc;
@@ -468,7 +423,6 @@
     color: #aaa;
     font-style: italic;
     margin-bottom: 8px;
-    
 }
 
 .squire-tray[data-position="left"] .codex-entry-tags {
@@ -480,16 +434,7 @@
     padding-top: 8px;
 }
 
-
-
-
-
-
-
-
-
-/* Tag Cloud Container */
-
+/* === Codex Tag Cloud Styles === */
 .squire-tray[data-position="left"] .codex-tag-cloud {
     padding: 8px;
     display: flex;
@@ -501,6 +446,7 @@
     border-radius: 4px;
     transition: all 0.2s ease-out;
 }
+
 .squire-tray[data-position="left"] .codex-tag-cloud.collapsed {
     max-height: 0;
     padding: 0;
@@ -508,14 +454,9 @@
     opacity: 0;
 }
 
-/* Tag Cloud Tags */
-
 .squire-tray[data-position="left"] .codex-tag {
-
-    
     background: rgba(255, 47, 47, 0.2);
     border-color: rgba(255, 47, 47, 0.4);
-    
     border-radius: 4px;
     padding: 2px 8px;
     font-size: 0.9em;
@@ -523,6 +464,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
 }
+
 .squire-tray[data-position="left"] .codex-tag:hover {
     background: rgba(255, 47, 47, 0.7);
     border-color: rgba(255, 47, 47, 0.7);
@@ -533,54 +475,13 @@
     border-color: rgba(50, 100, 150, 0.6);
     color: #fff;
 }
+
 .squire-tray[data-position="left"] .codex-tag.selected:hover {
     background: rgba(50, 100, 150, 0.7);
     border-color: rgba(100, 150, 200, 0.8);
 }
 
-
-/* Toolbar Links */
-
-
-
-/* Entry Controls */
-.squire-tray[data-position="left"] .codex-entry-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.squire-tray[data-position="left"] .codex-entry-controls i {
-    font-size: 1.1em;
-    width: 28px;
-    height: 28px;
-    color: #fff;
-    opacity: 0.7;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s, opacity 0.2s, box-shadow 0.2s;
-}
-
-.squire-tray[data-position="left"] .codex-entry-controls i:hover {
-    color: var(--color-border-highlight, #ff6400);
-    opacity: 1;
-    box-shadow: 0 0 8px var(--color-shadow-primary, #ff6400);
-}
-
-.squire-tray[data-position="left"] .codex-entry-controls .identified {
-    color: #88ff88;
-}
-.squire-tray[data-position="left"] .codex-entry-controls .unidentified {
-    color: #ff8888;
-}
-
-.squire-tray[data-position="left"] .codex-entry-controls .has-link {
-    color: var(--color-border-highlight, #ff6400);
-}
-
-/* === Unified Codex Toolbar Icon Styles === */
+/* === Unified Codex Control Styles === */
 .squire-tray[data-position="left"] .codex-entry-controls i,
 .squire-tray[data-position="left"] .codex-controls i,
 .squire-tray[data-position="left"] .codex-toolbar i {
@@ -588,8 +489,6 @@
     width: 28px;
     height: 28px;
     color: #fff;
-    opacity: 0.7;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -604,25 +503,30 @@
     box-shadow: 0 0 8px var(--color-shadow-primary, #ff6400);
 }
 
-/* === State overrides (only color) === */
+/* === State Overrides (only color) === */
 .squire-tray[data-position="left"] .codex-entry-controls .identified {
     color: #88ff88;
 }
+
 .squire-tray[data-position="left"] .codex-entry-controls .unidentified {
     color: #ff8888;
 }
+
 .squire-tray[data-position="left"] .codex-entry-controls .has-link {
     color: var(--color-border-highlight, #ff6400);
 }
 
+/* === Collapse/Expand States === */
 .squire-tray[data-position="left"] .codex-entry.collapsed .codex-entry-content {
     display: none;
 }
+
 .squire-tray[data-position="left"] .codex-entry .codex-entry-toggle {
     margin-right: 8px;
     transition: transform 0.2s;
     cursor: pointer;
 }
+
 .squire-tray[data-position="left"] .codex-entry:not(.collapsed) .codex-entry-toggle {
     transform: rotate(90deg);
 }

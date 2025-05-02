@@ -7,7 +7,7 @@
             Codex
             {{/if}}
         </span>
-        <div class="codex-controls">
+        <div class="codex-toolbar">
             {{#if isGM}}
             <i class="fas fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
             <i class="fas fa-cog set-codex-button" title="Set Codex Journal"></i>
@@ -48,7 +48,7 @@
                                     <div class="codex-entry collapsed">
                                         <div class="codex-entry-header">
                                             <div class="codex-entry-name">{{name}}</div>
-                                            <div class="codex-entry-controls">
+                                            <div class="codex-toolbar">
                                                 <i class="fas {{#if identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if identified}}Identified{{else}}Not Identified{{/if}}"></i>
                                                 {{#if link}}
                                                     <i class="fas fa-feather codex-entry-link has-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>

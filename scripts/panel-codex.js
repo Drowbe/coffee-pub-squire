@@ -303,7 +303,7 @@ export class CodexPanel {
         html.off('click.codexIdentified');
         
         // Identified state toggle - with namespaced event
-        html.on('click.codexIdentified', '.codex-entry-controls .fa-eye, .codex-entry-controls .fa-eye-slash', async (event) => {
+        html.on('click.codexIdentified', '.codex-toolbar .fa-eye, .codex-toolbar .fa-eye-slash', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -649,7 +649,7 @@ export class CodexPanel {
         });
         // Toggle collapse on header click (but not controls)
         codexContainer.on('click', '.codex-entry-header', function(e) {
-            if ($(e.target).closest('.codex-entry-controls').length) return;
+            if ($(e.target).closest('.codex-toolbar').length) return;
             const card = $(this).closest('.codex-entry');
             card.toggleClass('collapsed');
         });
