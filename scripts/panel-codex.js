@@ -102,9 +102,14 @@ export class CodexPanel {
             a.name.localeCompare(b.name)
         );
 
+        // Filter out unidentified entries for non-GM users
+        const filteredEntries = sortedEntries.filter(entry => 
+            game.user.isGM || entry.identified
+        );
+
         // Only filter by tags since search is now handled in DOM
         if (this.filters.tags.length > 0) {
-            return sortedEntries.filter(entry => {
+            return filteredEntries.filter(entry => {
                 const hasAnyTag = this.filters.tags.some(tag => 
                     entry.tags.includes(tag)
                 );
@@ -112,7 +117,7 @@ export class CodexPanel {
             });
         }
 
-        return sortedEntries;
+        return filteredEntries;
     }
 
     /**
@@ -132,11 +137,21 @@ export class CodexPanel {
             clearButton.toggleClass('disabled', !searchValue);
             
             // Show all entries first (in case we're making the search less restrictive)
-            html.find('.codex-entry, .codex-section').show();
+            // For non-GMs, only show entries that are already visible (identified)
+            if (game.user.isGM) {
+                html.find('.codex-entry').show();
+            } else {
+                html.find('.codex-entry:not(.unidentified)').show();
+            }
+            html.find('.codex-section').show();
             
             if (searchValue) {
                 // Then filter entries
-                html.find('.codex-entry').each((i, el) => {
+                const entriesToSearch = game.user.isGM ? 
+                    html.find('.codex-entry') : 
+                    html.find('.codex-entry:not(.unidentified)');
+
+                entriesToSearch.each((i, el) => {
                     const entry = $(el);
                     const name = entry.find('.codex-entry-name').text().toLowerCase();
                     const description = entry.find('.codex-entry-description').text().toLowerCase();
