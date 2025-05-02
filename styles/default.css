@@ -37,6 +37,10 @@
 
 @import "panel-party.css"; 
 
+@import "panel-notes.css";
+
+@import "panel-codex.css";
+
 /* --- Stacked Panels ---------------------- */
 
 @import "panel-inventory.css"; 
@@ -46,5 +50,6 @@
 @import "panel-weapons.css"; 
 
 @import "panel-party-stats.css";
+
 
 

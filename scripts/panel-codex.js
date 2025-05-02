@@ -628,13 +628,6 @@ export class CodexPanel {
             }
         }
 
-     
-
-        // Apply current search filter if any
-        if (this.filters.search) {
-            codexContainer.find('.codex-search input').trigger('input');
-        }
-
         // After rendering, set initial states
         if (this.filters.search) {
             codexContainer.find('.clear-search').show();
@@ -644,5 +637,21 @@ export class CodexPanel {
         if (!isTagCloudCollapsed) {
             codexContainer.find('.toggle-tags-button').addClass('active');
         }
+
+        // --- Codex Card Collapse/Expand ---
+        // Always start collapsed
+        codexContainer.find('.codex-entry').addClass('collapsed');
+        // Toggle collapse on chevron click
+        codexContainer.on('click', '.codex-entry-toggle', function(e) {
+            const card = $(this).closest('.codex-entry');
+            card.toggleClass('collapsed');
+            e.stopPropagation();
+        });
+        // Toggle collapse on header click (but not controls)
+        codexContainer.on('click', '.codex-entry-header', function(e) {
+            if ($(e.target).closest('.codex-entry-controls').length) return;
+            const card = $(this).closest('.codex-entry');
+            card.toggleClass('collapsed');
+        });
     }
 } 

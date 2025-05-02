@@ -45,35 +45,37 @@
 
                             <div class="codex-entries">
                                 {{#each entries}}
-                                    <div class="codex-entry">
+                                    <div class="codex-entry collapsed">
                                         <div class="codex-entry-header">
                                             <div class="codex-entry-name">{{name}}</div>
                                             <div class="codex-entry-controls">
                                                 <i class="fas {{#if identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if identified}}Identified{{else}}Not Identified{{/if}}"></i>
                                                 {{#if link}}
-                                                    <i class="fas fa-feather codex-entry-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
+                                                    <i class="fas fa-feather codex-entry-link has-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
                                                 {{/if}}
+                                                <i class="fas fa-chevron-right codex-entry-toggle" title="Expand/Collapse"></i>
                                             </div>
                                         </div>
-                                        <div class="codex-entry-divider"></div>
-                                        <div class="codex-entry-image">
-                                            <img src="{{img}}" alt="{{name}}">
-                                        </div>
-                                        {{#if description}}
-                                            <div class="codex-entry-description">{{description}}</div>
-                                        {{/if}}
-                                        {{#if plotHook}}
-                                            {{#if isGM}}
-                                                <div class="codex-entry-hook">{{plotHook}}</div>
+                                        <div class="codex-entry-content">
+                                            <div class="codex-entry-image">
+                                                <img src="{{img}}" alt="{{name}}">
+                                            </div>
+                                            {{#if description}}
+                                                <div class="codex-entry-description">{{description}}</div>
                                             {{/if}}
-                                        {{/if}}
-                                        {{#if tags.length}}
-                                            <div class="codex-entry-tags">
-                                                {{#each tags}}
-                                                    <span class="codex-tag {{#if (includes ../../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                                                {{/each}}
-                                            </div>
-                                        {{/if}}
+                                            {{#if plotHook}}
+                                                {{#if isGM}}
+                                                    <div class="codex-entry-hook">{{plotHook}}</div>
+                                                {{/if}}
+                                            {{/if}}
+                                            {{#if tags.length}}
+                                                <div class="codex-entry-tags">
+                                                    {{#each tags}}
+                                                        <span class="codex-tag {{#if (includes ../../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                                                    {{/each}}
+                                                </div>
+                                            {{/if}}
+                                        </div>
                                     </div>
                                 {{/each}}
                             </div>
