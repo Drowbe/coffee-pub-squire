@@ -37,8 +37,8 @@
                     {{#if entries.length}}
                         <div class="codex-section">
                             <div class="codex-category">
-                                <h3>{{category}}</h3>
-                                <div class="codex-category-controls">
+                                <h3><i class="fas {{#if (eq category "Characters")}}fa-user{{else if (eq category "Locations")}}fa-map{{else if (eq category "Artifacts")}}fa-treasure-chest{{/if}}"></i> {{category}}</h3>
+                                <div class="codex-toolbar">
                                     <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
                                 </div>
                             </div>
@@ -49,14 +49,15 @@
                                         <div class="codex-entry-header">
                                             <div class="codex-entry-name">{{name}}</div>
                                             <div class="codex-toolbar">
-                                                <i class="fas {{#if identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if identified}}Identified{{else}}Not Identified{{/if}}"></i>
                                                 {{#if link}}
                                                     <i class="fas fa-feather codex-entry-link has-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
                                                 {{/if}}
+                                                <i class="fas {{#if identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if identified}}Identified{{else}}Not Identified{{/if}}"></i>
                                                 <i class="fas fa-chevron-right codex-entry-toggle" title="Expand/Collapse"></i>
                                             </div>
                                         </div>
                                         <div class="codex-entry-content">
+                                            <div class="codex-entry-divider"></div>
                                             <div class="codex-entry-image">
                                                 <img src="{{img}}" alt="{{name}}">
                                             </div>
