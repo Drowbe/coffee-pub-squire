@@ -102,27 +102,17 @@ export class CodexPanel {
             a.name.localeCompare(b.name)
         );
 
-        return sortedEntries.filter(entry => {
-            // Search filter
-            if (this.filters.search) {
-                const searchLower = this.filters.search.toLowerCase();
-                const matchesSearch = 
-                    entry.name.toLowerCase().includes(searchLower) ||
-                    entry.description.toLowerCase().includes(searchLower) ||
-                    entry.plotHook.toLowerCase().includes(searchLower);
-                if (!matchesSearch) return false;
-            }
-
-            // Tag filter - now uses OR logic (entry must have ANY of the selected tags)
-            if (this.filters.tags.length > 0) {
+        // Only filter by tags since search is now handled in DOM
+        if (this.filters.tags.length > 0) {
+            return sortedEntries.filter(entry => {
                 const hasAnyTag = this.filters.tags.some(tag => 
                     entry.tags.includes(tag)
                 );
-                if (!hasAnyTag) return false;
-            }
+                return hasAnyTag;
+            });
+        }
 
-            return true;
-        });
+        return sortedEntries;
     }
 
     /**
@@ -130,10 +120,41 @@ export class CodexPanel {
      * @private
      */
     _activateListeners(html) {
-        // Search input - remove focus handling
-        html.find('.codex-search input').on('input', (event) => {
-            this.filters.search = event.target.value;
-            this.render(this.element);
+        // Search input - live DOM filtering
+        const searchInput = html.find('.codex-search input');
+        
+        searchInput.on('input', (event) => {
+            const searchValue = event.target.value.toLowerCase();
+            this.filters.search = searchValue;
+            
+            // Show/hide the clear button based on search value
+            html.find('.clear-search').toggle(!!searchValue);
+            
+            // Show all entries first (in case we're making the search less restrictive)
+            html.find('.codex-entry, .codex-section').show();
+            
+            if (searchValue) {
+                // Then filter entries
+                html.find('.codex-entry').each((i, el) => {
+                    const entry = $(el);
+                    const name = entry.find('.codex-entry-name').text().toLowerCase();
+                    const description = entry.find('.codex-entry-description').text().toLowerCase();
+                    const plotHook = entry.find('.codex-entry-hook').text().toLowerCase();
+                    
+                    const matches = name.includes(searchValue) || 
+                        description.includes(searchValue) || 
+                        plotHook.includes(searchValue);
+                    
+                    entry.toggle(matches);
+                });
+                
+                // Hide empty sections
+                html.find('.codex-section').each((i, el) => {
+                    const section = $(el);
+                    const hasVisibleEntries = section.find('.codex-entry:visible').length > 0;
+                    section.toggle(hasVisibleEntries);
+                });
+            }
         });
 
         // Refresh button
@@ -146,10 +167,13 @@ export class CodexPanel {
         });
 
         // Clear search button
-        html.find('.codex-search .clear-search').click((event) => {
+        html.find('.clear-search').click((event) => {
             this.filters.search = "";
-            html.find('.codex-search input').val("");
-            this.render(this.element);
+            searchInput.val("");
+            // Show all entries and sections
+            html.find('.codex-entry, .codex-section').show();
+            // Hide the clear button
+            html.find('.clear-search').hide();
         });
 
         // Tag cloud header (expand/collapse)
@@ -337,11 +361,6 @@ export class CodexPanel {
         if (!element) return;
         this.element = element;
 
-        // Store the current search input value and focus state
-        const searchInput = element.find('.codex-search input');
-        const searchValue = searchInput.val();
-        const searchFocused = document.activeElement === searchInput[0];
-
         const codexContainer = element.find('[data-panel="panel-codex"]');
         console.log("SQUIRE | Looking for codex container", { 
             found: codexContainer.length > 0,
@@ -381,7 +400,10 @@ export class CodexPanel {
             isGM: game.user.isGM,
             categories: this.categories,
             data: {},
-            filters: this.filters,
+            filters: {
+                ...this.filters,  // Make sure we pass the current search value
+                search: this.filters.search || ""  // Ensure search is always a string
+            },
             allTags: Array.from(this.allTags).sort(),
             isTagCloudCollapsed
         };
@@ -421,13 +443,9 @@ export class CodexPanel {
             codexContainer.find('.codex-tag-header .fa-chevron-down').css('transform', 'rotate(-90deg)');
         }
 
-        // Restore search input state
-        if (searchValue) {
-            const newSearchInput = codexContainer.find('.codex-search input');
-            newSearchInput.val(searchValue);
-            if (searchFocused) {
-                newSearchInput.focus();
-            }
+        // Apply current search filter if any
+        if (this.filters.search) {
+            codexContainer.find('.codex-search input').trigger('input');
         }
     }
 } 
