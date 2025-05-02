@@ -1,11 +1,13 @@
 /* Notes Panel - Main Layout */
-.squire-tray[data-position="left"] .panel-container[data-panel="panel-notes"] {
+.squire-tray[data-position="left"] .panel-container[data-panel="panel-notes"],
+.squire-tray[data-position="left"] .panel-container[data-panel="panel-codex"] {
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-.squire-tray[data-position="left"] .notes-content {
+.squire-tray[data-position="left"] .notes-content,
+.squire-tray[data-position="left"] .codex-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
@@ -17,7 +19,8 @@
 
 /* Common Title & Toolbar Styles */
 .squire-tray[data-position="left"] .tray-title-small,
-.squire-tray[data-position="left"] .notes-toolbar {
+.squire-tray[data-position="left"] .notes-toolbar,
+.squire-tray[data-position="left"] .codex-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -35,7 +38,8 @@
 }
 
 /* Control Icons */
-.squire-tray[data-position="left"] .notes-controls {
+.squire-tray[data-position="left"] .notes-controls,
+.squire-tray[data-position="left"] .codex-controls {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -43,14 +47,18 @@
 }
 
 .squire-tray[data-position="left"] .notes-controls i,
-.squire-tray[data-position="left"] .notes-toolbar i {
+.squire-tray[data-position="left"] .notes-toolbar i,
+.squire-tray[data-position="left"] .codex-controls i,
+.squire-tray[data-position="left"] .codex-toolbar i {
     cursor: pointer;
     opacity: 0.7;
     transition: all 0.2s ease;
 }
 
 .squire-tray[data-position="left"] .notes-controls i:hover,
-.squire-tray[data-position="left"] .notes-toolbar i:hover {
+.squire-tray[data-position="left"] .notes-toolbar i:hover,
+.squire-tray[data-position="left"] .codex-controls i:hover,
+.squire-tray[data-position="left"] .codex-toolbar i:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
@@ -240,6 +248,161 @@
     align-items: center;
     gap: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Codex Panel Styles */
+.squire-tray[data-position="left"] .codex-content {
+    padding: 8px;
+    margin: 0;
+    background: transparent;
+}
+
+/* Search and Filter Bar */
+.squire-tray[data-position="left"] .codex-filters {
+    margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-search input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px 8px;
+    margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-tag-filter select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px;
+}
+
+/* Category Headers */
+.squire-tray[data-position="left"] .codex-section {
+    margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-category {
+    background: rgba(50, 0, 0, 0.5);
+    padding: 8px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .codex-category h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.1em;
+    border: none;
+}
+
+.squire-tray[data-position="left"] .codex-category-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-category-controls i {
+    transition: transform 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .codex-section.collapsed .codex-category-controls i {
+    transform: rotate(-90deg);
+}
+
+.squire-tray[data-position="left"] .codex-section.collapsed .codex-entries {
+    display: none;
+}
+
+/* Entry Cards */
+.squire-tray[data-position="left"] .codex-entries {
+    margin-top: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-entry {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-entry-name {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.1em;
+}
+
+.squire-tray[data-position="left"] .codex-entry-image {
+    float: left;
+    margin: 0 8px 8px 0;
+    width: 64px;
+    height: 64px;
+}
+
+.squire-tray[data-position="left"] .codex-entry-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.squire-tray[data-position="left"] .codex-entry-description {
+    color: #ccc;
+    margin-bottom: 8px;
+    clear: right;
+}
+
+.squire-tray[data-position="left"] .codex-entry-hook {
+    color: #aaa;
+    font-style: italic;
+    margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .codex-entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    clear: both;
+}
+
+.squire-tray[data-position="left"] .codex-tag {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    color: #ccc;
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .codex-tag.selected {
+    background: var(--color-border-highlight, #ff6400);
+    border-color: var(--color-border-highlight-alt, #ff8533);
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .codex-entry-link {
+    color: var(--color-border-highlight, #ff6400);
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .codex-entry-link:hover {
+    text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 

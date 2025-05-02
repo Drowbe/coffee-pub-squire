@@ -21,6 +21,7 @@ export const TEMPLATES = {
     PANEL_PARTY: `modules/${MODULE.ID}/templates/panel-party.hbs`,
     PANEL_PARTY_STATS: `modules/${MODULE.ID}/templates/panel-party-stats.hbs`,
     PANEL_NOTES: `modules/${MODULE.ID}/templates/panel-notes.hbs`,
+    PANEL_CODEX: `modules/${MODULE.ID}/templates/panel-codex.hbs`,
     HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`,
     TRANSFER_DIALOG: `modules/${MODULE.ID}/templates/window-transfer.hbs`,
     CHAT_CARD: `modules/${MODULE.ID}/templates/chat-cards.hbs`

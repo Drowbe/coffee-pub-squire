@@ -696,8 +696,48 @@ export const registerSettings = function() {
         default: 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3'
     });
 
+    // --------------------------------
+    // ---      CODEX Settings     ---
+    // --------------------------------
 
+    // ---------- Codex Heading ----------
+    game.settings.register(MODULE.ID, "headingH3CodexConfiguration", {
+        name: 'Codex Configuration',
+        hint: 'Settings for the codex system that organizes characters, locations, and artifacts.',
+        scope: "world",
+        config: true,
+        default: "",
+        type: String,
+    });
 
+    // Codex Journal
+    game.settings.register(MODULE.ID, 'codexJournal', {
+        name: "Codex Journal",
+        hint: "The journal to use for the codex entries. Each category (Characters, Locations, Artifacts) should be a separate page in this journal.",
+        scope: "world",
+        config: true,
+        type: String,
+        choices: () => {
+            // Create choices object with 'none' as first option
+            const choices = {
+                'none': '- Select Journal -'
+            };
+            
+            // Add all available journals
+            game.journal.contents.forEach(j => {
+                choices[j.id] = j.name;
+            });
+            
+            return choices;
+        },
+        default: "none",
+        onChange: () => {
+            // Update the codex panel if it exists
+            if (PanelManager.instance?.codexPanel) {
+                PanelManager.instance.codexPanel.render(PanelManager.element);
+            }
+        }
+    });
 
 };
 

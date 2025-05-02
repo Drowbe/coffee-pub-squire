@@ -557,15 +557,15 @@ export class NotesPanel {
                         contentContainer.addClass("journal-entry-page journal-page-content prose");
                         
                         // Forcibly set styles before content insertion
-                        contentContainer.css({
-                            'display': 'block',
-                            'visibility': 'visible',
-                            'background-color': '#f0f0e0',
-                            'color': '#000',
-                            'min-height': '200px',
-                            'padding': '10px',
-                            'border-radius': '5px'
-                        });
+                        // contentContainer.css({
+                        //     'display': 'block',
+                        //     'visibility': 'visible',
+                        //     'background-color': '#f0f0e0',
+                        //     'color': '#000',
+                        //     'min-height': '200px',
+                        //     'padding': '10px',
+                        //     'border-radius': '5px'
+                        // });
                         
                         // Insert the content
                         contentContainer.html(formattedContent || renderedContent);
@@ -867,19 +867,19 @@ export class NotesPanel {
                     contentContainer.addClass("journal-entry-page journal-page-content");
                     
                     // Apply direct styling before adding content
-                    contentContainer.css({
-                        'display': 'block',
-                        'visibility': 'visible',
-                        'background-color': 'rgba(255, 255, 255, 0.9)',
-                        'color': '#000',
-                        'min-height': '200px',
-                        'height': 'auto',
-                        'max-height': 'none',
-                        'padding': '10px',
-                        'border-radius': '5px',
-                        'overflow-y': 'auto',
-                        'word-wrap': 'break-word'
-                    });
+                    // contentContainer.css({
+                    //     'display': 'block',
+                    //     'visibility': 'visible',
+                    //     'background-color': 'rgba(255, 255, 255, 0.9)',
+                    //     'color': '#000',
+                    //     'min-height': '200px',
+                    //     'height': 'auto',
+                    //     'max-height': 'none',
+                    //     'padding': '10px',
+                    //     'border-radius': '5px',
+                    //     'overflow-y': 'auto',
+                    //     'word-wrap': 'break-word'
+                    // });
                     
                     // Insert the content
                     contentContainer.html(content);
@@ -955,57 +955,57 @@ export class NotesPanel {
         // Add journal-specific classes if they don't exist
         container.addClass("journal-entry-page journal-page-content");
         
-        // Force display block and proper styling
-        container.css({
-            'display': 'block',
-            'visibility': 'visible',
-            'background-color': 'rgba(255, 255, 255, 0.9)',
-            'color': '#000',
-            'min-height': '200px',
-            'height': 'auto',
-            'max-height': 'none',
-            'padding': '10px',
-            'border-radius': '5px',
-            'overflow-y': 'auto',
-            'word-wrap': 'break-word'
-        });
+        // // Force display block and proper styling
+        // container.css({
+        //     'display': 'block',
+        //     'visibility': 'visible',
+        //     'background-color': 'rgba(255, 255, 255, 0.9)',
+        //     'color': '#000',
+        //     'min-height': '200px',
+        //     'height': 'auto',
+        //     'max-height': 'none',
+        //     'padding': '10px',
+        //     'border-radius': '5px',
+        //     'overflow-y': 'auto',
+        //     'word-wrap': 'break-word'
+        // });
         
-        // Adjust journal page content element if it exists
-        container.find('.journal-page-content').css({
-            'height': 'auto',
-            'max-height': 'none',
-            'padding': '0',
-            'border': 'none',
-            'display': 'block',
-            'visibility': 'visible'
-        });
+        // // Adjust journal page content element if it exists
+        // container.find('.journal-page-content').css({
+        //     'height': 'auto',
+        //     'max-height': 'none',
+        //     'padding': '0',
+        //     'border': 'none',
+        //     'display': 'block',
+        //     'visibility': 'visible'
+        // });
         
-        // Adjust image sizes
-        container.find('img').css({
-            'max-width': '100%',
-            'height': 'auto',
-            'display': 'block',
-            'margin': '10px auto'
-        });
+        // // Adjust image sizes
+        // container.find('img').css({
+        //     'max-width': '100%',
+        //     'height': 'auto',
+        //     'display': 'block',
+        //     'margin': '10px auto'
+        // });
         
-        // Make sure links are visible
-        container.find('a').css({
-            'color': '#0066cc',
-            'text-decoration': 'underline'
-        });
+        // // Make sure links are visible
+        // container.find('a').css({
+        //     'color': '#0066cc',
+        //     'text-decoration': 'underline'
+        // });
         
-        // Make sure text elements are visible
-        container.find('p, h1, h2, h3, h4, h5, h6, span, div').css({
-            'color': '#000',
-            'visibility': 'visible',
-            'display': 'block'
-        });
+        // // Make sure text elements are visible
+        // container.find('p, h1, h2, h3, h4, h5, h6, span, div').css({
+        //     'color': '#000',
+        //     'visibility': 'visible',
+        //     'display': 'block'
+        // });
         
-        // Make the content scrollable
-        container.css({
-            'overflow-y': 'auto',
-            'max-height': '600px'
-        });
+        // // Make the content scrollable
+        // container.css({
+        //     'overflow-y': 'auto',
+        //     'max-height': '600px'
+        // });
     }
 
     _showJournalPicker() {

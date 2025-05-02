@@ -14,6 +14,7 @@ import { AbilitiesPanel } from "./panel-abilities.js";
 import { PartyPanel } from "./panel-party.js";
 import { PartyStatsPanel } from "./panel-party-stats.js";
 import { NotesPanel } from "./panel-notes.js";
+import { CodexPanel } from "./panel-codex.js";
 
 export class PanelManager {
     static instance = null;
@@ -45,6 +46,7 @@ export class PanelManager {
             this.partyPanel = new PartyPanel();
             this.partyStatsPanel = new PartyStatsPanel();
             this.notesPanel = new NotesPanel();
+            this.codexPanel = new CodexPanel();
         }
         this.hiddenCategories = new Set();
     }
@@ -342,7 +344,9 @@ export class PanelManager {
     }
 
     async renderPanels(element) {
-        // Only try to render panels that exist
+        if (!element) return;
+
+        // Render all panels
         if (this.actor) {
             this.characterPanel?.render(element);
             this.controlPanel?.render(element);
@@ -351,19 +355,18 @@ export class PanelManager {
             this.weaponsPanel?.render(element);
             this.inventoryPanel?.render(element);
             this.featuresPanel?.render(element);
-            if (!DiceTrayPanel.isWindowOpen) {
-                this.dicetrayPanel?.render(element);
-            }
+            this.dicetrayPanel?.render(element);
             this.experiencePanel?.render(element);
-            if (!HealthPanel.isWindowOpen) {
-                this.healthPanel?.render(element);
-            }
+            this.healthPanel?.render(element);
             this.statsPanel?.render(element);
             this.abilitiesPanel?.render(element);
-            this.partyPanel?.render(element);
-            this.partyStatsPanel?.render(element);
-            this.notesPanel?.render(element);
         }
+        
+        // These panels don't require an actor
+        this.partyPanel?.render(element);
+        this.partyStatsPanel?.render(element);
+        this.notesPanel?.render(element);
+        this.codexPanel?.render(element);
     }
 
     activateListeners(tray) {
@@ -1093,88 +1096,38 @@ export class PanelManager {
             }
         });
 
-        // View toggle button
+        // View mode toggle button
         tray.find('.view-toggle-button').click(async (event) => {
             event.preventDefault();
-            
-            // Cycle through the views: player -> party -> notes -> player
+            const currentMode = PanelManager.viewMode;
             let newMode;
-            if (PanelManager.viewMode === 'player') {
-                newMode = 'party';
-            } else if (PanelManager.viewMode === 'party') {
-                newMode = 'notes';
-            } else {
-                newMode = 'player';
+            
+            // Cycle through modes: player -> party -> notes -> codex -> player
+            switch (currentMode) {
+                case 'player':
+                    newMode = 'party';
+                    break;
+                case 'party':
+                    newMode = 'notes';
+                    break;
+                case 'notes':
+                    newMode = 'codex';
+                    break;
+                case 'codex':
+                    newMode = 'player';
+                    break;
+                default:
+                    newMode = 'player';
             }
             
-            PanelManager.viewMode = newMode;
-            await game.settings.set(MODULE.ID, 'viewMode', newMode);
-            
-            // Update button icon
-            const button = tray.find('.view-toggle-button i');
-            button.removeClass('fa-user fa-users fa-sticky-note');
-            if (newMode === 'party') {
-                button.addClass('fa-users');
-            } else if (newMode === 'notes') {
-                button.addClass('fa-sticky-note');
-            } else {
-                button.addClass('fa-user');
-            }
-            
-            // Update tab buttons
-            tray.find('.tray-tab-button').removeClass('active');
-            tray.find(`.tray-tab-button[data-view="${newMode}"]`).addClass('active');
-            
-            // Toggle view visibility
-            tray.find('.tray-view-content.player-view').toggleClass('hidden', newMode !== 'player');
-            tray.find('.tray-view-content.party-view').toggleClass('hidden', newMode !== 'party');
-            tray.find('.tray-view-content.notes-view').toggleClass('hidden', newMode !== 'notes');
-            
-            // Toggle toolbar visibility
-            tray.find('.tray-tools-toolbar').toggleClass('hidden', newMode !== 'party');
+            await this.setViewMode(newMode);
         });
-        
-        // Tab buttons
+
+        // View tab buttons
         tray.find('.tray-tab-button').click(async (event) => {
-            const $button = $(event.currentTarget);
-            const view = $button.data('view');
-            
-            // Skip if already active
-            if ($button.hasClass('active')) return;
-            
-            // Update active state
-            tray.find('.tray-tab-button').removeClass('active');
-            $button.addClass('active');
-            
-            // Update view mode
-            PanelManager.viewMode = view;
-            await game.settings.set(MODULE.ID, 'viewMode', view);
-            
-            // Update handle button icon
-            const handleButton = tray.find('.view-toggle-button i');
-            handleButton.removeClass('fa-user fa-users fa-sticky-note');
-            if (view === 'party') {
-                handleButton.addClass('fa-users');
-            } else if (view === 'notes') {
-                handleButton.addClass('fa-sticky-note');
-            } else {
-                handleButton.addClass('fa-user');
-            }
-            
-            // Toggle view visibility
-            tray.find('.tray-view-content.player-view').toggleClass('hidden', view !== 'player');
-            tray.find('.tray-view-content.party-view').toggleClass('hidden', view !== 'party');
-            tray.find('.tray-view-content.notes-view').toggleClass('hidden', view !== 'notes');
-            
-            // Toggle toolbar visibility
-            tray.find('.tray-tools-toolbar').toggleClass('hidden', view !== 'party');
-            
-            // Play a sound effect if blacksmith is available
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (blacksmith) {
-                const sound = game.settings.get(MODULE.ID, 'tabChangeSound') || 'modules/coffee-pub-blacksmith/sounds/interface-click-01.mp3';
-                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-            }
+            event.preventDefault();
+            const view = event.currentTarget.dataset.view;
+            await this.setViewMode(view);
         });
         
         // GM-only buttons
@@ -1279,6 +1232,44 @@ export class PanelManager {
                 blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
             }
         });
+    }
+
+    async setViewMode(mode) {
+        // Update viewMode
+        PanelManager.viewMode = mode;
+        await game.settings.set(MODULE.ID, 'viewMode', mode);
+        
+        // Update tab buttons
+        const tray = PanelManager.element;
+        tray.find('.tray-tab-button').removeClass('active');
+        tray.find(`.tray-tab-button[data-view="${mode}"]`).addClass('active');
+        
+        // Update view content visibility
+        tray.find('.tray-view-content').addClass('hidden');
+        tray.find(`.${mode}-view`).removeClass('hidden');
+        
+        // Update tools toolbar visibility
+        tray.find('.tray-tools-toolbar').toggleClass('hidden', mode !== 'party');
+        
+        // Update toggle button icon
+        const icon = tray.find('.view-toggle-button i');
+        icon.removeClass('fa-user fa-users fa-sticky-note fa-book');
+        switch (mode) {
+            case 'party':
+                icon.addClass('fa-users');
+                break;
+            case 'notes':
+                icon.addClass('fa-sticky-note');
+                break;
+            case 'codex':
+                icon.addClass('fa-book');
+                break;
+            default:
+                icon.addClass('fa-user');
+        }
+        
+        // Play sound effect
+        AudioHelper.play({src: game.settings.get(MODULE.ID, 'tabChangeSound'), volume: 0.8, autoplay: true, loop: false}, false);
     }
 
     // Helper method to get the appropriate icon based on item type

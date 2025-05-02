@@ -8,7 +8,7 @@
             <i class="fas fa-arrows-rotate"></i>
         </button>
         <button class="view-toggle-button" title="Toggle View Mode">
-            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else}}fa-user{{/if}}"></i>
+            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else}}fa-user{{/if}}"></i>
         </button>
         <div class="handle-left">
             {{> handle-player}}
@@ -25,6 +25,9 @@
             </button>
             <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes">
                 <i class="fas fa-sticky-note"></i> Notes
+            </button>
+            <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex">
+                <i class="fas fa-book"></i> Codex
             </button>
         </div>
         
@@ -83,10 +86,12 @@
             {{/if}}
         </div>
 
-
         <div class="tray-view-content notes-view {{#unless (eq viewMode 'notes')}}hidden{{/unless}}">
             <div class="panel-container" data-panel="panel-notes"></div>
         </div>
 
+        <div class="tray-view-content codex-view {{#unless (eq viewMode 'codex')}}hidden{{/unless}}">
+            <div class="panel-container" data-panel="panel-codex"></div>
+        </div>
     </div>
 </div> 

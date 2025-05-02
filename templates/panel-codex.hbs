@@ -1,0 +1,95 @@
+{{#if (eq position "left")}}
+    <div class="tray-title-small">
+        <span>
+            {{#if hasJournal}}
+            {{journalName}}
+            {{else}}
+            Codex
+            {{/if}}
+        </span>
+        <div class="codex-controls">
+            {{#if isGM}}
+            <i class="fas fa-cog set-codex-button" title="Set Codex Journal"></i>
+            {{/if}}
+        </div>
+    </div>
+
+    <div class="codex-content">
+        {{#if hasJournal}}
+            <div class="codex-filters">
+                <div class="codex-search">
+                    <input type="text" placeholder="Search entries..." value="{{filters.search}}">
+                </div>
+                {{#if allTags.length}}
+                    <div class="codex-tag-filter">
+                        <select multiple>
+                            {{#each allTags}}
+                                <option value="{{this}}" {{#if (includes ../filters.tags this)}}selected{{/if}}>{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                {{/if}}
+            </div>
+
+            {{#each categories as |category|}}
+                {{#with (lookup ../data category) as |entries|}}
+                    {{#if entries.length}}
+                        <div class="codex-section">
+                            <div class="codex-category">
+                                <h3>{{category}}</h3>
+                                <div class="codex-category-controls">
+                                    <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
+                                </div>
+                            </div>
+
+                            <div class="codex-entries">
+                                {{#each entries}}
+                                    <div class="codex-entry">
+                                        <div class="codex-entry-header">
+                                            <div class="codex-entry-name">{{name}}</div>
+                                            {{#if link}}
+                                                <i class="fas fa-link codex-entry-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
+                                            {{/if}}
+                                        </div>
+                                        <div class="codex-entry-image">
+                                            {{#if img}}
+                                                <img src="{{img}}" alt="{{name}}">
+                                            {{else}}
+                                                <i class="fas fa-user"></i>
+                                            {{/if}}
+                                        </div>
+                                        {{#if description}}
+                                            <div class="codex-entry-description">{{description}}</div>
+                                        {{/if}}
+                                        {{#if plotHook}}
+                                            <div class="codex-entry-hook">{{plotHook}}</div>
+                                        {{/if}}
+                                        {{#if tags.length}}
+                                            <div class="codex-entry-tags">
+                                                {{#each tags}}
+                                                    <span class="codex-tag {{#if (includes ../../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                                                {{/each}}
+                                            </div>
+                                        {{/if}}
+                                    </div>
+                                {{/each}}
+                            </div>
+                        </div>
+                    {{/if}}
+                {{/with}}
+            {{/each}}
+        {{else}}
+            <div class="no-codex-selected">
+                {{#if isGM}}
+                    <p>No journal has been selected for the codex.</p>
+                    <p>Click the <i class="fas fa-cog"></i> icon to select a journal.</p>
+                    <button class="set-codex-button-large">
+                        <i class="fas fa-book"></i> Select Codex Journal
+                    </button>
+                {{else}}
+                    <p>No codex journal has been selected by the GM yet.</p>
+                {{/if}}
+            </div>
+        {{/if}}
+    </div>
+{{/if}} 
