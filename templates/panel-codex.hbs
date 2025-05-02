@@ -19,26 +19,17 @@
         <div class="codex-filters">
             <div class="codex-search">
                 <input type="text" placeholder="Search entries..." value="{{filters.search}}">
-                {{#if filters.search}}
-                    <i class="fas fa-times clear-search" title="Clear search"></i>
-                {{/if}}
+                <i class="fas fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+                <i class="fas fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
             </div>
             {{#if allTags.length}}
-                <div class="codex-tag-section">
-                    <div class="codex-tag-header" title="Click to expand/collapse tags">
-                        <span>Tags</span>
-                        <div class="tag-controls">
-                            {{#if filters.tags.length}}
-                                <i class="fas fa-times clear-tags" title="Clear all tags"></i>
-                            {{/if}}
-                            <i class="fas fa-chevron-down" style="transform: {{#if isTagCloudCollapsed}}rotate(-90deg){{else}}rotate(0deg){{/if}};"></i>
-                        </div>
-                    </div>
-                    <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
-                        {{#each allTags}}
-                            <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                        {{/each}}
-                    </div>
+                <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
+                    {{#if filters.tags.length}}
+                        <i class="fas fa-times clear-tags" title="Clear all tags"></i>
+                    {{/if}}
+                    {{#each allTags}}
+                        <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                    {{/each}}
                 </div>
             {{/if}}
         </div>

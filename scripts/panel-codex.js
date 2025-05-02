@@ -122,13 +122,14 @@ export class CodexPanel {
     _activateListeners(html) {
         // Search input - live DOM filtering
         const searchInput = html.find('.codex-search input');
+        const clearButton = html.find('.clear-search');
         
         searchInput.on('input', (event) => {
             const searchValue = event.target.value.toLowerCase();
             this.filters.search = searchValue;
             
-            // Show/hide the clear button based on search value
-            html.find('.clear-search').toggle(!!searchValue);
+            // Toggle disabled state of clear button
+            clearButton.toggleClass('disabled', !searchValue);
             
             // Show all entries first (in case we're making the search less restrictive)
             html.find('.codex-entry, .codex-section').show();
@@ -167,34 +168,29 @@ export class CodexPanel {
         });
 
         // Clear search button
-        html.find('.clear-search').click((event) => {
-            this.filters.search = "";
-            searchInput.val("");
-            // Show all entries and sections
-            html.find('.codex-entry, .codex-section').show();
-            // Hide the clear button
-            html.find('.clear-search').hide();
+        clearButton.click((event) => {
+            if (!$(event.currentTarget).hasClass('disabled')) {
+                this.filters.search = "";
+                searchInput.val("");
+                // Show all entries and sections
+                html.find('.codex-entry, .codex-section').show();
+                // Update clear button state
+                $(event.currentTarget).addClass('disabled');
+            }
         });
 
-        // Tag cloud header (expand/collapse)
-        html.find('.codex-tag-header').click((event) => {
-            const tagCloud = $(event.currentTarget).closest('.codex-tag-section').find('.codex-tag-cloud');
+        // Toggle tags button
+        html.find('.toggle-tags-button').click((event) => {
+            const button = $(event.currentTarget);
+            const tagCloud = html.find('.codex-tag-cloud');
             const isCollapsed = tagCloud.hasClass('collapsed');
             
             // Toggle collapsed state
             tagCloud.toggleClass('collapsed');
-            
-            // Update chevron icon
-            $(event.currentTarget).find('.fa-chevron-down').css('transform', isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)');
+            button.toggleClass('active');
             
             // Save state to user flags
             game.user.setFlag(MODULE.ID, 'codexTagCloudCollapsed', !isCollapsed);
-        });
-
-        // Clear tags button
-        html.find('.clear-tags').click((event) => {
-            this.filters.tags = [];
-            this.render(this.element);
         });
 
         // Tag cloud tag selection
@@ -401,8 +397,8 @@ export class CodexPanel {
             categories: this.categories,
             data: {},
             filters: {
-                ...this.filters,  // Make sure we pass the current search value
-                search: this.filters.search || ""  // Ensure search is always a string
+                ...this.filters,
+                search: this.filters.search || ""
             },
             allTags: Array.from(this.allTags).sort(),
             isTagCloudCollapsed
@@ -446,6 +442,16 @@ export class CodexPanel {
         // Apply current search filter if any
         if (this.filters.search) {
             codexContainer.find('.codex-search input').trigger('input');
+        }
+
+        // After rendering, set initial states
+        if (this.filters.search) {
+            codexContainer.find('.clear-search').show();
+        }
+        
+        // Set initial filter button state
+        if (!isTagCloudCollapsed) {
+            codexContainer.find('.toggle-tags-button').addClass('active');
         }
     }
 } 
