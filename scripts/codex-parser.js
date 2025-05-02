@@ -63,12 +63,21 @@ export class CodexParser {
                             break;
                         case 'LINK':
                             // Look for UUID format: @UUID[type.id]{label}
-                            const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
+                            let uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                             if (uuidMatch) {
                                 entry.link = {
                                     uuid: uuidMatch[1],
                                     label: uuidMatch[2]
                                 };
+                            } else {
+                                // Try to find <a data-uuid=...> in the li
+                                const aTag = li.querySelector('a[data-uuid]');
+                                if (aTag) {
+                                    entry.link = {
+                                        uuid: aTag.getAttribute('data-uuid'),
+                                        label: aTag.textContent.trim()
+                                    };
+                                }
                             }
                             break;
                         case 'TAGS':
