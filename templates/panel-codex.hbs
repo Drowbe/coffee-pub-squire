@@ -19,14 +19,26 @@
             <div class="codex-filters">
                 <div class="codex-search">
                     <input type="text" placeholder="Search entries..." value="{{filters.search}}">
+                    {{#if filters.search}}
+                        <i class="fas fa-times clear-search" title="Clear search"></i>
+                    {{/if}}
                 </div>
                 {{#if allTags.length}}
-                    <div class="codex-tag-filter">
-                        <select multiple>
+                    <div class="codex-tag-section">
+                        <div class="codex-tag-header" title="Click to expand/collapse tags">
+                            <span>Tags</span>
+                            <div class="tag-controls">
+                                {{#if filters.tags.length}}
+                                    <i class="fas fa-times clear-tags" title="Clear all tags"></i>
+                                {{/if}}
+                                <i class="fas fa-chevron-down" style="transform: {{#if isTagCloudCollapsed}}rotate(-90deg){{else}}rotate(0deg){{/if}};"></i>
+                            </div>
+                        </div>
+                        <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
                             {{#each allTags}}
-                                <option value="{{this}}" {{#if (includes ../filters.tags this)}}selected{{/if}}>{{this}}</option>
+                                <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
                             {{/each}}
-                        </select>
+                        </div>
                     </div>
                 {{/if}}
             </div>
@@ -47,15 +59,28 @@
                                     <div class="codex-entry">
                                         <div class="codex-entry-header">
                                             <div class="codex-entry-name">{{name}}</div>
-                                            {{#if link}}
-                                                <i class="fas fa-link codex-entry-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
-                                            {{/if}}
+                                            <div class="codex-entry-controls">
+                                                {{#if identified}}
+                                                    <i class="fas fa-eye" title="Identified"></i>
+                                                {{else}}
+                                                    <i class="fas fa-eye-slash" title="Not Identified"></i>
+                                                {{/if}}
+                                                {{#if link}}
+                                                    <i class="fas fa-feather codex-entry-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
+                                                {{/if}}
+                                            </div>
                                         </div>
                                         <div class="codex-entry-image">
                                             {{#if img}}
                                                 <img src="{{img}}" alt="{{name}}">
                                             {{else}}
-                                                <i class="fas fa-user"></i>
+                                                {{#if (eq ../category "Characters")}}
+                                                    <i class="fas fa-user"></i>
+                                                {{else if (eq ../category "Locations")}}
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                {{else}}
+                                                    <i class="fas fa-gem"></i>
+                                                {{/if}}
                                             {{/if}}
                                         </div>
                                         {{#if description}}

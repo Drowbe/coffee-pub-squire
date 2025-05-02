@@ -131,6 +131,50 @@ export class CodexPanel {
             this.render(this.element);
         });
 
+        // Clear search button
+        html.find('.codex-search .clear-search').click((event) => {
+            this.filters.search = "";
+            html.find('.codex-search input').val("");
+            this.render(this.element);
+        });
+
+        // Tag cloud header (expand/collapse)
+        html.find('.codex-tag-header').click((event) => {
+            const tagCloud = $(event.currentTarget).closest('.codex-tag-section').find('.codex-tag-cloud');
+            const isCollapsed = tagCloud.hasClass('collapsed');
+            
+            // Toggle collapsed state
+            tagCloud.toggleClass('collapsed');
+            
+            // Update chevron icon
+            $(event.currentTarget).find('.fa-chevron-down').css('transform', isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)');
+            
+            // Save state to user flags
+            game.user.setFlag(MODULE.ID, 'codexTagCloudCollapsed', !isCollapsed);
+        });
+
+        // Clear tags button
+        html.find('.clear-tags').click((event) => {
+            this.filters.tags = [];
+            this.render(this.element);
+        });
+
+        // Tag cloud tag selection
+        html.find('.codex-tag-cloud .codex-tag').click((event) => {
+            event.preventDefault();
+            const tag = event.currentTarget.dataset.tag;
+            
+            // Toggle tag selection
+            const tagIndex = this.filters.tags.indexOf(tag);
+            if (tagIndex === -1) {
+                this.filters.tags.push(tag);
+            } else {
+                this.filters.tags.splice(tagIndex, 1);
+            }
+            
+            this.render(this.element);
+        });
+
         // Tag filter
         html.find('.codex-tag-filter select').on('change', (event) => {
             const select = event.currentTarget;
@@ -308,6 +352,7 @@ export class CodexPanel {
 
         // Get collapsed states
         const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+        const isTagCloudCollapsed = game.user.getFlag(MODULE.ID, 'codexTagCloudCollapsed') || false;
 
         // Prepare template data
         const templateData = {
@@ -318,7 +363,8 @@ export class CodexPanel {
             categories: this.categories,
             data: {},
             filters: this.filters,
-            allTags: Array.from(this.allTags).sort()
+            allTags: Array.from(this.allTags).sort(),
+            isTagCloudCollapsed
         };
 
         // Apply filters to each category
@@ -347,6 +393,13 @@ export class CodexPanel {
             if (collapsed) {
                 codexContainer.find(`.codex-section h3:contains("${category}")`).closest('.codex-section').addClass('collapsed');
             }
+        }
+
+        // Restore tag cloud collapsed state
+        if (isTagCloudCollapsed) {
+            const tagCloud = codexContainer.find('.codex-tag-cloud');
+            tagCloud.addClass('collapsed');
+            codexContainer.find('.codex-tag-header .fa-chevron-down').css('transform', 'rotate(-90deg)');
         }
     }
 } 
