@@ -97,7 +97,12 @@ export class CodexPanel {
      * @private
      */
     _applyFilters(entries) {
-        return entries.filter(entry => {
+        // First sort entries alphabetically by name
+        const sortedEntries = [...entries].sort((a, b) => 
+            a.name.localeCompare(b.name)
+        );
+
+        return sortedEntries.filter(entry => {
             // Search filter
             if (this.filters.search) {
                 const searchLower = this.filters.search.toLowerCase();
@@ -108,12 +113,12 @@ export class CodexPanel {
                 if (!matchesSearch) return false;
             }
 
-            // Tag filter
+            // Tag filter - now uses OR logic (entry must have ANY of the selected tags)
             if (this.filters.tags.length > 0) {
-                const hasAllTags = this.filters.tags.every(tag => 
+                const hasAnyTag = this.filters.tags.some(tag => 
                     entry.tags.includes(tag)
                 );
-                if (!hasAllTags) return false;
+                if (!hasAnyTag) return false;
             }
 
             return true;
@@ -125,10 +130,19 @@ export class CodexPanel {
      * @private
      */
     _activateListeners(html) {
-        // Search input
+        // Search input - remove focus handling
         html.find('.codex-search input').on('input', (event) => {
             this.filters.search = event.target.value;
             this.render(this.element);
+        });
+
+        // Refresh button
+        html.find('.refresh-codex-button').click(async () => {
+            if (this.selectedJournal) {
+                await this._refreshData();
+                this.render(this.element);
+                ui.notifications.info("Codex refreshed.");
+            }
         });
 
         // Clear search button
@@ -323,6 +337,11 @@ export class CodexPanel {
         if (!element) return;
         this.element = element;
 
+        // Store the current search input value and focus state
+        const searchInput = element.find('.codex-search input');
+        const searchValue = searchInput.val();
+        const searchFocused = document.activeElement === searchInput[0];
+
         const codexContainer = element.find('[data-panel="panel-codex"]');
         console.log("SQUIRE | Looking for codex container", { 
             found: codexContainer.length > 0,
@@ -400,6 +419,15 @@ export class CodexPanel {
             const tagCloud = codexContainer.find('.codex-tag-cloud');
             tagCloud.addClass('collapsed');
             codexContainer.find('.codex-tag-header .fa-chevron-down').css('transform', 'rotate(-90deg)');
+        }
+
+        // Restore search input state
+        if (searchValue) {
+            const newSearchInput = codexContainer.find('.codex-search input');
+            newSearchInput.val(searchValue);
+            if (searchFocused) {
+                newSearchInput.focus();
+            }
         }
     }
 } 

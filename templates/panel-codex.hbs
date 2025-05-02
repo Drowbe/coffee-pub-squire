@@ -9,40 +9,41 @@
         </span>
         <div class="codex-controls">
             {{#if isGM}}
+            <i class="fas fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
             <i class="fas fa-cog set-codex-button" title="Set Codex Journal"></i>
             {{/if}}
         </div>
     </div>
 
-    <div class="codex-content">
-        {{#if hasJournal}}
-            <div class="codex-filters">
-                <div class="codex-search">
-                    <input type="text" placeholder="Search entries..." value="{{filters.search}}">
-                    {{#if filters.search}}
-                        <i class="fas fa-times clear-search" title="Clear search"></i>
-                    {{/if}}
-                </div>
-                {{#if allTags.length}}
-                    <div class="codex-tag-section">
-                        <div class="codex-tag-header" title="Click to expand/collapse tags">
-                            <span>Tags</span>
-                            <div class="tag-controls">
-                                {{#if filters.tags.length}}
-                                    <i class="fas fa-times clear-tags" title="Clear all tags"></i>
-                                {{/if}}
-                                <i class="fas fa-chevron-down" style="transform: {{#if isTagCloudCollapsed}}rotate(-90deg){{else}}rotate(0deg){{/if}};"></i>
-                            </div>
-                        </div>
-                        <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
-                            {{#each allTags}}
-                                <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                            {{/each}}
-                        </div>
-                    </div>
+    {{#if hasJournal}}
+        <div class="codex-filters">
+            <div class="codex-search">
+                <input type="text" placeholder="Search entries..." value="{{filters.search}}">
+                {{#if filters.search}}
+                    <i class="fas fa-times clear-search" title="Clear search"></i>
                 {{/if}}
             </div>
+            {{#if allTags.length}}
+                <div class="codex-tag-section">
+                    <div class="codex-tag-header" title="Click to expand/collapse tags">
+                        <span>Tags</span>
+                        <div class="tag-controls">
+                            {{#if filters.tags.length}}
+                                <i class="fas fa-times clear-tags" title="Clear all tags"></i>
+                            {{/if}}
+                            <i class="fas fa-chevron-down" style="transform: {{#if isTagCloudCollapsed}}rotate(-90deg){{else}}rotate(0deg){{/if}};"></i>
+                        </div>
+                    </div>
+                    <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
+                        {{#each allTags}}
+                            <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                        {{/each}}
+                    </div>
+                </div>
+            {{/if}}
+        </div>
 
+        <div class="codex-content">
             {{#each categories as |category|}}
                 {{#with (lookup ../data category) as |entries|}}
                     {{#if entries.length}}
@@ -103,18 +104,18 @@
                     {{/if}}
                 {{/with}}
             {{/each}}
-        {{else}}
-            <div class="no-codex-selected">
-                {{#if isGM}}
-                    <p>No journal has been selected for the codex.</p>
-                    <p>Click the <i class="fas fa-cog"></i> icon to select a journal.</p>
-                    <button class="set-codex-button-large">
-                        <i class="fas fa-book"></i> Select Codex Journal
-                    </button>
-                {{else}}
-                    <p>No codex journal has been selected by the GM yet.</p>
-                {{/if}}
-            </div>
-        {{/if}}
-    </div>
+        </div>
+    {{else}}
+        <div class="no-codex-selected">
+            {{#if isGM}}
+                <p>No journal has been selected for the codex.</p>
+                <p>Click the <i class="fas fa-cog"></i> icon to select a journal.</p>
+                <button class="set-codex-button-large">
+                    <i class="fas fa-book"></i> Select Codex Journal
+                </button>
+            {{else}}
+                <p>No codex journal has been selected by the GM yet.</p>
+            {{/if}}
+        </div>
+    {{/if}}
 {{/if}} 

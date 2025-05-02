@@ -252,6 +252,9 @@
 
 /* Codex Panel Styles */
 .squire-tray[data-position="left"] .codex-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 8px;
     margin: 0;
     background: transparent;
@@ -259,7 +262,9 @@
 
 /* Search and Filter Bar */
 .squire-tray[data-position="left"] .codex-filters {
-    margin-bottom: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .squire-tray[data-position="left"] .codex-search {
@@ -274,6 +279,7 @@
     border-radius: 3px;
     color: #fff;
     padding: 4px 28px 4px 8px;
+    height: 28px;
 }
 
 .squire-tray[data-position="left"] .codex-search .clear-search {
@@ -425,7 +431,7 @@
 
 /* Tag Cloud Styles */
 .squire-tray[data-position="left"] .codex-tag-section {
-    margin-bottom: 8px;
+    margin-bottom: 0;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     overflow: hidden;
