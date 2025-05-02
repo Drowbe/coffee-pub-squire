@@ -186,11 +186,20 @@ export class CodexPanel {
         clearButton.click((event) => {
             if (!$(event.currentTarget).hasClass('disabled')) {
                 this.filters.search = "";
+                this.filters.tags = [];
                 searchInput.val("");
                 // Show all entries and sections
                 html.find('.codex-entry, .codex-section').show();
                 // Update clear button state
                 $(event.currentTarget).addClass('disabled');
+                // Also update tag filter UI if present
+                const tagSelect = html.find('.codex-tag-filter select')[0];
+                if (tagSelect) {
+                    Array.from(tagSelect.options).forEach(opt => opt.selected = false);
+                    $(tagSelect).trigger('change');
+                }
+                // Also remove selected class from tag cloud
+                html.find('.codex-tag.selected').removeClass('selected');
             }
         });
 
@@ -220,7 +229,13 @@ export class CodexPanel {
             } else {
                 this.filters.tags.splice(tagIndex, 1);
             }
-            
+            // Enable/disable clear button based on tags or search
+            const clearButton = html.find('.clear-search');
+            if (this.filters.tags.length > 0 || this.filters.search) {
+                clearButton.removeClass('disabled');
+            } else {
+                clearButton.addClass('disabled');
+            }
             this.render(this.element);
         });
 
@@ -228,6 +243,13 @@ export class CodexPanel {
         html.find('.codex-tag-filter select').on('change', (event) => {
             const select = event.currentTarget;
             this.filters.tags = Array.from(select.selectedOptions).map(option => option.value);
+            // Enable/disable clear button based on tags or search
+            const clearButton = html.find('.clear-search');
+            if (this.filters.tags.length > 0 || this.filters.search) {
+                clearButton.removeClass('disabled');
+            } else {
+                clearButton.addClass('disabled');
+            }
             this.render(this.element);
         });
 
@@ -249,7 +271,10 @@ export class CodexPanel {
             event.preventDefault();
             const tag = event.currentTarget.dataset.tag;
             const select = html.find('.codex-tag-filter select')[0];
-            
+            if (!select) {
+                console.warn("No tag filter select found in DOM for tag click.");
+                return;
+            }
             // Find the option
             const option = Array.from(select.options).find(opt => opt.value === tag);
             if (option) {
@@ -603,12 +628,7 @@ export class CodexPanel {
             }
         }
 
-        // Restore tag cloud collapsed state
-        if (isTagCloudCollapsed) {
-            const tagCloud = codexContainer.find('.codex-tag-cloud');
-            tagCloud.addClass('collapsed');
-            codexContainer.find('.codex-tag-header .fa-chevron-down').css('transform', 'rotate(-90deg)');
-        }
+     
 
         // Apply current search filter if any
         if (this.filters.search) {

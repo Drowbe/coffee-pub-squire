@@ -17,6 +17,7 @@
     padding: 8px;
 }
 
+
 /* Common Title & Toolbar Styles */
 .squire-tray[data-position="left"] .tray-title-small,
 .squire-tray[data-position="left"] .notes-toolbar,
@@ -250,13 +251,15 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
+
+
+
+
+
+
+
 /* Codex Panel Styles */
 .squire-tray[data-position="left"] .codex-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 8px;
-    margin: 0;
     background: transparent;
 }
 
@@ -403,27 +406,48 @@
     align-items: center;
     margin-bottom: 8px;
 }
-
 .squire-tray[data-position="left"] .codex-entry-name {
     font-weight: bold;
     color: #fff;
     font-size: 1.1em;
 }
 
+.squire-tray[data-position="left"] .codex-entry-divider {
+    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    padding-top: 8px;
+}
+
+
+
 .squire-tray[data-position="left"] .codex-entry-image {
     float: left;
     margin: 0 8px 8px 0;
     width: 64px;
     height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    
+    
+    
+    
 }
 
 .squire-tray[data-position="left"] .codex-entry-image img {
+    
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+
+
+
+
 
 .squire-tray[data-position="left"] .codex-entry-description {
     color: #ccc;
@@ -435,6 +459,7 @@
     color: #aaa;
     font-style: italic;
     margin-bottom: 8px;
+    
 }
 
 .squire-tray[data-position="left"] .codex-entry-tags {
@@ -442,23 +467,70 @@
     flex-wrap: wrap;
     gap: 4px;
     clear: both;
+    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    padding-top: 8px;
 }
 
+
+
+
+
+
+
+
+
+/* Tag Cloud Container */
+
+.squire-tray[data-position="left"] .codex-tag-cloud {
+    padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    max-height: 100px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    transition: all 0.2s ease-out;
+}
+.squire-tray[data-position="left"] .codex-tag-cloud.collapsed {
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+}
+
+/* Tag Cloud Tags */
+
 .squire-tray[data-position="left"] .codex-tag {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+
+    
+    background: rgba(255, 47, 47, 0.2);
+    border-color: rgba(255, 47, 47, 0.4);
+    
+    border-radius: 4px;
     padding: 2px 8px;
     font-size: 0.9em;
-    color: #ccc;
+    color: #ddd;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+.squire-tray[data-position="left"] .codex-tag:hover {
+    background: rgba(255, 47, 47, 0.7);
+    border-color: rgba(255, 47, 47, 0.7);
 }
 
 .squire-tray[data-position="left"] .codex-tag.selected {
-    background: var(--color-border-highlight, #ff6400);
-    border-color: var(--color-border-highlight-alt, #ff8533);
+    background: rgba(50, 100, 150, 0.4);
+    border-color: rgba(50, 100, 150, 0.6);
     color: #fff;
 }
+.squire-tray[data-position="left"] .codex-tag.selected:hover {
+    background: rgba(50, 100, 150, 0.7);
+    border-color: rgba(100, 150, 200, 0.8);
+}
+
+
+/* Toolbar Links */
 
 .squire-tray[data-position="left"] .codex-entry-link {
     color: var(--color-border-highlight, #ff6400);
@@ -469,84 +541,6 @@
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
-/* Tag Cloud Styles */
-.squire-tray[data-position="left"] .codex-tag-section {
-    margin-bottom: 0;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    overflow: hidden;
-    transition: max-height 0.2s ease-out;
-}
-
-.squire-tray[data-position="left"] .codex-tag-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 8px;
-    background: rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    user-select: none;
-}
-
-.squire-tray[data-position="left"] .codex-tag-header:hover {
-    background: rgba(0, 0, 0, 0.4);
-}
-
-.squire-tray[data-position="left"] .tag-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.squire-tray[data-position="left"] .tag-controls i {
-    transition: transform 0.2s ease;
-}
-
-.squire-tray[data-position="left"] .codex-tag-cloud {
-    padding: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    transition: all 0.2s ease-out;
-}
-
-.squire-tray[data-position="left"] .codex-tag-cloud.collapsed {
-    max-height: 0;
-    padding: 0;
-    margin: 0;
-    opacity: 0;
-}
-
-.squire-tray[data-position="left"] .codex-tag {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 2px 8px;
-    font-size: 0.9em;
-    color: #ddd;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.squire-tray[data-position="left"] .codex-tag:hover {
-    background: rgba(0, 0, 0, 0.4);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.squire-tray[data-position="left"] .codex-tag.selected {
-    background: rgba(50, 100, 150, 0.4);
-    border-color: rgba(100, 150, 200, 0.4);
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] .codex-tag.selected:hover {
-    background: rgba(50, 100, 150, 0.5);
-    border-color: rgba(100, 150, 200, 0.5);
-}
 
 /* Entry Controls */
 .squire-tray[data-position="left"] .codex-entry-controls {
@@ -566,53 +560,11 @@
     color: var(--color-border-highlight, #ff6400);
 }
 
-.squire-tray[data-position="left"] .codex-entry-controls .fa-eye {
+.squire-tray[data-position="left"] .codex-entry-controls .identified {
     color: #88ff88;
 }
-
-.squire-tray[data-position="left"] .codex-entry-controls .fa-eye-slash {
+.squire-tray[data-position="left"] .codex-entry-controls .unidentified {
     color: #ff8888;
 }
-
-/* Entry Images */
-.squire-tray[data-position="left"] .codex-entry-image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.squire-tray[data-position="left"] .codex-entry-image i {
-    font-size: 2em;
-    color: rgba(255, 255, 255, 0.3);
-}
-
-.squire-tray[data-position="left"] .clear-tags {
-    color: #fff;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-    cursor: pointer;
-    margin-right: 4px;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 4px;
-    border-radius: 50%;
-    font-size: 10px;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.squire-tray[data-position="left"] .clear-tags:hover {
-    opacity: 1;
-    color: var(--color-border-highlight, #ff6400);
-}
-
-
-
-
-
-
 
 

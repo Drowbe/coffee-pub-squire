@@ -24,9 +24,6 @@
             </div>
             {{#if allTags.length}}
                 <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
-                    {{#if filters.tags.length}}
-                        <i class="fas fa-times clear-tags" title="Clear all tags"></i>
-                    {{/if}}
                     {{#each allTags}}
                         <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
                     {{/each}}
@@ -52,16 +49,13 @@
                                         <div class="codex-entry-header">
                                             <div class="codex-entry-name">{{name}}</div>
                                             <div class="codex-entry-controls">
-                                                {{#if identified}}
-                                                    <i class="fas fa-eye" title="Identified"></i>
-                                                {{else}}
-                                                    <i class="fas fa-eye-slash" title="Not Identified"></i>
-                                                {{/if}}
+                                                <i class="fas {{#if identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if identified}}Identified{{else}}Not Identified{{/if}}"></i>
                                                 {{#if link}}
                                                     <i class="fas fa-feather codex-entry-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
                                                 {{/if}}
                                             </div>
                                         </div>
+                                        <div class="codex-entry-divider"></div>
                                         <div class="codex-entry-image">
                                             <img src="{{img}}" alt="{{name}}">
                                         </div>
@@ -69,7 +63,7 @@
                                             <div class="codex-entry-description">{{description}}</div>
                                         {{/if}}
                                         {{#if plotHook}}
-                                            {{#if ../../isGM}}
+                                            {{#if isGM}}
                                                 <div class="codex-entry-hook">{{plotHook}}</div>
                                             {{/if}}
                                         {{/if}}

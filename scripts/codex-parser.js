@@ -43,13 +43,23 @@ export class CodexParser {
                 
                 for (let j = 0; j < listItems.length; j++) {
                     const li = listItems[j];
-                    const text = li.textContent.trim();
-                    const strongTag = li.querySelector('strong');
-                    
+                    // Support <li><p><strong>...</strong>: value</p></li> and <li><strong>...</strong>: value</li>
+                    let container = li;
+                    if (li.children.length === 1 && li.children[0].tagName === 'P') {
+                        container = li.children[0];
+                    }
+                    const strongTag = container.querySelector('strong');
                     if (!strongTag) continue;
-                    
                     const label = strongTag.textContent.trim().replace(':', '').toUpperCase();
-                    const value = text.substring(text.indexOf(':') + 1).trim();
+                    // Get text after the strong element
+                    let value = '';
+                    if (container.childNodes.length > 1 && strongTag.nextSibling) {
+                        value = strongTag.nextSibling.textContent?.replace(/^:/, '').trim() || '';
+                    } else {
+                        // fallback: get all text after the colon
+                        const text = container.textContent || '';
+                        value = text.substring(text.indexOf(':') + 1).trim();
+                    }
                     
                     switch (label) {
                         case 'DESCRIPTION':
