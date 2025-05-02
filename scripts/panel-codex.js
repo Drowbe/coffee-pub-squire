@@ -273,6 +273,142 @@ export class CodexPanel {
                 }
             }
         });
+
+        // Identified state toggle
+        html.on('click', '.codex-entry-controls .fa-eye, .codex-entry-controls .fa-eye-slash', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            console.log("SQUIRE | Eye icon clicked", {
+                target: event.currentTarget,
+                isGM: game.user.isGM,
+                hasJournal: !!this.selectedJournal,
+                eventType: event.type,
+                eventPhase: event.eventPhase,
+                bubbles: event.bubbles,
+                cancelable: event.cancelable
+            });
+            
+            if (!game.user.isGM) {
+                console.log("SQUIRE | Not a GM, ignoring click");
+                return;
+            }
+            
+            const entryElement = $(event.currentTarget).closest('.codex-entry');
+            const entryName = entryElement.find('.codex-entry-name').text();
+            const category = entryElement.closest('.codex-section').find('h3').text();
+            
+            console.log("SQUIRE | Entry details", {
+                entryName,
+                category,
+                hasSelectedJournal: !!this.selectedJournal,
+                journalPages: this.selectedJournal?.pages.size,
+                entryElementFound: !!entryElement.length,
+                entryNameFound: !!entryName,
+                categoryFound: !!category
+            });
+            
+            // Find the journal page for this category
+            const page = this.selectedJournal.pages.find(p => p.name === category);
+            if (!page) {
+                console.log("SQUIRE | No page found for category:", category);
+                return;
+            }
+            
+            try {
+                // Get current content
+                let content = '';
+                if (typeof page.text?.content === 'string') {
+                    content = page.text.content;
+                } else if (typeof page.text === 'string') {
+                    content = page.text;
+                } else if (page.text?.content) {
+                    content = await page.text.content;
+                }
+                
+                console.log("SQUIRE | Got page content", {
+                    hasContent: !!content,
+                    contentLength: content?.length,
+                    contentType: typeof content
+                });
+                
+                if (!content) {
+                    console.log("SQUIRE | No content found in page");
+                    return;
+                }
+                
+                // Create a temporary div to parse the HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(content, 'text/html');
+                
+                // Find the entry's h1 element (changed from h2)
+                const entryH1 = Array.from(doc.getElementsByTagName('h1')).find(h1 => 
+                    h1.textContent.trim() === entryName
+                );
+                
+                console.log("SQUIRE | Found entry H1", {
+                    found: !!entryH1,
+                    entryName,
+                    allH1s: Array.from(doc.getElementsByTagName('h1')).map(h => h.textContent.trim()),
+                    h1Count: doc.getElementsByTagName('h1').length
+                });
+                
+                if (!entryH1) return;
+                
+                // Find the ul element after this h1
+                let currentElement = entryH1.nextElementSibling;
+                while (currentElement && currentElement.tagName !== 'UL') {
+                    currentElement = currentElement.nextElementSibling;
+                }
+                
+                console.log("SQUIRE | Found UL element", {
+                    found: !!currentElement,
+                    elementType: currentElement?.tagName,
+                    nextElements: Array.from(entryH1.parentNode.children)
+                        .slice(Array.from(entryH1.parentNode.children).indexOf(entryH1) + 1, 5)
+                        .map(el => el.tagName)
+                });
+                
+                if (!currentElement) return;
+                
+                // Find the Identified list item
+                const identifiedLi = Array.from(currentElement.getElementsByTagName('li')).find(li => 
+                    li.textContent.trim().toLowerCase().startsWith('identified:')
+                );
+                
+                console.log("SQUIRE | Found Identified LI", {
+                    found: !!identifiedLi,
+                    currentText: identifiedLi?.textContent.trim(),
+                    allLis: Array.from(currentElement.getElementsByTagName('li')).map(li => li.textContent.trim())
+                });
+                
+                if (!identifiedLi) return;
+                
+                // Toggle the identified state
+                const currentState = identifiedLi.textContent.trim().toLowerCase().endsWith('true');
+                identifiedLi.innerHTML = `<strong>Identified:</strong> ${!currentState}`;
+                
+                console.log("SQUIRE | Updating page with new content", {
+                    newState: !currentState,
+                    contentLength: doc.body.innerHTML.length,
+                    newContent: doc.body.innerHTML.substring(0, 100) + "..."
+                });
+                
+                // Update the journal page
+                await page.update({ text: { content: doc.body.innerHTML } });
+                
+                // Refresh the codex panel
+                await this._refreshData();
+                this.render(this.element);
+                
+                // Show notification
+                ui.notifications.info(`Entry "${entryName}" is now ${!currentState ? 'identified' : 'unidentified'}.`);
+                
+            } catch (error) {
+                console.error("SQUIRE | Error toggling identified state:", error);
+                ui.notifications.error("Failed to update identified state. See console for details.");
+            }
+        });
     }
 
     /**

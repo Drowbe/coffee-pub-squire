@@ -35,22 +35,19 @@ export class CodexParser {
                 currentElement = currentElement.nextElementSibling;
             }
             
-            // Look for ul with fields
+            // Look for ul element
             if (currentElement?.tagName === 'UL') {
                 const listItems = currentElement.getElementsByTagName('li');
                 
-                for (const li of listItems) {
-                    // Get the p element inside the li
-                    const p = li.querySelector('p');
-                    if (!p) continue;
-
-                    // Get the strong element inside the p
-                    const strong = p.querySelector('strong');
-                    if (!strong) continue;
+                for (let j = 0; j < listItems.length; j++) {
+                    const li = listItems[j];
+                    const text = li.textContent.trim();
+                    const strongTag = li.querySelector('strong');
                     
-                    const label = strong.textContent.replace(':', '').trim().toUpperCase();
-                    // Get text after the strong element
-                    const value = p.textContent.substring(strong.textContent.length).replace(':', '').trim();
+                    if (!strongTag) continue;
+                    
+                    const label = strongTag.textContent.trim().replace(':', '').toUpperCase();
+                    const value = text.substring(text.indexOf(':') + 1).trim();
                     
                     switch (label) {
                         case 'DESCRIPTION':
