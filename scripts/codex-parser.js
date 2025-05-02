@@ -33,6 +33,8 @@ export class CodexParser {
             if (currentElement?.tagName === 'IMG') {
                 entry.img = currentElement.src;
                 currentElement = currentElement.nextElementSibling;
+            } else {
+                entry.img = 'images/bookmark.webp';
             }
             
             // Look for ul element

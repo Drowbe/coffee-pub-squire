@@ -63,23 +63,15 @@
                                             </div>
                                         </div>
                                         <div class="codex-entry-image">
-                                            {{#if img}}
-                                                <img src="{{img}}" alt="{{name}}">
-                                            {{else}}
-                                                {{#if (eq ../category "Characters")}}
-                                                    <i class="fas fa-user"></i>
-                                                {{else if (eq ../category "Locations")}}
-                                                    <i class="fas fa-map-marker-alt"></i>
-                                                {{else}}
-                                                    <i class="fas fa-gem"></i>
-                                                {{/if}}
-                                            {{/if}}
+                                            <img src="{{img}}" alt="{{name}}">
                                         </div>
                                         {{#if description}}
                                             <div class="codex-entry-description">{{description}}</div>
                                         {{/if}}
                                         {{#if plotHook}}
-                                            <div class="codex-entry-hook">{{plotHook}}</div>
+                                            {{#if ../../isGM}}
+                                                <div class="codex-entry-hook">{{plotHook}}</div>
+                                            {{/if}}
                                         {{/if}}
                                         {{#if tags.length}}
                                             <div class="codex-entry-tags">

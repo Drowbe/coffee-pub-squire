@@ -274,10 +274,18 @@ export class CodexPanel {
             }
         });
 
-        // Identified state toggle
-        html.on('click', '.codex-entry-controls .fa-eye, .codex-entry-controls .fa-eye-slash', async (event) => {
+        // Remove any existing handlers first
+        html.off('click.codexIdentified');
+        
+        // Identified state toggle - with namespaced event
+        html.on('click.codexIdentified', '.codex-entry-controls .fa-eye, .codex-entry-controls .fa-eye-slash', async (event) => {
             event.preventDefault();
             event.stopPropagation();
+            
+            // Prevent multiple rapid clicks
+            const target = $(event.currentTarget);
+            if (target.data('processing')) return;
+            target.data('processing', true);
             
             console.log("SQUIRE | Eye icon clicked", {
                 target: event.currentTarget,
@@ -289,33 +297,33 @@ export class CodexPanel {
                 cancelable: event.cancelable
             });
             
-            if (!game.user.isGM) {
-                console.log("SQUIRE | Not a GM, ignoring click");
-                return;
-            }
-            
-            const entryElement = $(event.currentTarget).closest('.codex-entry');
-            const entryName = entryElement.find('.codex-entry-name').text();
-            const category = entryElement.closest('.codex-section').find('h3').text();
-            
-            console.log("SQUIRE | Entry details", {
-                entryName,
-                category,
-                hasSelectedJournal: !!this.selectedJournal,
-                journalPages: this.selectedJournal?.pages.size,
-                entryElementFound: !!entryElement.length,
-                entryNameFound: !!entryName,
-                categoryFound: !!category
-            });
-            
-            // Find the journal page for this category
-            const page = this.selectedJournal.pages.find(p => p.name === category);
-            if (!page) {
-                console.log("SQUIRE | No page found for category:", category);
-                return;
-            }
-            
             try {
+                if (!game.user.isGM) {
+                    console.log("SQUIRE | Not a GM, ignoring click");
+                    return;
+                }
+                
+                const entryElement = $(event.currentTarget).closest('.codex-entry');
+                const entryName = entryElement.find('.codex-entry-name').text();
+                const category = entryElement.closest('.codex-section').find('h3').text();
+                
+                console.log("SQUIRE | Entry details", {
+                    entryName,
+                    category,
+                    hasSelectedJournal: !!this.selectedJournal,
+                    journalPages: this.selectedJournal?.pages.size,
+                    entryElementFound: !!entryElement.length,
+                    entryNameFound: !!entryName,
+                    categoryFound: !!category
+                });
+                
+                // Find the journal page for this category
+                const page = this.selectedJournal.pages.find(p => p.name === category);
+                if (!page) {
+                    console.log("SQUIRE | No page found for category:", category);
+                    return;
+                }
+                
                 // Get current content
                 let content = '';
                 if (typeof page.text?.content === 'string') {
@@ -341,7 +349,7 @@ export class CodexPanel {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(content, 'text/html');
                 
-                // Find the entry's h1 element (changed from h2)
+                // Find the entry's h1 element
                 const entryH1 = Array.from(doc.getElementsByTagName('h1')).find(h1 => 
                     h1.textContent.trim() === entryName
                 );
@@ -397,9 +405,18 @@ export class CodexPanel {
                 // Update the journal page
                 await page.update({ text: { content: doc.body.innerHTML } });
                 
-                // Refresh the codex panel
+                // Update the UI immediately without a full refresh
+                const icon = $(event.currentTarget);
+                if (currentState) {
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                    entryElement.addClass('unidentified');
+                } else {
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                    entryElement.removeClass('unidentified');
+                }
+                
+                // Refresh the data in the background
                 await this._refreshData();
-                this.render(this.element);
                 
                 // Show notification
                 ui.notifications.info(`Entry "${entryName}" is now ${!currentState ? 'identified' : 'unidentified'}.`);
@@ -407,6 +424,9 @@ export class CodexPanel {
             } catch (error) {
                 console.error("SQUIRE | Error toggling identified state:", error);
                 ui.notifications.error("Failed to update identified state. See console for details.");
+            } finally {
+                // Clear the processing flag
+                target.removeData('processing');
             }
         });
     }
