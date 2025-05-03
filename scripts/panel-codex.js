@@ -432,6 +432,25 @@ export class CodexPanel {
                 target.removeData('processing');
             }
         });
+
+        // --- Codex Card Collapse/Expand ---
+        // Always start collapsed
+        html.find('.codex-entry').addClass('collapsed');
+        // Unbind previous handlers before binding new ones
+        html.off('click.codexEntryToggle');
+        html.off('click.codexEntryHeader');
+        // Toggle collapse on chevron click
+        html.on('click.codexEntryToggle', '.codex-entry-toggle', function(e) {
+            const card = $(this).closest('.codex-entry');
+            card.toggleClass('collapsed');
+            e.stopPropagation();
+        });
+        // Toggle collapse on header click (but not controls)
+        html.on('click.codexEntryHeader', '.codex-entry-header', function(e) {
+            if ($(e.target).closest('.codex-toolbar').length) return;
+            const card = $(this).closest('.codex-entry');
+            card.toggleClass('collapsed');
+        });
     }
 
     /**
@@ -615,21 +634,5 @@ export class CodexPanel {
         if (!isTagCloudCollapsed) {
             codexContainer.find('.toggle-tags-button').addClass('active');
         }
-
-        // --- Codex Card Collapse/Expand ---
-        // Always start collapsed
-        codexContainer.find('.codex-entry').addClass('collapsed');
-        // Toggle collapse on chevron click
-        codexContainer.on('click', '.codex-entry-toggle', function(e) {
-            const card = $(this).closest('.codex-entry');
-            card.toggleClass('collapsed');
-            e.stopPropagation();
-        });
-        // Toggle collapse on header click (but not controls)
-        codexContainer.on('click', '.codex-entry-header', function(e) {
-            if ($(e.target).closest('.codex-toolbar').length) return;
-            const card = $(this).closest('.codex-entry');
-            card.toggleClass('collapsed');
-        });
     }
 } 
