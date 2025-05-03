@@ -65,8 +65,8 @@
                                                 <div class="codex-entry-description">{{description}}</div>
                                             {{/if}}
                                             {{#if plotHook}}
-                                                {{#if isGM}}
-                                                    <div class="codex-entry-hook">{{plotHook}}</div>
+                                                {{#if ../../../isGM}}
+                                                    <div class="codex-entry-hook"><strong>Plot Hook</strong>: {{plotHook}}</div>
                                                 {{/if}}
                                             {{/if}}
                                             {{#if tags.length}}

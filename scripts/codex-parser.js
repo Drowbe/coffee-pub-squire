@@ -50,11 +50,14 @@ export class CodexParser {
                     }
                     const strongTag = container.querySelector('strong');
                     if (!strongTag) continue;
-                    const label = strongTag.textContent.trim().replace(':', '').toUpperCase();
-                    // Get text after the strong element
+                    // Remove any trailing colon and whitespace from the label
+                    const label = strongTag.textContent.trim().replace(/:$/, '').toUpperCase();
+                    // Robustly extract value: get all text after the <strong> tag, remove leading colons/whitespace, strip HTML tags
                     let value = '';
                     if (container.childNodes.length > 1 && strongTag.nextSibling) {
-                        value = strongTag.nextSibling.textContent?.replace(/^:/, '').trim() || '';
+                        // Get everything after the <strong> tag in the container's HTML
+                        value = container.innerHTML.split(strongTag.outerHTML)[1] || '';
+                        value = value.replace(/^[:\s]*/, '').replace(/<[^>]+>/g, '').trim();
                     } else {
                         // fallback: get all text after the colon
                         const text = container.textContent || '';
