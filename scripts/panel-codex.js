@@ -303,7 +303,7 @@ export class CodexPanel {
         html.off('click.codexIdentified');
         
         // Identified state toggle - with namespaced event
-        html.on('click.codexIdentified', '.codex-toolbar .fa-eye, .codex-toolbar .fa-eye-slash', async (event) => {
+        html.on('click.codexIdentified', '.codex-toolbar .identified, .codex-toolbar .unidentified', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -330,7 +330,7 @@ export class CodexPanel {
                 
                 const entryElement = $(event.currentTarget).closest('.codex-entry');
                 const entryName = entryElement.find('.codex-entry-name').text();
-                const category = entryElement.closest('.codex-section').find('h3').text();
+                const category = entryElement.closest('.codex-section').find('h3').text().trim();
                 
                 console.log("SQUIRE | Entry details", {
                     entryName,
