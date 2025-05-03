@@ -58,9 +58,11 @@
                                         </div>
                                         <div class="codex-entry-content">
                                             <div class="codex-entry-divider"></div>
+                                            {{#if img}}
                                             <div class="codex-entry-image">
                                                 <img src="{{img}}" alt="{{name}}">
                                             </div>
+                                            {{/if}}
                                             {{#if description}}
                                                 <div class="codex-entry-description">{{description}}</div>
                                             {{/if}}

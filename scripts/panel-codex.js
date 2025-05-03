@@ -133,9 +133,6 @@ export class CodexPanel {
             const searchValue = event.target.value.toLowerCase();
             this.filters.search = searchValue;
             
-            // Toggle disabled state of clear button
-            clearButton.toggleClass('disabled', !searchValue);
-            
             // Show all entries first (in case we're making the search less restrictive)
             // For non-GMs, only show entries that are already visible (identified)
             if (game.user.isGM) {
@@ -182,25 +179,42 @@ export class CodexPanel {
             }
         });
 
-        // Clear search button
-        clearButton.click((event) => {
-            if (!$(event.currentTarget).hasClass('disabled')) {
-                this.filters.search = "";
-                this.filters.tags = [];
-                searchInput.val("");
-                // Show all entries and sections
-                html.find('.codex-entry, .codex-section').show();
-                // Update clear button state
-                $(event.currentTarget).addClass('disabled');
-                // Also update tag filter UI if present
-                const tagSelect = html.find('.codex-tag-filter select')[0];
-                if (tagSelect) {
-                    Array.from(tagSelect.options).forEach(opt => opt.selected = false);
-                    $(tagSelect).trigger('change');
-                }
-                // Also remove selected class from tag cloud
-                html.find('.codex-tag.selected').removeClass('selected');
+        // Tag cloud tag selection
+        html.find('.codex-tag-cloud .codex-tag').click((event) => {
+            event.preventDefault();
+            const tag = event.currentTarget.dataset.tag;
+            // Toggle tag selection
+            const tagIndex = this.filters.tags.indexOf(tag);
+            if (tagIndex === -1) {
+                this.filters.tags.push(tag);
+            } else {
+                this.filters.tags.splice(tagIndex, 1);
             }
+            this.render(this.element);
+        });
+
+        // Tag filter
+        html.find('.codex-tag-filter select').on('change', (event) => {
+            const select = event.currentTarget;
+            this.filters.tags = Array.from(select.selectedOptions).map(option => option.value);
+            this.render(this.element);
+        });
+
+        // Clear search button (always enabled)
+        clearButton.removeClass('disabled');
+        clearButton.off('click').on('click', (event) => {
+            this.filters.search = "";
+            this.filters.tags = [];
+            searchInput.val("");
+            // Also update tag filter UI if present
+            const tagSelect = html.find('.codex-tag-filter select')[0];
+            if (tagSelect) {
+                Array.from(tagSelect.options).forEach(opt => opt.selected = false);
+                $(tagSelect).trigger('change');
+            }
+            // Also remove selected class from tag cloud
+            html.find('.codex-tag.selected').removeClass('selected');
+            this.render(this.element);
         });
 
         // Toggle tags button
@@ -215,42 +229,6 @@ export class CodexPanel {
             
             // Save state to user flags
             game.user.setFlag(MODULE.ID, 'codexTagCloudCollapsed', !isCollapsed);
-        });
-
-        // Tag cloud tag selection
-        html.find('.codex-tag-cloud .codex-tag').click((event) => {
-            event.preventDefault();
-            const tag = event.currentTarget.dataset.tag;
-            
-            // Toggle tag selection
-            const tagIndex = this.filters.tags.indexOf(tag);
-            if (tagIndex === -1) {
-                this.filters.tags.push(tag);
-            } else {
-                this.filters.tags.splice(tagIndex, 1);
-            }
-            // Enable/disable clear button based on tags or search
-            const clearButton = html.find('.clear-search');
-            if (this.filters.tags.length > 0 || this.filters.search) {
-                clearButton.removeClass('disabled');
-            } else {
-                clearButton.addClass('disabled');
-            }
-            this.render(this.element);
-        });
-
-        // Tag filter
-        html.find('.codex-tag-filter select').on('change', (event) => {
-            const select = event.currentTarget;
-            this.filters.tags = Array.from(select.selectedOptions).map(option => option.value);
-            // Enable/disable clear button based on tags or search
-            const clearButton = html.find('.clear-search');
-            if (this.filters.tags.length > 0 || this.filters.search) {
-                clearButton.removeClass('disabled');
-            } else {
-                clearButton.addClass('disabled');
-            }
-            this.render(this.element);
         });
 
         // Category collapse/expand
