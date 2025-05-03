@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual overlay indicating when content is being edited by any user
 - Proper hooks integration to refresh content when journal pages are updated
 - Auto-favorite equipped weapons and prepared spells for monsters/NPCs when first selected (only if they don't already have favorites)
+- Dynamic codex category icons based on category (Characters, Locations, Artifacts)
+- Always-enabled clear (X) button that clears both search and tag filters and resets results
+- Clicking a tag in an entry now clears all filters and filters by that tag only
+- Marked this version as Locked Down for release stability
+
+### Changed
+- Improved CSS organization and removed duplicate styles
+- Plot Hook and other fields are now robustly parsed regardless of colon placement or HTML structure
+- Improved tag/search/expand/collapse logic for all filter states
 
 ### Fixed
 - Fixed scrollbar issues to ensure only one scrollbar appears in the notes panel
@@ -23,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed critical hook function naming issue that was preventing content updates
 - Improved CSS styling for better integration with Foundry's UI
 - Consolidated duplicate CSS to improve maintainability
+- Fixed event handler binding to prevent odd expand/collapse behavior after filtering
 
 ## [1.0.10] - Transfers and More
 

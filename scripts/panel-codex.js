@@ -261,6 +261,17 @@ export class CodexPanel {
             }
         });
 
+        // Tag click in entry: clear search and filters, filter by clicked tag
+        html.off('click.codexEntryTag');
+        html.on('click.codexEntryTag', '.codex-entry-tags .codex-tag', (event) => {
+            event.preventDefault();
+            const tag = event.currentTarget.dataset.tag;
+            this.filters.search = "";
+            this.filters.tags = [tag];
+            searchInput.val("");
+            this.render(this.element);
+        });
+
         // Journal selection
         html.find('.set-codex-button, .set-codex-button-large').click(() => {
             this._showJournalPicker();
