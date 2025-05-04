@@ -46,12 +46,13 @@ export class CodexPanel {
      * @private
      */
     async _refreshData() {
+        // Always clear data and tags before repopulating
         this.data = {
             Characters: [],
             Locations: [],
             Artifacts: []
         };
-        this.allTags.clear();
+        this.allTags = new Set();
 
         for (const category of this.categories) {
             const journalId = game.settings.get(MODULE.ID, `codexJournal_${category}`);
@@ -429,6 +430,48 @@ export class CodexPanel {
                 // Clear the processing flag
                 target.removeData('processing');
             }
+        });
+
+        // Toggle identified state
+        html.find('.toggle-identified').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            console.log("SQUIRE | Toggle identified clicked", {
+                target: event.currentTarget,
+                uuid: $(event.currentTarget).data('uuid'),
+                isGM: game.user.isGM
+            });
+            
+            const icon = $(event.currentTarget);
+            const uuid = icon.data('uuid');
+            
+            if (!uuid) {
+                console.error("SQUIRE | No UUID found on clicked element");
+                return;
+            }
+            
+            const page = await fromUuid(uuid);
+            
+            if (!page) {
+                console.error("SQUIRE | Could not find page for UUID:", uuid);
+                return;
+            }
+            
+            console.log("SQUIRE | Found page:", {
+                name: page.name,
+                currentPermission: page.ownership.default
+            });
+            
+            // Toggle between NONE and OBSERVER permissions
+            const newPermission = page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
+                ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE 
+                : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+                
+            console.log("SQUIRE | Updating permission to:", newPermission);
+            
+            await page.update({ "ownership.default": newPermission });
+            // Do not call _refreshData or render here; let the updateJournalEntryPage hook handle it.
         });
 
         // --- Codex Card Collapse/Expand ---

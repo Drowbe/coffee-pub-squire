@@ -112,31 +112,90 @@ export class CodexParser {
     /**
      * Parse a single journal page into a codex entry object
      * @param {JournalEntryPage} page - The journal page
+     * @param {string} enrichedHtml - The enriched HTML content of the page
      * @returns {Object|null} Codex entry object or null if not valid
      */
-    static async parseSinglePage(page) {
-        const content = page.text.content;
-        const name = page.name;
-        const img = page.img;
-        const description = this.extractDescription(content);
-        const plotHook = this.extractPlotHook(content);
-        const location = this.extractLocation(content);
-        const link = this.extractLink(content);
-        const tags = this.extractTags(content);
-        
-        // Check if the page is visible to players (has OBSERVER or higher permission)
-        const isIdentified = page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-
-        return {
-            name,
-            img,
-            description,
-            plotHook,
-            location,
-            link,
-            tags,
-            identified: isIdentified
+    static async parseSinglePage(page, enrichedHtml) {
+        // Parse the enriched HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(enrichedHtml, 'text/html');
+        const entry = {
+            name: page.name,
+            img: page.img || '',
+            description: '',
+            plotHook: '',
+            location: '',
+            link: null,
+            tags: [],
+            identified: page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER,
+            uuid: page.uuid
         };
+        // If no explicit image, use the first <img> in the HTML
+        if (!entry.img) {
+            const imgTag = doc.querySelector('img');
+            if (imgTag) entry.img = imgTag.src;
+        }
+        // Look for <ul> and parse <li> items
+        const ul = doc.querySelector('ul');
+        if (ul) {
+            const listItems = ul.getElementsByTagName('li');
+            for (let j = 0; j < listItems.length; j++) {
+                const li = listItems[j];
+                let container = li;
+                if (li.children.length === 1 && li.children[0].tagName === 'P') {
+                    container = li.children[0];
+                }
+                const strongTag = container.querySelector('strong');
+                if (!strongTag) continue;
+                const label = strongTag.textContent.trim().replace(/:$/, '').toUpperCase();
+                let value = '';
+                if (container.childNodes.length > 1 && strongTag.nextSibling) {
+                    value = container.innerHTML.split(strongTag.outerHTML)[1] || '';
+                    value = value.replace(/^[:\s]*/, '').replace(/<[^>]+>/g, '').trim();
+                } else {
+                    const text = container.textContent || '';
+                    value = text.substring(text.indexOf(':') + 1).trim();
+                }
+                switch (label) {
+                    case 'DESCRIPTION':
+                        entry.description = value;
+                        break;
+                    case 'PLOT HOOK':
+                        entry.plotHook = value;
+                        break;
+                    case 'LOCATION':
+                        entry.location = value;
+                        break;
+                    case 'LINK':
+                        let uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
+                        if (uuidMatch) {
+                            entry.link = {
+                                uuid: uuidMatch[1],
+                                label: uuidMatch[2]
+                            };
+                        } else {
+                            const aTag = li.querySelector('a[data-uuid]');
+                            if (aTag) {
+                                entry.link = {
+                                    uuid: aTag.getAttribute('data-uuid'),
+                                    label: aTag.textContent.trim()
+                                };
+                            }
+                        }
+                        break;
+                    case 'TAGS':
+                        entry.tags = value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                        break;
+                }
+            }
+        }
+        // Fallback: if no description, use all text content
+        if (!entry.description) {
+            entry.description = doc.body.textContent.trim();
+        }
+        // If no name, skip
+        if (!entry.name) return null;
+        return entry;
     }
 
     static extractDescription(content) {

@@ -49,7 +49,9 @@
                                             {{#if entry.link}}
                                                 <i class="fas fa-feather codex-entry-link has-link" data-uuid="{{entry.link.uuid}}" title="{{entry.link.label}}"></i>
                                             {{/if}}
-                                            <i class="fas {{#if entry.identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if entry.identified}}Identified{{else}}Not Identified{{/if}}"></i>
+                                            {{#if @root.isGM}}
+                                                <i class="fas {{#if entry.identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}} toggle-identified" data-uuid="{{entry.uuid}}" title="{{#if entry.identified}}Hide from players{{else}}Show to players{{/if}}"></i>
+                                            {{/if}}
                                             <i class="fas fa-chevron-right codex-entry-toggle" title="Expand/Collapse"></i>
                                         </div>
                                     </div>
