@@ -41,6 +41,8 @@
 
 @import "panel-codex.css";
 
+@import "panel-quest.css";
+
 /* --- Stacked Panels ---------------------- */
 
 @import "panel-inventory.css"; 
