@@ -509,6 +509,37 @@ export class CodexPanel {
                 this._showJournalPicker(category);
             });
         }
+
+        // Import JSON button opens a dialog
+        html.find('.import-json-button').click((event) => {
+            event.preventDefault();
+            new Dialog({
+                title: 'Paste JSON',
+                content: `
+                    <textarea id="codex-import-json" style="width:100%;height:300px;resize:vertical;"></textarea>
+                `,
+                buttons: {
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: 'Cancel'
+                    },
+                    import: {
+                        icon: '<i class="fas fa-theater-masks"></i>',
+                        label: 'Import JSON',
+                        callback: async (html) => {
+                            const value = html.find('#codex-import-json').val();
+                            try {
+                                const data = JSON.parse(value);
+                                await this.importCodexJson(data);
+                            } catch (e) {
+                                ui.notifications.error('Invalid JSON.');
+                            }
+                        }
+                    }
+                },
+                default: 'import'
+            }).render(true);
+        });
     }
 
     /**
@@ -682,5 +713,43 @@ export class CodexPanel {
         
         // Refresh the codex to show updated state
         await this.refreshCodex();
+    }
+
+    /**
+     * Import codex entries from JSON and add them as pages to the correct journals
+     * @param {Object} data - Parsed JSON object
+     */
+    async importCodexJson(data) {
+        const categories = ["Characters", "Locations", "Artifacts"];
+        for (const category of categories) {
+            const entries = data[category];
+            if (!Array.isArray(entries) || !entries.length) continue;
+            const journalId = game.settings.get(MODULE.ID, `codexJournal_${category}`);
+            const journal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
+            if (!journal) {
+                ui.notifications.warn(`No journal set for ${category}. Skipping import for this category.`);
+                continue;
+            }
+            const pages = entries.map(entry => {
+                let html = `<ul>`;
+                if (entry.description) html += `<li><strong>Description:</strong> ${entry.description}</li>`;
+                if (entry.plotHook) html += `<li><strong>Plot Hook:</strong> ${entry.plotHook}</li>`;
+                if (entry.location) html += `<li><strong>Location:</strong> ${entry.location}</li>`;
+                if (entry.link && entry.link.uuid && entry.link.label) html += `<li><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</li>`;
+                if (entry.tags && entry.tags.length) html += `<li><strong>Tags:</strong> ${entry.tags.join(', ')}</li>`;
+                html += `</ul>`;
+                return {
+                    name: entry.name,
+                    type: 'text',
+                    text: { content: html },
+                    ownership: { default: entry.identified ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
+                };
+            });
+            await journal.createEmbeddedDocuments('JournalEntryPage', pages);
+        }
+        ui.notifications.info('Codex entries imported!');
+        // Optionally refresh the codex panel
+        await this._refreshData();
+        this.render(this.element);
     }
 } 
