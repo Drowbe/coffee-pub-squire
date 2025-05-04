@@ -46,9 +46,7 @@
                                     <div class="codex-entry-header">
                                         <div class="codex-entry-name">{{entry.name}}</div>
                                         <div class="codex-toolbar">
-                                            {{#if entry.link}}
-                                                <i class="fas fa-feather codex-entry-link has-link" data-uuid="{{entry.link.uuid}}" title="{{entry.link.label}}"></i>
-                                            {{/if}}
+                                            <i class="fas fa-feather codex-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
                                             {{#if @root.isGM}}
                                                 <i class="fas {{#if entry.identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}} toggle-identified" data-uuid="{{entry.uuid}}" title="{{#if entry.identified}}Hide from players{{else}}Show to players{{/if}}"></i>
                                             {{/if}}
@@ -64,6 +62,11 @@
                                         {{/if}}
                                         {{#if entry.description}}
                                             <div class="codex-entry-description">{{entry.description}}</div>
+                                        {{/if}}
+                                        {{#if entry.link}}
+                                            <div class="codex-entry-link-block">
+                                                <a class="codex-entry-link" data-uuid="{{entry.link.uuid}}" href="#">{{entry.link.label}}</a>
+                                            </div>
                                         {{/if}}
                                         {{#if entry.plotHook}}
                                             {{#if @root.isGM}}

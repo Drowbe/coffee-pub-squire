@@ -276,6 +276,16 @@ export class CodexPanel {
             }
         });
 
+        // Feather icon opens the current journal page
+        html.find('.codex-entry-feather').click(async (event) => {
+            event.preventDefault();
+            const uuid = event.currentTarget.dataset.uuid;
+            if (uuid) {
+                const doc = await fromUuid(uuid);
+                if (doc) doc.sheet.render(true);
+            }
+        });
+
         // Remove any existing handlers first
         html.off('click.codexIdentified');
         
