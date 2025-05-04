@@ -481,7 +481,7 @@ export class CodexPanel {
             console.log("SQUIRE | Updating permission to:", newPermission);
             
             await page.update({ "ownership.default": newPermission });
-            // Do not call _refreshData or render here; let the updateJournalEntryPage hook handle it.
+            // Do not call _refreshData or render here; let the Foundry updateJournalEntryPage hook handle the refresh.
         });
 
         // --- Codex Card Collapse/Expand ---
@@ -504,11 +504,10 @@ export class CodexPanel {
         });
 
         // Add gear icon handler for each category
-        for (const category of this.categories) {
-            html.find(`.set-codex-journal-${category}`).off('click').on('click', () => {
-                this._showJournalPicker(category);
-            });
-        }
+        html.find('.codex-set-journal').off('click').on('click', (event) => {
+            const category = event.currentTarget.dataset.category;
+            this._showJournalPicker(category);
+        });
 
         // Import JSON button opens a dialog
         html.find('.import-json-button').click((event) => {
@@ -721,6 +720,8 @@ export class CodexPanel {
      */
     async importCodexJson(data) {
         const categories = ["Characters", "Locations", "Artifacts"];
+        let added = 0;
+        let updated = 0;
         for (const category of categories) {
             const entries = data[category];
             if (!Array.isArray(entries) || !entries.length) continue;
@@ -730,26 +731,74 @@ export class CodexPanel {
                 ui.notifications.warn(`No journal set for ${category}. Skipping import for this category.`);
                 continue;
             }
-            const pages = entries.map(entry => {
-                let html = `<ul>`;
-                if (entry.description) html += `<li><strong>Description:</strong> ${entry.description}</li>`;
-                if (entry.plotHook) html += `<li><strong>Plot Hook:</strong> ${entry.plotHook}</li>`;
-                if (entry.location) html += `<li><strong>Location:</strong> ${entry.location}</li>`;
-                if (entry.link && entry.link.uuid && entry.link.label) html += `<li><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</li>`;
-                if (entry.tags && entry.tags.length) html += `<li><strong>Tags:</strong> ${entry.tags.join(', ')}</li>`;
-                html += `</ul>`;
-                return {
-                    name: entry.name,
-                    type: 'text',
-                    text: { content: html },
-                    ownership: { default: entry.identified ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
-                };
-            });
-            await journal.createEmbeddedDocuments('JournalEntryPage', pages);
+            for (const entry of entries) {
+                // Try to find an existing page by name
+                const existingPage = journal.pages.find(p => p.name === entry.name);
+                if (existingPage) {
+                    // Parse the existing HTML content
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(existingPage.text.content, 'text/html');
+                    let ul = doc.querySelector('ul');
+                    if (!ul) {
+                        ul = doc.createElement('ul');
+                        doc.body.appendChild(ul);
+                    }
+                    // Helper to update or add a <li> for a field
+                    function upsertLi(label, value) {
+                        if (value === undefined) return;
+                        let li = Array.from(ul.children).find(li => li.querySelector('strong') && li.querySelector('strong').textContent.trim().replace(/:$/, '').toUpperCase() === label.toUpperCase());
+                        if (!li && value !== "") {
+                            li = doc.createElement('li');
+                            let strong = doc.createElement('strong');
+                            strong.textContent = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase() + ':';
+                            li.appendChild(strong);
+                            ul.appendChild(li);
+                        }
+                        if (li) {
+                            if (value === "" || value === null) {
+                                li.remove();
+                            } else {
+                                // Special handling for link and tags
+                                if (label.toUpperCase() === 'LINK' && value && value.uuid && value.label) {
+                                    li.innerHTML = `<strong>Link:</strong> @UUID[${value.uuid}]{${value.label}}`;
+                                } else if (label.toUpperCase() === 'TAGS' && Array.isArray(value)) {
+                                    li.innerHTML = `<strong>Tags:</strong> ${value.join(', ')}`;
+                                } else {
+                                    li.innerHTML = `<strong>${label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()}:</strong> ${value}`;
+                                }
+                            }
+                        }
+                    }
+                    upsertLi('Description', entry.description);
+                    upsertLi('Plot Hook', entry.plotHook);
+                    upsertLi('Location', entry.location);
+                    upsertLi('Link', entry.link);
+                    upsertLi('Tags', entry.tags);
+                    // Update the page content only (do not update ownership.default)
+                    await existingPage.update({
+                        'text.content': doc.body.innerHTML
+                    });
+                    updated++;
+                } else {
+                    // Create new page as before
+                    let html = `<ul>`;
+                    if (entry.description) html += `<li><strong>Description:</strong> ${entry.description}</li>`;
+                    if (entry.plotHook) html += `<li><strong>Plot Hook:</strong> ${entry.plotHook}</li>`;
+                    if (entry.location) html += `<li><strong>Location:</strong> ${entry.location}</li>`;
+                    if (entry.link && entry.link.uuid && entry.link.label) html += `<li><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</li>`;
+                    if (entry.tags && entry.tags.length) html += `<li><strong>Tags:</strong> ${entry.tags.join(', ')}</li>`;
+                    html += `</ul>`;
+                    await journal.createEmbeddedDocuments('JournalEntryPage', [{
+                        name: entry.name,
+                        type: 'text',
+                        text: { content: html },
+                        ownership: { default: entry.identified ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
+                    }]);
+                    added++;
+                }
+            }
         }
-        ui.notifications.info('Codex entries imported!');
-        // Optionally refresh the codex panel
-        await this._refreshData();
-        this.render(this.element);
+        ui.notifications.info(`Codex import complete: ${added} added, ${updated} updated.`);
+        // Do not call _refreshData or render here; let the Foundry updateJournalEntryPage hook handle the refresh.
     }
 } 

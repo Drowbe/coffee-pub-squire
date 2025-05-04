@@ -4,8 +4,8 @@
             Codex
         </span>
         <div class="codex-toolbar">
-            {{#if isGM}}
             <i class="fas fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
+            {{#if isGM}}
             <i class="fas fa-file-import import-json-button" title="Import JSON"></i>
             {{/if}}
         </div>
@@ -33,9 +33,9 @@
                     <h3><i class="fas {{#if (eq category "Characters")}}fa-user{{else if (eq category "Locations")}}fa-map{{else if (eq category "Artifacts")}}fa-treasure-chest{{/if}}"></i> {{category}}
                     </h3>
                     <div class="codex-toolbar">
-                        <button type="button" class="set-codex-journal-{{category}}" title="Select Journal for {{category}}" style="background: none; border: none; cursor: pointer; margin-right: 8px;">
-                            <i class="fas fa-cog"></i>
-                        </button>
+                        {{#if @root.isGM}}
+                        <i class="fas fa-cog codex-set-journal" data-category="{{category}}" title="Select Journal for {{category}}"></i>
+                        {{/if}}
                         <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
                     </div>
                 </div>
