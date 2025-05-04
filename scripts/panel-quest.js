@@ -232,6 +232,25 @@ export class QuestPanel {
                 if (doc) doc.sheet.render(true);
             }
         });
+
+        // --- Quest Card Collapse/Expand ---
+        // Always start collapsed
+        html.find('.quest-entry').addClass('collapsed');
+        // Unbind previous handlers before binding new ones
+        html.off('click.questEntryToggle');
+        html.off('click.questEntryHeader');
+        // Toggle collapse on chevron click
+        html.on('click.questEntryToggle', '.quest-entry-toggle', function(e) {
+            const card = $(this).closest('.quest-entry');
+            card.toggleClass('collapsed');
+            e.stopPropagation();
+        });
+        // Toggle collapse on header click (but not controls)
+        html.on('click.questEntryHeader', '.quest-entry-header', function(e) {
+            if ($(e.target).closest('.quest-toolbar').length) return;
+            const card = $(this).closest('.quest-entry');
+            card.toggleClass('collapsed');
+        });
     }
 
     /**

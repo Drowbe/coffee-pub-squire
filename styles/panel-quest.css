@@ -323,74 +323,53 @@
     border-color: rgba(100, 150, 200, 0.8);
 }
 
-
-
-
-
-
-
 /* --- THESE ARE NEW AND DIFFERENT THN CODEX --- */
 
-
-
-.quest-entry-criteria,
-.quest-entry-timeframe,
-.quest-entry-tasks,
-.quest-entry-reward,
-.quest-entry-participants,
-.quest-entry-hook,
-.quest-entry-progress,
-.quest-entry-related {
+.squire-tray[data-position="left"] .quest-entry-criteria,
+.squire-tray[data-position="left"] .quest-entry-timeframe,
+.squire-tray[data-position="left"] .quest-entry-tasks,
+.squire-tray[data-position="left"] .quest-entry-reward,
+.squire-tray[data-position="left"] .quest-entry-participants,
+.squire-tray[data-position="left"] .quest-entry-hook,
+.squire-tray[data-position="left"] .quest-entry-progress,
+.squire-tray[data-position="left"] .quest-entry-related {
     margin-bottom: 0.5rem;
+    color: #ffffff;
+    clear: both;
 }
 
-.quest-entry-tasks ul {
+.squire-tray[data-position="left"] .quest-entry-tasks ul {
     list-style: none;
     padding-left: 0;
 }
 
-.quest-entry-tasks li {
+.squire-tray[data-position="left"] .quest-entry-tasks li {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
 }
 
-.quest-entry-tasks li.completed {
+.squire-tray[data-position="left"] .quest-entry-tasks li.completed {
     opacity: 0.7;
     text-decoration: line-through;
 }
 
-.quest-entry-tasks li i {
+.squire-tray[data-position="left"] .quest-entry-tasks li i {
     cursor: pointer;
 }
 
-.quest-entry-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-}
 
-.no-quest-selected {
+.squire-tray[data-position="left"] .no-quest-selected {
     padding: 1rem;
     text-align: center;
     color: var(--color-text-light);
 }
 
-.no-quest-selected p {
+.squire-tray[data-position="left"] .no-quest-selected p {
     margin: 0.5rem 0;
 }
 
-.no-quest-selected i {
+.squire-tray[data-position="left"] .no-quest-selected i {
     opacity: 0.7;
 }
-
-/* Identified/Unidentified States */
-.identified {
-    color: var(--color-success);
-}
-
-.unidentified {
-    color: var(--color-warning);
-} 
