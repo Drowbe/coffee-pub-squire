@@ -11,7 +11,7 @@ export class QuestParser {
         const doc = parser.parseFromString(enrichedHtml, 'text/html');
         const entry = {
             name: page.name,
-            img: page.img || '',
+            img: '',
             category: '',
             criteria: [],
             timeframe: {
@@ -35,85 +35,87 @@ export class QuestParser {
             uuid: page.uuid
         };
 
-        // If no explicit image, use the first <img> in the HTML
-        if (!entry.img) {
-            const imgTag = doc.querySelector('img');
-            if (imgTag) entry.img = imgTag.src;
-        }
+        // Get the first <img> for the quest image
+        const imgTag = doc.querySelector('img');
+        if (imgTag) entry.img = imgTag.src;
 
-        // Look for <ul> and parse <li> items
-        const ul = doc.querySelector('ul');
-        if (ul) {
-            const listItems = ul.getElementsByTagName('li');
-            for (let j = 0; j < listItems.length; j++) {
-                const li = listItems[j];
-                let container = li;
-                if (li.children.length === 1 && li.children[0].tagName === 'P') {
-                    container = li.children[0];
-                }
-                const strongTag = container.querySelector('strong');
-                if (!strongTag) continue;
-                const label = strongTag.textContent.trim().replace(/:$/, '').toUpperCase();
-                let value = '';
-                if (container.childNodes.length > 1 && strongTag.nextSibling) {
-                    value = container.innerHTML.split(strongTag.outerHTML)[1] || '';
-                    value = value.replace(/^[:\s]*/, '').replace(/<[^>]+>/g, '').trim();
-                } else {
-                    const text = container.textContent || '';
-                    value = text.substring(text.indexOf(':') + 1).trim();
-                }
-
-                switch (label) {
-                    case 'CATEGORY':
-                        entry.category = value;
-                        break;
-                    case 'CRITERIA':
-                        entry.criteria = value.split(',').map(c => c.trim()).filter(c => c);
-                        break;
-                    case 'TIMEFRAME':
-                        const timeframeMatch = value.match(/(?:Due: (.+?))?(?:\s*,\s*Duration: (.+))?/);
-                        if (timeframeMatch) {
-                            entry.timeframe.dueDate = timeframeMatch[1] || '';
-                            entry.timeframe.duration = timeframeMatch[2] || '';
-                        }
-                        break;
-                    case 'DESCRIPTION':
-                        entry.description = value;
-                        break;
-                    case 'TASKS':
-                        entry.tasks = value.split(',').map(t => ({
-                            text: t.trim(),
-                            completed: false
-                        })).filter(t => t.text);
-                        break;
-                    case 'REWARD':
-                        const rewardMatch = value.match(/(?:XP: (\d+))?(?:\s*,\s*Gold: (\d+))?(?:\s*,\s*Items: (.+))?/);
-                        if (rewardMatch) {
-                            entry.reward.xp = parseInt(rewardMatch[1]) || 0;
-                            entry.reward.gold = parseInt(rewardMatch[2]) || 0;
-                            entry.reward.items = (rewardMatch[3] || '').split(',').map(i => i.trim()).filter(i => i);
-                        }
-                        break;
-                    case 'PARTICIPANTS':
+        // Parse all <p> fields
+        const pTags = Array.from(doc.querySelectorAll('p'));
+        let lastP = null;
+        for (let i = 0; i < pTags.length; i++) {
+            const p = pTags[i];
+            const strong = p.querySelector('strong');
+            if (!strong) continue;
+            const label = strong.textContent.trim().replace(/:$/, '').toUpperCase();
+            // Get value: all text after the <strong> tag
+            let value = p.textContent.replace(strong.textContent, '').replace(/^[:\s]*/, '').trim();
+            switch (label) {
+                case 'CATEGORY':
+                    entry.category = value;
+                    break;
+                case 'DESCRIPTION':
+                    entry.description = value;
+                    break;
+                case 'CRITERIA':
+                    entry.criteria = value.split(',').map(c => c.trim()).filter(c => c);
+                    break;
+                case 'DUE':
+                    entry.timeframe.dueDate = value;
+                    break;
+                case 'DURATION':
+                    entry.timeframe.duration = value;
+                    break;
+                case 'XP':
+                    entry.reward.xp = parseInt(value) || 0;
+                    break;
+                case 'GOLD':
+                    entry.reward.gold = parseInt(value) || 0;
+                    break;
+                case 'ITEMS':
+                    entry.reward.items = value.split(',').map(i => i.trim()).filter(i => i);
+                    break;
+                case 'PARTICIPANTS': {
+                    // Parse @UUID[...]{...} links if present
+                    const uuidLinks = Array.from(p.querySelectorAll('a[data-uuid]'));
+                    if (uuidLinks.length) {
+                        entry.participants = uuidLinks.map(a => a.textContent.trim());
+                    } else {
                         entry.participants = value.split(',').map(p => p.trim()).filter(p => p);
-                        break;
-                    case 'PLOT HOOK':
-                        entry.plotHook = value;
-                        break;
-                    case 'STATUS':
-                        entry.status = value;
-                        break;
-                    case 'PROGRESS':
-                        // Remove any % symbol and convert to number
-                        entry.progress = parseInt(value.replace('%', '')) || 0;
-                        break;
-                    case 'RELATED':
-                        entry.related = value.split(',').map(r => r.trim()).filter(r => r);
-                        break;
-                    case 'TAGS':
-                        entry.tags = value.split(',').map(tag => tag.trim()).filter(tag => tag);
-                        break;
+                    }
+                    break;
                 }
+                case 'PLOT HOOK':
+                    entry.plotHook = value;
+                    break;
+                case 'STATUS':
+                    entry.status = value;
+                    break;
+                case 'PROGRESS':
+                    entry.progress = parseInt(value.replace('%', '')) || 0;
+                    break;
+                case 'RELATED':
+                    entry.related = value.split(',').map(r => r.trim()).filter(r => r);
+                    break;
+                case 'TAGS':
+                    entry.tags = value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                    break;
+                case 'IDENTIFIED':
+                    entry.identified = value.toLowerCase() === 'true';
+                    break;
+                case 'TASKS':
+                    // The next sibling should be a <ul> with <li> tasks
+                    lastP = p;
+                    break;
+            }
+        }
+        // Find <ul> after <p><strong>Tasks:</strong></p>
+        if (lastP) {
+            let ul = lastP.nextElementSibling;
+            if (ul && ul.tagName === 'UL') {
+                entry.tasks = Array.from(ul.querySelectorAll('li')).map(li => ({
+                    text: li.textContent.trim(),
+                    completed: false
+                })).filter(t => t.text);
             }
         }
 
