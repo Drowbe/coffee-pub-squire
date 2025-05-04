@@ -739,6 +739,32 @@ export const registerSettings = function() {
         }
     });
 
+    // Codex Journal per Category
+    game.settings.register(MODULE.ID, 'codexJournal_Characters', {
+        name: "Codex Journal (Characters)",
+        hint: "The journal to use for the Characters codex entries.",
+        scope: "world",
+        config: false,
+        type: String,
+        default: "none"
+    });
+    game.settings.register(MODULE.ID, 'codexJournal_Locations', {
+        name: "Codex Journal (Locations)",
+        hint: "The journal to use for the Locations codex entries.",
+        scope: "world",
+        config: false,
+        type: String,
+        default: "none"
+    });
+    game.settings.register(MODULE.ID, 'codexJournal_Artifacts', {
+        name: "Codex Journal (Artifacts)",
+        hint: "The journal to use for the Artifacts codex entries.",
+        scope: "world",
+        config: false,
+        type: String,
+        default: "none"
+    });
+
 };
 
 // ***************************

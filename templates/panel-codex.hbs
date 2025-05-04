@@ -1,103 +1,96 @@
 {{#if (eq position "left")}}
     <div class="tray-title-small">
         <span>
-            {{#if hasJournal}}
-            {{journalName}}
-            {{else}}
             Codex
-            {{/if}}
         </span>
         <div class="codex-toolbar">
             {{#if isGM}}
             <i class="fas fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
-            <i class="fas fa-cog set-codex-button" title="Set Codex Journal"></i>
             {{/if}}
         </div>
     </div>
 
-    {{#if hasJournal}}
-        <div class="codex-filters">
-            <div class="codex-search">
-                <input type="text" placeholder="Search entries..." value="{{filters.search}}">
-                <i class="fas fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
-                <i class="fas fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
-            </div>
-            {{#if allTags.length}}
-                <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
-                    {{#each allTags}}
-                        <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                    {{/each}}
-                </div>
-            {{/if}}
+    <div class="codex-filters">
+        <div class="codex-search">
+            <input type="text" placeholder="Search entries..." value="{{filters.search}}">
+            <i class="fas fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+            <i class="fas fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
         </div>
+        {{#if allTags.length}}
+            <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
+                {{#each allTags}}
+                    <span class="codex-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                {{/each}}
+            </div>
+        {{/if}}
+    </div>
 
-        <div class="codex-content">
-            {{#each categories as |category|}}
-                {{#with (lookup ../data category) as |entries|}}
-                    {{#if entries.length}}
-                        <div class="codex-section">
-                            <div class="codex-category">
-                                <h3><i class="fas {{#if (eq category "Characters")}}fa-user{{else if (eq category "Locations")}}fa-map{{else if (eq category "Artifacts")}}fa-treasure-chest{{/if}}"></i> {{category}}</h3>
-                                <div class="codex-toolbar">
-                                    <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
-                                </div>
-                            </div>
-
-                            <div class="codex-entries">
-                                {{#each entries}}
-                                    <div class="codex-entry collapsed">
-                                        <div class="codex-entry-header">
-                                            <div class="codex-entry-name">{{name}}</div>
-                                            <div class="codex-toolbar">
-                                                {{#if link}}
-                                                    <i class="fas fa-feather codex-entry-link has-link" data-uuid="{{link.uuid}}" title="{{link.label}}"></i>
-                                                {{/if}}
-                                                <i class="fas {{#if identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if identified}}Identified{{else}}Not Identified{{/if}}"></i>
-                                                <i class="fas fa-chevron-right codex-entry-toggle" title="Expand/Collapse"></i>
-                                            </div>
-                                        </div>
-                                        <div class="codex-entry-content">
-                                            <div class="codex-entry-divider"></div>
-                                            {{#if img}}
-                                            <div class="codex-entry-image">
-                                                <img src="{{img}}" alt="{{name}}">
-                                            </div>
+    <div class="codex-content">
+        {{#each categories as |category|}}
+            <div class="codex-section" data-category="{{category}}">
+                <div class="codex-category">
+                    <h3><i class="fas {{#if (eq category "Characters")}}fa-user{{else if (eq category "Locations")}}fa-map{{else if (eq category "Artifacts")}}fa-treasure-chest{{/if}}"></i> {{category}}
+                    </h3>
+                    <div class="codex-toolbar">
+                        <button type="button" class="set-codex-journal-{{category}}" title="Select Journal for {{category}}" style="background: none; border: none; cursor: pointer; margin-right: 8px;">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
+                    </div>
+                </div>
+                {{#if (lookup @root.hasJournal category)}}
+                    {{#with (lookup @root.data category) as |entries|}}
+                        <div class="codex-entries">
+                            {{#each entries as |entry|}}
+                                <div class="codex-entry collapsed">
+                                    <div class="codex-entry-header">
+                                        <div class="codex-entry-name">{{entry.name}}</div>
+                                        <div class="codex-toolbar">
+                                            {{#if entry.link}}
+                                                <i class="fas fa-feather codex-entry-link has-link" data-uuid="{{entry.link.uuid}}" title="{{entry.link.label}}"></i>
                                             {{/if}}
-                                            {{#if description}}
-                                                <div class="codex-entry-description">{{description}}</div>
-                                            {{/if}}
-                                            {{#if plotHook}}
-                                                {{#if ../../../isGM}}
-                                                    <div class="codex-entry-hook"><strong>Plot Hook</strong>: {{plotHook}}</div>
-                                                {{/if}}
-                                            {{/if}}
-                                            {{#if tags.length}}
-                                                <div class="codex-entry-tags">
-                                                    {{#each tags}}
-                                                        <span class="codex-tag {{#if (includes ../../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                                                    {{/each}}
-                                                </div>
-                                            {{/if}}
+                                            <i class="fas {{#if entry.identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}}" title="{{#if entry.identified}}Identified{{else}}Not Identified{{/if}}"></i>
+                                            <i class="fas fa-chevron-right codex-entry-toggle" title="Expand/Collapse"></i>
                                         </div>
                                     </div>
-                                {{/each}}
-                            </div>
+                                    <div class="codex-entry-content">
+                                        <div class="codex-entry-divider"></div>
+                                        {{#if entry.img}}
+                                        <div class="codex-entry-image">
+                                            <img src="{{entry.img}}" alt="{{entry.name}}">
+                                        </div>
+                                        {{/if}}
+                                        {{#if entry.description}}
+                                            <div class="codex-entry-description">{{entry.description}}</div>
+                                        {{/if}}
+                                        {{#if entry.plotHook}}
+                                            {{#if @root.isGM}}
+                                                <div class="codex-entry-hook"><strong>Plot Hook</strong>: {{entry.plotHook}}</div>
+                                            {{/if}}
+                                        {{/if}}
+                                        {{#if entry.tags.length}}
+                                            <div class="codex-entry-tags">
+                                                {{#each entry.tags}}
+                                                    <span class="codex-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                                                {{/each}}
+                                            </div>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                            {{/each}}
                         </div>
-                    {{/if}}
-                {{/with}}
-            {{/each}}
-        </div>
-    {{else}}
-        <div class="no-codex-selected">
-            {{#if isGM}}
-                <p>No journal has been selected for the codex.</p>
-                <p>Click the <i class="fas fa-cog"></i> icon to select a journal.</p>
-                <button class="set-codex-button-large">
-                    <i class="fas fa-book"></i> Select Codex Journal
-                </button>
-            {{else}}
-                <p>No codex journal has been selected by the GM yet.</p>
-            {{/if}}
-        </div>
-    {{/if}}
+                    {{/with}}
+                {{else}}
+                    <div class="no-codex-selected">
+                        {{#if @root.isGM}}
+                            <p>No journal has been selected for the {{category}} codex.</p>
+                            <p>Click the <i class="fas fa-cog"></i> button to select a journal.</p>
+                        {{else}}
+                            <p>No codex journal has been selected by the GM yet for {{category}}.</p>
+                        {{/if}}
+                    </div>
+                {{/if}}
+            </div>
+        {{/each}}
+    </div>
 {{/if}} 

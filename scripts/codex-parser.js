@@ -108,4 +108,68 @@ export class CodexParser {
         
         return entries;
     }
+
+    /**
+     * Parse a single journal page into a codex entry object
+     * @param {JournalEntryPage} page - The journal page
+     * @returns {Object|null} Codex entry object or null if not valid
+     */
+    static async parseSinglePage(page) {
+        const content = page.text.content;
+        const name = page.name;
+        const img = page.img;
+        const description = this.extractDescription(content);
+        const plotHook = this.extractPlotHook(content);
+        const location = this.extractLocation(content);
+        const link = this.extractLink(content);
+        const tags = this.extractTags(content);
+        
+        // Check if the page is visible to players (has OBSERVER or higher permission)
+        const isIdentified = page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+
+        return {
+            name,
+            img,
+            description,
+            plotHook,
+            location,
+            link,
+            tags,
+            identified: isIdentified
+        };
+    }
+
+    static extractDescription(content) {
+        const match = content.match(/<strong>Description:<\/strong>\s*([^<]+)/i);
+        return match ? match[1].trim() : '';
+    }
+
+    static extractPlotHook(content) {
+        const match = content.match(/<strong>Plot Hook:<\/strong>\s*([^<]+)/i);
+        return match ? match[1].trim() : '';
+    }
+
+    static extractLocation(content) {
+        const match = content.match(/<strong>Location:<\/strong>\s*([^<]+)/i);
+        return match ? match[1].trim() : '';
+    }
+
+    static extractLink(content) {
+        const match = content.match(/@UUID\[(.*?)\]{(.*?)}/);
+        if (match) {
+            return {
+                uuid: match[1],
+                label: match[2]
+            };
+        }
+        return null;
+    }
+
+    static extractTags(content) {
+        const match = content.match(/<strong>Tags:<\/strong>\s*([^<]+)/i);
+        if (match) {
+            return match[1].split(',').map(tag => tag.trim()).filter(tag => tag);
+        }
+        return [];
+    }
 } 

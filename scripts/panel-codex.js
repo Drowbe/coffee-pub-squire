@@ -4,7 +4,11 @@ import { CodexParser } from './codex-parser.js';
 export class CodexPanel {
     constructor() {
         this.element = null;
-        this.selectedJournal = null;
+        this.selectedJournals = {
+            Characters: null,
+            Locations: null,
+            Artifacts: null
+        };
         this.categories = ["Characters", "Locations", "Artifacts"];
         this.data = {
             Characters: [],
@@ -26,11 +30,15 @@ export class CodexPanel {
      */
     _setupHooks() {
         Hooks.on("updateJournalEntryPage", async (page, changes, options, userId) => {
-            if (this.element && this.selectedJournal?.id === page.parent.id) {
+            if (this.element && this._isPageInSelectedJournals(page)) {
                 await this._refreshData();
                 this.render(this.element);
             }
         });
+    }
+
+    _isPageInSelectedJournals(page) {
+        return Object.values(this.selectedJournals).some(journal => journal && journal.id === page.parent.id);
     }
 
     /**
@@ -38,9 +46,6 @@ export class CodexPanel {
      * @private
      */
     async _refreshData() {
-        if (!this.selectedJournal) return;
-
-        // Clear existing data
         this.data = {
             Characters: [],
             Locations: [],
@@ -48,46 +53,40 @@ export class CodexPanel {
         };
         this.allTags.clear();
 
-        // Process each category
         for (const category of this.categories) {
-            const page = this.selectedJournal.pages.find(p => p.name === category);
-            if (page) {
-                try {
-                    let content = '';
-                    
-                    // Try different methods to get the content
-                    if (typeof page.text?.content === 'string') {
-                        content = page.text.content;
-                    } else if (typeof page.text === 'string') {
-                        content = page.text;
-                    } else if (page.text?.content) {
-                        content = await page.text.content;
+            const journalId = game.settings.get(MODULE.ID, `codexJournal_${category}`);
+            const journal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
+            this.selectedJournals[category] = journal;
+            if (journal) {
+                for (const page of journal.pages.contents) {
+                    try {
+                        let content = '';
+                        if (typeof page.text?.content === 'string') {
+                            content = page.text.content;
+                        } else if (typeof page.text === 'string') {
+                            content = page.text;
+                        } else if (page.text?.content) {
+                            content = await page.text.content;
+                        }
+                        if (content) {
+                            const enriched = await TextEditor.enrichHTML(content, {
+                                secrets: game.user.isGM,
+                                documents: true,
+                                links: true,
+                                rolls: true
+                            });
+                            // Each page is a single entry
+                            const entry = await CodexParser.parseSinglePage(page, enriched);
+                            if (entry) {
+                                this.data[category].push(entry);
+                                entry.tags.forEach(tag => this.allTags.add(tag));
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`SQUIRE | Error processing page ${page.name} in ${category}:`, error);
+                        ui.notifications.error(`Error loading ${category} entry: ${page.name}. See console for details.`);
                     }
-
-                    // If we have content, enrich it
-                    if (content) {
-                        const enriched = await TextEditor.enrichHTML(content, {
-                            secrets: game.user.isGM,
-                            documents: true,
-                            links: true,
-                            rolls: true
-                        });
-
-                        // Parse the enriched content
-                        const entries = await CodexParser.parseContent(enriched);
-                        this.data[category] = entries;
-
-                        // Collect all tags
-                        entries.forEach(entry => {
-                            entry.tags.forEach(tag => this.allTags.add(tag));
-                        });
-                    }
-                } catch (error) {
-                    console.error(`SQUIRE | Error processing ${category} page:`, error);
-                    ui.notifications.error(`Error loading ${category} entries. See console for details.`);
                 }
-            } else {
-                console.log(`SQUIRE | No ${category} page found in journal`);
             }
         }
     }
@@ -97,26 +96,14 @@ export class CodexPanel {
      * @private
      */
     _applyFilters(entries) {
-        // First sort entries alphabetically by name
-        const sortedEntries = [...entries].sort((a, b) => 
-            a.name.localeCompare(b.name)
-        );
-
-        // Filter out unidentified entries for non-GM users
-        const filteredEntries = sortedEntries.filter(entry => 
-            game.user.isGM || entry.identified
-        );
-
-        // Only filter by tags since search is now handled in DOM
+        const sortedEntries = [...entries].sort((a, b) => a.name.localeCompare(b.name));
+        const filteredEntries = sortedEntries.filter(entry => game.user.isGM || entry.identified);
         if (this.filters.tags.length > 0) {
             return filteredEntries.filter(entry => {
-                const hasAnyTag = this.filters.tags.some(tag => 
-                    entry.tags.includes(tag)
-                );
+                const hasAnyTag = this.filters.tags.some(tag => entry.tags.includes(tag));
                 return hasAnyTag;
             });
         }
-
         return filteredEntries;
     }
 
@@ -172,7 +159,7 @@ export class CodexPanel {
 
         // Refresh button
         html.find('.refresh-codex-button').click(async () => {
-            if (this.selectedJournal) {
+            if (this.selectedJournals) {
                 await this._refreshData();
                 this.render(this.element);
                 ui.notifications.info("Codex refreshed.");
@@ -304,7 +291,7 @@ export class CodexPanel {
             console.log("SQUIRE | Eye icon clicked", {
                 target: event.currentTarget,
                 isGM: game.user.isGM,
-                hasJournal: !!this.selectedJournal,
+                hasJournal: !!this.selectedJournals,
                 eventType: event.type,
                 eventPhase: event.eventPhase,
                 bubbles: event.bubbles,
@@ -324,15 +311,15 @@ export class CodexPanel {
                 console.log("SQUIRE | Entry details", {
                     entryName,
                     category,
-                    hasSelectedJournal: !!this.selectedJournal,
-                    journalPages: this.selectedJournal?.pages.size,
+                    hasSelectedJournal: !!this.selectedJournals,
+                    journalPages: this.selectedJournals[category]?.pages.size,
                     entryElementFound: !!entryElement.length,
                     entryNameFound: !!entryName,
                     categoryFound: !!category
                 });
                 
                 // Find the journal page for this category
-                const page = this.selectedJournal.pages.find(p => p.name === category);
+                const page = this.selectedJournals[category].pages.find(p => p.name === category);
                 if (!page) {
                     console.log("SQUIRE | No page found for category:", category);
                     return;
@@ -462,28 +449,30 @@ export class CodexPanel {
             const card = $(this).closest('.codex-entry');
             card.toggleClass('collapsed');
         });
+
+        // Add gear icon handler for each category
+        for (const category of this.categories) {
+            html.find(`.set-codex-journal-${category}`).off('click').on('click', () => {
+                this._showJournalPicker(category);
+            });
+        }
     }
 
     /**
      * Show journal picker dialog
      * @private
      */
-    _showJournalPicker() {
-        // Get all available journals
+    _showJournalPicker(category) {
         const journals = game.journal.contents.map(j => ({
             id: j.id,
             name: j.name,
             img: j.thumbnail || j.img || 'icons/svg/book.svg',
             pages: j.pages.size
         }));
-        
-        // Sort alphabetically
         journals.sort((a, b) => a.name.localeCompare(b.name));
-        
-        // Create a more visual journal picker with journal covers
         const content = `
-        <h2 style="text-align: center; margin-bottom: 15px;">Select a Journal for Codex</h2>
-        ${journals.length === 0 ? 
+        <h2 style="text-align: center; margin-bottom: 15px;">Select a Journal for ${category}</h2>
+        ${journals.length === 0 ?
             `<div class="no-journals-message" style="text-align: center; padding: 20px;">
                 <i class="fas fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
                 <p>No journals found in your world.</p>
@@ -508,47 +497,29 @@ export class CodexPanel {
             </div>`
         }
         <div style="margin-bottom: 10px; padding: 10px; background: rgba(50, 50, 80, 0.3); border-radius: 5px;">
-            <p style="margin-bottom: 5px; color: #ddd;"><i class="fas fa-info-circle" style="color: #88f;"></i> The codex journal should have pages named "Characters", "Locations", and "Artifacts".</p>
-            <p style="color: #ddd;">Each page should contain entries formatted with headings and lists as described in the journal template.</p>
+            <p style="margin-bottom: 5px; color: #ddd;"><i class="fas fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate codex entry.</p>
         </div>
         <div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;">
             <button class="cancel-button" style="flex: 1; margin-right: 5px;">Cancel</button>
-            <button class="refresh-button" style="flex: 1; margin-left: 5px;">Refresh List</button>
         </div>
         `;
-        
         const dialog = new Dialog({
-            title: "Select Codex Journal",
+            title: `Select Journal for ${category}`,
             content: content,
             buttons: {},
             render: html => {
-                // Handle journal item clicks
                 html.find('.journal-item').click(async event => {
                     const journalId = event.currentTarget.dataset.id;
-                    
-                    // Update the setting
-                    await game.settings.set(MODULE.ID, 'codexJournal', journalId);
-                    
-                    ui.notifications.info(`Journal ${journalId === 'none' ? 'selection cleared' : 'selected'}.`);
+                    await game.settings.set(MODULE.ID, `codexJournal_${category}`, journalId);
+                    ui.notifications.info(`Journal for ${category} ${journalId === 'none' ? 'cleared' : 'selected'}.`);
                     dialog.close();
-                    
-                    // Re-render the codex panel
                     this.render(this.element);
                 });
-                
-                // Handle cancel button
                 html.find('.cancel-button').click(() => dialog.close());
-                
-                // Handle refresh button
-                html.find('.refresh-button').click(() => {
-                    dialog.close();
-                    this._showJournalPicker();
-                });
             },
             default: '',
             close: () => {}
         });
-        
         dialog.render(true);
     }
 
@@ -573,18 +544,8 @@ export class CodexPanel {
             return;
         }
 
-        // Get the selected journal
-        const journalId = game.settings.get(MODULE.ID, 'codexJournal');
-        this.selectedJournal = journalId !== 'none' ? game.journal.get(journalId) : null;
-        
-        console.log("SQUIRE | Codex journal", {
-            journalId,
-            journal: this.selectedJournal,
-            hasJournal: !!this.selectedJournal
-        });
-
         // Refresh data if needed
-        if (this.selectedJournal && Object.values(this.data).flat().length === 0) {
+        if (this.selectedJournals) {
             await this._refreshData();
         }
 
@@ -595,8 +556,8 @@ export class CodexPanel {
         // Prepare template data
         const templateData = {
             position: "left",
-            hasJournal: !!this.selectedJournal,
-            journalName: this.selectedJournal?.name || "Codex",
+            hasJournal: {},
+            journalName: {},
             isGM: game.user.isGM,
             categories: this.categories,
             data: {},
@@ -610,20 +571,22 @@ export class CodexPanel {
 
         // Apply filters to each category
         for (const category of this.categories) {
+            const journal = this.selectedJournals[category];
+            templateData.hasJournal[category] = !!journal;
+            templateData.journalName[category] = journal ? journal.name : "";
             templateData.data[category] = this._applyFilters(this.data[category] || []);
         }
+        // Debug output for context
+        console.log('SQUIRE | CODEX DEBUG: categories:', this.categories);
+        console.log('SQUIRE | CODEX DEBUG: templateData.journalName:', templateData.journalName);
+        console.log('SQUIRE | CODEX DEBUG: journalName keys:', Object.keys(templateData.journalName));
+        console.log('SQUIRE | CODEX this.data before render:', JSON.parse(JSON.stringify(this.data)));
+        console.log('SQUIRE | CODEX FINAL templateData passed to renderTemplate:', templateData);
 
-        console.log("SQUIRE | Rendering codex template", {
-            hasJournal: !!this.selectedJournal,
-            journalName: this.selectedJournal?.name || 'No Journal Selected',
-            categories: this.categories,
-            dataCount: Object.values(templateData.data).flat().length,
-            filters: this.filters,
-            tagCount: this.allTags.size
-        });
-
-        // Render the template
-        const html = await renderTemplate(TEMPLATES.PANEL_CODEX, templateData);
+        // Deep clone to break references and ensure only primitives are passed
+        const safeTemplateData = JSON.parse(JSON.stringify(templateData));
+        console.log('SQUIRE | CODEX FINAL safeTemplateData passed to renderTemplate:', safeTemplateData);
+        const html = await renderTemplate(TEMPLATES.PANEL_CODEX, safeTemplateData);
         codexContainer.html(html);
 
         // Activate listeners
@@ -632,7 +595,7 @@ export class CodexPanel {
         // Restore collapsed states
         for (const [category, collapsed] of Object.entries(collapsedCategories)) {
             if (collapsed) {
-                codexContainer.find(`.codex-section h3:contains("${category}")`).closest('.codex-section').addClass('collapsed');
+                codexContainer.find(`.codex-section[data-category="${category}"]`).addClass('collapsed');
             }
         }
 
@@ -645,5 +608,26 @@ export class CodexPanel {
         if (!isTagCloudCollapsed) {
             codexContainer.find('.toggle-tags-button').addClass('active');
         }
+    }
+
+    async _onToggleIdentified(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const entry = event.currentTarget.closest('.codex-entry');
+        const uuid = entry.dataset.uuid;
+        const page = await fromUuid(uuid);
+        
+        if (!page) return;
+        
+        // Toggle between NONE and OBSERVER permissions
+        const newPermission = page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
+            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE 
+            : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+            
+        await page.update({ "ownership.default": newPermission });
+        
+        // Refresh the codex to show updated state
+        await this.refreshCodex();
     }
 } 
