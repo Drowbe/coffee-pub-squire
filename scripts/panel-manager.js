@@ -15,6 +15,7 @@ import { PartyPanel } from "./panel-party.js";
 import { PartyStatsPanel } from "./panel-party-stats.js";
 import { NotesPanel } from "./panel-notes.js";
 import { CodexPanel } from "./panel-codex.js";
+import { QuestPanel } from './panel-quest.js';
 
 export class PanelManager {
     static instance = null;
@@ -43,11 +44,12 @@ export class PanelManager {
             this.healthPanel = new HealthPanel(actor);
             this.statsPanel = new StatsPanel(actor);
             this.abilitiesPanel = new AbilitiesPanel(actor);
-            this.partyPanel = new PartyPanel();
-            this.partyStatsPanel = new PartyStatsPanel();
-            this.notesPanel = new NotesPanel();
-            this.codexPanel = new CodexPanel();
         }
+        this.partyPanel = new PartyPanel();
+        this.partyStatsPanel = new PartyStatsPanel();
+        this.notesPanel = new NotesPanel();
+        this.codexPanel = new CodexPanel();
+        this.questPanel = new QuestPanel();
         this.hiddenCategories = new Set();
     }
 
@@ -367,6 +369,7 @@ export class PanelManager {
         this.partyStatsPanel?.render(element);
         this.notesPanel?.render(element);
         this.codexPanel?.render(element);
+        this.questPanel?.render(element);
     }
 
     activateListeners(tray) {

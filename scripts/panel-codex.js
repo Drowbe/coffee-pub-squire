@@ -60,27 +60,27 @@ export class CodexPanel {
             this.selectedJournals[category] = journal;
             if (journal) {
                 for (const page of journal.pages.contents) {
-                    try {
-                        let content = '';
-                        if (typeof page.text?.content === 'string') {
-                            content = page.text.content;
-                        } else if (typeof page.text === 'string') {
-                            content = page.text;
-                        } else if (page.text?.content) {
-                            content = await page.text.content;
-                        }
-                        if (content) {
-                            const enriched = await TextEditor.enrichHTML(content, {
-                                secrets: game.user.isGM,
-                                documents: true,
-                                links: true,
-                                rolls: true
-                            });
+                try {
+                    let content = '';
+                    if (typeof page.text?.content === 'string') {
+                        content = page.text.content;
+                    } else if (typeof page.text === 'string') {
+                        content = page.text;
+                    } else if (page.text?.content) {
+                        content = await page.text.content;
+                    }
+                    if (content) {
+                        const enriched = await TextEditor.enrichHTML(content, {
+                            secrets: game.user.isGM,
+                            documents: true,
+                            links: true,
+                            rolls: true
+                        });
                             // Each page is a single entry
                             const entry = await CodexParser.parseSinglePage(page, enriched);
                             if (entry) {
                                 this.data[category].push(entry);
-                                entry.tags.forEach(tag => this.allTags.add(tag));
+                            entry.tags.forEach(tag => this.allTags.add(tag));
                             }
                         }
                     } catch (error) {
@@ -191,17 +191,17 @@ export class CodexPanel {
         // Clear search button (always enabled)
         clearButton.removeClass('disabled');
         clearButton.off('click').on('click', (event) => {
-            this.filters.search = "";
-            this.filters.tags = [];
-            searchInput.val("");
-            // Also update tag filter UI if present
-            const tagSelect = html.find('.codex-tag-filter select')[0];
-            if (tagSelect) {
-                Array.from(tagSelect.options).forEach(opt => opt.selected = false);
-                $(tagSelect).trigger('change');
-            }
-            // Also remove selected class from tag cloud
-            html.find('.codex-tag.selected').removeClass('selected');
+                this.filters.search = "";
+                this.filters.tags = [];
+                searchInput.val("");
+                // Also update tag filter UI if present
+                const tagSelect = html.find('.codex-tag-filter select')[0];
+                if (tagSelect) {
+                    Array.from(tagSelect.options).forEach(opt => opt.selected = false);
+                    $(tagSelect).trigger('change');
+                }
+                // Also remove selected class from tag cloud
+                html.find('.codex-tag.selected').removeClass('selected');
             this.render(this.element);
         });
 
@@ -555,7 +555,7 @@ export class CodexPanel {
         journals.sort((a, b) => a.name.localeCompare(b.name));
         const content = `
         <h2 style="text-align: center; margin-bottom: 15px;">Select a Journal for ${category}</h2>
-        ${journals.length === 0 ?
+        ${journals.length === 0 ? 
             `<div class="no-journals-message" style="text-align: center; padding: 20px;">
                 <i class="fas fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
                 <p>No journals found in your world.</p>

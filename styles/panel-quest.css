@@ -1,0 +1,241 @@
+/* Quest Panel Styles */
+.quest-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.quest-toolbar i {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.quest-toolbar i:hover {
+    opacity: 1;
+}
+
+/* Quest Filters */
+.quest-filters {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.quest-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quest-search input {
+    flex: 1;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--color-border-light);
+    border-radius: 3px;
+    background: var(--color-bg-input);
+    color: var(--color-text-highlight);
+}
+
+.quest-search input:focus {
+    outline: none;
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 0 1px var(--color-border-highlight);
+}
+
+.quest-tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--color-bg-input);
+    border-radius: 3px;
+    transition: max-height 0.3s ease-in-out;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.quest-tag-cloud.collapsed {
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.quest-tag {
+    display: inline-block;
+    padding: 0.1rem 0.3rem;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-light);
+    border-radius: 3px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quest-tag:hover {
+    background: var(--color-bg-highlight);
+}
+
+.quest-tag.selected {
+    background: var(--color-primary);
+    color: var(--color-text-light);
+    border-color: var(--color-primary);
+}
+
+/* Quest Content */
+.quest-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.quest-section {
+    margin-bottom: 1rem;
+}
+
+.quest-category {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--color-bg-secondary);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.quest-category h3 {
+    margin: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quest-category i {
+    opacity: 0.7;
+}
+
+.quest-entries {
+    margin-top: 0.5rem;
+}
+
+.quest-entry {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--color-border-light);
+    border-radius: 3px;
+    background: var(--color-bg-input);
+}
+
+.quest-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+.quest-entry-name {
+    font-weight: bold;
+    flex: 1;
+    margin-right: 0.5rem;
+}
+
+.quest-entry-content {
+    display: none;
+    padding: 0.5rem;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.quest-entry:not(.collapsed) .quest-entry-content {
+    display: block;
+}
+
+.quest-entry:not(.collapsed) .quest-entry-toggle {
+    transform: rotate(90deg);
+}
+
+.quest-entry-divider {
+    height: 1px;
+    background: var(--color-border-light);
+    margin: 0.5rem 0;
+}
+
+.quest-entry-image {
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.quest-entry-image img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 3px;
+}
+
+.quest-entry-description {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.quest-entry-criteria,
+.quest-entry-timeframe,
+.quest-entry-tasks,
+.quest-entry-reward,
+.quest-entry-participants,
+.quest-entry-hook,
+.quest-entry-progress,
+.quest-entry-related {
+    margin-bottom: 0.5rem;
+}
+
+.quest-entry-tasks ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.quest-entry-tasks li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.quest-entry-tasks li.completed {
+    opacity: 0.7;
+    text-decoration: line-through;
+}
+
+.quest-entry-tasks li i {
+    cursor: pointer;
+}
+
+.quest-entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.no-quest-selected {
+    padding: 1rem;
+    text-align: center;
+    color: var(--color-text-light);
+}
+
+.no-quest-selected p {
+    margin: 0.5rem 0;
+}
+
+.no-quest-selected i {
+    opacity: 0.7;
+}
+
+/* Identified/Unidentified States */
+.identified {
+    color: var(--color-success);
+}
+
+.unidentified {
+    color: var(--color-warning);
+} 

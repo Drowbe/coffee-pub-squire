@@ -1,0 +1,174 @@
+{{#if (eq position "left")}}
+    <div class="tray-title-small">
+        <span>
+            Quests
+        </span>
+        <div class="quest-toolbar">
+            <i class="fas fa-sync-alt refresh-quest-button" title="Refresh Quests"></i>
+            {{#if isGM}}
+            <i class="fas fa-cog set-quest-button" title="Select Journal for Quests"></i>
+            {{/if}}
+        </div>
+    </div>
+
+    <div class="quest-filters">
+        <div class="quest-search">
+            <input type="text" placeholder="Search quests..." value="{{filters.search}}">
+            <i class="fas fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+            <i class="fas fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
+        </div>
+        {{#if allTags.length}}
+            <div class="quest-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
+                {{#each allTags}}
+                    <span class="quest-tag {{#if (includes ../filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                {{/each}}
+            </div>
+        {{/if}}
+    </div>
+
+    <div class="quest-content">
+        {{#each categories as |category|}}
+            <div class="quest-section" data-category="{{category}}">
+                <div class="quest-category">
+                    <h3><i class="fas {{#if (eq category "Main Quest")}}fa-flag{{else}}fa-map-signs{{/if}}"></i> {{category}}</h3>
+                    <div class="quest-toolbar">
+                        <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
+                    </div>
+                </div>
+                {{#if (lookup @root.hasJournal category)}}
+                    {{#with (lookup @root.data category) as |entries|}}
+                        <div class="quest-entries">
+                            {{#each entries as |entry|}}
+                                <div class="quest-entry collapsed">
+                                    <div class="quest-entry-header">
+                                        <div class="quest-entry-name">{{entry.name}}</div>
+                                        <div class="quest-toolbar">
+                                            <i class="fas fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
+                                            {{#if @root.isGM}}
+                                                <i class="fas {{#if entry.identified}}fa-eye identified{{else}}fa-eye-slash unidentified{{/if}} toggle-identified" data-uuid="{{entry.uuid}}" title="{{#if entry.identified}}Hide from players{{else}}Show to players{{/if}}"></i>
+                                            {{/if}}
+                                            <i class="fas fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
+                                        </div>
+                                    </div>
+                                    <div class="quest-entry-content">
+                                        <div class="quest-entry-divider"></div>
+                                        {{#if entry.img}}
+                                        <div class="quest-entry-image">
+                                            <img src="{{entry.img}}" alt="{{entry.name}}">
+                                        </div>
+                                        {{/if}}
+                                        {{#if entry.description}}
+                                            <div class="quest-entry-description">{{entry.description}}</div>
+                                        {{/if}}
+                                        {{#if entry.criteria.length}}
+                                            <div class="quest-entry-criteria">
+                                                <strong>Criteria:</strong>
+                                                <ul>
+                                                    {{#each entry.criteria}}
+                                                        <li>{{this}}</li>
+                                                    {{/each}}
+                                                </ul>
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.timeframe.dueDate}}
+                                            <div class="quest-entry-timeframe">
+                                                <strong>Due:</strong> {{entry.timeframe.dueDate}}
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.timeframe.duration}}
+                                            <div class="quest-entry-timeframe">
+                                                <strong>Duration:</strong> {{entry.timeframe.duration}}
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.tasks.length}}
+                                            <div class="quest-entry-tasks">
+                                                <strong>Tasks:</strong>
+                                                <ul>
+                                                    {{#each entry.tasks}}
+                                                        <li class="{{#if this.completed}}completed{{/if}}">
+                                                            <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
+                                                            {{this.text}}
+                                                        </li>
+                                                    {{/each}}
+                                                </ul>
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.reward.xp}}
+                                            <div class="quest-entry-reward">
+                                                <strong>XP:</strong> {{entry.reward.xp}}
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.reward.gold}}
+                                            <div class="quest-entry-reward">
+                                                <strong>Gold:</strong> {{entry.reward.gold}}
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.reward.items.length}}
+                                            <div class="quest-entry-reward">
+                                                <strong>Items:</strong>
+                                                <ul>
+                                                    {{#each entry.reward.items}}
+                                                        <li>{{this}}</li>
+                                                    {{/each}}
+                                                </ul>
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.participants.length}}
+                                            <div class="quest-entry-participants">
+                                                <strong>Participants:</strong>
+                                                <ul>
+                                                    {{#each entry.participants}}
+                                                        <li>{{this}}</li>
+                                                    {{/each}}
+                                                </ul>
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.plotHook}}
+                                            <div class="quest-entry-hook">
+                                                <strong>Plot Hook:</strong> {{entry.plotHook}}
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.progress.status}}
+                                            <div class="quest-entry-progress">
+                                                <strong>Progress:</strong> {{entry.progress.status}}
+                                                {{#if entry.progress.percentage}}
+                                                    ({{entry.progress.percentage}}%)
+                                                {{/if}}
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.related.length}}
+                                            <div class="quest-entry-related">
+                                                <strong>Related Quests:</strong>
+                                                <ul>
+                                                    {{#each entry.related}}
+                                                        <li>{{this}}</li>
+                                                    {{/each}}
+                                                </ul>
+                                            </div>
+                                        {{/if}}
+                                        {{#if entry.tags.length}}
+                                            <div class="quest-entry-tags">
+                                                {{#each entry.tags}}
+                                                    <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                                                {{/each}}
+                                            </div>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                            {{/each}}
+                        </div>
+                    {{/with}}
+                {{else}}
+                    <div class="no-quest-selected">
+                        {{#if @root.isGM}}
+                            <p>No journal has been selected for quests.</p>
+                            <p>Click the <i class="fas fa-cog"></i> button to select a journal.</p>
+                        {{else}}
+                            <p>No quest journal has been selected by the GM yet.</p>
+                        {{/if}}
+                    </div>
+                {{/if}}
+            </div>
+        {{/each}}
+    </div>
+{{/if}} 

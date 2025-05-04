@@ -8,7 +8,7 @@
             <i class="fas fa-arrows-rotate"></i>
         </button>
         <button class="view-toggle-button" title="Toggle View Mode">
-            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else}}fa-user{{/if}}"></i>
+            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quest')}}fa-scroll{{else}}fa-user{{/if}}"></i>
         </button>
         <div class="handle-left">
             {{> handle-player}}
@@ -17,17 +17,20 @@
 
     <div class="tray-content">
         <div class="tray-view-tabs">
-            <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player">
-                <i class="fas fa-user"></i> Token
+            <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player" title="Player View">
+                <i class="fas fa-user"></i>
             </button>
-            <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party">
-                <i class="fas fa-users"></i> Party
+            <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party" title="Party View">
+                <i class="fas fa-users"></i>
             </button>
-            <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes">
-                <i class="fas fa-sticky-note"></i> Notes
+            <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes" title="Notes">
+                <i class="fas fa-sticky-note"></i>
             </button>
-            <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex">
-                <i class="fas fa-book"></i> Codex
+            <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex" title="Codex">
+                <i class="fas fa-book"></i>
+            </button>
+            <button class="tray-tab-button {{#if (eq viewMode 'quest')}}active{{/if}}" data-view="quest" title="Quests">
+                <i class="fas fa-scroll"></i>
             </button>
         </div>
         
@@ -92,6 +95,10 @@
 
         <div class="tray-view-content codex-view {{#unless (eq viewMode 'codex')}}hidden{{/unless}}">
             <div class="panel-container" data-panel="panel-codex"></div>
+        </div>
+
+        <div class="tray-view-content quest-view {{#unless (eq viewMode 'quest')}}hidden{{/unless}}">
+            <div class="panel-container" data-panel="panel-quest"></div>
         </div>
     </div>
 </div> 

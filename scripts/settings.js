@@ -765,6 +765,59 @@ export const registerSettings = function() {
         default: "none"
     });
 
+    // --------------------------------
+    // ---      QUEST Settings     ---
+    // --------------------------------
+
+    // ---------- Quest Heading ----------
+    game.settings.register(MODULE.ID, "headingH3QuestConfiguration", {
+        name: 'Quest Configuration',
+        hint: 'Settings for the quest system that organizes main quests and side quests.',
+        scope: "world",
+        config: true,
+        default: "",
+        type: String,
+    });
+
+    // Quest Journal
+    game.settings.register(MODULE.ID, 'questJournal', {
+        name: "Quest Journal",
+        hint: "The journal to use for quest entries. Each quest will be a separate page in this journal.",
+        scope: "world",
+        config: true,
+        type: String,
+        choices: () => {
+            // Create choices object with 'none' as first option
+            const choices = {
+                'none': '- Select Journal -'
+            };
+            
+            // Add all available journals
+            game.journal.contents.forEach(j => {
+                choices[j.id] = j.name;
+            });
+            
+            return choices;
+        },
+        default: "none",
+        onChange: () => {
+            // Update the quest panel if it exists
+            if (PanelManager.instance?.questPanel) {
+                PanelManager.instance.questPanel.render(PanelManager.element);
+            }
+        }
+    });
+
+    // Quest Categories
+    game.settings.register(MODULE.ID, 'questCategories', {
+        name: "Quest Categories",
+        hint: "Available categories for quests",
+        scope: "world",
+        config: false,
+        type: Array,
+        default: ["Main Quest", "Side Quest"]
+    });
+
 };
 
 // ***************************

@@ -3,6 +3,9 @@ import { PanelManager } from './panel-manager.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers } from './helpers.js';
+import { QuestPanel } from './panel-quest.js';
+import { QuestForm } from './quest-form.js';
+import { QuestParser } from './quest-parser.js';
 
 let socket;
 
@@ -288,6 +291,23 @@ Hooks.once('init', async function() {
     
     // Create and store PartyPanel instance
     game.modules.get(MODULE.ID).PartyPanel = new PartyPanel();
+
+    // Add quest panel to panel manager
+    PanelManager.prototype.initializePanels = function() {
+        // ... existing code ...
+        this.questPanel = new QuestPanel();
+        // ... existing code ...
+    };
+
+    // Add quest panel to render
+    PanelManager.prototype.render = function(element) {
+        // ... existing code ...
+        this.questPanel.render(element);
+        // ... existing code ...
+    };
+
+    // Add quest form to Hooks
+    window.QuestForm = QuestForm;
 });
 
 Hooks.once('ready', async function() {

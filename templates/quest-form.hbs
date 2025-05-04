@@ -1,0 +1,108 @@
+<form class="quest-form">
+    <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" value="{{quest.name}}" required>
+    </div>
+
+    <div class="form-group">
+        <label>Image</label>
+        <div class="quest-image-container">
+            {{#if quest.img}}
+                <img src="{{quest.img}}" alt="{{quest.name}}" class="quest-image-preview">
+            {{/if}}
+            <button type="button" class="quest-image-upload">
+                <i class="fas fa-upload"></i> Upload Image
+            </button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Category</label>
+        <select name="category">
+            {{#each categories}}
+                <option value="{{this}}" {{#if (eq ../quest.category this)}}selected{{/if}}>{{this}}</option>
+            {{/each}}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Criteria (one per line)</label>
+        <textarea name="criteria" rows="3">{{quest.criteria}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Timeframe</label>
+        <div class="form-fields">
+            <input type="text" name="timeframe.dueDate" value="{{quest.timeframe.dueDate}}" placeholder="Due Date">
+            <input type="text" name="timeframe.duration" value="{{quest.timeframe.duration}}" placeholder="Duration">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" rows="4">{{quest.description}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Tasks (one per line)</label>
+        <textarea name="tasks" rows="4">{{quest.tasks}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Reward</label>
+        <div class="form-fields">
+            <input type="number" name="reward.xp" value="{{quest.reward.xp}}" placeholder="XP">
+            <input type="number" name="reward.gold" value="{{quest.reward.gold}}" placeholder="Gold">
+        </div>
+        <textarea name="reward.items" rows="2" placeholder="Items (one per line)">{{quest.reward.items}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Participants (one per line)</label>
+        <textarea name="participants" rows="3">{{quest.participants}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Plot Hook</label>
+        <textarea name="plotHook" rows="3">{{quest.plotHook}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Progress</label>
+        <div class="form-fields">
+            <input type="text" name="progress.status" value="{{quest.progress.status}}" placeholder="Status">
+            <input type="number" name="progress.percentage" value="{{quest.progress.percentage}}" placeholder="Percentage" min="0" max="100">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Related Quests (one per line)</label>
+        <textarea name="related" rows="3">{{quest.related}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Tags (comma-separated)</label>
+        <input type="text" name="tags" value="{{quest.tags}}">
+    </div>
+
+    {{#if isGM}}
+    <div class="form-group">
+        <label>Visibility</label>
+        <div class="form-fields">
+            <label class="checkbox">
+                <input type="checkbox" name="identified" {{#if quest.identified}}checked{{/if}}>
+                Visible to Players
+            </label>
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="form-group buttons">
+        <button type="submit">
+            <i class="fas fa-save"></i> Save Quest
+        </button>
+        <button type="button" class="cancel">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+    </div>
+</form> 
