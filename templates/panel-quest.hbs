@@ -57,29 +57,17 @@
                                             <img src="{{entry.img}}" alt="{{entry.name}}">
                                         </div>
                                         {{/if}}
+                                        {{!-- DESCRIPTION --}} 
                                         {{#if entry.description}}
                                             <div class="quest-entry-description">{{entry.description}}</div>
                                         {{/if}}
-                                        {{#if entry.criteria.length}}
-                                            <div class="quest-entry-criteria">
-                                                <strong>Criteria:</strong>
-                                                <ul>
-                                                    {{#each entry.criteria}}
-                                                        <li>{{this}}</li>
-                                                    {{/each}}
-                                                </ul>
+                                        {{!-- PLOT HOOK --}} 
+                                        {{#if entry.plotHook}}
+                                            <div class="quest-entry-hook">
+                                                <strong>Plot Hook:</strong> {{entry.plotHook}}
                                             </div>
                                         {{/if}}
-                                        {{#if entry.timeframe.dueDate}}
-                                            <div class="quest-entry-timeframe">
-                                                <strong>Due:</strong> {{entry.timeframe.dueDate}}
-                                            </div>
-                                        {{/if}}
-                                        {{#if entry.timeframe.duration}}
-                                            <div class="quest-entry-timeframe">
-                                                <strong>Duration:</strong> {{entry.timeframe.duration}}
-                                            </div>
-                                        {{/if}}
+                                        {{!-- TASKS --}} 
                                         {{#if entry.tasks.length}}
                                             <div class="quest-entry-tasks">
                                                 <strong>Tasks:</strong>
@@ -93,6 +81,7 @@
                                                 </ul>
                                             </div>
                                         {{/if}}
+                                        {{!-- REWARDS --}} 
                                         {{#if entry.reward.xp}}
                                             <div class="quest-entry-reward">
                                                 <strong>XP:</strong> {{entry.reward.xp}}
@@ -113,21 +102,31 @@
                                                 </ul>
                                             </div>
                                         {{/if}}
-                                        {{#if entry.participants.length}}
-                                            <div class="quest-entry-participants">
-                                                <strong>Participants:</strong>
+                                        {{#if entry.reward.treasure.length}}
+                                            <div class="quest-entry-reward">
+                                                <strong>Treasure:</strong>
                                                 <ul>
-                                                    {{#each entry.participants}}
-                                                        <li>{{this}}</li>
+                                                    {{#each entry.reward.treasure}}
+                                                        <li>
+                                                            {{#if this.uuid}}
+                                                                <a data-uuid="{{this.uuid}}">{{this.name}}</a>
+                                                            {{else}}
+                                                                {{this.text}}
+                                                            {{/if}}
+                                                        </li>
                                                     {{/each}}
                                                 </ul>
                                             </div>
                                         {{/if}}
-                                        {{#if entry.plotHook}}
-                                            <div class="quest-entry-hook">
-                                                <strong>Plot Hook:</strong> {{entry.plotHook}}
+
+                                        {{!-- TIMEFRAME --}} 
+                                        {{#if entry.timeframe.duration}}
+                                            <div class="quest-entry-timeframe">
+                                                <strong>Duration:</strong> {{entry.timeframe.duration}}
                                             </div>
                                         {{/if}}
+
+                                            
                                         {{#if entry.progress.status}}
                                             <div class="quest-entry-progress">
                                                 <strong>Progress:</strong> {{entry.progress.status}}
@@ -136,21 +135,31 @@
                                                 {{/if}}
                                             </div>
                                         {{/if}}
-                                        {{#if entry.related.length}}
-                                            <div class="quest-entry-related">
-                                                <strong>Related Quests:</strong>
-                                                <ul>
-                                                    {{#each entry.related}}
-                                                        <li>{{this}}</li>
+
+                                        {{!-- PARTICIPANTS --}} 
+                                        {{#if entry.participants.length}}
+                                            <div class="quest-entry-participants">
+                                                <strong>Participants:</strong>
+                                                <div class="participant-portraits">
+                                                    {{#each entry.participants}}
+                                                        <div class="participant-portrait" data-uuid="{{this.uuid}}" title="{{this.name}}">
+                                                            <img src="{{this.img}}" alt="{{this.name}}">
+                                                        </div>
                                                     {{/each}}
-                                                </ul>
+                                                </div>
                                             </div>
                                         {{/if}}
+
+
+                                        {{!-- TAGS --}} 
                                         {{#if entry.tags.length}}
                                             <div class="quest-entry-tags">
                                                 {{#each entry.tags}}
                                                     <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
                                                 {{/each}}
+                                                {{#if entry.status}}
+                                                    <span class="quest-tag quest-status {{#if (includes @root.filters.tags entry.status)}}selected{{/if}}" data-tag="{{entry.status}}">{{entry.status}}</span>
+                                                {{/if}}
                                             </div>
                                         {{/if}}
                                     </div>

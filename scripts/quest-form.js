@@ -31,17 +31,14 @@ export class QuestForm extends FormApplication {
             name: '',
             img: '',
             category: game.settings.get(MODULE.ID, 'questCategories')[0],
-            criteria: [],
             timeframe: {
-                dueDate: '',
                 duration: ''
             },
             description: '',
             tasks: [],
             reward: {
                 xp: 0,
-                gold: 0,
-                items: []
+                treasure: 0
             },
             participants: [],
             plotHook: '',
@@ -49,9 +46,7 @@ export class QuestForm extends FormApplication {
                 status: '',
                 percentage: 0
             },
-            related: [],
             tags: [],
-            identified: true,
             uuid: ''
         };
     }
@@ -60,9 +55,6 @@ export class QuestForm extends FormApplication {
         const quest = expandObject(formData);
         
         // Convert string arrays back to arrays
-        if (typeof quest.criteria === 'string') {
-            quest.criteria = quest.criteria.split('\n').filter(c => c.trim());
-        }
         if (typeof quest.tasks === 'string') {
             quest.tasks = quest.tasks.split('\n').map(t => ({
                 text: t.trim(),
@@ -72,19 +64,13 @@ export class QuestForm extends FormApplication {
         if (typeof quest.participants === 'string') {
             quest.participants = quest.participants.split('\n').filter(p => p.trim());
         }
-        if (typeof quest.related === 'string') {
-            quest.related = quest.related.split('\n').filter(r => r.trim());
-        }
         if (typeof quest.tags === 'string') {
             quest.tags = quest.tags.split(',').map(t => t.trim()).filter(t => t);
-        }
-        if (typeof quest.reward.items === 'string') {
-            quest.reward.items = quest.reward.items.split('\n').filter(i => i.trim());
         }
 
         // Convert numeric values
         quest.reward.xp = Number(quest.reward.xp) || 0;
-        quest.reward.gold = Number(quest.reward.gold) || 0;
+        quest.reward.treasure = Number(quest.reward.treasure) || 0;
         quest.progress.percentage = Number(quest.progress.percentage) || 0;
 
         // Generate UUID if new quest
@@ -143,66 +129,41 @@ export class QuestForm extends FormApplication {
             content += `<img src="${quest.img}" alt="${quest.name}">\n\n`;
         }
 
-        content += `<p><strong>CATEGORY:</strong> ${quest.category}</p>\n\n`;
-
-        if (quest.criteria.length) {
-            content += `<p><strong>CRITERIA:</strong></p>\n<ul>\n`;
-            quest.criteria.forEach(c => content += `<li>${c}</li>\n`);
-            content += `</ul>\n\n`;
-        }
-
-        if (quest.timeframe.dueDate || quest.timeframe.duration) {
-            content += `<p><strong>TIMEFRAME:</strong></p>\n<ul>\n`;
-            if (quest.timeframe.dueDate) content += `<li>Due: ${quest.timeframe.dueDate}</li>\n`;
-            if (quest.timeframe.duration) content += `<li>Duration: ${quest.timeframe.duration}</li>\n`;
-            content += `</ul>\n\n`;
-        }
+        content += `<p><strong>Category:</strong> ${quest.category}</p>\n\n`;
 
         if (quest.description) {
-            content += `<p><strong>DESCRIPTION:</strong></p>\n<p>${quest.description}</p>\n\n`;
+            content += `<p><strong>Description:</strong> ${quest.description}</p>\n\n`;
+        }
+
+        if (quest.plotHook) {
+            content += `<p><strong>Plot Hook:</strong> ${quest.plotHook}</p>\n\n`;
         }
 
         if (quest.tasks.length) {
-            content += `<p><strong>TASKS:</strong></p>\n<ul>\n`;
+            content += `<p><strong>Tasks:</strong></p>\n<ul>\n`;
             quest.tasks.forEach(t => content += `<li>${t.text}</li>\n`);
             content += `</ul>\n\n`;
         }
 
-        if (quest.reward.xp || quest.reward.gold || quest.reward.items.length) {
-            content += `<p><strong>REWARD:</strong></p>\n<ul>\n`;
-            if (quest.reward.xp) content += `<li>XP: ${quest.reward.xp}</li>\n`;
-            if (quest.reward.gold) content += `<li>Gold: ${quest.reward.gold}</li>\n`;
-            if (quest.reward.items.length) {
-                quest.reward.items.forEach(i => content += `<li>${i}</li>\n`);
-            }
-            content += `</ul>\n\n`;
+        if (quest.reward.xp || quest.reward.treasure) {
+            content += `<p><strong>XP:</strong> ${quest.reward.xp}</p>\n\n`;
+            content += `<p><strong>Treasure:</strong> ${quest.reward.treasure}</p>\n\n`;
+        }
+
+        if (quest.timeframe.duration) {
+            content += `<p><strong>Duration:</strong> ${quest.timeframe.duration}</p>\n\n`;
+        }
+
+        if (quest.status) {
+            content += `<p><strong>Status:</strong> ${quest.status}</p>\n\n`;
         }
 
         if (quest.participants.length) {
-            content += `<p><strong>PARTICIPANTS:</strong></p>\n<ul>\n`;
-            quest.participants.forEach(p => content += `<li>${p}</li>\n`);
-            content += `</ul>\n\n`;
-        }
-
-        if (quest.plotHook) {
-            content += `<p><strong>PLOT HOOK:</strong></p>\n<p>${quest.plotHook}</p>\n\n`;
-        }
-
-        if (quest.progress.status || quest.progress.percentage) {
-            content += `<p><strong>PROGRESS:</strong></p>\n<ul>\n`;
-            if (quest.progress.status) content += `<li>Status: ${quest.progress.status}</li>\n`;
-            if (quest.progress.percentage) content += `<li>Progress: ${quest.progress.percentage}%</li>\n`;
-            content += `</ul>\n\n`;
-        }
-
-        if (quest.related.length) {
-            content += `<p><strong>RELATED:</strong></p>\n<ul>\n`;
-            quest.related.forEach(r => content += `<li>${r}</li>\n`);
-            content += `</ul>\n\n`;
+            content += `<p><strong>Participants:</strong> ${quest.participants.join(', ')}</p>\n\n`;
         }
 
         if (quest.tags.length) {
-            content += `<p><strong>TAGS:</strong> ${quest.tags.join(', ')}</p>\n\n`;
+            content += `<p><strong>Tags:</strong> ${quest.tags.join(', ')}</p>\n\n`;
         }
 
         return content;

@@ -74,7 +74,22 @@ export class QuestPanel {
                         if (entry) {
                             const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
                             this.data[category].push(entry);
+                            // Add regular tags
                             entry.tags.forEach(tag => this.allTags.add(tag));
+                            // Add status as a special tag
+                            if (entry.status) {
+                                this.allTags.add(entry.status);
+                            }
+                            // Add participant names as tags
+                            if (Array.isArray(entry.participants)) {
+                                entry.participants.forEach(p => {
+                                    if (typeof p === 'string') {
+                                        this.allTags.add(p);
+                                    } else if (p && typeof p.name === 'string') {
+                                        this.allTags.add(p.name);
+                                    }
+                                });
+                            }
                         }
                     }
                 } catch (error) {
@@ -225,6 +240,25 @@ export class QuestPanel {
 
         // Feather icon opens the current journal page
         html.find('.quest-entry-feather').click(async (event) => {
+            event.preventDefault();
+            const uuid = event.currentTarget.dataset.uuid;
+            if (uuid) {
+                const doc = await fromUuid(uuid);
+                if (doc) doc.sheet.render(true);
+            }
+        });
+
+        // Participant portrait clicks
+        html.find('.participant-portrait').click(async (event) => {
+            const uuid = event.currentTarget.dataset.uuid;
+            if (uuid) {
+                const doc = await fromUuid(uuid);
+                if (doc) doc.sheet.render(true);
+            }
+        });
+
+        // Treasure UUID link clicks
+        html.find('.quest-entry-reward a[data-uuid]').click(async (event) => {
             event.preventDefault();
             const uuid = event.currentTarget.dataset.uuid;
             if (uuid) {

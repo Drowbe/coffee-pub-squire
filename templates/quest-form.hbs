@@ -26,14 +26,8 @@
     </div>
 
     <div class="form-group">
-        <label>Criteria (one per line)</label>
-        <textarea name="criteria" rows="3">{{quest.criteria}}</textarea>
-    </div>
-
-    <div class="form-group">
         <label>Timeframe</label>
         <div class="form-fields">
-            <input type="text" name="timeframe.dueDate" value="{{quest.timeframe.dueDate}}" placeholder="Due Date">
             <input type="text" name="timeframe.duration" value="{{quest.timeframe.duration}}" placeholder="Duration">
         </div>
     </div>
@@ -52,9 +46,8 @@
         <label>Reward</label>
         <div class="form-fields">
             <input type="number" name="reward.xp" value="{{quest.reward.xp}}" placeholder="XP">
-            <input type="number" name="reward.gold" value="{{quest.reward.gold}}" placeholder="Gold">
+            <input type="number" name="reward.treasure" value="{{quest.reward.treasure}}" placeholder="Treasure">
         </div>
-        <textarea name="reward.items" rows="2" placeholder="Items (one per line)">{{quest.reward.items}}</textarea>
     </div>
 
     <div class="form-group">
@@ -73,11 +66,6 @@
             <input type="text" name="progress.status" value="{{quest.progress.status}}" placeholder="Status">
             <input type="number" name="progress.percentage" value="{{quest.progress.percentage}}" placeholder="Percentage" min="0" max="100">
         </div>
-    </div>
-
-    <div class="form-group">
-        <label>Related Quests (one per line)</label>
-        <textarea name="related" rows="3">{{quest.related}}</textarea>
     </div>
 
     <div class="form-group">

@@ -13,25 +13,20 @@ export class QuestParser {
             name: page.name,
             img: '',
             category: '',
-            criteria: [],
             timeframe: {
-                dueDate: '',
                 duration: ''
             },
             description: '',
             tasks: [],
             reward: {
                 xp: 0,
-                gold: 0,
-                items: []
+                treasure: []
             },
             participants: [],
             plotHook: '',
             status: 'Not Started',
             progress: 0,
-            related: [],
             tags: [],
-            identified: page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER,
             uuid: page.uuid
         };
 
@@ -56,31 +51,107 @@ export class QuestParser {
                 case 'DESCRIPTION':
                     entry.description = value;
                     break;
-                case 'CRITERIA':
-                    entry.criteria = value.split(',').map(c => c.trim()).filter(c => c);
-                    break;
-                case 'DUE':
-                    entry.timeframe.dueDate = value;
-                    break;
                 case 'DURATION':
                     entry.timeframe.duration = value;
                     break;
                 case 'XP':
                     entry.reward.xp = parseInt(value) || 0;
                     break;
-                case 'GOLD':
-                    entry.reward.gold = parseInt(value) || 0;
+                case 'TREASURE': {
+                    entry.reward.treasure = [];
+                    // Inline treasure (on the same <p> line)
+                    let node = p.childNodes[1]; // childNodes[0] is <strong>
+                    let foundInline = false;
+                    while (node) {
+                        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'A' && node.hasAttribute('data-uuid')) {
+                            entry.reward.treasure.push({
+                                uuid: node.getAttribute('data-uuid'),
+                                name: node.textContent.trim()
+                            });
+                            foundInline = true;
+                        } else if (node.nodeType === Node.TEXT_NODE) {
+                            const text = node.textContent.trim();
+                            if (text) {
+                                entry.reward.treasure.push({ text });
+                                foundInline = true;
+                            }
+                        }
+                        node = node.nextSibling;
+                    }
+                    // List treasure (if next sibling is <ul>)
+                    if (!foundInline) {
+                        const ul = p.nextElementSibling;
+                        if (ul && ul.tagName === 'UL') {
+                            entry.reward.treasure = Array.from(ul.querySelectorAll('li')).map(li => {
+                                const a = li.querySelector('a[data-uuid]');
+                                if (a) {
+                                    return {
+                                        uuid: a.getAttribute('data-uuid'),
+                                        name: a.textContent.trim()
+                                    };
+                                } else {
+                                    return { text: li.textContent.trim() };
+                                }
+                            }).filter(t => t.uuid || t.text);
+                        }
+                    }
                     break;
-                case 'ITEMS':
-                    entry.reward.items = value.split(',').map(i => i.trim()).filter(i => i);
-                    break;
+                }
                 case 'PARTICIPANTS': {
-                    // Parse @UUID[...]{...} links if present
-                    const uuidLinks = Array.from(p.querySelectorAll('a[data-uuid]'));
-                    if (uuidLinks.length) {
-                        entry.participants = uuidLinks.map(a => a.textContent.trim());
-                    } else {
-                        entry.participants = value.split(',').map(p => p.trim()).filter(p => p);
+                    entry.participants = [];
+                    // Inline participants (on the same <p> line)
+                    let node = p.childNodes[1]; // childNodes[0] is <strong>
+                    let foundInline = false;
+                    while (node) {
+                        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'A' && node.hasAttribute('data-uuid')) {
+                            const uuid = node.getAttribute('data-uuid');
+                            const doc = await fromUuid(uuid);
+                            if (doc) {
+                                entry.participants.push({
+                                    uuid: uuid,
+                                    name: doc.name,
+                                    img: doc.img || doc.thumbnail || 'icons/svg/mystery-man.svg'
+                                });
+                                entry.tags.push(doc.name);
+                            }
+                            foundInline = true;
+                        } else if (node.nodeType === Node.TEXT_NODE) {
+                            const text = node.textContent.trim();
+                            if (text) {
+                                entry.participants.push(text);
+                                entry.tags.push(text);
+                                foundInline = true;
+                            }
+                        }
+                        node = node.nextSibling;
+                    }
+                    // List participants (if next sibling is <ul>)
+                    if (!foundInline) {
+                        const ul = p.nextElementSibling;
+                        if (ul && ul.tagName === 'UL') {
+                            const liNodes = Array.from(ul.querySelectorAll('li'));
+                            for (const li of liNodes) {
+                                const a = li.querySelector('a[data-uuid]');
+                                if (a) {
+                                    const uuid = a.getAttribute('data-uuid');
+                                    const doc = await fromUuid(uuid);
+                                    if (doc) {
+                                        entry.participants.push({
+                                            uuid: uuid,
+                                            name: doc.name,
+                                            img: doc.img || doc.thumbnail || 'icons/svg/mystery-man.svg'
+                                        });
+                                        entry.tags.push(doc.name);
+                                    }
+                                } else {
+                                    const text = li.textContent.trim();
+                                    if (text) {
+                                        entry.participants.push(text);
+                                        entry.tags.push(text);
+                                    }
+                                }
+                            }
+                        }
                     }
                     break;
                 }
@@ -93,14 +164,8 @@ export class QuestParser {
                 case 'PROGRESS':
                     entry.progress = parseInt(value.replace('%', '')) || 0;
                     break;
-                case 'RELATED':
-                    entry.related = value.split(',').map(r => r.trim()).filter(r => r);
-                    break;
                 case 'TAGS':
                     entry.tags = value.split(',').map(tag => tag.trim()).filter(tag => tag);
-                    break;
-                case 'IDENTIFIED':
-                    entry.identified = value.toLowerCase() === 'true';
                     break;
                 case 'TASKS':
                     // The next sibling should be a <ul> with <li> tasks
@@ -108,14 +173,20 @@ export class QuestParser {
                     break;
             }
         }
+
         // Find <ul> after <p><strong>Tasks:</strong></p>
         if (lastP) {
             let ul = lastP.nextElementSibling;
             if (ul && ul.tagName === 'UL') {
-                entry.tasks = Array.from(ul.querySelectorAll('li')).map(li => ({
-                    text: li.textContent.trim(),
-                    completed: false
-                })).filter(t => t.text);
+                entry.tasks = Array.from(ul.querySelectorAll('li')).map(li => {
+                    // Check for nested p tags
+                    const pTag = li.querySelector('p');
+                    const text = pTag ? pTag.textContent.trim() : li.textContent.trim();
+                    return {
+                        text: text,
+                        completed: false
+                    };
+                }).filter(t => t.text);
             }
         }
 
@@ -132,6 +203,21 @@ export class QuestParser {
 
         // If no name, skip
         if (!entry.name) return null;
+
+        // Ensure all participant names are in tags
+        if (Array.isArray(entry.participants)) {
+            entry.participants.forEach(p => {
+                if (typeof p === 'string') {
+                    entry.tags.push(p);
+                } else if (p && typeof p.name === 'string') {
+                    entry.tags.push(p.name);
+                }
+            });
+        }
+
+        // Deduplicate and trim tags
+        entry.tags = Array.from(new Set(entry.tags.map(t => t.trim())));
+
         return entry;
     }
 } 
