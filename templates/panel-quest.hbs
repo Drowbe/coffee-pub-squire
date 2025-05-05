@@ -34,7 +34,7 @@
                 <div class="quest-category">
                     <h3>
                         <i class="fas fa-spinner"></i>
-                        In Progress
+                        In Progress {{#if statusGroups.inProgress.length}}({{statusGroups.inProgress.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
                         <i class="fas fa-chevron-down" title="Toggle In Progress"></i>
@@ -194,7 +194,7 @@
                 <div class="quest-category">
                     <h3>
                         <i class="fas fa-clock"></i>
-                        Not Started
+                        Not Started {{#if statusGroups.notStarted.length}}({{statusGroups.notStarted.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
                         <i class="fas fa-chevron-down" title="Toggle Not Started"></i>
@@ -353,7 +353,7 @@
                 <div class="quest-category">
                     <h3>
                         <i class="fas fa-check-circle"></i>
-                        Completed
+                        Completed {{#if statusGroups.completed.length}}({{statusGroups.completed.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
                         <i class="fas fa-chevron-down" title="Toggle Completed"></i>
@@ -512,7 +512,7 @@
                 <div class="quest-category">
                     <h3>
                         <i class="fas fa-times-circle"></i>
-                        Failed
+                        Failed {{#if statusGroups.failed.length}}({{statusGroups.failed.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
                         <i class="fas fa-chevron-down" title="Toggle Failed"></i>
