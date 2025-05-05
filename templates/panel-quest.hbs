@@ -30,12 +30,20 @@
     <div class="quest-content">
         {{#each categories as |category|}}
             <div class="quest-section" data-category="{{category}}">
-                <div class="quest-category">
-                    <h3><i class="fas {{#if (eq category "Main Quest")}}fa-flag{{else}}fa-map-signs{{/if}}"></i> {{category}}</h3>
-                    <div class="quest-toolbar">
-                        <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
+                {{#with (lookup @root.data category) as |entries|}}
+                    <div class="quest-category">
+                        
+                            <h3>
+                                <i class="fas {{#if (eq category "Main Quest")}}fa-flag{{else}}fa-map-signs{{/if}}"></i>
+                                {{category}}{{#if entries.[1]}}s{{/if}}
+                            </h3>
+                        
+                        <div class="quest-toolbar">
+                            <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
+                        </div>
                     </div>
-                </div>
+
+                {{/with}}
                 {{#if (lookup @root.hasJournal category)}}
                     {{#with (lookup @root.data category) as |entries|}}
                         <div class="quest-entries">
