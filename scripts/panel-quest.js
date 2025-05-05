@@ -428,6 +428,82 @@ export class QuestPanel {
             await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
             this.render(this.element);
         });
+
+        // Import Quests from JSON (GM only)
+        html.find('.import-quests-json').click(() => {
+            if (!game.user.isGM) return;
+            new Dialog({
+                title: 'Import Quests from JSON',
+                content: `
+                    <div style="margin-bottom: 8px;">Paste your quest JSON below. Each quest should be an object with at least a <code>name</code> field.</div>
+                    <textarea id="import-quests-json-input" style="width:100%;height:200px;"></textarea>
+                `,
+                buttons: {
+                    import: {
+                        icon: '<i class="fas fa-file-import"></i>',
+                        label: 'Import',
+                        callback: async (dlgHtml) => {
+                            const input = dlgHtml.find('#import-quests-json-input').val();
+                            let quests;
+                            try {
+                                quests = JSON.parse(input);
+                                if (!Array.isArray(quests)) throw new Error('JSON must be an array of quest objects.');
+                            } catch (e) {
+                                ui.notifications.error('Invalid JSON: ' + e.message);
+                                return;
+                            }
+                            // Ensure categories include Main Quests and Side Quests
+                            let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
+                            let changed = false;
+                            for (const cat of ["Main Quests", "Side Quests"]) {
+                                if (!categories.includes(cat)) { categories.push(cat); changed = true; }
+                            }
+                            if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
+                            const journalId = game.settings.get(MODULE.ID, 'questJournal');
+                            if (!journalId || journalId === 'none') {
+                                ui.notifications.error('No quest journal selected.');
+                                return;
+                            }
+                            const journal = game.journal.get(journalId);
+                            if (!journal) {
+                                ui.notifications.error('Selected quest journal not found.');
+                                return;
+                            }
+                            let imported = 0;
+                            for (const quest of quests) {
+                                if (!quest.name) continue;
+                                const uuid = quest.uuid || foundry.utils.randomID();
+                                const pageData = {
+                                    name: quest.name,
+                                    type: 'text',
+                                    text: {
+                                        content: this._generateJournalContentFromImport(quest)
+                                    },
+                                    flags: {
+                                        [MODULE.ID]: {
+                                            questUuid: uuid
+                                        }
+                                    }
+                                };
+                                const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                                const page = created[0];
+                                if (page) {
+                                    await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+                                    imported++;
+                                }
+                            }
+                            ui.notifications.info(`Imported ${imported} quest(s).`);
+                            this._refreshData();
+                            this.render(this.element);
+                        }
+                    },
+                    cancel: {
+                        label: 'Cancel'
+                    }
+                },
+                default: 'import'
+            }).render(true);
+        });
     }
 
     /**
@@ -580,5 +656,46 @@ export class QuestPanel {
                 questContainer.find(`.quest-entry .quest-pin.pinned[data-uuid="${uuid}"][data-category="${category}"]`).closest('.quest-entry').removeClass('collapsed');
             }
         }
+    }
+
+    /**
+     * Generate journal content from imported quest object
+     */
+    _generateJournalContentFromImport(quest) {
+        let content = "";
+        if (quest.img) {
+            content += `<img src="${quest.img}" alt="${quest.name}">\n\n`;
+        }
+        if (quest.category) {
+            content += `<p><strong>Category:</strong> ${quest.category}</p>\n\n`;
+        }
+        if (quest.description) {
+            content += `<p><strong>Description:</strong> ${quest.description}</p>\n\n`;
+        }
+        if (quest.plotHook) {
+            content += `<p><strong>Plot Hook:</strong> ${quest.plotHook}</p>\n\n`;
+        }
+        if (quest.tasks && quest.tasks.length) {
+            content += `<p><strong>Tasks:</strong></p>\n<ul>\n`;
+            quest.tasks.forEach(t => content += `<li>${typeof t === 'string' ? t : t.text}</li>\n`);
+            content += `</ul>\n\n`;
+        }
+        if (quest.reward) {
+            if (quest.reward.xp) content += `<p><strong>XP:</strong> ${quest.reward.xp}</p>\n\n`;
+            if (quest.reward.treasure) content += `<p><strong>Treasure:</strong> ${quest.reward.treasure}</p>\n\n`;
+        }
+        if (quest.timeframe && quest.timeframe.duration) {
+            content += `<p><strong>Duration:</strong> ${quest.timeframe.duration}</p>\n\n`;
+        }
+        if (quest.status) {
+            content += `<p><strong>Status:</strong> ${quest.status}</p>\n\n`;
+        }
+        if (quest.participants && quest.participants.length) {
+            content += `<p><strong>Participants:</strong> ${quest.participants.join(', ')}</p>\n\n`;
+        }
+        if (quest.tags && quest.tags.length) {
+            content += `<p><strong>Tags:</strong> ${quest.tags.join(', ')}</p>\n\n`;
+        }
+        return content;
     }
 } 
