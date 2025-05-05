@@ -4,7 +4,7 @@ import { QuestParser } from './quest-parser.js';
 export class QuestPanel {
     constructor() {
         this.element = null;
-        this.categories = game.settings.get(MODULE.ID, 'questCategories') || ["Main Quest", "Side Quest"];
+        this.categories = game.settings.get(MODULE.ID, 'questCategories') || ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"];
         this.data = {};
         for (const category of this.categories) {
             this.data[category] = [];
@@ -16,7 +16,41 @@ export class QuestPanel {
             category: "all"
         };
         this.allTags = new Set();
+        this._verifyAndUpdateCategories();
         this._setupHooks();
+    }
+
+    /**
+     * Verifies that all required categories exist and updates if needed
+     * @private
+     */
+    _verifyAndUpdateCategories() {
+        const requiredCategories = ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"];
+        const storedCategories = game.settings.get(MODULE.ID, 'questCategories') || [];
+        
+        // Create a new array with required categories at their specific positions
+        let updatedCategories = [...requiredCategories]; // Start with the required categories
+        
+        // Add any custom categories that aren't in the required list
+        storedCategories.forEach(cat => {
+            if (!requiredCategories.includes(cat)) {
+                updatedCategories.push(cat);
+            }
+        });
+        
+        // Remove duplicates while preserving order
+        updatedCategories = [...new Set(updatedCategories)];
+        
+        // Update settings if there's a change
+        const currentCategories = JSON.stringify(storedCategories);
+        const newCategories = JSON.stringify(updatedCategories);
+        
+        if (currentCategories !== newCategories) {
+            game.settings.set(MODULE.ID, 'questCategories', updatedCategories);
+        }
+        
+        // Update this instance's categories
+        this.categories = updatedCategories;
     }
 
     /**
@@ -41,6 +75,9 @@ export class QuestPanel {
      * @private
      */
     async _refreshData() {
+        // Always verify categories are correct
+        this._verifyAndUpdateCategories();
+        
         // Always clear data and tags before repopulating
         this.data = {};
         for (const category of this.categories) {
@@ -345,21 +382,45 @@ export class QuestPanel {
                 // After toggling, check if all tasks are completed
                 const allLis = Array.from(ul.children);
                 const allCompleted = allLis.length > 0 && allLis.every(l => l.querySelector('s'));
-                // Find current status
+                // Find current status and category
                 const statusMatch = newContent.match(/<strong>Status:<\/strong>\s*([^<]*)/);
                 let currentStatus = statusMatch ? statusMatch[1].trim() : '';
+                const categoryMatch = newContent.match(/<strong>Category:<\/strong>\s*([^<]*)/);
+                const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
+                
                 if (allCompleted) {
+                    // Change status to Complete
                     if (currentStatus !== 'Complete') {
                         if (statusMatch) {
                             newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Complete');
                         } else {
                             newContent += `<p><strong>Status:</strong> Complete</p>`;
                         }
+                        
+                        // Get or store original category
+                        let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+                        if (!originalCategory && currentCategory && currentCategory !== 'Completed') {
+                            originalCategory = currentCategory;
+                            await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
+                        }
+                        
+                        // Move to Completed category
+                        if (categoryMatch && currentCategory !== 'Completed') {
+                            newContent = newContent.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, '$1Completed');
+                        }
                     }
                 } else {
                     // If status is Complete and not all tasks are completed, set to In Progress
                     if (currentStatus === 'Complete') {
                         newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
+                        
+                        // Restore original category if quest is in Completed
+                        if (currentCategory === 'Completed') {
+                            const originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+                            if (originalCategory && categoryMatch) {
+                                newContent = newContent.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
+                            }
+                        }
                     }
                 }
                 try {
@@ -454,13 +515,52 @@ export class QuestPanel {
             const category = icon.data('category');
             if (!uuid || !category) return;
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            
             if (pinnedQuests[category] === uuid) {
-                // Unpin
+                // Unpin quest
                 pinnedQuests[category] = null;
+                
+                // Restore original category if in Pinned category
+                const page = await fromUuid(uuid);
+                if (page) {
+                    const originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+                    if (originalCategory) {
+                        const content = page.text.content;
+                        const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
+                        
+                        if (categoryMatch && categoryMatch[1].trim() === 'Pinned') {
+                            const newContent = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
+                            await page.update({ text: { content: newContent } });
+                        }
+                    }
+                }
             } else {
                 // Pin this quest, unpin any other
                 pinnedQuests[category] = uuid;
+                
+                // Move to Pinned category in the journal
+                const page = await fromUuid(uuid);
+                if (page) {
+                    // Store original category if not stored yet
+                    let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+                    if (!originalCategory) {
+                        const content = page.text.content;
+                        const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
+                        const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
+                        
+                        if (currentCategory && currentCategory !== 'Pinned') {
+                            await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
+                            
+                            // Update category in content
+                            if (categoryMatch) {
+                                const newContent = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, '$1Pinned');
+                                await page.update({ text: { content: newContent } });
+                            }
+                        }
+                    }
+                }
             }
+            
             await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
             this.render(this.element);
         });
@@ -488,10 +588,10 @@ export class QuestPanel {
                                 ui.notifications.error('Invalid JSON: ' + e.message);
                                 return;
                             }
-                            // Ensure categories include Main Quests and Side Quests
+                            // Ensure categories include all required categories
                             let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
                             let changed = false;
-                            for (const cat of ["Main Quests", "Side Quests"]) {
+                            for (const cat of ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]) {
                                 if (!categories.includes(cat)) { categories.push(cat); changed = true; }
                             }
                             if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
@@ -564,13 +664,59 @@ export class QuestPanel {
             if (!uuid) return;
             const page = await fromUuid(uuid);
             if (!page) return;
+            
             let content = page.text.content;
             const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+            const currentStatus = statusMatch ? statusMatch[1].trim() : '';
+            
+            // Update the status in the content
             if (statusMatch) {
                 content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, `$1${newStatus}`);
             } else {
                 content += `<p><strong>Status:</strong> ${newStatus}</p>`;
             }
+            
+            // Get the current category
+            const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
+            const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
+            
+            // Get the original category from flag or current category
+            let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+            if (!originalCategory && currentCategory && !['Completed', 'Failed'].includes(currentCategory)) {
+                originalCategory = currentCategory;
+                await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
+            }
+            
+            // Handle category changes based on status
+            if (newStatus === 'Complete') {
+                // Store original category if not already stored and move to Completed
+                if (currentCategory !== 'Completed') {
+                    if (!originalCategory && currentCategory) {
+                        await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
+                    }
+                    if (categoryMatch) {
+                        content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1Completed`);
+                    }
+                }
+            } else if (newStatus === 'Failed') {
+                // Store original category if not already stored and move to Failed
+                if (currentCategory !== 'Failed') {
+                    if (!originalCategory && currentCategory) {
+                        await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
+                    }
+                    if (categoryMatch) {
+                        content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1Failed`);
+                    }
+                }
+            } else if (['Not Started', 'In Progress'].includes(newStatus)) {
+                // Restore original category if quest is active again
+                if (['Completed', 'Failed'].includes(currentCategory) && originalCategory) {
+                    if (categoryMatch) {
+                        content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
+                    }
+                }
+            }
+            
             await page.update({ text: { content } });
             // No manual refresh; let the updateJournalEntryPage hook handle it
             option.closest('.quest-status-dropdown').hide();

@@ -815,7 +815,7 @@ export const registerSettings = function() {
         scope: "world",
         config: false,
         type: Array,
-        default: ["Main Quest", "Side Quest"]
+        default: ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]
     });
 
 };

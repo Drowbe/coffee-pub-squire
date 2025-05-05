@@ -13,6 +13,7 @@ export class QuestParser {
             name: page.name,
             img: '',
             category: '',
+            originalCategory: '',
             timeframe: {
                 duration: ''
             },
@@ -47,6 +48,7 @@ export class QuestParser {
             switch (label) {
                 case 'CATEGORY':
                     entry.category = value;
+                    entry.originalCategory = value;
                     break;
                 case 'DESCRIPTION':
                     entry.description = value;

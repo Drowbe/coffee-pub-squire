@@ -28,16 +28,32 @@
     </div>
 
     <div class="quest-content">
+        
+        
         {{#each categories as |category|}}
             <div class="quest-section" data-category="{{category}}">
                 {{#with (lookup @root.data category) as |entries|}}
                     <div class="quest-category">
-                        
                             <h3>
-                                <i class="fas {{#if (eq category "Main Quest")}}fa-flag{{else}}fa-map-signs{{/if}}"></i>
-                                {{category}}{{#if entries.[1]}}s{{/if}}
+                                {{#if (eq category "Main Quest")}}
+                                    <i class="fas fa-flag"></i>
+                                    {{category}}s
+                                {{else if (eq category "Side Quest")}}
+                                    <i class="fas fa-flag"></i>
+                                    {{category}}s
+                                {{else if (eq category "Completed")}}
+                                    <i class="fas fa-check-circle"></i>
+                                    {{category}}
+                                {{else if (eq category "Failed")}}
+                                    <i class="fas fa-times-circle"></i>
+                                    {{category}}
+                                {{else if (eq category "Pinned")}}
+                                    <i class="fas fa-thumbtack"></i>
+                                    {{category}}
+                                {{else}}
+                                    {{category}}
+                                {{/if}}
                             </h3>
-                        
                         <div class="quest-toolbar">
                             <i class="fas fa-chevron-down" title="Toggle {{category}}"></i>
                         </div>
@@ -58,15 +74,16 @@
                                         <div class="quest-toolbar">
                                             <i class="fas fa-thumbtack quest-pin {{#if (eq entry.uuid (lookup @root.pinnedQuests category))}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{category}}" title="Pin this quest"></i>
                                             {{#if @root.isGM}}
-                                                <i class="fas fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Change Status"></i>
+
+                                                <i class="fas fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
+                                                <i class="fas {{#if entry.visible}}fa-eye visible{{else}}fa-eye-slash invisible{{/if}} toggle-visible" data-uuid="{{entry.uuid}}" title="{{#if entry.visible}}Hide from players{{else}}Show to players{{/if}}"></i>
+                                                                                                <i class="fas fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Change Status"></i>
                                                 <div class="quest-status-dropdown" style="display:none;">
                                                     <div class="quest-status-option" data-status="Not Started">Not Started</div>
                                                     <div class="quest-status-option" data-status="In Progress">In Progress</div>
                                                     <div class="quest-status-option" data-status="Complete">Complete</div>
                                                     <div class="quest-status-option" data-status="Failed">Failed</div>
                                                 </div>
-                                                <i class="fas fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
-                                                <i class="fas {{#if entry.visible}}fa-eye visible{{else}}fa-eye-slash invisible{{/if}} toggle-visible" data-uuid="{{entry.uuid}}" title="{{#if entry.visible}}Hide from players{{else}}Show to players{{/if}}"></i>
                                             {{/if}}
                                             <i class="fas fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
                                         </div>
