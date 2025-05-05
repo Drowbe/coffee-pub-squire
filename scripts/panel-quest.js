@@ -408,6 +408,26 @@ export class QuestPanel {
             await page.setFlag(MODULE.ID, 'visible', visible);
             // No manual refresh; let the updateJournalEntryPage hook handle it
         });
+
+        // Pin quest handler
+        html.find('.quest-pin').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const icon = $(event.currentTarget);
+            const uuid = icon.data('uuid');
+            const category = icon.data('category');
+            if (!uuid || !category) return;
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            if (pinnedQuests[category] === uuid) {
+                // Unpin
+                pinnedQuests[category] = null;
+            } else {
+                // Pin this quest, unpin any other
+                pinnedQuests[category] = uuid;
+            }
+            await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
+            this.render(this.element);
+        });
     }
 
     /**
@@ -492,6 +512,8 @@ export class QuestPanel {
         // Get collapsed states
         const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
         const isTagCloudCollapsed = game.user.getFlag(MODULE.ID, 'questTagCloudCollapsed') || false;
+        // Get pinned quests
+        const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
 
         // Prepare template data
         const templateData = {
@@ -506,12 +528,24 @@ export class QuestPanel {
                 search: this.filters.search || ""
             },
             allTags: Array.from(this.allTags).sort(),
-            isTagCloudCollapsed
+            isTagCloudCollapsed,
+            pinnedQuests
         };
         for (const category of this.categories) {
             templateData.hasJournal[category] = !!this.selectedJournal;
             templateData.journalName[category] = this.selectedJournal ? this.selectedJournal.name : "";
-            templateData.data[category] = this._applyFilters(this.data[category] || []);
+            let entries = this._applyFilters(this.data[category] || []);
+            // Sort: pinned quest first
+            const pinnedUuid = pinnedQuests[category];
+            if (pinnedUuid) {
+                entries = entries.slice();
+                const idx = entries.findIndex(e => e.uuid === pinnedUuid);
+                if (idx > 0) {
+                    const [pinned] = entries.splice(idx, 1);
+                    entries.unshift(pinned);
+                }
+            }
+            templateData.data[category] = entries;
         }
 
         // DEBUG LOG
@@ -539,6 +573,12 @@ export class QuestPanel {
         }
         if (!isTagCloudCollapsed) {
             questContainer.find('.toggle-tags-button').addClass('active');
+        }
+        // Open pinned quests by default
+        for (const [category, uuid] of Object.entries(pinnedQuests)) {
+            if (uuid) {
+                questContainer.find(`.quest-entry .quest-pin.pinned[data-uuid="${uuid}"][data-category="${category}"]`).closest('.quest-entry').removeClass('collapsed');
+            }
         }
     }
 } 

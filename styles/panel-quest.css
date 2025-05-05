@@ -384,7 +384,13 @@
 }
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
-    opacity: 0.6;
+    opacity: 0.9;
+    color: #447900;
+    text-decoration: none;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden {
+    opacity: 0.3;
     color: #aaa;
     text-decoration: none;
 }

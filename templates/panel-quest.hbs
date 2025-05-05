@@ -43,6 +43,7 @@
                                     <div class="quest-entry-header">
                                         <div class="quest-entry-name">{{entry.name}}</div>
                                         <div class="quest-toolbar">
+                                            <i class="fas fa-thumbtack quest-pin {{#if (eq entry.uuid (lookup @root.pinnedQuests category))}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{category}}" title="Pin this quest"></i>
                                             {{#if @root.isGM}}
                                                 <i class="fas fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
                                                 <i class="fas {{#if entry.visible}}fa-eye visible{{else}}fa-eye-slash invisible{{/if}} toggle-visible" data-uuid="{{entry.uuid}}" title="{{#if entry.visible}}Hide from players{{else}}Show to players{{/if}}"></i>
@@ -70,11 +71,11 @@
                                         {{!-- TASKS --}} 
                                         {{#if entry.tasks.length}}
                                             <div class="quest-entry-tasks">
-                                                <strong>Tasks</strong>
+                                                <strong>Objectives </strong> {{#if entry.status}}({{entry.status}}){{/if}}
                                                 <ul>
                                                     {{#each entry.tasks}}
                                                         {{#if @root.isGM}}
-                                                            <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
+                                                            <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}}">
                                                                 <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
                                                                 {{this.text}}
                                                             </li>
@@ -149,12 +150,12 @@
                                         {{!-- TAGS --}} 
                                         {{#if entry.tags.length}}
                                             <div class="quest-entry-tags">
-                                                {{#each entry.tags}}
-                                                    <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                                                {{/each}}
                                                 {{#if entry.status}}
                                                     <span class="quest-tag quest-status {{#if (includes @root.filters.tags entry.status)}}selected{{/if}}" data-tag="{{entry.status}}">{{entry.status}}</span>
                                                 {{/if}}
+                                                {{#each entry.tags}}
+                                                    <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                                                {{/each}}
                                             </div>
                                         {{/if}}
                                     </div>
