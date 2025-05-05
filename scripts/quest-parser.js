@@ -179,12 +179,24 @@ export class QuestParser {
             let ul = lastP.nextElementSibling;
             if (ul && ul.tagName === 'UL') {
                 entry.tasks = Array.from(ul.querySelectorAll('li')).map(li => {
-                    // Check for nested p tags
-                    const pTag = li.querySelector('p');
-                    const text = pTag ? pTag.textContent.trim() : li.textContent.trim();
+                    // Detect state by child tags
+                    let state = 'active';
+                    let text = li.textContent.trim();
+                    if (li.querySelector('s, del, strike')) {
+                        state = 'completed';
+                        // Prefer the text inside the strikethrough tag
+                        const s = li.querySelector('s, del, strike');
+                        if (s) text = s.textContent.trim();
+                    } else if (li.querySelector('em, i')) {
+                        state = 'hidden';
+                        // Prefer the text inside the italics tag
+                        const em = li.querySelector('em, i');
+                        if (em) text = em.textContent.trim();
+                    }
                     return {
-                        text: text,
-                        completed: false
+                        text,
+                        state,
+                        completed: state === 'completed'
                     };
                 }).filter(t => t.text);
             }

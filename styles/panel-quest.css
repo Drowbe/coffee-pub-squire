@@ -383,10 +383,19 @@
     cursor: pointer;
 }
 
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
+    opacity: 0.6;
+    color: #aaa;
+    text-decoration: none;
+}
+
 .squire-tray[data-position="left"] .quest-entry-participants {
     margin-bottom: 0.5rem;
     color: #ffffff;
     clear: both;
+    gap: 4px;
+    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    padding-top: 4px;
 }
 
 .squire-tray[data-position="left"] .participant-portraits {
@@ -397,11 +406,11 @@
 }
 
 .squire-tray[data-position="left"] .participant-portrait {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    border-radius: 4px;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     cursor: pointer;
     transition: all 0.2s ease;
 }

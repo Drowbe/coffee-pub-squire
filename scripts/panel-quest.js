@@ -72,6 +72,10 @@ export class QuestPanel {
                         // Each page is a single quest entry
                         const entry = await QuestParser.parseSinglePage(page, enriched);
                         if (entry) {
+                            // Set visible from flag, default true
+                            let visible = await page.getFlag(MODULE.ID, 'visible');
+                            if (typeof visible === 'undefined') visible = true;
+                            entry.visible = visible;
                             const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
                             this.data[category].push(entry);
                             // Add regular tags
@@ -106,7 +110,8 @@ export class QuestPanel {
      */
     _applyFilters(entries) {
         const sortedEntries = [...entries].sort((a, b) => a.name.localeCompare(b.name));
-        const filteredEntries = sortedEntries.filter(entry => game.user.isGM || entry.identified);
+        // Only show visible quests to non-GMs
+        const filteredEntries = sortedEntries.filter(entry => game.user.isGM || entry.visible !== false);
         if (this.filters.tags.length > 0) {
             return filteredEntries.filter(entry => {
                 const hasAnyTag = this.filters.tags.some(tag => entry.tags.includes(tag));
@@ -121,6 +126,8 @@ export class QuestPanel {
      * @private
      */
     _activateListeners(html) {
+        console.log('SQUIRE | Activating listeners for quest panel');
+        
         // Search input - live DOM filtering
         const searchInput = html.find('.quest-search input');
         const clearButton = html.find('.clear-search');
@@ -267,23 +274,139 @@ export class QuestPanel {
             }
         });
 
+        // Task completion and hidden toggling
+        const taskCheckboxes = html.find('.task-checkbox');
+        console.log('SQUIRE | Found task checkboxes:', taskCheckboxes.length);
+        
+        // Use mousedown to detect right-click for hidden toggle
+        taskCheckboxes.on('mousedown', async (event) => {
+            if (!game.user.isGM) return;
+            const checkbox = $(event.currentTarget);
+            const taskIndex = parseInt(checkbox.data('task-index'));
+            const questEntry = checkbox.closest('.quest-entry');
+            const questUuid = questEntry.find('.quest-entry-feather').data('uuid');
+            if (!questUuid) return;
+            const journalId = game.settings.get(MODULE.ID, 'questJournal');
+            if (!journalId || journalId === 'none') return;
+            const journal = game.journal.get(journalId);
+            if (!journal) return;
+            const page = journal.pages.find(p => p.uuid === questUuid);
+            if (!page) return;
+            let content = page.text.content;
+            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+            if (!tasksMatch) return;
+            const tasksHtml = tasksMatch[1];
+            const parser = new DOMParser();
+            const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+            const ul = ulDoc.querySelector('ul');
+            const liList = ul ? Array.from(ul.children) : [];
+            const li = liList[taskIndex];
+            if (!li) return;
+
+            if (event.button === 2) { // Right-click: toggle hidden
+                event.preventDefault();
+                const emTag = li.querySelector('em');
+                if (emTag) {
+                    // Unwrap <em>
+                    emTag.replaceWith(...emTag.childNodes);
+                    console.log('SQUIRE | Unwrapped <em> for hidden');
+                } else {
+                    // Wrap all inner HTML in <em>, preserving <s> if present
+                    if (li.querySelector('s')) {
+                        // If already completed, wrap <s> in <em>
+                        const sTag = li.querySelector('s');
+                        sTag.innerHTML = `<em>${sTag.innerHTML}</em>`;
+                    } else {
+                        li.innerHTML = `<em>${li.innerHTML}</em>`;
+                    }
+                    console.log('SQUIRE | Wrapped in <em> for hidden');
+                }
+                const newTasksHtml = ul.innerHTML;
+                const newContent = content.replace(tasksMatch[1], newTasksHtml);
+                try {
+                    await page.update({ text: { content: newContent } });
+                    console.log('SQUIRE | Journal page updated (hidden toggle)');
+                } catch (error) {
+                    console.error('SQUIRE | Error updating journal page (hidden toggle):', error);
+                }
+                return;
+            }
+            if (event.button === 0) { // Left-click: toggle completed (existing logic)
+                const sTag = li.querySelector('s');
+                if (sTag) {
+                    li.innerHTML = sTag.innerHTML;
+                    console.log('SQUIRE | Unwrapped <s> for completion');
+                } else {
+                    li.innerHTML = `<s>${li.innerHTML}</s>`;
+                    console.log('SQUIRE | Wrapped in <s> for completion');
+                }
+                const newTasksHtml = ul.innerHTML;
+                const newContent = content.replace(tasksMatch[1], newTasksHtml);
+                try {
+                    await page.update({ text: { content: newContent } });
+                    console.log('SQUIRE | Journal page updated (completion toggle)');
+                } catch (error) {
+                    console.error('SQUIRE | Error updating journal page (completion toggle):', error);
+                }
+            }
+        });
+
         // --- Quest Card Collapse/Expand ---
-        // Always start collapsed
+        // Always start collapsed unless remembered
         html.find('.quest-entry').addClass('collapsed');
+        // Restore open/closed state from user flag
+        const questCardCollapsed = game.user.getFlag(MODULE.ID, 'questCardCollapsed') || {};
+        html.find('.quest-entry').each(function() {
+            const uuid = $(this).find('.quest-entry-feather').data('uuid');
+            if (uuid && questCardCollapsed[uuid] === false) {
+                $(this).removeClass('collapsed');
+            }
+        });
         // Unbind previous handlers before binding new ones
         html.off('click.questEntryToggle');
         html.off('click.questEntryHeader');
         // Toggle collapse on chevron click
-        html.on('click.questEntryToggle', '.quest-entry-toggle', function(e) {
+        html.on('click.questEntryToggle', '.quest-entry-toggle', async function(e) {
             const card = $(this).closest('.quest-entry');
             card.toggleClass('collapsed');
+            const uuid = card.find('.quest-entry-feather').data('uuid');
+            if (uuid) {
+                const collapsed = card.hasClass('collapsed');
+                const flag = game.user.getFlag(MODULE.ID, 'questCardCollapsed') || {};
+                flag[uuid] = collapsed;
+                await game.user.setFlag(MODULE.ID, 'questCardCollapsed', flag);
+            }
             e.stopPropagation();
         });
         // Toggle collapse on header click (but not controls)
-        html.on('click.questEntryHeader', '.quest-entry-header', function(e) {
+        html.on('click.questEntryHeader', '.quest-entry-header', async function(e) {
             if ($(e.target).closest('.quest-toolbar').length) return;
             const card = $(this).closest('.quest-entry');
             card.toggleClass('collapsed');
+            const uuid = card.find('.quest-entry-feather').data('uuid');
+            if (uuid) {
+                const collapsed = card.hasClass('collapsed');
+                const flag = game.user.getFlag(MODULE.ID, 'questCardCollapsed') || {};
+                flag[uuid] = collapsed;
+                await game.user.setFlag(MODULE.ID, 'questCardCollapsed', flag);
+            }
+        });
+
+        // Toggle quest visibility (show/hide to players)
+        html.find('.toggle-visible').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!game.user.isGM) return;
+            const icon = $(event.currentTarget);
+            const uuid = icon.data('uuid');
+            if (!uuid) return;
+            const page = await fromUuid(uuid);
+            if (!page) return;
+            let visible = await page.getFlag(MODULE.ID, 'visible');
+            if (typeof visible === 'undefined') visible = true;
+            visible = !visible;
+            await page.setFlag(MODULE.ID, 'visible', visible);
+            // No manual refresh; let the updateJournalEntryPage hook handle it
         });
     }
 

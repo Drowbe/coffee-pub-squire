@@ -47,7 +47,8 @@ export class QuestForm extends FormApplication {
                 percentage: 0
             },
             tags: [],
-            uuid: ''
+            uuid: '',
+            visible: true
         };
     }
 
@@ -100,9 +101,10 @@ export class QuestForm extends FormApplication {
             }
         };
 
+        let page;
         if (this.quest.uuid) {
             // Update existing page
-            const page = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === this.quest.uuid);
+            page = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === this.quest.uuid);
             if (page) {
                 await page.update(pageData);
             }
@@ -113,7 +115,13 @@ export class QuestForm extends FormApplication {
                     questUuid: quest.uuid
                 }
             };
-            await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+            const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+            page = created[0];
+        }
+
+        // Set the visible flag
+        if (page) {
+            await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
         }
 
         // Refresh the quest panel if it exists
