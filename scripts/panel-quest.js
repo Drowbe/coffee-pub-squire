@@ -514,51 +514,32 @@ export class QuestPanel {
             const uuid = icon.data('uuid');
             const category = icon.data('category');
             if (!uuid || !category) return;
+            
+            // Check if this quest is in "In Progress" status
+            // Since we only show pins in In Progress section,
+            // and we only process clicks on pins that exist,
+            // this check is now redundant and can be removed
+            
+            // Get current pinned quests
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
             
-            if (pinnedQuests[category] === uuid) {
-                // Unpin quest
-                pinnedQuests[category] = null;
-                
-                // Restore original category if in Pinned category
-                const page = await fromUuid(uuid);
-                if (page) {
-                    const originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
-                    if (originalCategory) {
-                        const content = page.text.content;
-                        const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
-                        
-                        if (categoryMatch && categoryMatch[1].trim() === 'Pinned') {
-                            const newContent = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
-                            await page.update({ text: { content: newContent } });
-                        }
+            // Check if this quest is already pinned
+            const isPinned = Object.values(pinnedQuests).includes(uuid);
+            
+            if (isPinned) {
+                // Unpin this quest
+                for (const cat in pinnedQuests) {
+                    if (pinnedQuests[cat] === uuid) {
+                        pinnedQuests[cat] = null;
                     }
                 }
             } else {
-                // Pin this quest, unpin any other
-                pinnedQuests[category] = uuid;
-                
-                // Move to Pinned category in the journal
-                const page = await fromUuid(uuid);
-                if (page) {
-                    // Store original category if not stored yet
-                    let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
-                    if (!originalCategory) {
-                        const content = page.text.content;
-                        const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
-                        const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
-                        
-                        if (currentCategory && currentCategory !== 'Pinned') {
-                            await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
-                            
-                            // Update category in content
-                            if (categoryMatch) {
-                                const newContent = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, '$1Pinned');
-                                await page.update({ text: { content: newContent } });
-                            }
-                        }
-                    }
+                // Clear any existing pins
+                for (const cat in pinnedQuests) {
+                    pinnedQuests[cat] = null;
                 }
+                // Pin this quest
+                pinnedQuests[category] = uuid;
             }
             
             await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
@@ -898,6 +879,14 @@ export class QuestPanel {
         }
         if (!isTagCloudCollapsed) {
             questContainer.find('.toggle-tags-button').addClass('active');
+        }
+        
+        // Auto-expand pinned quests
+        if (pinnedQuestUuid) {
+            // Make sure the In Progress section is expanded
+            questContainer.find(`.quest-section[data-status="In Progress"]`).removeClass('collapsed');
+            // Expand the pinned quest
+            questContainer.find(`.quest-entry:has(.quest-pin.pinned)`).removeClass('collapsed');
         }
     }
 

@@ -194,7 +194,7 @@
 }
 
 .squire-tray[data-position="left"] .quest-category h3 {
-    color: rgb(159, 146, 117);
+    color: rgba(159, 146, 117, 0.9);
     margin: 0;
     border: none;
     font-family: "Modesto Condensed"; 
@@ -202,7 +202,7 @@
     font-weight: 900;
 }
 .squire-tray[data-position="left"] .quest-category h3 i {
-    color: rgb(159, 146, 117);
+    color: rgba(159, 146, 117, 0.9);
     font-size: .80em;
     margin-right: 4px;
 }
@@ -240,9 +240,13 @@
 .squire-tray[data-position="left"] .quest-entry-name {
     flex: 1 1 auto;
     text-align: left;
-    font-weight: 900;
-    color: #fff;
+    font-weight: 500;
+    color: rgba(159, 146, 117, 0.9);
     font-size: 1.2em;
+}
+.squire-tray[data-position="left"] .quest-entry-name i {
+    font-size: 0.85em;
+    margin-right: 2px;
 }
 .squire-tray[data-position="left"] .quest-entry-image {
     float: left;
@@ -262,10 +266,28 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+
+.quest-label {
+    color: rgba(159, 146, 117, 0.9);
+    background-color: rgba(159, 146, 117, 0.15);
+    font-size: 0.8em;
+    text-transform: uppercase;
+    padding: 2px 4px 2px 4px;
+    border-radius: 3px;
+    margin-right: 2px;    
+}
+
+
+
 .squire-tray[data-position="left"] .quest-entry-description {
     margin-bottom: 8px;
     clear: right;
 }
+
+
+
+
+
 
 .squire-tray[data-position="left"] .quest-entry-hook {
     clear: left;
