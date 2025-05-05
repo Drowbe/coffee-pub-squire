@@ -540,6 +540,41 @@ export class QuestPanel {
                 default: 'import'
             }).render(true);
         });
+
+        // Status menu (GM only)
+        html.find('.quest-status-menu').click(function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            // Hide any other open dropdowns
+            html.find('.quest-status-dropdown').hide();
+            // Show the dropdown next to this button
+            const btn = $(this);
+            const dropdown = btn.siblings('.quest-status-dropdown');
+            dropdown.toggle();
+            // Close on click outside
+            $(document).one('click.questStatusDropdown', () => dropdown.hide());
+        });
+        // Status option click
+        html.find('.quest-status-option').click(async function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const option = $(this);
+            const newStatus = option.data('status');
+            const uuid = option.closest('.quest-toolbar').find('.quest-status-menu').data('uuid');
+            if (!uuid) return;
+            const page = await fromUuid(uuid);
+            if (!page) return;
+            let content = page.text.content;
+            const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+            if (statusMatch) {
+                content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, `$1${newStatus}`);
+            } else {
+                content += `<p><strong>Status:</strong> ${newStatus}</p>`;
+            }
+            await page.update({ text: { content } });
+            // No manual refresh; let the updateJournalEntryPage hook handle it
+            option.closest('.quest-status-dropdown').hide();
+        });
     }
 
     /**
