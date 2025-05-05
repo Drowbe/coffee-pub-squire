@@ -64,6 +64,15 @@
     opacity: 1;
 }
 
+
+.squire-tray[data-position="left"] .quest-toolbar .quest-pin {
+    opacity: .3;
+}
+
+.squire-tray[data-position="left"] .quest-toolbar .quest-pin.pinned {
+    opacity: 1;
+}
+
 .squire-tray[data-position="left"] .quest-entry .quest-entry-toggle {
     margin-left: 8px;
     transition: transform 0.2s;
