@@ -15,6 +15,7 @@
     margin-top: 10px;
     padding: 8px;
     border: 2px solid rgba(255, 255, 255, 0.2);
+    color: #cccccc;
 }
 
 .squire-tray[data-position="left"] .quest-entry.collapsed .quest-entry-content {
@@ -262,7 +263,6 @@
 }
 
 .squire-tray[data-position="left"] .quest-entry-description {
-    color: #ccc;
     margin-bottom: 8px;
     clear: right;
 }
@@ -361,7 +361,7 @@
 
 /* --- THESE ARE NEW AND DIFFERENT THN CODEX --- */
 
-.squire-tray[data-position="left"] .quest-entry-criteria,
+.squire-tray[data-position="left"] .quest-entry-location,
 .squire-tray[data-position="left"] .quest-entry-timeframe,
 .squire-tray[data-position="left"] .quest-entry-tasks,
 .squire-tray[data-position="left"] .quest-entry-reward,
@@ -370,7 +370,6 @@
 .squire-tray[data-position="left"] .quest-entry-progress,
 .squire-tray[data-position="left"] .quest-entry-related {
     margin-bottom: 0.5rem;
-    color: #ffffff;
     clear: both;
 }
 
@@ -397,7 +396,7 @@
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
     opacity: 0.9;
-    color: #447900;
+    color: #156e17;
     text-decoration: none;
 }
 

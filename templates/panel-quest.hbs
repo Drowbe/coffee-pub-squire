@@ -66,18 +66,15 @@
                                         {{/if}}
                                         {{!-- DESCRIPTION --}} 
                                         {{#if entry.description}}
-                                            <div class="quest-entry-description">{{entry.description}}</div>
-                                        {{/if}}
-                                        {{!-- PLOT HOOK --}} 
-                                        {{#if entry.plotHook}}
-                                            <div class="quest-entry-hook">
-                                                <strong>Plot Hook:</strong> {{entry.plotHook}}
+                                            <div class="quest-entry-description">
+                                                <span class="quest-label">Description</span> 
+                                                <p>{{entry.description}}</p>
                                             </div>
                                         {{/if}}
                                         {{!-- TASKS --}} 
                                         {{#if entry.tasks.length}}
                                             <div class="quest-entry-tasks">
-                                                <strong>Objectives </strong> {{#if entry.status}}({{entry.status}}){{/if}}
+                                                <span class="quest-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
                                                 <ul>
                                                     {{#each entry.tasks}}
                                                         {{#if @root.isGM}}
@@ -97,16 +94,25 @@
                                                 </ul>
                                             </div>
                                         {{/if}}
-                                        {{!-- REWARDS --}} 
-                                        {{#if entry.reward.xp}}
-                                            <div class="quest-entry-reward">
-                                                <strong>Experience</strong>
-                                                <p>{{entry.reward.xp}}</p>
-                                            </div>
+
+                                        {{!-- PLOT HOOK --}} 
+                                        {{#if @root.isGM}}
+                                            {{#if entry.plotHook}}
+                                                <div class="quest-entry-hook">
+                                                    <span class="quest-label">Plot Hook</span> 
+                                                    <p>{{entry.plotHook}}</p>
+                                                </div>
+                                            {{/if}}
                                         {{/if}}
+
+                                        <div class="quest-entry-divider"></div>
+
+                                        
+                                        {{!-- TREASUREE --}} 
+
                                         {{#if entry.reward.treasure.length}}
                                             <div class="quest-entry-reward">
-                                                <strong>Treasure:</strong>
+                                                <span class="quest-label">Treasure</span>
                                                 <ul>
                                                     {{#each entry.reward.treasure}}
                                                         <li>
@@ -121,21 +127,32 @@
                                             </div>
                                         {{/if}}
 
-                                        {{!-- TIMEFRAME --}} 
-                                        {{#if entry.timeframe.duration}}
-                                            <div class="quest-entry-timeframe">
-                                                <strong>Timeframe</strong>
-                                                <p>{{entry.timeframe.duration}}</p>
+
+                                        <div class="quest-entry-divider"></div>
+
+                                        {{#if entry.reward.xp}}
+                                            <div class="quest-entry-reward">
+                                                <span class="quest-label">Experience</span> {{entry.reward.xp}}
+                                            </div>
+                                        {{/if}}
+                                        {{!-- LOCATION --}} 
+                                        {{#if entry.location}}
+                                            <div class="quest-entry-location">
+                                                <span class="quest-label">Location</span> {{entry.location}}
                                             </div>
                                         {{/if}}
 
-                                            
-                                        {{#if entry.progress.status}}
+                                        {{!-- TIMEFRAME --}} 
+                                        {{#if entry.timeframe.duration}}
+                                            <div class="quest-entry-timeframe">
+                                                <span class="quest-label">Timeframe</span> {{entry.timeframe.duration}}
+                                            </div>
+                                        {{/if}}
+
+                                        {{!-- STATUS --}} 
+                                        {{#if entry.status}}
                                             <div class="quest-entry-progress">
-                                                <strong>Progress:</strong> {{entry.progress.status}}
-                                                {{#if entry.progress.percentage}}
-                                                    ({{entry.progress.percentage}}%)
-                                                {{/if}}
+                                                <span class="quest-label">Status</span> {{entry.status}}
                                             </div>
                                         {{/if}}
 

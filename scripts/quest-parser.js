@@ -51,6 +51,9 @@ export class QuestParser {
                 case 'DESCRIPTION':
                     entry.description = value;
                     break;
+                case 'LOCATION':
+                    entry.location = value;
+                    break;
                 case 'DURATION':
                     entry.timeframe.duration = value;
                     break;

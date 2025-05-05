@@ -672,6 +672,9 @@ export class QuestPanel {
         if (quest.description) {
             content += `<p><strong>Description:</strong> ${quest.description}</p>\n\n`;
         }
+        if (quest.location) {
+            content += `<p><strong>Location:</strong> ${quest.location}</p>\n\n`;
+        }
         if (quest.plotHook) {
             content += `<p><strong>Plot Hook:</strong> ${quest.plotHook}</p>\n\n`;
         }
