@@ -42,7 +42,11 @@
                             {{#each entries as |entry|}}
                                 <div class="quest-entry collapsed">
                                     <div class="quest-entry-header">
-                                        <div class="quest-entry-name">{{entry.name}}</div>
+                                        <div class="quest-entry-name">
+                                            {{#if (eq entry.status "Complete")}}<i class="fas fa-badge-check"></i> {{/if}}
+                                            {{#if (eq entry.status "Failed")}}<i class="fas fa-circle-xmark"></i> {{/if}}
+                                            {{entry.name}}
+                                        </div>
                                         <div class="quest-toolbar">
                                             <i class="fas fa-thumbtack quest-pin {{#if (eq entry.uuid (lookup @root.pinnedQuests category))}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{category}}" title="Pin this quest"></i>
                                             {{#if @root.isGM}}

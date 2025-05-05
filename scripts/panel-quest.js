@@ -341,7 +341,27 @@ export class QuestPanel {
                     console.log('SQUIRE | Wrapped in <s> for completion');
                 }
                 const newTasksHtml = ul.innerHTML;
-                const newContent = content.replace(tasksMatch[1], newTasksHtml);
+                let newContent = content.replace(tasksMatch[1], newTasksHtml);
+                // After toggling, check if all tasks are completed
+                const allLis = Array.from(ul.children);
+                const allCompleted = allLis.length > 0 && allLis.every(l => l.querySelector('s'));
+                // Find current status
+                const statusMatch = newContent.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+                let currentStatus = statusMatch ? statusMatch[1].trim() : '';
+                if (allCompleted) {
+                    if (currentStatus !== 'Complete') {
+                        if (statusMatch) {
+                            newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Complete');
+                        } else {
+                            newContent += `<p><strong>Status:</strong> Complete</p>`;
+                        }
+                    }
+                } else {
+                    // If status is Complete and not all tasks are completed, set to In Progress
+                    if (currentStatus === 'Complete') {
+                        newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
+                    }
+                }
                 try {
                     await page.update({ text: { content: newContent } });
                     console.log('SQUIRE | Journal page updated (completion toggle)');
@@ -406,6 +426,22 @@ export class QuestPanel {
             if (typeof visible === 'undefined') visible = true;
             visible = !visible;
             await page.setFlag(MODULE.ID, 'visible', visible);
+            // If making visible, set status to In Progress if not Complete/Failed
+            if (visible) {
+                let content = page.text.content;
+                // Try to find <strong>Status:</strong> ... and update it
+                const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+                let currentStatus = statusMatch ? statusMatch[1].trim() : '';
+                if (currentStatus !== 'Complete' && currentStatus !== 'Failed') {
+                    if (statusMatch) {
+                        content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
+                    } else {
+                        // If no status, add it at the end
+                        content += `<p><strong>Status:</strong> In Progress</p>`;
+                    }
+                    await page.update({ text: { content } });
+                }
+            }
             // No manual refresh; let the updateJournalEntryPage hook handle it
         });
 
