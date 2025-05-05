@@ -52,6 +52,11 @@
                                             <i class="fas fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
                                         </div>
                                     </div>
+                                    {{#if entry.tasks.length}}
+                                        <div class="quest-entry-progressbar">
+                                            <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
+                                        </div>
+                                    {{/if}}
                                     <div class="quest-entry-content">
                                         <div class="quest-entry-divider"></div>
                                         {{#if entry.img}}
