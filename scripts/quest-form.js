@@ -63,7 +63,10 @@ export class QuestForm extends FormApplication {
             })).filter(t => t.text);
         }
         if (typeof quest.participants === 'string') {
-            quest.participants = quest.participants.split('\n').filter(p => p.trim());
+            quest.participants = quest.participants.split('\n')
+                .map(p => p.trim())
+                .filter(p => p)
+                .map(p => ({ name: p, img: 'icons/svg/mystery-man.svg' }));
         }
         if (typeof quest.tags === 'string') {
             quest.tags = quest.tags.split(',').map(t => t.trim()).filter(t => t);
@@ -167,7 +170,12 @@ export class QuestForm extends FormApplication {
         }
 
         if (quest.participants.length) {
-            content += `<p><strong>Participants:</strong> ${quest.participants.join(', ')}</p>\n\n`;
+            const participantList = quest.participants.map(p => {
+                if (typeof p === 'string') return p;
+                if (p.uuid) return `@UUID[${p.uuid}]{${p.name || 'Actor'}}`;
+                return p.name || '';
+            }).filter(p => p).join(', ');
+            content += `<p><strong>Participants:</strong> ${participantList}</p>\n\n`;
         }
 
         if (quest.tags.length) {

@@ -1058,7 +1058,12 @@ export class QuestPanel {
             content += `<p><strong>Status:</strong> ${quest.status}</p>\n\n`;
         }
         if (quest.participants && quest.participants.length) {
-            content += `<p><strong>Participants:</strong> ${quest.participants.join(', ')}</p>\n\n`;
+            const participantList = quest.participants.map(p => {
+                if (typeof p === 'string') return p;
+                if (p.uuid) return `@UUID[${p.uuid}]{${p.name || 'Actor'}}`;
+                return p.name || '';
+            }).filter(p => p).join(', ');
+            content += `<p><strong>Participants:</strong> ${participantList}</p>\n\n`;
         }
         if (quest.tags && quest.tags.length) {
             content += `<p><strong>Tags:</strong> ${quest.tags.join(', ')}</p>\n\n`;

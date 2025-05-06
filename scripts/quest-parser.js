@@ -104,56 +104,83 @@ export class QuestParser {
                 }
                 case 'PARTICIPANTS': {
                     entry.participants = [];
-                    // Inline participants (on the same <p> line)
-                    let node = p.childNodes[1]; // childNodes[0] is <strong>
-                    let foundInline = false;
-                    while (node) {
-                        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'A' && node.hasAttribute('data-uuid')) {
-                            const uuid = node.getAttribute('data-uuid');
-                            const doc = await fromUuid(uuid);
-                            if (doc) {
-                                entry.participants.push({
-                                    uuid: uuid,
-                                    name: doc.name,
-                                    img: doc.img || doc.thumbnail || 'icons/svg/mystery-man.svg'
-                                });
-                                entry.tags.push(doc.name);
-                            }
-                            foundInline = true;
-                        } else if (node.nodeType === Node.TEXT_NODE) {
-                            const text = node.textContent.trim();
-                            if (text) {
-                                entry.participants.push(text);
-                                entry.tags.push(text);
-                                foundInline = true;
+                    // Get the full HTML content of the paragraph after the strong tag
+                    const paragraphHTML = p.innerHTML.replace(/<strong>[^<]*<\/strong>/, '').trim();
+                    
+                    // Check if there's significant content in the paragraph itself
+                    if (paragraphHTML && paragraphHTML !== ':') {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = paragraphHTML;
+                        
+                        // Process all UUID links
+                        const uuidLinks = tempDiv.querySelectorAll('a[data-uuid]');
+                        let foundLinks = false;
+                        
+                        if (uuidLinks.length > 0) {
+                            foundLinks = true;
+                            for (const link of uuidLinks) {
+                                const uuid = link.getAttribute('data-uuid');
+                                const doc = await fromUuid(uuid);
+                                if (doc) {
+                                    entry.participants.push({
+                                        uuid: uuid,
+                                        name: doc.name,
+                                        img: doc.img || doc.thumbnail || 'icons/svg/mystery-man.svg'
+                                    });
+                                    entry.tags.push(doc.name);
+                                }
                             }
                         }
-                        node = node.nextSibling;
+                        
+                        // If no links were found, try to process text content
+                        if (!foundLinks) {
+                            const text = tempDiv.textContent.trim();
+                            if (text) {
+                                // Split by common separators and process each non-empty part
+                                const parts = text.split(/[,;]/).map(part => part.trim()).filter(part => part);
+                                for (const part of parts) {
+                                    entry.participants.push({
+                                        name: part,
+                                        img: 'icons/svg/mystery-man.svg'
+                                    });
+                                    entry.tags.push(part);
+                                }
+                            }
+                        }
                     }
-                    // List participants (if next sibling is <ul>)
-                    if (!foundInline) {
-                        const ul = p.nextElementSibling;
-                        if (ul && ul.tagName === 'UL') {
-                            const liNodes = Array.from(ul.querySelectorAll('li'));
-                            for (const li of liNodes) {
-                                const a = li.querySelector('a[data-uuid]');
-                                if (a) {
-                                    const uuid = a.getAttribute('data-uuid');
+                    
+                    // If we have a list following the participants heading, process it
+                    // Check if the next element is a <ul>
+                    const nextElement = p.nextElementSibling;
+                    if (nextElement && nextElement.tagName === 'UL') {
+                        const liNodes = Array.from(nextElement.querySelectorAll('li'));
+                        for (const li of liNodes) {
+                            // Look for UUID links in the list item
+                            const uuidLinks = li.querySelectorAll('a[data-uuid]');
+                            
+                            if (uuidLinks.length > 0) {
+                                // Process all UUID links in this list item
+                                for (const link of uuidLinks) {
+                                    const uuid = link.getAttribute('data-uuid');
                                     const doc = await fromUuid(uuid);
                                     if (doc) {
                                         entry.participants.push({
                                             uuid: uuid,
-                                            name: doc.name,
+                                            name: doc.name, 
                                             img: doc.img || doc.thumbnail || 'icons/svg/mystery-man.svg'
                                         });
                                         entry.tags.push(doc.name);
                                     }
-                                } else {
-                                    const text = li.textContent.trim();
-                                    if (text) {
-                                        entry.participants.push(text);
-                                        entry.tags.push(text);
-                                    }
+                                }
+                            } else {
+                                // No UUID links, use the text content
+                                const text = li.textContent.trim();
+                                if (text) {
+                                    entry.participants.push({
+                                        name: text,
+                                        img: 'icons/svg/mystery-man.svg'
+                                    });
+                                    entry.tags.push(text);
                                 }
                             }
                         }
@@ -223,6 +250,13 @@ export class QuestParser {
 
         // Ensure all participant names are in tags
         if (Array.isArray(entry.participants)) {
+            // Filter out any empty participant objects or strings
+            entry.participants = entry.participants.filter(p => {
+                if (!p) return false;
+                if (typeof p === 'string') return p.trim() !== '';
+                return p.uuid || (p.name && p.name.trim() !== '');
+            });
+            
             entry.participants.forEach(p => {
                 if (typeof p === 'string') {
                     entry.tags.push(p);
