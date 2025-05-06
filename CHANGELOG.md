@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.11] - Notes Panel
+## [1.0.11] - Notes Panel & Quest Improvements
 
 ### Added
 - New journal notes panel in the tray for easy access to journal entries
@@ -19,12 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dynamic codex category icons based on category (Characters, Locations, Artifacts)
 - Always-enabled clear (X) button that clears both search and tag filters and resets results
 - Clicking a tag in an entry now clears all filters and filters by that tag only
-- Marked this version as Locked Down for release stability
+- Reorganized quests by status (In Progress, Not Started, Completed, Failed) rather than by category
+- Quest counts now display in section headers (e.g., "In Progress (3)")
+- Pinning functionality for quests in the "In Progress" section with auto-expansion
+- JSON export/import functionality for both quest and codex panels
+- Added feather icon to quest cards to open the quest journal directly
 
 ### Changed
 - Improved CSS organization and removed duplicate styles
 - Plot Hook and other fields are now robustly parsed regardless of colon placement or HTML structure
 - Improved tag/search/expand/collapse logic for all filter states
+- Changed progress bar to only display when progress is greater than 0%
+- Modified the border styling for expanded quest entries
+- Enhanced quest import functionality to check for existing entries and update them
+- Quest export now includes quests from all status groups, not just category groupings
+- Cleaned up the codebase by removing unnecessary console.log debug statements
 
 ### Fixed
 - Fixed scrollbar issues to ensure only one scrollbar appears in the notes panel
@@ -33,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved CSS styling for better integration with Foundry's UI
 - Consolidated duplicate CSS to improve maintainability
 - Fixed event handler binding to prevent odd expand/collapse behavior after filtering
+- Fixed quest import to properly handle UUID and preserve original category information
 
 ## [1.0.10] - Transfers and More
 
