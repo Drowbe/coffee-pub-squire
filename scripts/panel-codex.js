@@ -299,42 +299,16 @@ export class CodexPanel {
             if (target.data('processing')) return;
             target.data('processing', true);
             
-            console.log("SQUIRE | Eye icon clicked", {
-                target: event.currentTarget,
-                isGM: game.user.isGM,
-                hasJournal: !!this.selectedJournals,
-                eventType: event.type,
-                eventPhase: event.eventPhase,
-                bubbles: event.bubbles,
-                cancelable: event.cancelable
-            });
-            
             try {
-                if (!game.user.isGM) {
-                    console.log("SQUIRE | Not a GM, ignoring click");
-                    return;
-                }
+                if (!game.user.isGM) return;
                 
                 const entryElement = $(event.currentTarget).closest('.codex-entry');
                 const entryName = entryElement.find('.codex-entry-name').text();
                 const category = entryElement.closest('.codex-section').find('h3').text().trim();
                 
-                console.log("SQUIRE | Entry details", {
-                    entryName,
-                    category,
-                    hasSelectedJournal: !!this.selectedJournals,
-                    journalPages: this.selectedJournals[category]?.pages.size,
-                    entryElementFound: !!entryElement.length,
-                    entryNameFound: !!entryName,
-                    categoryFound: !!category
-                });
-                
                 // Find the journal page for this category
-                const page = this.selectedJournals[category].pages.find(p => p.name === category);
-                if (!page) {
-                    console.log("SQUIRE | No page found for category:", category);
-                    return;
-                }
+                const page = this.selectedJournals[category]?.pages.find(p => p.name === category);
+                if (!page) return;
                 
                 // Get current content
                 let content = '';
@@ -346,16 +320,7 @@ export class CodexPanel {
                     content = await page.text.content;
                 }
                 
-                console.log("SQUIRE | Got page content", {
-                    hasContent: !!content,
-                    contentLength: content?.length,
-                    contentType: typeof content
-                });
-                
-                if (!content) {
-                    console.log("SQUIRE | No content found in page");
-                    return;
-                }
+                if (!content) return;
                 
                 // Create a temporary div to parse the HTML
                 const parser = new DOMParser();
@@ -366,13 +331,6 @@ export class CodexPanel {
                     h1.textContent.trim() === entryName
                 );
                 
-                console.log("SQUIRE | Found entry H1", {
-                    found: !!entryH1,
-                    entryName,
-                    allH1s: Array.from(doc.getElementsByTagName('h1')).map(h => h.textContent.trim()),
-                    h1Count: doc.getElementsByTagName('h1').length
-                });
-                
                 if (!entryH1) return;
                 
                 // Find the ul element after this h1
@@ -381,14 +339,6 @@ export class CodexPanel {
                     currentElement = currentElement.nextElementSibling;
                 }
                 
-                console.log("SQUIRE | Found UL element", {
-                    found: !!currentElement,
-                    elementType: currentElement?.tagName,
-                    nextElements: Array.from(entryH1.parentNode.children)
-                        .slice(Array.from(entryH1.parentNode.children).indexOf(entryH1) + 1, 5)
-                        .map(el => el.tagName)
-                });
-                
                 if (!currentElement) return;
                 
                 // Find the Identified list item
@@ -396,23 +346,11 @@ export class CodexPanel {
                     li.textContent.trim().toLowerCase().startsWith('identified:')
                 );
                 
-                console.log("SQUIRE | Found Identified LI", {
-                    found: !!identifiedLi,
-                    currentText: identifiedLi?.textContent.trim(),
-                    allLis: Array.from(currentElement.getElementsByTagName('li')).map(li => li.textContent.trim())
-                });
-                
                 if (!identifiedLi) return;
                 
                 // Toggle the identified state
                 const currentState = identifiedLi.textContent.trim().toLowerCase().endsWith('true');
                 identifiedLi.innerHTML = `<strong>Identified:</strong> ${!currentState}`;
-                
-                console.log("SQUIRE | Updating page with new content", {
-                    newState: !currentState,
-                    contentLength: doc.body.innerHTML.length,
-                    newContent: doc.body.innerHTML.substring(0, 100) + "..."
-                });
                 
                 // Update the journal page
                 await page.update({ text: { content: doc.body.innerHTML } });
@@ -447,12 +385,6 @@ export class CodexPanel {
             event.preventDefault();
             event.stopPropagation();
             
-            console.log("SQUIRE | Toggle identified clicked", {
-                target: event.currentTarget,
-                uuid: $(event.currentTarget).data('uuid'),
-                isGM: game.user.isGM
-            });
-            
             const icon = $(event.currentTarget);
             const uuid = icon.data('uuid');
             
@@ -468,18 +400,11 @@ export class CodexPanel {
                 return;
             }
             
-            console.log("SQUIRE | Found page:", {
-                name: page.name,
-                currentPermission: page.ownership.default
-            });
-            
             // Toggle between NONE and OBSERVER permissions
             const newPermission = page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
                 ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE 
                 : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
                 
-            console.log("SQUIRE | Updating permission to:", newPermission);
-            
             await page.update({ "ownership.default": newPermission });
             // Do not call _refreshData or render here; let the Foundry updateJournalEntryPage hook handle the refresh.
         });
@@ -673,21 +598,11 @@ export class CodexPanel {
      * @param {jQuery} element - The element to render into
      */
     async render(element) {
-        console.log("SQUIRE | Codex Panel render called", { element });
         if (!element) return;
         this.element = element;
 
         const codexContainer = element.find('[data-panel="panel-codex"]');
-        console.log("SQUIRE | Looking for codex container", { 
-            found: codexContainer.length > 0,
-            selector: '[data-panel="panel-codex"]',
-            allPanels: element.find('[data-panel]').map((i, el) => el.getAttribute('data-panel')).get()
-        });
-
-        if (!codexContainer.length) {
-            console.log("SQUIRE | Codex container not found");
-            return;
-        }
+        if (!codexContainer.length) return;
 
         // Refresh data if needed
         if (this.selectedJournals) {
@@ -721,16 +636,9 @@ export class CodexPanel {
             templateData.journalName[category] = journal ? journal.name : "";
             templateData.data[category] = this._applyFilters(this.data[category] || []);
         }
-        // Debug output for context
-        console.log('SQUIRE | CODEX DEBUG: categories:', this.categories);
-        console.log('SQUIRE | CODEX DEBUG: templateData.journalName:', templateData.journalName);
-        console.log('SQUIRE | CODEX DEBUG: journalName keys:', Object.keys(templateData.journalName));
-        console.log('SQUIRE | CODEX this.data before render:', JSON.parse(JSON.stringify(this.data)));
-        console.log('SQUIRE | CODEX FINAL templateData passed to renderTemplate:', templateData);
 
         // Deep clone to break references and ensure only primitives are passed
         const safeTemplateData = JSON.parse(JSON.stringify(templateData));
-        console.log('SQUIRE | CODEX FINAL safeTemplateData passed to renderTemplate:', safeTemplateData);
         const html = await renderTemplate(TEMPLATES.PANEL_CODEX, safeTemplateData);
         codexContainer.html(html);
 

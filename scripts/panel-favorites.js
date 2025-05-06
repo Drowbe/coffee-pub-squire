@@ -585,11 +585,9 @@ export class FavoritesPanel {
             return;
         }
 
-        console.log("SQUIRE | Reordering favorite", { itemId, newIndex });
-
         // Get the raw favorites array (just IDs) from flags
         const favoriteIds = actor.getFlag(MODULE.ID, 'favorites') || [];
-        console.log("SQUIRE | Current favorites IDs", favoriteIds);
+        
         
         // Find the current index of the item ID
         const currentIndex = favoriteIds.indexOf(itemId);
@@ -598,13 +596,11 @@ export class FavoritesPanel {
             return;
         }
 
-        console.log("SQUIRE | Current index", currentIndex);
+        
 
         // Remove item from current position and insert at new position
         const [movedId] = favoriteIds.splice(currentIndex, 1);
         favoriteIds.splice(newIndex, 0, movedId);
-
-        console.log("SQUIRE | New favorites order", favoriteIds);
 
         try {
             // Clean up context menu before updates
@@ -711,7 +707,6 @@ export class FavoritesPanel {
                 if (wasPinned) tray.addClass('pinned');
             }
 
-            console.log("SQUIRE | Reorder complete");
         } catch (error) {
             console.error("SQUIRE | Error reordering favorites", error);
         }

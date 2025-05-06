@@ -18,7 +18,7 @@ export class NotesPanel {
             if (this.element) {
                 const currentPageId = this.element.find('.journal-content').data('page-id');
                 if (currentPageId === page.id) {
-                    console.log("SQUIRE | Journal page updated, refreshing notes panel");
+                    
                     this.render(this.element);
                 }
             }
@@ -130,36 +130,7 @@ export class NotesPanel {
             ui.notifications.warn("The previously selected journal no longer exists. Please select a new one.");
         }
 
-        // For debugging
-        if (journal && !game.user.isGM) {
-            console.log(`SQUIRE | Notes Panel Journal Permissions:`, {
-                journal: journal.name,
-                journalId: journal.id,
-                canViewJournal,
-                userLevel: journal.getUserLevel(game.user),
-                permission: journal.permission,
-                ownership: journal.ownership,
-                defaultOwnership: journal.ownership.default,
-                userOwnership: journal.ownership[game.user.id],
-                page: page?.name,
-                pageId: page?.id,
-                accessiblePageCount: pages.length,
-                userIsGM: game.user.isGM
-            });
-            
-            if (page) {
-                console.log(`SQUIRE | Notes Panel Page Permissions:`, {
-                    page: page.name,
-                    pageId: page.id,
-                    canAccess: this._userCanAccessPage(page, game.user, PERMISSION_LEVELS),
-                    userLevel: page.getUserLevel(game.user),
-                    permission: page.permission,
-                    ownership: page.ownership,
-                    defaultOwnership: page.ownership.default,
-                    userOwnership: page.ownership[game.user.id]
-                });
-            }
-        }
+
 
         const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
             hasJournal: !!journal && canViewJournal,
@@ -487,39 +458,17 @@ export class NotesPanel {
             // Clear the container and prepare for rendering
             contentContainer.empty();
             
-            console.log("SQUIRE | Rendering journal page:", {
-                journalId: journal.id,
-                journalName: journal.name,
-                pageId: page.id,
-                pageName: page.name,
-                pageType: page.type
-            });
-            
             // Track if rendering was successful with any approach
             let renderSuccessful = false;
             
             // APPROACH 1: PREFERRED - Use renderContent() (V12/V13 approach)
             try {
                 if (typeof page.renderContent === 'function') {
-                    console.log("SQUIRE | Using page.renderContent() to render journal content");
-                    
-                    // Debug: Log the full page object for detailed inspection
-                    try {
-                        const pageObj = page.toObject ? page.toObject() : page;
-                        console.log("SQUIRE | Full page object:", pageObj);
-                    } catch (e) {
-                        console.log("SQUIRE | Full page simple:", page);
-                    }
-                    
                     // Validate page type first - renderContent works best with text/markdown
                     if (!['text', 'markdown'].includes(page.type)) {
                         console.warn(`SQUIRE | Unsupported page type for renderContent: ${page.type}`);
                         // Don't return - let it try but prepare for failure
                     }
-                    
-                    // Log what's actually inside page.text
-                    console.log("SQUIRE | Page.text raw value:", page.text);
-                    console.log("SQUIRE | Page.text.content:", page.text?.content);
                     
                     try {
                         // Try the standard renderContent approach
@@ -538,34 +487,16 @@ export class NotesPanel {
                                     links: true,
                                     rolls: true
                                 });
-                                console.log("SQUIRE | Created manually enriched content", renderedContent.substring(0, 100));
                             } else {
                                 throw new Error("Empty or invalid content");
                             }
                         }
-                        
-                        console.log("SQUIRE | Rendered content:", { 
-                            contentType: typeof renderedContent,
-                            length: typeof renderedContent === 'string' ? renderedContent.length : 'not a string',
-                            sample: typeof renderedContent === 'string' ? renderedContent.substring(0, 100) : 'not a string'
-                        });
                         
                         // Apply Foundry-like styling to the content
                         const formattedContent = this._applyFoundryJournalStyling(contentContainer, renderedContent);
                         
                         // Add classes to match Foundry's styling
                         contentContainer.addClass("journal-entry-page journal-page-content prose");
-                        
-                        // Forcibly set styles before content insertion
-                        // contentContainer.css({
-                        //     'display': 'block',
-                        //     'visibility': 'visible',
-                        //     'background-color': '#f0f0e0',
-                        //     'color': '#000',
-                        //     'min-height': '200px',
-                        //     'padding': '10px',
-                        //     'border-radius': '5px'
-                        // });
                         
                         // Insert the content
                         contentContainer.html(formattedContent || renderedContent);
@@ -579,12 +510,6 @@ export class NotesPanel {
                         const contentText = contentContainer.text();
                         const hasContent = contentContainer.children().length > 0 || contentText.trim().length > 0;
                         
-                        console.log("SQUIRE | renderContent content check:", {
-                            hasChildren: contentContainer.children().length > 0,
-                            textLength: contentText.length,
-                            hasContent: hasContent
-                        });
-                        
                         // If no content was rendered, add placeholder text
                         if (!hasContent) {
                             console.warn("SQUIRE | renderContent didn't produce visible content");
@@ -597,7 +522,6 @@ export class NotesPanel {
                             `);
                         }
                         
-                        console.log("SQUIRE | Successfully rendered journal content with renderContent method");
                         renderSuccessful = true;
                         
                         // Make all links open in a new tab
@@ -616,14 +540,10 @@ export class NotesPanel {
             // APPROACH 2: FALLBACK - Try to use the new UI extraction method
             try {
                 if (!renderSuccessful) {
-                    console.log("SQUIRE | Attempting to extract content from journal UI");
-                    
                     // Extract content from journal UI
                     const uiContent = await this._getContentFromJournalUI(journal, page);
                     
                     if (uiContent) {
-                        console.log("SQUIRE | Successfully extracted content from journal UI");
-                        
                         // Add classes for consistent styling
                         contentContainer.addClass("journal-entry-page journal-page-content");
                         
@@ -634,7 +554,6 @@ export class NotesPanel {
                         this._adjustJournalContentStyles(contentContainer);
                         
                         renderSuccessful = true;
-                        console.log("SQUIRE | Successfully rendered content from journal UI");
                         
                         // Make all links open in a new tab
                         contentContainer.find('a').attr('target', '_blank');
@@ -651,8 +570,6 @@ export class NotesPanel {
             // APPROACH 3: FALLBACK - Try to use the native render method
             try {
                 if (!renderSuccessful && typeof page.render === 'function') {
-                    console.log("SQUIRE | Attempting to use page.render() method");
-                    
                     // Wrap in a promise with a timeout to prevent hanging
                     const renderPromise = new Promise((resolve, reject) => {
                         const timeout = setTimeout(() => {
@@ -693,12 +610,6 @@ export class NotesPanel {
                     const contentText = contentContainer.text();
                     const hasContent = contentContainer.children().length > 0 || contentText.trim().length > 0;
                     
-                    console.log("SQUIRE | Native render content check:", {
-                        hasChildren: contentContainer.children().length > 0,
-                        textLength: contentText.length,
-                        hasContent: hasContent
-                    });
-                    
                     // If no content was rendered, add placeholder text
                     if (!hasContent) {
                         console.warn("SQUIRE | Native render didn't produce visible content");
@@ -712,7 +623,6 @@ export class NotesPanel {
                     }
                     
                     renderSuccessful = true;
-                    console.log("SQUIRE | Successfully rendered journal page using Foundry's native renderer");
                     
                     // Make all links open in a new tab
                     contentContainer.find('a').attr('target', '_blank');
@@ -726,8 +636,6 @@ export class NotesPanel {
             // APPROACH 4: LAST RESORT - Direct content rendering
             if (!renderSuccessful) {
                 try {
-                    console.log("SQUIRE | Falling back to direct content rendering");
-                    
                     // First, handle specific page types differently
                     if (page.type === 'image') {
                         contentContainer.html(`
@@ -791,49 +699,26 @@ export class NotesPanel {
                     // For text-based pages, try to get content
                     let content = '';
                     
-                    // Debug: Log the page structure to help diagnose
-                    try {
-                        const pageObj = page.toObject ? page.toObject() : page;
-                        console.log("SQUIRE | Direct render - page details:", {
-                            type: page.type,
-                            id: page.id,
-                            name: page.name,
-                            textType: page.text ? typeof page.text : 'none',
-                            textContentType: page.text?.content ? typeof page.text.content : 'none',
-                            text: page.text,
-                            textContent: page.text?.content,
-                            fullObject: pageObj
-                        });
-                    } catch (e) {
-                        console.error("SQUIRE | Error logging page details:", e);
-                    }
-                    
                     // Try different approaches to get the content
                     if (page.text?.content) {
                         // Most common format in v12/v13
                         content = page.text.content;
-                        console.log("SQUIRE | Using page.text.content");
                     } else if (typeof page.text === 'string') {
                         // Older format or simple text
                         content = page.text;
-                        console.log("SQUIRE | Using page.text as string");
                     } else if (page.content) {
                         // Alternative location
                         content = typeof page.content === 'string' ? page.content : JSON.stringify(page.content);
-                        console.log("SQUIRE | Using page.content");
                     } else {
                         // Last resort
                         const directContent = await this._getPageContent(page);
                         if (directContent) {
                             content = directContent;
-                            console.log("SQUIRE | Using _getPageContent result");
                         }
                     }
                     
                     // If we have content, enrich it
                     if (content && typeof content === 'string') {
-                        console.log("SQUIRE | Raw content sample:", content.substring(0, 100));
-                        
                         try {
                             content = await TextEditor.enrichHTML(content, {
                                 secrets: game.user.isGM,
@@ -841,7 +726,6 @@ export class NotesPanel {
                                 links: true,
                                 rolls: true
                             });
-                            console.log("SQUIRE | Enriched content sample:", content.substring(0, 100));
                         } catch (enrichError) {
                             console.error("SQUIRE | Error enriching content:", enrichError);
                         }
@@ -865,21 +749,6 @@ export class NotesPanel {
                     
                     // Add classes for consistent styling
                     contentContainer.addClass("journal-entry-page journal-page-content");
-                    
-                    // Apply direct styling before adding content
-                    // contentContainer.css({
-                    //     'display': 'block',
-                    //     'visibility': 'visible',
-                    //     'background-color': 'rgba(255, 255, 255, 0.9)',
-                    //     'color': '#000',
-                    //     'min-height': '200px',
-                    //     'height': 'auto',
-                    //     'max-height': 'none',
-                    //     'padding': '10px',
-                    //     'border-radius': '5px',
-                    //     'overflow-y': 'auto',
-                    //     'word-wrap': 'break-word'
-                    // });
                     
                     // Insert the content
                     contentContainer.html(content);
@@ -942,70 +811,8 @@ export class NotesPanel {
      * @private
      */
     _adjustJournalContentStyles(container) {
-        // Log container properties
-        console.log("SQUIRE | Adjusting journal content styles:", {
-            containerWidth: container.width(),
-            containerHeight: container.height(),
-            hasChildren: container.children().length > 0,
-            childrenCount: container.children().length,
-            childrenTypes: Array.from(container.children()).map(el => el.nodeName).join(', '),
-            containerClasses: container.attr('class')
-        });
-        
         // Add journal-specific classes if they don't exist
         container.addClass("journal-entry-page journal-page-content");
-        
-        // // Force display block and proper styling
-        // container.css({
-        //     'display': 'block',
-        //     'visibility': 'visible',
-        //     'background-color': 'rgba(255, 255, 255, 0.9)',
-        //     'color': '#000',
-        //     'min-height': '200px',
-        //     'height': 'auto',
-        //     'max-height': 'none',
-        //     'padding': '10px',
-        //     'border-radius': '5px',
-        //     'overflow-y': 'auto',
-        //     'word-wrap': 'break-word'
-        // });
-        
-        // // Adjust journal page content element if it exists
-        // container.find('.journal-page-content').css({
-        //     'height': 'auto',
-        //     'max-height': 'none',
-        //     'padding': '0',
-        //     'border': 'none',
-        //     'display': 'block',
-        //     'visibility': 'visible'
-        // });
-        
-        // // Adjust image sizes
-        // container.find('img').css({
-        //     'max-width': '100%',
-        //     'height': 'auto',
-        //     'display': 'block',
-        //     'margin': '10px auto'
-        // });
-        
-        // // Make sure links are visible
-        // container.find('a').css({
-        //     'color': '#0066cc',
-        //     'text-decoration': 'underline'
-        // });
-        
-        // // Make sure text elements are visible
-        // container.find('p, h1, h2, h3, h4, h5, h6, span, div').css({
-        //     'color': '#000',
-        //     'visibility': 'visible',
-        //     'display': 'block'
-        // });
-        
-        // // Make the content scrollable
-        // container.css({
-        //     'overflow-y': 'auto',
-        //     'max-height': '600px'
-        // });
     }
 
     _showJournalPicker() {
@@ -1230,7 +1037,6 @@ export class NotesPanel {
         try {
             // Handle if the entire page is a Promise
             if (page && typeof page.then === 'function') {
-                console.log("SQUIRE | Page is a Promise, resolving");
                 try {
                     page = await page;
                 } catch (pagePromiseError) {
@@ -1238,17 +1044,6 @@ export class NotesPanel {
                     return '';
                 }
             }
-            
-            // Log the page structure to help diagnose
-            console.log("SQUIRE | Page structure:", {
-                type: page.type,
-                hasText: !!page.text,
-                textType: page.text ? typeof page.text : 'none',
-                hasContent: !!page.content,
-                contentType: page.content ? typeof page.content : 'none',
-                isTextPromise: page.text && typeof page.text.then === 'function',
-                isContentPromise: page.content && typeof page.content.then === 'function'
-            });
             
             // Handle different ways content might be stored depending on Foundry version
             if (page.type === 'text') {
@@ -1260,7 +1055,6 @@ export class NotesPanel {
                     if (typeof page.text.content !== 'undefined') {
                         // Handle Promise
                         if (typeof page.text.content.then === 'function') {
-                            console.log("SQUIRE | page.text.content is a Promise, resolving");
                             try {
                                 content = await page.text.content;
                             } catch (contentPromiseError) {
@@ -1283,7 +1077,6 @@ export class NotesPanel {
                     } 
                     // Handle if page.text is a Promise
                     else if (typeof page.text.then === 'function') {
-                        console.log("SQUIRE | page.text is a Promise, resolving");
                         try {
                             content = await page.text;
                         } catch (textPromiseError) {
@@ -1299,7 +1092,6 @@ export class NotesPanel {
                     }
                     // Handle if page.content is a Promise
                     else if (typeof page.content.then === 'function') {
-                        console.log("SQUIRE | page.content is a Promise, resolving");
                         try {
                             content = await page.content;
                         } catch (contentPromiseError) {
@@ -1315,7 +1107,6 @@ export class NotesPanel {
                     }
                     else if (page.document.text && page.document.text.content) {
                         if (typeof page.document.text.content.then === 'function') {
-                            console.log("SQUIRE | document.text.content is a Promise, resolving");
                             try {
                                 content = await page.document.text.content;
                             } catch (docContentPromiseError) {
@@ -1342,7 +1133,6 @@ export class NotesPanel {
                     // If content is a Promise (after all our attempts)
                     if (content && typeof content.then === 'function') {
                         try {
-                            console.log("SQUIRE | Final content is still a Promise, resolving");
                             content = await content;
                         } catch (finalPromiseError) {
                             console.error("SQUIRE | Failed to resolve final content promise:", finalPromiseError);
@@ -1388,9 +1178,6 @@ export class NotesPanel {
         if (!journal || !page) return null;
         
         try {
-            // Log page type for debugging
-            console.log(`SQUIRE | Getting content from UI for page type: ${page.type}`);
-            
             // For non-text page types, create appropriate representation
             if (page.type === 'image') {
                 return `<div class="journal-image-container" style="text-align: center;">
@@ -1421,7 +1208,6 @@ export class NotesPanel {
             // First check if the journal sheet is open
             if (!journal.sheet || !journal.sheet.element) {
                 // If not, we need to temporarily render it to get content
-                console.log("SQUIRE | Journal sheet not open, temporarily rendering it");
                 
                 // Create a temporary journal sheet to extract content
                 const tempSheet = new JournalSheet(journal);
@@ -1437,8 +1223,6 @@ export class NotesPanel {
                             
                             // If we can't get content from the sheet, try a direct enrichment
                             if (!content) {
-                                console.log("SQUIRE | No content from temp sheet, trying direct enrichment");
-                                
                                 // Get the raw text content
                                 let rawContent = page.text?.content ?? page.text ?? '';
                                 if (rawContent && typeof rawContent === 'string') {
@@ -1457,12 +1241,6 @@ export class NotesPanel {
                                 }
                             }
                             
-                            console.log("SQUIRE | Extracted content from temporary journal:", {
-                                found: !!content,
-                                length: content ? content.length : 0,
-                                sample: content ? content.substring(0, 100) : 'no content'
-                            });
-                            
                             // Close the temporary sheet
                             tempSheet.close();
                             
@@ -1480,14 +1258,11 @@ export class NotesPanel {
                 });
             } else {
                 // If the journal is already open, extract directly
-                console.log("SQUIRE | Journal sheet is open, extracting content directly");
                 const pageContent = journal.sheet.element.find(`.journal-page-content[data-page-id="${page.id}"]`);
                 const content = pageContent.html();
                 
                 // If we can't get content from the sheet, try a direct enrichment
                 if (!content && ['text', 'markdown'].includes(page.type)) {
-                    console.log("SQUIRE | No content from sheet, trying direct enrichment");
-                    
                     // Get the raw text content
                     let rawContent = page.text?.content ?? page.text ?? '';
                     if (rawContent && typeof rawContent === 'string') {
@@ -1500,12 +1275,6 @@ export class NotesPanel {
                         });
                     }
                 }
-                
-                console.log("SQUIRE | Extracted content from open journal:", {
-                    found: !!content,
-                    length: content ? content.length : 0,
-                    sample: content ? content.substring(0, 100) : 'no content'
-                });
                 
                 return content || null;
             }
@@ -1643,13 +1412,10 @@ export class NotesPanel {
             const hookId = Hooks.on("updateJournalEntryPage", function(updatedPage, changes, options, userId) {
                 // Check if this is the page we're currently viewing
                 if (updatedPage.id === currentPageId) {
-                    console.log("SQUIRE | Journal page updated, refreshing notes panel");
                     // Re-render the content after a slight delay to ensure changes are processed
                     setTimeout(() => self.render(self.element), 100);
                 }
             });
-            
-            console.log("SQUIRE | Added journal update hook with ID:", hookId);
             
             return true;
         } catch (error) {

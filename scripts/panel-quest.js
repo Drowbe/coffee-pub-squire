@@ -163,8 +163,6 @@ export class QuestPanel {
      * @private
      */
     _activateListeners(html) {
-        console.log('SQUIRE | Activating listeners for quest panel');
-        
         // Search input - live DOM filtering
         const searchInput = html.find('.quest-search input');
         const clearButton = html.find('.clear-search');
@@ -334,8 +332,6 @@ export class QuestPanel {
 
         // Task completion and hidden toggling
         const taskCheckboxes = html.find('.task-checkbox');
-        console.log('SQUIRE | Found task checkboxes:', taskCheckboxes.length);
-        
         // Use mousedown to detect right-click for hidden toggle
         taskCheckboxes.on('mousedown', async (event) => {
             if (!game.user.isGM) return;
@@ -367,7 +363,6 @@ export class QuestPanel {
                 if (emTag) {
                     // Unwrap <em>
                     emTag.replaceWith(...emTag.childNodes);
-                    console.log('SQUIRE | Unwrapped <em> for hidden');
                 } else {
                     // Wrap all inner HTML in <em>, preserving <s> if present
                     if (li.querySelector('s')) {
@@ -377,13 +372,11 @@ export class QuestPanel {
                     } else {
                         li.innerHTML = `<em>${li.innerHTML}</em>`;
                     }
-                    console.log('SQUIRE | Wrapped in <em> for hidden');
                 }
                 const newTasksHtml = ul.innerHTML;
                 const newContent = content.replace(tasksMatch[1], newTasksHtml);
                 try {
                     await page.update({ text: { content: newContent } });
-                    console.log('SQUIRE | Journal page updated (hidden toggle)');
                 } catch (error) {
                     console.error('SQUIRE | Error updating journal page (hidden toggle):', error);
                 }
@@ -393,10 +386,8 @@ export class QuestPanel {
                 const sTag = li.querySelector('s');
                 if (sTag) {
                     li.innerHTML = sTag.innerHTML;
-                    console.log('SQUIRE | Unwrapped <s> for completion');
                 } else {
                     li.innerHTML = `<s>${li.innerHTML}</s>`;
-                    console.log('SQUIRE | Wrapped in <s> for completion');
                 }
                 const newTasksHtml = ul.innerHTML;
                 let newContent = content.replace(tasksMatch[1], newTasksHtml);
@@ -446,7 +437,6 @@ export class QuestPanel {
                 }
                 try {
                     await page.update({ text: { content: newContent } });
-                    console.log('SQUIRE | Journal page updated (completion toggle)');
                 } catch (error) {
                     console.error('SQUIRE | Error updating journal page (completion toggle):', error);
                 }
@@ -993,12 +983,8 @@ export class QuestPanel {
             }
         }
 
-        // DEBUG LOG
-        console.log("SQUIRE | QUESTS templateData", JSON.parse(JSON.stringify(templateData)));
-
         // Deep clone to break references and ensure only primitives are passed
         const safeTemplateData = JSON.parse(JSON.stringify(templateData));
-        console.log('SQUIRE | QUESTS FINAL safeTemplateData passed to renderTemplate:', safeTemplateData);
         const html = await renderTemplate(TEMPLATES.PANEL_QUEST, safeTemplateData);
         questContainer.html(html);
 

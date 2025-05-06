@@ -68,7 +68,6 @@ export class PanelManager {
         // Debounce initialization - don't initialize more than once every 100ms
         const now = Date.now();
         if (now - PanelManager._lastInitTime < 100) {
-            console.log("SQUIRE | Debouncing initialize call - too soon after previous call");
             return;
         }
         PanelManager._lastInitTime = now;
