@@ -608,29 +608,69 @@ export class QuestPanel {
                                 return;
                             }
                             let imported = 0;
+                            let updated = 0;
                             for (const quest of quests) {
                                 if (!quest.name) continue;
-                                const uuid = quest.uuid || foundry.utils.randomID();
-                                const pageData = {
-                                    name: quest.name,
-                                    type: 'text',
-                                    text: {
-                                        content: this._generateJournalContentFromImport(quest)
-                                    },
-                                    flags: {
-                                        [MODULE.ID]: {
-                                            questUuid: uuid
+                                
+                                // Check if a quest with this name already exists
+                                const existingPage = journal.pages.find(p => p.name === quest.name);
+                                
+                                if (existingPage) {
+                                    // Update existing quest
+                                    await existingPage.update({
+                                        text: {
+                                            content: this._generateJournalContentFromImport(quest)
+                                        }
+                                    });
+                                    // Update flags if necessary
+                                    if (quest.visible !== undefined) {
+                                        await existingPage.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+                                    }
+                                    // Make sure the questUuid flag is set
+                                    const uuid = quest.uuid || existingPage.getFlag(MODULE.ID, 'questUuid') || foundry.utils.randomID();
+                                    if (uuid !== existingPage.getFlag(MODULE.ID, 'questUuid')) {
+                                        await existingPage.setFlag(MODULE.ID, 'questUuid', uuid);
+                                    }
+                                    
+                                    // Set original category flag if status is Complete or Failed
+                                    if (quest.status === 'Complete' || quest.status === 'Failed') {
+                                        // Only set if not already set and the quest has a category
+                                        if (!await existingPage.getFlag(MODULE.ID, 'originalCategory') && quest.category) {
+                                            await existingPage.setFlag(MODULE.ID, 'originalCategory', quest.category);
                                         }
                                     }
-                                };
-                                const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-                                const page = created[0];
-                                if (page) {
-                                    await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
-                                    imported++;
+                                    
+                                    updated++;
+                                } else {
+                                    // Create new quest
+                                    const uuid = quest.uuid || foundry.utils.randomID();
+                                    const pageData = {
+                                        name: quest.name,
+                                        type: 'text',
+                                        text: {
+                                            content: this._generateJournalContentFromImport(quest)
+                                        },
+                                        flags: {
+                                            [MODULE.ID]: {
+                                                questUuid: uuid
+                                            }
+                                        }
+                                    };
+                                    const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                                    const page = created[0];
+                                    if (page) {
+                                        await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+                                        
+                                        // Set original category flag if status is Complete or Failed
+                                        if ((quest.status === 'Complete' || quest.status === 'Failed') && quest.category) {
+                                            await page.setFlag(MODULE.ID, 'originalCategory', quest.category);
+                                        }
+                                        
+                                        imported++;
+                                    }
                                 }
                             }
-                            ui.notifications.info(`Imported ${imported} quest(s).`);
+                            ui.notifications.info(`Quest import complete: ${imported} added, ${updated} updated.`);
                             this._refreshData();
                             this.render(this.element);
                         }
@@ -644,22 +684,35 @@ export class QuestPanel {
         });
 
         // Export Quests to JSON (GM only)
-        html.find('.export-quests-json').click(() => {
+        html.find('.export-quests-json').click(async () => {
             if (!game.user.isGM) return;
             
-            // Collect all quests from all status groups
-            const allQuests = [
-                ...this.data["Main Quest"] || [],
-                ...this.data["Side Quest"] || []
-            ];
+            // Make sure data is refreshed
+            await this._refreshData();
             
-            if (allQuests.length === 0) {
+            // Collect all quests from all categories
+            const allQuests = [];
+            for (const category of this.categories) {
+                allQuests.push(...this.data[category] || []);
+            }
+            
+            // Remove duplicates by UUID
+            const uniqueQuests = [];
+            const seenUUIDs = new Set();
+            allQuests.forEach(quest => {
+                if (quest.uuid && !seenUUIDs.has(quest.uuid)) {
+                    seenUUIDs.add(quest.uuid);
+                    uniqueQuests.push(quest);
+                }
+            });
+            
+            if (uniqueQuests.length === 0) {
                 ui.notifications.warn("No quests to export");
                 return;
             }
             
             // Convert quests to a simpler exportable format
-            const exportQuests = allQuests.map(q => {
+            const exportQuests = uniqueQuests.map(q => {
                 return {
                     name: q.name,
                     uuid: q.uuid,

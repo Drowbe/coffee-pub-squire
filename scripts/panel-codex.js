@@ -539,6 +539,68 @@ export class CodexPanel {
                 default: 'import'
             }).render(true);
         });
+        
+        // Export JSON button opens a dialog with current data
+        html.find('.export-json-button').click((event) => {
+            event.preventDefault();
+            
+            // Collect all entries from all categories
+            const exportData = {};
+            for (const category of this.categories) {
+                // Only export categories that have a journal selected
+                if (this.selectedJournals[category]) {
+                    exportData[category] = this.data[category].map(entry => ({
+                        name: entry.name,
+                        img: entry.img || "",
+                        description: entry.description || "",
+                        plotHook: entry.plotHook || "",
+                        location: entry.location || "",
+                        link: entry.link,
+                        tags: entry.tags || [],
+                        identified: entry.identified !== false,
+                        uuid: entry.uuid
+                    }));
+                }
+            }
+            
+            // Check if there's any data to export
+            const totalEntries = Object.values(exportData).reduce((sum, entries) => sum + entries.length, 0);
+            if (totalEntries === 0) {
+                ui.notifications.warn("No codex entries to export");
+                return;
+            }
+            
+            // Format the data as JSON
+            const jsonString = JSON.stringify(exportData, null, 2);
+            
+            // Create a dialog to display and export the JSON
+            new Dialog({
+                title: 'Export Codex as JSON',
+                content: `
+                    <div style="margin-bottom: 8px;">Here are your codex entries in JSON format. Copy this text to save it, or use the download button.</div>
+                    <textarea id="codex-export-json" style="width:100%;height:300px;resize:vertical;">${jsonString}</textarea>
+                `,
+                buttons: {
+                    download: {
+                        icon: '<i class="fas fa-download"></i>',
+                        label: 'Download JSON',
+                        callback: () => {
+                            const blob = new Blob([jsonString], { type: 'application/json' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `codex-export-${new Date().toISOString().split('T')[0]}.json`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }
+                    },
+                    close: {
+                        label: 'Close'
+                    }
+                },
+                default: 'download'
+            }).render(true);
+        });
     }
 
     /**
