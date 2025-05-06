@@ -112,12 +112,18 @@
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
-                                                    {{#unless (eq this.state 'hidden')}}
+                                                    {{#if (eq this.state 'hidden')}}
+                                                        <li class="task-hidden">
+                                                            
+                                                            <i class="fas fa-square-question"></i>
+                                                            Objective not discovered
+                                                        </li>
+                                                    {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
                                                             {{this.text}}
                                                         </li>
-                                                    {{/unless}}
+                                                    {{/if}}
                                                 {{/if}}
                                             {{/each}}
                                         </ul>
@@ -277,12 +283,17 @@
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
-                                                    {{#unless (eq this.state 'hidden')}}
+                                                    {{#if (eq this.state 'hidden')}}
+                                                        <li class="task-hidden">
+                                                            <i class="fas fa-square-question"></i>
+                                                            Objective not discovered
+                                                        </li>
+                                                    {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
                                                             {{this.text}}
                                                         </li>
-                                                    {{/unless}}
+                                                    {{/if}}
                                                 {{/if}}
                                             {{/each}}
                                         </ul>
@@ -440,12 +451,17 @@
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
-                                                    {{#unless (eq this.state 'hidden')}}
+                                                    {{#if (eq this.state 'hidden')}}
+                                                        <li class="task-hidden">
+                                                            <i class="fas fa-square-question"></i>
+                                                            Objective not discovered
+                                                        </li>
+                                                    {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
                                                             {{this.text}}
                                                         </li>
-                                                    {{/unless}}
+                                                    {{/if}}
                                                 {{/if}}
                                             {{/each}}
                                         </ul>
@@ -603,12 +619,17 @@
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
-                                                    {{#unless (eq this.state 'hidden')}}
+                                                    {{#if (eq this.state 'hidden')}}
+                                                        <li class="task-hidden">
+                                                            <i class="fas fa-square-question"></i>
+                                                            Objective not discovered
+                                                        </li>
+                                                    {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
                                                             {{this.text}}
                                                         </li>
-                                                    {{/unless}}
+                                                    {{/if}}
                                                 {{/if}}
                                             {{/each}}
                                         </ul>

@@ -16,6 +16,7 @@
     padding: 8px;
     border: 2px solid rgba(255, 255, 255, 0.2);
     color: #cccccc;
+    font-weight: 400;
 }
 
 .squire-tray[data-position="left"] .quest-entry-content {
@@ -442,6 +443,7 @@
 }
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden {
+    opacity: 0.6;
     color: rgba(204, 204, 204, 0.5);
     text-decoration: none;
 }
@@ -465,8 +467,8 @@
 }
 
 .squire-tray[data-position="left"] .participant-portrait {
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
     border-radius: 4px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.2);
