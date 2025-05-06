@@ -218,6 +218,27 @@ export class QuestPanel {
             }
         });
 
+        // Open quest journal button
+        html.find('.open-quest-journal').click(async () => {
+            const journalId = game.settings.get(MODULE.ID, 'questJournal');
+            if (!journalId || journalId === 'none') {
+                if (game.user.isGM) {
+                    ui.notifications.warn("No quest journal selected. Click the gear icon to select one.");
+                } else {
+                    ui.notifications.warn("No quest journal has been set by the GM.");
+                }
+                return;
+            }
+            
+            const journal = game.journal.get(journalId);
+            if (!journal) {
+                ui.notifications.error("Could not find the quest journal.");
+                return;
+            }
+            
+            journal.sheet.render(true);
+        });
+
         // Tag cloud tag selection
         html.find('.quest-tag-cloud .quest-tag').click((event) => {
             event.preventDefault();
@@ -619,6 +640,78 @@ export class QuestPanel {
                     }
                 },
                 default: 'import'
+            }).render(true);
+        });
+
+        // Export Quests to JSON (GM only)
+        html.find('.export-quests-json').click(() => {
+            if (!game.user.isGM) return;
+            
+            // Collect all quests from all status groups
+            const allQuests = [
+                ...this.data["Main Quest"] || [],
+                ...this.data["Side Quest"] || []
+            ];
+            
+            if (allQuests.length === 0) {
+                ui.notifications.warn("No quests to export");
+                return;
+            }
+            
+            // Convert quests to a simpler exportable format
+            const exportQuests = allQuests.map(q => {
+                return {
+                    name: q.name,
+                    uuid: q.uuid,
+                    img: q.img || "",
+                    category: q.category || "Side Quest",
+                    description: q.description || "",
+                    plotHook: q.plotHook || "",
+                    status: q.status || "Not Started",
+                    visible: q.visible !== false,
+                    timeframe: q.timeframe || { duration: "" },
+                    tasks: q.tasks?.map(t => ({
+                        text: t.text,
+                        completed: t.completed || false,
+                        state: t.state || "active"
+                    })) || [],
+                    reward: {
+                        xp: q.reward?.xp || 0,
+                        treasure: q.reward?.treasure || []
+                    },
+                    participants: q.participants || [],
+                    tags: q.tags || [],
+                    location: q.location || ""
+                };
+            });
+            
+            // Create a download dialog with the JSON
+            const exportData = JSON.stringify(exportQuests, null, 2);
+            new Dialog({
+                title: 'Export Quests to JSON',
+                content: `
+                    <div style="margin-bottom: 8px;">Here are your ${exportQuests.length} quests in JSON format. Copy this text to save it, or use the download button.</div>
+                    <textarea id="export-quests-json-output" style="width:100%;height:200px;">${exportData}</textarea>
+                `,
+                buttons: {
+                    download: {
+                        icon: '<i class="fas fa-download"></i>',
+                        label: 'Download JSON',
+                        callback: () => {
+                            const blob = new Blob([exportData], { type: 'application/json' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `quests-export-${new Date().toISOString().split('T')[0]}.json`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }
+                    },
+                    close: {
+                        label: 'Close'
+                    }
+                },
+                default: 'download'
             }).render(true);
         });
 

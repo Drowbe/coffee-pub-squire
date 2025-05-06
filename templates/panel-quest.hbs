@@ -6,8 +6,10 @@
         <div class="quest-toolbar">
             <i class="fas fa-sync-alt refresh-quest-button" title="Refresh Quests"></i>
             {{#if isGM}}
-            <i class="fas fa-cog set-quest-button" title="Select Journal for Quests"></i>
-            <i class="fas fa-file-import import-quests-json" title="Import Quests from JSON"></i>
+                <i class="fas fa-file-import import-quests-json" title="Import Quests from JSON"></i>
+                <i class="fas fa-file-export export-quests-json" title="Export Quests to JSON"></i>
+                <i class="fas fa-cog set-quest-button" title="Select Journal for Quests"></i>
+                <i class="fas fa-feather open-quest-journal" title="Open Quest Journal"></i>
             {{/if}}
         </div>
     </div>
@@ -43,6 +45,9 @@
                 <div class="quest-entries">
                     {{#each statusGroups.inProgress as |entry|}}
                         <div class="quest-entry collapsed">
+                            
+                            <!-- ENTRY HEADER -->
+
                             <div class="quest-entry-header">
                                 <div class="quest-entry-name">
                                     {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
@@ -64,27 +69,41 @@
                                     <i class="fas fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
                                 </div>
                             </div>
+
+                            <!-- PROGRESS BAR -->
                             {{#if entry.tasks.length}}
-                                <div class="quest-entry-progressbar">
-                                    <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
-                                </div>
-                            {{/if}}
-                            <div class="quest-entry-content">
-                                <div class="quest-entry-divider"></div>
-                                {{#if entry.img}}
-                                <div class="quest-entry-image">
-                                    <img src="{{entry.img}}" alt="{{entry.name}}">
-                                </div>
+                                {{#if (gt entry.progress 0)}}
+                                    <div class="quest-entry-progressbar">
+                                        <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
+                                    </div>
                                 {{/if}}
+                            {{/if}}
+
+                            <!-- ENTRY CONTENT -->
+                            <div class="quest-entry-content">
+                                <!-- Dotted Line -->
+
+
+                                <!-- DESCRIPTION -->
                                 {{#if entry.description}}
+                                    <div class="quest-entry-divider"></div>
                                     <div class="quest-entry-description">
+                                        <!-- IMAGE -->
+                                        {{#if entry.img}}
+                                        <div class="quest-entry-image">
+                                            <img src="{{entry.img}}" alt="{{entry.name}}">
+                                        </div>
+                                        {{/if}}
+
                                         <span class="quest-label">Description</span> 
                                         <p>{{entry.description}}</p>
                                     </div>
                                 {{/if}}
+
+                                <!-- OBJECTIVES --> 
                                 {{#if entry.tasks.length}}
                                     <div class="quest-entry-tasks">
-                                        <span class="quest-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
+                                        <span class="quest-label">Objectives</span> 
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
@@ -105,6 +124,7 @@
                                     </div>
                                 {{/if}}
 
+                                <!-- PLOT HOOK -->
                                 {{#if @root.isGM}}
                                     {{#if entry.plotHook}}
                                         <div class="quest-entry-hook">
@@ -114,9 +134,10 @@
                                     {{/if}}
                                 {{/if}}
 
-                                <div class="quest-entry-divider"></div>
+                                
 
                                 {{#if entry.reward.treasure.length}}
+                                    <div class="quest-entry-divider"></div>
                                     <div class="quest-entry-reward">
                                         <span class="quest-label">Treasure</span>
                                         <ul>
@@ -224,9 +245,13 @@
                                 </div>
                             </div>
                             {{#if entry.tasks.length}}
+                                {{#if (gt entry.progress 0)}}
                                 <div class="quest-entry-progressbar">
                                     <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
                                 </div>
+                                {{else}}
+                                <div class="quest-entry-divider"></div>
+                                {{/if}}
                             {{/if}}
                             <div class="quest-entry-content">
                                 <div class="quest-entry-divider"></div>
@@ -383,9 +408,13 @@
                                 </div>
                             </div>
                             {{#if entry.tasks.length}}
+                                {{#if (gt entry.progress 0)}}
                                 <div class="quest-entry-progressbar">
                                     <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
                                 </div>
+                                {{else}}
+                                <div class="quest-entry-divider"></div>
+                                {{/if}}
                             {{/if}}
                             <div class="quest-entry-content">
                                 <div class="quest-entry-divider"></div>
@@ -542,9 +571,13 @@
                                 </div>
                             </div>
                             {{#if entry.tasks.length}}
+                                {{#if (gt entry.progress 0)}}
                                 <div class="quest-entry-progressbar">
                                     <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
                                 </div>
+                                {{else}}
+                                <div class="quest-entry-divider"></div>
+                                {{/if}}
                             {{/if}}
                             <div class="quest-entry-content">
                                 <div class="quest-entry-divider"></div>

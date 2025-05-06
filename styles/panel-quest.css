@@ -18,6 +18,10 @@
     color: #cccccc;
 }
 
+.squire-tray[data-position="left"] .quest-entry-content {
+    padding: 2px 0px 10px 0px;
+}
+
 .squire-tray[data-position="left"] .quest-entry.collapsed .quest-entry-content {
     display: none;
 }
@@ -226,6 +230,13 @@
     border-radius: 4px;
     margin-bottom: 4px;
     padding: 8px;
+    transition: border-color 0.2s ease;
+}
+
+/* Special styling for expanded entries */
+.squire-tray[data-position="left"] .quest-entry:not(.collapsed) {
+    border: 2px solid rgba(183, 169, 136, 0.55);
+    box-shadow: 0 0 5px rgba(200, 100, 121, 0.3);
 }
 
 .squire-tray[data-position="left"] .quest-entry-header {
@@ -395,6 +406,9 @@
     clear: both;
 }
 
+
+/* TASKS */
+
 .squire-tray[data-position="left"] .quest-entry-tasks ul {
     list-style: none;
     padding-left: 0;
@@ -402,9 +416,14 @@
 
 .squire-tray[data-position="left"] .quest-entry-tasks li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks li i.task-checkbox {
+    margin-top: 3px; /* Slight top margin to align with the first line of text */
+    flex-shrink: 0; /* Prevent the icon from shrinking */
 }
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.completed {
@@ -418,15 +437,16 @@
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
     opacity: 0.9;
-    color: #156e17;
+    color: rgba(31, 159, 207, .9);
     text-decoration: none;
 }
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden {
-    opacity: 0.3;
-    color: #aaa;
+    color: rgba(204, 204, 204, 0.5);
     text-decoration: none;
 }
+
+/* PARTICIPANTS */
 
 .squire-tray[data-position="left"] .quest-entry-participants {
     margin-bottom: 0.5rem;
@@ -485,15 +505,14 @@
     height: 4px;
     background: rgba(255,255,255,0.08);
     border-radius: 2px;
-    margin: 6px 0px 6px 0px;
+    margin: 8px 0px 6px 0px;
     width: 100%;
     position: relative;
     overflow: hidden;
-
 }
 .squire-tray[data-position="left"] .quest-entry-progressbar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #156e17 0%, #0bba0e 100%);
+    background: linear-gradient(90deg, #791a38 0%, #831c3c 100%);
     border-radius: 2px;
     transition: width 0.3s;
 }
