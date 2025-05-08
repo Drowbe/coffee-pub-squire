@@ -247,8 +247,8 @@
 .squire-tray[data-position="left"] .codex-entry-image {
     float: left;
     margin: 0 8px 8px 0;
-    width: 64px;
-    height: 64px;
+    width: 120px;
+    height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -278,13 +278,11 @@
 }
 
 .squire-tray[data-position="left"] .codex-entry-plothook {
-    clear: left;
     color: #aaa;
     margin-bottom: 8px;
     background: rgba(128, 127, 112, 0.3);
     border-radius: 4px;
     padding: 6px 8px 6px 8px;
-    font-size: .85em;
 }
 
 .squire-tray[data-position="left"] .codex-entry-tags {
@@ -349,4 +347,11 @@
 .squire-tray[data-position="left"] .codex-entry-plothook {
     margin-bottom: 0.5rem;
     clear: both;
+}
+
+.squire-tray[data-position="left"] i.codex-entry-visibility {
+    opacity: .4;
+}
+.squire-tray[data-position="left"] i.codex-entry-visibility.visible {
+    opacity: 1;
 }

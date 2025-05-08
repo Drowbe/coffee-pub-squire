@@ -60,6 +60,15 @@
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
+
+.squire-tray[data-position="left"] i.quest-entry-visibility {
+    opacity: .4;
+}
+.squire-tray[data-position="left"] i.quest-entry-visibility.visible {
+    opacity: 1;
+}
+
+
 .squire-tray[data-position="left"] .quest-toolbar .identified {
     opacity: 1;
 }
@@ -288,13 +297,11 @@
 }
 
 .squire-tray[data-position="left"] .quest-entry-plothook {
-    clear: left;
     color: #aaa;
     margin-bottom: 8px;
     background: rgba(128, 127, 112, 0.3);
     border-radius: 4px;
     padding: 6px 8px 6px 8px;
-    font-size: .85em;
 }
 
 .squire-tray[data-position="left"] .quest-entry-tags {

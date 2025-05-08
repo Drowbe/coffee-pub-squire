@@ -90,6 +90,8 @@ export class CodexPanel {
                         if (entry && entry.category) {
                             // Use the category string exactly as provided (trimmed)
                             let normCategory = entry.category.trim();
+                            // Add ownership info for visibility icon
+                            entry.ownership = page.ownership;
                             // Add to categories set
                             this.categories.add(normCategory);
                             // Initialize category array if needed
@@ -336,6 +338,22 @@ export class CodexPanel {
                 },
                 default: 'download'
             }).render(true);
+        });
+
+        // Toggle visibility (ownership) icon
+        html.find('.codex-entry-visibility').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const uuid = event.currentTarget.dataset.uuid;
+            if (!uuid) return;
+            const page = await fromUuid(uuid);
+            if (!page) return;
+            const current = page.ownership?.default ?? 0;
+            const newPermission = current >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
+                ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
+                : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+            await page.update({ 'ownership.default': newPermission });
+            // No need to refresh/render here; the updateJournalEntryPage hook will handle it.
         });
     }
 

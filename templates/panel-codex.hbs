@@ -55,6 +55,11 @@
                                 <div class="codex-toolbar">
                                     {{#if @root.isGM}}
                                         <i class="fas fa-feather codex-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
+                                        {{#if (gte entry.ownership.default 2)}}
+                                            <i class="fas fa-eye codex-entry-visibility visible" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
+                                        {{else}}
+                                            <i class="fas fa-eye-slash codex-entry-visibility" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
+                                        {{/if}}
                                     {{/if}}
                                     <i class="fas fa-chevron-right codex-entry-toggle" title="Toggle entry"></i>
                                 </div>
@@ -75,7 +80,7 @@
                                         {{/if}}
 
                                         <span class="codex-entry-label">Description</span> 
-                                        <p>{{entry.description}}</p>
+                                        <p>{{{entry.description}}}</p>
                                     </div>
                                 {{/if}}
 
@@ -84,7 +89,7 @@
                                     {{#if entry.plotHook}}
                                         <div class="codex-entry-plothook">
                                             <span class="codex-entry-label">Plot Hook</span> 
-                                            <p>{{entry.plotHook}}</p>
+                                            <p>{{{entry.plotHook}}}</p>
                                         </div>
                                     {{/if}}
                                 {{/if}}
@@ -92,14 +97,14 @@
                                 <!-- LOCATION -->
                                 {{#if entry.location}}
                                     <div class="codex-entry-location">
-                                        <span class="codex-entry-label">Location</span> {{entry.location}}
+                                        <span class="codex-entry-label">Location</span> {{{entry.location}}}
                                     </div>
                                 {{/if}}
 
                                 <!-- LINK -->
                                 {{#if entry.link}}
                                     <div class="codex-entry-link">
-                                        <span class="codex-entry-label">Link:</span> <a href="#" class="codex-entry-link" data-uuid="{{entry.link.uuid}}">{{entry.link.label}}</a>
+                                        <span class="codex-entry-label">Link:</span> <a href="#" class="codex-entry-link" data-uuid="{{entry.link.uuid}}">{{{entry.link.label}}}</a>
                                     </div>
                                 {{/if}}
 
@@ -107,7 +112,7 @@
                                 {{#if entry.tags.length}}
                                     <div class="codex-entry-tags">
                                         {{#each entry.tags}}
-                                            <span class="codex-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+                                            <span class="codex-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{{this}}}</span>
                                         {{/each}}
                                     </div>
                                 {{/if}}
