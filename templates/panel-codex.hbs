@@ -4,6 +4,9 @@
             Codex
         </span>
         <div class="codex-toolbar">
+            {{#if hasJournal}}
+                <i class="fas fa-feather codex-open-journal" title="Open Codex Journal"></i>
+            {{/if}}
             <i class="fas fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
             {{#if isGM}}
             <i class="fas fa-cog codex-set-journal" title="Select Journal"></i>
