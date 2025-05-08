@@ -245,9 +245,37 @@ export class CodexPanel {
         // Import JSON button
         html.find('.import-json-button').click((event) => {
             event.preventDefault();
+            const template = `I want you to build a JSON template based on the criteria I will share below. Here are the rules for how you will add data to the JSON.
+
+**NAME** - The name of the entry
+**CATEGORY** - This will be the organizing and grouping mechanism for the entry, so be smart about it as we do not want a bunch of similar categories. They should be unique and specific. For example: Character, Locations, and Items. Any non-unique classifications would be better as tags. It should be plural as there will be multiple things in the category. e.g. "Characters"
+**DESCRIPTION** - A description of the entry that would help someone understand what, where, or show this is, and enough context to make it interesting. (make it 200 to 500 characters)
+**PLOTHOOK** - The relationship to the plot,  especially if they have something the party might need (under 200 characters)
+**LOCATION** - where the character is located (a city, area, or establishment). It is fine to add a location and area, but use a greater-than symbol between them, e.g, "Phlan > Thorne Island > Aquatic Crypt"
+**TAGS** - a list of tags that would help filter this entry when looking it up. These will be used for filtering, so characteristics and identifying attributes like type, location, faction, etc., would be useful. The first tag should always be the category. Add no more than 10 tags. Having spaces in the tag is okay, but do not divide words with special characters like underscores. You should always add the location as a tag, but the location should be specific. Something like "Phlan - Thorne Island - Aquatic Crypt" would be three tags. Also, be mindful of when a particular tag might need to be a second, less specific tag. For instance, "black cult of the dragon" is a particular tag, but we should add a second tag for "cult" which would be another proper tag. They should be formatted to be json-friendly and will be an array formatted like: "npc", "inn", "drinking game", "informant", "phlan".
+
+Replace the above items in their matching placeholder below. Be sure the text is JSON-friendly. Do not change any of the code, replace the placeholders. This JSON  will be cut and pasted into an importer. Here is the template to use to build the JSON. It is an array, so be sure the JSON is valid, creates proper arrays, and has no linter errors:
+
+[
+  {
+    "name": "**NAME**",
+    "img": null,
+    "category": "**CATEGORY**",
+    "description": "**DESCRIPTION**",
+    "plotHook": "**PLOTHOOK**",
+    "location": "**LOCATION**",
+    "link": null,
+    "tags": [ **TAGS** ]
+  }
+]
+
+Here are the specific instructions I want you to use to build the above JSON array:
+
+SPECIFIC INSTRUCTIONS HERE`;
             new Dialog({
                 title: 'Paste JSON',
                 content: `
+                    <button type="button" class="copy-template-button" style="margin-bottom:8px;">Copy a Blank Pasteable JSON Template to the Clipboard</button>
                     <textarea id="codex-import-json" style="width:100%;height:500px;resize:vertical;"></textarea>
                 `,
                 buttons: {
@@ -332,7 +360,14 @@ export class CodexPanel {
                         }
                     }
                 },
-                default: 'import'
+                default: 'import',
+                render: (html) => {
+                    html.find('.copy-template-button').click(() => {
+                        navigator.clipboard.writeText(template).then(() => {
+                            ui.notifications.info('Template copied to clipboard!');
+                        });
+                    });
+                }
             }).render(true);
         });
 
