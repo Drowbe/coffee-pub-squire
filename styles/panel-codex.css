@@ -15,6 +15,12 @@
     margin-top: 10px;
     padding: 8px;
     border: 2px solid rgba(255, 255, 255, 0.2);
+    color: #cccccc;
+    font-weight: 400;
+}
+
+.squire-tray[data-position="left"] .codex-entry-content {
+    padding: 2px 0px 10px 0px;
 }
 
 .squire-tray[data-position="left"] .codex-entry.collapsed .codex-entry-content {
@@ -63,7 +69,6 @@
 .squire-tray[data-position="left"] .codex-toolbar .has-link {
     opacity: 1;
 }
-
 .squire-tray[data-position="left"] .codex-entry .codex-entry-toggle {
     margin-left: 8px;
     transition: transform 0.2s;
@@ -76,9 +81,6 @@
     transform: rotate(-90deg);
     transition: transform 0.2s ease;
 }
-
-
-
 
 
 /* SEARCH & FILTER BAR */
@@ -184,7 +186,7 @@
 }
 
 .squire-tray[data-position="left"] .codex-category h3 {
-    color: rgb(159, 146, 117);
+    color: rgba(159, 146, 117, 0.9);
     margin: 0;
     border: none;
     font-family: "Modesto Condensed"; 
@@ -192,7 +194,7 @@
     font-weight: 900;
 }
 .squire-tray[data-position="left"] .codex-category h3 i {
-    color: rgb(159, 146, 117);
+    color: rgba(159, 146, 117, 0.9);
     font-size: .80em;
     margin-right: 4px;
 }
@@ -200,9 +202,6 @@
 .squire-tray[data-position="left"] .codex-section.collapsed .codex-entries {
     display: none;
 }
-
-
-
 
 /* ENTRY CARDS */
 
@@ -216,6 +215,13 @@
     border-radius: 4px;
     margin-bottom: 4px;
     padding: 8px;
+    transition: border-color 0.2s ease;
+}
+
+/* Special styling for expanded entries */
+.squire-tray[data-position="left"] .codex-entry:not(.collapsed) {
+    border: 2px solid rgba(183, 169, 136, 0.55);
+    box-shadow: 0 0 5px rgba(200, 100, 121, 0.3);
 }
 
 .squire-tray[data-position="left"] .codex-entry-header {
@@ -223,13 +229,20 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    background: rgba(96, 54, 51, 0.0);
+    padding: 4px 2px 4px 0px;
+    border-radius: 4px;
 }
 .squire-tray[data-position="left"] .codex-entry-name {
     flex: 1 1 auto;
     text-align: left;
-    font-weight: 400;
-    color: #fff;
-    font-size: 1.0em;
+    font-weight: 500;
+    color: rgba(159, 146, 117, 0.9);
+    font-size: 1.2em;
+}
+.squire-tray[data-position="left"] .codex-entry-name i {
+    font-size: 0.85em;
+    margin-right: 2px;
 }
 .squire-tray[data-position="left"] .codex-entry-image {
     float: left;
@@ -249,13 +262,22 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.codex-entry-label {
+    color: rgba(159, 146, 117, 0.9);
+    background-color: rgba(159, 146, 117, 0.15);
+    font-size: 0.8em;
+    text-transform: uppercase;
+    padding: 2px 4px 2px 4px;
+    border-radius: 3px;
+    margin-right: 2px;    
+}
+
 .squire-tray[data-position="left"] .codex-entry-description {
-    color: #ccc;
     margin-bottom: 8px;
     clear: right;
 }
 
-.squire-tray[data-position="left"] .codex-entry-hook {
+.squire-tray[data-position="left"] .codex-entry-plothook {
     clear: left;
     color: #aaa;
     margin-bottom: 8px;
@@ -273,7 +295,6 @@
     border-top: 1px dotted rgba(255, 255, 255, 0.2);
     padding-top: 8px;
 }
-
 
 /* Tag Cloud Container */
 
@@ -323,3 +344,9 @@
     border-color: rgba(100, 150, 200, 0.8);
 }
 
+.squire-tray[data-position="left"] .codex-entry-link,
+.squire-tray[data-position="left"] .codex-entry-location,
+.squire-tray[data-position="left"] .codex-entry-plothook {
+    margin-bottom: 0.5rem;
+    clear: both;
+}

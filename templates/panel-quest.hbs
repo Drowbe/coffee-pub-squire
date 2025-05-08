@@ -47,7 +47,6 @@
                         <div class="quest-entry collapsed">
                             
                             <!-- ENTRY HEADER -->
-
                             <div class="quest-entry-header">
                                 <div class="quest-entry-name">
                                     {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
@@ -81,8 +80,6 @@
 
                             <!-- ENTRY CONTENT -->
                             <div class="quest-entry-content">
-                                <!-- Dotted Line -->
-
 
                                 <!-- DESCRIPTION -->
                                 {{#if entry.description}}
@@ -95,7 +92,7 @@
                                         </div>
                                         {{/if}}
 
-                                        <span class="quest-label">Description</span> 
+                                        <span class="quest-entry-label">Description</span> 
                                         <p>{{entry.description}}</p>
                                     </div>
                                 {{/if}}
@@ -103,7 +100,7 @@
                                 <!-- OBJECTIVES --> 
                                 {{#if entry.tasks.length}}
                                     <div class="quest-entry-tasks">
-                                        <span class="quest-label">Objectives</span> 
+                                        <span class="quest-entry-label">Objectives</span> 
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
@@ -133,19 +130,18 @@
                                 <!-- PLOT HOOK -->
                                 {{#if @root.isGM}}
                                     {{#if entry.plotHook}}
-                                        <div class="quest-entry-hook">
-                                            <span class="quest-label">Plot Hook</span> 
+                                        <div class="quest-entry-plothook">
+                                            <span class="quest-entry-label">Plot Hook</span> 
                                             <p>{{entry.plotHook}}</p>
                                         </div>
                                     {{/if}}
                                 {{/if}}
-
                                 
-
+                                <!-- TREASURE -->
                                 {{#if entry.reward.treasure.length}}
                                     <div class="quest-entry-divider"></div>
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Treasure</span>
+                                        <span class="quest-entry-label">Treasure</span>
                                         <ul>
                                             {{#each entry.reward.treasure}}
                                                 <li>
@@ -159,32 +155,38 @@
                                         </ul>
                                     </div>
                                 {{/if}}
-
+                                <!-- DIVIDER -->
                                 <div class="quest-entry-divider"></div>
 
+                                <!-- REWARD -->
                                 {{#if entry.reward.xp}}
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Experience</span> {{entry.reward.xp}}
+                                        <span class="quest-entry-label">Experience</span> {{entry.reward.xp}}
                                     </div>
                                 {{/if}}
+
+                                <!-- LOCATION -->
                                 {{#if entry.location}}
                                     <div class="quest-entry-location">
-                                        <span class="quest-label">Location</span> {{entry.location}}
+                                        <span class="quest-entry-label">Location</span> {{entry.location}}
                                     </div>
                                 {{/if}}
 
+                                <!-- TIMEFRAME -->  
                                 {{#if entry.timeframe.duration}}
                                     <div class="quest-entry-timeframe">
-                                        <span class="quest-label">Timeframe</span> {{entry.timeframe.duration}}
+                                        <span class="quest-entry-label">Timeframe</span> {{entry.timeframe.duration}}
                                     </div>
                                 {{/if}}
 
+                                <!-- STATUS --> 
                                 {{#if entry.status}}
                                     <div class="quest-entry-progress">
-                                        <span class="quest-label">Status</span> {{entry.status}}
+                                        <span class="quest-entry-label">Status</span> {{entry.status}}
                                     </div>
                                 {{/if}}
 
+                                <!-- PARTICIPANTS -->
                                 {{#if entry.participants.length}}
                                     <div class="quest-entry-participants">
                                         <div class="participant-portraits">
@@ -197,6 +199,7 @@
                                     </div>
                                 {{/if}}
 
+                                <!-- TAGS -->      
                                 {{#if entry.tags.length}}
                                     <div class="quest-entry-tags">
                                         {{#if entry.status}}
@@ -268,13 +271,13 @@
                                 {{/if}}
                                 {{#if entry.description}}
                                     <div class="quest-entry-description">
-                                        <span class="quest-label">Description</span> 
+                                        <span class="quest-entry-label">Description</span> 
                                         <p>{{entry.description}}</p>
                                     </div>
                                 {{/if}}
                                 {{#if entry.tasks.length}}
                                     <div class="quest-entry-tasks">
-                                        <span class="quest-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
+                                        <span class="quest-entry-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
@@ -302,8 +305,8 @@
 
                                 {{#if @root.isGM}}
                                     {{#if entry.plotHook}}
-                                        <div class="quest-entry-hook">
-                                            <span class="quest-label">Plot Hook</span> 
+                                        <div class="quest-entry-plothook">
+                                            <span class="quest-entry-label">Plot Hook</span> 
                                             <p>{{entry.plotHook}}</p>
                                         </div>
                                     {{/if}}
@@ -313,7 +316,7 @@
 
                                 {{#if entry.reward.treasure.length}}
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Treasure</span>
+                                        <span class="quest-entry-label">Treasure</span>
                                         <ul>
                                             {{#each entry.reward.treasure}}
                                                 <li>
@@ -332,24 +335,24 @@
 
                                 {{#if entry.reward.xp}}
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Experience</span> {{entry.reward.xp}}
+                                        <span class="quest-entry-label">Experience</span> {{entry.reward.xp}}
                                     </div>
                                 {{/if}}
                                 {{#if entry.location}}
                                     <div class="quest-entry-location">
-                                        <span class="quest-label">Location</span> {{entry.location}}
+                                        <span class="quest-entry-label">Location</span> {{entry.location}}
                                     </div>
                                 {{/if}}
 
                                 {{#if entry.timeframe.duration}}
                                     <div class="quest-entry-timeframe">
-                                        <span class="quest-label">Timeframe</span> {{entry.timeframe.duration}}
+                                        <span class="quest-entry-label">Timeframe</span> {{entry.timeframe.duration}}
                                     </div>
                                 {{/if}}
 
                                 {{#if entry.status}}
                                     <div class="quest-entry-progress">
-                                        <span class="quest-label">Status</span> {{entry.status}}
+                                        <span class="quest-entry-label">Status</span> {{entry.status}}
                                     </div>
                                 {{/if}}
 
@@ -436,13 +439,13 @@
                                 {{/if}}
                                 {{#if entry.description}}
                                     <div class="quest-entry-description">
-                                        <span class="quest-label">Description</span> 
+                                        <span class="quest-entry-label">Description</span> 
                                         <p>{{entry.description}}</p>
                                     </div>
                                 {{/if}}
                                 {{#if entry.tasks.length}}
                                     <div class="quest-entry-tasks">
-                                        <span class="quest-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
+                                        <span class="quest-entry-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
@@ -470,8 +473,8 @@
 
                                 {{#if @root.isGM}}
                                     {{#if entry.plotHook}}
-                                        <div class="quest-entry-hook">
-                                            <span class="quest-label">Plot Hook</span> 
+                                        <div class="quest-entry-plothook">
+                                            <span class="quest-entry-label">Plot Hook</span> 
                                             <p>{{entry.plotHook}}</p>
                                         </div>
                                     {{/if}}
@@ -481,7 +484,7 @@
 
                                 {{#if entry.reward.treasure.length}}
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Treasure</span>
+                                        <span class="quest-entry-label">Treasure</span>
                                         <ul>
                                             {{#each entry.reward.treasure}}
                                                 <li>
@@ -500,24 +503,24 @@
 
                                 {{#if entry.reward.xp}}
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Experience</span> {{entry.reward.xp}}
+                                        <span class="quest-entry-label">Experience</span> {{entry.reward.xp}}
                                     </div>
                                 {{/if}}
                                 {{#if entry.location}}
                                     <div class="quest-entry-location">
-                                        <span class="quest-label">Location</span> {{entry.location}}
+                                        <span class="quest-entry-label">Location</span> {{entry.location}}
                                     </div>
                                 {{/if}}
 
                                 {{#if entry.timeframe.duration}}
                                     <div class="quest-entry-timeframe">
-                                        <span class="quest-label">Timeframe</span> {{entry.timeframe.duration}}
+                                        <span class="quest-entry-label">Timeframe</span> {{entry.timeframe.duration}}
                                     </div>
                                 {{/if}}
 
                                 {{#if entry.status}}
                                     <div class="quest-entry-progress">
-                                        <span class="quest-label">Status</span> {{entry.status}}
+                                        <span class="quest-entry-label">Status</span> {{entry.status}}
                                     </div>
                                 {{/if}}
 
@@ -604,13 +607,13 @@
                                 {{/if}}
                                 {{#if entry.description}}
                                     <div class="quest-entry-description">
-                                        <span class="quest-label">Description</span> 
+                                        <span class="quest-entry-label">Description</span> 
                                         <p>{{entry.description}}</p>
                                     </div>
                                 {{/if}}
                                 {{#if entry.tasks.length}}
                                     <div class="quest-entry-tasks">
-                                        <span class="quest-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
+                                        <span class="quest-entry-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
@@ -638,8 +641,8 @@
 
                                 {{#if @root.isGM}}
                                     {{#if entry.plotHook}}
-                                        <div class="quest-entry-hook">
-                                            <span class="quest-label">Plot Hook</span> 
+                                        <div class="quest-entry-plothook">
+                                            <span class="quest-entry-label">Plot Hook</span> 
                                             <p>{{entry.plotHook}}</p>
                                         </div>
                                     {{/if}}
@@ -649,7 +652,7 @@
 
                                 {{#if entry.reward.treasure.length}}
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Treasure</span>
+                                        <span class="quest-entry-label">Treasure</span>
                                         <ul>
                                             {{#each entry.reward.treasure}}
                                                 <li>
@@ -668,24 +671,24 @@
 
                                 {{#if entry.reward.xp}}
                                     <div class="quest-entry-reward">
-                                        <span class="quest-label">Experience</span> {{entry.reward.xp}}
+                                        <span class="quest-entry-label">Experience</span> {{entry.reward.xp}}
                                     </div>
                                 {{/if}}
                                 {{#if entry.location}}
                                     <div class="quest-entry-location">
-                                        <span class="quest-label">Location</span> {{entry.location}}
+                                        <span class="quest-entry-label">Location</span> {{entry.location}}
                                     </div>
                                 {{/if}}
 
                                 {{#if entry.timeframe.duration}}
                                     <div class="quest-entry-timeframe">
-                                        <span class="quest-label">Timeframe</span> {{entry.timeframe.duration}}
+                                        <span class="quest-entry-label">Timeframe</span> {{entry.timeframe.duration}}
                                     </div>
                                 {{/if}}
 
                                 {{#if entry.status}}
                                     <div class="quest-entry-progress">
-                                        <span class="quest-label">Status</span> {{entry.status}}
+                                        <span class="quest-entry-label">Status</span> {{entry.status}}
                                     </div>
                                 {{/if}}
 

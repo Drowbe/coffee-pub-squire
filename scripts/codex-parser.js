@@ -119,82 +119,87 @@ export class CodexParser {
         // Parse the enriched HTML
         const parser = new DOMParser();
         const doc = parser.parseFromString(enrichedHtml, 'text/html');
+        
         const entry = {
             name: page.name,
-            img: page.img || '',
-            description: '',
+            img: '',
+            category: '',  // Mandatory
+            description: '',  // Mandatory
             plotHook: '',
             location: '',
             link: null,
             tags: [],
-            identified: page.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER,
             uuid: page.uuid
         };
-        // If no explicit image, use the first <img> in the HTML
-        if (!entry.img) {
-            const imgTag = doc.querySelector('img');
-            if (imgTag) entry.img = imgTag.src;
-        }
-        // Look for <ul> and parse <li> items
-        const ul = doc.querySelector('ul');
-        if (ul) {
-            const listItems = ul.getElementsByTagName('li');
-            for (let j = 0; j < listItems.length; j++) {
-                const li = listItems[j];
-                let container = li;
-                if (li.children.length === 1 && li.children[0].tagName === 'P') {
-                    container = li.children[0];
-                }
-                const strongTag = container.querySelector('strong');
-                if (!strongTag) continue;
-                const label = strongTag.textContent.trim().replace(/:$/, '').toUpperCase();
-                let value = '';
-                if (container.childNodes.length > 1 && strongTag.nextSibling) {
-                    value = container.innerHTML.split(strongTag.outerHTML)[1] || '';
-                    value = value.replace(/^[:\s]*/, '').replace(/<[^>]+>/g, '').trim();
-                } else {
-                    const text = container.textContent || '';
-                    value = text.substring(text.indexOf(':') + 1).trim();
-                }
-                switch (label) {
-                    case 'DESCRIPTION':
-                        entry.description = value;
-                        break;
-                    case 'PLOT HOOK':
-                        entry.plotHook = value;
-                        break;
-                    case 'LOCATION':
-                        entry.location = value;
-                        break;
-                    case 'LINK':
-                        let uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
-                        if (uuidMatch) {
+
+        // Get image if present
+        const imgTag = doc.querySelector('img');
+        if (imgTag) entry.img = imgTag.src;
+
+        // Parse all <p> fields with <strong> labels
+        const pTags = Array.from(doc.querySelectorAll('p'));
+        for (const p of pTags) {
+            const strong = p.querySelector('strong');
+            if (!strong) continue;
+
+            // Robustly extract label: remove colon if inside <strong> or just after
+            let label = strong.textContent.trim();
+            if (label.endsWith(':')) label = label.slice(0, -1);
+            let afterStrong = p.innerHTML.split(strong.outerHTML)[1] || '';
+            afterStrong = afterStrong.trim();
+            if (afterStrong.startsWith(':')) afterStrong = afterStrong.slice(1);
+            let value = afterStrong.replace(/^\s*/, '').replace(/<[^>]+>/g, '').trim();
+
+            label = label.toUpperCase();
+
+            switch (label) {
+                case 'CATEGORY':
+                    entry.category = value.trim();
+                    // Capitalize first letter, lower the rest
+                    if (entry.category.length > 0) {
+                        entry.category = entry.category.charAt(0).toUpperCase() + entry.category.slice(1).toLowerCase();
+                    }
+                    break;
+                case 'DESCRIPTION':
+                    entry.description = value;
+                    break;
+                case 'PLOT HOOK':
+                    entry.plotHook = value;
+                    break;
+                case 'LOCATION':
+                    entry.location = value;
+                    break;
+                case 'LINK':
+                    const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
+                    if (uuidMatch) {
+                        entry.link = {
+                            uuid: uuidMatch[1],
+                            label: uuidMatch[2]
+                        };
+                    } else {
+                        const aTag = p.querySelector('a[data-uuid]');
+                        if (aTag) {
                             entry.link = {
-                                uuid: uuidMatch[1],
-                                label: uuidMatch[2]
+                                uuid: aTag.getAttribute('data-uuid'),
+                                label: aTag.textContent.trim()
                             };
-                        } else {
-                            const aTag = li.querySelector('a[data-uuid]');
-                            if (aTag) {
-                                entry.link = {
-                                    uuid: aTag.getAttribute('data-uuid'),
-                                    label: aTag.textContent.trim()
-                                };
-                            }
                         }
-                        break;
-                    case 'TAGS':
-                        entry.tags = value.split(',').map(tag => tag.trim()).filter(tag => tag);
-                        break;
-                }
+                    }
+                    break;
+                case 'TAGS':
+                    entry.tags = value.split(',').map(t => t.trim()).filter(t => t);
+                    break;
             }
         }
-        // Fallback: if no description, use all text content
-        if (!entry.description) {
-            entry.description = doc.body.textContent.trim();
+
+        // Validate mandatory fields
+        if (!entry.category || !entry.description) {
+            console.warn(`SQUIRE | CODEX: Entry "${entry.name}" is missing mandatory fields (Category or Description). HTML:`, enrichedHtml);
+            return null;
         }
-        // If no name, skip
-        if (!entry.name) return null;
+
+        // Debug log for every parsed entry
+        console.log('SQUIRE | CODEX: Parsed entry', entry);
         return entry;
     }
 

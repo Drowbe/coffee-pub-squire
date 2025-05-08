@@ -70,15 +70,6 @@
     opacity: 1;
 }
 
-
-.squire-tray[data-position="left"] .quest-toolbar .quest-pin {
-    opacity: .3;
-}
-
-.squire-tray[data-position="left"] .quest-toolbar .quest-pin.pinned {
-    opacity: 1;
-}
-
 .squire-tray[data-position="left"] .quest-entry .quest-entry-toggle {
     margin-left: 8px;
     transition: transform 0.2s;
@@ -92,8 +83,14 @@
     transition: transform 0.2s ease;
 }
 
+/* Pin Icon */
+.squire-tray[data-position="left"] .quest-toolbar .quest-pin {
+    opacity: .3;
+}
 
-
+.squire-tray[data-position="left"] .quest-toolbar .quest-pin.pinned {
+    opacity: 1;
+}
 
 
 /* SEARCH & FILTER BAR */
@@ -216,9 +213,6 @@
     display: none;
 }
 
-
-
-
 /* ENTRY CARDS */
 
 .squire-tray[data-position="left"] .quest-entries {
@@ -278,8 +272,7 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-
-.quest-label {
+.quest-entry-label {
     color: rgba(159, 146, 117, 0.9);
     background-color: rgba(159, 146, 117, 0.15);
     font-size: 0.8em;
@@ -289,19 +282,12 @@
     margin-right: 2px;    
 }
 
-
-
 .squire-tray[data-position="left"] .quest-entry-description {
     margin-bottom: 8px;
     clear: right;
 }
 
-
-
-
-
-
-.squire-tray[data-position="left"] .quest-entry-hook {
+.squire-tray[data-position="left"] .quest-entry-plothook {
     clear: left;
     color: #aaa;
     margin-bottom: 8px;
@@ -319,7 +305,6 @@
     border-top: 1px dotted rgba(255, 255, 255, 0.2);
     padding-top: 8px;
 }
-
 
 /* Tag Cloud Container */
 
@@ -359,9 +344,6 @@
     border-color: rgba(255, 47, 47, 0.7);
 }
 
-
-
-
 .squire-tray[data-position="left"] .quest-tag.selected {
     background: rgba(50, 100, 150, 0.4);
     border-color: rgba(50, 100, 150, 0.6);
@@ -400,9 +382,8 @@
 .squire-tray[data-position="left"] .quest-entry-tasks,
 .squire-tray[data-position="left"] .quest-entry-reward,
 .squire-tray[data-position="left"] .quest-entry-participants,
-.squire-tray[data-position="left"] .quest-entry-hook,
-.squire-tray[data-position="left"] .quest-entry-progress,
-.squire-tray[data-position="left"] .quest-entry-related {
+.squire-tray[data-position="left"] .quest-entry-plothook,
+.squire-tray[data-position="left"] .quest-entry-progress {
     margin-bottom: 0.5rem;
     clear: both;
 }

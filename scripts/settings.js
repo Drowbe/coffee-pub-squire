@@ -713,21 +713,17 @@ export const registerSettings = function() {
     // Codex Journal
     game.settings.register(MODULE.ID, 'codexJournal', {
         name: "Codex Journal",
-        hint: "The journal to use for the codex entries. Each category (Characters, Locations, Artifacts) should be a separate page in this journal.",
+        hint: "The journal to use for codex entries. Each entry will be a separate page in this journal.",
         scope: "world",
         config: true,
         type: String,
         choices: () => {
-            // Create choices object with 'none' as first option
             const choices = {
                 'none': '- Select Journal -'
             };
-            
-            // Add all available journals
             game.journal.contents.forEach(j => {
                 choices[j.id] = j.name;
             });
-            
             return choices;
         },
         default: "none",
@@ -737,32 +733,6 @@ export const registerSettings = function() {
                 PanelManager.instance.codexPanel.render(PanelManager.element);
             }
         }
-    });
-
-    // Codex Journal per Category
-    game.settings.register(MODULE.ID, 'codexJournal_Characters', {
-        name: "Codex Journal (Characters)",
-        hint: "The journal to use for the Characters codex entries.",
-        scope: "world",
-        config: false,
-        type: String,
-        default: "none"
-    });
-    game.settings.register(MODULE.ID, 'codexJournal_Locations', {
-        name: "Codex Journal (Locations)",
-        hint: "The journal to use for the Locations codex entries.",
-        scope: "world",
-        config: false,
-        type: String,
-        default: "none"
-    });
-    game.settings.register(MODULE.ID, 'codexJournal_Artifacts', {
-        name: "Codex Journal (Artifacts)",
-        hint: "The journal to use for the Artifacts codex entries.",
-        scope: "world",
-        config: false,
-        type: String,
-        default: "none"
     });
 
     // --------------------------------
