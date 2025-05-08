@@ -123,16 +123,47 @@ export class CodexPanel {
         const searchInput = html.find('.codex-search input');
         const clearButton = html.find('.clear-search');
         
+        // --- DOM-based filtering for search and tags ---
+        const filterEntries = () => {
+            const search = this.filters.search.trim().toLowerCase();
+            html.find('.codex-entry').each(function() {
+                const entry = $(this);
+                let text = entry.text().toLowerCase();
+                let searchMatch = true;
+                if (search) {
+                    searchMatch = text.includes(search);
+                }
+                entry.toggle(searchMatch);
+            });
+            // Hide category sections with no visible entries
+            html.find('.codex-section').each(function() {
+                const section = $(this);
+                const hasVisible = section.find('.codex-entry:visible').length > 0;
+                section.toggle(hasVisible);
+            });
+        };
+
         searchInput.on('input', (event) => {
             const searchValue = event.target.value.toLowerCase();
             this.filters.search = searchValue;
-            this.render(this.element);
+            // Show all entries and sections before filtering
+            html.find('.codex-entry').show();
+            html.find('.codex-section').show();
+            if (searchValue) {
+                html.find('.clear-search').removeClass('disabled');
+                filterEntries();
+            } else {
+                html.find('.clear-search').addClass('disabled');
+            }
         });
 
         // Clear search button
-        clearButton.click(() => {
+        clearButton.removeClass('disabled');
+        clearButton.off('click').on('click', (event) => {
             this.filters.search = "";
+            this.filters.tags = [];
             searchInput.val("");
+            html.find('.codex-tag.selected').removeClass('selected');
             this.render(this.element);
         });
 
@@ -355,6 +386,16 @@ export class CodexPanel {
             await page.update({ 'ownership.default': newPermission });
             // No need to refresh/render here; the updateJournalEntryPage hook will handle it.
         });
+
+        // On load, ensure all entries are visible if no filters are set
+        setTimeout(() => {
+            if (!this.filters.search && (!this.filters.tags || this.filters.tags.length === 0)) {
+                html.find('.codex-entry').show();
+                html.find('.codex-section').show();
+            } else {
+                filterEntries();
+            }
+        }, 0);
     }
 
     /**
@@ -402,39 +443,6 @@ export class CodexPanel {
             },
             default: 'save'
         }).render(true);
-    }
-
-    /**
-     * Apply filters to entries
-     * @private
-     */
-    _applyFilters(entries) {
-        return entries.filter(entry => {
-            // Search filter
-            if (this.filters.search) {
-                const searchLower = this.filters.search.toLowerCase();
-                const searchableText = [
-                    entry.name,
-                    entry.description,
-                    entry.plotHook,
-                    entry.location,
-                    entry.tags.join(' ')
-                ].join(' ').toLowerCase();
-                
-                if (!searchableText.includes(searchLower)) {
-                    return false;
-                }
-            }
-            
-            // Tag filter
-            if (this.filters.tags.length > 0) {
-                if (!this.filters.tags.every(tag => entry.tags.includes(tag))) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
     }
 
     /**
