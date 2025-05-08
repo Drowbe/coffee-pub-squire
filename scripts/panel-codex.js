@@ -151,6 +151,8 @@ export class CodexPanel {
             html.find('.codex-section').show();
             if (searchValue) {
                 html.find('.clear-search').removeClass('disabled');
+                // Always expand all categories during search
+                html.find('.codex-section').removeClass('collapsed');
                 filterEntries();
             } else {
                 html.find('.clear-search').addClass('disabled');
