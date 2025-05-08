@@ -1,0 +1,772 @@
+[
+    {
+      "name": "Find the Arcanic Wayfinder",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.Lx02OvIBer1qRUsU",
+      "img": "",
+      "category": "Pinned",
+      "description": "Recover and reassemble all eight lost components of the Arcanic Wayfinder, a powerful ancient artifact that can help stop the Black Cult of the Dragon.",
+      "plotHook": "The completed Wayfinder reveals the locations of Baphomet’s gear.",
+      "status": "In Progress",
+      "visible": true,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Recover the Wayfinder Case from Mr. Jahz Haands in Daggerford or from the Aquatic Crypt",
+          "completed": true,
+          "state": "completed"
+        },
+        {
+          "text": "Retrieve the Casing from the Mines of Tethyamar",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Infiltrate the Earthspur Mountains fortress to obtain the Infinity Gear",
+          "completed": false,
+          "state": "hidden"
+        },
+        {
+          "text": "Navigate the Flooded Forest and deal with the ancient Treant to recover the Arcana Cell",
+          "completed": false,
+          "state": "hidden"
+        },
+        {
+          "text": "Steal the Navigation System from the underworld network in Melvaunt",
+          "completed": false,
+          "state": "hidden"
+        },
+        {
+          "text": "Survive the haunted tower in The Ride to secure the Focal Orb",
+          "completed": false,
+          "state": "hidden"
+        },
+        {
+          "text": "Dive into the sunken Netherese city beneath the Moonsea to obtain the Navigation Hud",
+          "completed": false,
+          "state": "hidden"
+        },
+        {
+          "text": "Defeat or negotiate with the dragon Deep Sleep in the Aquatic Crypt to claim the Gem Ring",
+          "completed": false,
+          "state": "hidden"
+        }
+      ],
+      "reward": {
+        "xp": 10000,
+        "treasure": [
+          {
+            "text": "Fully functional Arcanic Wayfinder"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "uuid": "Actor.K2rCk70YW6MhrWR8",
+          "name": "Cyrus Bing",
+          "img": "assets/images/portraits/campaigns/cyrus-portrait.webp"
+        },
+        {
+          "uuid": "Actor.fDrM6DQhcSLR1OgD",
+          "name": "Favia Gitta",
+          "img": "assets/images/portraits/campaigns/favia-portrait.webp"
+        },
+        {
+          "uuid": "Actor.7chltDs55Xh5e3tB",
+          "name": "Kar-ahn",
+          "img": "assets/images/portraits/campaigns/kar-ahn-portrait.webp"
+        },
+        {
+          "uuid": "Actor.QNjIFD8sTuVuoJNg",
+          "name": "Nik Melok",
+          "img": "assets/images/portraits/campaigns/nik-portrait.webp"
+        },
+        {
+          "uuid": "Actor.mNmqpQPtmAVF3iz1",
+          "name": "Noodle HOM",
+          "img": "assets/images/portraits/campaigns/noodle-portrait.webp"
+        },
+        {
+          "uuid": "Actor.95MFJsRFMOKeUQ0K",
+          "name": "Skylar Blackthorn",
+          "img": "assets/images/portraits/campaigns/skylar-portrait.webp"
+        }
+      ],
+      "tags": [
+        "wayfinder",
+        "artifact",
+        "moonsea",
+        "main",
+        "multi-part",
+        "cult",
+        "harpers",
+        "Cyrus Bing",
+        "Favia Gitta",
+        "Kar-ahn",
+        "Nik Melok",
+        "Noodle HOM",
+        "Skylar Blackthorn"
+      ],
+      "location": "Multiple - Across the Moonsea Region"
+    },
+    {
+      "name": "Ancient Treant",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.VxQPHAMbmjrOKlJY",
+      "img": "",
+      "category": "Main Quest",
+      "description": "Retrieve the Arcana Cell from the heart of the Flooded Forest, guarded by an ancient Treant of immense power.",
+      "plotHook": "The Cell is essential to complete the Arcanic Wayfinder.",
+      "status": "Not Started",
+      "visible": false,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [],
+      "reward": {
+        "xp": 4000,
+        "treasure": [
+          {
+            "text": "Arcana Cell"
+          }
+        ]
+      },
+      "participants": [],
+      "tags": [
+        "artifact",
+        "flooded-forest",
+        "main",
+        "treant",
+        "wayfinder",
+        "forest",
+        "guardian"
+      ],
+      "location": ""
+    },
+    {
+      "name": "Brother Samian’s Fortress",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.1JqVMJSdkSVOPwjt",
+      "img": "",
+      "category": "Main Quest",
+      "description": "Infiltrate Brother Samian’s fortress in the Earthspur Mountains and retrieve the Arcanic Wayfinder’s Infinity Gear.",
+      "plotHook": "The Infinity Gear is one of the final parts of the Wayfinder.",
+      "status": "Not Started",
+      "visible": false,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Breach the stronghold’s magical and physical defenses",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Defeat Brother Samian and his dragon allies",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Secure the Infinity Gear",
+          "completed": false,
+          "state": "active"
+        }
+      ],
+      "reward": {
+        "xp": 6000,
+        "treasure": [
+          {
+            "text": "Infinity Gear"
+          }
+        ]
+      },
+      "participants": [],
+      "tags": [
+        "cult",
+        "earthspur",
+        "stronghold",
+        "main",
+        "artifact",
+        "wayfinder",
+        "dragon"
+      ],
+      "location": ""
+    },
+    {
+      "name": "Chasmfall Descent",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.1YKnEIamHJMUMWy0",
+      "img": "",
+      "category": "Main Quest",
+      "description": "Delve deep into the cursed Mines of Tethyamar to uncover the hidden Arcanic Wayfinder Casing.",
+      "plotHook": "The Casing is vital to reassembling the Wayfinder.",
+      "status": "In Progress",
+      "visible": true,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Survive the upper mines and spectral guardians",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Confront Duergar and the Ghoul King",
+          "completed": true,
+          "state": "completed"
+        },
+        {
+          "text": "Recover the Casing from the ancient forge",
+          "completed": false,
+          "state": "hidden"
+        }
+      ],
+      "reward": {
+        "xp": 5000,
+        "treasure": [
+          {
+            "text": "Wayfinder Casing"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "uuid": "Actor.K2rCk70YW6MhrWR8",
+          "name": "Cyrus Bing",
+          "img": "assets/images/portraits/campaigns/cyrus-portrait.webp"
+        },
+        {
+          "uuid": "Actor.fDrM6DQhcSLR1OgD",
+          "name": "Favia Gitta",
+          "img": "assets/images/portraits/campaigns/favia-portrait.webp"
+        },
+        {
+          "uuid": "Actor.7chltDs55Xh5e3tB",
+          "name": "Kar-ahn",
+          "img": "assets/images/portraits/campaigns/kar-ahn-portrait.webp"
+        },
+        {
+          "uuid": "Actor.QNjIFD8sTuVuoJNg",
+          "name": "Nik Melok",
+          "img": "assets/images/portraits/campaigns/nik-portrait.webp"
+        },
+        {
+          "uuid": "Actor.mNmqpQPtmAVF3iz1",
+          "name": "Noodle HOM",
+          "img": "assets/images/portraits/campaigns/noodle-portrait.webp"
+        },
+        {
+          "uuid": "Actor.95MFJsRFMOKeUQ0K",
+          "name": "Skylar Blackthorn",
+          "img": "assets/images/portraits/campaigns/skylar-portrait.webp"
+        }
+      ],
+      "tags": [
+        "tethyamar",
+        "dwarves",
+        "undead",
+        "artifact",
+        "main",
+        "mine",
+        "wayfinder",
+        "Cyrus Bing",
+        "Favia Gitta",
+        "Kar-ahn",
+        "Nik Melok",
+        "Noodle HOM",
+        "Skylar Blackthorn"
+      ],
+      "location": ""
+    },
+    {
+      "name": "The Sorrowbound Descent",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.AJ9S74ZfK27lwZt7",
+      "img": "",
+      "category": "Main Quest",
+      "description": "Descend into the sealed domain of Vaelice, the Ice Lich, uncovering fragments of her story and navigating her sorrow-forged defenses. This emotional descent prepares you for what lies beyond.",
+      "plotHook": "The descent is the only path to Hisclaveus Chasmfall—Vaelice guards what he became.",
+      "status": "In Progress",
+      "visible": false,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Survive the Frozen Descent and interpret the Draconic runes",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Pass the Watchers' Gate through empathy or battle",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Recover the memory gem to unlock Vaelice’s final memory",
+          "completed": false,
+          "state": "active"
+        }
+      ],
+      "reward": {
+        "xp": 4500,
+        "treasure": [
+          {
+            "text": "Memory Gem"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "uuid": "Actor.K2rCk70YW6MhrWR8",
+          "name": "Cyrus Bing",
+          "img": "assets/images/portraits/campaigns/cyrus-portrait.webp"
+        },
+        {
+          "uuid": "Actor.fDrM6DQhcSLR1OgD",
+          "name": "Favia Gitta",
+          "img": "assets/images/portraits/campaigns/favia-portrait.webp"
+        },
+        {
+          "uuid": "Actor.7chltDs55Xh5e3tB",
+          "name": "Kar-ahn",
+          "img": "assets/images/portraits/campaigns/kar-ahn-portrait.webp"
+        },
+        {
+          "uuid": "Actor.QNjIFD8sTuVuoJNg",
+          "name": "Nik Melok",
+          "img": "assets/images/portraits/campaigns/nik-portrait.webp"
+        },
+        {
+          "uuid": "Actor.mNmqpQPtmAVF3iz1",
+          "name": "Noodle HOM",
+          "img": "assets/images/portraits/campaigns/noodle-portrait.webp"
+        },
+        {
+          "uuid": "Actor.95MFJsRFMOKeUQ0K",
+          "name": "Skylar Blackthorn",
+          "img": "assets/images/portraits/campaigns/skylar-portrait.webp"
+        }
+      ],
+      "tags": [
+        "ice-lich",
+        "tethyamar",
+        "vault-access",
+        "memory",
+        "wayfinder",
+        "main",
+        "emotional",
+        "Cyrus Bing",
+        "Favia Gitta",
+        "Kar-ahn",
+        "Nik Melok",
+        "Noodle HOM",
+        "Skylar Blackthorn"
+      ],
+      "location": "Mines of Tethyamar - Throne of the Ice Lich"
+    },
+    {
+      "name": "The Throne of the Ice Lich",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.e7P14WDTWrL4FIZ7",
+      "img": "",
+      "category": "Main Quest",
+      "description": "Unravel the tragic story of Vaelice, the Ice Lich, and navigate her sorrow-bound crypt to reach the vault of Hisclaveus Chasmfall. Your choices—mercy, violence, or understanding—will shape what awaits below.",
+      "plotHook": "Vaelice guards the path to the Lich Lord’s vault. Her defeat—or redemption—unlocks the final chamber.",
+      "status": "In Progress",
+      "visible": false,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Descend through the frozen stair and survive its hazards",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Recover and use the memory gem to unlock her past",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Resolve the confrontation with Vaelice—by steel or sorrow",
+          "completed": false,
+          "state": "active"
+        }
+      ],
+      "reward": {
+        "xp": 8000,
+        "treasure": [
+          {
+            "text": "Frozen Soul Keystone"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "uuid": "Actor.K2rCk70YW6MhrWR8",
+          "name": "Cyrus Bing",
+          "img": "assets/images/portraits/campaigns/cyrus-portrait.webp"
+        },
+        {
+          "uuid": "Actor.fDrM6DQhcSLR1OgD",
+          "name": "Favia Gitta",
+          "img": "assets/images/portraits/campaigns/favia-portrait.webp"
+        },
+        {
+          "uuid": "Actor.7chltDs55Xh5e3tB",
+          "name": "Kar-ahn",
+          "img": "assets/images/portraits/campaigns/kar-ahn-portrait.webp"
+        },
+        {
+          "uuid": "Actor.QNjIFD8sTuVuoJNg",
+          "name": "Nik Melok",
+          "img": "assets/images/portraits/campaigns/nik-portrait.webp"
+        },
+        {
+          "uuid": "Actor.mNmqpQPtmAVF3iz1",
+          "name": "Noodle HOM",
+          "img": "assets/images/portraits/campaigns/noodle-portrait.webp"
+        },
+        {
+          "uuid": "Actor.95MFJsRFMOKeUQ0K",
+          "name": "Skylar Blackthorn",
+          "img": "assets/images/portraits/campaigns/skylar-portrait.webp"
+        }
+      ],
+      "tags": [
+        "main",
+        "ice-lich",
+        "emotional",
+        "tethyamar",
+        "vaelice",
+        "wayfinder",
+        "vault-access",
+        "Cyrus Bing",
+        "Favia Gitta",
+        "Kar-ahn",
+        "Nik Melok",
+        "Noodle HOM",
+        "Skylar Blackthorn"
+      ],
+      "location": "Mines of Tethyamar - Throne of the Ice Lich"
+    },
+    {
+      "name": "Flintstown’s Daughter",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.uZUNXF6hi8DCcxdq",
+      "img": "",
+      "category": "Side Quest",
+      "description": "Flintstown, a desperate farmer, begs you to find his kidnapped daughter Fram from the goblin-infested tunnels.",
+      "plotHook": "Reveals clues to goblin-cultist collaboration.",
+      "status": "In Progress",
+      "visible": true,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Search the Goblin Quarters for signs of Fram",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Rescue Fram from the goblin temple",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Return Fram safely to Flintstown",
+          "completed": false,
+          "state": "active"
+        }
+      ],
+      "reward": {
+        "xp": 1500,
+        "treasure": [
+          {
+            "text": "Healing poultice + Flintstown’s favor"
+          }
+        ]
+      },
+      "participants": [],
+      "tags": [
+        "phlan",
+        "goblins",
+        "rescue",
+        "npc",
+        "side",
+        "temple",
+        "cult"
+      ],
+      "location": ""
+    },
+    {
+      "name": "Jubgub’s Betrayal",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.9lDLB4rKT2reUt82",
+      "img": "",
+      "category": "Side Quest",
+      "description": "Jubgub, a traitor, sells captives for a dragon egg. Expose him and decide his fate in the goblin arena.",
+      "plotHook": "Reveals internal cult corruption and ties to dragon summoning.",
+      "status": "In Progress",
+      "visible": true,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Gather evidence of Jubgub’s betrayal",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Confront Jubgub in the arena",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Decide whether to spare or punish him",
+          "completed": false,
+          "state": "active"
+        }
+      ],
+      "reward": {
+        "xp": 1200,
+        "treasure": [
+          {
+            "text": "Dragon egg (unhatched, inert)"
+          }
+        ]
+      },
+      "participants": [],
+      "tags": [
+        "phlan",
+        "goblin",
+        "arena",
+        "cult",
+        "betrayal",
+        "side",
+        "egg"
+      ],
+      "location": ""
+    },
+    {
+      "name": "Truth in the Icebound Pages",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.7Fp7njmAQwQiThy6",
+      "img": "",
+      "category": "Side Quest",
+      "description": "Search the ruined study once used by Vaelice to uncover her final efforts to save Hisclaveus. Beware the psychic backlash triggered by disturbing her work.",
+      "plotHook": "Reveals key knowledge about Hisclaveus’s phylactery and Vaelice’s refusal to destroy it.",
+      "status": "In Progress",
+      "visible": false,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Disarm the psychic trap on her arcane scrolls",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Recover Vaelice’s sketch of the phylactery",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Uncover the hidden wand and journal page",
+          "completed": false,
+          "state": "active"
+        }
+      ],
+      "reward": {
+        "xp": 1500,
+        "treasure": [
+          {
+            "text": "Wand of Detect Thoughts, Phylactery Diagram"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "uuid": "Actor.K2rCk70YW6MhrWR8",
+          "name": "Cyrus Bing",
+          "img": "assets/images/portraits/campaigns/cyrus-portrait.webp"
+        },
+        {
+          "uuid": "Actor.fDrM6DQhcSLR1OgD",
+          "name": "Favia Gitta",
+          "img": "assets/images/portraits/campaigns/favia-portrait.webp"
+        },
+        {
+          "uuid": "Actor.7chltDs55Xh5e3tB",
+          "name": "Kar-ahn",
+          "img": "assets/images/portraits/campaigns/kar-ahn-portrait.webp"
+        },
+        {
+          "uuid": "Actor.QNjIFD8sTuVuoJNg",
+          "name": "Nik Melok",
+          "img": "assets/images/portraits/campaigns/nik-portrait.webp"
+        },
+        {
+          "uuid": "Actor.mNmqpQPtmAVF3iz1",
+          "name": "Noodle HOM",
+          "img": "assets/images/portraits/campaigns/noodle-portrait.webp"
+        },
+        {
+          "uuid": "Actor.95MFJsRFMOKeUQ0K",
+          "name": "Skylar Blackthorn",
+          "img": "assets/images/portraits/campaigns/skylar-portrait.webp"
+        }
+      ],
+      "tags": [
+        "tethyamar",
+        "side",
+        "lore",
+        "trap",
+        "vaelice",
+        "phylactery",
+        "arcana",
+        "Cyrus Bing",
+        "Favia Gitta",
+        "Kar-ahn",
+        "Nik Melok",
+        "Noodle HOM",
+        "Skylar Blackthorn"
+      ],
+      "location": "Throne of the Ice Lich - Archivist’s Alcove"
+    },
+    {
+      "name": "Frozen Testimony",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.tVncwMPPNzbz5l1i",
+      "img": "",
+      "category": "Side Quest",
+      "description": "Interpret the murals in the Frostbite Gallery and confront the undead remnants of Vaelice’s cult. Decide whether to fight, reason with, or learn from the Cultist Revenant.",
+      "plotHook": "Unlocks narrative insights and access to deeper lore or alternate paths below.",
+      "status": "In Progress",
+      "visible": false,
+      "timeframe": {
+        "duration": "None"
+      },
+      "tasks": [
+        {
+          "text": "Survive the Frost Wights or avoid them with stealth",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Engage or negotiate with the Cultist Revenant",
+          "completed": false,
+          "state": "active"
+        },
+        {
+          "text": "Activate all four murals with the memory gem",
+          "completed": false,
+          "state": "active"
+        }
+      ],
+      "reward": {
+        "xp": 2000,
+        "treasure": [
+          {
+            "text": "Cultist Sigil, Lore Clues"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "uuid": "Actor.K2rCk70YW6MhrWR8",
+          "name": "Cyrus Bing",
+          "img": "assets/images/portraits/campaigns/cyrus-portrait.webp"
+        },
+        {
+          "uuid": "Actor.fDrM6DQhcSLR1OgD",
+          "name": "Favia Gitta",
+          "img": "assets/images/portraits/campaigns/favia-portrait.webp"
+        },
+        {
+          "uuid": "Actor.7chltDs55Xh5e3tB",
+          "name": "Kar-ahn",
+          "img": "assets/images/portraits/campaigns/kar-ahn-portrait.webp"
+        },
+        {
+          "uuid": "Actor.QNjIFD8sTuVuoJNg",
+          "name": "Nik Melok",
+          "img": "assets/images/portraits/campaigns/nik-portrait.webp"
+        },
+        {
+          "uuid": "Actor.mNmqpQPtmAVF3iz1",
+          "name": "Noodle HOM",
+          "img": "assets/images/portraits/campaigns/noodle-portrait.webp"
+        },
+        {
+          "uuid": "Actor.95MFJsRFMOKeUQ0K",
+          "name": "Skylar Blackthorn",
+          "img": "assets/images/portraits/campaigns/skylar-portrait.webp"
+        }
+      ],
+      "tags": [
+        "tethyamar",
+        "side",
+        "murals",
+        "undead",
+        "vaelice",
+        "cult",
+        "empathy",
+        "Cyrus Bing",
+        "Favia Gitta",
+        "Kar-ahn",
+        "Nik Melok",
+        "Noodle HOM",
+        "Skylar Blackthorn"
+      ],
+      "location": "Throne of the Ice Lich - Frostbite Gallery"
+    },
+    {
+      "name": "Delyth’s Whisper",
+      "uuid": "JournalEntry.hKIA4odmmvDk1Xt8.JournalEntryPage.Eh3QGAaUdoOnW4Ss",
+      "img": "",
+      "category": "Completed",
+      "description": "Delyth Cheesefroth suspects her mother is hiding something sinister at the Wayward Spirit Inn.",
+      "plotHook": "Leads to knowledge about cult activities and a hidden map.",
+      "status": "Complete",
+      "visible": false,
+      "timeframe": {
+        "duration": "1 in-game day"
+      },
+      "tasks": [
+        {
+          "text": "Gain Delyth’s trust",
+          "completed": true,
+          "state": "completed"
+        },
+        {
+          "text": "Investigate the cellar without alerting Madame Cheesefroth",
+          "completed": true,
+          "state": "completed"
+        },
+        {
+          "text": "Uncover the cult's plans and recover the hidden map",
+          "completed": true,
+          "state": "completed"
+        }
+      ],
+      "reward": {
+        "xp": 1000,
+        "treasure": [
+          {
+            "text": "Map to Tethyamar"
+          }
+        ]
+      },
+      "participants": [],
+      "tags": [
+        "llorkh",
+        "inn",
+        "npc",
+        "informant",
+        "cult",
+        "map",
+        "side"
+      ],
+      "location": ""
+    }
+  ]
