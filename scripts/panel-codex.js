@@ -213,7 +213,7 @@ export class CodexPanel {
             new Dialog({
                 title: 'Paste JSON',
                 content: `
-                    <textarea id="codex-import-json" style="width:100%;height:300px;resize:vertical;"></textarea>
+                    <textarea id="codex-import-json" style="width:100%;height:500px;resize:vertical;"></textarea>
                 `,
                 buttons: {
                     cancel: {
@@ -227,8 +227,70 @@ export class CodexPanel {
                             const value = html.find('#codex-import-json').val();
                             try {
                                 const data = JSON.parse(value);
-                                // Implement your import logic here
-                                ui.notifications.info('Codex JSON imported (implement logic).');
+                                if (!Array.isArray(data)) {
+                                    ui.notifications.error('Imported JSON must be an array of entries.');
+                                    return;
+                                }
+                                if (!this.selectedJournal) {
+                                    ui.notifications.error('No Codex journal selected.');
+                                    return;
+                                }
+                                let added = 0;
+                                let updated = 0;
+                                for (const entry of data) {
+                                    // Find existing page by name
+                                    const page = this.selectedJournal.pages.find(p => p.name === entry.name);
+                                    if (page) {
+                                        // Update only description, tags, location, category, plotHook
+                                        let parser = new DOMParser();
+                                        let doc = parser.parseFromString(page.text.content, 'text/html');
+                                        // Remove all <p> with <strong> labels for fields we update
+                                        const pTags = Array.from(doc.querySelectorAll('p'));
+                                        for (const p of pTags) {
+                                            const strong = p.querySelector('strong');
+                                            if (!strong) continue;
+                                            const label = strong.textContent.trim().replace(/:$/, '').toUpperCase();
+                                            if (["CATEGORY","DESCRIPTION","PLOT HOOK","LOCATION","TAGS"].includes(label)) {
+                                                p.remove();
+                                            }
+                                        }
+                                        // Insert new/updated fields at the top
+                                        const newFields = [];
+                                        if (entry.category) newFields.push(`<p><strong>Category:</strong> ${entry.category}</p>`);
+                                        if (entry.description) newFields.push(`<p><strong>Description:</strong> ${entry.description}</p>`);
+                                        if (entry.plotHook) newFields.push(`<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`);
+                                        if (entry.location) newFields.push(`<p><strong>Location:</strong> ${entry.location}</p>`);
+                                        if (entry.tags && entry.tags.length) newFields.push(`<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`);
+                                        doc.body.innerHTML = newFields.join('\n') + doc.body.innerHTML;
+                                        await page.update({ 'text.content': doc.body.innerHTML });
+                                        updated++;
+                                    } else {
+                                        // Create new page with all fields, formatted as expected
+                                        let html = '';
+                                        if (entry.img) html += `<img src="${entry.img}" alt="${entry.name}">`;
+                                        if (entry.category) html += `<p><strong>Category:</strong> ${entry.category}</p>`;
+                                        if (entry.description) html += `<p><strong>Description:</strong> ${entry.description}</p>`;
+                                        if (entry.plotHook) html += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`;
+                                        if (entry.location) html += `<p><strong>Location:</strong> ${entry.location}</p>`;
+                                        if (entry.link && entry.link.uuid && entry.link.label) html += `<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`;
+                                        if (entry.tags && entry.tags.length) html += `<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`;
+                                        await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
+                                            name: entry.name,
+                                            type: 'text',
+                                            text: { content: html },
+                                            ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
+                                        }]);
+                                        added++;
+                                    }
+                                }
+                                // Sort pages alphabetically by name
+                                const sorted = this.selectedJournal.pages.contents.slice().sort((a, b) => a.name.localeCompare(b.name));
+                                for (let i = 0; i < sorted.length; i++) {
+                                    await sorted[i].update({ sort: (i + 1) * 10 });
+                                }
+                                ui.notifications.info(`Codex import complete: ${added} added, ${updated} updated.`);
+                                await this._refreshData();
+                                this.render(this.element);
                             } catch (e) {
                                 ui.notifications.error('Invalid JSON.');
                             }
@@ -242,17 +304,17 @@ export class CodexPanel {
         // Export JSON button
         html.find('.export-json-button').click((event) => {
             event.preventDefault();
-            // Collect all entries from all categories
-            const exportData = {};
+            // Collect all entries as a flat array (single journal format)
+            const exportData = [];
             for (const cat of this.categories) {
-                exportData[cat] = this.data[cat] || [];
+                exportData.push(...(this.data[cat] || []));
             }
             const jsonString = JSON.stringify(exportData, null, 2);
             new Dialog({
                 title: 'Export Codex as JSON',
                 content: `
                     <div style="margin-bottom: 8px;">Here are your codex entries in JSON format. Copy this text to save it, or use the download button.</div>
-                    <textarea id="codex-export-json" style="width:100%;height:300px;resize:vertical;">${jsonString}</textarea>
+                    <textarea id="codex-export-json" style="width:100%;height:500px;resize:vertical;">${jsonString}</textarea>
                 `,
                 buttons: {
                     download: {
