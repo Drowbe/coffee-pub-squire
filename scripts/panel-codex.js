@@ -222,6 +222,46 @@ export class CodexPanel {
             }
         });
 
+
+        // Delete entry button
+        html.find('.codex-entry-delete').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const uuid = event.currentTarget.dataset.uuid;
+            if (!uuid) return;
+            
+            // Confirm deletion
+            const confirmed = await new Dialog({
+                title: 'Delete Entry',
+                content: 'Are you sure you want to delete this entry? This cannot be undone.',
+                buttons: {
+                    yes: {
+                        icon: '<i class="fas fa-trash"></i>',
+                        label: 'Delete',
+                        callback: async () => {
+                            const page = await fromUuid(uuid);
+                            if (page) {
+                                await page.delete();
+                                return true;
+                            }
+                            return false;
+                        }
+                    },
+                    no: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: 'Cancel'
+                    }
+                },
+                default: 'no'
+            }).render(true);
+
+            if (confirmed) {
+                await this._refreshData();
+                this.render(this.element);
+            }
+        });
+
+        
         // Entry collapse/expand
         html.find('.codex-entry-toggle').click(function(e) {
             const card = $(this).closest('.codex-entry');
@@ -247,7 +287,7 @@ export class CodexPanel {
             event.preventDefault();
             const template = `I want you to build a JSON template based on the criteria I will share below. Here are the rules for how you will add data to the JSON.
 
-**NAME** - The name of the entry
+**NAME** - The name of the entry. DO not add "the" or "a" to the name.
 **CATEGORY** - This will be the organizing and grouping mechanism for the entry, so be smart about it as we do not want a bunch of similar categories. They should be unique and specific. For example: Character, Locations, and Items. Any non-unique classifications would be better as tags. It should be plural as there will be multiple things in the category. e.g. "Characters"
 **DESCRIPTION** - A description of the entry that would help someone understand what, where, or show this is, and enough context to make it interesting. (make it 200 to 500 characters)
 **PLOTHOOK** - The relationship to the plot,  especially if they have something the party might need (under 200 characters)
@@ -506,6 +546,8 @@ SPECIFIC INSTRUCTIONS HERE`;
             if (this.filters.tags && this.filters.tags.length > 0) {
                 entries = entries.filter(entry => entry.tags.some(tag => this.filters.tags.includes(tag)));
             }
+            // Sort entries alphabetically by name
+            entries = entries.slice().sort((a, b) => a.name.localeCompare(b.name));
             return {
                 name: category,
                 icon: this.getCategoryIcon(category),
