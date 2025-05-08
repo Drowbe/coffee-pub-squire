@@ -466,11 +466,17 @@ export class CodexPanel {
         const isTagCloudCollapsed = game.user.getFlag(MODULE.ID, 'codexTagCloudCollapsed') || false;
 
         // Build categoriesData array for the template
-        const categoriesData = Array.from(this.categories).sort().map(category => ({
-            name: category,
-            icon: this.getCategoryIcon(category),
-            entries: this.data[category] || []
-        }));
+        const categoriesData = Array.from(this.categories).sort().map(category => {
+            let entries = this.data[category] || [];
+            if (this.filters.tags && this.filters.tags.length > 0) {
+                entries = entries.filter(entry => entry.tags.some(tag => this.filters.tags.includes(tag)));
+            }
+            return {
+                name: category,
+                icon: this.getCategoryIcon(category),
+                entries
+            };
+        });
 
         // Prepare template data
         const templateData = {
