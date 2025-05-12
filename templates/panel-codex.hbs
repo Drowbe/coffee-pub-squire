@@ -37,7 +37,7 @@
                 <div class="codex-category">
                     <h3>
                         <i class="fas {{cat.icon}}"></i>
-                        {{cat.name}} {{#if cat.entries.length}}({{cat.entries.length}}){{/if}}
+                        {{cat.name}} {{#if cat.entries.length}}({{cat.visibleCount}} of {{cat.totalCount}} Discovered){{/if}}
                     </h3>
                     <div class="codex-toolbar">
                         <i class="fas fa-chevron-down" title="Toggle {{cat.name}}"></i>

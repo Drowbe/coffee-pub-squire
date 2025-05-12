@@ -616,11 +616,15 @@ SPECIFIC INSTRUCTIONS HERE`;
             }
             // Sort entries alphabetically by name
             entries = entries.slice().sort((a, b) => a.name.localeCompare(b.name));
+            const totalCount = entries.length;
+            const visibleCount = entries.filter(e => (e.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER).length;
             return {
                 name: category,
                 icon: this.getCategoryIcon(category),
                 entries,
-                collapsed: collapsedCategories[category] || false
+                collapsed: collapsedCategories[category] || false,
+                totalCount,
+                visibleCount
             };
         });
 
