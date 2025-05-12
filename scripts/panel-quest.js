@@ -564,7 +564,7 @@ export class QuestPanel {
                 title: 'Import Quests from JSON',
                 content: `
                     <div style="margin-bottom: 8px;">Paste your quest JSON below. Each quest should be an object with at least a <code>name</code> field.</div>
-                    <textarea id="import-quests-json-input" style="width:100%;height:200px;"></textarea>
+                    <textarea id="import-quests-json-input" style="width:100%;height:500px;resize:vertical;"></textarea>
                 `,
                 buttons: {
                     import: {
@@ -741,7 +741,7 @@ export class QuestPanel {
                 title: 'Export Quests to JSON',
                 content: `
                     <div style="margin-bottom: 8px;">Here are your ${exportQuests.length} quests in JSON format. Copy this text to save it, or use the download button.</div>
-                    <textarea id="export-quests-json-output" style="width:100%;height:200px;">${exportData}</textarea>
+                    <textarea id="export-quests-json-output" style="width:100%;height:500px;resize:vertical;">${exportData}</textarea>
                 `,
                 buttons: {
                     download: {
