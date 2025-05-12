@@ -474,7 +474,18 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Collect all entries as a flat array (single journal format)
             const exportData = [];
             for (const cat of this.categories) {
-                exportData.push(...(this.data[cat] || []));
+                const entries = (this.data[cat] || []).map(entry => {
+                    const newEntry = { ...entry };
+                    if (newEntry.img && typeof newEntry.img === 'string') {
+                        // Remove site origin from img path if present
+                        const origin = window.location.origin + '/';
+                        if (newEntry.img.startsWith(origin)) {
+                            newEntry.img = newEntry.img.slice(origin.length);
+                        }
+                    }
+                    return newEntry;
+                });
+                exportData.push(...entries);
             }
             const jsonString = JSON.stringify(exportData, null, 2);
             new Dialog({

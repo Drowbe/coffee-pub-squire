@@ -703,7 +703,7 @@ export class QuestPanel {
             
             // Convert quests to a simpler exportable format
             const exportQuests = uniqueQuests.map(q => {
-                return {
+                const quest = {
                     name: q.name,
                     uuid: q.uuid,
                     img: q.img || "",
@@ -726,6 +726,13 @@ export class QuestPanel {
                     tags: q.tags || [],
                     location: q.location || ""
                 };
+                if (quest.img && typeof quest.img === 'string') {
+                    const origin = window.location.origin + '/';
+                    if (quest.img.startsWith(origin)) {
+                        quest.img = quest.img.slice(origin.length);
+                    }
+                }
+                return quest;
             });
             
             // Create a download dialog with the JSON
