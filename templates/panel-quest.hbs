@@ -314,23 +314,25 @@
                                     {{/if}}
                                 {{/if}}
 
-                                <div class="quest-entry-divider"></div>
+                                {{#if @root.isGM}}
+                                    <div class="quest-entry-divider"></div>
 
-                                {{#if entry.reward.treasure.length}}
-                                    <div class="quest-entry-reward">
-                                        <span class="quest-entry-label">Treasure</span>
-                                        <ul>
-                                            {{#each entry.reward.treasure}}
-                                                <li>
-                                                    {{#if this.uuid}}
-                                                        <a data-uuid="{{this.uuid}}">{{this.name}}</a>
-                                                    {{else}}
-                                                        {{this.text}}
-                                                    {{/if}}
-                                                </li>
-                                            {{/each}}
-                                        </ul>
-                                    </div>
+                                    {{#if entry.reward.treasure.length}}
+                                        <div class="quest-entry-reward">
+                                            <span class="quest-entry-label">Treasure</span>
+                                            <ul>
+                                                {{#each entry.reward.treasure}}
+                                                    <li>
+                                                        {{#if this.uuid}}
+                                                            <a data-uuid="{{this.uuid}}">{{this.name}}</a>
+                                                        {{else}}
+                                                            {{this.text}}
+                                                        {{/if}}
+                                                    </li>
+                                                {{/each}}
+                                            </ul>
+                                        </div>
+                                    {{/if}}
                                 {{/if}}
 
                                 <div class="quest-entry-divider"></div>
@@ -482,23 +484,26 @@
                                     {{/if}}
                                 {{/if}}
 
-                                <div class="quest-entry-divider"></div>
 
-                                {{#if entry.reward.treasure.length}}
-                                    <div class="quest-entry-reward">
-                                        <span class="quest-entry-label">Treasure</span>
-                                        <ul>
-                                            {{#each entry.reward.treasure}}
-                                                <li>
-                                                    {{#if this.uuid}}
-                                                        <a data-uuid="{{this.uuid}}">{{this.name}}</a>
-                                                    {{else}}
-                                                        {{this.text}}
-                                                    {{/if}}
-                                                </li>
-                                            {{/each}}
-                                        </ul>
-                                    </div>
+                                {{#if @root.isGM}}
+                                    <div class="quest-entry-divider"></div>
+
+                                    {{#if entry.reward.treasure.length}}
+                                        <div class="quest-entry-reward">
+                                            <span class="quest-entry-label">Treasure</span>
+                                            <ul>
+                                                {{#each entry.reward.treasure}}
+                                                    <li>
+                                                        {{#if this.uuid}}
+                                                            <a data-uuid="{{this.uuid}}">{{this.name}}</a>
+                                                        {{else}}
+                                                            {{this.text}}
+                                                        {{/if}}
+                                                    </li>
+                                                {{/each}}
+                                            </ul>
+                                        </div>
+                                    {{/if}}
                                 {{/if}}
 
                                 <div class="quest-entry-divider"></div>
@@ -650,23 +655,25 @@
                                     {{/if}}
                                 {{/if}}
 
-                                <div class="quest-entry-divider"></div>
+                                {{#if @root.isGM}}
+                                    <div class="quest-entry-divider"></div>
 
-                                {{#if entry.reward.treasure.length}}
-                                    <div class="quest-entry-reward">
-                                        <span class="quest-entry-label">Treasure</span>
-                                        <ul>
-                                            {{#each entry.reward.treasure}}
-                                                <li>
-                                                    {{#if this.uuid}}
-                                                        <a data-uuid="{{this.uuid}}">{{this.name}}</a>
-                                                    {{else}}
-                                                        {{this.text}}
-                                                    {{/if}}
-                                                </li>
-                                            {{/each}}
-                                        </ul>
-                                    </div>
+                                    {{#if entry.reward.treasure.length}}
+                                        <div class="quest-entry-reward">
+                                            <span class="quest-entry-label">Treasure</span>
+                                            <ul>
+                                                {{#each entry.reward.treasure}}
+                                                    <li>
+                                                        {{#if this.uuid}}
+                                                            <a data-uuid="{{this.uuid}}">{{this.name}}</a>
+                                                        {{else}}
+                                                            {{this.text}}
+                                                        {{/if}}
+                                                    </li>
+                                                {{/each}}
+                                            </ul>
+                                        </div>
+                                    {{/if}}
                                 {{/if}}
 
                                 <div class="quest-entry-divider"></div>
