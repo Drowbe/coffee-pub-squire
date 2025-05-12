@@ -156,6 +156,19 @@ export class CodexPanel {
                 filterEntries();
             } else {
                 html.find('.clear-search').addClass('disabled');
+                // When search is cleared, restore original collapsed states
+                const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+                for (const [category, collapsed] of Object.entries(collapsedCategories)) {
+                    if (collapsed) {
+                        html.find(`.codex-section[data-category="${category}"]`).addClass('collapsed');
+                    }
+                }
+                // Only filter by tags if any are selected
+                if (this.filters.tags && this.filters.tags.length > 0) {
+                    // Always expand all categories for tag filtering
+                    html.find('.codex-section').removeClass('collapsed');
+                    filterEntries();
+                }
             }
         });
 
