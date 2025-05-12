@@ -383,6 +383,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                         icon: '<i class="fas fa-theater-masks"></i>',
                         label: 'Import JSON',
                         callback: async (html) => {
+                            ui.notifications.info('Importing Codex entries. This may take some time as entries are added, updated, indexed, and sorted. You will be notified when the process is complete.');
                             const value = html.find('#codex-import-json').val();
                             try {
                                 const data = JSON.parse(value);
