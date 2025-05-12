@@ -136,6 +136,15 @@ export class CodexPanel {
                 if (search) {
                     searchMatch = text.includes(search);
                 }
+                // Hide entries the user cannot see (non-GMs)
+                if (!game.user.isGM) {
+                    // Try to get ownership from data attribute, fallback to hiding if not present
+                    const ownershipDefault = entry.data('ownershipDefault');
+                    if (typeof ownershipDefault !== 'undefined' && ownershipDefault < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+                        entry.hide();
+                        return;
+                    }
+                }
                 entry.toggle(searchMatch);
             });
             // Hide category sections with no visible entries
