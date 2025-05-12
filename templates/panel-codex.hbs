@@ -33,7 +33,7 @@
 
     <div class="codex-content">
         {{#each categoriesData as |cat|}}
-            <div class="codex-section" data-category="{{cat.name}}">
+            <div class="codex-section {{#if cat.collapsed}}collapsed{{/if}}" data-category="{{cat.name}}">
                 <div class="codex-category">
                     <h3>
                         <i class="fas {{cat.icon}}"></i>

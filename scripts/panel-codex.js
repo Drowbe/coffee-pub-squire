@@ -166,6 +166,19 @@ export class CodexPanel {
             this.filters.tags = [];
             searchInput.val("");
             html.find('.codex-tag.selected').removeClass('selected');
+            
+            // Show all entries and sections
+            html.find('.codex-entry').show();
+            html.find('.codex-section').show();
+            
+            // Restore original collapsed states
+            const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+            for (const [category, collapsed] of Object.entries(collapsedCategories)) {
+                if (collapsed) {
+                    html.find(`.codex-section[data-category="${category}"]`).addClass('collapsed');
+                }
+            }
+            
             this.render(this.element);
         });
 
@@ -179,6 +192,26 @@ export class CodexPanel {
             } else {
                 this.filters.tags.splice(tagIndex, 1);
             }
+            
+            // Show all entries and sections before filtering
+            html.find('.codex-entry').show();
+            html.find('.codex-section').show();
+            
+            // If we have tags selected, expand all categories
+            if (this.filters.tags.length > 0) {
+                html.find('.codex-section').removeClass('collapsed');
+                // Temporarily clear the collapsed state in user flags while filtering
+                game.user.setFlag(MODULE.ID, 'codexCollapsedCategories', {});
+            } else {
+                // If no tags selected, restore original collapsed states
+                const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+                for (const [category, collapsed] of Object.entries(collapsedCategories)) {
+                    if (collapsed) {
+                        html.find(`.codex-section[data-category="${category}"]`).addClass('collapsed');
+                    }
+                }
+            }
+            
             this.render(this.element);
         });
 
@@ -273,6 +306,13 @@ export class CodexPanel {
         html.find('.codex-category .fa-chevron-down').click(function(e) {
             const section = $(this).closest('.codex-section');
             section.toggleClass('collapsed');
+            
+            const category = section.data('category');
+            const collapsed = section.hasClass('collapsed');
+            const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+            collapsedCategories[category] = collapsed;
+            game.user.setFlag(MODULE.ID, 'codexCollapsedCategories', collapsedCategories);
+            
             e.stopPropagation();
         });
 
@@ -537,7 +577,7 @@ SPECIFIC INSTRUCTIONS HERE`;
         await this._refreshData();
 
         // Get collapsed states
-        const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+        const collapsedCategories = this.filters.tags.length > 0 ? {} : (game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {});
         const isTagCloudCollapsed = game.user.getFlag(MODULE.ID, 'codexTagCloudCollapsed') || false;
 
         // Build categoriesData array for the template
@@ -551,7 +591,8 @@ SPECIFIC INSTRUCTIONS HERE`;
             return {
                 name: category,
                 icon: this.getCategoryIcon(category),
-                entries
+                entries,
+                collapsed: collapsedCategories[category] || false
             };
         });
 
