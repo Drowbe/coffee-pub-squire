@@ -348,7 +348,7 @@ export class CodexPanel {
 **DESCRIPTION** - A description of the entry that would help someone understand what, where, or show this is, and enough context to make it interesting. (make it 200 to 500 characters)
 **PLOTHOOK** - The relationship to the plot,  especially if they have something the party might need (under 200 characters)
 **LOCATION** - where the character is located (a city, area, or establishment). It is fine to add a location and area, but use a greater-than symbol between them, e.g, "Phlan > Thorne Island > Aquatic Crypt"
-**TAGS** - a list of tags that would help filter this entry when looking it up. These will be used for filtering, so characteristics and identifying attributes like type, location, faction, etc., would be useful. The first tag should always be the category. Add no more than 10 tags. Having spaces in the tag is okay, but do not divide words with special characters like underscores. You should always add the location as a tag, but the location should be specific. Something like "Phlan - Thorne Island - Aquatic Crypt" would be three tags. Also, be mindful of when a particular tag might need to be a second, less specific tag. For instance, "black cult of the dragon" is a particular tag, but we should add a second tag for "cult" which would be another proper tag. They should be formatted to be json-friendly and will be an array formatted like: "npc", "inn", "drinking game", "informant", "phlan".
+**TAGS** - a list of tags that would help filter this entry when looking it up. These will be used for filtering, so characteristics and identifying attributes like type, location, faction, etc., would be useful. There should never be tags for words like "the" and there should never be single-letter tags like "a". The first tag should always be the category. Add no more than 5 tags. Having spaces in the tag is okay, but do not divide words with special characters like underscores. You should always add the location as a tag, but the location should be specific. Something like "Phlan - Thorne Island - Aquatic Crypt" would be three tags. Also, be mindful of when a particular tag might need to be a second, less specific tag. For instance, "black cult of the dragon" is a particular tag, but we should add a second tag for "cult" which would be another proper tag. They should be formatted to be json-friendly and will be an array formatted like: "npc", "inn", "drinking game", "informant", "phlan".
 
 Replace the above items in their matching placeholder below. Be sure the text is JSON-friendly. Do not change any of the code, replace the placeholders. This JSON  will be cut and pasted into an importer. Here is the template to use to build the JSON. It is an array, so be sure the JSON is valid, creates proper arrays, and has no linter errors:
 
@@ -617,16 +617,32 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Sort entries alphabetically by name
             entries = entries.slice().sort((a, b) => a.name.localeCompare(b.name));
             const totalCount = entries.length;
-            const visibleCount = entries.filter(e => (e.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER).length;
+            const visibleEntries = entries.filter(e => (e.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
+            const visibleCount = visibleEntries.length;
             return {
                 name: category,
                 icon: this.getCategoryIcon(category),
                 entries,
                 collapsed: collapsedCategories[category] || false,
                 totalCount,
-                visibleCount
+                visibleCount,
+                visibleEntries
             };
         });
+
+        // Build allTags for tag cloud
+        let allTags;
+        if (game.user.isGM) {
+            // GMs see tags from all entries
+            const allEntries = categoriesData.flatMap(cat => cat.entries);
+            allTags = new Set();
+            allEntries.forEach(entry => entry.tags.forEach(tag => allTags.add(tag)));
+        } else {
+            // Players see tags only from visible entries
+            const allVisibleEntries = categoriesData.flatMap(cat => cat.visibleEntries);
+            allTags = new Set();
+            allVisibleEntries.forEach(entry => entry.tags.forEach(tag => allTags.add(tag)));
+        }
 
         // Prepare template data
         const templateData = {
@@ -639,7 +655,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 ...this.filters,
                 search: this.filters.search || ""
             },
-            allTags: Array.from(this.allTags).sort(),
+            allTags: Array.from(allTags).sort(),
             isTagCloudCollapsed
         };
 
