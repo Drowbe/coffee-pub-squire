@@ -560,9 +560,52 @@ export class QuestPanel {
         // Import Quests from JSON (GM only)
         html.find('.import-quests-json').click(() => {
             if (!game.user.isGM) return;
+            const template = `I want you to build a JSON template based on the criteria I will share below. Here are the rules for how you will add data to the JSON.
+
+**NAME** - the name of the Quest. DO not add "the" or "a" to the name.
+**CATEGORY** - This will either be "Main Quest" or "Side Quest"
+**DESCRIPTION** - A description of the entry that would help someone understand what, where, or show this is and enough context to make it interesting. (under 600 characters)
+**PLOTHOOK** - The relationship to the plot,  especially if they have something the party might need to know or understand. (under 300 characters) 
+**LOCATION** - where the character is located (a city, area, or establishment). It is fine to add a locationan and area, but use a greater-than symbol between them e.g "Phlan > Thorne Island > Aquatic Crypt"
+**TASK** - These represent the list of objectives that must be met to complete the quest. You can have several of these, but there has to be at least one. They are part of an array. 
+**DURATION** - Optional. If the quest is time-bound, add the duration here. Valid durations include "number of days" or a qualifier like "Before bob dies."
+**XP** - The amount of experience points the party gets for completing the task. Note it if is per person or overall.
+**TREASURE** - List any specific item that the party might get upon comp-letion of the quest.
+**TAGS** - a list of tags that would help filter this entry when looking it up. These will be used for filtering, so characteristics and idenitifying attributes like type, location, faction, etc. would be useful. The first tag should always be the category. Add no more than 10 tags. It is okay to have spaces in the tag, but do not divide words with special character like underscores. You should always add th elocation as a tag, but the location should be specific. Something like "Phlan - Thorne Island - Aquatic Crypt" would actually be three tags. Also, be mindfule of when a specific tag might need to be a second, less specific tag. For instance, "black cult of the dragon" is a specific tag, but we shoudl add a second tag for "cult" which would be another useful tag. They should be formatted to be json-friendly and will be an array formatted like: "npc", "inn", "drinking game", "informant", "phlan". For most tags they should be lowercase, single-word tags unless the tag is the name of something like "black cult of the dragon". A tag would be something that would likely be applied to more than one entry. For example, "arena beast" is unnecessary... it should be "arena" and "beast". They should not be niche or overly specific phrases. Remember, these are used to group like things based on characteristics of the entry.
+
+Replace the above items in their matching placeholder below. Be sure the text is JSON-friendly. Do not change any of the code, just replace the placeholders. This JSON  will be cut and pasted into an importer
+
+[
+    {
+    "name": "**NAME**", 
+    "img": null,
+    "category": "**CATEGORY**", 
+    "description": "**DESCRIPTION**", 
+    "plotHook": "**PLOTHOOK**",   
+    "location": "**LOCATION**",   
+    "tasks": [  
+        { "text": "**TASK**", "state": "active" }
+    ],
+    "reward": { 
+        "xp": **XP** 
+        "treasure": "**TREASURE**" 
+    },
+    "timeframe": { 
+        "duration": "**DURATION**"
+    },
+    "status": "Not Started", 
+    "tags": [ **TAGS** ],
+    "visible": false  
+    }
+]
+
+Here are the specific instructions I want you to use to build the above JSON array:
+
+SPECIFIC INSTRUCTIONS HERE`;
             new Dialog({
                 title: 'Import Quests from JSON',
                 content: `
+                    <button type="button" class="copy-template-button" style="margin-bottom:8px;">Copy a Blank, Pasteable JSON template to the clipboard</button>
                     <div style="margin-bottom: 8px;">Paste your quest JSON below. Each quest should be an object with at least a <code>name</code> field.</div>
                     <textarea id="import-quests-json-input" style="width:100%;height:500px;resize:vertical;"></textarea>
                 `,
@@ -669,7 +712,14 @@ export class QuestPanel {
                         label: 'Cancel'
                     }
                 },
-                default: 'import'
+                default: 'import',
+                render: (html) => {
+                    html.find('.copy-template-button').click(() => {
+                        navigator.clipboard.writeText(template).then(() => {
+                            ui.notifications.info('Template copied to clipboard!');
+                        });
+                    });
+                }
             }).render(true);
         });
 

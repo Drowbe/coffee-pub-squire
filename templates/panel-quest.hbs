@@ -4,12 +4,14 @@
             Quests
         </span>
         <div class="quest-toolbar">
+            {{#if isGM}}
+                <i class="fas fa-feather open-quest-journal" title="Open Quest Journal"></i>
+            {{/if}}
             <i class="fas fa-sync-alt refresh-quest-button" title="Refresh Quests"></i>
             {{#if isGM}}
+                <i class="fas fa-cog set-quest-button" title="Select Journal for Quests"></i>
                 <i class="fas fa-file-import import-quests-json" title="Import Quests from JSON"></i>
                 <i class="fas fa-file-export export-quests-json" title="Export Quests to JSON"></i>
-                <i class="fas fa-cog set-quest-button" title="Select Journal for Quests"></i>
-                <i class="fas fa-feather open-quest-journal" title="Open Quest Journal"></i>
             {{/if}}
         </div>
     </div>
