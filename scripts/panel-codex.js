@@ -44,10 +44,13 @@ export class CodexPanel {
      */
     getCategoryIcon(category) {
         const map = {
-            'Characters': 'fa-user',
-            'Locations': 'fa-map',
-            'Artifact': 'fa-gem',
             'Artifacts': 'fa-gem',
+            'Characters': 'fa-user',
+            'Events': 'fa-calendar-star',
+            'Factions': 'fa-shield-cross',
+            'Items': 'fa-box',
+            'Locations': 'fa-location-pin',
+            'Maps': 'fa-map'
             // Add more mappings as needed
         };
         return map[category] || 'fa-book';
