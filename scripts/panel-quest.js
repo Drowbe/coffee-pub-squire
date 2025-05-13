@@ -1034,9 +1034,25 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 }
                                 
                                 // Check if actor is already in participants
-                                const isActorAlreadyAdded = allParticipants.some(p => 
-                                    p.includes(actor.name) || p.includes(actor.uuid) || p.includes(uuidLink)
-                                );
+                                // We need to improve this check to handle various formats
+                                const isActorAlreadyAdded = allParticipants.some(p => {
+                                    // Check direct matches of the actor name or UUID
+                                    if (p.includes(actor.name) || p.includes(actor.uuid)) return true;
+                                    
+                                    // Check for UUID pattern matches
+                                    if (p.includes(`@UUID[${actor.uuid}]`) || p.includes(`@UUID[Actor.${actor.id}]`)) return true;
+                                    
+                                    // Parse the HTML to find data-uuid attributes
+                                    const tempEl = document.createElement('div');
+                                    tempEl.innerHTML = p;
+                                    const links = tempEl.querySelectorAll('a[data-uuid]');
+                                    for (const link of links) {
+                                        const linkUuid = link.dataset.uuid;
+                                        if (linkUuid === actor.uuid || linkUuid === `Actor.${actor.id}`) return true;
+                                    }
+                                    
+                                    return false;
+                                });
                                 
                                 if (isActorAlreadyAdded) {
                                     ui.notifications.warn(`${actor.name} is already a participant.`);
@@ -1130,9 +1146,24 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 }
                                 
                                 // Check if item is already in treasures
-                                const isItemAlreadyAdded = allTreasures.some(t => 
-                                    t.includes(item.name) || t.includes(item.uuid) || t.includes(uuidLink)
-                                );
+                                const isItemAlreadyAdded = allTreasures.some(t => {
+                                    // Check direct matches of the item name or UUID
+                                    if (t.includes(item.name) || t.includes(item.uuid)) return true;
+                                    
+                                    // Check for UUID pattern matches
+                                    if (t.includes(`@UUID[${item.uuid}]`) || t.includes(`@UUID[Item.${item.id}]`)) return true;
+                                    
+                                    // Parse the HTML to find data-uuid attributes
+                                    const tempEl = document.createElement('div');
+                                    tempEl.innerHTML = t;
+                                    const links = tempEl.querySelectorAll('a[data-uuid]');
+                                    for (const link of links) {
+                                        const linkUuid = link.dataset.uuid;
+                                        if (linkUuid === item.uuid || linkUuid === `Item.${item.id}`) return true;
+                                    }
+                                    
+                                    return false;
+                                });
                                 
                                 if (isItemAlreadyAdded) {
                                     ui.notifications.warn(`${item.name} is already listed as treasure.`);
