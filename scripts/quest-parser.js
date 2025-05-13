@@ -127,7 +127,6 @@ export class QuestParser {
                                         name: doc.name,
                                         img: doc.img || doc.thumbnail || 'icons/svg/mystery-man.svg'
                                     });
-                                    entry.tags.push(doc.name);
                                 }
                             }
                         }
@@ -143,7 +142,6 @@ export class QuestParser {
                                         name: part,
                                         img: 'icons/svg/mystery-man.svg'
                                     });
-                                    entry.tags.push(part);
                                 }
                             }
                         }
@@ -169,7 +167,6 @@ export class QuestParser {
                                             name: doc.name, 
                                             img: doc.img || doc.thumbnail || 'icons/svg/mystery-man.svg'
                                         });
-                                        entry.tags.push(doc.name);
                                     }
                                 }
                             } else {
@@ -180,7 +177,6 @@ export class QuestParser {
                                         name: text,
                                         img: 'icons/svg/mystery-man.svg'
                                     });
-                                    entry.tags.push(text);
                                 }
                             }
                         }
@@ -248,21 +244,13 @@ export class QuestParser {
         // If no name, skip
         if (!entry.name) return null;
 
-        // Ensure all participant names are in tags
+        // Filter out empty participants
         if (Array.isArray(entry.participants)) {
             // Filter out any empty participant objects or strings
             entry.participants = entry.participants.filter(p => {
                 if (!p) return false;
                 if (typeof p === 'string') return p.trim() !== '';
                 return p.uuid || (p.name && p.name.trim() !== '');
-            });
-            
-            entry.participants.forEach(p => {
-                if (typeof p === 'string') {
-                    entry.tags.push(p);
-                } else if (p && typeof p.name === 'string') {
-                    entry.tags.push(p.name);
-                }
             });
         }
 

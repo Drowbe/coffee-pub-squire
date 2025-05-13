@@ -115,21 +115,10 @@ export class QuestPanel {
                             entry.visible = visible;
                             const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
                             this.data[category].push(entry);
-                            // Add regular tags
-                            entry.tags.forEach(tag => this.allTags.add(tag));
-                            // Add status as a special tag
-                            if (entry.status) {
-                                this.allTags.add(entry.status);
-                            }
-                            // Add participant names as tags
-                            if (Array.isArray(entry.participants)) {
-                                entry.participants.forEach(p => {
-                                    if (typeof p === 'string') {
-                                        this.allTags.add(p);
-                                    } else if (p && typeof p.name === 'string') {
-                                        this.allTags.add(p.name);
-                                    }
-                                });
+                            
+                            // Add only the explicit tags from the entry
+                            if (entry.tags && Array.isArray(entry.tags)) {
+                                entry.tags.forEach(tag => this.allTags.add(tag));
                             }
                         }
                     }
@@ -151,6 +140,8 @@ export class QuestPanel {
         const filteredEntries = sortedEntries.filter(entry => game.user.isGM || entry.visible !== false);
         if (this.filters.tags.length > 0) {
             return filteredEntries.filter(entry => {
+                // Only check for tags in the explicit tags array
+                if (!entry.tags || !Array.isArray(entry.tags)) return false;
                 const hasAnyTag = this.filters.tags.some(tag => entry.tags.includes(tag));
                 return hasAnyTag;
             });
@@ -985,42 +976,103 @@ SPECIFIC INSTRUCTIONS HERE`;
                         ui.notifications.warn("Could not find the quest page.");
                         return;
                     }
+                    
+                    // Get the document content
                     let content = page.text.content;
                     let updated = false;
+                    
                     if (data.type === 'Actor') {
                         const actor = await fromUuid(data.uuid || (data.id ? `Actor.${data.id}` : undefined));
                         if (actor) {
-                            let participants = [];
-                            let contentParts = content.split(/(<p><strong>Participants:<\/strong><\/p>)/);
-                            if (contentParts.length > 2) {
-                                let afterP = contentParts[2];
-                                let sectionEnd = afterP.indexOf('<p>');
-                                let section = sectionEnd !== -1 ? afterP.slice(0, sectionEnd) : afterP;
-                                let rest = sectionEnd !== -1 ? afterP.slice(sectionEnd) : '';
-                                let ulBlocks = [];
-                                let ulRegex = /<ul>([\s\S]*?)<\/ul>/g;
-                                let match;
-                                while ((match = ulRegex.exec(section)) !== null) {
-                                    ulBlocks.push(match[1]);
-                                }
-                                ulBlocks.forEach(block => {
-                                    participants.push(...block.split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean));
-                                });
-                                // Remove all those <ul> blocks from section
-                                section = section.replace(/(<ul>[\s\S]*?<\/ul>\s*)+/g, '');
-                                content = contentParts[0] + contentParts[1] + section + rest;
-                            }
+                            // Create the UUID link for the actor
                             const uuidLink = actor.uuid ? `@UUID[${actor.uuid}]{${actor.name}}` : `@UUID[Actor.${actor.id}]{${actor.name}}`;
-                            if (!participants.includes(uuidLink) && !participants.includes(actor.name)) {
-                                participants.push(uuidLink);
-                                const listHtml = `<ul>${participants.map(p => `<li class='quest-participant'>${p}</li>`).join('')}</ul>`;
-                                content = content.replace(/(<p><strong>Participants:<\/strong><\/p>)/, `$1\n${listHtml}`);
+
+                            // NEW APPROACH: More aggressive HTML parsing to fix duplicate sections
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = content;
+                            
+                            // Find all Participants sections
+                            const participantHeadings = [...tempDiv.querySelectorAll('p')].filter(p => 
+                                p.textContent.trim().startsWith('Participants:') || 
+                                (p.querySelector('strong') && p.querySelector('strong').textContent.trim() === 'Participants:')
+                            );
+                            
+                            if (participantHeadings.length > 0) {
+                                // Get the first heading
+                                const firstHeading = participantHeadings[0];
+                                
+                                // Find all participant lists following any heading
+                                const allParticipantLists = [];
+                                for (const heading of participantHeadings) {
+                                    let nextElement = heading.nextElementSibling;
+                                    while (nextElement && nextElement.tagName === 'UL') {
+                                        allParticipantLists.push(nextElement);
+                                        nextElement = nextElement.nextElementSibling;
+                                    }
+                                }
+                                
+                                // Collect all participant items
+                                const allParticipants = [];
+                                for (const list of allParticipantLists) {
+                                    const items = list.querySelectorAll('li');
+                                    for (const item of items) {
+                                        allParticipants.push(item.innerHTML);
+                                    }
+                                }
+                                
+                                // Check if actor is already in participants
+                                const isActorAlreadyAdded = allParticipants.some(p => 
+                                    p.includes(actor.name) || p.includes(actor.uuid) || p.includes(uuidLink)
+                                );
+                                
+                                if (isActorAlreadyAdded) {
+                                    ui.notifications.warn(`${actor.name} is already a participant.`);
+                                    return;
+                                }
+                                
+                                // Add new actor
+                                allParticipants.push(uuidLink);
+                                
+                                // Remove all existing participant lists
+                                for (const list of allParticipantLists) {
+                                    list.parentNode.removeChild(list);
+                                }
+                                
+                                // Remove all participant headings except the first one
+                                for (let i = 1; i < participantHeadings.length; i++) {
+                                    participantHeadings[i].parentNode.removeChild(participantHeadings[i]);
+                                }
+                                
+                                // Create new list after the first heading
+                                const newList = document.createElement('ul');
+                                newList.innerHTML = allParticipants.map(p => `<li class="quest-participant">${p}</li>`).join('');
+                                
+                                // Insert after the first heading
+                                if (firstHeading.nextSibling) {
+                                    firstHeading.parentNode.insertBefore(newList, firstHeading.nextSibling);
+                                } else {
+                                    firstHeading.parentNode.appendChild(newList);
+                                }
+                                
+                                // Update the content
+                                content = tempDiv.innerHTML;
                                 updated = true;
                                 ui.notifications.info(`Added ${actor.name} as a participant.`);
                                 $entry.addClass('dropped-success');
                                 setTimeout(() => $entry.removeClass('dropped-success'), 800);
                             } else {
-                                ui.notifications.warn(`${actor.name} is already a participant.`);
+                                // No participants section exists, create one at the end
+                                const participantsSection = `
+                                    <p><strong>Participants:</strong></p>
+                                    <ul>
+                                        <li class="quest-participant">${uuidLink}</li>
+                                    </ul>
+                                `;
+                                content += participantsSection;
+                                updated = true;
+                                ui.notifications.info(`Added ${actor.name} as a participant.`);
+                                $entry.addClass('dropped-success');
+                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
                             }
                         } else {
                             ui.notifications.error('Could not resolve actor from drop.');
@@ -1028,37 +1080,95 @@ SPECIFIC INSTRUCTIONS HERE`;
                     } else if (data.type === 'Item') {
                         const item = await fromUuid(data.uuid || (data.id ? `Item.${data.id}` : undefined));
                         if (item) {
-                            let treasures = [];
-                            let contentParts = content.split(/(<p><strong>Treasure:<\/strong><\/p>)/);
-                            if (contentParts.length > 2) {
-                                let afterP = contentParts[2];
-                                let sectionEnd = afterP.indexOf('<p>');
-                                let section = sectionEnd !== -1 ? afterP.slice(0, sectionEnd) : afterP;
-                                let rest = sectionEnd !== -1 ? afterP.slice(sectionEnd) : '';
-                                let ulBlocks = [];
-                                let ulRegex = /<ul>([\s\S]*?)<\/ul>/g;
-                                let match;
-                                while ((match = ulRegex.exec(section)) !== null) {
-                                    ulBlocks.push(match[1]);
-                                }
-                                ulBlocks.forEach(block => {
-                                    treasures.push(...block.split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean));
-                                });
-                                // Remove all those <ul> blocks from section
-                                section = section.replace(/(<ul>[\s\S]*?<\/ul>\s*)+/g, '');
-                                content = contentParts[0] + contentParts[1] + section + rest;
-                            }
+                            // Create the UUID link for the item
                             const uuidLink = item.uuid ? `@UUID[${item.uuid}]{${item.name}}` : `@UUID[Item.${item.id}]{${item.name}}`;
-                            if (!treasures.includes(uuidLink) && !treasures.includes(item.name)) {
-                                treasures.push(uuidLink);
-                                const listHtml = `<ul>${treasures.map(t => `<li class='quest-treasure'>${t}</li>`).join('')}</ul>`;
-                                content = content.replace(/(<p><strong>Treasure:<\/strong><\/p>)/, `$1\n${listHtml}`);
+
+                            // Use DOM-based approach to fix duplicate sections
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = content;
+                            
+                            // Find all Treasure sections
+                            const treasureHeadings = [...tempDiv.querySelectorAll('p')].filter(p => 
+                                p.textContent.trim().startsWith('Treasure:') || 
+                                (p.querySelector('strong') && p.querySelector('strong').textContent.trim() === 'Treasure:')
+                            );
+                            
+                            if (treasureHeadings.length > 0) {
+                                // Get the first heading
+                                const firstHeading = treasureHeadings[0];
+                                
+                                // Find all treasure lists following any heading
+                                const allTreasureLists = [];
+                                for (const heading of treasureHeadings) {
+                                    let nextElement = heading.nextElementSibling;
+                                    while (nextElement && nextElement.tagName === 'UL') {
+                                        allTreasureLists.push(nextElement);
+                                        nextElement = nextElement.nextElementSibling;
+                                    }
+                                }
+                                
+                                // Collect all treasure items
+                                const allTreasures = [];
+                                for (const list of allTreasureLists) {
+                                    const items = list.querySelectorAll('li');
+                                    for (const item of items) {
+                                        allTreasures.push(item.innerHTML);
+                                    }
+                                }
+                                
+                                // Check if item is already in treasures
+                                const isItemAlreadyAdded = allTreasures.some(t => 
+                                    t.includes(item.name) || t.includes(item.uuid) || t.includes(uuidLink)
+                                );
+                                
+                                if (isItemAlreadyAdded) {
+                                    ui.notifications.warn(`${item.name} is already listed as treasure.`);
+                                    return;
+                                }
+                                
+                                // Add new item
+                                allTreasures.push(uuidLink);
+                                
+                                // Remove all existing treasure lists
+                                for (const list of allTreasureLists) {
+                                    list.parentNode.removeChild(list);
+                                }
+                                
+                                // Remove all treasure headings except the first one
+                                for (let i = 1; i < treasureHeadings.length; i++) {
+                                    treasureHeadings[i].parentNode.removeChild(treasureHeadings[i]);
+                                }
+                                
+                                // Create new list after the first heading
+                                const newList = document.createElement('ul');
+                                newList.innerHTML = allTreasures.map(t => `<li class="quest-treasure">${t}</li>`).join('');
+                                
+                                // Insert after the first heading
+                                if (firstHeading.nextSibling) {
+                                    firstHeading.parentNode.insertBefore(newList, firstHeading.nextSibling);
+                                } else {
+                                    firstHeading.parentNode.appendChild(newList);
+                                }
+                                
+                                // Update the content
+                                content = tempDiv.innerHTML;
                                 updated = true;
                                 ui.notifications.info(`Added ${item.name} as treasure.`);
                                 $entry.addClass('dropped-success');
                                 setTimeout(() => $entry.removeClass('dropped-success'), 800);
                             } else {
-                                ui.notifications.warn(`${item.name} is already listed as treasure.`);
+                                // No treasure section exists, create one at the end
+                                const treasureSection = `
+                                    <p><strong>Treasure:</strong></p>
+                                    <ul>
+                                        <li class="quest-treasure">${uuidLink}</li>
+                                    </ul>
+                                `;
+                                content += treasureSection;
+                                updated = true;
+                                ui.notifications.info(`Added ${item.name} as treasure.`);
+                                $entry.addClass('dropped-success');
+                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
                             }
                         } else {
                             ui.notifications.error('Could not resolve item from drop.');
@@ -1175,13 +1285,9 @@ SPECIFIC INSTRUCTIONS HERE`;
             allTags = new Set();
             for (const category of this.categories) {
                 for (const entry of this.data[category] || []) {
-                    entry.tags.forEach(tag => allTags.add(tag));
-                    if (entry.status) allTags.add(entry.status);
-                    if (Array.isArray(entry.participants)) {
-                        entry.participants.forEach(p => {
-                            if (typeof p === 'string') allTags.add(p);
-                            else if (p && typeof p.name === 'string') allTags.add(p.name);
-                        });
+                    // Add only explicit tags
+                    if (entry.tags && Array.isArray(entry.tags)) {
+                        entry.tags.forEach(tag => allTags.add(tag));
                     }
                 }
             }
@@ -1191,13 +1297,9 @@ SPECIFIC INSTRUCTIONS HERE`;
             for (const category of this.categories) {
                 for (const entry of this.data[category] || []) {
                     if (entry.visible !== false) {
-                        entry.tags.forEach(tag => allTags.add(tag));
-                        if (entry.status) allTags.add(entry.status);
-                        if (Array.isArray(entry.participants)) {
-                            entry.participants.forEach(p => {
-                                if (typeof p === 'string') allTags.add(p);
-                                else if (p && typeof p.name === 'string') allTags.add(p.name);
-                            });
+                        // Add only explicit tags
+                        if (entry.tags && Array.isArray(entry.tags)) {
+                            entry.tags.forEach(tag => allTags.add(tag));
                         }
                     }
                 }

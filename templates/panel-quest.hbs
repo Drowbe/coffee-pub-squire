@@ -204,14 +204,8 @@
                                 <!-- TAGS -->      
                                 {{#if entry.tags.length}}
                                     <div class="quest-entry-tags">
-                                        {{#if entry.status}}
-                                            <span class="quest-tag quest-status {{#if (includes @root.filters.tags entry.status)}}selected{{/if}}" data-tag="{{entry.status}}">{{entry.status}}</span>
-                                        {{/if}}
-                                        <span class="quest-tag {{#if (includes @root.filters.tags entry.category)}}selected{{/if}}" data-tag="{{entry.category}}">{{entry.category}}</span>
                                         {{#each entry.tags}}
-                                            {{#unless (eq this ../entry.category)}}
-                                                <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                                            {{/unless}}
+                                            <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
                                         {{/each}}
                                     </div>
                                 {{/if}}
@@ -372,16 +366,11 @@
                                     </div>
                                 {{/if}}
 
+                                <!-- TAGS -->      
                                 {{#if entry.tags.length}}
                                     <div class="quest-entry-tags">
-                                        {{#if entry.status}}
-                                            <span class="quest-tag quest-status {{#if (includes @root.filters.tags entry.status)}}selected{{/if}}" data-tag="{{entry.status}}">{{entry.status}}</span>
-                                        {{/if}}
-                                        <span class="quest-tag {{#if (includes @root.filters.tags entry.category)}}selected{{/if}}" data-tag="{{entry.category}}">{{entry.category}}</span>
                                         {{#each entry.tags}}
-                                            {{#unless (eq this ../entry.category)}}
-                                                <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                                            {{/unless}}
+                                            <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
                                         {{/each}}
                                     </div>
                                 {{/if}}
@@ -543,16 +532,11 @@
                                     </div>
                                 {{/if}}
 
+                                <!-- TAGS -->      
                                 {{#if entry.tags.length}}
                                     <div class="quest-entry-tags">
-                                        {{#if entry.status}}
-                                            <span class="quest-tag quest-status {{#if (includes @root.filters.tags entry.status)}}selected{{/if}}" data-tag="{{entry.status}}">{{entry.status}}</span>
-                                        {{/if}}
-                                        <span class="quest-tag {{#if (includes @root.filters.tags entry.category)}}selected{{/if}}" data-tag="{{entry.category}}">{{entry.category}}</span>
                                         {{#each entry.tags}}
-                                            {{#unless (eq this ../entry.category)}}
-                                                <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                                            {{/unless}}
+                                            <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
                                         {{/each}}
                                     </div>
                                 {{/if}}
@@ -713,16 +697,11 @@
                                     </div>
                                 {{/if}}
 
+                                <!-- TAGS -->      
                                 {{#if entry.tags.length}}
                                     <div class="quest-entry-tags">
-                                        {{#if entry.status}}
-                                            <span class="quest-tag quest-status {{#if (includes @root.filters.tags entry.status)}}selected{{/if}}" data-tag="{{entry.status}}">{{entry.status}}</span>
-                                        {{/if}}
-                                        <span class="quest-tag {{#if (includes @root.filters.tags entry.category)}}selected{{/if}}" data-tag="{{entry.category}}">{{entry.category}}</span>
                                         {{#each entry.tags}}
-                                            {{#unless (eq this ../entry.category)}}
-                                                <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
-                                            {{/unless}}
+                                            <span class="quest-tag {{#if (includes @root.filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
                                         {{/each}}
                                     </div>
                                 {{/if}}
