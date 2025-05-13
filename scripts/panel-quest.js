@@ -183,9 +183,15 @@ export class QuestPanel {
                     const location = entry.find('.quest-entry-location').text().toLowerCase();
                     const tasks = entry.find('.quest-entry-tasks').text().toLowerCase();
                     const plotHook = entry.find('.quest-entry-plothook').text().toLowerCase();
-                    const participants = entry.find('.quest-entry-participants').text().toLowerCase();
                     const tags = entry.find('.quest-entry-tags').text().toLowerCase();
                     const treasure = entry.find('.quest-entry-reward').text().toLowerCase();
+                    
+                    // Special handling for participants - extract names from portrait title attributes
+                    let participants = '';
+                    entry.find('.participant-portrait').each(function() {
+                        participants += $(this).attr('title') + ' ';
+                    });
+                    participants = participants.toLowerCase();
                     
                     const matches = name.includes(searchValue) || 
                         description.includes(searchValue) || 
