@@ -5,31 +5,24 @@
     </div>
 
     <div class="form-group">
-        <label>Image</label>
-        <div class="quest-image-container">
-            {{#if quest.img}}
-                <img src="{{quest.img}}" alt="{{quest.name}}" class="quest-image-preview">
-            {{/if}}
-            <button type="button" class="quest-image-upload">
-                <i class="fas fa-upload"></i> Upload Image
-            </button>
-        </div>
-    </div>
-
-    <div class="form-group">
         <label>Category</label>
         <select name="category">
-            {{#each categories}}
-                <option value="{{this}}" {{#if (eq ../quest.category this)}}selected{{/if}}>{{this}}</option>
+            {{#each categories as |category|}}
+                {{#unless (eq category "Pinned")}}
+                    <option value="{{category}}" {{#if (and (eq ../quest.category category) (not (eq category "Pinned")))}}selected{{else if (and (eq @index 0) (not ../quest.category))}}selected{{/if}}>{{category}}</option>
+                {{/unless}}
             {{/each}}
         </select>
     </div>
 
     <div class="form-group">
-        <label>Timeframe</label>
-        <div class="form-fields">
-            <input type="text" name="timeframe.duration" value="{{quest.timeframe.duration}}" placeholder="Duration">
-        </div>
+        <label>Status</label>
+        <select name="status">
+            <option value="Not Started" selected>Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Complete">Complete</option>
+            <option value="Failed">Failed</option>
+        </select>
     </div>
 
     <div class="form-group">
@@ -38,34 +31,33 @@
     </div>
 
     <div class="form-group">
-        <label>Tasks (one per line)</label>
-        <textarea name="tasks" rows="4">{{quest.tasks}}</textarea>
-    </div>
-
-    <div class="form-group">
-        <label>Reward</label>
-        <div class="form-fields">
-            <input type="number" name="reward.xp" value="{{quest.reward.xp}}" placeholder="XP">
-            <input type="number" name="reward.treasure" value="{{quest.reward.treasure}}" placeholder="Treasure">
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label>Participants (one per line)</label>
-        <textarea name="participants" rows="3">{{quest.participants}}</textarea>
-    </div>
-
-    <div class="form-group">
         <label>Plot Hook</label>
         <textarea name="plotHook" rows="3">{{quest.plotHook}}</textarea>
     </div>
 
     <div class="form-group">
-        <label>Progress</label>
-        <div class="form-fields">
-            <input type="text" name="progress.status" value="{{quest.progress.status}}" placeholder="Status">
-            <input type="number" name="progress.percentage" value="{{quest.progress.percentage}}" placeholder="Percentage" min="0" max="100">
-        </div>
+        <label>Location</label>
+        <input type="text" name="location" value="{{quest.location}}">
+    </div>
+
+    <div class="form-group">
+        <label>Tasks (one per line)</label>
+        <textarea name="tasks" rows="4">{{quest.tasks}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Experience Points</label>
+        <input type="number" name="reward.xp" value="{{quest.reward.xp}}" placeholder="XP">
+    </div>
+
+    <div class="form-group">
+        <label>Treasure</label>
+        <input type="text" name="reward.treasure" value="{{quest.reward.treasure}}" placeholder="Treasure">
+    </div>
+
+    <div class="form-group">
+        <label>Timeframe</label>
+        <input type="text" name="timeframe.duration" value="{{quest.timeframe.duration}}" placeholder="Duration">
     </div>
 
     <div class="form-group">
@@ -78,7 +70,7 @@
         <label>Visibility</label>
         <div class="form-fields">
             <label class="checkbox">
-                <input type="checkbox" name="visible" {{#if quest.visible}}checked{{/if}}>
+                <input type="checkbox" name="visible">
                 Visible to Players
             </label>
         </div>

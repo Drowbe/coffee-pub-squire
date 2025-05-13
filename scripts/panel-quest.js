@@ -236,6 +236,26 @@ export class QuestPanel {
             journal.sheet.render(true);
         });
 
+        // Add new quest button
+        html.find('.add-quest-button').click(() => {
+            if (!game.user.isGM) return;
+            
+            const journalId = game.settings.get(MODULE.ID, 'questJournal');
+            if (!journalId || journalId === 'none') {
+                ui.notifications.warn("No quest journal selected. Click the gear icon to select one.");
+                return;
+            }
+            
+            const journal = game.journal.get(journalId);
+            if (!journal) {
+                ui.notifications.error("Could not find the quest journal.");
+                return;
+            }
+            
+            const questForm = new QuestForm();
+            questForm.render(true);
+        });
+
         // Tag cloud tag selection
         html.find('.quest-tag-cloud .quest-tag').click((event) => {
             event.preventDefault();
