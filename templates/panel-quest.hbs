@@ -107,8 +107,8 @@
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
-                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}}">
-                                                        <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
+                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
+                                                        <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
@@ -117,6 +117,11 @@
                                                             
                                                             <i class="fas fa-square-question"></i>
                                                             Objective not discovered
+                                                        </li>
+                                                    {{else if (eq this.state 'failed')}}
+                                                        <li class="task-failed">
+                                                            <i class="fas fa-square-xmark"></i>
+                                                            {{this.text}}
                                                         </li>
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
@@ -289,8 +294,8 @@
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
-                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}}">
-                                                        <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
+                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
+                                                        <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
@@ -298,6 +303,11 @@
                                                         <li class="task-hidden">
                                                             <i class="fas fa-square-question"></i>
                                                             Objective not discovered
+                                                        </li>
+                                                    {{else if (eq this.state 'failed')}}
+                                                        <li class="task-failed">
+                                                            <i class="fas fa-square-xmark"></i>
+                                                            {{this.text}}
                                                         </li>
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
@@ -459,8 +469,8 @@
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
-                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}}">
-                                                        <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
+                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
+                                                        <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
@@ -468,6 +478,11 @@
                                                         <li class="task-hidden">
                                                             <i class="fas fa-square-question"></i>
                                                             Objective not discovered
+                                                        </li>
+                                                    {{else if (eq this.state 'failed')}}
+                                                        <li class="task-failed">
+                                                            <i class="fas fa-square-xmark"></i>
+                                                            {{this.text}}
                                                         </li>
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
@@ -625,8 +640,8 @@
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
-                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}}">
-                                                        <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
+                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
+                                                        <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
                                                         {{this.text}}
                                                     </li>
                                                 {{else}}
@@ -634,6 +649,11 @@
                                                         <li class="task-hidden">
                                                             <i class="fas fa-square-question"></i>
                                                             Objective not discovered
+                                                        </li>
+                                                    {{else if (eq this.state 'failed')}}
+                                                        <li class="task-failed">
+                                                            <i class="fas fa-square-xmark"></i>
+                                                            {{this.text}}
                                                         </li>
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">

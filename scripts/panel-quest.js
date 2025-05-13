@@ -118,7 +118,7 @@ export class QuestPanel {
                             
                             // Add only the explicit tags from the entry
                             if (entry.tags && Array.isArray(entry.tags)) {
-                                entry.tags.forEach(tag => this.allTags.add(tag));
+                            entry.tags.forEach(tag => this.allTags.add(tag));
                             }
                         }
                     }
@@ -398,7 +398,7 @@ export class QuestPanel {
 
         // Task completion and hidden toggling
         const taskCheckboxes = html.find('.task-checkbox');
-        // Use mousedown to detect right-click for hidden toggle
+        // Use mousedown to detect different click types
         taskCheckboxes.on('mousedown', async (event) => {
             if (!game.user.isGM) return;
             const checkbox = $(event.currentTarget);
@@ -423,7 +423,7 @@ export class QuestPanel {
             const li = liList[taskIndex];
             if (!li) return;
 
-            if (event.button === 2) { // Right-click: toggle hidden
+            if (event.button === 1) { // Middle-click: toggle hidden
                 event.preventDefault();
                 const emTag = li.querySelector('em');
                 if (emTag) {
@@ -448,6 +448,31 @@ export class QuestPanel {
                 }
                 return;
             }
+            
+            if (event.button === 2) { // Right-click: toggle failed state
+                event.preventDefault();
+                
+                // Use the EXACT same pattern as left-click/middle-click
+                const codeTag = li.querySelector('code');
+                if (codeTag) {
+                    // Task is already failed, revert to normal - unwrap code
+                    li.innerHTML = codeTag.innerHTML;
+                } else {
+                    // Task is not failed, mark as failed - wrap in code
+                    li.innerHTML = `<code>${li.innerHTML}</code>`;
+                }
+                
+                const newTasksHtml = ul.innerHTML;
+                let newContent = content.replace(tasksMatch[1], newTasksHtml);
+                
+                try {
+                    await page.update({ text: { content: newContent } });
+                } catch (error) {
+                    console.error('SQUIRE | Error updating journal page (failed task toggle):', error);
+                }
+                return;
+            }
+            
             if (event.button === 0) { // Left-click: toggle completed (existing logic)
                 const sTag = li.querySelector('s');
                 if (sTag) {
@@ -508,6 +533,9 @@ export class QuestPanel {
                 }
             }
         });
+        
+        // Remove double-click handler since we've moved it to right-click
+        taskCheckboxes.off('dblclick');
 
         // --- Quest Card Collapse/Expand ---
         // Always start collapsed unless remembered
@@ -1367,7 +1395,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 for (const entry of this.data[category] || []) {
                     // Add only explicit tags
                     if (entry.tags && Array.isArray(entry.tags)) {
-                        entry.tags.forEach(tag => allTags.add(tag));
+                    entry.tags.forEach(tag => allTags.add(tag));
                     }
                 }
             }
@@ -1379,7 +1407,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                     if (entry.visible !== false) {
                         // Add only explicit tags
                         if (entry.tags && Array.isArray(entry.tags)) {
-                            entry.tags.forEach(tag => allTags.add(tag));
+                        entry.tags.forEach(tag => allTags.add(tag));
                         }
                     }
                 }

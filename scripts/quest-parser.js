@@ -215,6 +215,17 @@ export class QuestParser {
                         // Prefer the text inside the strikethrough tag
                         const s = li.querySelector('s, del, strike');
                         if (s) text = s.textContent.trim();
+                    } else if (li.querySelector('code')) {
+                        // Use code tags for failed tasks
+                        state = 'failed';
+                        // Prefer the text inside the code tag
+                        const code = li.querySelector('code');
+                        if (code) text = code.textContent.trim();
+                    } else if (li.querySelector('u, span[style*="text-decoration: underline"]')) {
+                        // Legacy support for underline as failed tasks (can be removed later)
+                        state = 'failed';
+                        const u = li.querySelector('u, span[style*="text-decoration: underline"]');
+                        if (u) text = u.textContent.trim();
                     } else if (li.querySelector('em, i')) {
                         state = 'hidden';
                         // Prefer the text inside the italics tag

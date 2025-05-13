@@ -415,11 +415,6 @@
     flex-shrink: 0; /* Prevent the icon from shrinking */
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks li.completed {
-    opacity: 0.7;
-    text-decoration: line-through;
-}
-
 .squire-tray[data-position="left"] .quest-entry-tasks li i {
     cursor: pointer;
 }
@@ -430,11 +425,18 @@
     text-decoration: none;
 }
 
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed {
+    opacity: 0.9;
+    color: rgba(255, 27, 27, 0.9);
+    text-decoration: none;
+}
+
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden {
     opacity: 0.6;
     color: rgba(204, 204, 204, 0.5);
     text-decoration: none;
 }
+
 
 /* PARTICIPANTS */
 
