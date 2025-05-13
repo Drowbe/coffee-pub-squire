@@ -259,20 +259,7 @@ export class CodexPanel {
             }
         });
 
-        // Link clicks
-        html.find('.codex-entry-link').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const uuid = event.currentTarget.dataset.uuid;
-            if (uuid) {
-                const doc = await fromUuid(uuid);
-                if (doc) {
-                    doc.sheet.render(true);
-                }
-            }
-        });
-
-        // Feather icon opens the current journal page
+        // Feather icon opens the current journal page (GM)
         html.find('.codex-entry-feather').click(async (event) => {
             event.preventDefault();
             const uuid = event.currentTarget.dataset.uuid;
@@ -281,7 +268,29 @@ export class CodexPanel {
                 if (doc) doc.sheet.render(true);
             }
         });
-
+        // Feather icon opens the current journal page (User)
+        html.find('.codex-entry-feather-user').click(async (event) => {
+            event.preventDefault();
+            const uuid = event.currentTarget.dataset.uuid;
+            if (uuid) {
+                const page = await fromUuid(uuid);
+                if (page && page.parent) {
+                    page.parent.sheet.render(true, { pageId: page.id });
+                }
+            }
+        });
+        // Link clicks
+        html.find('.codex-entry-link').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const uuid = event.currentTarget.dataset.uuid;
+            if (uuid) {
+                const page = await fromUuid(uuid);
+                if (page && page.parent) {
+                    page.parent.sheet.render(true, { pageId: page.id });
+                }
+            }
+        });
 
         // Delete entry button
         html.find('.codex-entry-delete').click(async (event) => {
@@ -622,6 +631,10 @@ SPECIFIC INSTRUCTIONS HERE`;
         // Build categoriesData array for the template
         const categoriesData = Array.from(this.categories).sort().map(category => {
             let entries = this.data[category] || [];
+            if (!game.user.isGM) {
+                // Only show visible entries for non-GMs
+                entries = entries.filter(e => (e.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
+            }
             if (this.filters.tags && this.filters.tags.length > 0) {
                 entries = entries.filter(entry => entry.tags.some(tag => this.filters.tags.includes(tag)));
             }

@@ -54,13 +54,15 @@
                                 </div>
                                 <div class="codex-toolbar">
                                     {{#if @root.isGM}}
-                                        <i class="fas fa-feather codex-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
+                                        <i class="fas fa-feather codex-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page (GM)"></i>
                                         <i class="fas fa-trash codex-entry-delete" data-uuid="{{entry.uuid}}" title="Delete this entry"></i>
                                         {{#if (gte entry.ownership.default 2)}}
                                             <i class="fas fa-eye codex-entry-visibility visible" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
                                         {{else}}
                                             <i class="fas fa-eye-slash codex-entry-visibility" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
                                         {{/if}}
+                                    {{else}}
+                                        <i class="fas fa-feather codex-entry-feather-user" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
                                     {{/if}}
                                     <i class="fas fa-chevron-right codex-entry-toggle" title="Toggle entry"></i>
                                 </div>
