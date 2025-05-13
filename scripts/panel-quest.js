@@ -1037,48 +1037,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                 }
             });
         }
-
-        // --- Right-click remove for participants and treasure ---
-        html.off('contextmenu.questParticipantRemove');
-        html.on('contextmenu', '.quest-participant, .quest-treasure', async (event) => {
-            event.preventDefault();
-            if (!game.user.isGM) return;
-            const $li = $(event.currentTarget);
-            const text = $li.text().trim();
-            const $entry = $li.closest('.quest-entry');
-            const uuid = $entry.find('.quest-entry-feather').data('uuid');
-            if (!uuid) return;
-            const page = await fromUuid(uuid);
-            if (!page) return;
-            let content = page.text.content;
-            let updated = false;
-            if ($li.hasClass('quest-participant')) {
-                const participantsMatch = content.match(/<strong>Participants:<\/strong>\s*([\s\S]*?)<\/p>/);
-                if (participantsMatch) {
-                    const ulMatch = participantsMatch[1].match(/<ul>([\s\S]*?)<\/ul>/);
-                    let participants = ulMatch ? ulMatch[1].split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean) : [];
-                    participants = participants.filter(p => p !== text);
-                    const listHtml = participants.length ? `<ul>${participants.map(p => `<li class='quest-participant'>${p}</li>`).join('')}</ul>` : '';
-                    content = content.replace(/(<strong>Participants:<\/strong>\s*)([\s\S]*?)<\/p>/, `$1${listHtml}</p>`);
-                    updated = true;
-                }
-            } else if ($li.hasClass('quest-treasure')) {
-                const treasureMatch = content.match(/<strong>Treasure:<\/strong>\s*([\s\S]*?)<\/p>/);
-                if (treasureMatch) {
-                    const ulMatch = treasureMatch[1].match(/<ul>([\s\S]*?)<\/ul>/);
-                    let treasures = ulMatch ? ulMatch[1].split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean) : [];
-                    treasures = treasures.filter(t => t !== text);
-                    const listHtml = treasures.length ? `<ul>${treasures.map(t => `<li class='quest-treasure'>${t}</li>`).join('')}</ul>` : '';
-                    content = content.replace(/(<strong>Treasure:<\/strong>\s*)([\s\S]*?)<\/p>/, `$1${listHtml}</p>`);
-                    updated = true;
-                }
-            }
-            if (updated) {
-                await page.update({ text: { content } });
-                ui.notifications.info('Entry removed.');
-                this.render(this.element);
-            }
-        });
     }
 
     /**
