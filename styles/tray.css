@@ -919,17 +919,19 @@
 
 .squire-tray .tray-view-tabs {
     display: flex;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 0px solid rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.0);
+    border: 0px solid rgba(0, 0, 0, 0.3);
     overflow: hidden;
     margin-bottom: 8px;
+    margin-right: 6px;
     border-radius: 4px 4px 0px 0px;
+
 }
 
 .squire-tray .tray-tab-button {
     flex: 1;
     padding: 0px 0px;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.3);
     border: none;
     color: #9f9275;
     cursor: pointer;
@@ -1036,15 +1038,7 @@
     margin-right: 5px;
 }
 
-/* Tray View Tabs */
-.squire-tray .tray-view-tabs {
-    display: flex;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid #444;
-    overflow: hidden;
-    margin-bottom: 8px;
-	border-radius: 8px 8px 0px 0px;
-}
+
 
 /* Tray Tools Toolbar (for all users) */
 .squire-tray .tray-tools-toolbar {
