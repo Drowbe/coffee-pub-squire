@@ -292,6 +292,8 @@ export class QuestPanel {
 
         // Link clicks
         html.find('.quest-entry-link').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const uuid = event.currentTarget.dataset.uuid;
             if (uuid) {
                 const doc = await fromUuid(uuid);

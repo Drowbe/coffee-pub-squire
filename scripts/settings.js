@@ -715,7 +715,7 @@ export const registerSettings = function() {
         name: "Codex Journal",
         hint: "The journal to use for codex entries. Each entry will be a separate page in this journal.",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         choices: () => {
             const choices = {
@@ -754,7 +754,7 @@ export const registerSettings = function() {
         name: "Quest Journal",
         hint: "The journal to use for quest entries. Each quest will be a separate page in this journal.",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         choices: () => {
             // Create choices object with 'none' as first option

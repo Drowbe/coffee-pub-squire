@@ -261,6 +261,8 @@ export class CodexPanel {
 
         // Link clicks
         html.find('.codex-entry-link').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const uuid = event.currentTarget.dataset.uuid;
             if (uuid) {
                 const doc = await fromUuid(uuid);

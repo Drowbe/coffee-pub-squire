@@ -961,6 +961,8 @@
     margin-right: 6px;
 }
 
+/* Tray Content */
+
 .squire-tray .tray-view-content {
     flex: 1;
     display: flex;
