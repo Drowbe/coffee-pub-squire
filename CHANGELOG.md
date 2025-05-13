@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.13] - Quests and Codex
+
+### Added
+- Visual feedback for drag and drop operations with highlighted drop targets
+- CSS styling for drop targets with green borders and animations
+- Improved quest journal entry handling with better section management
+
+### Changed
+- Modified tag system to only include explicit tags from quest entries
+- Removed automatic inclusion of participant names and status as tags
+- Improved persistence of collapsed/expanded state for quest categories
+- Enhanced drag and drop functionality for actors and items
+- Updated quest panel data attribute selectors for better state tracking
+
+### Fixed
+- Fixed issue with collapsed/expanded state not persisting between sessions
+- Resolved problem with duplicate "Participants:" sections when dragging actors
+- Fixed drag and drop functionality for adding actors as participants
+- Fixed drag and drop functionality for adding items as treasure
+- Improved drag handler implementation using DOM-based approach instead of regex
+
 ## [1.0.12] - Bug Fixees
 
 ### Fixed
