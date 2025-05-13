@@ -204,6 +204,14 @@ export class QuestPanel {
                     const hasVisibleEntries = section.find('.quest-entry:visible').length > 0;
                     section.toggle(hasVisibleEntries);
                 });
+            } else {
+                // When search is cleared, restore original collapsed states
+                const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
+                for (const [category, collapsed] of Object.entries(collapsedCategories)) {
+                    if (collapsed) {
+                        html.find(`.quest-section[data-status="${category}"]`).addClass('collapsed');
+                    }
+                }
             }
         });
 
@@ -241,13 +249,30 @@ export class QuestPanel {
         html.find('.quest-tag-cloud .quest-tag').click((event) => {
             event.preventDefault();
             const tag = event.currentTarget.dataset.tag;
-            // Toggle tag selection
             const tagIndex = this.filters.tags.indexOf(tag);
             if (tagIndex === -1) {
                 this.filters.tags.push(tag);
             } else {
                 this.filters.tags.splice(tagIndex, 1);
             }
+            
+            // Show all entries and sections before filtering
+            html.find('.quest-entry').show();
+            html.find('.quest-section').show();
+            
+            // If we have tags selected, expand all categories
+            if (this.filters.tags.length > 0) {
+                html.find('.quest-section').removeClass('collapsed');
+            } else {
+                // If no tags selected, restore original collapsed states
+                const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
+                for (const [category, collapsed] of Object.entries(collapsedCategories)) {
+                    if (collapsed) {
+                        html.find(`.quest-section[data-status="${category}"]`).addClass('collapsed');
+                    }
+                }
+            }
+            
             this.render(this.element);
         });
 
@@ -258,6 +283,19 @@ export class QuestPanel {
             this.filters.tags = [];
             searchInput.val("");
             html.find('.quest-tag.selected').removeClass('selected');
+            
+            // Show all entries and sections
+            html.find('.quest-entry').show();
+            html.find('.quest-section').show();
+            
+            // Restore original collapsed states
+            const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
+            for (const [category, collapsed] of Object.entries(collapsedCategories)) {
+                if (collapsed) {
+                    html.find(`.quest-section[data-status="${category}"]`).addClass('collapsed');
+                }
+            }
+            
             this.render(this.element);
         });
 
@@ -277,11 +315,10 @@ export class QuestPanel {
         html.find('.quest-category').click((event) => {
             const section = $(event.currentTarget).closest('.quest-section');
             section.toggleClass('collapsed');
-            
-            const category = section.find('h3').text();
+            const status = section.data('status');
             const collapsed = section.hasClass('collapsed');
             const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
-            collapsedCategories[category] = collapsed;
+            collapsedCategories[status] = collapsed;
             game.user.setFlag(MODULE.ID, 'questCollapsedCategories', collapsedCategories);
         });
 
@@ -1229,20 +1266,6 @@ SPECIFIC INSTRUCTIONS HERE`;
         // Activate listeners
         this._activateListeners(questContainer);
 
-        // Restore collapsed states
-        if (collapsedCategories["In Progress"]) {
-            questContainer.find(`.quest-section[data-status="In Progress"]`).addClass('collapsed');
-        }
-        if (collapsedCategories["Not Started"]) {
-            questContainer.find(`.quest-section[data-status="Not Started"]`).addClass('collapsed');
-        }
-        if (collapsedCategories["Complete"]) {
-            questContainer.find(`.quest-section[data-status="Complete"]`).addClass('collapsed');
-        }
-        if (collapsedCategories["Failed"]) {
-            questContainer.find(`.quest-section[data-status="Failed"]`).addClass('collapsed');
-        }
-
         // After rendering, set initial states
         if (this.filters.search) {
             questContainer.find('.clear-search').show();
@@ -1257,6 +1280,13 @@ SPECIFIC INSTRUCTIONS HERE`;
             questContainer.find(`.quest-section[data-status="In Progress"]`).removeClass('collapsed');
             // Expand the pinned quest
             questContainer.find(`.quest-entry:has(.quest-pin.pinned)`).removeClass('collapsed');
+        }
+
+        // Apply collapsed states to sections
+        for (const [status, collapsed] of Object.entries(collapsedCategories)) {
+            if (collapsed) {
+                questContainer.find(`.quest-section[data-status="${status}"]`).addClass('collapsed');
+            }
         }
     }
 
