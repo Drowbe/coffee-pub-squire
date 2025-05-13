@@ -536,6 +536,11 @@ export class QuestPanel {
         
         // Remove double-click handler since we've moved it to right-click
         taskCheckboxes.off('dblclick');
+        
+        // Prevent context menu on right-click
+        taskCheckboxes.on('contextmenu', (event) => {
+            event.preventDefault();
+        });
 
         // --- Quest Card Collapse/Expand ---
         // Always start collapsed unless remembered
