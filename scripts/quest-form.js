@@ -9,12 +9,14 @@ export class QuestForm extends FormApplication {
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
             id: 'quest-form',
-            title: 'Quest Form',
+            title: 'Add Quest',
             template: 'modules/coffee-pub-squire/templates/quest-form.hbs',
             width: 600,
             height: 'auto',
             resizable: true,
-            closeOnSubmit: true
+            closeOnSubmit: true,
+            submitOnClose: false,
+            submitOnChange: false
         });
     }
 
@@ -104,41 +106,50 @@ export class QuestForm extends FormApplication {
             return;
         }
 
-        // Create or update the journal page
-        const pageData = {
-            name: quest.name,
-            type: 'text',
-            text: {
-                content: this._generateJournalContent(quest)
-            }
-        };
-
-        let page;
-        if (this.quest.uuid) {
-            // Update existing page
-            page = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === this.quest.uuid);
-            if (page) {
-                await page.update(pageData);
-            }
-        } else {
-            // Create new page
-            pageData.flags = {
-                [MODULE.ID]: {
-                    questUuid: quest.uuid
+        try {
+            // Create or update the journal page
+            const pageData = {
+                name: quest.name,
+                type: 'text',
+                text: {
+                    content: this._generateJournalContent(quest)
                 }
             };
-            const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-            page = created[0];
-        }
 
-        // Set the visible flag
-        if (page) {
-            await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
-        }
+            let page;
+            if (this.quest.uuid) {
+                // Update existing page
+                page = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === this.quest.uuid);
+                if (page) {
+                    await page.update(pageData);
+                }
+            } else {
+                // Create new page
+                pageData.flags = {
+                    [MODULE.ID]: {
+                        questUuid: quest.uuid
+                    }
+                };
+                const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                page = created[0];
+            }
 
-        // Refresh the quest panel if it exists
-        if (PanelManager.instance?.questPanel) {
-            PanelManager.instance.questPanel.render(PanelManager.element);
+            // Set the visible flag
+            if (page) {
+                await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+            }
+
+            // Show success notification
+            ui.notifications.info(`Quest "${quest.name}" saved successfully.`);
+            
+            // Explicitly close the form
+            this.close();
+            
+            return true;
+        } catch (error) {
+            console.error("Error saving quest:", error);
+            ui.notifications.error(`Failed to save quest: ${error.message}`);
+            return false;
         }
     }
 
@@ -247,6 +258,11 @@ export class QuestForm extends FormApplication {
             const index = event.currentTarget.dataset.index;
             this.quest.tasks[index].completed = !this.quest.tasks[index].completed;
             this.render();
+        });
+        
+        // Handle cancel button click
+        html.find('button.cancel').on('click', () => {
+            this.close();
         });
     }
 } 
