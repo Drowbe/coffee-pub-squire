@@ -507,10 +507,7 @@ export class QuestPanel {
                             await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
                         }
                         
-                        // Move to Completed category
-                        if (categoryMatch && currentCategory !== 'Completed') {
-                            newContent = newContent.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, '$1Completed');
-                        }
+                        // Remove automatic category change to Completed
                     }
                 } else {
                     // If status is Complete and not all tasks are completed, set to In Progress
@@ -962,23 +959,17 @@ SPECIFIC INSTRUCTIONS HERE`;
             
             // Handle category changes based on status
             if (newStatus === 'Complete') {
-                // Store original category if not already stored and move to Completed
+                // Store original category if not already stored
                 if (currentCategory !== 'Completed') {
                     if (!originalCategory && currentCategory) {
                         await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
                     }
-                    if (categoryMatch) {
-                        content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1Completed`);
-                    }
                 }
             } else if (newStatus === 'Failed') {
-                // Store original category if not already stored and move to Failed
+                // Store original category if not already stored
                 if (currentCategory !== 'Failed') {
                     if (!originalCategory && currentCategory) {
                         await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
-                    }
-                    if (categoryMatch) {
-                        content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1Failed`);
                     }
                 }
             } else if (['Not Started', 'In Progress'].includes(newStatus)) {

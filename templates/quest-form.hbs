@@ -8,9 +8,9 @@
         <label>Category</label>
         <select name="category">
             {{#each categories as |category|}}
-                {{#unless (eq category "Pinned")}}
-                    <option value="{{category}}" {{#if (and (eq ../quest.category category) (not (eq category "Pinned")))}}selected{{else if (and (eq @index 0) (not ../quest.category))}}selected{{/if}}>{{category}}</option>
-                {{/unless}}
+                {{#if (or (eq category "Main Quest") (eq category "Side Quest"))}}
+                    <option value="{{category}}" {{#if (eq ../quest.category category)}}selected{{else if (and (eq category "Main Quest") (not ../quest.category))}}selected{{/if}}>{{category}}</option>
+                {{/if}}
             {{/each}}
         </select>
     </div>
