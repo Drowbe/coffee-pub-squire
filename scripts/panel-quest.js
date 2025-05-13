@@ -933,21 +933,34 @@ SPECIFIC INSTRUCTIONS HERE`;
             
             questEntries.on('dragenter', function(event) {
                 event.preventDefault();
+                event.stopPropagation();
                 let isValid = false;
                 try {
                     const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
                     if (["Actor", "Item"].includes(data.type)) isValid = true;
-                } catch {}
-                if (isValid) $(this).addClass('drop-target');
+                } catch (e) {
+                    // If we can't parse the data yet, assume it might be valid
+                    isValid = true;
+                }
+                
+                if (isValid) {
+                    $(this).addClass('drop-target');
+                    console.log("SQUIRE | Added drop-target class");
+                }
             });
 
             questEntries.on('dragleave', function(event) {
                 event.preventDefault();
+                event.stopPropagation();
                 $(this).removeClass('drop-target');
+                console.log("SQUIRE | Removed drop-target class on dragleave");
             });
 
             questEntries.on('dragover', function(event) {
                 event.preventDefault();
+                event.stopPropagation();
+                // Make sure the class stays applied during dragover
+                $(this).addClass('drop-target');
                 event.originalEvent.dataTransfer.dropEffect = 'copy';
             });
 

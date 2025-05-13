@@ -529,3 +529,60 @@
 .squire-tray[data-position="left"] .quest-status-option:hover {
     background: #444;
 }
+
+/* Add drop target styling for quest entries */
+.squire-tray[data-position="left"] .quest-entry.drop-target {
+    border-color: #48a000;
+    box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
+    background: rgba(72, 160, 0, 0.15);
+    transform: scale(1.01);
+    filter: brightness(1.2);
+    backdrop-filter: blur(1px);
+    position: relative;
+    z-index: 100;
+}
+
+.squire-tray[data-position="left"] .quest-entry.drop-target::after {
+    content: 'DROP HERE';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #48a000;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    z-index: 101;
+}
+
+.squire-tray[data-position="left"] .quest-entry.drop-target::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 3px dashed #48a000;
+    border-radius: 4px;
+    pointer-events: none;
+    box-sizing: border-box;
+    z-index: 101;
+    animation: pulse-border 1s infinite alternate;
+}
+
+@keyframes pulse-border {
+    from { opacity: 0.3; }
+    to { opacity: 1; }
+}
+
+/* Special styling for success indication after drop */
+.squire-tray[data-position="left"] .quest-entry.dropped-success {
+    border-color: #48a000;
+    box-shadow: 0 0 10px rgba(72, 160, 0, 0.7);
+    transition: all 0.3s ease;
+}
