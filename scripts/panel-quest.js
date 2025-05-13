@@ -985,6 +985,40 @@ SPECIFIC INSTRUCTIONS HERE`;
         const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
 
         // Prepare template data
+        let allTags;
+        if (game.user.isGM) {
+            // GMs see tags from all quests
+            allTags = new Set();
+            for (const category of this.categories) {
+                for (const entry of this.data[category] || []) {
+                    entry.tags.forEach(tag => allTags.add(tag));
+                    if (entry.status) allTags.add(entry.status);
+                    if (Array.isArray(entry.participants)) {
+                        entry.participants.forEach(p => {
+                            if (typeof p === 'string') allTags.add(p);
+                            else if (p && typeof p.name === 'string') allTags.add(p.name);
+                        });
+                    }
+                }
+            }
+        } else {
+            // Players see tags only from visible quests
+            allTags = new Set();
+            for (const category of this.categories) {
+                for (const entry of this.data[category] || []) {
+                    if (entry.visible !== false) {
+                        entry.tags.forEach(tag => allTags.add(tag));
+                        if (entry.status) allTags.add(entry.status);
+                        if (Array.isArray(entry.participants)) {
+                            entry.participants.forEach(p => {
+                                if (typeof p === 'string') allTags.add(p);
+                                else if (p && typeof p.name === 'string') allTags.add(p.name);
+                            });
+                        }
+                    }
+                }
+            }
+        }
         const templateData = {
             position: "left",
             hasJournal: !!this.selectedJournal,
@@ -1001,7 +1035,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 ...this.filters,
                 search: this.filters.search || ""
             },
-            allTags: Array.from(this.allTags).sort(),
+            allTags: Array.from(allTags).sort(),
             isTagCloudCollapsed,
             pinnedQuests
         };
