@@ -230,6 +230,8 @@
                 <div class="quest-entries">
                     {{#each statusGroups.notStarted as |entry|}}
                         <div class="quest-entry collapsed">
+                            
+                            <!-- ENTRY HEADER -->
                             <div class="quest-entry-header">
                                 <div class="quest-entry-name">
                                     {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
@@ -250,28 +252,37 @@
                                     <i class="fas fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
                                 </div>
                             </div>
+
+                             <!-- PROGRESS BAR -->
                             {{#if entry.tasks.length}}
                                 {{#if (gt entry.progress 0)}}
-                                <div class="quest-entry-progressbar">
-                                    <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
-                                </div>
-                                {{else}}
-                                <div class="quest-entry-divider"></div>
+                                    <div class="quest-entry-progressbar">
+                                        <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
+                                    </div>
                                 {{/if}}
                             {{/if}}
+
+                            <!-- ENTRY CONTENT -->
                             <div class="quest-entry-content">
-                                <div class="quest-entry-divider"></div>
-                                {{#if entry.img}}
-                                <div class="quest-entry-image">
-                                    <img src="{{entry.img}}" alt="{{entry.name}}">
-                                </div>
-                                {{/if}}
+
+                                <!-- DESCRIPTION -->
                                 {{#if entry.description}}
+                                    <div class="quest-entry-divider"></div>
                                     <div class="quest-entry-description">
+                                        <!-- IMAGE -->
+                                        {{#if entry.img}}
+                                        <div class="quest-entry-image">
+                                            <img src="{{entry.img}}" alt="{{entry.name}}">
+                                        </div>
+                                        {{/if}}
+
                                         <span class="quest-entry-label">Description</span> 
                                         <p>{{entry.description}}</p>
                                     </div>
                                 {{/if}}
+                                
+                                
+                                <!-- OBJECTIVES --> 
                                 {{#if entry.tasks.length}}
                                     <div class="quest-entry-tasks">
                                         <span class="quest-entry-label">Objectives {{#if entry.status}}({{entry.status}}){{/if}}</span> 
@@ -300,6 +311,7 @@
                                     </div>
                                 {{/if}}
 
+                                <!-- PLOT HOOK -->
                                 {{#if @root.isGM}}
                                     {{#if entry.plotHook}}
                                         <div class="quest-entry-plothook">
@@ -309,52 +321,56 @@
                                     {{/if}}
                                 {{/if}}
 
-                                {{#if @root.isGM}}
+                                <!-- TREASURE -->
+                                {{#if entry.reward.treasure.length}}
                                     <div class="quest-entry-divider"></div>
-
-                                    {{#if entry.reward.treasure.length}}
-                                        <div class="quest-entry-reward">
-                                            <span class="quest-entry-label">Treasure</span>
-                                            <ul>
-                                                {{#each entry.reward.treasure}}
-                                                    <li>
-                                                        {{#if this.uuid}}
-                                                            <a data-uuid="{{this.uuid}}">{{this.name}}</a>
-                                                        {{else}}
-                                                            {{this.text}}
-                                                        {{/if}}
-                                                    </li>
-                                                {{/each}}
-                                            </ul>
-                                        </div>
-                                    {{/if}}
+                                    <div class="quest-entry-reward">
+                                        <span class="quest-entry-label">Treasure</span>
+                                        <ul>
+                                            {{#each entry.reward.treasure}}
+                                                <li>
+                                                    {{#if this.uuid}}
+                                                        <a data-uuid="{{this.uuid}}">{{this.name}}</a>
+                                                    {{else}}
+                                                        {{this.text}}
+                                                    {{/if}}
+                                                </li>
+                                            {{/each}}
+                                        </ul>
+                                    </div>
                                 {{/if}}
-
+                                <!-- DIVIDER -->
                                 <div class="quest-entry-divider"></div>
 
+                                <!-- REWARD -->
                                 {{#if entry.reward.xp}}
                                     <div class="quest-entry-reward">
                                         <span class="quest-entry-label">Experience</span> {{entry.reward.xp}}
                                     </div>
                                 {{/if}}
+
+                                <!-- LOCATION -->
                                 {{#if entry.location}}
                                     <div class="quest-entry-location">
                                         <span class="quest-entry-label">Location</span> {{entry.location}}
                                     </div>
                                 {{/if}}
 
+                                <!-- TIMEFRAME -->
                                 {{#if entry.timeframe.duration}}
                                     <div class="quest-entry-timeframe">
                                         <span class="quest-entry-label">Timeframe</span> {{entry.timeframe.duration}}
                                     </div>
                                 {{/if}}
 
+                                <!-- STATUS -->
                                 {{#if entry.status}}
                                     <div class="quest-entry-progress">
                                         <span class="quest-entry-label">Status</span> {{entry.status}}
                                     </div>
                                 {{/if}}
 
+                                <!-- PARTICIPANTS -->
                                 {{#if entry.participants.length}}
                                     <div class="quest-entry-participants">
                                         <div class="participant-portraits">
