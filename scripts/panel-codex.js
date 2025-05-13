@@ -84,7 +84,7 @@ class CodexForm extends FormApplication {
             // Refresh the codex panel if it exists
             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.codexPanel) {
                 await game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel._refreshData();
-                game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel.render();
+                game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel.render(game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel.element);
             }
             
             return true;
