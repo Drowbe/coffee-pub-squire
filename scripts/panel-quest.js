@@ -897,6 +897,188 @@ SPECIFIC INSTRUCTIONS HERE`;
             // No manual refresh; let the updateJournalEntryPage hook handle it
             option.closest('.quest-status-dropdown').hide();
         });
+
+        // --- Drag and Drop for Quest Entries (GM only) ---
+        if (game.user.isGM) {
+            const questEntries = html.find('.quest-entry');
+            questEntries.off('dragenter dragleave dragover drop');
+            
+            questEntries.on('dragenter', function(event) {
+                event.preventDefault();
+                let isValid = false;
+                try {
+                    const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
+                    if (["Actor", "Item"].includes(data.type)) isValid = true;
+                } catch {}
+                if (isValid) $(this).addClass('drop-target');
+            });
+
+            questEntries.on('dragleave', function(event) {
+                event.preventDefault();
+                $(this).removeClass('drop-target');
+            });
+
+            questEntries.on('dragover', function(event) {
+                event.preventDefault();
+                event.originalEvent.dataTransfer.dropEffect = 'copy';
+            });
+
+            questEntries.on('drop', async (event) => {
+                event.preventDefault();
+                const $entry = $(event.currentTarget);
+                $entry.removeClass('drop-target');
+                
+                try {
+                    const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
+                    console.log("SQUIRE | Quest Panel Raw drop data:", dataTransfer);
+                    const data = JSON.parse(dataTransfer);
+                    console.log("SQUIRE | Quest Panel Parsed drop data:", data);
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    if (blacksmith) {
+                        const sound = game.settings.get(MODULE.ID, 'dropSound');
+                        blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                    }
+                    const uuid = $entry.find('.quest-entry-feather').data('uuid');
+                    if (!uuid) {
+                        ui.notifications.warn("Could not find the quest entry.");
+                        return;
+                    }
+                    const page = await fromUuid(uuid);
+                    if (!page) {
+                        ui.notifications.warn("Could not find the quest page.");
+                        return;
+                    }
+                    let content = page.text.content;
+                    let updated = false;
+                    if (data.type === 'Actor') {
+                        const actor = await fromUuid(data.uuid || (data.id ? `Actor.${data.id}` : undefined));
+                        if (actor) {
+                            let participants = [];
+                            let contentParts = content.split(/(<p><strong>Participants:<\/strong><\/p>)/);
+                            if (contentParts.length > 2) {
+                                let afterP = contentParts[2];
+                                let sectionEnd = afterP.indexOf('<p>');
+                                let section = sectionEnd !== -1 ? afterP.slice(0, sectionEnd) : afterP;
+                                let rest = sectionEnd !== -1 ? afterP.slice(sectionEnd) : '';
+                                let ulBlocks = [];
+                                let ulRegex = /<ul>([\s\S]*?)<\/ul>/g;
+                                let match;
+                                while ((match = ulRegex.exec(section)) !== null) {
+                                    ulBlocks.push(match[1]);
+                                }
+                                ulBlocks.forEach(block => {
+                                    participants.push(...block.split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean));
+                                });
+                                // Remove all those <ul> blocks from section
+                                section = section.replace(/(<ul>[\s\S]*?<\/ul>\s*)+/g, '');
+                                content = contentParts[0] + contentParts[1] + section + rest;
+                            }
+                            const uuidLink = actor.uuid ? `@UUID[${actor.uuid}]{${actor.name}}` : `@UUID[Actor.${actor.id}]{${actor.name}}`;
+                            if (!participants.includes(uuidLink) && !participants.includes(actor.name)) {
+                                participants.push(uuidLink);
+                                const listHtml = `<ul>${participants.map(p => `<li class='quest-participant'>${p}</li>`).join('')}</ul>`;
+                                content = content.replace(/(<p><strong>Participants:<\/strong><\/p>)/, `$1\n${listHtml}`);
+                                updated = true;
+                                ui.notifications.info(`Added ${actor.name} as a participant.`);
+                                $entry.addClass('dropped-success');
+                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
+                            } else {
+                                ui.notifications.warn(`${actor.name} is already a participant.`);
+                            }
+                        } else {
+                            ui.notifications.error('Could not resolve actor from drop.');
+                        }
+                    } else if (data.type === 'Item') {
+                        const item = await fromUuid(data.uuid || (data.id ? `Item.${data.id}` : undefined));
+                        if (item) {
+                            let treasures = [];
+                            let contentParts = content.split(/(<p><strong>Treasure:<\/strong><\/p>)/);
+                            if (contentParts.length > 2) {
+                                let afterP = contentParts[2];
+                                let sectionEnd = afterP.indexOf('<p>');
+                                let section = sectionEnd !== -1 ? afterP.slice(0, sectionEnd) : afterP;
+                                let rest = sectionEnd !== -1 ? afterP.slice(sectionEnd) : '';
+                                let ulBlocks = [];
+                                let ulRegex = /<ul>([\s\S]*?)<\/ul>/g;
+                                let match;
+                                while ((match = ulRegex.exec(section)) !== null) {
+                                    ulBlocks.push(match[1]);
+                                }
+                                ulBlocks.forEach(block => {
+                                    treasures.push(...block.split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean));
+                                });
+                                // Remove all those <ul> blocks from section
+                                section = section.replace(/(<ul>[\s\S]*?<\/ul>\s*)+/g, '');
+                                content = contentParts[0] + contentParts[1] + section + rest;
+                            }
+                            const uuidLink = item.uuid ? `@UUID[${item.uuid}]{${item.name}}` : `@UUID[Item.${item.id}]{${item.name}}`;
+                            if (!treasures.includes(uuidLink) && !treasures.includes(item.name)) {
+                                treasures.push(uuidLink);
+                                const listHtml = `<ul>${treasures.map(t => `<li class='quest-treasure'>${t}</li>`).join('')}</ul>`;
+                                content = content.replace(/(<p><strong>Treasure:<\/strong><\/p>)/, `$1\n${listHtml}`);
+                                updated = true;
+                                ui.notifications.info(`Added ${item.name} as treasure.`);
+                                $entry.addClass('dropped-success');
+                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
+                            } else {
+                                ui.notifications.warn(`${item.name} is already listed as treasure.`);
+                            }
+                        } else {
+                            ui.notifications.error('Could not resolve item from drop.');
+                        }
+                    }
+                    if (updated) {
+                        await page.update({ text: { content } });
+                        this.render(this.element);
+                    }
+                } catch (error) {
+                    console.error('SQUIRE | Error handling quest entry drop:', error);
+                    ui.notifications.error('Failed to add participant or treasure.');
+                }
+            });
+        }
+
+        // --- Right-click remove for participants and treasure ---
+        html.off('contextmenu.questParticipantRemove');
+        html.on('contextmenu', '.quest-participant, .quest-treasure', async (event) => {
+            event.preventDefault();
+            if (!game.user.isGM) return;
+            const $li = $(event.currentTarget);
+            const text = $li.text().trim();
+            const $entry = $li.closest('.quest-entry');
+            const uuid = $entry.find('.quest-entry-feather').data('uuid');
+            if (!uuid) return;
+            const page = await fromUuid(uuid);
+            if (!page) return;
+            let content = page.text.content;
+            let updated = false;
+            if ($li.hasClass('quest-participant')) {
+                const participantsMatch = content.match(/<strong>Participants:<\/strong>\s*([\s\S]*?)<\/p>/);
+                if (participantsMatch) {
+                    const ulMatch = participantsMatch[1].match(/<ul>([\s\S]*?)<\/ul>/);
+                    let participants = ulMatch ? ulMatch[1].split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean) : [];
+                    participants = participants.filter(p => p !== text);
+                    const listHtml = participants.length ? `<ul>${participants.map(p => `<li class='quest-participant'>${p}</li>`).join('')}</ul>` : '';
+                    content = content.replace(/(<strong>Participants:<\/strong>\s*)([\s\S]*?)<\/p>/, `$1${listHtml}</p>`);
+                    updated = true;
+                }
+            } else if ($li.hasClass('quest-treasure')) {
+                const treasureMatch = content.match(/<strong>Treasure:<\/strong>\s*([\s\S]*?)<\/p>/);
+                if (treasureMatch) {
+                    const ulMatch = treasureMatch[1].match(/<ul>([\s\S]*?)<\/ul>/);
+                    let treasures = ulMatch ? ulMatch[1].split(/<li[^>]*>|<\/li>/).map(s => s.trim()).filter(Boolean) : [];
+                    treasures = treasures.filter(t => t !== text);
+                    const listHtml = treasures.length ? `<ul>${treasures.map(t => `<li class='quest-treasure'>${t}</li>`).join('')}</ul>` : '';
+                    content = content.replace(/(<strong>Treasure:<\/strong>\s*)([\s\S]*?)<\/p>/, `$1${listHtml}</p>`);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                await page.update({ text: { content } });
+                ui.notifications.info('Entry removed.');
+                this.render(this.element);
+            }
+        });
     }
 
     /**
@@ -971,6 +1153,11 @@ SPECIFIC INSTRUCTIONS HERE`;
     async render(element) {
         if (!element) return;
         this.element = element;
+
+        // Set view mode to quest so the tray does not intercept drops
+        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+            game.modules.get('coffee-pub-squire').api.PanelManager.viewMode = "quest";
+        }
 
         const questContainer = element.find('[data-panel="panel-quest"]');
         if (!questContainer.length) return;

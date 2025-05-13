@@ -512,8 +512,8 @@ export class PanelManager {
         
         // Handle drag and drop on the tray content only when in player view
         trayContent.on('dragenter', (event) => {
-            // Skip if in party view
-            if (PanelManager.viewMode === 'party') return;
+            // Skip if in party or quest view
+            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             
             event.preventDefault();
             try {
@@ -551,8 +551,8 @@ export class PanelManager {
         });
 
         trayContent.on('dragleave', (event) => {
-            // Skip if in party view
-            if (PanelManager.viewMode === 'party') return;
+            // Skip if in party or quest view
+            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             
             event.preventDefault();
             if (!event.relatedTarget?.closest('.tray-content')) {
@@ -563,8 +563,8 @@ export class PanelManager {
         });
 
         trayContent.on('drop', async (event) => {
-            // Skip if in party view
-            if (PanelManager.viewMode === 'party') return;
+            // Skip if in party or quest view
+            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             
             event.preventDefault();
             trayContent.removeClass('drop-hover');
@@ -837,8 +837,8 @@ export class PanelManager {
 
         // Prevent default drag over behavior only when in player view
         trayContent.on('dragover', (event) => {
-            // Skip if in party view
-            if (PanelManager.viewMode === 'party') return;
+            // Skip if in party or quest view
+            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             
             event.preventDefault();
             event.originalEvent.dataTransfer.dropEffect = 'copy';
