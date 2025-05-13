@@ -1,6 +1,140 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { CodexParser } from './codex-parser.js';
 
+class CodexForm extends FormApplication {
+    constructor(entry = null, options = {}) {
+        super(entry, options);
+        this.entry = entry || this._getDefaultEntry();
+    }
+
+    static get defaultOptions() {
+        return mergeObject(super.defaultOptions, {
+            id: 'codex-form',
+            title: 'Add Codex Entry',
+            template: 'modules/coffee-pub-squire/templates/codex-form.hbs',
+            width: 600,
+            height: 'auto',
+            resizable: true,
+            closeOnSubmit: true,
+            submitOnClose: false,
+            submitOnChange: false
+        });
+    }
+
+    getData() {
+        return {
+            entry: this.entry,
+            isGM: game.user.isGM
+        };
+    }
+
+    _getDefaultEntry() {
+        return {
+            name: '',
+            img: null,
+            category: '',
+            description: '',
+            plotHook: '',
+            location: '',
+            link: null,
+            tags: []
+        };
+    }
+
+    async _updateObject(event, formData) {
+        const entry = expandObject(formData);
+        
+        // Convert tags to array
+        if (typeof entry.tags === 'string') {
+            entry.tags = entry.tags.split(',').map(t => t.trim()).filter(t => t);
+        }
+
+        // Get the journal
+        const journalId = game.settings.get(MODULE.ID, 'codexJournal');
+        if (!journalId || journalId === 'none') {
+            ui.notifications.error('No codex journal selected. Please select a journal in the codex panel settings.');
+            return;
+        }
+
+        const journal = game.journal.get(journalId);
+        if (!journal) {
+            ui.notifications.error('Selected codex journal not found.');
+            return;
+        }
+
+        try {
+            // Create the journal page
+            const pageData = {
+                name: entry.name,
+                type: 'text',
+                text: {
+                    content: this._generateJournalContent(entry)
+                }
+            };
+
+            // Create new page
+            await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+
+            // Show success notification
+            ui.notifications.info(`Codex entry "${entry.name}" saved successfully.`);
+            
+            // Explicitly close the form
+            this.close();
+            
+            // Refresh the codex panel if it exists
+            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.codexPanel) {
+                await game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel._refreshData();
+                game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel.render();
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("Error saving codex entry:", error);
+            ui.notifications.error(`Failed to save codex entry: ${error.message}`);
+            return false;
+        }
+    }
+
+    _generateJournalContent(entry) {
+        let content = "";
+        
+        if (entry.img) {
+            content += `<img src="${entry.img}" alt="${entry.name}">\n\n`;
+        }
+
+        if (entry.category) {
+            content += `<p><strong>Category:</strong> ${entry.category}</p>\n\n`;
+        }
+
+        if (entry.description) {
+            content += `<p><strong>Description:</strong> ${entry.description}</p>\n\n`;
+        }
+        
+        if (entry.plotHook) {
+            content += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>\n\n`;
+        }
+        
+        if (entry.location) {
+            content += `<p><strong>Location:</strong> ${entry.location}</p>\n\n`;
+        }
+
+        if (entry.tags && entry.tags.length) {
+            content += `<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>\n\n`;
+        }
+
+        return content;
+    }
+
+    activateListeners(html) {
+        super.activateListeners(html);
+        
+        // Handle cancel button click
+        html.find('button.cancel').on('click', () => {
+            this.close();
+        });
+    }
+}
+
 export class CodexPanel {
     constructor() {
         this.element = null;
@@ -356,6 +490,26 @@ export class CodexPanel {
         html.find('.refresh-codex-button').click(async () => {
             await this._refreshData();
             this.render(this.element);
+        });
+
+        // Add new codex entry button
+        html.find('.add-codex-button').click(() => {
+            if (!game.user.isGM) return;
+            
+            const journalId = game.settings.get(MODULE.ID, 'codexJournal');
+            if (!journalId || journalId === 'none') {
+                ui.notifications.warn("No codex journal selected. Click the gear icon to select one.");
+                return;
+            }
+            
+            const journal = game.journal.get(journalId);
+            if (!journal) {
+                ui.notifications.error("Could not find the codex journal.");
+                return;
+            }
+            
+            const codexForm = new CodexForm();
+            codexForm.render(true);
         });
 
         // Import JSON button
