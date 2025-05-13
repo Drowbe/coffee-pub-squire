@@ -180,11 +180,21 @@ export class QuestPanel {
                     const entry = $(el);
                     const name = entry.find('.quest-entry-name').text().toLowerCase();
                     const description = entry.find('.quest-entry-description').text().toLowerCase();
-                    const criteria = entry.find('.quest-entry-criteria').text().toLowerCase();
+                    const location = entry.find('.quest-entry-location').text().toLowerCase();
+                    const tasks = entry.find('.quest-entry-tasks').text().toLowerCase();
+                    const plotHook = entry.find('.quest-entry-plothook').text().toLowerCase();
+                    const participants = entry.find('.quest-entry-participants').text().toLowerCase();
+                    const tags = entry.find('.quest-entry-tags').text().toLowerCase();
+                    const treasure = entry.find('.quest-entry-reward').text().toLowerCase();
                     
                     const matches = name.includes(searchValue) || 
                         description.includes(searchValue) || 
-                        criteria.includes(searchValue);
+                        location.includes(searchValue) ||
+                        tasks.includes(searchValue) ||
+                        plotHook.includes(searchValue) ||
+                        participants.includes(searchValue) ||
+                        tags.includes(searchValue) ||
+                        treasure.includes(searchValue);
                     
                     entry.toggle(matches);
                 });
