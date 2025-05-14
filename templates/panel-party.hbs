@@ -29,6 +29,17 @@
                         <div>IMMUNITITES: {{#if token.actor.system.traits.di.value}}{{#each token.actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
                     {{/if}}
                 </div>
+                {{#if token.actor.system.attributes.hp}}
+                <div class="party-hp-bar">
+                    <div class="hp-current">
+                        <span class="hp-value">{{token.actor.system.attributes.hp.value}}</span>
+                    </div>
+                    <div class="hp-fill" style="width: {{multiply (divide token.actor.system.attributes.hp.value token.actor.system.attributes.hp.max) 100}}%"></div>
+                    <div class="hp-max">
+                        <span class="hp-value">{{token.actor.system.attributes.hp.max}}</span>
+                    </div>
+                </div>
+                {{/if}}
             </div>
         </div>
         <div class="character-actions">
