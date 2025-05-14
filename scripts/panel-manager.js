@@ -205,8 +205,17 @@ export class PanelManager {
             trayElement.addClass('pinned expanded');
         }
 
+        // Ensure viewMode is properly set (critical for drag and drop functionality)
+        PanelManager.viewMode = viewMode;
+        
         this.activateListeners(trayElement);
         await this.renderPanels(trayElement);
+        
+        // Since clicking the player tab even when already in player view makes
+        // drag and drop work, explicitly call setViewMode to ensure everything is properly initialized
+        if (viewMode === 'player') {
+            await this.setViewMode('player');
+        }
     }
 
     async updateTray() {
