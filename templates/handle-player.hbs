@@ -3,7 +3,15 @@
     {{!-- DICETRAY --}} 
     {{#if showHandleDiceTray}}
         <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Click to open the dice tray for quick rolls">
-            <img class="dice-tray-icon" src="icons/svg/d20.svg"/>
+            <i class="fas fa-dice-d20 dice-tray-icon"></i>
+        </div>
+        <span class="tray-handle-separator line"></span>
+    {{/if}}
+
+    {{!-- MACROS --}} 
+    {{#if showHandleMacros}}
+        <div class="handle-macros" title="Macros" data-tooltip="Click to open the macros panel for quick access">
+            <i class="fas fa-sparkles macros-icon"></i>
         </div>
         <span class="tray-handle-separator line"></span>
     {{/if}}
