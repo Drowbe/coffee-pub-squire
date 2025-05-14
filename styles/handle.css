@@ -196,6 +196,13 @@
 }
 
 
+.squire-tray[data-position="left"] .handle-no-character {
+    font-size: 1.2em;
+    color: #909090;
+    font-weight: 900;
+    padding-top: 10px;
+}
+
 /* SEPARATORS AND SPACERS */
 
 .squire-tray[data-position="left"] .tray-handle-separator {

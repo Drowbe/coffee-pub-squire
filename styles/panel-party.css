@@ -169,7 +169,7 @@
     padding: 20px;
     color: #9f9275;
     font-size: 1.2em;
-    font-style: italic;
+    text-transform: uppercase;
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid #444;
     border-radius: 4px;
