@@ -26,6 +26,11 @@ export class PartyPanel {
         // Get all player-owned tokens on the canvas
         const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
         
+        // Get non-player tokens (for GM only)
+        const nonPlayerTokens = game.user.isGM ? 
+            canvas.tokens.placeables.filter(token => token.actor && !token.actor.hasPlayerOwner) : 
+            [];
+        
         // Get currently controlled tokens' actor IDs
         const controlledTokenIds = canvas.tokens.controlled
             .filter(token => token.actor)
@@ -33,7 +38,9 @@ export class PartyPanel {
 
         const html = await renderTemplate(TEMPLATES.PANEL_PARTY, { 
             tokens,
-            controlledTokenIds
+            nonPlayerTokens,
+            controlledTokenIds,
+            isGM: game.user.isGM
         });
         partyContainer.html(html);
 

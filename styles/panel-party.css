@@ -199,6 +199,88 @@
     transition: width 0.3s ease;
 }
 
+/* Section Divider */
+.party-view .section-divider {
+    position: relative;
+    text-align: center;
+    margin: 20px 0 15px;
+    height: 20px;
+}
+
+.party-view .section-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #444;
+    z-index: 1;
+}
+
+.party-view .section-divider .divider-text {
+    display: inline-block;
+    background: #111;
+    padding: 0 10px;
+    color: #922610;
+    font-size: 0.75em;
+    font-weight: bold;
+    position: relative;
+    z-index: 2;
+    letter-spacing: 1px;
+}
+
+/* NPC Cards */
+.party-view .npc-card {
+    background: rgba(60, 0, 0, 0.25);
+    border-color: #922610;
+    position: relative;
+}
+
+.party-view .npc-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0, 0, 0, 0.05) 5px, rgba(0, 0, 0, 0.05) 10px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.party-view .npc-card.selected {
+    border-color: #922610;
+    box-shadow: 0 0 5px rgba(146, 38, 16, 0.4);
+}
+
+.party-view .npc-card.selected::before {
+    background: #922610;
+    opacity: 0.5;
+}
+
+.party-view .npc-card .character-name {
+    color: #d9a19b;
+    position: relative;
+    z-index: 1;
+}
+
+.party-view .npc-card .details-primary, 
+.party-view .npc-card .details-secondary {
+    color: #9f8275;
+}
+
+.party-view .npc-card.drop-target {
+    border-color: #922610;
+    box-shadow: 0 0 5px rgba(146, 38, 16, 0.5);
+    background: rgba(146, 38, 16, 0.15);
+}
+
+.party-view .npc-card.drop-target::after {
+    background: #922610;
+    border: 2px solid #922610;
+}
+
 /* No Party Message */
 .party-view .no-party-message {
     text-align: center;

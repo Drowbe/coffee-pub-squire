@@ -53,4 +53,52 @@
         <p>- No Party Tokens to Display -</p>
         <p>Add tokens to the scene to get started</p>
     </div>
-{{/each}} 
+{{/each}}
+
+{{#if isGM}}
+    {{#if nonPlayerTokens.length}}
+        <div class="section-divider">
+            <span class="divider-text">MONSTERS & NPCs</span>
+        </div>
+        
+        {{#each nonPlayerTokens as |token|}}
+            <div class="character-card npc-card {{#if token.actor.isOwner}}clickable{{/if}} {{#if (includes ../controlledTokenIds token.actor.id)}}selected{{/if}}" data-actor-id="{{token.actor.id}}">
+                <div class="character-image clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">
+                    {{#if token.actor.system.attributes.hp}}
+                    <div class="health-overlay" style="height: {{healthOverlayHeight token.actor.system.attributes.hp}}"></div>
+                    {{#if (eq token.actor.system.attributes.hp.value 0)}}
+                    <i class="fas fa-skull death-skull"></i>
+                    {{/if}}
+                    {{/if}}
+                </div>
+                <div class="character-info">
+                    <div class="character-name">{{token.actor.name}}</div>
+                    <div class="character-details">
+                        <div class="details-primary">
+                            {{#if token.actor.system.details.cr}}CR {{token.actor.system.details.cr}}{{/if}}
+                            {{#if token.actor.system.details.alignment}} • {{token.actor.system.details.alignment}}{{/if}}
+                        </div>
+                        <div class="details-secondary">
+                            <div>RESISTANCES: {{#if token.actor.system.traits.dr.value}}{{#each token.actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
+                            <div>IMMUNITITES: {{#if token.actor.system.traits.di.value}}{{#each token.actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
+                        </div>
+                        {{#if token.actor.system.attributes.hp}}
+                        <div class="party-hp-bar">
+                            <div class="hp-current">
+                                <span class="hp-value">{{token.actor.system.attributes.hp.value}}</span>
+                            </div>
+                            <div class="hp-fill" style="width: {{multiply (divide token.actor.system.attributes.hp.value token.actor.system.attributes.hp.max) 100}}%"></div>
+                            <div class="hp-max">
+                                <span class="hp-value">{{token.actor.system.attributes.hp.max}}</span>
+                            </div>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+                <div class="character-actions">
+                    <i class="fas fa-feather-alt open-sheet" title="Open Character Sheet"></i>
+                </div>
+            </div>
+        {{/each}}
+    {{/if}}
+{{/if}} 
