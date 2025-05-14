@@ -14,6 +14,7 @@ export const TEMPLATES = {
     PANEL_FAVORITES: `modules/${MODULE.ID}/templates/panel-favorites.hbs`,
     PANEL_FEATURES: `modules/${MODULE.ID}/templates/panel-features.hbs`,
     PANEL_DICETRAY: `modules/${MODULE.ID}/templates/panel-dicetray.hbs`,
+    PANEL_MACROS: `modules/${MODULE.ID}/templates/panel-macros.hbs`,
     PANEL_EXPERIENCE: `modules/${MODULE.ID}/templates/panel-experience.hbs`,
     PANEL_HEALTH: `modules/${MODULE.ID}/templates/panel-health.hbs`,
     PANEL_STATS: `modules/${MODULE.ID}/templates/panel-stats.hbs`,

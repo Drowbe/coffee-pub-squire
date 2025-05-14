@@ -280,6 +280,23 @@
     transform: rotate(180deg);
 }
 
+/* Macros */
+.squire-tray[data-position="left"] .macros-icon {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+.squire-tray[data-position="left"] .macros-icon:hover {
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 10px var(--color-shadow-highlight);
+    transform: scale(1.1,1.1);
+}
 
 /* Handle Favorites */
 .squire-tray[data-position="left"] .handle-favorites {

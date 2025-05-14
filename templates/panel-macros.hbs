@@ -1,0 +1,17 @@
+{{#if (eq position "left")}}
+{{#unless isMacrosPopped}}
+<div class="tray-title-small">
+    {{#if actor}}Macros: {{actor.name}}{{else}}Macros: No Character{{/if}}
+    <div class="macros-controls">
+        <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
+        <i class="fas fa-chevron-down macros-toggle" title="Toggle Macros Panel"></i>
+    </div>
+</div>
+{{/unless}}
+
+<div class="macros-content">
+    <div class="macros-placeholder">
+        <p>MACROS WILL GO HERE</p>
+    </div>
+</div>
+{{/if}} 

@@ -16,6 +16,7 @@ import { PartyStatsPanel } from "./panel-party-stats.js";
 import { NotesPanel } from "./panel-notes.js";
 import { CodexPanel } from "./panel-codex.js";
 import { QuestPanel } from './panel-quest.js';
+import { MacrosPanel } from "./panel-macros.js";
 
 export class PanelManager {
     static instance = null;
@@ -51,6 +52,7 @@ export class PanelManager {
         this.codexPanel = new CodexPanel();
         this.questPanel = new QuestPanel();
         this.hiddenCategories = new Set();
+        this.macrosPanel = new MacrosPanel({ actor });
     }
 
     static async initialize(actor = null) {
@@ -176,6 +178,7 @@ export class PanelManager {
                 showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
+                showMacrosPanel: game.settings.get(MODULE.ID, 'showMacrosPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode, // Use the current viewMode
@@ -185,7 +188,9 @@ export class PanelManager {
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
+            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
+            isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
         });
@@ -226,6 +231,7 @@ export class PanelManager {
                 showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
+                showMacrosPanel: game.settings.get(MODULE.ID, 'showMacrosPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode,
@@ -235,7 +241,9 @@ export class PanelManager {
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
+            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
+            isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
         });
@@ -271,6 +279,11 @@ export class PanelManager {
             this.healthPanel = new HealthPanel(this.actor);
         }
 
+        // Only create macros panel if not popped out
+        if (!MacrosPanel.isWindowOpen) {
+            this.macrosPanel = new MacrosPanel({ actor: this.actor });
+        }
+
         this.statsPanel = new StatsPanel(this.actor);
         this.abilitiesPanel = new AbilitiesPanel(this.actor);
         this.partyPanel = new PartyPanel();
@@ -288,6 +301,9 @@ export class PanelManager {
         this.experiencePanel.element = PanelManager.element;
         if (!HealthPanel.isWindowOpen) {
             this.healthPanel.element = PanelManager.element;
+        }
+        if (!MacrosPanel.isWindowOpen) {
+            this.macrosPanel.element = PanelManager.element;
         }
         this.statsPanel.element = PanelManager.element;
         this.abilitiesPanel.element = PanelManager.element;
@@ -336,7 +352,8 @@ export class PanelManager {
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
                 showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
                 showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-                showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray')
+                showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
+                showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros')
             });
             const handle = PanelManager.element.find('.handle-left');
             handle.html(handleTemplate);
@@ -369,6 +386,7 @@ export class PanelManager {
         this.notesPanel?.render(element);
         this.codexPanel?.render(element);
         this.questPanel?.render(element);
+        if (this.macrosPanel && !this.macrosPanel.isPoppedOut) await this.macrosPanel.render(element);
     }
 
     activateListeners(tray) {
@@ -1232,6 +1250,15 @@ export class PanelManager {
             if (blacksmith) {
                 const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
                 blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
+        });
+
+        // Handle macros icon clicks
+        handle.find('.handle-macros').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
+                await this.macrosPanel._onPopOut();
             }
         });
     }

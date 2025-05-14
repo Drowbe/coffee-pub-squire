@@ -67,6 +67,11 @@
                 <div class="panel-container" data-panel="dicetray"></div>
                 {{/if}}
             {{/unless}}
+            {{#unless isMacrosPopped}}
+                {{#if @root.settings.showMacrosPanel}}
+                <div class="panel-container" data-panel="macros"></div>
+                {{/if}}
+            {{/unless}}
             <div class="panel-container" data-panel="control"></div>
             <div class="panel-containers stacked">
                 <div class="panel-container" data-panel="favorites"></div>

@@ -301,6 +301,18 @@ export const registerSettings = function() {
         }
     });
 
+    game.settings.register(MODULE.ID, 'showMacrosPanel', {
+        name: 'Show Macros Panel',
+        hint: 'Display macros panel for quick access to macros',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: false,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
 
     // --------------------------------
     // --- Handle Display Settings ---
@@ -368,6 +380,15 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleDiceTray', {
         name: 'Show Dice Tray Icon in Handle',
         hint: 'Display a dice icon in the handle to quickly access the dice tray',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHandleMacros', {
+        name: 'Show Macros Icon in Handle',
+        hint: 'Display a macros icon in the handle to quickly access the macros panel',
         scope: 'client',
         config: true,
         type: Boolean,
@@ -528,6 +549,13 @@ export const registerSettings = function() {
     });
 
     game.settings.register(MODULE.ID, 'isDiceTrayPanelCollapsed', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'isMacrosPanelCollapsed', {
         scope: 'client',
         config: false,
         type: Boolean,
@@ -696,6 +724,14 @@ export const registerSettings = function() {
         default: 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3'
     });
 
+    // Macros Panel
+    game.settings.register(MODULE.ID, 'userMacros', {
+        scope: 'client',
+        config: false,
+        type: Array,
+        default: []
+    }); 
+
     // --------------------------------
     // ---      CODEX Settings     ---
     // --------------------------------
@@ -834,4 +870,5 @@ export const initializeNoteSettings = function() {
             console.log(`SQUIRE | Migrated notes journal settings from old value: ${oldJournalId}`);
         }
     }
-}; 
+};
+
