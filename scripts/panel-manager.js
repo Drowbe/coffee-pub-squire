@@ -405,6 +405,10 @@ export class PanelManager {
         const trayContent = tray.find('.tray-content');
         trayContent.off('dragenter dragleave dragover drop');
         
+        // Find the stacked panels container to use as our drop target
+        const stackedPanels = tray.find('.panel-containers.stacked');
+        stackedPanels.off('dragenter dragleave dragover drop');
+        
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
             if ($(event.target).closest('.pin-button').length || 
@@ -537,8 +541,8 @@ export class PanelManager {
             return false;
         });
         
-        // Handle drag and drop on the tray content only when in player view
-        trayContent.on('dragenter', (event) => {
+        // Handle drag and drop on the stacked panels container only when in player view
+        stackedPanels.on('dragenter', (event) => {
             // Skip if in party or quest view
             if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             
@@ -568,33 +572,33 @@ export class PanelManager {
                         break;
                 }
                 
-                trayContent.addClass('drop-hover');
-                trayContent.attr('data-drop-type', dropType.toLowerCase());
-                trayContent.attr('data-drop-message', dropMessage);
+                stackedPanels.addClass('drop-hover');
+                stackedPanels.attr('data-drop-type', dropType.toLowerCase());
+                stackedPanels.attr('data-drop-message', dropMessage);
             } catch (error) {
                 // If we can't parse the data, use default message
-                trayContent.addClass('drop-hover');
+                stackedPanels.addClass('drop-hover');
             }
         });
 
-        trayContent.on('dragleave', (event) => {
+        stackedPanels.on('dragleave', (event) => {
             // Skip if in party or quest view
             if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             
             event.preventDefault();
-            if (!event.relatedTarget?.closest('.tray-content')) {
-                trayContent.removeClass('drop-hover');
-                trayContent.removeAttr('data-drop-type');
-                trayContent.removeAttr('data-drop-message');
+            if (!event.relatedTarget?.closest('.panel-containers.stacked')) {
+                stackedPanels.removeClass('drop-hover');
+                stackedPanels.removeAttr('data-drop-type');
+                stackedPanels.removeAttr('data-drop-message');
             }
         });
 
-        trayContent.on('drop', async (event) => {
+        stackedPanels.on('drop', async (event) => {
             // Skip if in party or quest view
             if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             
             event.preventDefault();
-            trayContent.removeClass('drop-hover');
+            stackedPanels.removeClass('drop-hover');
 
             try {
                 const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
@@ -863,7 +867,7 @@ export class PanelManager {
         });
 
         // Prevent default drag over behavior only when in player view
-        trayContent.on('dragover', (event) => {
+        stackedPanels.on('dragover', (event) => {
             // Skip if in party or quest view
             if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
             

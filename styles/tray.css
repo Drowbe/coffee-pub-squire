@@ -76,7 +76,8 @@
 
 
 /* Drop Zone Styles */
-.squire-tray .tray-content.drop-hover {
+.squire-tray .tray-content.drop-hover,
+.squire-tray .panel-containers.stacked.drop-hover {
     position: relative;
     font-weight: 900;
     text-align: center;
@@ -84,11 +85,13 @@
 }
 
 /* Prevent text centering during favorites reordering */
-.squire-tray.reordering-favorites .tray-content.drop-hover {
+.squire-tray.reordering-favorites .tray-content.drop-hover,
+.squire-tray.reordering-favorites .panel-containers.stacked.drop-hover {
     text-align: left;
 }
 
-.squire-tray .tray-content.drop-hover::before {
+.squire-tray .tray-content.drop-hover::before,
+.squire-tray .panel-containers.stacked.drop-hover::before {
     content: '';
     position: absolute;
     top: 0;
@@ -106,7 +109,8 @@
     border-radius: 8px;
 }
 
-.squire-tray .tray-content.drop-hover::after {
+.squire-tray .tray-content.drop-hover::after,
+.squire-tray .panel-containers.stacked.drop-hover::after {
     content: 'ADD TO CHARACTER';
     position: absolute;
     top: 50%;
@@ -119,13 +123,21 @@
     pointer-events: none;
 }
 
+/* Custom content based on data attribute */
+.squire-tray .panel-containers.stacked.drop-hover[data-drop-message]::after {
+    content: attr(data-drop-message);
+}
+
 /* Hide drop zone elements during favorites reordering */
 .squire-tray.reordering-favorites .tray-content.drop-hover::before,
-.squire-tray.reordering-favorites .tray-content.drop-hover::after {
+.squire-tray.reordering-favorites .tray-content.drop-hover::after,
+.squire-tray.reordering-favorites .panel-containers.stacked.drop-hover::before,
+.squire-tray.reordering-favorites .panel-containers.stacked.drop-hover::after {
     display: none;
 }
 
-.squire-tray .tray-content.drop-hover * {
+.squire-tray .tray-content.drop-hover *,
+.squire-tray .panel-containers.stacked.drop-hover * {
     pointer-events: none;
 }
 
