@@ -932,6 +932,418 @@ export class PanelManager {
                 await this.macrosPanel._onPopOut();
             }
         });
+
+        // Add drag and drop handlers for stacked panels
+        const stackedContainer = tray.find('.panel-containers.stacked');
+        
+        // Remove any existing drag event listeners
+        stackedContainer.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
+        
+        // Add new drag event listeners
+        stackedContainer.on('dragenter.squire', (event) => {
+            event.preventDefault();
+            console.log("SQUIRE | DROPZONE | dragenter event triggered");
+            
+            // Add drop hover styles for any drag operation
+            $(event.currentTarget).addClass('drop-target');
+            
+            // Play hover sound
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
+                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
+        });
+
+        stackedContainer.on('dragleave.squire', (event) => {
+            event.preventDefault();
+            console.log("SQUIRE | DROPZONE | dragleave event triggered");
+            // Remove the style if we're leaving the container or entering a child element
+            const container = $(event.currentTarget);
+            const relatedTarget = $(event.relatedTarget);
+            
+            // Check if we're actually leaving the container
+            if (!relatedTarget.closest('.panel-containers.stacked').is(container)) {
+                container.removeClass('drop-target');
+            }
+        });
+
+        stackedContainer.on('dragover.squire', (event) => {
+            event.preventDefault();
+            event.originalEvent.dataTransfer.dropEffect = 'copy';
+            console.log("SQUIRE | DROPZONE | dragover event triggered");
+        });
+
+        stackedContainer.on('drop.squire', async (event) => {
+            event.preventDefault();
+            console.log("SQUIRE | DROPZONE | drop event triggered");
+            
+            // Get the container and remove hover state
+            const $container = $(event.currentTarget);
+            $container.removeClass('drop-target');
+            
+            try {
+                const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
+                console.log("SQUIRE | DROPZONE | Data transfer content:", dataTransfer);
+                
+                const data = JSON.parse(dataTransfer);
+                console.log("SQUIRE | DROPZONE | Parsed data:", data);
+                
+                // Play drop sound
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'dropSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+                
+                // Get the current actor
+                const actor = PanelManager.currentActor;
+                if (!actor) {
+                    console.log("SQUIRE | DROPZONE | No actor found");
+                    ui.notifications.warn("No character selected.");
+                    return;
+                }
+                console.log("SQUIRE | DROPZONE | Current actor:", actor.name);
+                
+                // Handle different drop types
+                let item;
+                switch (data.type) {
+                    case 'Item':
+                        console.log("SQUIRE | DROPZONE | Processing Item drop");
+                        // This could be either a world item OR a drag from character sheet
+                        if ((data.actorId && (data.data?.itemId || data.embedId)) || 
+                            data.fromInventory || 
+                            (data.uuid && data.uuid.startsWith("Actor."))) {
+                            
+                            console.log("SQUIRE | DROPZONE | Item is from character sheet");
+                            // This is a drag from character sheet
+                            let sourceActorId;
+                            let itemId;
+                            
+                            // Parse from UUID format if present (Actor.actorId.Item.itemId)
+                            if (data.uuid && data.uuid.startsWith("Actor.")) {
+                                const parts = data.uuid.split(".");
+                                if (parts.length >= 4 && parts[2] === "Item") {
+                                    sourceActorId = parts[1];
+                                    itemId = parts[3];
+                                }
+                            } else {
+                                sourceActorId = data.actorId;
+                                itemId = data.data?.itemId || data.embedId || data.uuid?.split('.').pop();
+                            }
+                            
+                            const sourceActor = game.actors.get(sourceActorId);
+                            if (!sourceActor || !itemId) {
+                                console.log("SQUIRE | DROPZONE | No source actor or item ID");
+                                ui.notifications.warn("Could not determine the source actor or item.");
+                                return;
+                            }
+                            
+                            // Get the item from the source actor
+                            const sourceItem = sourceActor.items.get(itemId);
+                            if (!sourceItem) {
+                                console.log("SQUIRE | DROPZONE | No source item found");
+                                ui.notifications.warn("Could not find the item on the source character.");
+                                return;
+                            }
+                            
+                            // Handle quantity logic for stackable items
+                            let quantityToTransfer = 1;
+                            const hasQuantity = sourceItem.system.quantity != null;
+                            const maxQuantity = hasQuantity ? sourceItem.system.quantity : 1;
+                            
+                            // Always create a dialog, even for single items
+                            const timestamp = Date.now();
+                            
+                            // Check if we have direct permission to modify both actors
+                            const hasSourcePermission = sourceActor.isOwner;
+                            const hasTargetPermission = actor.isOwner;
+                            
+                            // Prepare template data for sender's dialog
+                            const senderTemplateData = {
+                                sourceItem,
+                                sourceActor,
+                                targetActor: actor,
+                                maxQuantity,
+                                timestamp,
+                                canAdjustQuantity: hasQuantity && maxQuantity > 1,
+                                isReceiveRequest: false,
+                                hasQuantity
+                            };
+                            
+                            // Render the transfer dialog template for the sender
+                            const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
+                            
+                            // Initiate the transfer process
+                            let selectedQuantity = await new Promise(resolve => {
+                                new Dialog({
+                                    title: "Transfer Item",
+                                    content: senderContent,
+                                    buttons: {
+                                        transfer: {
+                                            icon: '<i class="fas fa-exchange-alt"></i>',
+                                            label: "Transfer",
+                                            callback: () => {
+                                                const quantityInput = document.querySelector(`#transfer-item-${timestamp} input[type="number"]`);
+                                                resolve(quantityInput ? parseInt(quantityInput.value) : 1);
+                                            }
+                                        },
+                                        cancel: {
+                                            icon: '<i class="fas fa-times"></i>',
+                                            label: "Cancel",
+                                            callback: () => resolve(0)
+                                        }
+                                    },
+                                    default: "transfer",
+                                    close: () => resolve(0)
+                                }, {
+                                    classes: ["transfer-item"],
+                                    id: `transfer-item-${timestamp}`,
+                                    width: 320,
+                                    height: "auto"
+                                }).render(true);
+                            });
+                            
+                            if (selectedQuantity <= 0) return; // User cancelled
+                            
+                            if (!hasSourcePermission || !hasTargetPermission) {
+                                // Prepare transfer data
+                                const transferId = `transfer_${Date.now()}`;
+                                const transferData = {
+                                    id: transferId,
+                                    sourceActorId: sourceActor.id,
+                                    targetActorId: actor.id,
+                                    itemId: sourceItem.id,
+                                    itemName: sourceItem.name,
+                                    quantity: selectedQuantity,
+                                    hasQuantity: hasQuantity,
+                                    isPlural: selectedQuantity > 1,
+                                    sourceActorName: sourceActor.name,
+                                    targetActorName: actor.name,
+                                    status: 'pending',
+                                    timestamp: Date.now(),
+                                    sourceUserId: game.user.id
+                                };
+                                
+                                // Create chat message for transfer request
+                                const targetUsers = game.users.filter(u => !u.isGM && actor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+                                if (targetUsers.length > 0) {
+                                    // If current user is not a GM, use socketlib to have a GM create the message
+                                    if (!game.user.isGM) {
+                                        const socket = game.modules.get(MODULE.ID)?.socket;
+                                        if (socket) {
+                                            await socket.executeAsGM('createTransferRequestChat', {
+                                                cardType: "transfer-request",
+                                                sourceActorId: sourceActor.id,
+                                                sourceActorName: sourceActor.name,
+                                                targetActorId: actor.id,
+                                                targetActorName: actor.name,
+                                                itemId: sourceItem.id,
+                                                itemName: sourceItem.name,
+                                                quantity: selectedQuantity,
+                                                hasQuantity: !!hasQuantity,
+                                                isPlural: selectedQuantity > 1,
+                                                isTransferReceiver: true,
+                                                transferId,
+                                                receiverIds: targetUsers.map(u => u.id),
+                                                transferData
+                                            });
+                                        }
+                                    }
+                                    await ChatMessage.create({
+                                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                                            isPublic: false,
+                                            cardType: "transfer-request",
+                                            strCardIcon: "fas fa-people-arrows",
+                                            strCardTitle: "Transfer Request",
+                                            sourceActor,
+                                            sourceActorName: sourceActor.name,
+                                            targetActor: actor,
+                                            targetActorName: actor.name,
+                                            item: sourceItem,
+                                            itemName: sourceItem.name,
+                                            quantity: selectedQuantity,
+                                            hasQuantity: !!hasQuantity,
+                                            isPlural: selectedQuantity > 1,
+                                            isTransferReceiver: true,
+                                            transferId
+                                        }),
+                                        speaker: { alias: "System" },
+                                        whisper: targetUsers.map(u => u.id),
+                                        flags: {
+                                            [MODULE.ID]: {
+                                                transferId,
+                                                type: 'transferRequest',
+                                                isTransferReceiver: true,
+                                                targetUsers: targetUsers.map(u => u.id),
+                                                data: transferData
+                                            }
+                                        }
+                                    });
+                                }
+                                
+                                // GM: only if approval is required (no Accept/Reject buttons)
+                                const gmUsers = game.users.filter(u => u.isGM);
+                                const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+                                
+                                if (gmUsers.length > 0 && gmApprovalRequired) {
+                                    // If current user is not a GM, use socketlib to have a GM create the message
+                                    if (!game.user.isGM) {
+                                        const socket = game.modules.get(MODULE.ID)?.socket;
+                                        if (socket) {
+                                            await socket.executeAsGM('createTransferRequestChat', {
+                                                cardType: "transfer-request",
+                                                sourceActorId: sourceActor.id,
+                                                sourceActorName: sourceActor.name,
+                                                targetActorId: actor.id,
+                                                targetActorName: actor.name,
+                                                itemId: sourceItem.id,
+                                                itemName: sourceItem.name,
+                                                quantity: selectedQuantity,
+                                                hasQuantity: !!hasQuantity,
+                                                isPlural: selectedQuantity > 1,
+                                                isTransferReceiver: false,
+                                                transferId,
+                                                receiverIds: gmUsers.map(u => u.id),
+                                                transferData
+                                            });
+                                        }
+                                    }
+                                    await ChatMessage.create({
+                                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                                            isPublic: false,
+                                            cardType: "transfer-request",
+                                            strCardIcon: "fas fa-people-arrows",
+                                            strCardTitle: "Transfer Request",
+                                            sourceActor,
+                                            sourceActorName: sourceActor.name,
+                                            targetActor: actor,
+                                            targetActorName: actor.name,
+                                            item: sourceItem,
+                                            itemName: sourceItem.name,
+                                            quantity: selectedQuantity,
+                                            hasQuantity: !!hasQuantity,
+                                            isPlural: selectedQuantity > 1,
+                                            isTransferReceiver: false,
+                                            transferId
+                                        }),
+                                        speaker: { alias: "System" },
+                                        whisper: gmUsers.map(u => u.id),
+                                        flags: {
+                                            [MODULE.ID]: {
+                                                transferId,
+                                                type: 'transferRequest',
+                                                isTransferReceiver: false,
+                                                targetUsers: gmUsers.map(u => u.id),
+                                                data: transferData
+                                            }
+                                        }
+                                    });
+                                }
+                                
+                                if (hasSourcePermission && hasTargetPermission) {
+                                    await this._completeItemTransfer(sourceActor, actor, sourceItem, selectedQuantity, hasQuantity);
+                                    return;
+                                } else {
+                                    const socket = game.modules.get(MODULE.ID)?.socket;
+                                    if (!socket) {
+                                        ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+                                        return;
+                                    }
+                                    await socket.executeAsGM('executeItemTransfer', {
+                                        sourceActorId: sourceActor.id,
+                                        targetActorId: actor.id,
+                                        sourceItemId: sourceItem.id,
+                                        quantity: selectedQuantity,
+                                        hasQuantity: hasQuantity
+                                    });
+                                    return;
+                                }
+                            } else {
+                                await this._completeItemTransfer(sourceActor, actor, sourceItem, selectedQuantity, hasQuantity);
+                                return;
+                            }
+                        } else {
+                            console.log("SQUIRE | DROPZONE | Item is from world");
+                            try {
+                                // Get the item from the UUID
+                                const item = await fromUuid(data.uuid);
+                                if (!item) {
+                                    console.log("SQUIRE | DROPZONE | Failed to get item from UUID");
+                                    return;
+                                }
+                                console.log("SQUIRE | DROPZONE | Retrieved item:", item.name);
+                                
+                                // Create the item on the actor
+                                const createdItem = await actor.createEmbeddedDocuments('Item', [item.toObject()]);
+                                console.log("SQUIRE | DROPZONE | Created item on actor:", createdItem[0].name);
+                                
+                                // Add to newlyAddedItems in PanelManager
+                                if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                                    game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
+                                    console.log("SQUIRE | DROPZONE | Added to newlyAddedItems");
+                                }
+                                
+                                // Send chat notification
+                                const cardDataWorld = this._getTransferCardData({ cardType: "transfer-gm", targetActor: actor, item });
+                                const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataWorld);
+                                await ChatMessage.create({
+                                    content: chatContent,
+                                    speaker: ChatMessage.getSpeaker({ actor })
+                                });
+                                console.log("SQUIRE | DROPZONE | Created chat message");
+
+                                // Determine which panel to re-render based on item type
+                                let targetPanel;
+                                switch (item.type) {
+                                    case 'weapon':
+                                        targetPanel = 'weapons';
+                                        break;
+                                    case 'spell':
+                                        targetPanel = 'spells';
+                                        break;
+                                    case 'feat':
+                                        targetPanel = 'features';
+                                        break;
+                                    default:
+                                        targetPanel = 'inventory';
+                                }
+                                console.log("SQUIRE | DROPZONE | Target panel:", targetPanel);
+
+                                // Re-render the appropriate panel
+                                switch (targetPanel) {
+                                    case 'favorites':
+                                        if (this.favoritesPanel) await this.favoritesPanel.render(this.element);
+                                        break;
+                                    case 'weapons':
+                                        if (this.weaponsPanel) await this.weaponsPanel.render(this.element);
+                                        break;
+                                    case 'spells':
+                                        if (this.spellsPanel) await this.spellsPanel.render(this.element);
+                                        break;
+                                    case 'features':
+                                        if (this.featuresPanel) await this.featuresPanel.render(this.element);
+                                        break;
+                                    case 'inventory':
+                                        if (this.inventoryPanel) await this.inventoryPanel.render(this.element);
+                                        break;
+                                }
+                                console.log("SQUIRE | DROPZONE | Re-rendered panel:", targetPanel);
+                            } catch (error) {
+                                console.error("SQUIRE | DROPZONE | Error processing world item:", error);
+                                ui.notifications.error("Error processing dropped item. See console for details.");
+                            }
+                        }
+                        break;
+                    default:
+                        console.log("SQUIRE | DROPZONE | Unhandled drop type:", data.type);
+                }
+                
+            } catch (error) {
+                console.error("SQUIRE | DROPZONE | Error handling drop:", error);
+                ui.notifications.error("Error handling drop. See console for details.");
+            }
+        });
     }
 
     async setViewMode(mode) {

@@ -1021,3 +1021,42 @@
 .squire-tray .tray-tools-button i {
     margin-right: 5px;
 }
+
+/* Drop Target Styles for Stacked Container */
+.panel-containers.stacked.drop-target {
+    border: 2px solid #48a000;
+    box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
+    background: rgba(72, 160, 0, 0.15);
+    transform: scale(1.001);
+    position: relative;
+    z-index: 100;
+}
+
+.panel-containers.stacked.drop-target::after {
+    content: 'DROP ITEM';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #48a000;
+    color: #ffffff;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 0.7em;
+    white-space: nowrap;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    border: 2px solid #48a000;
+    z-index: 101;
+}
+
+/* Remove the old panel-specific drop target styles */
+.panel-containers.stacked .panel-container.drop-target {
+    border: none;
+    box-shadow: none;
+    background: none;
+    transform: none;
+}
+
+.panel-containers.stacked .panel-container.drop-target::after {
+    content: none;
+}
