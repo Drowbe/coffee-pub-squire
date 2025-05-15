@@ -942,11 +942,8 @@ export class PanelManager {
         // Add new drag event listeners
         stackedContainer.on('dragenter.squire', (event) => {
             event.preventDefault();
-            console.log("SQUIRE | DROPZONE | dragenter event triggered");
-            
             // Add drop hover styles for any drag operation
             $(event.currentTarget).addClass('drop-target');
-            
             // Play hover sound
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
             if (blacksmith) {
@@ -957,11 +954,9 @@ export class PanelManager {
 
         stackedContainer.on('dragleave.squire', (event) => {
             event.preventDefault();
-            console.log("SQUIRE | DROPZONE | dragleave event triggered");
             // Remove the style if we're leaving the container or entering a child element
             const container = $(event.currentTarget);
             const relatedTarget = $(event.relatedTarget);
-            
             // Check if we're actually leaving the container
             if (!relatedTarget.closest('.panel-containers.stacked').is(container)) {
                 container.removeClass('drop-target');
@@ -971,12 +966,10 @@ export class PanelManager {
         stackedContainer.on('dragover.squire', (event) => {
             event.preventDefault();
             event.originalEvent.dataTransfer.dropEffect = 'copy';
-            console.log("SQUIRE | DROPZONE | dragover event triggered");
         });
 
         stackedContainer.on('drop.squire', async (event) => {
             event.preventDefault();
-            console.log("SQUIRE | DROPZONE | drop event triggered");
             
             // Get the container and remove hover state
             const $container = $(event.currentTarget);
@@ -1612,6 +1605,27 @@ export class PanelManager {
             strCardTitle: this._getDropTitle(data.item.type),
             strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${data.item.name}</strong> via the Squire tray.</p>`
         };
+    }
+
+    // Add this new method to complete an item transfer between actors
+    async _completeItemTransfer(sourceActor, targetActor, sourceItem, quantityToTransfer, hasQuantity) {
+        // Create a copy of the item data to transfer
+        const transferData = sourceItem.toObject();
+        if (hasQuantity) {
+            transferData.system.quantity = quantityToTransfer;
+        }
+        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+        if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
+            await sourceItem.update({
+                'system.quantity': sourceItem.system.quantity - quantityToTransfer
+            });
+        } else {
+            await sourceItem.delete();
+        }
+        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+            game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
+            await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
+        }
     }
 }
 
