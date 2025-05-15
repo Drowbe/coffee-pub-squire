@@ -181,7 +181,7 @@ export class PanelManager {
                 showMacrosPanel: game.settings.get(MODULE.ID, 'showMacrosPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
-            viewMode: viewMode, // Use the current viewMode
+            viewMode: viewMode,
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -205,14 +205,13 @@ export class PanelManager {
             trayElement.addClass('pinned expanded');
         }
 
-        // Ensure viewMode is properly set (critical for drag and drop functionality)
+        // Ensure viewMode is properly set
         PanelManager.viewMode = viewMode;
         
         this.activateListeners(trayElement);
         await this.renderPanels(trayElement);
         
-        // Since clicking the player tab even when already in player view makes
-        // drag and drop work, explicitly call setViewMode to ensure everything is properly initialized
+        // Set view mode
         if (viewMode === 'player') {
             await this.setViewMode('player');
         }
@@ -324,19 +323,7 @@ export class PanelManager {
         setTimeout(() => {
             PanelManager.element.css('animation', '');
         }, 100);
-        
-        // After all panels are rendered, ensure drag and drop functionality is restored
-        // Find the stacked panels container in the NEW tray and reattach handlers
-        const stackedPanels = PanelManager.element.find('.panel-containers.stacked');
-        if (stackedPanels.length) {
-            // Explicitly remove any existing event handlers
-            stackedPanels.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
-            
-            // Re-add the drag event handlers
-            this._attachStackedPanelsDragHandlers(stackedPanels);
-            
-            console.log("SQUIRE | Drag and drop handlers reattached after tray update");
-        }
+
     }
 
     async updateHandle() {
@@ -413,14 +400,6 @@ export class PanelManager {
 
     activateListeners(tray) {
         const handle = tray.find('.tray-handle');
-        
-        // Clean up existing drop event listeners
-        const trayContent = tray.find('.tray-content');
-        trayContent.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
-        
-        // Find the stacked panels container to use as our drop target
-        const stackedPanels = tray.find('.panel-containers.stacked');
-        stackedPanels.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
         
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
@@ -553,9 +532,6 @@ export class PanelManager {
             
             return false;
         });
-        
-        // Handle drag and drop on the stacked panels container only when in player view
-        this._attachStackedPanelsDragHandlers(stackedPanels);
 
         // Handle condition icon clicks
         tray.find('.condition-icon').click(async (event) => {
@@ -1224,348 +1200,6 @@ export class PanelManager {
             strCardTitle: this._getDropTitle(data.item.type),
             strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${data.item.name}</strong> via the Squire tray.</p>`
         };
-    }
-
-    // Create a new method to hold the drag and drop handlers
-    _attachStackedPanelsDragHandlers(stackedPanels) {
-        // Skip if stackedPanels is not found
-        if (!stackedPanels.length) return;
-        
-        // Ensure we completely remove any existing handlers first
-        stackedPanels.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
-        
-        // Handle drag and drop on the stacked panels container only when in player view
-        stackedPanels.on('dragenter.squire', (event) => {
-            // Skip if in party or quest view
-            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
-            
-            event.preventDefault();
-            try {
-                const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
-                const dropType = data.type;
-                let dropMessage = "Drop to Add";
-                
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-                
-                // Customize message based on type
-                switch(dropType) {
-                    case 'Item':
-                        dropMessage = `Drop to Add ${data.name || 'Item'}`;
-                        break;
-                    case 'ItemDirectory':
-                        dropMessage = `Drop to Add from Compendium`;
-                        break;
-                    case 'Actor':
-                        dropMessage = `Drop to Add from Character`;
-                        break;
-                }
-                
-                stackedPanels.addClass('drop-hover');
-                stackedPanels.attr('data-drop-type', dropType.toLowerCase());
-                stackedPanels.attr('data-drop-message', dropMessage);
-            } catch (error) {
-                // If we can't parse the data, use default message
-                stackedPanels.addClass('drop-hover');
-            }
-        });
-
-        stackedPanels.on('dragleave.squire', (event) => {
-            // Skip if in party or quest view
-            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
-            
-            event.preventDefault();
-            if (!event.relatedTarget?.closest('.panel-containers.stacked')) {
-                stackedPanels.removeClass('drop-hover');
-                stackedPanels.removeAttr('data-drop-type');
-                stackedPanels.removeAttr('data-drop-message');
-            }
-        });
-
-        stackedPanels.on('drop.squire', async (event) => {
-            // Skip if in party or quest view
-            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
-            
-            event.preventDefault();
-            stackedPanels.removeClass('drop-hover');
-
-            try {
-                const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
-                // Debug log the raw data transfer
-                console.log("SQUIRE | Raw drop data:", dataTransfer);
-                
-                const data = JSON.parse(dataTransfer);
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                
-                // Play drop sound
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'dropSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-                
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Drop data received",
-                    data,
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
-
-                if (!this.actor) {
-                    ui.notifications.warn("Please select a character before dropping items.");
-                    return;
-                }
-
-                // Handle different drop types
-                let item;
-                switch (data.type) {
-                    case 'Item':
-                        // Check if this is a drag from character sheet
-                        // **********************************
-                        // *** DROP FROM CHARACTER SHEET ***
-                        // **********************************
-                        if ((data.actorId && (data.data?.itemId || data.embedId)) || 
-                            data.fromInventory || 
-                            (data.uuid && data.uuid.startsWith("Actor."))) {
-                            
-                            // This is a drag from character sheet
-                            // Get source actor ID based on different data formats
-                            let sourceActorId;
-                            let itemId;
-                            
-                            // Parse from UUID format if present (Actor.actorId.Item.itemId)
-                            if (data.uuid && data.uuid.startsWith("Actor.")) {
-                                const parts = data.uuid.split(".");
-                                if (parts.length >= 4 && parts[2] === "Item") {
-                                    sourceActorId = parts[1];
-                                    itemId = parts[3];
-                                }
-                            } else {
-                                sourceActorId = data.actorId;
-                                itemId = data.data?.itemId || data.embedId || data.uuid?.split('.').pop();
-                            }
-                            
-                            const sourceActor = game.actors.get(sourceActorId);
-                            if (!sourceActor || !itemId) {
-                                ui.notifications.warn("Could not determine the source actor or item.");
-                                break;
-                            }
-                            
-                            // Get the item from the source actor
-                            const sourceItem = sourceActor.items.get(itemId);
-                            if (!sourceItem) {
-                                ui.notifications.warn("Could not find the item on the source character.");
-                                return;
-                            }
-                            
-                            // Check permissions on source actor
-                            if (!sourceActor.isOwner) {
-                                ui.notifications.warn(`You don't have permission to remove items from ${sourceActor.name}.`);
-                                return;
-                            }
-                            
-                            // Handle quantity logic for stackable items
-                            let quantityToTransfer = 1;
-                            const hasQuantity = sourceItem.system.quantity != null;
-                            const maxQuantity = hasQuantity ? sourceItem.system.quantity : 1;
-                            
-                            // Always create a dialog, even for single items
-                            const timestamp = Date.now();
-                            
-                            // Prepare template data
-                            const templateData = {
-                                sourceItem,
-                                sourceActor,
-                                targetActor: this.actor,
-                                maxQuantity,
-                                timestamp,
-                                canAdjustQuantity: hasQuantity && maxQuantity > 1
-                            };
-                            
-                            // Render the transfer dialog template
-                            const content = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, templateData);
-                            
-                            let selectedQuantity = await new Promise(resolve => {
-                                new Dialog({
-                                    title: "Transfer Item",
-                                    content,
-                                    buttons: {
-                                        transfer: {
-                                            icon: '<i class="fas fa-exchange-alt"></i>',
-                                            label: "Transfer",
-                                            callback: html => {
-                                                if (hasQuantity && maxQuantity > 1) {
-                                                    const quantity = Math.clamp(
-                                                        parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
-                                                        1,
-                                                        maxQuantity
-                                                    );
-                                                    resolve(quantity);
-                                                } else {
-                                                    resolve(1);
-                                                }
-                                            }
-                                        },
-                                        cancel: {
-                                            icon: '<i class="fas fa-times"></i>',
-                                            label: "Cancel",
-                                            callback: () => resolve(0)
-                                        }
-                                    },
-                                    default: "transfer",
-                                    close: () => resolve(0)
-                                }, {
-                                    classes: ["transfer-item"],
-                                    id: `transfer-item-${timestamp}`,
-                                    width: 320,
-                                    height: "auto"
-                                }).render(true);
-                            });
-                            
-                            if (selectedQuantity <= 0) return; // User cancelled
-                            quantityToTransfer = selectedQuantity;
-                            
-                            // Create a copy of the item data to transfer
-                            const transferData = sourceItem.toObject();
-                            
-                            // Set the correct quantity on the new item
-                            if (hasQuantity) {
-                                transferData.system.quantity = quantityToTransfer;
-                            }
-                            
-                            // Create the item on the target actor
-                            const transferredItem = await this.actor.createEmbeddedDocuments('Item', [transferData]);
-                            
-                            // Mark the item as new using the flag system
-                            await PanelManager.markItemAsNew(transferredItem[0].id, this.actor.id);
-                            
-                            // Reduce quantity or remove the item from source actor
-                            if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
-                                // Just reduce the quantity
-                                await sourceItem.update({
-                                    'system.quantity': sourceItem.system.quantity - quantityToTransfer
-                                });
-                            } else {
-                                // Remove the item entirely
-                                await sourceItem.delete();
-                            }
-                            
-                            // Send chat notification
-                            const transferChatData = this._getTransferCardData({
-                                cardType: "transfer-complete",
-                                sourceActor,
-                                targetActor: this.actor,
-                                item: sourceItem,
-                                quantity: quantityToTransfer,
-                                hasQuantity,
-                                isPlural: quantityToTransfer > 1
-                            });
-                            const transferChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, transferChatData);
-                            await ChatMessage.create({
-                                content: transferChatContent,
-                                speaker: ChatMessage.getSpeaker({ actor: this.actor })
-                            });
-                            
-                            // Update the tray and panels
-                            await this.updateTray();
-                            await this.renderPanels(PanelManager.element);
-                            break;
-                        }
-                        
-                        // If not from character sheet, proceed with regular item creation
-
-                        // **********************************
-                        // *** DROP FROM COMPENDIUM ***
-                        // **********************************   
-                        item = await Item.implementation.fromDropData(data);
-                        if (!item) return;
-                        // Create the item on the actor
-                        const createdItem = await this.actor.createEmbeddedDocuments('Item', [item.toObject()]);
-                        
-                        // Mark the item as new using the flag system
-                        await PanelManager.markItemAsNew(createdItem[0].id, this.actor.id);
-                        
-                        // Update the tray first
-                        await this.updateTray();
-                        await this.renderPanels(PanelManager.element);
-                        
-                        // Debug log the UUID generation
-                        const itemUUID = this._getItemUUID(createdItem[0], data);
-                        
-                        // Send chat notification
-                        const chatData = this._getTransferCardData({ cardType: "transfer-gm", targetActor: this.actor, item });
-                        const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, chatData);
-                        await ChatMessage.create({
-                            content: chatContent,
-                            speaker: ChatMessage.getSpeaker({ actor: this.actor })
-                        });
- 
-                        break;
-
-                    case 'ItemDirectory':
-                        const itemData = game.items.get(data.uuid)?.toObject();
-                        if (itemData) {
-                            const newItem = await this.actor.createEmbeddedDocuments('Item', [itemData]);
-                            
-                            // Mark the item as new using the flag system
-                            await PanelManager.markItemAsNew(newItem[0].id, this.actor.id);
-                            
-                            // Update the tray first
-                            await this.updateTray();
-                            await this.renderPanels(PanelManager.element);
-                            
-                            // Debug log the UUID generation
-                            const dirItemUUID = this._getItemUUID(newItem[0], data);
-                            blacksmith?.utils.postConsoleAndNotification(
-                                "SQUIRE | Generated UUID for ItemDirectory drop",
-                                {
-                                    data,
-                                    newItem: newItem[0],
-                                    generatedUUID: dirItemUUID
-                                },
-                                false,
-                                true,
-                                false,
-                                MODULE.TITLE
-                            );
-                            
-                            // Send chat notification
-                            /* Unused code - transfers are handled by Party Panel
-                            const dirItemChatData = {
-                                isPublic: true,
-                                strCardIcon: this._getDropIcon(itemData.type),
-                                strCardTitle: this._getDropTitle(itemData.type),
-                                strCardContent: `<p><strong>${this.actor.name}</strong> received <strong>${itemData.name}</strong> via the Squire tray.</p>`
-                            };
-                            const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, dirItemChatData);
-                            await ChatMessage.create({
-                                content: dirItemChatContent,
-                                speaker: ChatMessage.getSpeaker({ actor: this.actor })
-                            });
-                            */
-                        }
-                        break;
-
-                    // Add more cases as needed for other drop types
-                }
-
-            } catch (error) {
-                console.error(`${MODULE.TITLE} | Error handling drop:`, error);
-            }
-        });
-
-        // Prevent default drag over behavior only when in player view
-        stackedPanels.on('dragover.squire', (event) => {
-            // Skip if in party or quest view
-            if (PanelManager.viewMode === 'party' || PanelManager.viewMode === 'quest') return;
-            
-            event.preventDefault();
-            event.originalEvent.dataTransfer.dropEffect = 'copy';
-        });
     }
 }
 
