@@ -91,10 +91,10 @@ export class PartyPanel {
         const characterCards = html.find('.character-card');
         
         // Remove any existing drag event listeners
-        characterCards.off('dragenter dragleave dragover drop');
+        characterCards.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
         
         // Add new drag event listeners
-        characterCards.on('dragenter', (event) => {
+        characterCards.on('dragenter.squire', (event) => {
             event.preventDefault();
             
             try {
@@ -119,7 +119,7 @@ export class PartyPanel {
             }
         });
 
-        characterCards.on('dragleave', (event) => {
+        characterCards.on('dragleave.squire', (event) => {
             event.preventDefault();
             // Remove the style if we're leaving the card or entering a child element
             const card = $(event.currentTarget);
@@ -131,12 +131,12 @@ export class PartyPanel {
             }
         });
 
-        characterCards.on('dragover', (event) => {
+        characterCards.on('dragover.squire', (event) => {
             event.preventDefault();
             event.originalEvent.dataTransfer.dropEffect = 'copy';
         });
 
-        characterCards.on('drop', async (event) => {
+        characterCards.on('drop.squire', async (event) => {
             event.preventDefault();
             
             // Get the character card and remove hover state

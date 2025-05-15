@@ -989,9 +989,9 @@ SPECIFIC INSTRUCTIONS HERE`;
         // --- Drag and Drop for Quest Entries (GM only) ---
         if (game.user.isGM) {
             const questEntries = html.find('.quest-entry');
-            questEntries.off('dragenter dragleave dragover drop');
+            questEntries.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
             
-            questEntries.on('dragenter', function(event) {
+            questEntries.on('dragenter.squire', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
                 let isValid = false;
@@ -1009,14 +1009,14 @@ SPECIFIC INSTRUCTIONS HERE`;
                 }
             });
 
-            questEntries.on('dragleave', function(event) {
+            questEntries.on('dragleave.squire', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
                 $(this).removeClass('drop-target');
                 console.log("SQUIRE | Removed drop-target class on dragleave");
             });
 
-            questEntries.on('dragover', function(event) {
+            questEntries.on('dragover.squire', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
                 // Make sure the class stays applied during dragover
@@ -1024,7 +1024,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 event.originalEvent.dataTransfer.dropEffect = 'copy';
             });
 
-            questEntries.on('drop', async (event) => {
+            questEntries.on('drop.squire', async (event) => {
                 event.preventDefault();
                 const $entry = $(event.currentTarget);
                 $entry.removeClass('drop-target');

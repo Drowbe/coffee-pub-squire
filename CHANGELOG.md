@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.15] - Drag and Drop Fix
+
+### Fixed
+- Fixed persistent issue with drag and drop functionality where subsequent drops wouldn't work until switching tabs
+- Implemented proper event handler reattachment after DOM updates in the panel manager
+- Ensured drag and drop handlers are explicitly removed and reattached after tray updates
+- Added dedicated method for attaching drag handlers to improve code organization
+- Added debug logging to track event handler reattachment
 
 ## [1.0.13] - Quests and Codex
 
