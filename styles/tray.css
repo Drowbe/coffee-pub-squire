@@ -1033,20 +1033,22 @@
 }
 
 .panel-containers.stacked.drop-target::after {
-    content: 'DROP ITEM';
+    content: "DROP ITEM";
     position: absolute;
-    bottom: -15px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    background: #48a000;
-    color: #ffffff;
-    padding: 3px 6px;
-    border-radius: 6px;
-    font-size: 0.7em;
-    white-space: nowrap;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-    border: 2px solid #48a000;
-    z-index: 101;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 0.5em 1.5em;
+    border-radius: 1em;
+    font-size: 1.5em;
+    font-weight: bold;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 16px #000a;
+    text-shadow: 0 2px 8px #000a;
+    letter-spacing: 0.05em;
 }
 
 /* Remove the old panel-specific drop target styles */
