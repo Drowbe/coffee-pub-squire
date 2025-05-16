@@ -307,6 +307,9 @@ export class MacrosPanel {
         });
         MacrosPanel.activeWindow = this.window;
         await this.window.render(true);
+        if (window.PanelManager?.instance) {
+            window.PanelManager.instance.updateHandle();
+        }
     }
 
     async returnToTray() {
@@ -378,6 +381,9 @@ export class MacrosPanel {
         } catch (error) {
             console.error(`${MODULE.ID} | Error returning macros panel to main tray:`, error);
             ui.notifications.error("Error returning macros panel to main tray");
+        }
+        if (window.PanelManager?.instance) {
+            window.PanelManager.instance.updateHandle();
         }
     }
 

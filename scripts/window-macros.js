@@ -40,11 +40,18 @@ export class MacrosWindow extends Application {
     }
 
     getData() {
+        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+        let favoriteMacros = favoriteMacroIds.map(id => {
+            const macro = game.macros.get(id);
+            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
+        }).filter(Boolean);
         return {
             actor: this.panel?.actor,
             position: "left",
             isMacrosPopped: true,
-            macros: this.macros
+            macros: this.macros,
+            favoriteMacroIds,
+            favoriteMacros
         };
     }
 
