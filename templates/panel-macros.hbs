@@ -16,6 +16,9 @@
             <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false" {{#if macro.id}}title="{{macro.name}}"{{/if}}>
                 {{#if macro.id}}
                     <img src="{{macro.img}}" title="{{macro.name}}" draggable="false" />
+                    {{#if (includes ../favoriteMacroIds macro.id)}}
+                      <i class="fas fa-heart macro-favorite" title="Favorited"></i>
+                    {{/if}}
                 {{else}}
                     <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
                 {{/if}}

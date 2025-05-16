@@ -328,25 +328,12 @@ export class PanelManager {
 
     async updateHandle() {
         if (PanelManager.element) {
-            // Get favorites in their correct order from the FavoritesPanel class
-            const favoriteIds = FavoritesPanel.getFavorites(this.actor);
-            const itemsById = new Map(this.actor.items.map(item => [item.id, item]));
-            
-            // Map favorites in their original order
-            const favorites = favoriteIds
-                .map((id, index) => {
-                    const item = itemsById.get(id);
-                    if (!item) return null;
-                    return {
-                        id: item.id,
-                        name: item.name,
-                        img: item.img || 'icons/svg/item-bag.svg',
-                        type: item.type,
-                        system: item.system,
-                        sortOrder: index
-                    };
-                })
-                .filter(item => item !== null);
+            // Build favorite macros array
+            let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+            let favoriteMacros = favoriteMacroIds.map(id => {
+                const macro = game.macros.get(id);
+                return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
+            }).filter(Boolean);
 
             const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
                 actor: this.actor,
@@ -355,7 +342,8 @@ export class PanelManager {
                     name: e.name,
                     icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
-                favorites: favorites,
+                favorites: FavoritesPanel.getFavorites(this.actor),
+                favoriteMacros,
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -367,6 +355,15 @@ export class PanelManager {
             const handle = PanelManager.element.find('.handle-left');
             handle.html(handleTemplate);
             this.activateListeners(PanelManager.element);
+
+            // Add click handler for favorite macros in handle
+            handle.find('.handle-macro-favorite').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const macroId = $(this).data('macro-id');
+                const macro = game.macros.get(macroId);
+                if (macro) macro.execute();
+            });
         }
     }
 

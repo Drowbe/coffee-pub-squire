@@ -20,15 +20,21 @@ export class MacrosPanel {
     }
 
     async render(html, { showAddSlot = false } = {}) {
-        // Load macros from settings
+        // Load macros and favorites from settings
         let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-        // Do NOT filter macros here! Always pass the full array to the template.
+        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+        let favoriteMacros = favoriteMacroIds.map(id => {
+            const macro = game.macros.get(id);
+            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
+        }).filter(Boolean);
         const templateData = {
             actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             isMacrosPopped: this.isPoppedOut,
             macros,
-            showAddSlot
+            showAddSlot,
+            favoriteMacroIds,
+            favoriteMacros
         };
 
         if (html) {
@@ -119,6 +125,15 @@ export class MacrosPanel {
         macrosGrid.on('drop.macroDnd', (e) => {
             dragActive = false;
             this.render();
+        });
+
+        // Handle favorite macro click in handle
+        panel.find('.handle-macro-favorite').click(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const macroId = $(this).data('macro-id');
+            const macro = game.macros.get(macroId);
+            if (macro) macro.execute();
         });
 
         // Macro grid interactions
@@ -232,6 +247,30 @@ export class MacrosPanel {
                 }
                 await self.render();
             });
+            // Middle click: toggle favorite
+            slot.on('mousedown.macroDnd', async function(e) {
+                if (e.button === 1 && !slot.hasClass('empty')) {
+                    let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                    let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+                    const macroId = macros[idx]?.id;
+                    if (!macroId) return;
+                    const isFav = favoriteMacroIds.includes(macroId);
+                    if (isFav) {
+                        favoriteMacroIds = favoriteMacroIds.filter(id => id !== macroId);
+                    } else {
+                        favoriteMacroIds.push(macroId);
+                    }
+                    await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
+                    if (self.isPoppedOut && self.window) {
+                        self.window.macros = macros;
+                        await self.window.render(false);
+                    }
+                    await self.render();
+                    if (window.PanelManager?.instance) {
+                        window.PanelManager.instance.updateHandle();
+                    }
+                }
+            });
         });
     }
 
@@ -313,9 +352,13 @@ export class MacrosPanel {
         }
 
         try {
-            // Get current macros from settings and filter
+            // Get current macros and favorites from settings
             let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-            macros = macros.filter(m => m && m.id);
+            let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+            let favoriteMacros = favoriteMacroIds.map(id => {
+                const macro = game.macros.get(id);
+                return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
+            }).filter(Boolean);
 
             // Render the content into the new container
             const templateData = {
@@ -323,7 +366,9 @@ export class MacrosPanel {
                 actor: this.actor,
                 isMacrosPopped: false,
                 macros,
-                showAddSlot: false
+                showAddSlot: false,
+                favoriteMacroIds,
+                favoriteMacros
             };
             const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
             macrosContainer.html(content);

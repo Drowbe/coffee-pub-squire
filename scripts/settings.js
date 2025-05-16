@@ -731,6 +731,13 @@ export const registerSettings = function() {
         type: Array,
         default: []
     }); 
+    // Macros Favorites
+    game.settings.register(MODULE.ID, 'userFavoriteMacros', {
+        scope: 'client',
+        config: false,
+        type: Array,
+        default: []
+    }); 
 
     // --------------------------------
     // ---      CODEX Settings     ---
