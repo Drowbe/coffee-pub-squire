@@ -264,11 +264,16 @@ export class MacrosPanel {
         }
 
         try {
+            // Get current macros from settings
+            let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+            macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
+
             // Render the content into the new container
             const templateData = {
                 position: game.settings.get(MODULE.ID, 'trayPosition'),
                 actor: this.actor,
-                isMacrosPopped: false
+                isMacrosPopped: false,
+                macros
             };
             const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
             macrosContainer.html(content);
