@@ -146,7 +146,17 @@ export class MacrosPanel {
                             macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
                             macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
                             await game.settings.set(MODULE.ID, 'userMacros', macros);
-                            self.render();
+                            
+                            // Update both tray and window if popped out
+                            if (self.isPoppedOut && self.window) {
+                                // Update window's macros data
+                                self.window.macros = macros;
+                                // Re-render the window
+                                await self.window.render(false);
+                            }
+                            // Always re-render the tray
+                            await self.render();
+                            
                             // Play drop sound
                             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
                             if (blacksmith) {
@@ -179,11 +189,28 @@ export class MacrosPanel {
             // Right click: clear slot
             slot.on('contextmenu.macroDnd', async function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                 macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
                 macros[idx] = { id: null, name: null, img: null };
                 await game.settings.set(MODULE.ID, 'userMacros', macros);
-                self.render();
+                
+                // Update both tray and window if popped out
+                if (self.isPoppedOut && self.window) {
+                    // Update window's macros data
+                    self.window.macros = macros;
+                    // Re-render the window
+                    await self.window.render(false);
+                }
+                // Always re-render the tray
+                await self.render();
+                
+                // Play drop sound for feedback
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'dropSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
             });
         });
     }
