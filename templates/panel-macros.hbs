@@ -11,7 +11,7 @@
 
 <div class="macros-content">
     <div class="macros-grid">
-        {{#each (macrosOrPlaceholders macros) as |macro idx|}}
+        {{#each macros as |macro idx|}}
             <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false">
                 {{#if macro.id}}
                     <img src="{{macro.img}}" title="{{macro.name}}" draggable="false" />
@@ -20,6 +20,11 @@
                 {{/if}}
             </div>
         {{/each}}
+        {{#if (gt macros.length 0)}}
+            <div class="macro-slot empty add-slot" draggable="false">
+                <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
+            </div>
+        {{/if}}
     </div>
 </div>
 {{/if}} 

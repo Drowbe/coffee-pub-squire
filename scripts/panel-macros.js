@@ -20,9 +20,8 @@ export class MacrosPanel {
     }
 
     async render(html) {
-        // Load macros from settings and ensure 5 slots
+        // Load macros from settings
         let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-        macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
 
         if (html) {
             this.element = html;
@@ -80,6 +79,22 @@ export class MacrosPanel {
 
         // Pop-out button handler
         panel.find('.pop-out-button').click(() => this._onPopOut());
+
+        // Add drag and drop handlers for the entire macros grid
+        const macrosGrid = panel.find('.macros-grid');
+        macrosGrid.off('dragenter.macroDnd dragleave.macroDnd dragover.macroDnd drop.macroDnd');
+        
+        macrosGrid.on('dragenter.macroDnd', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Add a new slot if we're dragging over the grid
+            const macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+            if (!macros.find(m => !m.id)) {
+                macros.push({ id: null, name: null, img: null });
+                game.settings.set(MODULE.ID, 'userMacros', macros);
+                this.render();
+            }
+        });
 
         // Macro grid interactions
         const self = this;
@@ -143,7 +158,10 @@ export class MacrosPanel {
                         const macro = game.macros.get(macroId);
                         if (macro) {
                             let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                            macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
+                            // If dropping on the last empty slot, add a new one
+                            if (idx === macros.length - 1 && !macros[idx].id) {
+                                macros.push({ id: null, name: null, img: null });
+                            }
                             macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
                             await game.settings.set(MODULE.ID, 'userMacros', macros);
                             
@@ -191,8 +209,11 @@ export class MacrosPanel {
                 e.preventDefault();
                 e.stopPropagation();
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
-                macros[idx] = { id: null, name: null, img: null };
+                // Remove the slot and any trailing empty slots
+                macros.splice(idx, 1);
+                while (macros.length > 0 && !macros[macros.length - 1].id) {
+                    macros.pop();
+                }
                 await game.settings.set(MODULE.ID, 'userMacros', macros);
                 
                 // Update both tray and window if popped out
