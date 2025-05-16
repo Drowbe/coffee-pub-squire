@@ -24,6 +24,8 @@
 
 @import "panel-dicetray.css"; 
 
+@import "panel-macros.css";
+
 @import "panel-experience.css"; 
 
 @import "panel-favorites.css"; 

@@ -50,13 +50,9 @@
 
 .squire-tray[data-position="left"] [data-panel="macros"] .macros-content,
 .squire-popout[data-position="left"] [data-panel="macros"] .macros-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: max-height 0.3s ease, opacity 0.2s ease;
-    overflow: hidden;
     max-height: 1000px;
-    opacity: 1;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
 }
 
 .squire-tray[data-position="left"] [data-panel="macros"] .macros-content.collapsed,
