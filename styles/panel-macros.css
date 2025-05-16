@@ -93,13 +93,33 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .macro-slot.dragover {
-  border-color: orange;
-  box-shadow: 0 0 8px orange;
+  border-color: #48a000;
+  border-style: solid;
+  box-shadow: 0 0 8px rgba(72, 160, 0, 0.5);
+  background: rgba(72, 160, 0, 0.15);
+  transform: scale(1.05);
+}
+
+.macro-slot.dragover::after {
+  content: 'DROP MACRO';
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #48a000;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  white-space: nowrap;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  z-index: 101;
 }
 
 .macro-slot img {
@@ -118,5 +138,5 @@
 }
 
 .macro-slot.empty:hover .macro-placeholder {
-  color: orange;
+  color: #48a000;
 } 
