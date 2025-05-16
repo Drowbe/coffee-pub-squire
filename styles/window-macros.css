@@ -2,8 +2,6 @@
 /* -- LAYOUT                 ---------- */
 /* ------------------------------------ */
 
-/* --- Window Styles ------------------- */
-
 /* ----- VARIABLES ----- */
 :root {
     --macros-min-width: 40px;
@@ -11,85 +9,80 @@
     --border-color: #444;
     --accent-color: #9f9275;
     --background-color: rgba(0, 0, 0, 0.95);
-}
-
-/* ----- WINDOW STRUCTURE ----- */
-
-/* Window Container */
-#squire-macros-window {
+  }
+  
+  /* ----- WINDOW STRUCTURE ----- */
+  
+  #squire-macros-window {
     background: var(--background-color) !important;
     border: 2px solid var(--border-color) !important;
     border-radius: 6px !important;
     box-shadow: 0 0 20px #000 !important;
     min-width: var(--macros-min-width) !important;
-}
-
-.squire-popout {
+    display: flex !important;
+    flex-direction: column !important;
+    /* height: 100% !important;  <-- REMOVE THIS LINE */
+  }
+  
+  .squire-popout {
     width: 100% !important;
-}
-
-#squire-macros-window .window-content {
-    padding: 0px !important;
-}
-
-/* ----- HEADER ----- */
-
-#squire-macros-window .window-header {
+    height: 100% !important;
+  }
+  
+  #squire-macros-window .window-content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    height: auto !important; /* <-- only grow based on content/window */
+    padding: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  
+  #squire-macros-window .window-content > * {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  /* ----- HEADER ----- */
+  
+  #squire-macros-window .window-header {
     background: rgba(0, 0, 0, 0.9) !important;
     border-bottom: 2px solid var(--border-color) !important;
     color: var(--accent-color) !important;
     font-family: "Signika", sans-serif !important;
-}
-
-#squire-macros-window .window-header .window-title {
+  }
+  
+  #squire-macros-window .window-header .window-title {
     color: var(--accent-color) !important;
     text-transform: uppercase !important;
     font-weight: bold !important;
     font-size: 1.2em !important;
-}
-
-#squire-macros-window .window-header .header-button {
+  }
+  
+  #squire-macros-window .window-header .header-button {
     color: var(--accent-color) !important;
     border: none !important;
     background: none !important;
-}
-
-#squire-macros-window .window-header .header-button:hover {
+  }
+  
+  #squire-macros-window .window-header .header-button:hover {
     color: #fff !important;
     text-shadow: 0 0 8px var(--accent-color) !important;
-}
-
-/* ----- CONTENT ----- */
-
-#squire-macros-window .window-content {
-    background: none !important;
-    color: #fff !important;
+  }
+  
+  /* ----- PANEL CONTAINER ----- */
+  
+  #squire-macros-window .window-content .panel-container {
+    flex: 1 1 auto !important;  /* <- Grow to fill remaining space */
     display: flex !important;
     flex-direction: column !important;
-    padding: 0 !important;
     width: 100% !important;
-    min-width: 100% !important;
-    overflow: visible !important;
-    
-}
-
-#squire-macros-window .window-content > * {
-    width: 100% !important;
-    min-width: 100% !important;
-}
-
-/* ----- PANEL CONTAINER ----- */
-
-#squire-macros-window .window-content .panel-container {
-    flex: 0 0 auto !important;
-    width: 100% !important;
-    min-width: 100% !important;
     margin: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-#squire-macros-window .window-content [data-panel="macros"] {
+  }
+  
+  #squire-macros-window .window-content [data-panel="macros"] {
+    flex: 1 1 auto !important; /* <-- Makes macro panel fill space */
     width: 100% !important;
     min-width: 100% !important;
     height: 100% !important;
@@ -102,33 +95,46 @@
     flex-direction: column !important;
     gap: var(--container-padding) !important;
     padding: var(--container-padding) !important;
-}
-
-#squire-macros-window .window-content [data-panel="macros"] > * {
+  }
+  
+  #squire-macros-window .window-content [data-panel="macros"] > * {
     width: 100% !important;
     min-width: 100% !important;
-}
-
-/* ----- RESIZABLE HANDLE ----- */
-
-#squire-macros-window .window-resizable-handle {
+  }
+  
+  #squire-macros-window.collapsed .window-content {
+    display: flex !important;
+  }
+  
+  /* Ensure the tray-content and macros-content stretch fully */
+  #squire-macros-window .tray-content,
+  #squire-macros-window .macros-content {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+  }
+  
+  
+  /* ----- RESIZABLE HANDLE ----- */
+  
+  #squire-macros-window .window-resizable-handle {
     background: var(--border-color) !important;
     border-radius: 0 0 3px 0 !important;
     opacity: 0.5 !important;
-}
-
-#squire-macros-window .window-resizable-handle:hover {
+  }
+  
+  #squire-macros-window .window-resizable-handle:hover {
     background: var(--accent-color) !important;
     opacity: 1 !important;
-}
-
-/* Prevent collapse on double-click */
-#squire-macros-window.collapsed {
+  }
+  
+  /* Prevent collapse on double-click */
+  #squire-macros-window.collapsed {
     min-height: 60px !important;
-}
-
-#squire-macros-window.collapsed .window-content {
-    display: flex !important;
-}
-
-
+  }
+  
+  
+  
+  
+  

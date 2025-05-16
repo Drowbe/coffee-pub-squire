@@ -12,7 +12,7 @@
 <div class="macros-content">
     <div class="macros-grid">
         {{#each macros as |macro idx|}}
-            <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false">
+            <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false" {{#if macro.id}}title="{{macro.name}}"{{/if}}>
                 {{#if macro.id}}
                     <img src="{{macro.img}}" title="{{macro.name}}" draggable="false" />
                 {{else}}

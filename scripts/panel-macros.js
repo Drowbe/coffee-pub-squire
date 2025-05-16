@@ -22,7 +22,7 @@ export class MacrosPanel {
     async render(html, { showAddSlot = false } = {}) {
         // Load macros from settings
         let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-        macros = macros.filter(m => m && m.id);
+        // Do NOT filter macros here! Always pass the full array to the template.
         const templateData = {
             actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
