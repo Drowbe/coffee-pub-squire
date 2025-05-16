@@ -4,6 +4,7 @@ export class MacrosWindow extends Application {
     constructor(options = {}) {
         super(options);
         this.panel = options.panel;
+        this.macros = options.macros || [];
         
         // Register for actor updates
         if (this.panel?.actor) {
@@ -39,14 +40,12 @@ export class MacrosWindow extends Application {
     }
 
     getData() {
-        const data = {
+        return {
             actor: this.panel?.actor,
             position: "left",
-            isMacrosPopped: true
+            isMacrosPopped: true,
+            macros: this.macros
         };
-        // Update window title with actor name
-        this.options.title = `Macros: ${this.panel?.actor?.name || 'No Character'}`;
-        return data;
     }
 
     async _renderInner(data) {

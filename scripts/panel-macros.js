@@ -213,7 +213,10 @@ export class MacrosPanel {
         }
 
         // Create and render the window
-        this.window = new MacrosWindow({ panel: this });
+        this.window = new MacrosWindow({ 
+            panel: this,
+            macros: game.settings.get(MODULE.ID, 'userMacros') || []
+        });
         MacrosPanel.activeWindow = this.window;
         await this.window.render(true);
     }
