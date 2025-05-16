@@ -184,19 +184,31 @@ export class MacrosPanel {
                     if (macro) macro.execute();
                 }
             });
-            // Right click: clear slot
+            // Right click: clear macro or remove slot
             slot.on('contextmenu.macroDnd', async function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                macros = macros.filter(m => m && m.id);
-                macros.splice(idx, 1);
-                // Always leave at least one slot (empty) if none remain
-                if (macros.length === 0) {
-                    await game.settings.set(MODULE.ID, 'userMacros', []);
+                // Debug: print the slot object
+                console.log('SQUIRE | MACROS | Slot object at idx', idx, macros[idx]);
+                // Treat as having a macro only if id is a non-empty string
+                if (macros[idx] && typeof macros[idx].id === 'string' && macros[idx].id.length > 0) {
+                    // If slot has a macro, clear it
+                    console.log('SQUIRE | MACROS | Slot has a macro, clearing macro');
+                    macros[idx] = { id: null, name: null, img: null };
                 } else {
-                    await game.settings.set(MODULE.ID, 'userMacros', macros);
+                    // Else (slot is empty), remove it (unless it's the last slot)
+                    console.log('SQUIRE | MACROS | Slot is empty, removing slot');
+                    if (macros.length > 1) {
+                        macros.splice(idx, 1);
+                    }
                 }
+                // Always leave at least one slot
+                if (macros.length === 0) {
+                    console.log('SQUIRE | MACROS | Last slot detected, leaving it empty');
+                    macros = [{ id: null, name: null, img: null }];
+                }
+                await game.settings.set(MODULE.ID, 'userMacros', macros);
                 if (self.isPoppedOut && self.window) {
                     self.window.macros = macros;
                     await self.window.render(false);
