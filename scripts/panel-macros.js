@@ -81,6 +81,13 @@ export class MacrosPanel {
         // Pop-out button handler
         panel.find('.pop-out-button').click(() => this._onPopOut());
 
+        // Open macro folder button handler
+        panel.find('.open-macro-folder').click((e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (ui.macros && typeof ui.macros.renderPopout === 'function') ui.macros.renderPopout();
+        });
+
         // Add drag and drop handlers for the entire macros grid
         const macrosGrid = panel.find('.macros-grid');
         macrosGrid.off('dragenter.macroDnd dragleave.macroDnd dragover.macroDnd drop.macroDnd');
@@ -178,10 +185,20 @@ export class MacrosPanel {
                 if (slot.hasClass('empty')) return;
                 if (e.button === 0) {
                     let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                    macros = macros.filter(m => m && m.id);
                     const macroId = macros[idx]?.id;
                     const macro = game.macros.get(macroId);
-                    if (macro) macro.execute();
+                    if (macro) {
+                        // Show loader animation
+                        if (!slot.find('.macro-loader').length) {
+                            slot.append('<span class="macro-loader"><i class="fas fa-sun macro-spinner"></i></span>');
+                        }
+                        slot.addClass('loading');
+                        setTimeout(() => {
+                            slot.removeClass('loading');
+                            slot.find('.macro-loader').remove();
+                        }, 600);
+                        macro.execute();
+                    }
                 }
             });
             // Right click: clear macro or remove slot
