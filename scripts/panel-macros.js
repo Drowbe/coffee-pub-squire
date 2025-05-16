@@ -217,6 +217,8 @@ export class MacrosPanel {
         if (this.element) {
             // Find and remove the panel container
             const container = this.element.find('[data-panel="macros"]').closest('.panel-container');
+            // Store previous sibling for reinsertion
+            this.previousSibling = container.prev();
             if (container.length) {
                 // Also check for and remove any wrapper divs that might be left behind
                 const wrappers = container.parents().filter(function() {
@@ -264,21 +266,21 @@ export class MacrosPanel {
         // Update our element reference
         this.element = mainTray;
 
-        // Find the correct insertion point - after dice tray panel
-        const diceTrayPanel = mainTray.find('[data-panel="dicetray"]').closest('.panel-container');
+        // Create the new panel container
         const macrosContainer = $('<div class="panel-container" data-panel="macros"></div>');
         
-        // Insert after dice tray if found, otherwise before the stacked panels
-        if (diceTrayPanel.length) {
-            macrosContainer.insertAfter(diceTrayPanel);
-        } else {
-            const stackedPanels = mainTray.find('.panel-containers.stacked');
-            if (stackedPanels.length) {
-                macrosContainer.insertBefore(stackedPanels);
+        // Insert at the stored position
+        if (this.previousSibling && this.previousSibling.length) {
+            if (this.previousSibling.is('.squire-tray')) {
+                // If the previous sibling was the tray itself, we were first
+                this.previousSibling.find('.tray-content').prepend(macrosContainer);
             } else {
-                // Fallback - append to tray content
-                mainTray.find('.tray-content').append(macrosContainer);
+                // Otherwise insert after the stored sibling
+                macrosContainer.insertAfter(this.previousSibling);
             }
+        } else {
+            // Fallback to prepending to tray content if no position info
+            mainTray.find('.tray-content').prepend(macrosContainer);
         }
 
         try {
