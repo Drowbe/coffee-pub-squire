@@ -32,8 +32,10 @@
 
 /* Popout-specific styles */
 .squire-popout {
-    height: 100%;
-    width: 100%;
+    width: auto !important;
+    max-width: 90vw;
+    height: auto !important;
+    max-height: 90vh;
 }
 
 /* Common Tray Styles */

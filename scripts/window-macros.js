@@ -16,12 +16,12 @@ export class MacrosWindow extends Application {
             id: "squire-macros-window",
             title: "Macros",
             template: TEMPLATES.PANEL_MACROS,
-            width: 300,
-            height: 300,
+            width: 400,
+            height: "auto",
+            minimizable: true,
             resizable: true,
-            classes: ["squire-popout"],
             popOut: true,
-            minimizable: true
+            classes: ["squire-window"]
         });
     }
 
@@ -36,28 +36,89 @@ export class MacrosWindow extends Application {
         return data;
     }
 
+    async _renderInner(data) {
+        // First render the template
+        const content = await renderTemplate(this.options.template, data);
+        // Create the wrapper structure using squire-popout
+        const html = `
+            <div class="squire-popout" data-position="left">
+                <div class="tray-content">
+                    <div class="panel-container" data-panel="macros">
+                        ${content}
+                    </div>
+                </div>
+            </div>
+        `;
+        return $(html);
+    }
+
     activateListeners(html) {
         super.activateListeners(html);
-        
+        // Find the panel container within the window content
+        const panelContainer = html.find('[data-panel="macros"]').closest('.panel-container');
+        if (this.panel) {
+            // Update the panel's element reference with the panel container
+            this.panel.updateElement(panelContainer);
+        }
+        // Add close button handler
+        html.closest('.app').find('.close').click(ev => {
+            ev.preventDefault();
+            this.close();
+        });
         // Set up data-panel attribute for CSS targeting
         html.closest('.window-content').attr('data-panel', 'macros');
-        
         // Add listeners from the panel
         if (this.panel) {
             this.panel._activateListeners(html);
         }
     }
 
-    updateActor(actor) {
-        this.setPosition({ height: "auto" });
+    get appId() {
+        return `squire-macros-window-${this.panel.actor?.id || 'no-actor'}`;
+    }
+
+    setPosition(options={}) {
+        if (this.element && this._position) {
+            options = foundry.utils.mergeObject(this._position, options);
+        }
+        return super.setPosition(options);
+    }
+
+    async _onUpdateActor(actor, changes) {
         this.render(false);
     }
 
-    async close(options = {}) {
-        // Return the panel to the tray when the window is closed
+    async _onToggleMinimize(ev) {
+        ev?.preventDefault();
+        if (!this.rendered) return;
+        this._minimized = !this._minimized;
+        this.element.toggleClass("minimized");
+    }
+
+    async close(options={}) {
+        if (this.panel?.actor) {
+            delete this.panel.actor.apps[this.appId];
+        }
         if (this.panel) {
             await this.panel.returnToTray();
         }
         return super.close(options);
+    }
+
+    updateActor(actor) {
+        // Unregister from old actor
+        if (this.panel?.actor) {
+            delete this.panel.actor.apps[this.appId];
+        }
+        // Update panel's actor
+        if (this.panel) {
+            this.panel.actor = actor;
+        }
+        // Register with new actor
+        if (actor) {
+            actor.apps[this.appId] = this;
+        }
+        // Re-render with new actor data
+        this.render(false);
     }
 } 
