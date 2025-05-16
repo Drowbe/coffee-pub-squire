@@ -20,6 +20,10 @@ export class MacrosPanel {
     }
 
     async render(html) {
+        // Load macros from settings and ensure 5 slots
+        let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+        macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
+
         if (html) {
             this.element = html;
         }
@@ -29,7 +33,8 @@ export class MacrosPanel {
         const templateData = {
             actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
-            isMacrosPopped: this.isPoppedOut
+            isMacrosPopped: this.isPoppedOut,
+            macros
         };
 
         // If popped out, only update the window content and don't render in tray
@@ -75,6 +80,63 @@ export class MacrosPanel {
 
         // Pop-out button handler
         panel.find('.pop-out-button').click(() => this._onPopOut());
+
+        // Macro grid interactions
+        const self = this;
+        panel.find('.macro-slot').each(function(idx) {
+            const slot = $(this);
+            // Drag & drop
+            slot.on('dragover', (e) => e.preventDefault());
+            slot.on('dragenter', function(e) {
+                e.preventDefault();
+                slot.addClass('dragover');
+            });
+            slot.on('dragleave', function(e) {
+                e.preventDefault();
+                slot.removeClass('dragover');
+            });
+            slot.on('drop', async function(e) {
+                e.preventDefault();
+                slot.removeClass('dragover');
+                const data = e.originalEvent.dataTransfer.getData('text/plain');
+                let macroData;
+                try {
+                    macroData = JSON.parse(data);
+                } catch {
+                    return;
+                }
+                // Only accept Macro drops
+                if (macroData.type === 'Macro' && macroData.id) {
+                    const macro = game.macros.get(macroData.id);
+                    if (macro) {
+                        let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                        macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
+                        macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
+                        await game.settings.set(MODULE.ID, 'userMacros', macros);
+                        self.render();
+                    }
+                }
+            });
+            // Left click: run macro
+            slot.on('click', async function(e) {
+                if (slot.hasClass('empty')) return;
+                if (e.button === 0) {
+                    const macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                    const macroId = macros[idx]?.id;
+                    const macro = game.macros.get(macroId);
+                    if (macro) macro.execute();
+                }
+            });
+            // Right click: clear slot
+            slot.on('contextmenu', async function(e) {
+                e.preventDefault();
+                let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                macros = Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
+                macros[idx] = { id: null, name: null, img: null };
+                await game.settings.set(MODULE.ID, 'userMacros', macros);
+                self.render();
+            });
+        });
     }
 
     async _onPopOut() {
@@ -195,4 +257,12 @@ export class MacrosPanel {
     updateElement(element) {
         this.element = element;
     }
+}
+
+// Register a Handlebars helper to always provide 5 slots
+if (typeof Handlebars !== 'undefined' && !Handlebars.helpers.macrosOrPlaceholders) {
+    Handlebars.registerHelper('macrosOrPlaceholders', function(macros) {
+        macros = macros || [];
+        return Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
+    });
 } 

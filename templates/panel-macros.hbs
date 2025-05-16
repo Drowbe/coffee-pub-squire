@@ -10,8 +10,16 @@
 {{/unless}}
 
 <div class="macros-content">
-    <div class="macros-placeholder">
-        <p>MACROS WILL GO HERE</p>
+    <div class="macros-grid">
+        {{#each (macrosOrPlaceholders macros) as |macro idx|}}
+            <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}">
+                {{#if macro.id}}
+                    <img src="{{macro.img}}" title="{{macro.name}}" draggable="false" />
+                {{else}}
+                    <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
+                {{/if}}
+            </div>
+        {{/each}}
     </div>
 </div>
 {{/if}} 
