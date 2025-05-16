@@ -19,31 +19,30 @@ export class MacrosPanel {
         }
     }
 
-    async render(html) {
+    async render(html, { showAddSlot = false } = {}) {
         // Load macros from settings
         let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+        macros = macros.filter(m => m && m.id);
+        const templateData = {
+            actor: this.actor,
+            position: game.settings.get(MODULE.ID, 'trayPosition'),
+            isMacrosPopped: this.isPoppedOut,
+            macros,
+            showAddSlot
+        };
 
         if (html) {
             this.element = html;
         }
         // Skip rendering in tray if popped out
-        if (!this.element || this.isPoppedOut) return;
-
-        const templateData = {
-            actor: this.actor,
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
-            isMacrosPopped: this.isPoppedOut,
-            macros
-        };
-
-        // If popped out, only update the window content and don't render in tray
-        if (this.isPoppedOut) {
-            if (this.window?.element) {
+        if (!this.element || this.isPoppedOut) {
+            // If popped out, only update the window content
+            if (this.isPoppedOut && this.window?.element) {
                 const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
                 this.window.element.find('[data-panel="macros"]').html(content);
                 this._activateListeners(this.window.element);
             }
-            return; // Don't render in tray if popped out
+            return;
         }
 
         // Only render in tray if not popped out
@@ -66,6 +65,8 @@ export class MacrosPanel {
         if (!html) return;
 
         const panel = html.find('[data-panel="macros"]');
+        let showAddSlot = false;
+        let dragActive = false;
 
         // Toggle panel handler
         panel.find('.tray-title-small').click(() => {
@@ -87,13 +88,30 @@ export class MacrosPanel {
         macrosGrid.on('dragenter.macroDnd', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            // Add a new slot if we're dragging over the grid
-            const macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-            if (!macros.find(m => !m.id)) {
-                macros.push({ id: null, name: null, img: null });
-                game.settings.set(MODULE.ID, 'userMacros', macros);
+            if (!dragActive) {
+                dragActive = true;
+                // Only show add slot if there are no empty slots
+                let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                macros = macros.filter(m => m && m.id);
+                this.render(undefined, { showAddSlot: true });
+            }
+        });
+        macrosGrid.on('dragleave.macroDnd', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (dragActive) {
+                dragActive = false;
                 this.render();
             }
+        });
+        macrosGrid.on('dragover.macroDnd', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.originalEvent.dataTransfer.dropEffect = 'copy';
+        });
+        macrosGrid.on('drop.macroDnd', (e) => {
+            dragActive = false;
+            this.render();
         });
 
         // Macro grid interactions
@@ -106,21 +124,7 @@ export class MacrosPanel {
             slot.on('dragenter.macroDnd', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                try {
-                    const data = JSON.parse(e.originalEvent.dataTransfer.getData('text/plain'));
-                    if (data.type === 'Macro') {
-                        slot.addClass('dragover');
-                        // Play hover sound
-                        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                        if (blacksmith) {
-                            const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
-                            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                        }
-                    }
-                } catch (error) {
-                    // If we can't parse the data yet, still show hover state
-                    slot.addClass('dragover');
-                }
+                slot.addClass('dragover');
             });
             slot.on('dragleave.macroDnd', (e) => {
                 e.preventDefault();
@@ -136,69 +140,45 @@ export class MacrosPanel {
                 e.preventDefault();
                 e.stopPropagation();
                 slot.removeClass('dragover');
+                let data;
                 try {
-                    const dataTransfer = e.originalEvent.dataTransfer.getData('text/plain');
-                    console.log("SQUIRE | MACROS | Raw drop data:", dataTransfer);
-                    
-                    let data;
-                    try {
-                        data = JSON.parse(dataTransfer);
-                        console.log("SQUIRE | MACROS | Parsed drop data:", data);
-                    } catch (error) {
-                        console.error("SQUIRE | MACROS | Error parsing drop data:", error);
-                        ui.notifications.warn('Invalid drag data.');
-                        return;
-                    }
-
-                    // Check for macro data in various formats
-                    const macroId = data.id || data.data?.id || data.uuid?.split('.').pop();
-                    const isMacro = data.type === 'Macro' || data.data?.type === 'Macro' || data.uuid?.startsWith('Macro.');
-                    
-                    if (isMacro && macroId) {
-                        const macro = game.macros.get(macroId);
-                        if (macro) {
-                            let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                            // If dropping on the last empty slot, add a new one
-                            if (idx === macros.length - 1 && !macros[idx].id) {
-                                macros.push({ id: null, name: null, img: null });
-                            }
-                            macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
-                            await game.settings.set(MODULE.ID, 'userMacros', macros);
-                            
-                            // Update both tray and window if popped out
-                            if (self.isPoppedOut && self.window) {
-                                // Update window's macros data
-                                self.window.macros = macros;
-                                // Re-render the window
-                                await self.window.render(false);
-                            }
-                            // Always re-render the tray
-                            await self.render();
-                            
-                            // Play drop sound
-                            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                            if (blacksmith) {
-                                const sound = game.settings.get(MODULE.ID, 'dropSound');
-                                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                            }
-                        } else {
-                            console.error("SQUIRE | MACROS | Macro not found:", macroId);
-                            ui.notifications.warn('Macro not found.');
-                        }
-                    } else {
-                        console.error("SQUIRE | MACROS | Invalid drop data:", data);
-                        ui.notifications.warn('Only macros can be dropped here.');
-                    }
+                    data = JSON.parse(e.originalEvent.dataTransfer.getData('text/plain'));
                 } catch (error) {
-                    console.error('SQUIRE | MACROS | Error handling drop:', error);
-                    ui.notifications.error('Error handling macro drop. See console for details.');
+                    ui.notifications.warn('Invalid drag data.');
+                    return;
+                }
+                const macroId = data.id || data.data?.id || data.uuid?.split('.').pop();
+                const isMacro = data.type === 'Macro' || data.data?.type === 'Macro' || data.uuid?.startsWith('Macro.');
+                if (isMacro && macroId) {
+                    const macro = game.macros.get(macroId);
+                    if (macro) {
+                        let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                        macros = macros.filter(m => m && m.id);
+                        // If dropped on add slot, push new macro
+                        if (slot.hasClass('add-slot')) {
+                            macros.push({ id: macro.id, name: macro.name, img: macro.img });
+                        } else {
+                            macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
+                        }
+                        await game.settings.set(MODULE.ID, 'userMacros', macros);
+                        if (self.isPoppedOut && self.window) {
+                            self.window.macros = macros;
+                            await self.window.render(false);
+                        }
+                        await self.render();
+                    } else {
+                        ui.notifications.warn('Macro not found.');
+                    }
+                } else {
+                    ui.notifications.warn('Only macros can be dropped here.');
                 }
             });
             // Left click: run macro
             slot.on('click.macroDnd', async function(e) {
                 if (slot.hasClass('empty')) return;
                 if (e.button === 0) {
-                    const macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                    let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                    macros = macros.filter(m => m && m.id);
                     const macroId = macros[idx]?.id;
                     const macro = game.macros.get(macroId);
                     if (macro) macro.execute();
@@ -209,29 +189,19 @@ export class MacrosPanel {
                 e.preventDefault();
                 e.stopPropagation();
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                // Remove the slot and any trailing empty slots
+                macros = macros.filter(m => m && m.id);
                 macros.splice(idx, 1);
-                while (macros.length > 0 && !macros[macros.length - 1].id) {
-                    macros.pop();
+                // Always leave at least one slot (empty) if none remain
+                if (macros.length === 0) {
+                    await game.settings.set(MODULE.ID, 'userMacros', []);
+                } else {
+                    await game.settings.set(MODULE.ID, 'userMacros', macros);
                 }
-                await game.settings.set(MODULE.ID, 'userMacros', macros);
-                
-                // Update both tray and window if popped out
                 if (self.isPoppedOut && self.window) {
-                    // Update window's macros data
                     self.window.macros = macros;
-                    // Re-render the window
                     await self.window.render(false);
                 }
-                // Always re-render the tray
                 await self.render();
-                
-                // Play drop sound for feedback
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'dropSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
             });
         });
     }

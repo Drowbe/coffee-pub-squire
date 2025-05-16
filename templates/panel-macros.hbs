@@ -11,17 +11,21 @@
 
 <div class="macros-content">
     <div class="macros-grid">
-        {{#each macros as |macro idx|}}
-            <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false">
+        {{#if macros.length}}
+            {{#each macros as |macro idx|}}
                 {{#if macro.id}}
-                    <img src="{{macro.img}}" title="{{macro.name}}" draggable="false" />
-                {{else}}
-                    <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
+                    <div class="macro-slot" data-slot="{{idx}}" draggable="false">
+                        <img src="{{macro.img}}" title="{{macro.name}}" draggable="false" />
+                    </div>
                 {{/if}}
+            {{/each}}
+        {{else}}
+            <div class="macro-slot empty" data-slot="0" draggable="false">
+                <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
             </div>
-        {{/each}}
-        {{#if (gt macros.length 0)}}
-            <div class="macro-slot empty add-slot" draggable="false">
+        {{/if}}
+        {{#if showAddSlot}}
+            <div class="macro-slot empty add-slot" data-slot="add" draggable="false">
                 <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
             </div>
         {{/if}}
