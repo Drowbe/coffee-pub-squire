@@ -16,12 +16,25 @@ export class HealthWindow extends Application {
     }
 
     static get defaultOptions() {
+        // Try to load saved position
+        let saved = {};
+        try {
+            saved = game.settings.get(MODULE.ID, 'healthWindowPosition') || {};
+        } catch (e) {
+            saved = {};
+        }
+        const width = 400;
+        const height = 'auto';
+        const top = (typeof saved.top === 'number') ? saved.top : Math.max(0, (window.innerHeight - 300) / 2);
+        const left = (typeof saved.left === 'number') ? saved.left : Math.max(0, (window.innerWidth - width) / 2);
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "squire-health-window",
             template: "modules/coffee-pub-squire/templates/panel-health.hbs",
             title: "Health Panel",
-            width: 400,
-            height: "auto",
+            width,
+            height,
+            top,
+            left,
             minimizable: true,
             resizable: false,
             popOut: true,
@@ -105,11 +118,13 @@ export class HealthWindow extends Application {
 
     // Override setPosition to ensure window stays in place when re-rendering
     setPosition(options={}) {
-        // If we already have a position, preserve it
-        if (this.element && this._position) {
-            options = foundry.utils.mergeObject(this._position, options);
+        const pos = super.setPosition(options);
+        // Save position to settings
+        if (this.rendered) {
+            const { top, left } = this.position;
+            game.settings.set(MODULE.ID, 'healthWindowPosition', { top, left });
         }
-        return super.setPosition(options);
+        return pos;
     }
 
     // Update the panel reference and re-register for updates when the actor changes

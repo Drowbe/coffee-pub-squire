@@ -831,6 +831,20 @@ export const registerSettings = function() {
         default: {}
     });
 
+    game.settings.register(MODULE.ID, 'diceTrayWindowPosition', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {}
+    });
+
+    game.settings.register(MODULE.ID, 'healthWindowPosition', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {}
+    });
+
 };
 
 // ***************************
