@@ -191,4 +191,8 @@ export class MacrosPanel {
             this.render();
         }
     }
+
+    updateElement(element) {
+        this.element = element;
+    }
 } 

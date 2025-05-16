@@ -824,6 +824,13 @@ export const registerSettings = function() {
         default: ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]
     });
 
+    game.settings.register(MODULE.ID, 'macrosWindowPosition', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {}
+    });
+
 };
 
 // ***************************

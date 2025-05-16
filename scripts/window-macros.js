@@ -12,12 +12,25 @@ export class MacrosWindow extends Application {
     }
 
     static get defaultOptions() {
+        // Try to load saved position/size
+        let saved = {};
+        try {
+            saved = game.settings.get(MODULE.ID, 'macrosWindowPosition') || {};
+        } catch (e) {
+            saved = {};
+        }
+        const width = saved.width ?? 400;
+        const height = saved.height ?? 300;
+        const top = (typeof saved.top === 'number') ? saved.top : Math.max(0, (window.innerHeight - height) / 2);
+        const left = (typeof saved.left === 'number') ? saved.left : Math.max(0, (window.innerWidth - width) / 2);
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "squire-macros-window",
             title: "Macros",
             template: TEMPLATES.PANEL_MACROS,
-            width: 400,
-            height: "auto",
+            width,
+            height,
+            top,
+            left,
             minimizable: true,
             resizable: true,
             popOut: true,
@@ -78,10 +91,13 @@ export class MacrosWindow extends Application {
     }
 
     setPosition(options={}) {
-        if (this.element && this._position) {
-            options = foundry.utils.mergeObject(this._position, options);
+        const pos = super.setPosition(options);
+        // Save position/size to settings
+        if (this.rendered) {
+            const { top, left, width, height } = this.position;
+            game.settings.set(MODULE.ID, 'macrosWindowPosition', { top, left, width, height });
         }
-        return super.setPosition(options);
+        return pos;
     }
 
     async _onUpdateActor(actor, changes) {
