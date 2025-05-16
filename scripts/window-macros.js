@@ -90,6 +90,11 @@ export class MacrosWindow extends Application {
     }
 
     setPosition(options={}) {
+        // Enforce minimum size: 1 slot (48px) + padding/margins (let's use 32px for safety)
+        const minWidth = 48 + 32;
+        const minHeight = 48 + 32 + 40; // 40px for header/title bar
+        if (options.width && options.width < minWidth) options.width = minWidth;
+        if (options.height && options.height < minHeight) options.height = minHeight;
         const pos = super.setPosition(options);
         // Save position/size to settings
         if (this.rendered) {

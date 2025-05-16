@@ -6,7 +6,7 @@
 
 /* ----- VARIABLES ----- */
 :root {
-    --macros-min-width: 300px;
+    --macros-min-width: 40px;
     --container-padding: 8px;
     --border-color: #444;
     --accent-color: #9f9275;
@@ -70,6 +70,7 @@
     width: 100% !important;
     min-width: 100% !important;
     overflow: visible !important;
+    
 }
 
 #squire-macros-window .window-content > * {
@@ -130,12 +131,4 @@
     display: flex !important;
 }
 
-/* Target the app element itself */
-.app.window-app#squire-macros-window {
-    min-width: 300px !important;
-}
 
-/* Target the window wrapper */
-.app.window-app#squire-macros-window > .window-content {
-    min-width: 300px !important;
-} 
