@@ -254,9 +254,9 @@ export class MacrosPanel {
                     await panelManager.updateHandle();
                 }
             });
-            // Middle click: toggle favorite
+            // Middle click or Shift+Left click: toggle favorite
             slot.on('mousedown.macroDnd', async function(e) {
-                if (e.button === 1 && !slot.hasClass('empty')) {
+                if (!slot.hasClass('empty') && (e.button === 1 || (e.button === 0 && e.shiftKey))) {
                     let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                     let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
                     const macroId = macros[idx]?.id;
