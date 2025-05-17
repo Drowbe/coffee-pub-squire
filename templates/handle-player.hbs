@@ -12,10 +12,13 @@
     {{#if showHandleMacros}}
         <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
             <i class="fas fa-sparkles macros-icon"></i>
+            {{#if favoriteMacros}}
+                <span class="tray-handle-separator line"></span>
+            {{/if}}
             {{#each favoriteMacros as |fav|}}
-                <button class="handle-macro-favorite" data-macro-id="{{fav.id}}" title="{{fav.name}}">
+                <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" title="{{fav.name}}">
                     <img src="{{fav.img}}" alt="{{fav.name}}" />
-                </button>
+                </div>
             {{/each}}
         </div>
         <span class="tray-handle-separator line"></span>

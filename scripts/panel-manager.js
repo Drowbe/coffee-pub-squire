@@ -165,6 +165,13 @@ export class PanelManager {
         // Use the current viewMode (which is either default or from settings)
         const viewMode = PanelManager.viewMode;
         
+        // Build favorite macros array
+        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+        let favoriteMacros = favoriteMacroIds.map(id => {
+            const macro = game.macros.get(id);
+            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
+        }).filter(Boolean);
+
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
@@ -192,7 +199,8 @@ export class PanelManager {
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
-            newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
+            newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
+            favoriteMacros
         });
         const trayElement = $(trayHtml);
         $('body').append(trayElement);
@@ -226,6 +234,14 @@ export class PanelManager {
         
         // Create new tray element
         const viewMode = PanelManager.viewMode;
+        
+        // Build favorite macros array
+        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+        let favoriteMacros = favoriteMacroIds.map(id => {
+            const macro = game.macros.get(id);
+            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
+        }).filter(Boolean);
+
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
@@ -253,7 +269,8 @@ export class PanelManager {
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
-            newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems)
+            newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
+            favoriteMacros
         });
         const newTrayElement = $(trayHtml);
         
@@ -323,7 +340,6 @@ export class PanelManager {
         setTimeout(() => {
             PanelManager.element.css('animation', '');
         }, 100);
-
     }
 
     async updateHandle() {
@@ -334,6 +350,7 @@ export class PanelManager {
                 const macro = game.macros.get(id);
                 return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
             }).filter(Boolean);
+            console.log('SQUIRE | MACROS | favoriteMacros:', favoriteMacros);
 
             const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
                 actor: this.actor,

@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { MacrosWindow } from './window-macros.js';
+import { PanelManager } from './panel-manager.js';
 
 export class MacrosPanel {
     static isWindowOpen = false;
@@ -128,7 +129,8 @@ export class MacrosPanel {
         });
 
         // Handle favorite macro click in handle
-        panel.find('.handle-macro-favorite').click(function(e) {
+        const handle = html.find('.handle-left');
+        handle.find('.handle-macro-favorite').off('click').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             const macroId = $(this).data('macro-id');
@@ -246,6 +248,11 @@ export class MacrosPanel {
                     await self.window.render(false);
                 }
                 await self.render();
+                // Ensure we update the handle in case a favorite macro was deleted
+                const panelManager = PanelManager.instance;
+                if (panelManager) {
+                    await panelManager.updateHandle();
+                }
             });
             // Middle click: toggle favorite
             slot.on('mousedown.macroDnd', async function(e) {
@@ -266,8 +273,10 @@ export class MacrosPanel {
                         await self.window.render(false);
                     }
                     await self.render();
-                    if (window.PanelManager?.instance) {
-                        window.PanelManager.instance.updateHandle();
+                    // Ensure we update the handle immediately after toggling favorite
+                    const panelManager = PanelManager.instance;
+                    if (panelManager) {
+                        await panelManager.updateHandle();
                     }
                 }
             });
