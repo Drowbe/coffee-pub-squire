@@ -261,15 +261,18 @@ export class MacrosPanel {
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                 // Debug: print the slot object
                 console.log('SQUIRE | MACROS | Slot object at idx', idx, macros[idx]);
+                let removedMacroId = null;
                 // Treat as having a macro only if id is a non-empty string
                 if (macros[idx] && typeof macros[idx].id === 'string' && macros[idx].id.length > 0) {
                     // If slot has a macro, clear it
                     console.log('SQUIRE | MACROS | Slot has a macro, clearing macro');
+                    removedMacroId = macros[idx].id;
                     macros[idx] = { id: null, name: null, img: null };
                 } else {
                     // Else (slot is empty), remove it (unless it's the last slot)
                     console.log('SQUIRE | MACROS | Slot is empty, removing slot');
                     if (macros.length > 1) {
+                        removedMacroId = macros[idx]?.id || null;
                         macros.splice(idx, 1);
                     }
                 }
@@ -279,6 +282,15 @@ export class MacrosPanel {
                     macros = [{ id: null, name: null, img: null }];
                 }
                 await game.settings.set(MODULE.ID, 'userMacros', macros);
+                // Remove from favorites if no longer present
+                if (removedMacroId) {
+                    const stillPresent = macros.some(m => m.id === removedMacroId);
+                    if (!stillPresent) {
+                        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+                        favoriteMacroIds = favoriteMacroIds.filter(id => id !== removedMacroId);
+                        await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
+                    }
+                }
                 if (self.isPoppedOut && self.window) {
                     self.window.macros = macros;
                     await self.window.render(false);
