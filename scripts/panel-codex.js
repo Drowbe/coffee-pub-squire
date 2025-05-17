@@ -246,9 +246,6 @@ export class CodexPanel {
                 }
             }
         }
-        // Debug output
-        console.log('SQUIRE | CODEX: categories', Array.from(this.categories));
-        console.log('SQUIRE | CODEX: data', this.data);
     }
 
     /**

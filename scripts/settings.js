@@ -395,7 +395,14 @@ export const registerSettings = function() {
         default: true
     });
 
-
+    game.settings.register(MODULE.ID, 'hideFounryHotbar', {
+        name: 'Hide the default Foundry hotbar.',
+        hint: 'Get some screen real estate back by hiding the default Foundry hotbar.',
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
 
     // --------------------------------
     // ---      NOTES Settings      ---

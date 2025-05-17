@@ -197,9 +197,6 @@ export class CodexParser {
             console.warn(`SQUIRE | CODEX: Entry "${entry.name}" is missing mandatory fields (Category or Description). HTML:`, enrichedHtml);
             return null;
         }
-
-        // Debug log for every parsed entry
-        console.log('SQUIRE | CODEX: Parsed entry', entry);
         return entry;
     }
 

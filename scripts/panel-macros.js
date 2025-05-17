@@ -2,6 +2,30 @@ import { MODULE, TEMPLATES } from './const.js';
 import { MacrosWindow } from './window-macros.js';
 import { PanelManager } from './panel-manager.js';
 
+// Hide Foundry hotbar if setting is enabled
+function updateHotbarVisibility() {
+  // Only run if the setting is registered
+  if (!game.settings.settings.has(`${MODULE.ID}.hideFoundryHotbar`)) return;
+  const shouldHide = game.settings.get(MODULE.ID, 'hideFoundryHotbar');
+  let styleTag = document.getElementById('squire-hide-hotbar-style');
+  if (shouldHide) {
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'squire-hide-hotbar-style';
+      styleTag.innerText = '#hotbar { display: none !important; }';
+      document.head.appendChild(styleTag);
+    }
+  } else if (styleTag) {
+    styleTag.remove();
+  }
+}
+
+// Only call after settings are registered
+Hooks.once('init', () => {
+  Hooks.on('ready', updateHotbarVisibility);
+  Hooks.on('renderSettingsConfig', updateHotbarVisibility);
+});
+
 export class MacrosPanel {
     static isWindowOpen = false;
     static activeWindow = null;
@@ -259,13 +283,10 @@ export class MacrosPanel {
                 e.preventDefault();
                 e.stopPropagation();
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                // Debug: print the slot object
-                console.log('SQUIRE | MACROS | Slot object at idx', idx, macros[idx]);
                 let removedMacroId = null;
                 // Treat as having a macro only if id is a non-empty string
                 if (macros[idx] && typeof macros[idx].id === 'string' && macros[idx].id.length > 0) {
                     // If slot has a macro, clear it
-                    console.log('SQUIRE | MACROS | Slot has a macro, clearing macro');
                     removedMacroId = macros[idx].id;
                     macros[idx] = { id: null, name: null, img: null };
                 } else {

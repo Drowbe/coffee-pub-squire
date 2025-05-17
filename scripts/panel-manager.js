@@ -76,7 +76,6 @@ export class PanelManager {
         
         // Prevent overlapping initializations 
         if (PanelManager._initializationInProgress) {
-            console.log("SQUIRE | Initialize already in progress, skipping");
             return;
         }
         
@@ -350,7 +349,6 @@ export class PanelManager {
                 const macro = game.macros.get(id);
                 return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
             }).filter(Boolean);
-            console.log('SQUIRE | MACROS | favoriteMacros:', favoriteMacros);
 
             const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
                 actor: this.actor,
@@ -854,15 +852,6 @@ export class PanelManager {
                     
                     if (!AwardClass) {
                         ui.notifications.warn("Award functionality not found in this version of DnD5e. Please check system version.");
-                        
-                        // Debug log to help identify the correct path
-                        console.log("SQUIRE | Award debug paths:", {
-                            applications: game.dnd5e.applications,
-                            documents: game.dnd5e.documents,
-                            apps: game.dnd5e.apps,
-                            api: game.dnd5e.api,
-                            fullDnd5e: game.dnd5e
-                        });
                         return;
                     }
                     
@@ -991,10 +980,7 @@ export class PanelManager {
             
             try {
                 const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
-                console.log("SQUIRE | DROPZONE | Data transfer content:", dataTransfer);
-                
                 const data = JSON.parse(dataTransfer);
-                console.log("SQUIRE | DROPZONE | Parsed data:", data);
                 
                 // Play drop sound
                 const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
@@ -1279,16 +1265,11 @@ export class PanelManager {
                                     console.log("SQUIRE | DROPZONE | Failed to get item from UUID");
                                     return;
                                 }
-                                console.log("SQUIRE | DROPZONE | Retrieved item:", item.name);
-                                
                                 // Create the item on the actor
                                 const createdItem = await actor.createEmbeddedDocuments('Item', [item.toObject()]);
-                                console.log("SQUIRE | DROPZONE | Created item on actor:", createdItem[0].name);
-                                
                                 // Add to newlyAddedItems in PanelManager
                                 if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
                                     game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
-                                    console.log("SQUIRE | DROPZONE | Added to newlyAddedItems");
                                 }
                                 
                                 // Send chat notification
@@ -1298,7 +1279,6 @@ export class PanelManager {
                                     content: chatContent,
                                     speaker: ChatMessage.getSpeaker({ actor })
                                 });
-                                console.log("SQUIRE | DROPZONE | Created chat message");
 
                                 // Determine which panel to re-render based on item type
                                 let targetPanel;
@@ -1315,8 +1295,6 @@ export class PanelManager {
                                     default:
                                         targetPanel = 'inventory';
                                 }
-                                console.log("SQUIRE | DROPZONE | Target panel:", targetPanel);
-
                                 // Re-render the appropriate panel
                                 switch (targetPanel) {
                                     case 'favorites':
@@ -1335,7 +1313,6 @@ export class PanelManager {
                                         if (this.inventoryPanel) await this.inventoryPanel.render(this.element);
                                         break;
                                 }
-                                console.log("SQUIRE | DROPZONE | Re-rendered panel:", targetPanel);
                             } catch (error) {
                                 console.error("SQUIRE | DROPZONE | Error processing world item:", error);
                                 ui.notifications.error("Error processing dropped item. See console for details.");
@@ -1343,7 +1320,6 @@ export class PanelManager {
                         }
                         break;
                     default:
-                        console.log("SQUIRE | DROPZONE | Unhandled drop type:", data.type);
                 }
                 
             } catch (error) {
