@@ -188,6 +188,10 @@ export class PanelManager {
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode,
+            showTabParty: game.settings.get(MODULE.ID, 'showTabParty'),
+            showTabNotes: game.settings.get(MODULE.ID, 'showTabNotes'),
+            showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
+            showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -258,18 +262,15 @@ export class PanelManager {
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode,
+            showTabParty: game.settings.get(MODULE.ID, 'showTabParty'),
+            showTabNotes: game.settings.get(MODULE.ID, 'showTabNotes'),
+            showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
+            showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
-            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
-            isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-            isMacrosPopped: MacrosPanel.isWindowOpen,
-            isHealthPopped: HealthPanel.isWindowOpen,
-            newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
-            favoriteMacros
         });
         const newTrayElement = $(trayHtml);
         

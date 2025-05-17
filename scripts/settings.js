@@ -33,11 +33,67 @@ export const registerSettings = function() {
 		type: String,
 	});
 
+
+    // Tabs
+
+    game.settings.register(MODULE.ID, 'showTabParty', {
+        name: 'Show Party Tab',
+        hint: 'Show the Party tab on the tray (recommended)',
+        scope: 'client',
+        requiresReload: true,
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+    game.settings.register(MODULE.ID, 'showTabNotes', {
+        name: 'Show Notes Tab',
+        hint: 'Show the Notes tab on the tray (recommended)',
+        scope: 'client',
+        requiresReload: true,
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+    game.settings.register(MODULE.ID, 'showTabCodex', {
+        name: 'Show Codex Tab',
+        hint: 'Show the Codex tab on the tray (recommended)',
+        scope: 'client',
+        requiresReload: true,
+        config: true,   
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
+    game.settings.register(MODULE.ID, 'showTabQuests', {
+        name: 'Show Quests Tab',
+        hint: 'Show the Quests tab on the tray (recommended)',
+        scope: 'client',
+        requiresReload: true,
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
     // Excluded Users
     game.settings.register(MODULE.ID, 'excludedUsers', {
         name: 'Excluded Users',
         hint: 'List of userIDs that should not see the Squire tray (comma-separated)',
         scope: 'world',
+        requiresReload: true,
         config: true,
         type: String,
         default: '',
@@ -105,6 +161,9 @@ export const registerSettings = function() {
             }
         }
     });
+
+
+    
 
 
     // Tray Position
@@ -217,7 +276,7 @@ export const registerSettings = function() {
         }
     });
 
-	// ---------- Tray Configuration ----------
+	// ---------- Panel Configuration ----------
 	game.settings.register(MODULE.ID, "headingH3PanelConfiguration", {
 		name: 'Panel Configuration',
 		hint: 'Panels appear at the top of the tray, above the spells, weapons, and inventory. They can be collapsed or hidden completely. Several of them can be accessed via the handle even if the panel is disabled.',
