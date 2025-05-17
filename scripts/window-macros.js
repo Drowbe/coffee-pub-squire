@@ -90,6 +90,18 @@ export class MacrosWindow extends Application {
         if (this.panel) {
             this.panel._activateListeners(html);
         }
+        // --- Add open macro folder icon to window header ---
+        const header = html.closest('.app').find('.window-header');
+        if (header.length && !header.find('.open-macro-folder').length) {
+            // Insert before the close button
+            const closeBtn = header.find('.close');
+            const macroBtn = $('<a class="header-button open-macro-folder" title="Open Macro Folder"><i class="fas fa-folder-open"></i></a>');
+            macroBtn.insertBefore(closeBtn);
+            macroBtn.on('click', (e) => {
+                e.preventDefault();
+                if (ui.macros && typeof ui.macros.renderPopout === 'function') ui.macros.renderPopout();
+            });
+        }
     }
 
     get appId() {
