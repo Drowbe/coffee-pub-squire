@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { PanelManager } from './panel-manager.js';
 
 export class PartyPanel {
     constructor() {
@@ -742,6 +743,18 @@ export class PartyPanel {
             } catch (error) {
                 console.error(`${MODULE.TITLE} | Error handling drop on character card:`, error);
                 ui.notifications.error("Failed to add item to character.");
+            }
+        });
+
+        // Handle health bar clicks in the party tab
+        html.find('.party-hp-bar').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const actorId = $(event.currentTarget).closest('.character-card').data('actor-id');
+            const actor = game.actors.get(actorId);
+            if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
+                PanelManager.instance.healthPanel.updateActor(actor);
+                await PanelManager.instance.healthPanel._onPopOut();
             }
         });
     }

@@ -186,7 +186,7 @@
 }
 
 .party-view .party-hp-bar .hp-value {
-    color: #cccccc;
+    color: #9d9476;
 }
 
 .party-view .party-hp-bar .hp-fill {
@@ -194,7 +194,7 @@
     top: 0;
     left: 0;
     height: 100%;
-    background: linear-gradient(to right, #6b0000, #a00000);
+    background: linear-gradient(to right, #531513, #67312c);
     z-index: 1;
     transition: width 0.3s ease;
 }
