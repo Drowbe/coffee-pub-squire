@@ -168,7 +168,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 16px;
+    height: 14px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid #444;
     border-radius: 4px;
@@ -200,30 +200,35 @@
 }
 
 /* Section Divider */
+
 .party-view .section-divider {
     position: relative;
     text-align: center;
-    margin: 20px 0 15px;
+    margin: 20px 0 20px;
     height: 20px;
 }
 
 .party-view .section-divider::before {
+    
+    display: none;
+    
     content: '';
     position: absolute;
     top: 50%;
     left: 0;
     right: 0;
     height: 1px;
-    background: #444;
+    background: #000000;
     z-index: 1;
 }
 
 .party-view .section-divider .divider-text {
     display: inline-block;
     background: #111;
-    padding: 0 10px;
-    color: #922610;
-    font-size: 0.75em;
+    padding: 5px 10px 5px 10px;
+    border-radius: 4px;
+    color: #9f9275;
+    font-size: 0.8em;
     font-weight: bold;
     position: relative;
     z-index: 2;
@@ -232,9 +237,10 @@
 
 /* NPC Cards */
 .party-view .npc-card {
-    background: rgba(60, 0, 0, 0.25);
-    border-color: #922610;
+    background: rgba(60, 0, 0, 0.0);
+    border: 2px solid #444;
     position: relative;
+    color: #9f9275;
 }
 
 .party-view .npc-card::after {
@@ -260,14 +266,14 @@
 }
 
 .party-view .npc-card .character-name {
-    color: #d9a19b;
+    color: #9f9275;
     position: relative;
     z-index: 1;
 }
 
 .party-view .npc-card .details-primary, 
 .party-view .npc-card .details-secondary {
-    color: #9f8275;
+    color: #9f9275;
 }
 
 .party-view .npc-card.drop-target {
