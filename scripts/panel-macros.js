@@ -121,7 +121,7 @@ export class MacrosPanel {
         macrosGrid.on('dragover.macroDnd', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            e.originalEvent.dataTransfer.dropEffect = 'copy';
+            e.originalEvent.dataTransfer.dropEffect = 'move';
         });
         macrosGrid.on('drop.macroDnd', (e) => {
             dragActive = false;
@@ -145,6 +145,25 @@ export class MacrosPanel {
             // Remove any previous event listeners
             slot.off('.macroDnd');
             // Drag & drop events
+            slot.on('dragstart.macroDnd', function(e) {
+                if (!slot.hasClass('empty')) {
+                    e.originalEvent.dataTransfer.setData('text/plain', JSON.stringify({
+                        type: 'internal-macro',
+                        fromIndex: idx
+                    }));
+                    // Optionally, set a drag image
+                    const img = slot.find('img')[0];
+                    if (img) e.originalEvent.dataTransfer.setDragImage(img, 16, 16);
+                }
+            });
+            slot.attr('draggable', !slot.hasClass('empty'));
+
+            // Restore dragover, dragenter, dragleave for drop to work and feedback
+            slot.on('dragover.macroDnd', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.originalEvent.dataTransfer.dropEffect = 'move';
+            });
             slot.on('dragenter.macroDnd', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -155,11 +174,7 @@ export class MacrosPanel {
                 e.stopPropagation();
                 slot.removeClass('dragover');
             });
-            slot.on('dragover.macroDnd', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.originalEvent.dataTransfer.dropEffect = 'copy';
-            });
+
             slot.on('drop.macroDnd', async function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -171,6 +186,27 @@ export class MacrosPanel {
                     ui.notifications.warn('Invalid drag data.');
                     return;
                 }
+                // Internal reorder
+                if (data.type === 'internal-macro' && typeof data.fromIndex === 'number') {
+                    if (data.fromIndex === idx) return; // No-op if dropped on itself
+                    let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                    macros = macros.filter(m => m && typeof m === 'object');
+                    const [moved] = macros.splice(data.fromIndex, 1);
+                    macros.splice(idx, 0, moved);
+                    await game.settings.set(MODULE.ID, 'userMacros', macros);
+                    if (self.isPoppedOut && self.window) {
+                        self.window.macros = macros;
+                        await self.window.render(false);
+                    }
+                    await self.render();
+                    // Update handle in case favorites order changed
+                    const panelManager = PanelManager.instance;
+                    if (panelManager) {
+                        await panelManager.updateHandle();
+                    }
+                    return;
+                }
+                // External drop (existing logic)
                 const macroId = data.id || data.data?.id || data.uuid?.split('.').pop();
                 const isMacro = data.type === 'Macro' || data.data?.type === 'Macro' || data.uuid?.startsWith('Macro.');
                 if (isMacro && macroId) {
