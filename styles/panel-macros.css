@@ -207,4 +207,13 @@
         0px 2px 0 rgba(0, 0, 0, 0.9);
 }
 
+/* Always enforce dark background for macro panel, even when dragged over (popped out) */
+.squire-popout[data-position="left"] [data-panel="macros"] {
+  background: rgba(0, 0, 0, 0.9) !important;
+}
+.squire-popout[data-position="left"] [data-panel="macros"].dragover,
+.squire-popout[data-position="left"] [data-panel="macros"] .macro-slot.dragover {
+  background: rgba(0, 0, 0, 0.9) !important;
+}
+
 
