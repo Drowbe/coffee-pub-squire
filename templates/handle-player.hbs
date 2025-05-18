@@ -1,27 +1,27 @@
 {{#if actor}}
     <span class="tray-handle-separator spacer"></span>
+    {{!-- CHARACTER NAME --}} 
+    <div class="handle-character">{{actor.name}}</div>
+    
+    {{!-- HEALTH --}} 
+    {{#if showHandleHealthBar}}
+        <span class="tray-handle-separator spacer"></span>
+        <div class="handle-health-bar">
+            <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%" data-tooltip="{{actor.system.attributes.hp.value}} HP"></div>
+        </div>
+    {{/if}}
+
+    {{!-- SEPARATOR --}}
+    {{#if (or showHandleDiceTray showHandleFavorites)}}
+        <span class="tray-handle-separator line"></span>
+    {{/if}}
+
     {{!-- DICETRAY --}} 
     {{#if showHandleDiceTray}}
         <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
             <i class="fas fa-dice-d20 dice-tray-icon"></i>
         </div>
-        <span class="tray-handle-separator line"></span>
-    {{/if}}
-
-    {{!-- MACROS --}} 
-    {{#if showHandleMacros}}
-        <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
-            <i class="fas fa-sparkles macros-icon"></i>
-            {{#if favoriteMacros}}
-                <span class="tray-handle-separator line"></span>
-            {{/if}}
-            {{#each favoriteMacros as |fav|}}
-                <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" title="{{fav.name}}">
-                    <img src="{{fav.img}}" alt="{{fav.name}}" />
-                </div>
-            {{/each}}
-        </div>
-        <span class="tray-handle-separator line"></span>
+        <span class="tray-handle-separator spacer"></span>
     {{/if}}
 
     {{!-- FAVORITES --}} 
@@ -44,56 +44,60 @@
                 {{/if}}
             {{/each}}
         </div>
-        <span class="tray-handle-separator line"></span>
     {{/if}}
 
-    {{!-- PRIMARY STATS --}} 
-    {{#if showHandleStatsPrimary}}
-        <span class="handle-stats-primary">
-            <span class="tray-handle-content">{{actor.system.attributes.ac.value}}</span> <span class="tray-handle-label">AC</span>
-            <span class="tray-handle-separator dot">•</span>
-            <span class="tray-handle-content">{{actor.system.attributes.movement.walk}}</span> <span class="tray-handle-label">MOVE</span>
-        </span>
+    {{!-- MACROS --}} 
+    {{#if showHandleMacros}}
         <span class="tray-handle-separator line"></span>
-    {{/if}}
-
-    {{!-- SECONDARY STATS --}} 
-    {{#if showHandleStatsSecondary}}
-        <span class="handle-stats-secondary">
-            <span class="tray-handle-content">{{numberFormat actor.system.attributes.init.total sign=true}}</span> <span class="tray-handle-label">INIT</span>
-            <span class="tray-handle-separator dot">•</span>
-            <span class="tray-handle-content">+{{actor.system.attributes.prof}}</span> <span class="tray-handle-label">PROF</span>
-        </span>
-        <span class="tray-handle-separator line"></span>
-    {{/if}}
-
-    {{!-- HEALTH --}} 
-    {{#if showHandleHealthBar}}
-        <span class="tray-handle-content">{{actor.system.attributes.hp.value}}</span> <span class="tray-handle-label">HP</span>
-        <div class="handle-health-bar">
-            <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
+        <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
+            <i class="fas fa-sun macros-icon"></i>
+            {{#if favoriteMacros}}
+                <span class="tray-handle-separator spacer"></span>
+            {{/if}}
+            {{#each favoriteMacros as |fav|}}
+                <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
+                    <img src="{{fav.img}}" alt="{{fav.name}}" />
+                </div>
+            {{/each}}
         </div>
-        <span class="tray-handle-separator line"></span>
     {{/if}}
 
     {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
         <span class="handle-conditions">
-            {{#if isGM}}
-            <img class="condition-icon add-effect-icon" src="icons/svg/aura.svg" title="Add Effect"/>
-            {{/if}}
             {{!-- Core D&D 5e Conditions --}}
             {{#each effects as |effect|}}
-                <img class="condition-icon" src="{{effect.icon}}" title="{{effect.name}}"/>
+                <img class="condition-icon" src="{{effect.icon}}" data-tooltip="{{effect.name}}"/>
             {{/each}}
-        </span>
-        {{#if (or effects.length isGM)}}
+            {{#if isGM}}
+                <img class="condition-icon add-effect-icon" src="icons/svg/aura.svg" title="Add Effect"/>
+            {{/if}}
             <span class="tray-handle-separator line"></span>
-        {{/if}}
+        </span>
     {{/if}}
 
-    {{!-- CHARACTER NAME --}} 
-    <div class="handle-character">{{actor.name}}</div>
+
+    {{!-- PRIMARY STATS --}} 
+    {{#if showHandleStatsPrimary}}
+        <span class="tray-handle-separator line"></span>
+        <span class="handle-stats-primary">
+            <span class="tray-handle-content">{{actor.system.attributes.ac.value}}</span> <span class="tray-handle-label">AC</span>
+            <span class="tray-handle-separator dot">•</span>
+            <span class="tray-handle-content">{{actor.system.attributes.movement.walk}}</span> <span class="tray-handle-label">MOVE</span>
+        </span>
+    {{/if}}
+
+    {{!-- SECONDARY STATS --}} 
+    {{#if showHandleStatsSecondary}}
+        <span class="tray-handle-separator line"></span>
+        <span class="handle-stats-secondary">
+            <span class="tray-handle-content">{{numberFormat actor.system.attributes.init.total sign=true}}</span> <span class="tray-handle-label">INIT</span>
+            <span class="tray-handle-separator dot">•</span>
+            <span class="tray-handle-content">+{{actor.system.attributes.prof}}</span> <span class="tray-handle-label">PROF</span>
+        </span>
+        
+    {{/if}}
+
 {{else}}
     <div class="handle-no-character">Select a Character</div>
 {{/if}} 

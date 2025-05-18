@@ -778,58 +778,6 @@
     text-shadow: 0 0 3px #ffd700;
 }
 
-/* PIN BUTTON */
-.squire-tray[data-position="left"] .pin-button,
-.squire-tray[data-position="left"] .view-toggle-button,
-.squire-tray[data-position="left"] .tray-refresh {
-    order: 1;
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    padding: 4px 8px;
-    transition: color 0.2s ease;
-    outline: none;
-    margin-bottom: 8px;
-}
-
-.squire-tray[data-position="left"] .pin-button i,
-.squire-tray[data-position="left"] .view-toggle-button i,
-.squire-tray[data-position="left"] .tray-refresh i {
-    transition: transform 0.2s ease, color 0.2s ease;
-}
-
-/* Refresh button animation */
-.squire-tray[data-position="left"] .tray-refresh i.spinning {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.squire-tray[data-position="left"] .pin-button:hover i {
-    transform: rotate(45deg);
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] .view-toggle-button:hover i {
-    color: #fff;
-}
-
-.pin-button:hover,
-.view-toggle-button:hover {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.squire-tray.pinned .pin-button {
-    color: #fff;
-}
-
-.squire-tray:not(.pinned) .pin-button {
-    color: rgba(255, 255, 255, 0.3);
-}
 
 /* Party View Placeholder */
 .party-view-placeholder {
