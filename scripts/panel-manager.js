@@ -705,12 +705,15 @@ export class PanelManager {
             }
             
             // Regular condition icon click handling continues here...
-            const conditionName = event.currentTarget.title;
+            const conditionName = event.currentTarget.dataset.tooltip;
             
             // Try to get the condition data from CONFIG.DND5E.conditionTypes
             let description = "No description available.";
             try {
-                const conditionData = CONFIG.DND5E.conditionTypes[conditionName.toLowerCase()];
+                // Find the condition by matching the label
+                const conditionData = Object.values(CONFIG.DND5E.conditionTypes).find(
+                    condition => condition.label === conditionName
+                );
 
                 // Get the icon path from the clicked element
                 const iconPath = event.currentTarget.src;
@@ -785,7 +788,7 @@ export class PanelManager {
                 return;
             }
             
-            const conditionName = event.currentTarget.title;
+            const conditionName = event.currentTarget.dataset.tooltip;
             
             try {
                 // Find the effect with this condition name
