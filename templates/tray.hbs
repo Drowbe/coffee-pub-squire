@@ -1,18 +1,21 @@
 <div class="squire-tray" data-position="left">
     <div class="tray-handle">
-        <button class="pin-button" title="Pin Tray">
-            <i class="fas fa-thumbtack"></i>
-        </button>
-        <i class="fas fa-chevron-right"></i>
-        <button class="tray-refresh" title="Refresh Tray">
-            <i class="fas fa-arrows-rotate"></i>
-        </button>
-        <button class="view-toggle-button" title="Toggle View Mode">
-            <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quests')}}fa-scroll{{else}}fa-user{{/if}}"></i>
-        </button>
-        <div class="handle-left">
-            {{> handle-player}}
+        <div class="tray-handle-content-container">
+            <button class="pin-button" title="Pin Tray">
+                <i class="fas fa-thumbtack"></i>
+            </button>
+            <i class="fas fa-chevron-right"></i>
+            <button class="tray-refresh" title="Refresh Tray">
+                <i class="fas fa-arrows-rotate"></i>
+            </button>
+            <button class="view-toggle-button" title="Toggle View Mode">
+                <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quests')}}fa-scroll{{else}}fa-user{{/if}}"></i>
+            </button>
+            <div class="handle-left">
+                {{> handle-player}}
+            </div>
         </div>
+        <div class="tray-handle-fade-bottom"></div>
     </div>
 
     <div class="tray-content">

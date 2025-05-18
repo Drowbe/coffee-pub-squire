@@ -21,6 +21,7 @@
     text-transform: uppercase;
     font-size: 1.1em;
     font-weight: 900;
+    position: relative;
 }
 
 
@@ -401,6 +402,24 @@
 .prepared-text, .equipped-text {
     color: var(--color-text-hyperlink);
     font-weight: bold;
+}
+
+.squire-tray[data-position="left"] .tray-handle-content-container {
+    max-height: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.squire-tray[data-position="left"] .tray-handle-fade-bottom {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 32px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(30,30,30,0.85) 100%);
+    z-index: 2;
+    display: none; /* hidden by default, shown by JS if overflowing */
 }
 
 

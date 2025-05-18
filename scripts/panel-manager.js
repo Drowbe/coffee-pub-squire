@@ -226,6 +226,23 @@ export class PanelManager {
         if (viewMode === 'player') {
             await this.setViewMode('player');
         }
+
+        // After rendering the tray handle, check for overflow and toggle fade
+        function updateTrayHandleFade() {
+            const handle = trayElement.find('.tray-handle');
+            const container = handle.find('.tray-handle-content-container');
+            const fade = handle.find('.tray-handle-fade-bottom');
+            if (!container.length || !fade.length) return;
+            // Check if content is overflowing vertically
+            const isOverflowing = container[0].scrollHeight > container[0].clientHeight;
+            fade.toggle(isOverflowing);
+        }
+        // Initial check
+        updateTrayHandleFade();
+        // Re-check on window resize
+        window.addEventListener('resize', updateTrayHandleFade);
+        // Optionally, re-check after a short delay in case of async content
+        setTimeout(updateTrayHandleFade, 250);
     }
 
     async updateTray() {
