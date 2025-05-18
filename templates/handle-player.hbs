@@ -51,9 +51,6 @@
         <span class="tray-handle-separator line"></span>
         <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
             <i class="fas fa-sun macros-icon"></i>
-            {{#if favoriteMacros}}
-                <span class="tray-handle-separator spacer"></span>
-            {{/if}}
             {{#each favoriteMacros as |fav|}}
                 <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
                     <img src="{{fav.img}}" alt="{{fav.name}}" />
@@ -64,16 +61,16 @@
 
     {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
-        <span class="handle-conditions">
+        <div class="handle-conditions">
             {{!-- Core D&D 5e Conditions --}}
             {{#each effects as |effect|}}
                 <img class="condition-icon" src="{{effect.icon}}" data-tooltip="{{effect.name}}"/>
             {{/each}}
             {{#if isGM}}
-                <img class="condition-icon add-effect-icon" src="icons/svg/aura.svg" title="Add Effect"/>
+                <i class="fas fa-sparkles add-effect-icon" title="Add Effect"></i>
             {{/if}}
             <span class="tray-handle-separator line"></span>
-        </span>
+        </div>
     {{/if}}
 
 

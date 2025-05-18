@@ -257,8 +257,8 @@
     width: 22px;
     height: 1px;
     display: inline-block;
-    margin-top: 6px;
-    margin-bottom: 6px;
+    margin-top: 8px;
+    margin-bottom: 8px;
     vertical-align: middle;
 }
 
@@ -292,8 +292,11 @@
     margin-top: 10px;
 }
 
-/* Dice Tray  */
+/* Dice Tray / Macros / Contitions Icon  */
 
+
+.squire-tray[data-position="left"] .add-effect-icon,
+.squire-tray[data-position="left"] .macros-icon,
 .squire-tray[data-position="left"] .dice-tray-icon {
     width: 24px;
     height: 24px;
@@ -305,6 +308,8 @@
     filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
 
+.squire-tray[data-position="left"] .add-effect-icon:hover,
+.squire-tray[data-position="left"] .macros-icon:hover,
 .squire-tray[data-position="left"] .dice-tray-icon:hover {
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 10px var(--color-shadow-highlight);
@@ -314,23 +319,7 @@
     transform: rotate(180deg);
 }
 
-/* Macros Icon */
-.squire-tray[data-position="left"] .macros-icon {
-    width: 24px;
-    height: 24px;
-    padding: 4px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
-}
 
-.squire-tray[data-position="left"] .macros-icon:hover {
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 10px var(--color-shadow-highlight);
-    transform: scale(1.1,1.1);
-}
 
 /* MACRO AND ATTACK FAVORITES */
 
