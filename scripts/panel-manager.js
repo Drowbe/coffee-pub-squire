@@ -827,7 +827,7 @@ export class PanelManager {
             const currentMode = PanelManager.viewMode;
             let newMode;
             
-            // Cycle through modes: player -> party -> notes -> codex -> player
+            // Cycle through modes: player -> party -> notes -> codex -> quest -> player
             switch (currentMode) {
                 case 'player':
                     newMode = 'party';
@@ -839,6 +839,9 @@ export class PanelManager {
                     newMode = 'codex';
                     break;
                 case 'codex':
+                    newMode = 'quest';
+                    break;
+                case 'quest':
                     newMode = 'player';
                     break;
                 default:
