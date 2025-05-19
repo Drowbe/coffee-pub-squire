@@ -1,7 +1,10 @@
 {{#if actor}}
 
     {{!-- CHARACTER NAME --}} 
-    <div class="handle-character">{{actor.name}}</div>
+    <div class="handle-character">
+      <img class="handle-character-portrait" src="{{actor.img}}" alt="{{actor.name}}" />
+      <span class="handle-character-name">{{actor.name}}</span>
+    </div>
     
     {{!-- HEALTH --}} 
     {{#if showHandleHealthBar}}

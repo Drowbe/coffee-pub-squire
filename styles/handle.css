@@ -240,7 +240,16 @@
     margin-top: 2px;
     margin-bottom: 0px;
 }
-
+.squire-tray[data-position="left"] .handle-character-portrait {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    object-fit: cover;
+    vertical-align: middle;
+    transform: rotate(180deg);
+    margin-bottom: 6px;
+    border: 0px solid rgba(0, 0, 0, 0.3);
+}
 
 .squire-tray[data-position="left"] .handle-no-character {
     font-size: 1.2em;
@@ -428,11 +437,15 @@
 .squire-tray[data-position="left"] .tray-handle-fade-bottom {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 32px;
+    height: 80px;
     pointer-events: none;
-    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(30,30,30,0.85) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(30,30,30,0.0) 0%,
+        rgba(30,30,30,1.0) 100%
+    );
     z-index: 2;
-    display: none; /* hidden by default, shown by JS if overflowing */
+    display: none;
 }
 
 
