@@ -1834,6 +1834,17 @@ export class PanelManager {
                 await PanelManager.instance.healthPanel._onPopOut();
             }
         });
+
+        // Handle character portrait click in the handle
+        handle.find('.handle-character-portrait').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            // Use the actor from the handle context
+            const actor = this.actor || PanelManager.currentActor;
+            if (actor) {
+                actor.sheet.render(true);
+            }
+        });
     }
 
     // Helper method to get the appropriate icon based on item type
