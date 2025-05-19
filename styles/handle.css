@@ -176,11 +176,11 @@
 
 
 .squire-tray[data-position="left"] .handle-health-bar {
-    height: 50px;
-    width: 18px;
-    background: #000000;
-    border: 1px solid #aaaaaab4;
-    border-radius: 4px;
+    height: 100px;
+    width: 24px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 3px solid rgba(0, 0, 0, 0.01);
+    border-radius: 3px;
     overflow: hidden;
     margin-top: 0px;
     margin-bottom: 0px;
@@ -188,16 +188,16 @@
     margin-right: 0px;
     writing-mode: vertical-lr;
     position: relative;
-}
 
+}
 .squire-tray[data-position="left"] .handle-health-fill {
     width: 100%;
-    background: #3aa144;
+    background: rgba(58, 161, 68, 0.8);
     transition: height 0.3s ease;
     position: absolute;
     top: 0;
-    border: 2px solid #000000;
-    border-radius: 4px;
+    border: 0px solid rgba(0, 0, 0, 0.2);
+    border-radius: 2px 2px 1px 1px;
     
     font-size: 0.65em;
     font-weight: 400;
@@ -226,8 +226,19 @@
 
 .squire-tray[data-position="left"] .handle-character {
     font-size: 1.2em;
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 0px solid rgba(0, 0, 0, 0.4);
     font-weight: 900;
+    
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius:  6px 3px 3px 3px;
+    padding: 3px;
+    margin-top: 2px;
+    margin-bottom: 0px;
 }
 
 
@@ -406,6 +417,8 @@
 
 .squire-tray[data-position="left"] .tray-handle-content-container {
     max-height: 100%;
+    border: 0px solid #ffffff;
+    height: 100%;
     overflow: hidden;
     position: relative;
     display: flex;
