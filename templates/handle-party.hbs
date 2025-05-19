@@ -14,33 +14,45 @@
         </div>
     {{/if}}
 
-    {{!-- SEPARATOR --}}
-    {{#if (or showHandleDiceTray showHandleFavorites)}}
+
+    {{!-- OTHER PARTY MEMBERS --}}
+    {{#if otherPartyMembers}}
         <span class="tray-handle-separator line"></span>
+        <div class="handle-other-party-members">
+            {{#each otherPartyMembers as |member|}}
+                <div class="handle-party-member" data-actor-id="{{member.id}}">
+                    <img class="handle-party-member-portrait {{#if member.isOwner}}clickable{{/if}}" 
+                         src="{{member.img}}" 
+                         alt="{{member.name}}"
+                         {{#if member.isOwner}}data-tooltip="Switch to {{member.name}}"{{/if}}/>
+                    {{#if showHandleHealthBar}}
+                        <div class="handle-party-member-health-bar">
+                            <div class="handle-health-fill {{#if member.isOwner}}clickable{{/if}}" 
+                                 style="height: {{multiply (divide member.system.attributes.hp.value member.system.attributes.hp.max) 100}}%" 
+                                 data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
+                        </div>
+                    {{/if}}
+                </div>
+            {{/each}}
+        </div>
     {{/if}}
+
 
     {{!-- DICETRAY --}} 
     {{#if showHandleDiceTray}}
+        <span class="tray-handle-separator line"></span>
         <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
             <i class="fas fa-dice-d20 dice-tray-icon"></i>
         </div>
-        <span class="tray-handle-separator spacer"></span>
     {{/if}}
-
 
     {{!-- MACROS --}} 
     {{#if showHandleMacros}}
         <span class="tray-handle-separator line"></span>
         <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
             <i class="fas fa-sun macros-icon"></i>
-            {{#each favoriteMacros as |fav|}}
-                <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
-                    <img src="{{fav.img}}" alt="{{fav.name}}" />
-                </div>
-            {{/each}}
         </div>
     {{/if}}
-
 
     {{!-- SEPARATOR --}}
     <span class="tray-handle-separator line"></span>

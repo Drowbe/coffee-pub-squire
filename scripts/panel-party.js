@@ -37,11 +37,28 @@ export class PartyPanel {
             .filter(token => token.actor)
             .map(token => token.actor.id);
 
+        // Prepare other party members data for the handle
+        const currentActor = game.actors.get(controlledTokenIds[0]);
+        const otherPartyMembers = tokens
+            .filter(token => token.actor && token.actor.id !== currentActor?.id)
+            .map(token => ({
+                id: token.actor.id,
+                name: token.actor.name,
+                img: token.actor.img,
+                system: token.actor.system,
+                isOwner: token.actor.isOwner
+            }));
+
         const html = await renderTemplate(TEMPLATES.PANEL_PARTY, { 
             tokens,
             nonPlayerTokens,
             controlledTokenIds,
-            isGM: game.user.isGM
+            isGM: game.user.isGM,
+            actor: currentActor,
+            otherPartyMembers,
+            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
+            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros')
         });
         partyContainer.html(html);
 
@@ -753,6 +770,32 @@ export class PartyPanel {
             const actorId = $(event.currentTarget).closest('.character-card').data('actor-id');
             const actor = game.actors.get(actorId);
             if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
+                PanelManager.instance.healthPanel.updateActor(actor);
+                await PanelManager.instance.healthPanel._onPopOut();
+            }
+        });
+
+        // Add listeners for other party member portraits and health bars
+        html.find('.handle-party-member-portrait.clickable').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const actorId = $(event.currentTarget).closest('.handle-party-member').data('actor-id');
+            const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+            if (token) {
+                token.control({releaseOthers: true});
+            }
+        });
+
+        html.find('.handle-party-member-health-bar .handle-health-fill.clickable').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const actorId = $(event.currentTarget).closest('.handle-party-member').data('actor-id');
+            const actor = game.actors.get(actorId);
+            if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
+                const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+                if (token) {
+                    token.control({releaseOthers: true});
+                }
                 PanelManager.instance.healthPanel.updateActor(actor);
                 await PanelManager.instance.healthPanel._onPopOut();
             }

@@ -452,3 +452,75 @@
 
 
 
+
+
+/* OTHER PARTY MEMBERS */
+.squire-tray[data-position="left"] .handle-other-party-members {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+}
+
+.squire-tray[data-position="left"] .handle-party-member {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+}
+
+.squire-tray[data-position="left"] .handle-party-member-portrait {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    object-fit: cover;
+    vertical-align: middle;
+    transform: rotate(180deg);
+    margin-bottom: 0px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.squire-tray[data-position="left"] .handle-party-member-portrait.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .handle-party-member-portrait.clickable:hover {
+    filter: brightness(1);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 10px var(--color-shadow-highlight);
+    transform: scale(1.1,1.1);
+    transform: rotate(180deg);
+}
+
+.squire-tray[data-position="left"] .handle-party-member-health-bar {
+    height: 100px;
+    width: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(0, 0, 0, 0.01);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.squire-tray[data-position="left"] .handle-party-member-health-bar .handle-health-fill {
+    width: 100%;
+    background: rgba(58, 161, 68, 0.8);
+    transition: height 0.3s ease;
+    position: absolute;
+    top: 0;
+    border: 0px solid rgba(0, 0, 0, 0.2);
+    border-radius: 2px 2px 1px 1px;
+}
+
+.squire-tray[data-position="left"] .handle-party-member-health-bar .handle-health-fill.clickable {
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .handle-party-member-health-bar .handle-health-fill.clickable:hover {
+    filter: brightness(1.2);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 10px var(--color-shadow-highlight);
+}

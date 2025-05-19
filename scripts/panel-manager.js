@@ -1402,7 +1402,7 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
-        const handleData = {
+        let handleData = {
             actor: this.actor,
             isGM: game.user.isGM,
             effects: this.actor?.effects?.map(e => ({
@@ -1418,6 +1418,37 @@ export class PanelManager {
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
             favoriteMacros
         };
+
+        // If party view, add party context for handle-party
+        if (mode === 'party') {
+            // Get all player-owned tokens on the canvas
+            const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
+            // Get currently controlled tokens' actor IDs
+            const controlledTokenIds = canvas.tokens.controlled
+                .filter(token => token.actor)
+                .map(token => token.actor.id);
+            // Use the first controlled actor, or the first party member if none selected
+            let currentActor = null;
+            if (controlledTokenIds.length > 0) {
+                currentActor = game.actors.get(controlledTokenIds[0]);
+            } else if (tokens.length > 0) {
+                currentActor = tokens[0].actor;
+            }
+            const otherPartyMembers = tokens
+                .filter(token => token.actor && token.actor.id !== currentActor?.id)
+                .map(token => ({
+                    id: token.actor.id,
+                    name: token.actor.name,
+                    img: token.actor.img,
+                    system: token.actor.system,
+                    isOwner: token.actor.isOwner
+                }));
+            handleData = {
+                ...handleData,
+                actor: currentActor,
+                otherPartyMembers
+            };
+        }
 
         // Use the tray template which includes the correct partial
         const trayData = {
@@ -1588,6 +1619,33 @@ export class PanelManager {
         
         // Play sound effect
         AudioHelper.play({src: game.settings.get(MODULE.ID, 'tabChangeSound'), volume: 0.8, autoplay: true, loop: false}, false);
+
+        // Add click handler for party member portraits in the handle
+        handle.find('.handle-party-member-portrait.clickable').on('click', async function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const actorId = $(this).closest('.handle-party-member').data('actor-id');
+            const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+            if (token) {
+                token.control({releaseOthers: true});
+            }
+        });
+
+        // Add click handler for party member health bars in the handle
+        handle.find('.handle-party-member-health-bar .handle-health-fill.clickable').on('click', async function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const actorId = $(this).closest('.handle-party-member').data('actor-id');
+            const actor = game.actors.get(actorId);
+            if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
+                const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+                if (token) {
+                    token.control({releaseOthers: true});
+                }
+                PanelManager.instance.healthPanel.updateActor(actor);
+                await PanelManager.instance.healthPanel._onPopOut();
+            }
+        });
     }
 
     // Helper method to get the appropriate icon based on item type
@@ -1945,7 +2003,7 @@ Hooks.on('controlToken', async (token, controlled) => {
     // - If the list includes player-owned characters, use the most recent player character
     // - Otherwise, use the most recently selected token's actor
     let actorToUse = token.actor; // Default to the current token that triggered the hook
-    
+   
     // Look for player character tokens
     const playerTokens = controlledTokens.filter(t => t.actor?.type === 'character' && t.actor?.hasPlayerOwner);
     
@@ -1967,11 +2025,19 @@ Hooks.on('controlToken', async (token, controlled) => {
         }
         
         PanelManager.element.addClass('expanded');
+        // --- ADDED: If in party view, refresh party handle ---
+        if (PanelManager.viewMode === 'party' && PanelManager.instance) {
+            await PanelManager.instance.setViewMode('party');
+        }
         return;
     }
 
     // If pinned, just update the data immediately
     await PanelManager.initialize(actorToUse);
+    // --- ADDED: If in party view, refresh party handle ---
+    if (PanelManager.viewMode === 'party' && PanelManager.instance) {
+        await PanelManager.instance.setViewMode('party');
+    }
 });
 
 // Also handle when tokens are deleted or actors are updated
