@@ -1388,6 +1388,48 @@ export class PanelManager {
                 icon.addClass('fa-user');
         }
         
+        // Update handle content
+        const handleLeft = tray.find('.handle-left');
+        let handleTemplate;
+        
+        // Build favorite macros array
+        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+        let favoriteMacros = favoriteMacroIds.map(id => {
+            const macro = game.macros.get(id);
+            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
+        }).filter(Boolean);
+
+        const handleData = {
+            actor: this.actor,
+            isGM: game.user.isGM,
+            effects: this.actor?.effects?.map(e => ({
+                name: e.name,
+                icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+            })) || [],
+            showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
+            showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
+            showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
+            showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
+            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
+            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
+            favoriteMacros
+        };
+
+        // Use the tray template which includes the correct partial
+        const trayData = {
+            viewMode: mode,
+            ...handleData
+        };
+        handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
+        
+        // Extract just the handle-left content from the rendered template
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = handleTemplate;
+        const handleContent = tempDiv.querySelector('.handle-left').innerHTML;
+        
+        handleLeft.html(handleContent);
+        
         // Play sound effect
         AudioHelper.play({src: game.settings.get(MODULE.ID, 'tabChangeSound'), volume: 0.8, autoplay: true, loop: false}, false);
     }

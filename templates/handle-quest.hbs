@@ -1,0 +1,45 @@
+{{#if actor}}
+
+    {{!-- HEALTH --}} 
+    {{#if showHandleHealthBar}}
+        <span class="tray-handle-separator spacer"></span>
+        <div class="handle-health-bar">
+            <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%" data-tooltip="{{actor.system.attributes.hp.value}} HP"></div>
+        </div>
+    {{/if}}
+
+    {{!-- SEPARATOR --}}
+    {{#if (or showHandleDiceTray showHandleFavorites)}}
+        <span class="tray-handle-separator line"></span>
+    {{/if}}
+
+    {{!-- DICETRAY --}} 
+    {{#if showHandleDiceTray}}
+        <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
+            <i class="fas fa-dice-d20 dice-tray-icon"></i>
+        </div>
+        <span class="tray-handle-separator spacer"></span>
+    {{/if}}
+
+
+    {{!-- MACROS --}} 
+    {{#if showHandleMacros}}
+        <span class="tray-handle-separator line"></span>
+        <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
+            <i class="fas fa-sun macros-icon"></i>
+            {{#each favoriteMacros as |fav|}}
+                <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
+                    <img src="{{fav.img}}" alt="{{fav.name}}" />
+                </div>
+            {{/each}}
+        </div>
+    {{/if}}
+
+
+    {{!-- SEPARATOR --}}
+    <span class="tray-handle-separator line"></span>
+    <span class="tray-handle-separator spacer"></span>
+    <span class="tray-handle-separator spacer"></span>
+{{else}}
+    <div class="handle-no-character">Create Quests</div>
+{{/if}} 
