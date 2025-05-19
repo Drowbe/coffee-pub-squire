@@ -9,17 +9,14 @@
                 <i class="fas fa-arrows-rotate"></i>
             </button>
             <button class="view-toggle-button" title="Toggle View Mode">
-                <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quests')}}fa-scroll{{else}}fa-user{{/if}}"></i>
+                <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quest')}}fa-scroll{{else}}fa-user{{/if}}"></i>
             </button>
             <div class="handle-left">
                 {{#if (eq viewMode 'player')}}
-                    PLAYER
                     {{> handle-player}}
                 {{else if (eq viewMode 'party')}}
-                    PARTY
                     {{> handle-party}}
                 {{else}}
-                    QUEST
                     {{> handle-quest}}
                 {{/if}}
             </div>

@@ -1430,6 +1430,159 @@ export class PanelManager {
         
         handleLeft.html(handleContent);
         
+        // Reattach event listeners for handle elements
+        const handle = tray.find('.tray-handle');
+        
+        // Handle dice tray icon clicks
+        handle.find('.handle-dice-tray').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
+                await this.dicetrayPanel._onPopOut();
+            }
+        });
+
+        // Handle health bar clicks
+        handle.find('.handle-health-bar').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.healthPanel && !this.healthPanel.isPoppedOut) {
+                await this.healthPanel._onPopOut();
+            }
+        });
+
+        // Handle favorite item clicks
+        handle.find('.handle-favorite-icon').on('click', async (event) => {
+            if ($(event.target).hasClass('handle-favorite-roll-overlay')) {
+                const itemId = $(event.currentTarget).data('item-id');
+                const item = this.actor.items.get(itemId);
+                if (item) {
+                    await item.use({}, { event });
+                }
+            }
+        });
+
+        // Handle condition icon clicks
+        handle.find('.condition-icon').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const conditionName = event.currentTarget.dataset.tooltip;
+            
+            // Try to get the condition data from CONFIG.DND5E.conditionTypes
+            let description = "No description available.";
+            try {
+                // Find the condition by matching the label
+                const conditionData = Object.values(CONFIG.DND5E.conditionTypes).find(
+                    condition => condition.label === conditionName
+                );
+
+                // Get the icon path from the clicked element
+                const iconPath = event.currentTarget.src;
+
+                if (conditionData?.reference) {
+                    // Parse the reference string: "Compendium.dnd5e.rules.JournalEntry.w7eitkpD7QQTB6j0.JournalEntryPage.0b8N4FymGGfbZGpJ"
+                    const [, system, packName, type, journalId, , pageId] = conditionData.reference.split(".");
+                    const pack = game.packs.get(`${system}.${packName}`);
+                    
+                    if (pack) {
+                        const journal = await pack.getDocument(journalId);
+                        if (journal) {
+                            const page = journal.pages.get(pageId);
+                            if (page) {
+                                description = page.text.content;
+                            }
+                        }
+                    }
+                }
+
+                // Create a dialog showing the condition details
+                const content = `
+                    <div class="squire-description-window">
+                        <div class="squire-description-header">
+                            <img src="${iconPath}"/>
+                            <h1>${conditionData?.label || conditionName}</h1>
+                        </div>
+                        
+                        <div class="squire-description-content">
+                            ${description.split('\n').filter(line => line.trim()).map(line => 
+                                `<p>${line.trim()}</p>`
+                            ).join('')}
+                            ${game.user.isGM ? '<p class="gm-note"><i>Right-click to remove this condition.</i></p>' : ''}
+                        </div>
+                    </div>
+                    <style>
+                        .gm-note {
+                            margin-top: 1em;
+                            font-size: 0.9em;
+                            color: var(--color-text-dark-secondary);
+                            font-style: italic;
+                        }
+                    </style>`;
+                
+                new Dialog({
+                    title: conditionData?.label || conditionName,
+                    content: content,
+                    buttons: {
+                        close: {
+                            icon: '<i class="fas fa-times"></i>',
+                            label: "Close"
+                        }
+                    },
+                    default: "close"
+                }, {
+                    classes: ["dnd5e", "dialog", "window-app", "squire-description-dialog"],
+                    width: 400,
+                    height: "auto"
+                }).render(true);
+                
+            } catch (error) {
+                console.error("SQUIRE | Error getting condition description:", error);
+                ui.notifications.warn("Could not load condition description.");
+            }
+        }).on('contextmenu', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Only GMs can remove effects
+            if (!game.user.isGM) {
+                ui.notifications.warn("Only GMs can remove effects.");
+                return;
+            }
+            
+            const conditionName = event.currentTarget.dataset.tooltip;
+            
+            try {
+                // Find the effect with this condition name
+                const effect = this.actor.effects.find(e => e.name === conditionName);
+                if (effect) {
+                    await effect.delete();
+                    ui.notifications.info(`Removed ${conditionName} from ${this.actor.name}`);
+                }
+            } catch (error) {
+                console.error("SQUIRE | Error removing condition:", error);
+                ui.notifications.error(`Could not remove ${conditionName}`);
+            }
+        });
+
+        // Handle macros icon clicks
+        handle.find('.handle-macros').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
+                await this.macrosPanel._onPopOut();
+            }
+        });
+
+        // Add click handler for favorite macros in handle
+        handle.find('.handle-macro-favorite').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const macroId = $(this).data('macro-id');
+            const macro = game.macros.get(macroId);
+            if (macro) macro.execute();
+        });
+        
         // Play sound effect
         AudioHelper.play({src: game.settings.get(MODULE.ID, 'tabChangeSound'), volume: 0.8, autoplay: true, loop: false}, false);
     }
