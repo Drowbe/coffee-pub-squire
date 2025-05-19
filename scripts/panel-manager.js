@@ -1373,7 +1373,7 @@ export class PanelManager {
         
         // Update toggle button icon
         const icon = tray.find('.view-toggle-button i');
-        icon.removeClass('fa-user fa-users fa-sticky-note fa-book');
+        icon.removeClass('fa-user fa-users fa-sticky-note fa-book fa-scroll');
         switch (mode) {
             case 'party':
                 icon.addClass('fa-users');
@@ -1383,6 +1383,9 @@ export class PanelManager {
                 break;
             case 'codex':
                 icon.addClass('fa-book');
+                break;
+            case 'quest':
+                icon.addClass('fa-scroll');
                 break;
             default:
                 icon.addClass('fa-user');
