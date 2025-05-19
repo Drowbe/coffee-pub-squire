@@ -446,6 +446,8 @@
     );
     z-index: 2;
     display: none;
+    border-radius:  0px 0px 6px 0px;
+    margin-bottom: 0px;
 }
 
 
