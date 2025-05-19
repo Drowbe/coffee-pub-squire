@@ -368,7 +368,28 @@ export class PanelManager {
                 return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
             }).filter(Boolean);
 
-            const handleTemplate = await renderTemplate(TEMPLATES.HANDLE_PLAYER, {
+            // Always gather party context
+            const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
+            const controlledTokenIds = canvas.tokens.controlled
+                .filter(token => token.actor)
+                .map(token => token.actor.id);
+            let currentActor = null;
+            if (controlledTokenIds.length > 0) {
+                currentActor = game.actors.get(controlledTokenIds[0]);
+            } else if (tokens.length > 0) {
+                currentActor = tokens[0].actor;
+            }
+            const otherPartyMembers = tokens
+                .filter(token => token.actor && token.actor.id !== currentActor?.id)
+                .map(token => ({
+                    id: token.actor.id,
+                    name: token.actor.name,
+                    img: token.actor.img,
+                    system: token.actor.system,
+                    isOwner: token.actor.isOwner
+                }));
+
+            const handleData = {
                 actor: this.actor,
                 isGM: game.user.isGM,
                 effects: this.actor.effects?.map(e => ({
@@ -383,10 +404,26 @@ export class PanelManager {
                 showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
                 showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
                 showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
-                showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros')
-            });
+                showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
+                // Always include party context
+                currentActor,
+                otherPartyMembers
+            };
+
+            // Use the tray template which includes the correct partial
+            const trayData = {
+                viewMode: PanelManager.viewMode,
+                ...handleData
+            };
+            const handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
+            
+            // Extract just the handle-left content from the rendered template
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = handleTemplate;
+            const handleContent = tempDiv.querySelector('.handle-left').innerHTML;
+            
             const handle = PanelManager.element.find('.handle-left');
-            handle.html(handleTemplate);
+            handle.html(handleContent);
             this.activateListeners(PanelManager.element);
 
             // Add click handler for favorite macros in handle
@@ -2163,6 +2200,9 @@ Hooks.on('controlToken', async (token, controlled) => {
         actorToUse = playerTokens[playerTokens.length - 1].actor;
     }
 
+    // Save the current view mode before initializing
+    const currentViewMode = PanelManager.viewMode;
+
     // If not pinned, handle the animation sequence
     if (!PanelManager.isPinned && PanelManager.element) {
         PanelManager.element.removeClass('expanded');
@@ -2176,18 +2216,18 @@ Hooks.on('controlToken', async (token, controlled) => {
         }
         
         PanelManager.element.addClass('expanded');
-        // --- ADDED: If in party view, refresh party handle ---
-        if (PanelManager.viewMode === 'party' && PanelManager.instance) {
-            await PanelManager.instance.setViewMode('party');
+        // Restore the previous view mode after initializing
+        if (PanelManager.instance) {
+            await PanelManager.instance.setViewMode(currentViewMode);
         }
         return;
     }
 
     // If pinned, just update the data immediately
     await PanelManager.initialize(actorToUse);
-    // --- ADDED: If in party view, refresh party handle ---
-    if (PanelManager.viewMode === 'party' && PanelManager.instance) {
-        await PanelManager.instance.setViewMode('party');
+    // Restore the previous view mode after initializing
+    if (PanelManager.instance) {
+        await PanelManager.instance.setViewMode(currentViewMode);
     }
 });
 
