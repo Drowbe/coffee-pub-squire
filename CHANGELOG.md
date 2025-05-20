@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.16] - Macros and Handles
+
+### Added
+- Added empty macro slot placeholder with "Add" button when no macros are present
+- Added visual feedback for macro handles during drag operations
+- Added proper event handling for macro creation and updates
+
+### Changed
+- Improved macro panel rendering to always show at least one empty slot
+- Enhanced macro handle functionality with proper drag and drop support
+- Improved macro handle positioning and interaction areas
+- Enhanced macro panel refresh logic to maintain UI state
+- Improved macro panel performance with optimized rendering
+
+### Fixed
+- Fixed macro panel layout to maintain consistent spacing and alignment
+- Fixed macro handle visibility and interaction states
+
 ## [1.0.15] - Drag and Drop Fix
 
 ### Fixed
