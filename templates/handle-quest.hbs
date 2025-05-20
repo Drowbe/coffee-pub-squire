@@ -1,5 +1,17 @@
 {{#if actor}}
 
+{{!-- CHARACTER NAME --}} 
+    <div class="handle-character">
+      
+      <span class="handle-character-name">{{actor.name}}</span>
+    </div>
+
+    {{!-- CHARACTER PORTRAIT --}} 
+    <span class="tray-handle-separator spacer"></span>
+    <div class="handle-character-portrait-container">
+        <img class="handle-character-portrait" src="{{actor.img}}" alt="{{actor.name}}" data-tooltip="Open character sheet for {{actor.name}}"/>
+    </div>
+    
     {{!-- HEALTH --}} 
     {{#if showHandleHealthBar}}
         <span class="tray-handle-separator spacer"></span>
@@ -8,38 +20,36 @@
         </div>
     {{/if}}
 
-    {{!-- SEPARATOR --}}
-    {{#if (or showHandleDiceTray showHandleFavorites)}}
-        <span class="tray-handle-separator line"></span>
-    {{/if}}
+
+    <span class="tray-handle-separator line"></span>
 
     {{!-- DICETRAY --}} 
     {{#if showHandleDiceTray}}
+
         <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
             <i class="fas fa-dice-d20 dice-tray-icon"></i>
         </div>
-        <span class="tray-handle-separator spacer"></span>
     {{/if}}
-
 
     {{!-- MACROS --}} 
     {{#if showHandleMacros}}
-        <span class="tray-handle-separator line"></span>
         <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
             <i class="fas fa-sun macros-icon"></i>
-            {{#each favoriteMacros as |fav|}}
-                <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
-                    <img src="{{fav.img}}" alt="{{fav.name}}" />
-                </div>
-            {{/each}}
         </div>
     {{/if}}
 
 
+    {{!-- CONDITIONS --}} 
+    {{#if showHandleConditions}}
+        {{#if isGM}}
+            <div class="handle-conditions">
+                <i class="fas fa-sparkles add-effect-icon" title="Add Effect"></i>
+            </div>
+        {{/if}}
+    {{/if}}
+
     {{!-- SEPARATOR --}}
     <span class="tray-handle-separator line"></span>
-    <span class="tray-handle-separator spacer"></span>
-    <span class="tray-handle-separator spacer"></span>
 {{else}}
     <div class="handle-no-character">Create Quests</div>
 {{/if}} 

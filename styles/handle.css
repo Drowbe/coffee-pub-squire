@@ -119,8 +119,8 @@
     filter: brightness(1.2);
 }
 
-
 /* Handle Conditions */
+
 .squire-tray[data-position="left"] .handle-conditions {
     display: flex;
     align-items: center;
@@ -135,7 +135,9 @@
     filter: brightness(0.7);
     cursor: help;
     transition: filter 0.2s ease;
-	background-color: #000000;
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 2px;
+    border-radius: 3px;
 }
 
 .squire-tray[data-position="left"] .condition-icon:hover {
@@ -170,17 +172,14 @@
     font-weight: 900;
 }
 
-
-
 /* HEALTH BAR */
-
 
 .squire-tray[data-position="left"] .handle-health-bar {
     height: 100px;
-    width: 24px;
+    width: 26px;
     background: rgba(0, 0, 0, 0.3);
-    border: 3px solid rgba(0, 0, 0, 0.01);
-    border-radius: 3px;
+    border: 2px solid rgba(0, 0, 0, 0.01);
+    border-radius: 4px;
     overflow: hidden;
     margin-top: 0px;
     margin-bottom: 0px;
@@ -188,7 +187,6 @@
     margin-right: 0px;
     writing-mode: vertical-lr;
     position: relative;
-
 }
 .squire-tray[data-position="left"] .handle-health-fill {
     width: 100%;
@@ -198,7 +196,6 @@
     top: 0;
     border: 0px solid rgba(0, 0, 0, 0.2);
     border-radius: 2px 2px 1px 1px;
-    
     font-size: 0.65em;
     font-weight: 400;
     color: #ffffff;
@@ -208,10 +205,6 @@
     text-align: center;
     padding-top: 4px;
 }
-
-
-
-
 
 /* GLOBAL */
 
@@ -370,6 +363,8 @@
     flex-direction: row;
 }
 
+
+
 .squire-tray[data-position="left"] .handle-favorite-icon {
     display: flex;
     align-items: center;
@@ -386,10 +381,16 @@
     filter: brightness(1);
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 0 2px rgba(229, 71, 51, 0.9);
-    transform: rotate(180deg);
-    transform: scale(1.1,1.1);
     border-radius: 2px;
 }
+.squire-tray[data-position="left"] .handle-favorite-icon:hover {
+    transform: rotate(0deg) scale(1.1, 1.1);
+}
+.squire-tray[data-position="left"] .handle-macro-favorite:focus,
+.squire-tray[data-position="left"] .handle-macro-favorite:hover {
+    transform: rotate(180deg) scale(1.1, 1.1);
+}
+
 
 .squire-tray[data-position="left"] .handle-macro-favorite img,
 .squire-tray[data-position="left"] .handle-favorite-icon img {
@@ -474,7 +475,6 @@
 .squire-tray[data-position="left"] .handle-party-member {
     display: flex;
     align-items: center;
-    gap: 4px;
     writing-mode: vertical-lr;
     transform: rotate(180deg);
 }
@@ -503,14 +503,21 @@
     transform: rotate(180deg);
 }
 
+
+
+/* PARTY HEALTH BARS */
+
 .squire-tray[data-position="left"] .handle-party-member-health-bar {
-    height: 100px;
-    width: 16px;
+    height: 26px;
+    width: 8px;
     background: rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(0, 0, 0, 0.01);
-    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.01);
+    border-radius: 2px;
     overflow: hidden;
     position: relative;
+    transform: rotate(90deg);
+    margin-top: 0px;
+    margin-bottom: -5px;
 }
 
 .squire-tray[data-position="left"] .handle-party-member-health-bar .handle-health-fill {

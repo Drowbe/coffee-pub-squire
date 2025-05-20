@@ -26,25 +26,28 @@
         <div class="handle-other-party-members">
             {{#each otherPartyMembers as |member|}}
                 <div class="handle-party-member" data-actor-id="{{member.id}}">
+                    {{#if ../showHandleHealthBar}}
+                        <div class="handle-party-member-health-bar">
+                            <div class="handle-health-fill {{#if member.isOwner}}clickable{{/if}}" 
+                                style="height: {{multiply (divide member.system.attributes.hp.value member.system.attributes.hp.max) 100}}%" 
+                                data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
+                        </div>
+                    {{/if}}
                     <img class="handle-party-member-portrait {{#if member.isOwner}}clickable{{/if}}" 
                          src="{{member.img}}" 
                          alt="{{member.name}}"
                          {{#if member.isOwner}}data-tooltip="Switch to {{member.name}}"{{/if}}/>
-                        {{#if showHandleHealthBar}}
-                            <div class="handle-party-member-health-bar">
-                                <div class="handle-health-fill {{#if member.isOwner}}clickable{{/if}}" 
-                                    style="height: {{multiply (divide member.system.attributes.hp.value member.system.attributes.hp.max) 100}}%" 
-                                    data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
-                            </div>
-                        {{/if}}
+                    
                 </div>
             {{/each}}
         </div>
     {{/if}}
 
+    <span class="tray-handle-separator line"></span>
+
     {{!-- DICETRAY --}} 
     {{#if showHandleDiceTray}}
-        <span class="tray-handle-separator line"></span>
+
         <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
             <i class="fas fa-dice-d20 dice-tray-icon"></i>
         </div>
@@ -52,16 +55,23 @@
 
     {{!-- MACROS --}} 
     {{#if showHandleMacros}}
-        <span class="tray-handle-separator line"></span>
         <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
             <i class="fas fa-sun macros-icon"></i>
         </div>
     {{/if}}
 
+
+    {{!-- CONDITIONS --}} 
+    {{#if showHandleConditions}}
+        {{#if isGM}}
+            <div class="handle-conditions">
+                <i class="fas fa-sparkles add-effect-icon" title="Add Effect"></i>
+            </div>
+        {{/if}}
+    {{/if}}
+
     {{!-- SEPARATOR --}}
     <span class="tray-handle-separator line"></span>
-    <span class="tray-handle-separator spacer"></span>
-    <span class="tray-handle-separator spacer"></span>
 {{else}}
     <div class="handle-no-character">Create a Party</div>
 {{/if}} 
