@@ -1362,15 +1362,11 @@ export class NotesPanel {
             const contentContainer = html.find('.journal-content');
             if (!contentContainer.length) return;
             
-            // Add an overlay to indicate the page is being edited
-            contentContainer.addClass('being-edited');
+            // Remove any previous badge
+            contentContainer.find('.being-edited-badge').remove();
+            // Add a badge in the upper right corner
             contentContainer.append(`
-                <div class="journal-edit-overlay">
-                    <div class="edit-message">
-                        <i class="fas fa-edit"></i>
-                        <span>Being Edited</span>
-                    </div>
-                </div>
+                <div class="being-edited-badge">BEING EDITED</div>
             `);
             
             // Open the native journal sheet directly to this page
