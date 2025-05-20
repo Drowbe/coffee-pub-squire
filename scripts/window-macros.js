@@ -45,11 +45,13 @@ export class MacrosWindow extends Application {
             const macro = game.macros.get(id);
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
+        // Ensure at least one empty slot if macros is empty
+        let macros = this.macros && this.macros.length ? this.macros : [{ id: null, name: null, img: null }];
         return {
             actor: this.panel?.actor,
             position: "left",
             isMacrosPopped: true,
-            macros: this.macros,
+            macros,
             favoriteMacroIds,
             favoriteMacros
         };

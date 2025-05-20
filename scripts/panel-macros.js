@@ -47,6 +47,10 @@ export class MacrosPanel {
     async render(html, { showAddSlot = false } = {}) {
         // Load macros and favorites from settings
         let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+        // Ensure at least one empty slot if macros is empty
+        if (!macros.length) {
+            macros = [{ id: null, name: null, img: null }];
+        }
         let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
         let favoriteMacros = favoriteMacroIds.map(id => {
             const macro = game.macros.get(id);
