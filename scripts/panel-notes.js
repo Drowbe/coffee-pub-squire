@@ -1362,10 +1362,12 @@ export class NotesPanel {
             const contentContainer = html.find('.journal-content');
             if (!contentContainer.length) return;
             
+            // Find the panel container that is not scrollable
+            const panelContainer = contentContainer.closest('.panel-container[data-panel="panel-notes"]');
             // Remove any previous badge
-            contentContainer.find('.being-edited-badge').remove();
-            // Add a badge in the upper right corner
-            contentContainer.append(`
+            panelContainer.find('.being-edited-badge').remove();
+            // Add a badge in the upper right corner of the panel container
+            panelContainer.append(`
                 <div class="being-edited-badge">BEING EDITED</div>
             `);
             
