@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{actor.name}} - Character Sheet</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            color: #222;
+            background: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .character-sheet {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #faf8f6;
+            border-radius: 10px;
+            box-shadow: 0 2px 16px #0001;
+            padding: 24px 32px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #9f9275;
+            padding-bottom: 12px;
+        }
+        .portrait {
+            width: 110px;
+            height: 110px;
+            border: 2px solid #9f9275;
+            border-radius: 8px;
+            margin-right: 28px;
+            background: #eee;
+        }
+        .portrait img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .basic-info {
+            flex: 1;
+        }
+        .character-name {
+            font-size: 2.1em;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #7a3b2e;
+        }
+        .character-details {
+            font-size: 1.1em;
+            color: #444;
+        }
+        .section {
+            margin-bottom: 28px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            border-bottom: 1px solid #9f9275;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            color: #7a3b2e;
+        }
+        .abilities-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .ability {
+            text-align: center;
+            border: 1px solid #9f9275;
+            border-radius: 6px;
+            padding: 7px 0;
+            background: #fff;
+        }
+        .ability-name {
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #7a3b2e;
+        }
+        .ability-score {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        .ability-mod {
+            font-size: 1em;
+            color: #555;
+        }
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .skill {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 8px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .skill-name {
+            font-weight: bold;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .stat {
+            text-align: center;
+            border: 1px solid #9f9275;
+            border-radius: 6px;
+            padding: 7px 0;
+            background: #fff;
+        }
+        .stat-name {
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #7a3b2e;
+        }
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .inventory-list, .spells-list, .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .item {
+            padding: 7px 0 7px 0;
+            border-bottom: 1px solid #e0d8c3;
+        }
+        .item:last-child {
+            border-bottom: none;
+        }
+        .item-name {
+            font-weight: bold;
+            color: #7a3b2e;
+        }
+        .item-details {
+            font-size: 0.98em;
+            color: #666;
+            margin-top: 2px;
+        }
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+            .character-sheet {
+                box-shadow: none;
+                background: #fff;
+                padding: 0;
+            }
+            .section {
+                page-break-inside: avoid;
+            }
+            @page {
+                size: A4;
+                margin: 1cm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="character-sheet">
+        <!-- Header with Portrait and Basic Info -->
+        <div class="header">
+            <div class="portrait">
+                <img src="{{actor.img}}" alt="{{actor.name}}">
+            </div>
+            <div class="basic-info">
+                <div class="character-name">{{actor.name}}</div>
+                <div class="character-details">
+                    {{#each actor.items as |item|}}
+                        {{#if (eq item.type "class")}}
+                            {{item.name}} • Level {{item.system.levels}}
+                        {{/if}}
+                    {{/each}}
+                    {{#if actor.system.details.alignment}}
+                        • {{actor.system.details.alignment}}
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Abilities -->
+        <div class="section">
+            <div class="section-title">Ability Scores</div>
+            <div class="abilities-grid">
+                {{#each actor.system.abilities as |ability id|}}
+                <div class="ability">
+                    <div class="ability-name">{{ability.label}}</div>
+                    <div class="ability-score">{{ability.value}}</div>
+                    <div class="ability-mod">{{numberFormat ability.mod sign=true}}</div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <div class="section-title">Stats</div>
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-name">HP</div>
+                    <div class="stat-value">{{actor.system.attributes.hp.value}}/{{actor.system.attributes.hp.max}}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-name">AC</div>
+                    <div class="stat-value">{{actor.system.attributes.ac.value}}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-name">Proficiency</div>
+                    <div class="stat-value">+{{actor.system.attributes.prof}}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="section">
+            <div class="section-title">Skills</div>
+            <div class="skills-grid">
+                {{#each actor.system.skills as |skill id|}}
+                <div class="skill">
+                    <span class="skill-name">{{skill.label}}</span>
+                    <span class="skill-mod">{{numberFormat skill.mod sign=true}}</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+
+        <!-- Inventory -->
+        <div class="section">
+            <div class="section-title">Inventory</div>
+            <ul class="inventory-list">
+                {{#each actor.items as |item|}}
+                    {{#if (eq item.type "equipment")}}
+                    <li class="item">
+                        <div class="item-name">{{item.name}}</div>
+                        <div class="item-details">
+                            {{#if item.system.quantity}}Qty: {{item.system.quantity}}{{/if}}
+                            {{#if item.system.weight}} • Weight: {{item.system.weight}}{{/if}}
+                            {{#if item.system.description.value}}<br>{{{item.system.description.value}}}{{/if}}
+                        </div>
+                    </li>
+                    {{/if}}
+                {{/each}}
+            </ul>
+        </div>
+
+        <!-- Spells -->
+        <div class="section">
+            <div class="section-title">Spells</div>
+            <ul class="spells-list">
+                {{#each actor.items as |item|}}
+                    {{#if (eq item.type "spell")}}
+                    <li class="item">
+                        <div class="item-name">{{item.name}}</div>
+                        <div class="item-details">
+                            Level {{item.system.level}} • {{item.system.school}}
+                            {{#if item.system.description.value}}<br>{{{item.system.description.value}}}{{/if}}
+                        </div>
+                    </li>
+                    {{/if}}
+                {{/each}}
+            </ul>
+        </div>
+
+        <!-- Features -->
+        <div class="section">
+            <div class="section-title">Features & Traits</div>
+            <ul class="features-list">
+                {{#each actor.items as |item|}}
+                    {{#if (or (eq item.type "feat") (eq item.type "background"))}}
+                    <li class="item">
+                        <div class="item-name">{{item.name}}</div>
+                        <div class="item-details">
+                            {{#if item.system.description.value}}{{{item.system.description.value}}}{{/if}}
+                        </div>
+                    </li>
+                    {{/if}}
+                {{/each}}
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

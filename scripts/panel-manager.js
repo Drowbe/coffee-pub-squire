@@ -17,6 +17,7 @@ import { NotesPanel } from "./panel-notes.js";
 import { CodexPanel } from "./panel-codex.js";
 import { QuestPanel } from './panel-quest.js';
 import { MacrosPanel } from "./panel-macros.js";
+import { PrintCharacterSheet } from './print-character.js';
 
 export class PanelManager {
     static instance = null;
@@ -467,6 +468,15 @@ export class PanelManager {
 
     activateListeners(tray) {
         const handle = tray.find('.tray-handle');
+        
+        // Print character button
+        tray.find('.print-character').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.actor) {
+                await PrintCharacterSheet.print(this.actor);
+            }
+        });
         
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {

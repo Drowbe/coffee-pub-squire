@@ -312,6 +312,14 @@ export class CharacterPanel {
             const ability = event.currentTarget.dataset.ability;
             await this.actor.rollAbilitySave(ability);
         });
+
+        // Print character sheet
+        html.find('.print-character').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const { PrintCharacterSheet } = await import('./print-character.js');
+            await PrintCharacterSheet.print(this.actor);
+        });
     }
 
     async _updateHPDisplay() {
