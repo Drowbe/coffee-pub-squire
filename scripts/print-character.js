@@ -17,15 +17,38 @@ function splitDescription(desc) {
 }
 
 function getDisplayWeight(weight) {
-    if (weight == null) return 'N/A';
+    if (weight == null) return '—';
     if (typeof weight === 'object') {
-        if ('value' in weight) return weight.value;
-        return 'N/A';
+        if ('value' in weight && typeof weight.value === 'number') return weight.value;
+        if ('value' in weight && typeof weight.value === 'string') return weight.value;
+        return '—';
     }
-    return weight;
+    if (typeof weight === 'number' || typeof weight === 'string') return weight;
+    return '—';
 }
 
-// Ability to FontAwesome icon mapping
+// Unique FontAwesome icons for each skill
+const SKILL_ICONS = {
+    acr: 'fa-person-running',
+    ani: 'fa-dog',
+    arc: 'fa-hat-wizard',
+    ath: 'fa-dumbbell',
+    dec: 'fa-mask',
+    his: 'fa-landmark',
+    ins: 'fa-eye',
+    itm: 'fa-comments',
+    inv: 'fa-search',
+    med: 'fa-briefcase-medical',
+    nat: 'fa-leaf',
+    prc: 'fa-eye',
+    prf: 'fa-theater-masks',
+    per: 'fa-face-smile',
+    rel: 'fa-book',
+    slt: 'fa-hand-sparkles',
+    ste: 'fa-user-ninja',
+    sur: 'fa-compass'
+};
+
 const ABILITY_ICONS = {
     str: 'fa-dumbbell',
     dex: 'fa-running',
@@ -44,11 +67,18 @@ export class PrintCharacterSheet {
             const desc = item.system?.description?.value || '';
             const { mainDescription, additionalDetails } = splitDescription(desc);
             const displayWeight = getDisplayWeight(item.system?.weight);
+            const price = item.system?.price ?? '—';
+            const quantity = item.system?.quantity ?? '—';
+            const charges = item.system?.uses?.max ? `${item.system.uses.value ?? 0} / ${item.system.uses.max}` : '';
             return {
                 ...item,
                 mainDescription,
                 additionalDetails,
-                displayWeight
+                displayWeight,
+                price,
+                quantity,
+                charges,
+                icon: item.img || ''
             };
         });
 
@@ -58,9 +88,9 @@ export class PrintCharacterSheet {
             return {
                 id,
                 label: skill.label,
-                ability,
-                abilityLabel: actor.system.abilities?.[ability]?.label || ability.toUpperCase(),
-                icon: ABILITY_ICONS[ability] || 'fa-question',
+                ability: ability.toUpperCase(),
+                abilityLabel: (actor.system.abilities?.[ability]?.label || ability.toUpperCase()),
+                icon: SKILL_ICONS[id] || ABILITY_ICONS[ability] || 'fa-question',
                 mod: skill.mod
             };
         });
@@ -69,11 +99,19 @@ export class PrintCharacterSheet {
         const skillsCol1 = skills.slice(0, mid);
         const skillsCol2 = skills.slice(mid);
 
+        // Prepare spells and features (same as items for now)
+        const spells = items.filter(i => i.type === 'spell');
+        const features = items.filter(i => i.type === 'feat' || i.type === 'background');
+        const inventory = items.filter(i => i.type === 'equipment');
+
         // Render the print template
         const html = await renderTemplate(TEMPLATES.PRINT_CHARACTER, {
             actor: {
                 ...actor,
                 items,
+                inventory,
+                spells,
+                features,
                 skillsCol1,
                 skillsCol2
             }

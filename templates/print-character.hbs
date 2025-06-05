@@ -259,6 +259,76 @@
             padding: 18px 22px;
             margin-bottom: 18px;
         }
+        .inventory-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 4px;
+            background: none;
+        }
+        .inventory-table th {
+            text-align: left;
+            font-size: 1em;
+            color: #7a3b2e;
+            font-weight: 700;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #e0d8c3;
+        }
+        .inventory-table td {
+            background: #fff;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 1em;
+            vertical-align: middle;
+            border-bottom: 1px solid #f0e8d8;
+        }
+        .item-icon {
+            width: 32px;
+            height: 32px;
+            object-fit: cover;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px #0001;
+            background: #f8f6f2;
+        }
+        .item-name {
+            font-weight: bold;
+            color: #7a3b2e;
+        }
+        .item-type {
+            color: #2a4a6a;
+            font-size: 0.98em;
+        }
+        .item-weight, .item-qty, .item-price, .item-charges, .item-level, .item-school {
+            text-align: center;
+            color: #444;
+        }
+        .item-main-description {
+            background: #f8f6f2;
+            border-radius: 0 0 6px 6px;
+            padding: 10px 18px;
+            font-size: 0.98em;
+            color: #333;
+        }
+        .additional-details-box {
+            background: #f5f1e6;
+            border-left: 4px solid #9f9275;
+            border-radius: 0 0 6px 6px;
+            margin-top: 0;
+            margin-bottom: 4px;
+            padding: 8px 18px;
+            font-size: 0.92em;
+            color: #444;
+        }
+        .additional-details-label {
+            font-size: 0.92em;
+            font-weight: bold;
+            color: #7a3b2e;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .additional-details-content {
+            font-size: 0.89em;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -323,16 +393,18 @@
                 <table class="skills-table skills-col">
                     <thead>
                         <tr>
+                            <th></th>
                             <th>Skill</th>
                             <th>Ability</th>
-                            <th style="text-align:right;">Modifier</th>
+                            <th style="text-align:right;">Mod</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{#each actor.skillsCol1 as |skill|}}
                         <tr>
-                            <td><i class="fas {{skill.icon}} skill-icon"></i>{{skill.label}}</td>
-                            <td><span class="skill-ability">{{skill.abilityLabel}}</span></td>
+                            <td><i class="fas {{skill.icon}} skill-icon"></i></td>
+                            <td class="skill-name">{{skill.label}}</td>
+                            <td><span class="skill-ability">{{skill.ability}}</span></td>
                             <td class="skill-modifier {{#if (gt skill.mod 0)}}positive{{else if (lt skill.mod 0)}}negative{{else}}zero{{/if}}">{{numberFormat skill.mod sign=true}}</td>
                         </tr>
                         {{/each}}
@@ -341,16 +413,18 @@
                 <table class="skills-table skills-col">
                     <thead>
                         <tr>
+                            <th></th>
                             <th>Skill</th>
                             <th>Ability</th>
-                            <th style="text-align:right;">Modifier</th>
+                            <th style="text-align:right;">Mod</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{#each actor.skillsCol2 as |skill|}}
                         <tr>
-                            <td><i class="fas {{skill.icon}} skill-icon"></i>{{skill.label}}</td>
-                            <td><span class="skill-ability">{{skill.abilityLabel}}</span></td>
+                            <td><i class="fas {{skill.icon}} skill-icon"></i></td>
+                            <td class="skill-name">{{skill.label}}</td>
+                            <td><span class="skill-ability">{{skill.ability}}</span></td>
                             <td class="skill-modifier {{#if (gt skill.mod 0)}}positive{{else if (lt skill.mod 0)}}negative{{else}}zero{{/if}}">{{numberFormat skill.mod sign=true}}</td>
                         </tr>
                         {{/each}}
@@ -360,80 +434,115 @@
         </div>
 
         <!-- Inventory -->
-        <div class="section">
+        <div class="section card">
             <div class="section-title">Inventory</div>
-            <ul class="inventory-list">
-                {{#each actor.items as |item|}}
-                    {{#if (eq item.type "equipment")}}
-                    <li class="item">
-                        <div class="item-name">{{item.name}}</div>
-                        <div class="item-details">
-                            <span class="item-label">Qty:</span> {{item.system.quantity}}<br>
-                            <span class="item-label">Weight:</span> {{item.system.weight}}
-                        </div>
-                        {{#if item.mainDescription}}
-                        <div class="item-main-description">{{{item.mainDescription}}}</div>
-                        {{/if}}
-                        {{#if item.additionalDetails}}
-                        <div class="additional-details-box">
-                            <span class="additional-details-label">Additional Details</span>
-                            <div class="additional-details-content">{{{item.additionalDetails}}}</div>
-                        </div>
-                        {{/if}}
-                    </li>
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Weight</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Charges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each actor.inventory as |item|}}
+                    <tr>
+                        <td><img src="{{item.icon}}" alt="" class="item-icon"></td>
+                        <td class="item-name">{{item.name}}</td>
+                        <td class="item-type">{{item.type}}</td>
+                        <td class="item-weight">{{item.displayWeight}}</td>
+                        <td class="item-qty">{{item.quantity}}</td>
+                        <td class="item-price">{{item.price}}</td>
+                        <td class="item-charges">{{item.charges}}</td>
+                    </tr>
+                    {{#if item.mainDescription}}
+                    <tr><td colspan="7" class="item-main-description">{{{item.mainDescription}}}</td></tr>
                     {{/if}}
-                {{/each}}
-            </ul>
+                    {{#if item.additionalDetails}}
+                    <tr><td colspan="7" class="additional-details-box">
+                        <span class="additional-details-label">Additional Details</span>
+                        <div class="additional-details-content">{{{item.additionalDetails}}}</div>
+                    </td></tr>
+                    {{/if}}
+                    {{/each}}
+                </tbody>
+            </table>
         </div>
 
         <!-- Spells -->
-        <div class="section">
+        <div class="section card">
             <div class="section-title">Spells</div>
-            <ul class="spells-list">
-                {{#each actor.items as |item|}}
-                    {{#if (eq item.type "spell")}}
-                    <li class="item">
-                        <div class="item-name">{{item.name}}</div>
-                        <div class="item-details">
-                            <span class="item-label">Level:</span> {{item.system.level}}<br>
-                            <span class="item-label">School:</span> {{item.system.school}}
-                        </div>
-                        {{#if item.mainDescription}}
-                        <div class="item-main-description">{{{item.mainDescription}}}</div>
-                        {{/if}}
-                        {{#if item.additionalDetails}}
-                        <div class="additional-details-box">
-                            <span class="additional-details-label">Additional Details</span>
-                            <div class="additional-details-content">{{{item.additionalDetails}}}</div>
-                        </div>
-                        {{/if}}
-                    </li>
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Level</th>
+                        <th>School</th>
+                        <th>Qty</th>
+                        <th>Charges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each actor.spells as |item|}}
+                    <tr>
+                        <td><img src="{{item.icon}}" alt="" class="item-icon"></td>
+                        <td class="item-name">{{item.name}}</td>
+                        <td class="item-type">{{item.type}}</td>
+                        <td class="item-level">{{item.system.level}}</td>
+                        <td class="item-school">{{item.system.school}}</td>
+                        <td class="item-qty">{{item.quantity}}</td>
+                        <td class="item-charges">{{item.charges}}</td>
+                    </tr>
+                    {{#if item.mainDescription}}
+                    <tr><td colspan="7" class="item-main-description">{{{item.mainDescription}}}</td></tr>
                     {{/if}}
-                {{/each}}
-            </ul>
+                    {{#if item.additionalDetails}}
+                    <tr><td colspan="7" class="additional-details-box">
+                        <span class="additional-details-label">Additional Details</span>
+                        <div class="additional-details-content">{{{item.additionalDetails}}}</div>
+                    </td></tr>
+                    {{/if}}
+                    {{/each}}
+                </tbody>
+            </table>
         </div>
 
         <!-- Features -->
-        <div class="section">
+        <div class="section card">
             <div class="section-title">Features & Traits</div>
-            <ul class="features-list">
-                {{#each actor.items as |item|}}
-                    {{#if (or (eq item.type "feat") (eq item.type "background"))}}
-                    <li class="item">
-                        <div class="item-name">{{item.name}}</div>
-                        {{#if item.mainDescription}}
-                        <div class="item-main-description">{{{item.mainDescription}}}</div>
-                        {{/if}}
-                        {{#if item.additionalDetails}}
-                        <div class="additional-details-box">
-                            <span class="additional-details-label">Additional Details</span>
-                            <div class="additional-details-content">{{{item.additionalDetails}}}</div>
-                        </div>
-                        {{/if}}
-                    </li>
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each actor.features as |item|}}
+                    <tr>
+                        <td><img src="{{item.icon}}" alt="" class="item-icon"></td>
+                        <td class="item-name">{{item.name}}</td>
+                        <td class="item-type">{{item.type}}</td>
+                    </tr>
+                    {{#if item.mainDescription}}
+                    <tr><td colspan="3" class="item-main-description">{{{item.mainDescription}}}</td></tr>
                     {{/if}}
-                {{/each}}
-            </ul>
+                    {{#if item.additionalDetails}}
+                    <tr><td colspan="3" class="additional-details-box">
+                        <span class="additional-details-label">Additional Details</span>
+                        <div class="additional-details-content">{{{item.additionalDetails}}}</div>
+                    </td></tr>
+                    {{/if}}
+                    {{/each}}
+                </tbody>
+            </table>
         </div>
     </div>
 </body>
