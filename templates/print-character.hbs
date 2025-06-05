@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>{{actor.name}} - Character Sheet</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" crossorigin="anonymous" />
     <style>
         body {
             font-family: 'Roboto', Arial, sans-serif;
@@ -147,6 +148,38 @@
             color: #666;
             margin-top: 2px;
         }
+        .item-label {
+            font-weight: bold;
+            color: #7a3b2e;
+            margin-right: 4px;
+        }
+        .item-main-description {
+            margin-top: 6px;
+            margin-bottom: 2px;
+            font-size: 1em;
+            color: #333;
+        }
+        .additional-details-box {
+            background: #f5f1e6;
+            border-left: 4px solid #9f9275;
+            border-radius: 4px;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            padding: 8px 14px;
+            font-size: 0.92em;
+            color: #444;
+        }
+        .additional-details-label {
+            font-size: 0.92em;
+            font-weight: bold;
+            color: #7a3b2e;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .additional-details-content {
+            font-size: 0.89em;
+            color: #333;
+        }
         @media print {
             body {
                 background: #fff !important;
@@ -164,6 +197,67 @@
                 size: A4;
                 margin: 1cm;
             }
+        }
+        /* Skills Table */
+        .skills-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+            background: none;
+        }
+        .skills-table th {
+            text-align: left;
+            font-size: 1em;
+            color: #7a3b2e;
+            font-weight: 700;
+            padding-bottom: 4px;
+        }
+        .skills-table td {
+            background: #f8f6f2;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 1em;
+            vertical-align: middle;
+        }
+        .skill-icon {
+            color: #b08d57;
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+        .skill-ability {
+            color: #2a4a6a; /* darker blue */
+            font-weight: 600;
+            font-size: 0.98em;
+            margin-left: 4px;
+        }
+        .skill-modifier {
+            font-weight: bold;
+            font-size: 1.1em;
+            text-align: right;
+        }
+        .skill-modifier.positive {
+            color: #388e3c;
+        }
+        .skill-modifier.negative {
+            color: #b71c1c;
+        }
+        .skill-modifier.zero {
+            color: #888;
+        }
+        .skills-columns {
+            display: flex;
+            gap: 32px;
+        }
+        .skills-col {
+            flex: 1;
+        }
+        /* Card/Section Styling */
+        .card {
+            background: #f8f6f2;
+            border-radius: 10px;
+            box-shadow: 0 1px 6px #0001;
+            padding: 18px 22px;
+            margin-bottom: 18px;
         }
     </style>
 </head>
@@ -190,7 +284,7 @@
         </div>
 
         <!-- Abilities -->
-        <div class="section">
+        <div class="section card">
             <div class="section-title">Ability Scores</div>
             <div class="abilities-grid">
                 {{#each actor.system.abilities as |ability id|}}
@@ -204,7 +298,7 @@
         </div>
 
         <!-- Stats -->
-        <div class="section">
+        <div class="section card">
             <div class="section-title">Stats</div>
             <div class="stats-grid">
                 <div class="stat">
@@ -223,15 +317,45 @@
         </div>
 
         <!-- Skills -->
-        <div class="section">
+        <div class="section card">
             <div class="section-title">Skills</div>
-            <div class="skills-grid">
-                {{#each actor.system.skills as |skill id|}}
-                <div class="skill">
-                    <span class="skill-name">{{skill.label}}</span>
-                    <span class="skill-mod">{{numberFormat skill.mod sign=true}}</span>
-                </div>
-                {{/each}}
+            <div class="skills-columns">
+                <table class="skills-table skills-col">
+                    <thead>
+                        <tr>
+                            <th>Skill</th>
+                            <th>Ability</th>
+                            <th style="text-align:right;">Modifier</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each actor.skillsCol1 as |skill|}}
+                        <tr>
+                            <td><i class="fas {{skill.icon}} skill-icon"></i>{{skill.label}}</td>
+                            <td><span class="skill-ability">{{skill.abilityLabel}}</span></td>
+                            <td class="skill-modifier {{#if (gt skill.mod 0)}}positive{{else if (lt skill.mod 0)}}negative{{else}}zero{{/if}}">{{numberFormat skill.mod sign=true}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+                <table class="skills-table skills-col">
+                    <thead>
+                        <tr>
+                            <th>Skill</th>
+                            <th>Ability</th>
+                            <th style="text-align:right;">Modifier</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each actor.skillsCol2 as |skill|}}
+                        <tr>
+                            <td><i class="fas {{skill.icon}} skill-icon"></i>{{skill.label}}</td>
+                            <td><span class="skill-ability">{{skill.abilityLabel}}</span></td>
+                            <td class="skill-modifier {{#if (gt skill.mod 0)}}positive{{else if (lt skill.mod 0)}}negative{{else}}zero{{/if}}">{{numberFormat skill.mod sign=true}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -244,10 +368,18 @@
                     <li class="item">
                         <div class="item-name">{{item.name}}</div>
                         <div class="item-details">
-                            {{#if item.system.quantity}}Qty: {{item.system.quantity}}{{/if}}
-                            {{#if item.system.weight}} • Weight: {{item.system.weight}}{{/if}}
-                            {{#if item.system.description.value}}<br>{{{item.system.description.value}}}{{/if}}
+                            <span class="item-label">Qty:</span> {{item.system.quantity}}<br>
+                            <span class="item-label">Weight:</span> {{item.system.weight}}
                         </div>
+                        {{#if item.mainDescription}}
+                        <div class="item-main-description">{{{item.mainDescription}}}</div>
+                        {{/if}}
+                        {{#if item.additionalDetails}}
+                        <div class="additional-details-box">
+                            <span class="additional-details-label">Additional Details</span>
+                            <div class="additional-details-content">{{{item.additionalDetails}}}</div>
+                        </div>
+                        {{/if}}
                     </li>
                     {{/if}}
                 {{/each}}
@@ -263,9 +395,18 @@
                     <li class="item">
                         <div class="item-name">{{item.name}}</div>
                         <div class="item-details">
-                            Level {{item.system.level}} • {{item.system.school}}
-                            {{#if item.system.description.value}}<br>{{{item.system.description.value}}}{{/if}}
+                            <span class="item-label">Level:</span> {{item.system.level}}<br>
+                            <span class="item-label">School:</span> {{item.system.school}}
                         </div>
+                        {{#if item.mainDescription}}
+                        <div class="item-main-description">{{{item.mainDescription}}}</div>
+                        {{/if}}
+                        {{#if item.additionalDetails}}
+                        <div class="additional-details-box">
+                            <span class="additional-details-label">Additional Details</span>
+                            <div class="additional-details-content">{{{item.additionalDetails}}}</div>
+                        </div>
+                        {{/if}}
                     </li>
                     {{/if}}
                 {{/each}}
@@ -280,9 +421,15 @@
                     {{#if (or (eq item.type "feat") (eq item.type "background"))}}
                     <li class="item">
                         <div class="item-name">{{item.name}}</div>
-                        <div class="item-details">
-                            {{#if item.system.description.value}}{{{item.system.description.value}}}{{/if}}
+                        {{#if item.mainDescription}}
+                        <div class="item-main-description">{{{item.mainDescription}}}</div>
+                        {{/if}}
+                        {{#if item.additionalDetails}}
+                        <div class="additional-details-box">
+                            <span class="additional-details-label">Additional Details</span>
+                            <div class="additional-details-content">{{{item.additionalDetails}}}</div>
                         </div>
+                        {{/if}}
                     </li>
                     {{/if}}
                 {{/each}}
