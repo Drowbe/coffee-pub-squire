@@ -389,8 +389,8 @@
         <!-- Skills -->
         <div class="section card">
             <div class="section-title">Skills</div>
-            <div class="skills-columns">
-                <table class="skills-table skills-col">
+            <div class="skills-columns" style="display: flex; gap: 0;">
+                <table class="skills-table skills-col left-col" style="background: #f8f6f2; box-shadow: 0 2px 8px #0001; border-radius: 10px 0 0 10px; margin-right: 0; flex: 1;">
                     <thead>
                         <tr>
                             <th></th>
@@ -410,8 +410,9 @@
                         {{/each}}
                     </tbody>
                 </table>
-                <table class="skills-table skills-col">
-                    <thead>
+                <div style="width: 2px; background: #e0d8c3; margin: 0 18px; border-radius: 2px;"></div>
+                <table class="skills-table skills-col right-col" style="background: #f4f2ed; box-shadow: 0 2px 8px #0001; border-radius: 0 10px 10px 0; flex: 1;">
+                    <thead style="border-top: none;">
                         <tr>
                             <th></th>
                             <th>Skill</th>
