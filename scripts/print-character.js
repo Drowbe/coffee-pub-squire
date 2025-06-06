@@ -83,21 +83,28 @@ export class PrintCharacterSheet {
         });
 
         // Prepare skills array
-        const skills = Object.entries(actor.system.skills || {}).map(([id, skill]) => {
-            const ability = skill.ability || '';
+        const skills = Object.entries(actor.system.skills).map(([key, skill]) => {
+            const skillConfig = CONFIG.DND5E.skills[key];
+            let label;
+            if (typeof skillConfig === "string") {
+                label = skillConfig;
+            } else if (skillConfig && typeof skillConfig === "object" && "label" in skillConfig) {
+                label = skillConfig.label;
+            } else {
+                label = key;
+            }
             return {
-                id,
-                label: skill.label,
-                ability: ability.toUpperCase(),
-                abilityLabel: (actor.system.abilities?.[ability]?.label || ability.toUpperCase()),
-                icon: SKILL_ICONS[id] || ABILITY_ICONS[ability] || 'fa-question',
-                mod: skill.mod
+                key,
+                label,
+                mod: skill.mod,
+                ability: skill.ability,
+                icon: PrintCharacterSheet._getSkillIcon(key)
             };
         });
-        // Split into two columns
-        const mid = Math.ceil(skills.length / 2);
-        const skillsCol1 = skills.slice(0, mid);
-        const skillsCol2 = skills.slice(mid);
+        // Split skills into two columns
+        const midPoint = Math.ceil(skills.length / 2);
+        const skillsCol1 = skills.slice(0, midPoint);
+        const skillsCol2 = skills.slice(midPoint);
 
         // Prepare spells and features (same as items for now)
         const spells = items.filter(i => i.type === 'spell');
@@ -154,5 +161,26 @@ export class PrintCharacterSheet {
             }
         });
         // Do NOT trigger print dialog automatically. User can print from the new tab if desired.
+    }
+
+    _prepareSkills(actor) {
+        // Use actor.system.skills directly, ensuring each skill has a 'label' property
+        const skills = Object.values(actor.system.skills).map(skill => ({
+            label: skill.label,
+            mod: skill.mod,
+            ability: skill.ability,
+            icon: PrintCharacterSheet._getSkillIcon(skill.label)
+        }));
+        // Split skills into two columns
+        const midPoint = Math.ceil(skills.length / 2);
+        return {
+            skillsCol1: skills.slice(0, midPoint),
+            skillsCol2: skills.slice(midPoint)
+        };
+    }
+
+    static _getSkillIcon(skillKey) {
+        if (!skillKey) return 'fa-question';
+        return SKILL_ICONS[skillKey.toLowerCase()] || ABILITY_ICONS[skillKey.toLowerCase()] || 'fa-question';
     }
 } 
