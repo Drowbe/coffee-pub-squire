@@ -517,33 +517,31 @@
         <!-- Features -->
         <div class="section card">
             <div class="section-title">Features & Traits</div>
-            <table class="inventory-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Name</th>
-                        <th>Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{#each actor.features as |item|}}
-                    <tr>
-                        <td><img src="{{item.icon}}" alt="" class="item-icon"></td>
-                        <td class="item-name">{{item.name}}</td>
-                        <td class="item-type">{{item.type}}</td>
-                    </tr>
+            <div class="features-list">
+                {{#each actor.features as |item|}}
+                <div class="feature-card" style="background: #fff; border: 1.5px solid #e0d8c3; border-radius: 12px; box-shadow: 0 2px 10px #0001; margin-bottom: 28px; padding: 0 0 16px 0; overflow: hidden;">
+                    <div style="height: 4px; background: linear-gradient(90deg, #e6c36b 0%, #f7e7b0 100%); border-radius: 10px 10px 0 0;"></div>
+                    <div style="display: flex; align-items: center; padding: 14px 18px 0 18px;">
+                        <img src="{{item.icon}}" alt="" class="item-icon" style="width: 36px; height: 36px; margin-right: 16px; border-radius: 6px; border: 1px solid #e0d8c3; background: #faf8f6;">
+                        <div>
+                            <div class="item-name" style="font-size: 1.2em; font-weight: bold; color: #7a3b2e;">{{item.name}}</div>
+                            <div class="item-type" style="font-size: 1em; color: #b08d57; text-transform: capitalize;">{{item.type}}</div>
+                        </div>
+                    </div>
                     {{#if item.mainDescription}}
-                    <tr><td colspan="3" class="item-main-description">{{{item.mainDescription}}}</td></tr>
+                    <div class="feature-main-description" style="margin: 14px 18px 0 18px; padding: 10px 14px; background: none; border-radius: 6px; color: #333;">
+                        {{{item.mainDescription}}}
+                    </div>
                     {{/if}}
                     {{#if item.additionalDetails}}
-                    <tr><td colspan="3" class="additional-details-box">
-                        <span class="additional-details-label">Additional Details</span>
-                        <div class="additional-details-content">{{{item.additionalDetails}}}</div>
-                    </td></tr>
+                    <div class="feature-additional-details" style="margin: 14px 18px 0 18px; padding: 10px 14px; background: #f8f6f2; border-left: 4px solid #e6c36b; border-radius: 6px;">
+                        <span class="additional-details-label" style="font-size: 1em; font-weight: bold; color: #b08d57; display: block; margin-bottom: 4px;">Additional Details</span>
+                        <div class="additional-details-content" style="font-size: 0.98em; color: #444;">{{{item.additionalDetails}}}</div>
+                    </div>
                     {{/if}}
-                    {{/each}}
-                </tbody>
-            </table>
+                </div>
+                {{/each}}
+            </div>
         </div>
     </div>
 </body>
