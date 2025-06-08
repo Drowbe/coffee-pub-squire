@@ -95,7 +95,14 @@ export class PrintCharacterSheet {
                 const desc = item.system?.description?.value || '';
                 const { mainDescription, additionalDetails } = splitDescription(desc);
                 const displayWeight = getDisplayWeight(item.system?.weight);
-                const price = item.system?.price ?? '—';
+                let price = item.system?.price ?? '—';
+                if (typeof price === 'object' && price !== null) {
+                    // Try to extract a displayable value
+                    if ('value' in price) price = price.value;
+                    else if ('gp' in price) price = price.gp + ' gp';
+                    else price = JSON.stringify(price);
+                }
+                price = price === undefined || price === null ? '—' : price;
                 const quantity = item.system?.quantity ?? '—';
                 const charges = item.system?.uses?.max ? `${item.system.uses.value ?? 0} / ${item.system.uses.max}` : '';
                 
