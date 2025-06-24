@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.17] - Printing Character Sheets
+
+### Added
+- New character sheet printing functionality accessible from the character panel
+- Comprehensive print template with professional styling and layout
+- Print button (scroll icon) in character panel header for easy access
+- Detailed character information including portrait, basic info, and class details
+- Complete ability scores display with modifiers and visual icons
+- Skills section with dual-column layout and ability score associations
+- Inventory management with item details, quantities, weights, and prices
+- Spell listing with school, level, and usage information
+- Features and traits section with detailed descriptions
+- Print-optimized CSS with proper page breaks and A4 formatting
+- Image loading timeout handling for reliable printing
+- Error handling for popup blockers and invalid actor data
+
+### Changed
+- Enhanced character panel with print functionality integration
+- Improved item description parsing to separate main content from additional details
+- Updated template system to support comprehensive character data export
+- Optimized print layout for both screen viewing and physical printing
+
+### Fixed
+- Resolved item weight display issues for various data structures
+- Fixed skill icon mapping for all D&D 5e skills
+- Improved error handling for missing or invalid character data
+- Enhanced template rendering reliability with proper validation
+
 ## [1.0.16] - Macros and Handles
 
 ### Added
