@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { CodexParser } from './codex-parser.js';
+import { copyToClipboard } from './helpers.js';
 
 class CodexForm extends FormApplication {
     constructor(entry = null, options = {}) {
@@ -631,9 +632,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 default: 'import',
                 render: (html) => {
                     html.find('.copy-template-button').click(() => {
-                        navigator.clipboard.writeText(template).then(() => {
-                            ui.notifications.info('Template copied to clipboard!');
-                        });
+                        copyToClipboard(template);
                     });
                 }
             }).render(true);

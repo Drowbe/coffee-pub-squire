@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { QuestParser } from './quest-parser.js';
+import { copyToClipboard } from './helpers.js';
 
 export class QuestPanel {
     constructor() {
@@ -811,9 +812,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 default: 'import',
                 render: (html) => {
                     html.find('.copy-template-button').click(() => {
-                        navigator.clipboard.writeText(template).then(() => {
-                            ui.notifications.info('Template copied to clipboard!');
-                        });
+                        copyToClipboard(template);
                     });
                 }
             }).render(true);
