@@ -2334,6 +2334,7 @@ Hooks.on('createItem', async (item) => {
 
 // Handle item updates
 Hooks.on('updateItem', async (item) => {
+    if (!item.parent) return;
     if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
         // Check if this is an NPC/monster and the item is a weapon being equipped
         // or a spell being prepared
