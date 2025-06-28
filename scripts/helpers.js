@@ -171,7 +171,7 @@ export const registerHelpers = function() {
         return copyToClipboard(text);
     });
 
-    // Helper to render a task with GM hints and treasure unlocks (greyed out, locked, if not completed)
+    // Helper to render a task with GM hints and treasure unlocks (show treasure always for GM)
     Handlebars.registerHelper('renderTask', function(task, isGM, options) {
         let html = '';
         // Start the task text with tooltip if GM hint exists
@@ -180,12 +180,18 @@ export const registerHelpers = function() {
         } else {
             html += task.text;
         }
-        // Only GMs see the locked treasure text in the objective list
-        if (isGM && Array.isArray(task.treasureUnlocks) && task.treasureUnlocks.length > 0 && !task.completed) {
-            html += ' <span class="locked-objective-treasure">';
-            html += '<i class="fas fa-lock"></i> ';
-            html += task.treasureUnlocks.join(', ');
-            html += '</span>';
+        // Only GMs see the treasure text in the objective list
+        if (isGM && Array.isArray(task.treasureUnlocks) && task.treasureUnlocks.length > 0) {
+            if (!task.completed) {
+                html += ' <span class="locked-objective-treasure">';
+                html += '<i class="fas fa-lock"></i> ';
+                html += task.treasureUnlocks.join(', ');
+                html += '</span>';
+            } else {
+                html += ' <span class="unlocked-objective-treasure">';
+                html += task.treasureUnlocks.join(', ');
+                html += '</span>';
+            }
         }
         return new Handlebars.SafeString(html);
     });
