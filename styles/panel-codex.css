@@ -348,6 +348,15 @@
     margin-bottom: 0.5rem;
     clear: both;
 }
+.squire-tray[data-position="left"] .codex-entry-link i,
+.squire-tray[data-position="left"] .codex-entry-link a {
+  background-color: transparent;
+  border: none;
+  color: rgba(241, 71, 20, 0.863);
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 
 .squire-tray[data-position="left"] i.codex-entry-visibility {
     opacity: .4;

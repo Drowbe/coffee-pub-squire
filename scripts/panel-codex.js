@@ -413,15 +413,17 @@ export class CodexPanel {
         });
         // Link clicks
         html.find('.codex-entry-link').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+            // Only handle old-style links with data-uuid attribute
             const uuid = event.currentTarget.dataset.uuid;
             if (uuid) {
+                event.preventDefault();
+                event.stopPropagation();
                 const page = await fromUuid(uuid);
                 if (page && page.parent) {
                     page.parent.sheet.render(true, { pageId: page.id });
                 }
             }
+            // Otherwise, let Foundry's default handler process the click
         });
 
         // Delete entry button
@@ -779,7 +781,7 @@ SPECIFIC INSTRUCTIONS HERE`;
         const isTagCloudCollapsed = game.user.getFlag(MODULE.ID, 'codexTagCloudCollapsed') || false;
 
         // Build categoriesData array for the template
-        const categoriesData = Array.from(this.categories).sort().map(category => {
+        const categoriesData = await Promise.all(Array.from(this.categories).sort().map(async category => {
             let entries = this.data[category] || [];
             if (!game.user.isGM) {
                 // Only show visible entries for non-GMs
@@ -790,6 +792,15 @@ SPECIFIC INSTRUCTIONS HERE`;
             }
             // Sort entries alphabetically by name
             entries = entries.slice().sort((a, b) => a.name.localeCompare(b.name));
+            // Enrich links for Foundry UUID handling
+            for (const entry of entries) {
+                if (entry.link && entry.link.uuid && entry.link.label) {
+                    entry.linkHtml = await TextEditor.enrichHTML(
+                        `@UUID[${entry.link.uuid}]{${entry.link.label}}`,
+                        { documents: true, links: true }
+                    );
+                }
+            }
             const totalCount = entries.length;
             const visibleEntries = entries.filter(e => (e.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
             const visibleCount = visibleEntries.length;
@@ -802,7 +813,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 visibleCount,
                 visibleEntries
             };
-        });
+        }));
 
         // Build allTags for tag cloud
         let allTags;

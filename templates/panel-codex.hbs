@@ -106,7 +106,11 @@
                                 {{/if}}
 
                                 <!-- LINK -->
-                                {{#if entry.link}}
+                                {{#if entry.linkHtml}}
+                                    <div class="codex-entry-link">
+                                        <span class="codex-entry-label">Link:</span> {{{entry.linkHtml}}}
+                                    </div>
+                                {{else if entry.link}}
                                     <div class="codex-entry-link">
                                         <span class="codex-entry-label">Link:</span> <a href="#" class="codex-entry-link" data-uuid="{{entry.link.uuid}}">{{{entry.link.label}}}</a>
                                     </div>
