@@ -1517,7 +1517,23 @@ SPECIFIC INSTRUCTIONS HERE`;
         }
         if (quest.tasks && quest.tasks.length) {
             content += `<p><strong>Tasks:</strong></p>\n<ul>\n`;
-            quest.tasks.forEach(t => content += `<li>${typeof t === 'string' ? t : t.text}</li>\n`);
+            quest.tasks.forEach(t => {
+                let taskText = typeof t === 'string' ? t : t.text;
+                
+                // Add GM hint if present
+                if (t.gmHint) {
+                    taskText += ` ||${t.gmHint}||`;
+                }
+                
+                // Add treasure unlocks if present
+                if (t.treasureUnlocks && t.treasureUnlocks.length > 0) {
+                    t.treasureUnlocks.forEach(treasure => {
+                        taskText += ` [[${treasure}]]`;
+                    });
+                }
+                
+                content += `<li>${taskText}</li>\n`;
+            });
             content += `</ul>\n\n`;
         }
         if (quest.reward) {

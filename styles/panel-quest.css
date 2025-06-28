@@ -437,6 +437,37 @@
     text-decoration: none;
 }
 
+/* GM Hints and Treasure Unlocks */
+.squire-tray[data-position="left"] .quest-entry-tasks [data-tooltip] {
+    cursor: help;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocks {
+    margin-top: 0.25rem;
+    margin-left: 1.5rem;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .treasure-locked {
+    color: #888888;
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocked {
+    color: #48a000;
+    font-weight: 500;
+    opacity: 1;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocked a {
+    color: #48a000;
+    text-decoration: none;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocked a:hover {
+    color: #5bb800;
+    text-decoration: underline;
+}
 
 /* PARTICIPANTS */
 

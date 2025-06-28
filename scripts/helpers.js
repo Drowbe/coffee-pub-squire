@@ -170,6 +170,42 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('copyToClipboard', function(text) {
         return copyToClipboard(text);
     });
+
+    // Helper to render a task with GM hints and treasure unlocks
+    Handlebars.registerHelper('renderTask', function(task, isGM, options) {
+        let html = '';
+        
+        // Start the task text with tooltip if GM hint exists
+        if (isGM && task.gmHint) {
+            html += `<span data-tooltip="GM Note: ${task.gmHint}">${task.text}</span>`;
+        } else {
+            html += task.text;
+        }
+        
+        // Add treasure unlocks if present
+        if (task.treasureUnlocks && task.treasureUnlocks.length > 0) {
+            html += '<div class="treasure-unlocks">';
+            task.treasureUnlocks.forEach(treasure => {
+                const isCompleted = task.completed;
+                const treasureClass = isCompleted ? 'treasure-unlocked' : 'treasure-locked';
+                
+                // Check if treasure contains a UUID link
+                const uuidMatch = treasure.match(/@UUID\[([^\]]+)\]\{([^}]+)\}/);
+                if (uuidMatch && isCompleted) {
+                    // Render as a proper UUID link when unlocked
+                    const uuid = uuidMatch[1];
+                    const name = uuidMatch[2];
+                    html += `<span class="${treasureClass}"><a data-uuid="${uuid}">${name}</a></span>`;
+                } else {
+                    // Render as plain text (either locked or no UUID)
+                    html += `<span class="${treasureClass}">[[${treasure}]]</span>`;
+                }
+            });
+            html += '</div>';
+        }
+        
+        return new Handlebars.SafeString(html);
+    });
 };
 
 /**
