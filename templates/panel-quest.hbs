@@ -154,15 +154,15 @@
                                             {{#if @root.isGM}}
                                                 {{#each entry.reward.treasure}}
                                                     <li>
+                                                        {{#if this.boundToObjective}}
+                                                            {{#unless this.unlocked}}
+                                                                <i class="fas fa-lock" style="margin-right: 0.5em; opacity: 0.7;"></i>
+                                                            {{/unless}}
+                                                        {{/if}}
                                                         {{#if this.uuid}}
                                                             <a data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                         {{else}}
                                                             {{this.text}}
-                                                        {{/if}}
-                                                        {{#if this.boundToObjective}}
-                                                            {{#unless this.unlocked}}
-                                                                <i class="fas fa-lock" style="margin-left: 0.5em; opacity: 0.7;"></i>
-                                                            {{/unless}}
                                                         {{/if}}
                                                     </li>
                                                 {{/each}}
@@ -369,15 +369,15 @@
                                             {{#if @root.isGM}}
                                                 {{#each entry.reward.treasure}}
                                                     <li>
+                                                        {{#if this.boundToObjective}}
+                                                            {{#unless this.unlocked}}
+                                                                <i class="fas fa-lock" style="margin-right: 0.5em; opacity: 0.7;"></i>
+                                                            {{/unless}}
+                                                        {{/if}}
                                                         {{#if this.uuid}}
                                                             <a data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                         {{else}}
                                                             {{this.text}}
-                                                        {{/if}}
-                                                        {{#if this.boundToObjective}}
-                                                            {{#unless this.unlocked}}
-                                                                <i class="fas fa-lock" style="margin-left: 0.5em; opacity: 0.7;"></i>
-                                                            {{/unless}}
                                                         {{/if}}
                                                     </li>
                                                 {{/each}}

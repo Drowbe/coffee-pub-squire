@@ -171,14 +171,21 @@ export const registerHelpers = function() {
         return copyToClipboard(text);
     });
 
-    // Helper to render a task with GM hints (no treasure unlocks logic here)
+    // Helper to render a task with GM hints and treasure unlocks (greyed out, locked, if not completed)
     Handlebars.registerHelper('renderTask', function(task, isGM, options) {
         let html = '';
         // Start the task text with tooltip if GM hint exists
         if (isGM && task.gmHint) {
-            html += `<span data-tooltip="GM Note: ${task.gmHint}">${task.text}</span>`;
+            html += `<span data-tooltip=\"GM Note: ${task.gmHint}\">${task.text}</span>`;
         } else {
             html += task.text;
+        }
+        // Only GMs see the locked treasure text in the objective list
+        if (isGM && Array.isArray(task.treasureUnlocks) && task.treasureUnlocks.length > 0 && !task.completed) {
+            html += ' <span class="locked-objective-treasure">';
+            html += '<i class="fas fa-lock"></i> ';
+            html += task.treasureUnlocks.join(', ');
+            html += '</span>';
         }
         return new Handlebars.SafeString(html);
     });
