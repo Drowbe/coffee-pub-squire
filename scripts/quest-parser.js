@@ -238,30 +238,35 @@ export class QuestParser {
                     let gmHint = null;
                     let treasureUnlocks = [];
 
-                    // Extract GM hints (||text||)
-                    const gmHintRegex = /\|\|([^|]+)\|\|/g;
-                    const gmHints = [];
-                    let gmHintMatch;
-                    while ((gmHintMatch = gmHintRegex.exec(text)) !== null) {
-                        gmHints.push(gmHintMatch[1].trim());
-                    }
-                    if (gmHints.length > 0) {
-                        gmHint = gmHints.join(' ');
-                        // Remove GM hints from display text
-                        displayText = displayText.replace(gmHintRegex, '').trim();
-                    }
+                    try {
+                        // Extract GM hints (||text||)
+                        const gmHintRegex = /\|\|([^|]+)\|\|/g;
+                        const gmHints = [];
+                        let gmHintMatch;
+                        while ((gmHintMatch = gmHintRegex.exec(text)) !== null) {
+                            gmHints.push(gmHintMatch[1].trim());
+                        }
+                        if (gmHints.length > 0) {
+                            gmHint = gmHints.join(' ');
+                            // Remove GM hints from display text
+                            displayText = displayText.replace(gmHintRegex, '').trim();
+                        }
 
-                    // Extract treasure unlocks ([[text]])
-                    const treasureRegex = /\[\[([^\]]+)\]\]/g;
-                    const treasures = [];
-                    let treasureMatch;
-                    while ((treasureMatch = treasureRegex.exec(text)) !== null) {
-                        treasures.push(treasureMatch[1].trim());
-                    }
-                    if (treasures.length > 0) {
-                        treasureUnlocks = treasures;
-                        // Remove treasure unlocks from display text
-                        displayText = displayText.replace(treasureRegex, '').trim();
+                        // Extract treasure unlocks ((Treasure Name))
+                        const treasureRegex = /\(\(([^)]+)\)\)/g;
+                        const treasures = [];
+                        let treasureMatch;
+                        while ((treasureMatch = treasureRegex.exec(text)) !== null) {
+                            treasures.push(treasureMatch[1].trim());
+                        }
+                        if (treasures.length > 0) {
+                            treasureUnlocks = treasures;
+                            // Remove treasure unlocks from display text
+                            displayText = displayText.replace(treasureRegex, '').trim();
+                        }
+                    } catch (error) {
+                        console.error('SQUIRE | Error parsing task hints and treasures:', error, text);
+                        displayText = text;
                     }
 
                     return {

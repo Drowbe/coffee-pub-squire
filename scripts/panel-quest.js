@@ -1432,13 +1432,29 @@ SPECIFIC INSTRUCTIONS HERE`;
         // Process all quests from all categories
         for (const category of this.categories) {
             let entries = this._applyFilters(this.data[category] || []);
-            
             // Process each entry to add status and pinning info
             entries.forEach(entry => {
                 // Add additional properties needed for the template
                 entry.category = category; // Ensure category is included in the entry
                 entry.isPinned = entry.uuid === pinnedQuestUuid;
-                
+
+                // --- UNLOCKED TREASURE LOGIC ---
+                if (entry.reward && Array.isArray(entry.reward.treasure)) {
+                    // Collect all treasure unlock names from all tasks
+                    const allUnlockNames = (Array.isArray(entry.tasks) ? entry.tasks.flatMap(task => Array.isArray(task.treasureUnlocks) ? task.treasureUnlocks : []) : []).map(n => n && n.trim().toLowerCase());
+                    entry.reward.treasure.forEach(treasure => {
+                        // Get the treasure name or text
+                        const treasureName = (treasure.name || treasure.text || '').trim().toLowerCase();
+                        // Is this treasure referenced by any objective?
+                        treasure.boundToObjective = allUnlockNames.includes(treasureName);
+                        // Is this treasure unlocked by any completed task?
+                        treasure.unlocked = treasure.boundToObjective && Array.isArray(entry.tasks) && entry.tasks.some(task =>
+                            task.completed && Array.isArray(task.treasureUnlocks) &&
+                            task.treasureUnlocks.some(unlockName => unlockName && treasureName && unlockName.trim().toLowerCase() === treasureName)
+                        );
+                    });
+                }
+
                 // Add to the appropriate status group
                 if (entry.status === "Complete") {
                     templateData.statusGroups.completed.push(entry);
