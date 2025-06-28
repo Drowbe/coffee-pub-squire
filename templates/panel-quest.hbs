@@ -109,7 +109,7 @@
                                                 {{#if @root.isGM}}
                                                     <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
                                                         <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
-                                                        {{{renderTask this @root.isGM}}}
+                                                        <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                     </li>
                                                 {{else}}
                                                     {{#if (eq this.state 'hidden')}}
@@ -126,7 +126,7 @@
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
-                                                            {{{renderTask this @root.isGM}}}
+                                                            <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                         </li>
                                                     {{/if}}
                                                 {{/if}}
@@ -325,7 +325,7 @@
                                                 {{#if @root.isGM}}
                                                     <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
                                                         <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
-                                                        {{{renderTask this @root.isGM}}}
+                                                        <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                     </li>
                                                 {{else}}
                                                     {{#if (eq this.state 'hidden')}}
@@ -341,7 +341,7 @@
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
-                                                            {{{renderTask this @root.isGM}}}
+                                                            <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                         </li>
                                                     {{/if}}
                                                 {{/if}}
@@ -529,7 +529,7 @@
                                                 {{#if @root.isGM}}
                                                     <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
                                                         <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
-                                                        {{{renderTask this @root.isGM}}}
+                                                        <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                     </li>
                                                 {{else}}
                                                     {{#if (eq this.state 'hidden')}}
@@ -545,7 +545,7 @@
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
-                                                            {{{renderTask this @root.isGM}}}
+                                                            <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                         </li>
                                                     {{/if}}
                                                 {{/if}}
@@ -710,7 +710,7 @@
                                                 {{#if @root.isGM}}
                                                     <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
                                                         <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
-                                                        {{{renderTask this @root.isGM}}}
+                                                        <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                     </li>
                                                 {{else}}
                                                     {{#if (eq this.state 'hidden')}}
@@ -726,7 +726,7 @@
                                                     {{else}}
                                                         <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
-                                                            {{{renderTask this @root.isGM}}}
+                                                            <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                         </li>
                                                     {{/if}}
                                                 {{/if}}
