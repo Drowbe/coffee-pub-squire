@@ -638,9 +638,26 @@
 
 .squire-tray[data-position="left"] .quest-entry-tasks .unlocked-objective-treasure {
     display: inline;
-    color: #7c2e0f;
+    color: rgba(255, 33, 0, 0.9);
     font-style: normal;
     margin-left: 0.5em;
     font-size: 0.98em;
     vertical-align: baseline;
+}
+
+.squire-tray[data-position="left"] .quest-entry-reward .treasure-link {
+    color: #e2551d;
+    font-weight: 400;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.squire-tray[data-position="left"] .quest-entry-reward .treasure-link:hover {
+    color: #ff7a3c;
+    text-decoration: underline;
+}
+.squire-tray[data-position="left"] .quest-entry-reward .treasure-icon {
+    color: #e2551d;
+    margin-right: 0px;
+    vertical-align: baseline;
+    font-size: .85em;
 }
