@@ -262,8 +262,8 @@ Hooks.once('init', async function() {
         MODULE.TITLE
     );
     
-    // Register module settings
-    registerSettings();
+    // Register module settings -- moved to READY
+    //registerSettings();
 
     // Load CSS
     const cssFiles = [
@@ -324,6 +324,10 @@ Hooks.once('ready', async function() {
         console.error(`${MODULE.TITLE} | Required dependency 'coffee-pub-blacksmith' not found!`);
         return;
     }
+
+    // Register module settings
+    registerSettings();
+
 
     // Check if current user is excluded
     const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());

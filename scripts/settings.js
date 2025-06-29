@@ -979,19 +979,25 @@ export const registerSettings = function() {
 	// -- Item Lookup Compendiums (up to 5) --
 
     for (let i = 1; i <= 5; i++) {
-        game.settings.register(MODULE.ID, `itemCompendium${i}` , {
-            name: `Item Lookup ${i}`,
-            hint: `The #${i} compendium to use for item linking. Searched in order. Set to 'None' to skip.`,
-            scope: "world",
-            config: true,
-            requiresReload: false,
-            default: "none",
-            choices: () => {
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                return blacksmith?.BLACKSMITH?.arrCompendiumChoices || {};
-            }
+        game.settings.register(MODULE.ID, `itemCompendium${i}`, {
+          name: `Item Lookup ${i}`,
+          hint: `The #${i} compendium to use for item linking. Searched in order. Set to 'None' to skip.`,
+          scope: "world",
+          config: true,
+          requiresReload: false,
+          default: "none",
+          choices: (() => {
+                               
+            // const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            // const choices = blacksmith?.BLACKSMITH?.arrCompendiumChoices;
+            const choices = game.modules.get('coffee-pub-blacksmith').api.BLACKSMITH.arrCompendiumChoices;
+            console.log("SQUIRE | choices", choices);
+
+            if (choices && Object.keys(choices).length > 0) return { ...choices };
+            return { "none": "No compendiums found. Try reloading Foundry after all modules are enabled." };
+          })()
         });
-    }
+      }
 
 
     // -- Search World Items First --
