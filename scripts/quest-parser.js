@@ -1,3 +1,5 @@
+import { MODULE } from './const.js';
+
 export class QuestParser {
     /**
      * Parse a single journal page into a quest entry object
@@ -77,12 +79,21 @@ export class QuestParser {
                         } else if (node.nodeType === Node.TEXT_NODE) {
                             const text = node.textContent.trim();
                             if (text) {
-                                // Check if this looks like a treasure name (not just random text)
-                                // If it's a single word or short phrase, treat as treasure name
-                                if (text.length <= 50 && !text.includes(',')) {
-                                    entry.reward.treasure.push({ name: text });
+                                // Check for @UUID[...]{...} format
+                                const uuidMatch = text.match(/@UUID\[([^\]]+)\]\{([^}]+)\}/);
+                                if (uuidMatch) {
+                                    entry.reward.treasure.push({
+                                        uuid: uuidMatch[1],
+                                        name: uuidMatch[2]
+                                    });
                                 } else {
-                                    entry.reward.treasure.push({ text });
+                                    // Check if this looks like a treasure name (not just random text)
+                                    // If it's a single word or short phrase, treat as treasure name
+                                    if (text.length <= 50 && !text.includes(',')) {
+                                        entry.reward.treasure.push({ name: text });
+                                    } else {
+                                        entry.reward.treasure.push({ text });
+                                    }
                                 }
                                 foundInline = true;
                             }
@@ -102,12 +113,21 @@ export class QuestParser {
                                     };
                                 } else {
                                     const text = li.textContent.trim();
-                                    // Check if this looks like a treasure name (not just random text)
-                                    // If it's a single word or short phrase, treat as treasure name
-                                    if (text.length <= 50 && !text.includes(',')) {
-                                        return { name: text };
+                                    // Check for @UUID[...]{...} format
+                                    const uuidMatch = text.match(/@UUID\[([^\]]+)\]\{([^}]+)\}/);
+                                    if (uuidMatch) {
+                                        return {
+                                            uuid: uuidMatch[1],
+                                            name: uuidMatch[2]
+                                        };
                                     } else {
-                                        return { text };
+                                        // Check if this looks like a treasure name (not just random text)
+                                        // If it's a single word or short phrase, treat as treasure name
+                                        if (text.length <= 50 && !text.includes(',')) {
+                                            return { name: text };
+                                        } else {
+                                            return { text };
+                                        }
                                     }
                                 }
                             }).filter(t => t.uuid || t.name || t.text);
@@ -320,6 +340,24 @@ export class QuestParser {
 
         // Deduplicate and trim tags
         entry.tags = Array.from(new Set(entry.tags.map(t => t.trim())));
+
+        // --- AUTO ADD PARTY MEMBERS ---
+        const autoAddParty = game.settings.get(MODULE.ID, 'autoAddPartyMembers');
+        if (autoAddParty) {
+            // Get all party members (actors of type 'character' with a player owner)
+            const partyActors = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
+            for (const actor of partyActors) {
+                // Only add if not already present by uuid or name
+                const alreadyPresent = entry.participants.some(p => (p.uuid && p.uuid === actor.uuid) || (p.name && p.name === actor.name));
+                if (!alreadyPresent) {
+                    entry.participants.push({
+                        uuid: actor.uuid,
+                        name: actor.name,
+                        img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
+                    });
+                }
+            }
+        }
 
         return entry;
     }
