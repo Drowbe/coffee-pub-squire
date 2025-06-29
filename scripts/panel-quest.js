@@ -1256,6 +1256,80 @@ export class QuestPanel {
                 }
             });
         }
+
+        // Participant portrait right-click to remove (GM only)
+        const self = this; // Capture the QuestPanel reference
+        html.find('.participant-portrait').on('contextmenu', async function(event) {
+            event.preventDefault();
+            if (!game.user.isGM) return;
+            
+            const $portrait = $(this);
+            const participantUuid = $portrait.data('uuid');
+            const participantName = $portrait.attr('title');
+            const $questEntry = $portrait.closest('.quest-entry');
+            const questUuid = $questEntry.find('.quest-entry-feather').data('uuid');
+            
+            if (!questUuid) {
+                ui.notifications.warn("Could not find the quest entry.");
+                return;
+            }
+            
+            try {
+                // Get the quest page
+                const page = await fromUuid(questUuid);
+                if (!page) {
+                    ui.notifications.warn("Could not find the quest page.");
+                    return;
+                }
+                
+                // Get current content
+                let content = page.text.content;
+                
+                // Parse the content to find and remove the participant
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(content, 'text/html');
+                
+                // Find the participants paragraph
+                const participantsP = Array.from(doc.querySelectorAll('p')).find(p => {
+                    const strong = p.querySelector('strong');
+                    if (!strong) return false;
+                    const text = strong.textContent.trim();
+                    return text === 'Participants' || text === 'Participants:';
+                });
+                
+                if (participantsP) {
+                    // Remove the specific participant from the content
+                    const participantRegex = new RegExp(`@UUID\\[${participantUuid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]\\{[^}]+\\}`, 'g');
+                    const nameRegex = new RegExp(`\\b${participantName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+                    
+                    // Replace the participant with empty string and clean up
+                    let newContent = content.replace(participantRegex, '');
+                    newContent = newContent.replace(nameRegex, '');
+                    
+                    // Clean up extra commas and spaces
+                    newContent = newContent.replace(/,\s*,/g, ',');
+                    newContent = newContent.replace(/,\s*$/g, '');
+                    newContent = newContent.replace(/^\s*,/g, '');
+                    
+                    // If no participants left, remove the entire participants section
+                    if (!newContent.includes('@UUID[') && !newContent.match(/Participants:\s*[^,\s]/)) {
+                        newContent = newContent.replace(/<p><strong>Participants:<\/strong>\s*[^<]*<\/p>\s*\n?/g, '');
+                    }
+                    
+                    // Update the page
+                    await page.update({
+                        text: { content: newContent }
+                    });
+                    
+                    ui.notifications.info(`Removed ${participantName} from the quest.`);
+                } else {
+                    ui.notifications.warn("Could not find participants section in the quest.");
+                }
+            } catch (error) {
+                console.error('SQUIRE | Error removing participant:', error);
+                ui.notifications.error(`Failed to remove ${participantName} from the quest.`);
+            }
+        });
     }
 
     /**
@@ -1545,6 +1619,32 @@ export class QuestPanel {
         if (quest.status) {
             content += `<p><strong>Status:</strong> ${quest.status}</p>\n\n`;
         }
+        
+        // --- AUTO ADD PARTY MEMBERS (JSON Import Only) ---
+        const autoAddParty = game.settings.get(MODULE.ID, 'autoAddPartyMembers');
+        if (autoAddParty) {
+            // Ensure participants is an array
+            if (!quest.participants) quest.participants = [];
+            if (!Array.isArray(quest.participants)) quest.participants = [quest.participants];
+            
+            // Get all party members (actors of type 'character' with a player owner)
+            const partyActors = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
+            for (const actor of partyActors) {
+                // Only add if not already present by uuid or name
+                const alreadyPresent = quest.participants.some(p => {
+                    if (typeof p === 'string') return p === actor.name;
+                    return (p.uuid && p.uuid === actor.uuid) || (p.name && p.name === actor.name);
+                });
+                if (!alreadyPresent) {
+                    quest.participants.push({
+                        uuid: actor.uuid,
+                        name: actor.name,
+                        img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
+                    });
+                }
+            }
+        }
+        
         if (quest.participants && quest.participants.length) {
             const participantList = quest.participants.map(p => {
                 if (typeof p === 'string') return p;

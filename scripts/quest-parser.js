@@ -341,24 +341,6 @@ export class QuestParser {
         // Deduplicate and trim tags
         entry.tags = Array.from(new Set(entry.tags.map(t => t.trim())));
 
-        // --- AUTO ADD PARTY MEMBERS ---
-        const autoAddParty = game.settings.get(MODULE.ID, 'autoAddPartyMembers');
-        if (autoAddParty) {
-            // Get all party members (actors of type 'character' with a player owner)
-            const partyActors = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
-            for (const actor of partyActors) {
-                // Only add if not already present by uuid or name
-                const alreadyPresent = entry.participants.some(p => (p.uuid && p.uuid === actor.uuid) || (p.name && p.name === actor.name));
-                if (!alreadyPresent) {
-                    entry.participants.push({
-                        uuid: actor.uuid,
-                        name: actor.name,
-                        img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
-                    });
-                }
-            }
-        }
-
         return entry;
     }
 } 
