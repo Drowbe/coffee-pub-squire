@@ -49,7 +49,7 @@ export class QuestForm extends FormApplication {
             tasks: [],
             reward: {
                 xp: 0,
-                treasure: ''
+                treasure: []
             },
             location: '',
             plotHook: '',

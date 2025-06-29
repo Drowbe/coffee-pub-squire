@@ -77,7 +77,13 @@ export class QuestParser {
                         } else if (node.nodeType === Node.TEXT_NODE) {
                             const text = node.textContent.trim();
                             if (text) {
-                                entry.reward.treasure.push({ text });
+                                // Check if this looks like a treasure name (not just random text)
+                                // If it's a single word or short phrase, treat as treasure name
+                                if (text.length <= 50 && !text.includes(',')) {
+                                    entry.reward.treasure.push({ name: text });
+                                } else {
+                                    entry.reward.treasure.push({ text });
+                                }
                                 foundInline = true;
                             }
                         }
@@ -95,9 +101,16 @@ export class QuestParser {
                                         name: a.textContent.trim()
                                     };
                                 } else {
-                                    return { text: li.textContent.trim() };
+                                    const text = li.textContent.trim();
+                                    // Check if this looks like a treasure name (not just random text)
+                                    // If it's a single word or short phrase, treat as treasure name
+                                    if (text.length <= 50 && !text.includes(',')) {
+                                        return { name: text };
+                                    } else {
+                                        return { text };
+                                    }
                                 }
-                            }).filter(t => t.uuid || t.text);
+                            }).filter(t => t.uuid || t.name || t.text);
                         }
                     }
                     break;

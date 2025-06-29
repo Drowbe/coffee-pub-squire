@@ -655,50 +655,20 @@ export class QuestPanel {
         });
 
         // Import Quests from JSON (GM only)
-        html.find('.import-quests-json').click(() => {
+        html.find('.import-quests-json').click(async () => {
             if (!game.user.isGM) return;
-            const template = `I want you to build a JSON template based on the criteria I will share below. Here are the rules for how you will add data to the JSON.
-
-**NAME** - the name of the Quest. DO not add "the" or "a" to the name.
-**CATEGORY** - This will either be "Main Quest" or "Side Quest"
-**DESCRIPTION** - A description of the entry that would help someone understand what, where, or show this is and enough context to make it interesting. (under 600 characters)
-**PLOTHOOK** - The relationship to the plot,  especially if they have something the party might need to know or understand. (under 300 characters) 
-**LOCATION** - where the character is located (a city, area, or establishment). It is fine to add a locationan and area, but use a greater-than symbol between them e.g "Phlan > Thorne Island > Aquatic Crypt"
-**TASK** - These represent the list of objectives that must be met to complete the quest. You can have several of these, but there has to be at least one. They are part of an array. 
-**DURATION** - Optional. If the quest is time-bound, add the duration here. Valid durations include "number of days" or a qualifier like "Before bob dies."
-**XP** - The amount of experience points the party gets for completing the task. Note it if is per person or overall.
-**TREASURE** - List any specific item that the party might get upon comp-letion of the quest.
-**TAGS** - a list of tags that would help filter this entry when looking it up. These will be used for filtering, so characteristics and idenitifying attributes like type, location, faction, etc. would be useful. The first tag should always be the category. There should never be tags for words like "the" and there should never be single-letter tags like "a". Add no more than 5 tags. It is okay to have spaces in the tag, but do not divide words with special character like underscores. You should always add th elocation as a tag, but the location should be specific. Something like "Phlan - Thorne Island - Aquatic Crypt" would actually be three tags. Also, be mindfule of when a specific tag might need to be a second, less specific tag. For instance, "black cult of the dragon" is a specific tag, but we shoudl add a second tag for "cult" which would be another useful tag. They should be formatted to be json-friendly and will be an array formatted like: "npc", "inn", "drinking game", "informant", "phlan". For most tags they should be lowercase, single-word tags unless the tag is the name of something like "black cult of the dragon". A tag would be something that would likely be applied to more than one entry. For example, "arena beast" is unnecessary... it should be "arena" and "beast". They should not be niche or overly specific phrases. Remember, these are used to group like things based on characteristics of the entry.
-
-Replace the above items in their matching placeholder below. Be sure the text is JSON-friendly. Do not change any of the code, just replace the placeholders. This JSON  will be cut and pasted into an importer
-
-[
-    {
-    "name": "**NAME**", 
-    "img": null,
-    "category": "**CATEGORY**", 
-    "description": "**DESCRIPTION**", 
-    "plotHook": "**PLOTHOOK**",   
-    "location": "**LOCATION**",   
-    "tasks": [  
-        { "text": "**TASK**", "state": "active" }
-    ],
-    "reward": { 
-        "xp": **XP** 
-        "treasure": "**TREASURE**" 
-    },
-    "timeframe": { 
-        "duration": "**DURATION**"
-    },
-    "status": "Not Started", 
-    "tags": [ **TAGS** ],
-    "visible": false  
-    }
-]
-
-Here are the specific instructions I want you to use to build the above JSON array:
-
-SPECIFIC INSTRUCTIONS HERE`;
+            // Load the template from prompts/prompt-quests.txt
+            let template = '';
+            try {
+                const response = await fetch('modules/coffee-pub-squire/prompts/prompt-quests.txt');
+                if (response.ok) {
+                    template = await response.text();
+                } else {
+                    template = 'Failed to load prompt-quests.txt.';
+                }
+            } catch (e) {
+                template = 'Failed to load prompt-quests.txt.';
+            }
             new Dialog({
                 title: 'Import Quests from JSON',
                 content: `
@@ -741,10 +711,8 @@ SPECIFIC INSTRUCTIONS HERE`;
                             let updated = 0;
                             for (const quest of quests) {
                                 if (!quest.name) continue;
-                                
                                 // Check if a quest with this name already exists
                                 const existingPage = journal.pages.find(p => p.name === quest.name);
-                                
                                 if (existingPage) {
                                     // Update existing quest
                                     await existingPage.update({
@@ -761,7 +729,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                                     if (uuid !== existingPage.getFlag(MODULE.ID, 'questUuid')) {
                                         await existingPage.setFlag(MODULE.ID, 'questUuid', uuid);
                                     }
-                                    
                                     // Set original category flag if status is Complete or Failed
                                     if (quest.status === 'Complete' || quest.status === 'Failed') {
                                         // Only set if not already set and the quest has a category
@@ -769,7 +736,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                                             await existingPage.setFlag(MODULE.ID, 'originalCategory', quest.category);
                                         }
                                     }
-                                    
                                     updated++;
                                 } else {
                                     // Create new quest
@@ -790,12 +756,10 @@ SPECIFIC INSTRUCTIONS HERE`;
                                     const page = created[0];
                                     if (page) {
                                         await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
-                                        
                                         // Set original category flag if status is Complete or Failed
                                         if ((quest.status === 'Complete' || quest.status === 'Failed') && quest.category) {
                                             await page.setFlag(MODULE.ID, 'originalCategory', quest.category);
                                         }
-                                        
                                         imported++;
                                     }
                                 }
@@ -1554,7 +1518,21 @@ SPECIFIC INSTRUCTIONS HERE`;
         }
         if (quest.reward) {
             if (quest.reward.xp) content += `<p><strong>XP:</strong> ${quest.reward.xp}</p>\n\n`;
-            if (quest.reward.treasure) content += `<p><strong>Treasure:</strong> ${quest.reward.treasure}</p>\n\n`;
+            if (Array.isArray(quest.reward.treasure) && quest.reward.treasure.length > 0) {
+                content += `<p><strong>Treasure:</strong></p>\n<ul>\n`;
+                quest.reward.treasure.forEach(t => {
+                    if (t.uuid) {
+                        content += `<li>@UUID[${t.uuid}]{${t.name || 'Item'}}</li>\n`;
+                    } else if (t.name) {
+                        content += `<li>${t.name}</li>\n`;
+                    } else if (t.text) {
+                        content += `<li>${t.text}</li>\n`;
+                    }
+                });
+                content += `</ul>\n\n`;
+            } else if (quest.reward.treasure) {
+                content += `<p><strong>Treasure:</strong> ${quest.reward.treasure}</p>\n\n`;
+            }
         }
         if (quest.timeframe && quest.timeframe.duration) {
             content += `<p><strong>Duration:</strong> ${quest.timeframe.duration}</p>\n\n`;

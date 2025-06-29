@@ -162,6 +162,9 @@
                                                         {{#if this.uuid}}
                                                             <i class="fas fa-gem treasure-icon"></i>
                                                             <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
+                                                        {{else if this.name}}
+                                                            <i class="fas fa-gem treasure-icon"></i>
+                                                            <span class="treasure-name">{{this.name}}</span>
                                                         {{else}}
                                                             {{this.text}}
                                                         {{/if}}
@@ -175,7 +178,12 @@
                                                                 <i class="fas fa-gem treasure-icon"></i>
                                                                 <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                             {{else}}
-                                                                {{this.text}}
+                                                                {{#if this.name}}
+                                                                    <i class="fas fa-gem treasure-icon"></i>
+                                                                    <span class="treasure-name">{{this.name}}</span>
+                                                                {{else}}
+                                                                    {{this.text}}
+                                                                {{/if}}
                                                             {{/if}}
                                                         </li>
                                                     {{else}}
@@ -185,7 +193,12 @@
                                                                     <i class="fas fa-gem treasure-icon"></i>
                                                                     <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                                 {{else}}
-                                                                    {{this.text}}
+                                                                    {{#if this.name}}
+                                                                        <i class="fas fa-gem treasure-icon"></i>
+                                                                        <span class="treasure-name">{{this.name}}</span>
+                                                                    {{else}}
+                                                                        {{this.text}}
+                                                                    {{/if}}
                                                                 {{/if}}
                                                             </li>
                                                         {{/if}}
@@ -380,6 +393,9 @@
                                                         {{#if this.uuid}}
                                                             <i class="fas fa-gem treasure-icon"></i>
                                                             <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
+                                                        {{else if this.name}}
+                                                            <i class="fas fa-gem treasure-icon"></i>
+                                                            <span class="treasure-name">{{this.name}}</span>
                                                         {{else}}
                                                             {{this.text}}
                                                         {{/if}}
@@ -393,7 +409,12 @@
                                                                 <i class="fas fa-gem treasure-icon"></i>
                                                                 <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                             {{else}}
-                                                                {{this.text}}
+                                                                {{#if this.name}}
+                                                                    <i class="fas fa-gem treasure-icon"></i>
+                                                                    <span class="treasure-name">{{this.name}}</span>
+                                                                {{else}}
+                                                                    {{this.text}}
+                                                                {{/if}}
                                                             {{/if}}
                                                         </li>
                                                     {{else}}
@@ -403,7 +424,12 @@
                                                                     <i class="fas fa-gem treasure-icon"></i>
                                                                     <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                                 {{else}}
-                                                                    {{this.text}}
+                                                                    {{#if this.name}}
+                                                                        <i class="fas fa-gem treasure-icon"></i>
+                                                                        <span class="treasure-name">{{this.name}}</span>
+                                                                    {{else}}
+                                                                        {{this.text}}
+                                                                    {{/if}}
                                                                 {{/if}}
                                                             </li>
                                                         {{/if}}
@@ -584,7 +610,12 @@
                                                                 <i class="fas fa-gem treasure-icon"></i>
                                                                 <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                             {{else}}
-                                                                {{this.text}}
+                                                                {{#if this.name}}
+                                                                    <i class="fas fa-gem treasure-icon"></i>
+                                                                    <span class="treasure-name">{{this.name}}</span>
+                                                                {{else}}
+                                                                    {{this.text}}
+                                                                {{/if}}
                                                             {{/if}}
                                                         </li>
                                                     {{else}}
@@ -765,7 +796,12 @@
                                                                 <i class="fas fa-gem treasure-icon"></i>
                                                                 <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                                                             {{else}}
-                                                                {{this.text}}
+                                                                {{#if this.name}}
+                                                                    <i class="fas fa-gem treasure-icon"></i>
+                                                                    <span class="treasure-name">{{this.name}}</span>
+                                                                {{else}}
+                                                                    {{this.text}}
+                                                                {{/if}}
                                                             {{/if}}
                                                         </li>
                                                     {{else}}
