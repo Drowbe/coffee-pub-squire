@@ -776,7 +776,12 @@ export class QuestPanel {
                 default: 'import',
                 render: (html) => {
                     html.find('.copy-template-button').click(() => {
-                        copyToClipboard(template);
+                        let output = template;
+                        const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
+                        if (rulebooks && rulebooks.trim()) {
+                            output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
+                        }
+                        copyToClipboard(output);
                     });
                 }
             }).render(true);
