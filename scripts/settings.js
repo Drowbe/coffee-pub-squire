@@ -962,7 +962,15 @@ export const registerSettings = function() {
     });
 
 
-
+	// -- Search World Items First --
+	game.settings.register(MODULE.ID, 'autoAddPartyMembers', {
+		name: 'Auto Add Party Members',
+		hint: 'When enabled, we will automatically add party members to the quest when the quest is created.',
+		type: Boolean,
+		config: true,
+		scope: 'world',
+		default: true,
+	});
 
 
 
