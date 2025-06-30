@@ -204,6 +204,7 @@ export class PanelManager {
             isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
+            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
             favoriteMacros
         });
         const trayElement = $(trayHtml);
@@ -293,6 +294,7 @@ export class PanelManager {
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
             isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
+            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
         });
         const newTrayElement = $(trayHtml);
         
@@ -397,7 +399,7 @@ export class PanelManager {
             const handleData = {
                 actor: this.actor,
                 isGM: game.user.isGM,
-                effects: this.actor.effects?.map(e => ({
+                effects: this.actor?.effects?.map(e => ({
                     name: e.name,
                     icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
@@ -413,6 +415,7 @@ export class PanelManager {
                 isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
                 isMacrosPopped: MacrosPanel.isWindowOpen,
                 isHealthPopped: HealthPanel.isWindowOpen,
+                defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
                 // Always include party context
                 currentActor,
                 otherPartyMembers
@@ -1471,6 +1474,7 @@ export class PanelManager {
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
+            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
             favoriteMacros
         };
 

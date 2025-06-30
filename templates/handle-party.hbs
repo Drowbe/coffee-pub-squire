@@ -2,7 +2,7 @@
 
     {{!-- CHARACTER NAME --}} 
     <div class="handle-character">
-      <span class="handle-character-name">{{actor.name}}</span>
+      <span class="handle-character-name">{{#if defaultPartyName}}{{defaultPartyName}}{{else}}Party{{/if}}</span>
     </div>
 
     {{!-- CHARACTER PORTRAIT --}} 
