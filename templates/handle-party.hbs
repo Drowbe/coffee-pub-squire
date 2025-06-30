@@ -2,7 +2,6 @@
 
     {{!-- CHARACTER NAME --}} 
     <div class="handle-character">
-      
       <span class="handle-character-name">{{actor.name}}</span>
     </div>
 
@@ -43,35 +42,33 @@
         </div>
     {{/if}}
 
-    <span class="tray-handle-separator line"></span>
-
-    {{!-- DICETRAY --}} 
-    {{#if showHandleDiceTray}}
-
-        <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
-            <i class="fas fa-dice-d20 dice-tray-icon"></i>
-        </div>
-    {{/if}}
-
-    {{!-- MACROS --}} 
-    {{#if showHandleMacros}}
-        <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
-            <i class="fas fa-sun macros-icon"></i>
-        </div>
-    {{/if}}
-
-
-    {{!-- CONDITIONS --}} 
-    {{#if showHandleConditions}}
-        {{#if isGM}}
-            <div class="handle-conditions">
-                <i class="fas fa-sparkles add-effect-icon" title="Add Effect"></i>
-            </div>
-        {{/if}}
-    {{/if}}
-
-    {{!-- SEPARATOR --}}
-    <span class="tray-handle-separator line"></span>
 {{else}}
     <div class="handle-no-character">Create a Party</div>
-{{/if}} 
+{{/if}}
+
+{{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
+
+{{!-- MACROS --}} 
+{{#if showHandleMacros}}
+    <span class="tray-handle-separator line"></span>
+    <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
+        <i class="fas fa-sun macros-icon"></i>
+
+        {{#each favoriteMacros as |fav|}}
+            <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
+                <img src="{{fav.img}}" alt="{{fav.name}}" />
+            </div>
+        {{/each}}
+    </div>
+{{/if}}
+
+{{!-- DICETRAY --}} 
+{{#if showHandleDiceTray}}
+    <span class="tray-handle-separator line"></span>
+    <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
+        <i class="fas fa-dice-d20 dice-tray-icon"></i>
+    </div>
+{{/if}}
+
+{{!-- FINALSEPARATOR --}} 
+<span class="tray-handle-separator line"></span>

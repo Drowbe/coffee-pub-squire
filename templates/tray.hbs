@@ -1,6 +1,7 @@
 <div class="squire-tray" data-position="left">
     <div class="tray-handle">
         <div class="tray-handle-content-container">
+
             <button class="pin-button" title="Pin Tray">
                 <i class="fas fa-thumbtack"></i>
             </button>
@@ -11,6 +12,7 @@
             <button class="view-toggle-button" title="Toggle View Mode">
                 <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quest')}}fa-scroll{{else}}fa-user{{/if}}"></i>
             </button>
+
             <div class="handle-left">
                 {{#if (eq viewMode 'player')}}
                     {{> handle-player}}

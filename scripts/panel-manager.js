@@ -289,6 +289,10 @@ export class PanelManager {
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
+            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
+            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
+            isMacrosPopped: MacrosPanel.isWindowOpen,
+            isHealthPopped: HealthPanel.isWindowOpen,
         });
         const newTrayElement = $(trayHtml);
         
@@ -406,6 +410,9 @@ export class PanelManager {
                 showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
                 showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
                 showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
+                isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
+                isMacrosPopped: MacrosPanel.isWindowOpen,
+                isHealthPopped: HealthPanel.isWindowOpen,
                 // Always include party context
                 currentActor,
                 otherPartyMembers
@@ -1461,6 +1468,9 @@ export class PanelManager {
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
+            isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
+            isMacrosPopped: MacrosPanel.isWindowOpen,
+            isHealthPopped: HealthPanel.isWindowOpen,
             favoriteMacros
         };
 

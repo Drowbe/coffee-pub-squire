@@ -6,7 +6,7 @@
     </div>
 
     {{!-- CHARACTER PORTRAIT --}} 
-    <span class="tray-handle-separator spacer"></span>
+    
     <div class="handle-character-portrait-container">
         <img class="handle-character-portrait" src="{{actor.img}}" alt="{{actor.name}}" data-tooltip="Open character sheet for {{actor.name}}"/>
     </div>
@@ -19,21 +19,9 @@
         </div>
     {{/if}}
 
-    {{!-- SEPARATOR --}}
-    {{#if (or showHandleDiceTray showHandleFavorites)}}
-        <span class="tray-handle-separator line"></span>
-    {{/if}}
-
-    {{!-- DICETRAY --}} 
-    {{#if showHandleDiceTray}}
-        <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
-            <i class="fas fa-dice-d20 dice-tray-icon"></i>
-        </div>
-        <span class="tray-handle-separator spacer"></span>
-    {{/if}}
-
     {{!-- FAVORITES --}} 
     {{#if showHandleFavorites}}
+        <span class="tray-handle-separator line"></span>
         <div class="handle-favorites">
             {{#each (getFavorites actor)}}
                 {{#if (or 
@@ -54,21 +42,14 @@
         </div>
     {{/if}}
 
-    {{!-- MACROS --}} 
-    {{#if showHandleMacros}}
-        <span class="tray-handle-separator line"></span>
-        <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
-            <i class="fas fa-sun macros-icon"></i>
-            {{#each favoriteMacros as |fav|}}
-                <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
-                    <img src="{{fav.img}}" alt="{{fav.name}}" />
-                </div>
-            {{/each}}
-        </div>
-    {{/if}}
+
+
+
+
 
     {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
+        <span class="tray-handle-separator line"></span>
         <div class="handle-conditions">
             {{!-- Core D&D 5e Conditions --}}
             {{#each effects as |effect|}}
@@ -77,9 +58,14 @@
             {{#if isGM}}
                 <i class="fas fa-sparkles add-effect-icon" title="Add Effect"></i>
             {{/if}}
-            <span class="tray-handle-separator line"></span>
+
         </div>
     {{/if}}
+
+
+
+
+
 
 
     {{!-- PRIMARY STATS --}} 
@@ -102,9 +88,34 @@
         </span>
     {{/if}}
 
-    {{!-- SEPARATOR --}}
-    <span class="tray-handle-separator line"></span>
 
 {{else}}
     <div class="handle-no-character">Select a Character</div>
-{{/if}} 
+{{/if}}
+
+{{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
+
+{{!-- MACROS --}} 
+{{#if showHandleMacros}}
+    <span class="tray-handle-separator line"></span>
+    <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
+        <i class="fas fa-sun macros-icon"></i>
+
+        {{#each favoriteMacros as |fav|}}
+            <div class="handle-macro-favorite" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
+                <img src="{{fav.img}}" alt="{{fav.name}}" />
+            </div>
+        {{/each}}
+    </div>
+{{/if}}
+
+{{!-- DICETRAY --}} 
+{{#if showHandleDiceTray}}
+    <span class="tray-handle-separator line"></span>
+    <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
+        <i class="fas fa-dice-d20 dice-tray-icon"></i>
+    </div>
+{{/if}}
+
+{{!-- FINALSEPARATOR --}} 
+<span class="tray-handle-separator line"></span>
