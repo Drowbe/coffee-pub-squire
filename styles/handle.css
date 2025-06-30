@@ -27,7 +27,7 @@
 
 /* PINNED QUEST HANDLE */
 
-.squire-tray[data-position="left"] .pinned-quest-name {
+.squire-tray[data-position="left"] .handle-pinned-quest-name {
     font-size: 0.7em;
     font-weight: 200;
     overflow: hidden;
@@ -36,13 +36,13 @@
     max-width: 100%;
 }
 
-.squire-tray[data-position="left"] .pinned-quest-name i {
+.squire-tray[data-position="left"] .handle-pinned-quest-name i {
     font-size: 0.9em;
     margin-bottom: 3px;
     margin-top: 0px;
 }
 
-.squire-tray[data-position="left"] .pinned-quest-name:hover {
+.squire-tray[data-position="left"] .handle-pinned-quest-name:hover {
     color: #ffffff;
 }
 
@@ -240,7 +240,7 @@
 	color: #aaaaaab4;
 }
 
-.squire-tray[data-position="left"] .handle-character {
+.squire-tray[data-position="left"] .handle-info-container {
     font-size: 1.2em;
     color: rgba(255, 255, 255, 0.6);
     background-color: rgba(0, 0, 0, 0.3);

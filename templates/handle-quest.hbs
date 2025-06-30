@@ -1,13 +1,16 @@
 {{!-- QUEST TOOLS --}} 
-<div class="handle-character">
-    <span class="handle-character-name">Quests</span>
+<div class="handle-info-container">
+    <span class="handle-info-title">Quests</span>
     <span class="tray-handle-separator dot"></span>
     {{#if pinnedQuest}}
-        <span class="pinned-quest-name"><i class="fas fa-bow-arrow"></i> {{pinnedQuest.name}}</span>
+        <span class="handle-pinned-quest-name"><i class="fas fa-bow-arrow"></i> {{pinnedQuest.name}}</span>
     {{else}}
-        <span class="pinned-quest-name"><i class="fas fa-bow-arrow"></i> No pinned quest</span>
+        <span class="handle-pinned-quest-name"><i class="fas fa-bow-arrow"></i> No pinned quest</span>
     {{/if}}
 </div>
+
+{{!-- QUEST PROGRESS --}} 
+
 
 
 

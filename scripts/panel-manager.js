@@ -595,7 +595,7 @@ export class PanelManager {
         });
 
         // Handle pinned quest clicks
-        handle.find('.pinned-quest-name').on('click', async (event) => {
+        handle.find('.handle-pinned-quest-name').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -1622,7 +1622,7 @@ export class PanelManager {
         });
 
         // Handle pinned quest clicks
-        handle.find('.pinned-quest-name').on('click', async (event) => {
+        handle.find('.handle-pinned-quest-name').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
