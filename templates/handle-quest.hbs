@@ -15,7 +15,7 @@
         {{#each pinnedQuest.tasks as |task index|}}
             <div class="handle-quest-progress-square">
                 <div class="handle-quest-progress-fill objective-{{task.state}}" 
-                    title="{{task.state}}: {{task.text}}" 
+                    title="{{#if (eq task.state 'hidden')}}Objective not discovered{{else}}{{task.state}}: {{task.text}}{{/if}}" 
                     data-task-index="{{index}}">
                     {{#if (eq task.state "completed")}}
                         <i class="fas fa-check"></i>
@@ -34,6 +34,7 @@
         {{/each}}
     </div>
 {{/if}}
+{{!-- NOTE: To display objectives in top-to-bottom order, reverse pinnedQuest.tasks in JS before passing to the template. --}}
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
