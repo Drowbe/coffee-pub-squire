@@ -375,6 +375,37 @@ export class PanelManager {
                 return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
             }).filter(Boolean);
 
+            // Fetch pinned quest data for quest handle
+            let pinnedQuest = null;
+            if (PanelManager.viewMode === 'quest') {
+                const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+                const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+                
+                if (pinnedQuestUuid) {
+                    try {
+                        const doc = await fromUuid(pinnedQuestUuid);
+                        if (doc) {
+                            pinnedQuest = {
+                                name: doc.name,
+                                status: 'Unknown', // We'll need to parse this from the content
+                                uuid: pinnedQuestUuid
+                            };
+                            
+                            // Try to extract status from the journal page content
+                            if (doc.text?.content) {
+                                const content = doc.text.content;
+                                const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+                                if (statusMatch) {
+                                    pinnedQuest.status = statusMatch[1].trim();
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('SQUIRE | Error fetching pinned quest data:', error);
+                    }
+                }
+            }
+
             // Always gather party context
             const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
             const controlledTokenIds = canvas.tokens.controlled
@@ -405,6 +436,7 @@ export class PanelManager {
                 })) || [],
                 favorites: FavoritesPanel.getFavorites(this.actor),
                 favoriteMacros,
+                pinnedQuest, // Add pinned quest data
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
                 showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
                 showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -559,6 +591,28 @@ export class PanelManager {
             event.stopPropagation();
             if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
                 await this.dicetrayPanel._onPopOut();
+            }
+        });
+
+        // Handle pinned quest clicks
+        handle.find('.pinned-quest-name').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Get the pinned quest UUID from the current data
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+            
+            if (pinnedQuestUuid) {
+                try {
+                    const doc = await fromUuid(pinnedQuestUuid);
+                    if (doc) {
+                        doc.sheet.render(true);
+                    }
+                } catch (error) {
+                    console.warn('SQUIRE | Error opening pinned quest:', error);
+                    ui.notifications.warn('Could not open pinned quest.');
+                }
             }
         });
 
@@ -1457,6 +1511,37 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
+        // Fetch pinned quest data for quest handle
+        let pinnedQuest = null;
+        if (mode === 'quest') {
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+            
+            if (pinnedQuestUuid) {
+                try {
+                    const doc = await fromUuid(pinnedQuestUuid);
+                    if (doc) {
+                        pinnedQuest = {
+                            name: doc.name,
+                            status: 'Unknown', // We'll need to parse this from the content
+                            uuid: pinnedQuestUuid
+                        };
+                        
+                        // Try to extract status from the journal page content
+                        if (doc.text?.content) {
+                            const content = doc.text.content;
+                            const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+                            if (statusMatch) {
+                                pinnedQuest.status = statusMatch[1].trim();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn('SQUIRE | Error fetching pinned quest data:', error);
+                }
+            }
+        }
+
         let handleData = {
             actor: this.actor,
             isGM: game.user.isGM,
@@ -1464,6 +1549,7 @@ export class PanelManager {
                 name: e.name,
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
             })) || [],
+            pinnedQuest, // Add pinned quest data
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
             showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
@@ -1532,6 +1618,28 @@ export class PanelManager {
             event.stopPropagation();
             if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
                 await this.dicetrayPanel._onPopOut();
+            }
+        });
+
+        // Handle pinned quest clicks
+        handle.find('.pinned-quest-name').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Get the pinned quest UUID from the current data
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+            
+            if (pinnedQuestUuid) {
+                try {
+                    const doc = await fromUuid(pinnedQuestUuid);
+                    if (doc) {
+                        doc.sheet.render(true);
+                    }
+                } catch (error) {
+                    console.warn('SQUIRE | Error opening pinned quest:', error);
+                    ui.notifications.warn('Could not open pinned quest.');
+                }
             }
         });
 

@@ -652,6 +652,11 @@ export class QuestPanel {
             
             await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
             this.render(this.element);
+            
+            // Update the handle to reflect the pinned quest change
+            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
+                await game.modules.get('coffee-pub-squire').api.PanelManager.instance.updateHandle();
+            }
         });
 
         // Import Quests from JSON (GM only)
