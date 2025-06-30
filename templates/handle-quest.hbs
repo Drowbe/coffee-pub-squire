@@ -10,10 +10,27 @@
 </div>
 
 {{!-- QUEST PROGRESS --}} 
-
-
-
-
+{{#if pinnedQuest}}
+    <div class="handle-quest-progress-container">
+        {{#each pinnedQuest.tasks as |task index|}}
+            <div class="handle-quest-progress-square">
+                <div class="handle-quest-progress-fill objective-{{task.state}}" 
+                    title="{{task.state}}: {{task.text}}" 
+                    data-task-index="{{index}}">
+                    {{#if (eq task.state "completed")}}
+                        <i class="fas fa-check"></i>
+                    {{/if}}
+                    {{#if (eq task.state "failed")}}
+                        <i class="fas fa-xmark"></i>
+                    {{/if}}
+                    {{#if (eq task.state "hidden")}}
+                        <i class="fas fa-dash"></i>
+                    {{/if}}
+                </div>
+            </div>
+        {{/each}}
+    </div>
+{{/if}}
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 

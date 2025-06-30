@@ -388,15 +388,46 @@ export class PanelManager {
                             pinnedQuest = {
                                 name: doc.name,
                                 status: 'Unknown', // We'll need to parse this from the content
-                                uuid: pinnedQuestUuid
+                                uuid: pinnedQuestUuid,
+                                tasks: [] // Initialize empty tasks array
                             };
                             
-                            // Try to extract status from the journal page content
+                            // Try to extract status and tasks from the journal page content
                             if (doc.text?.content) {
                                 const content = doc.text.content;
                                 const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
                                 if (statusMatch) {
                                     pinnedQuest.status = statusMatch[1].trim();
+                                }
+                                
+                                // Parse tasks from the content
+                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                                if (tasksMatch) {
+                                    const tasksHtml = tasksMatch[1];
+                                    const parser = new DOMParser();
+                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                    const ul = ulDoc.querySelector('ul');
+                                    if (ul) {
+                                        const liList = Array.from(ul.children);
+                                        pinnedQuest.tasks = liList.map((li, index) => {
+                                            const text = li.textContent.trim();
+                                            const isCompleted = li.querySelector('s') !== null;
+                                            const isHidden = li.querySelector('em') !== null;
+                                            const isFailed = li.querySelector('code') !== null;
+                                            
+                                            let state = 'active';
+                                            if (isCompleted) state = 'completed';
+                                            else if (isFailed) state = 'failed';
+                                            else if (isHidden) state = 'hidden';
+                                            
+                                            return {
+                                                text: text,
+                                                completed: isCompleted,
+                                                state: state,
+                                                index: index
+                                            };
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -1524,15 +1555,46 @@ export class PanelManager {
                         pinnedQuest = {
                             name: doc.name,
                             status: 'Unknown', // We'll need to parse this from the content
-                            uuid: pinnedQuestUuid
+                            uuid: pinnedQuestUuid,
+                            tasks: [] // Initialize empty tasks array
                         };
                         
-                        // Try to extract status from the journal page content
+                        // Try to extract status and tasks from the journal page content
                         if (doc.text?.content) {
                             const content = doc.text.content;
                             const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
                             if (statusMatch) {
                                 pinnedQuest.status = statusMatch[1].trim();
+                            }
+                            
+                            // Parse tasks from the content
+                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                            if (tasksMatch) {
+                                const tasksHtml = tasksMatch[1];
+                                const parser = new DOMParser();
+                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                const ul = ulDoc.querySelector('ul');
+                                if (ul) {
+                                    const liList = Array.from(ul.children);
+                                    pinnedQuest.tasks = liList.map((li, index) => {
+                                        const text = li.textContent.trim();
+                                        const isCompleted = li.querySelector('s') !== null;
+                                        const isHidden = li.querySelector('em') !== null;
+                                        const isFailed = li.querySelector('code') !== null;
+                                        
+                                        let state = 'active';
+                                        if (isCompleted) state = 'completed';
+                                        else if (isFailed) state = 'failed';
+                                        else if (isHidden) state = 'hidden';
+                                        
+                                        return {
+                                            text: text,
+                                            completed: isCompleted,
+                                            state: state,
+                                            index: index
+                                        };
+                                    });
+                                }
                             }
                         }
                     }
