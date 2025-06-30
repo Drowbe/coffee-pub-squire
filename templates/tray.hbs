@@ -18,8 +18,14 @@
                     {{> handle-player}}
                 {{else if (eq viewMode 'party')}}
                     {{> handle-party}}
-                {{else}}
+                {{else if (eq viewMode 'notes')}}
+                    {{> handle-notes}}
+                {{else if (eq viewMode 'codex')}}
+                    {{> handle-codex}}
+                {{else if (eq viewMode 'quest')}}
                     {{> handle-quest}}
+                {{else}}
+                    {{> handle-player}}
                 {{/if}}
             </div>
         </div>

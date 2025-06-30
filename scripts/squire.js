@@ -292,6 +292,14 @@ Hooks.once('init', async function() {
     const handleQuestTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-quest.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-quest', handleQuestTemplate);
     
+    // Register handle-codex template
+    const handleCodexTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-codex.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-codex', handleCodexTemplate);
+    
+    // Register handle-notes template
+    const handleNotesTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-notes.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-notes', handleNotesTemplate);
+    
     // Set up API to expose PanelManager to other modules
     game.modules.get(MODULE.ID).api = {
         PanelManager
