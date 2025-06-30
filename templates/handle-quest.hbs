@@ -3,9 +3,9 @@
     <span class="handle-info-title">Quests</span>
     <span class="tray-handle-separator dot"></span>
     {{#if pinnedQuest}}
-        <span class="handle-pinned-quest-name"><i class="fas fa-bow-arrow"></i> {{pinnedQuest.name}}</span>
+        <span class="handle-pinned-quest-name">{{pinnedQuest.name}}</span>
     {{else}}
-        <span class="handle-pinned-quest-name"><i class="fas fa-bow-arrow"></i> No pinned quest</span>
+        <span class="handle-pinned-quest-name">No Pinned Quest</span>
     {{/if}}
 </div>
 
@@ -24,7 +24,10 @@
                         <i class="fas fa-xmark"></i>
                     {{/if}}
                     {{#if (eq task.state "hidden")}}
-                        <i class="fas fa-dash"></i>
+                        <i class="fas fa-eye"></i>
+                    {{/if}}
+                    {{#if (eq task.state "active")}}
+                        <span class="handle-quest-progress-index">{{task.index}}</span>
                     {{/if}}
                 </div>
             </div>
