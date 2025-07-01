@@ -156,6 +156,11 @@ export class PanelManager {
             
             // Create the tray
             await PanelManager.instance.createTray();
+            
+            // Initialize quest markers for the current scene
+            if (PanelManager.instance.questMarkers) {
+                await PanelManager.instance.questMarkers.initializeSceneMarkers();
+            }
         } finally {
             PanelManager._initializationInProgress = false;
         }

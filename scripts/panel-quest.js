@@ -399,6 +399,49 @@ export class QuestPanel {
 
         // Task completion and hidden toggling
         const taskCheckboxes = html.find('.task-checkbox');
+        
+        // Add drag functionality for quest objectives (GM only)
+        if (game.user.isGM) {
+            // Make the entire objective list item draggable
+            const objectiveItems = html.find('.quest-entry-tasks li');
+            objectiveItems.attr('draggable', 'true');
+            objectiveItems.on('dragstart', (event) => {
+                // Prevent drag if clicking on the checkbox
+                if ($(event.target).hasClass('task-checkbox')) {
+                    event.preventDefault();
+                    return;
+                }
+                
+                const listItem = $(event.currentTarget);
+                const checkbox = listItem.find('.task-checkbox');
+                const taskIndex = parseInt(checkbox.data('task-index'));
+                const questEntry = listItem.closest('.quest-entry');
+                const questUuid = questEntry.find('.quest-entry-feather').data('uuid');
+                const questName = questEntry.find('.quest-entry-name').text().trim();
+                const objectiveText = listItem.find('.objective-text').text().trim();
+                
+                // Create drag data
+                const dragData = {
+                    type: 'quest-objective',
+                    questUuid: questUuid,
+                    objectiveIndex: taskIndex,
+                    questName: questName,
+                    objectiveText: objectiveText
+                };
+                
+                event.originalEvent.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+                event.originalEvent.dataTransfer.effectAllowed = 'copy';
+                
+                // Add visual feedback
+                listItem.addClass('dragging');
+            });
+            
+            objectiveItems.on('dragend', (event) => {
+                const listItem = $(event.currentTarget);
+                listItem.removeClass('dragging');
+            });
+        }
+        
         // Use mousedown to detect different click types
         taskCheckboxes.on('mousedown', async (event) => {
             // Check for shift-left-click (same as middle-click for hidden toggle)

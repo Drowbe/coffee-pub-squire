@@ -6,6 +6,8 @@ import { registerHelpers } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestForm } from './quest-form.js';
 import { QuestParser } from './quest-parser.js';
+import { SquireLayer } from './squire-layer.js';
+import { QuestPin } from './quest-pin.js';
 
 let socket;
 
@@ -324,6 +326,20 @@ Hooks.once('init', async function() {
 
     // Add quest form to Hooks
     window.QuestForm = QuestForm;
+
+    // Insert SquireLayer after the 'tiles' layer
+    const layers = CONFIG.Canvas.layers;
+    const newLayers = {};
+    for (const [key, value] of Object.entries(layers)) {
+        newLayers[key] = value;
+        if (key === 'tiles') {
+            newLayers['squire'] = {
+                layerClass: SquireLayer,
+                group: 'interface'
+            };
+        }
+    }
+    CONFIG.Canvas.layers = newLayers;
 });
 
 Hooks.once('ready', async function() {
@@ -806,4 +822,30 @@ async function executeItemTransfer(transferData, accepted) {
 Handlebars.registerHelper('getFlag', function(flags, itemId, flagName) {
     if (!flags || !itemId || !flagName) return false;
     return flags[itemId]?.[flagName] || false;
+});
+
+function getQuestNumber(questUuid) {
+  let hash = 0;
+  for (let i = 0; i < questUuid.length; i++) {
+    hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.abs(hash) % 100 + 1;
+}
+
+Hooks.on('dropCanvasData', (canvas, data) => {
+  console.log('SQUIRE | dropCanvasData event fired', data);
+  if (data.type === 'quest-objective') {
+    const { questUuid, objectiveIndex } = data;
+    const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
+    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber });
+    if (canvas.squire) {
+      console.log('SQUIRE | Adding pin to canvas.squire', pin);
+      canvas.squire.addPin(pin);
+      console.log('SQUIRE | canvas.squire children after add:', canvas.squire.children);
+    } else {
+      console.error('SQUIRE | canvas.squire is not available!', canvas);
+    }
+    return true;
+  }
 });

@@ -46,6 +46,8 @@
 
 @import "panel-quest.css";
 
+@import "quest-markers.css";
+
 /* --- Stacked Panels ---------------------- */
 
 @import "panel-inventory.css"; 

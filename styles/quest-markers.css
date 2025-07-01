@@ -1,0 +1,55 @@
+/* Quest Marker Styles */
+.quest-marker {
+    /* Custom styling for quest markers */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.quest-marker:hover {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7));
+    transform: scale(1.05);
+}
+
+/* Quest marker text styling */
+.quest-marker text {
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+}
+
+/* Quest marker circle styling */
+.quest-marker circle {
+    transition: all 0.2s ease;
+}
+
+.quest-marker:hover circle {
+    stroke-width: 4px;
+    stroke: #FFA500; /* Orange on hover */
+}
+
+/* Hidden quest markers */
+.quest-marker.hidden {
+    opacity: 0.3;
+    filter: grayscale(50%);
+}
+
+.quest-marker.hidden:hover {
+    opacity: 0.6;
+    filter: grayscale(25%);
+}
+
+/* Quest marker glow effect */
+.quest-marker::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+} 
