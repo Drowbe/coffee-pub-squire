@@ -30,8 +30,10 @@ export class QuestPin extends PIXI.Container {
     this.addChild(text);
 
     // For future: add interactivity, tooltips, etc.
-    this.interactive = true;
-    this.buttonMode = true;
+    this.interactive = false;
+    this.buttonMode = false;
+    this.eventMode = 'none';
+    this.hitArea = null;
 
     // Debug log
     console.log('SQUIRE | QuestPin created', this);

@@ -327,17 +327,17 @@ Hooks.once('init', async function() {
     // Add quest form to Hooks
     window.QuestForm = QuestForm;
 
-    // Insert SquireLayer after the 'tiles' layer
+    // Insert SquireLayer before the 'tiles' layer
     const layers = CONFIG.Canvas.layers;
     const newLayers = {};
     for (const [key, value] of Object.entries(layers)) {
-        newLayers[key] = value;
         if (key === 'tiles') {
             newLayers['squire'] = {
                 layerClass: SquireLayer,
                 group: 'interface'
             };
         }
+        newLayers[key] = value;
     }
     CONFIG.Canvas.layers = newLayers;
 });

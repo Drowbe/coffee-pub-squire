@@ -4,6 +4,8 @@ export class SquireLayer extends CanvasLayer {
   constructor() {
     super();
     this.pins = [];
+    this.interactive = false;
+    this.ignoreEvents = true;
   }
 
   /**
