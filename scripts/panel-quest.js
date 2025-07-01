@@ -401,6 +401,11 @@ export class QuestPanel {
         const taskCheckboxes = html.find('.task-checkbox');
         // Use mousedown to detect different click types
         taskCheckboxes.on('mousedown', async (event) => {
+            // Check for shift-left-click (same as middle-click for hidden toggle)
+            const isShiftLeftClick = event.button === 0 && event.shiftKey;
+            const isMiddleClick = event.button === 1;
+            const isRightClick = event.button === 2;
+            const isLeftClick = event.button === 0 && !event.shiftKey;
             if (!game.user.isGM) {
                 ui.notifications.warn("Only the GM can edit objectives. Please ask the GM to do so.");
                 event.preventDefault();
@@ -429,7 +434,7 @@ export class QuestPanel {
             const li = liList[taskIndex];
             if (!li) return;
 
-            if (event.button === 1) { // Middle-click: toggle hidden
+            if (isMiddleClick || isShiftLeftClick) { // Middle-click or Shift+Left-click: toggle hidden
                 event.preventDefault();
                 const emTag = li.querySelector('em');
                 if (emTag) {
@@ -462,7 +467,7 @@ export class QuestPanel {
                 return;
             }
             
-            if (event.button === 2) { // Right-click: toggle failed state
+            if (isRightClick) { // Right-click: toggle failed state
                 event.preventDefault();
                 
                 const codeTag = li.querySelector('code');
@@ -498,7 +503,7 @@ export class QuestPanel {
                 return;
             }
             
-            if (event.button === 0) { // Left-click: toggle completed
+            if (isLeftClick) { // Left-click: toggle completed
                 const sTag = li.querySelector('s');
                 if (sTag) {
                     // Task is already completed, uncomplete it - unwrap <s>
