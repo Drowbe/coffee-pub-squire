@@ -401,7 +401,12 @@ export class QuestPanel {
         const taskCheckboxes = html.find('.task-checkbox');
         // Use mousedown to detect different click types
         taskCheckboxes.on('mousedown', async (event) => {
-            if (!game.user.isGM) return;
+            if (!game.user.isGM) {
+                ui.notifications.warn("Only the GM can edit objectives. Please ask the GM to do so.");
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
             const checkbox = $(event.currentTarget);
             const taskIndex = parseInt(checkbox.data('task-index'));
             const questEntry = checkbox.closest('.quest-entry');
