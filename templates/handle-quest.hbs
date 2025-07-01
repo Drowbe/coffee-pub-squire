@@ -15,7 +15,7 @@
         {{#each pinnedQuest.tasks as |task index|}}
             <div class="handle-quest-progress-square">
                 <div class="handle-quest-progress-fill objective-{{task.state}}" 
-                    title="{{#if (eq task.state 'hidden')}}Objective not discovered{{else}}{{task.state}}: {{task.text}}{{/if}}" 
+                    data-tooltip="Objective {{task.objectiveNumber}}: {{#if (eq task.state 'hidden')}}Objective not discovered{{else}}{{task.text}} ({{task.state}}) {{/if}}" 
                     data-task-index="{{index}}">
                     {{#if (eq task.state "completed")}}
                         <i class="fas fa-check"></i>
@@ -27,7 +27,7 @@
                         <i class="fas fa-eye"></i>
                     {{/if}}
                     {{#if (eq task.state "active")}}
-                        <span class="handle-quest-progress-index">{{task.index}}</span>
+                        <span class="handle-quest-progress-index">{{task.objectiveNumber}}</span>
                     {{/if}}
                 </div>
             </div>

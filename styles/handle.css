@@ -602,8 +602,8 @@
     max-width: none;
 }
 .squire-tray[data-position="left"] .handle-quest-progress-square {
-    height: 18px;
-    width: 18px;
+    height: 24px;
+    width: 24px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(0, 0, 0, 0.01);
     border-radius: 4px;
@@ -638,10 +638,10 @@
 .squire-tray[data-position="left"] .handle-quest-progress-index,
 .squire-tray[data-position="left"] .handle-quest-progress-fill i {
     transform: rotate(180deg);
-    font-size: 0.6em;
+    font-size: 0.8em;
     line-height: 1;
-    height: 70%;
-    width: 70%;
+    height: 100%;
+    width: 100%;
     text-align: center;
     display: flex;
     align-items: center;
@@ -655,7 +655,7 @@
 }
 .squire-tray[data-position="left"] .handle-quest-progress-index {
     transform: rotate(90deg);
-    padding-bottom: 1px;
+    padding-bottom: 0px;
 }
 
 /* Active tasks  */

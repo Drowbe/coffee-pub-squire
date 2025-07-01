@@ -414,7 +414,8 @@ export class PanelManager {
                                             const isCompleted = li.querySelector('s') !== null;
                                             const isHidden = li.querySelector('em') !== null;
                                             const isFailed = li.querySelector('code') !== null;
-                                            
+                                            const objectiveNumber = index + 1;
+
                                             let state = 'active';
                                             if (isCompleted) state = 'completed';
                                             else if (isFailed) state = 'failed';
@@ -424,9 +425,14 @@ export class PanelManager {
                                                 text: text,
                                                 completed: isCompleted,
                                                 state: state,
-                                                index: index
+                                                index: index,
+                                                objectiveNumber: objectiveNumber
                                             };
                                         });
+                                        // Reverse the order of tasks for the handle only, so the last objective is at the top
+                                        if (pinnedQuest && Array.isArray(pinnedQuest.tasks)) {
+                                            pinnedQuest.tasks = [...pinnedQuest.tasks].reverse();
+                                        }
                                     }
                                 }
                             }
@@ -1581,7 +1587,8 @@ export class PanelManager {
                                         const isCompleted = li.querySelector('s') !== null;
                                         const isHidden = li.querySelector('em') !== null;
                                         const isFailed = li.querySelector('code') !== null;
-                                        
+                                        const objectiveNumber = index + 1;
+
                                         let state = 'active';
                                         if (isCompleted) state = 'completed';
                                         else if (isFailed) state = 'failed';
@@ -1591,9 +1598,14 @@ export class PanelManager {
                                             text: text,
                                             completed: isCompleted,
                                             state: state,
-                                            index: index
+                                            index: index,
+                                            objectiveNumber: objectiveNumber
                                         };
                                     });
+                                    // Reverse the order of tasks for the handle only, so the last objective is at the top
+                                    if (pinnedQuest && Array.isArray(pinnedQuest.tasks)) {
+                                        pinnedQuest.tasks = [...pinnedQuest.tasks].reverse();
+                                    }
                                 }
                             }
                         }
