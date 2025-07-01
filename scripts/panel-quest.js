@@ -433,17 +433,24 @@ export class QuestPanel {
                 event.preventDefault();
                 const emTag = li.querySelector('em');
                 if (emTag) {
-                    // Unwrap <em>
+                    // Task is already hidden, unhide it - unwrap <em>
                     emTag.replaceWith(...emTag.childNodes);
                 } else {
-                    // Wrap all inner HTML in <em>, preserving <s> if present
-                    if (li.querySelector('s')) {
-                        // If already completed, wrap <s> in <em>
-                        const sTag = li.querySelector('s');
-                        sTag.innerHTML = `<em>${sTag.innerHTML}</em>`;
-                    } else {
-                        li.innerHTML = `<em>${li.innerHTML}</em>`;
+                    // Task is not hidden, hide it - wrap in <em> and remove other states
+                    // First, unwrap any existing state tags to ensure clean state
+                    const sTag = li.querySelector('s');
+                    const codeTag = li.querySelector('code');
+                    
+                    if (sTag) {
+                        // If completed, unwrap <s> first
+                        li.innerHTML = sTag.innerHTML;
+                    } else if (codeTag) {
+                        // If failed, unwrap <code> first
+                        li.innerHTML = codeTag.innerHTML;
                     }
+                    
+                    // Now wrap in <em>
+                    li.innerHTML = `<em>${li.innerHTML}</em>`;
                 }
                 const newTasksHtml = ul.innerHTML;
                 const newContent = content.replace(tasksMatch[1], newTasksHtml);
@@ -458,13 +465,25 @@ export class QuestPanel {
             if (event.button === 2) { // Right-click: toggle failed state
                 event.preventDefault();
                 
-                // Use the EXACT same pattern as left-click/middle-click
                 const codeTag = li.querySelector('code');
                 if (codeTag) {
-                    // Task is already failed, revert to normal - unwrap code
+                    // Task is already failed, unfail it - unwrap <code>
                     li.innerHTML = codeTag.innerHTML;
                 } else {
-                    // Task is not failed, mark as failed - wrap in code
+                    // Task is not failed, fail it - wrap in <code> and remove other states
+                    // First, unwrap any existing state tags to ensure clean state
+                    const sTag = li.querySelector('s');
+                    const emTag = li.querySelector('em');
+                    
+                    if (sTag) {
+                        // If completed, unwrap <s> first
+                        li.innerHTML = sTag.innerHTML;
+                    } else if (emTag) {
+                        // If hidden, unwrap <em> first
+                        li.innerHTML = emTag.innerHTML;
+                    }
+                    
+                    // Now wrap in <code>
                     li.innerHTML = `<code>${li.innerHTML}</code>`;
                 }
                 
@@ -479,11 +498,26 @@ export class QuestPanel {
                 return;
             }
             
-            if (event.button === 0) { // Left-click: toggle completed (existing logic)
+            if (event.button === 0) { // Left-click: toggle completed
                 const sTag = li.querySelector('s');
                 if (sTag) {
+                    // Task is already completed, uncomplete it - unwrap <s>
                     li.innerHTML = sTag.innerHTML;
                 } else {
+                    // Task is not completed, complete it - wrap in <s> and remove other states
+                    // First, unwrap any existing state tags to ensure clean state
+                    const codeTag = li.querySelector('code');
+                    const emTag = li.querySelector('em');
+                    
+                    if (codeTag) {
+                        // If failed, unwrap <code> first
+                        li.innerHTML = codeTag.innerHTML;
+                    } else if (emTag) {
+                        // If hidden, unwrap <em> first
+                        li.innerHTML = emTag.innerHTML;
+                    }
+                    
+                    // Now wrap in <s>
                     li.innerHTML = `<s>${li.innerHTML}</s>`;
                 }
                 const newTasksHtml = ul.innerHTML;
