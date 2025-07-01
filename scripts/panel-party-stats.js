@@ -47,10 +47,10 @@ export class PartyStatsPanel {
         try {
             // Get fresh reference to Blacksmith API
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            console.log('SQUIRE | Blacksmith API object:', blacksmith);
+            // console.log('SQUIRE | STATS Blacksmith API object:', blacksmith);
 
             if (!blacksmith?.stats?.player) {
-                console.warn('SQUIRE | Blacksmith Stats API (player) not available');
+                console.warn('SQUIRE | STATS Blacksmith Stats API (player) not available');
                 return data;
             }
 
@@ -58,7 +58,7 @@ export class PartyStatsPanel {
             const playerCharacters = game.actors.filter(actor => 
                 actor.type === 'character' && actor.hasPlayerOwner
             );
-            console.log('SQUIRE | Found player characters:', playerCharacters.map(pc => pc.name));
+            // console.log('SQUIRE | STATS Found player characters:', playerCharacters.map(pc => pc.name));
 
             // Initialize stat tracking
             let hitsByPlayer = new Map();
@@ -68,15 +68,15 @@ export class PartyStatsPanel {
             // Process each player's stats
             for (const actor of playerCharacters) {
                 try {
-                    console.log(`SQUIRE | Getting lifetime stats for ${actor.name}...`);
+                    // console.log(`SQUIRE | STATS Getting lifetime stats for ${actor.name}...`);
                     const stats = await blacksmith.stats.player.getLifetimeStats(actor.id);
                     
                     if (!stats) {
-                        console.log(`SQUIRE | No lifetime stats found for ${actor.name}`);
+                        // console.log(`SQUIRE | STATS No lifetime stats found for ${actor.name}`);
                         continue;
                     }
 
-                    console.log(`SQUIRE | Raw stats for ${actor.name}:`, stats);
+                    // console.log(`SQUIRE | STATS Raw stats for ${actor.name}:`, stats);
 
                     // Extract stats with null checks
                     const hits = stats.attacks?.totalHits ?? 0;
@@ -97,7 +97,7 @@ export class PartyStatsPanel {
                     if (turnTime > 0) turnTimeByPlayer.set(actor.name, turnTime);
 
                 } catch (error) {
-                    console.error(`SQUIRE | Error processing stats for ${actor.name}:`, error);
+                    console.error(`SQUIRE | STATS Error processing stats for ${actor.name}:`, error);
                 }
             }
 
@@ -136,13 +136,13 @@ export class PartyStatsPanel {
                     }
                 }
             } catch (error) {
-                console.error('SQUIRE | Error getting session duration:', error);
+                console.error('SQUIRE | STATS Error getting session duration:', error);
             }
 
-            console.log('SQUIRE | Final party stats data:', data);
+            // console.log('SQUIRE | STATS Final party stats data:', data);
 
         } catch (error) {
-            console.error('SQUIRE | Error gathering party stats:', error);
+            console.error('SQUIRE | STATS Error gathering party stats:', error);
         }
 
         return data;
