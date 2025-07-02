@@ -9,24 +9,34 @@ export class QuestPin extends PIXI.Container {
     this.objectiveIndex = objectiveIndex;
     this.displayNumber = displayNumber;
   
-    const pinWidth = 80;
-    const pinHeight = 80;
-    const pinRadius = 8;
+    const pinWidth = 74;
+    const pinHeight = 74;
+    const pinRadius = 4;
   
     // ===============================
     // 1. Draw subtle all-sides shadow
     // ===============================
+
+    // === 1. Fake soft shadow ===
+    // Draw a slightly larger, transparent shape underneath
     const shadow = new PIXI.Graphics();
-    shadow.beginFill(0x000000, 0.2); // Softer black shadow
-    shadow.drawRoundedRect(-pinWidth / 2, -pinHeight / 2 + 2, pinWidth, pinHeight, pinRadius); // Offset down slightly
+    shadow.beginFill(0x000000, 0.12); // Very subtle black
+    shadow.drawRoundedRect(
+      -pinWidth / 2 - 2,   // X - slightly bigger
+      -pinHeight / 2 - 2,  // Y - slightly bigger
+      pinWidth + 4,        // Width + blur effect
+      pinHeight + 4,       // Height + blur effect
+      pinRadius + 2        // Slightly more rounded
+    );
     shadow.endFill();
-    this.addChildAt(shadow, 0);
+    this.addChildAt(shadow, 0); // Make sure it's behind everything
+
   
     // =====================================
     // 2. Draw pin background (rounded rect)
     // =====================================
     const fillColor = 0x23221d; // Match top pin fill
-    const fillAlpha = 0.4;
+    const fillAlpha = 0.2;
     const borderColor = 0x000000;
   
     const rect = new PIXI.Graphics();
@@ -43,13 +53,16 @@ export class QuestPin extends PIXI.Container {
     // ==================================
     const iconStyle = new PIXI.TextStyle({
       fontFamily: 'FontAwesome',
-      fontSize: 26,
+      fontSize: 40,
       fill: '#FFFFFF',
       align: 'center',
+      stroke: '#000000',
+      strokeThickness: 3,
       dropShadow: true,
       dropShadowColor: '#000000',
-      dropShadowBlur: 2,
-      dropShadowDistance: 1
+      dropShadowBlur: 2,       // A bit more for softness
+      dropShadowDistance: 0,    // Centered = all sides
+      dropShadowAlpha: 0.60 // Makes the shadow more subtle
     });
     const icon = new PIXI.Text('\uf024', iconStyle); // Font Awesome flag icon
     icon.anchor.set(0.5);
@@ -63,7 +76,7 @@ export class QuestPin extends PIXI.Container {
     // ===========================================
     const refStyle = new PIXI.TextStyle({
       fontFamily: 'Signika',
-      fontSize: 11,
+      fontSize: 16,
       fill: '#FFFFFF',
       stroke: '#000000',
       strokeThickness: 3,
