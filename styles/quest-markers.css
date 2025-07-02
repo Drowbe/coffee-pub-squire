@@ -52,4 +52,46 @@
     border-radius: 50%;
     pointer-events: none;
     z-index: -1;
+}
+
+/* Quest Marker Tooltip Styles */
+.quest-marker-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(30, 30, 30, 0.95);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Signika', sans-serif;
+    z-index: 10000;
+    display: none;
+    max-width: 320px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    backdrop-filter: blur(4px);
+    animation: tooltip-fade-in 0.2s ease-out;
+}
+
+.quest-marker-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 10px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid rgba(30, 30, 30, 0.95);
+}
+
+@keyframes tooltip-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 } 

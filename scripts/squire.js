@@ -475,15 +475,6 @@ Hooks.on('canvasReady', () => {
       console.log('SQUIRE | Quest Pins | squirePins container moved to top of parent');
     }
     canvas.squirePins.interactive = true;
-    // Add a blue test pin to squirePins to test pointer events
-    const g = new PIXI.Graphics();
-    g.beginFill(0x0000ff).drawCircle(0, 0, 30).endFill();
-    g.x = 800; g.y = 600;
-    g.interactive = true;
-    g.eventMode = 'static';
-    g.hitArea = new PIXI.Circle(0, 0, 30);
-    g.on('pointerdown', () => ui.notifications.info('SQUIRE | Quest Pins | Test squirePins pin clicked!'));
-    canvas.squirePins.addChild(g);
   }
 });
 
