@@ -1,7 +1,7 @@
 export class QuestPin extends PIXI.Container {
   
   
-  constructor({ x, y, questUuid, objectiveIndex, displayNumber }) {
+  constructor({ x, y, questUuid, objectiveIndex, displayNumber, questState }) {
     super();
     this.x = x;
     this.y = y;
@@ -9,10 +9,34 @@ export class QuestPin extends PIXI.Container {
     this.objectiveIndex = objectiveIndex;
     this.displayNumber = displayNumber;
   
-    const radius = 30; // Radius of the circular pin
-    const borderColor = 0x000000;
-    const fillColor = 0x23221d;
-    const fillAlpha = 0.2;
+
+    // ===============================
+    // 0. Define pin properties
+    // ===============================
+    let radius = 40; // Radius of the circular pin
+    let borderColor = 0x000000;
+    let fillColor = 0x000000; // grey
+    let fillAlpha = 0.2; // Background transparency
+    let fontSize = radius - 10; // size of label
+    let fontColor = 0xFFFFFF; // white
+
+    if (questState === 'active') {
+      radius = 40; // Radius of the circular pin
+      borderColor = 0x1C4520; // dark green
+      fillColor = 0x3C9245; // green
+      fillAlpha = 0.2; // Background transparency
+      fontSize = radius - 10; // size of label
+      fontColor = 0xFFFFFF; // white
+
+    } else {
+      radius = 40; // Radius of the circular pin
+      borderColor = 0x000000;
+      fillColor = 0x000000; // grey
+      fillAlpha = 0.2; // Background transparency
+      fontSize = radius - 10; // size of label
+      fontColor = 0xFFFFFF; // white
+    }
+    
   
     // ===============================
     // 1. Draw circular pin background with blurred drop shadow
@@ -43,8 +67,8 @@ export class QuestPin extends PIXI.Container {
     // ===============================
     const refStyle = new PIXI.TextStyle({
       fontFamily: 'Signika',
-      fontSize: 20,
-      fill: '#FFFFFF',
+      fontSize: fontSize,
+      fill: fontColor,
       fontWeight: 'bold',
       stroke: '#000000',
       strokeThickness: 2,
