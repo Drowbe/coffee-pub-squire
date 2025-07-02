@@ -1,13 +1,14 @@
 export class QuestPin extends PIXI.Container {
   
   
-  constructor({ x, y, questUuid, objectiveIndex, displayNumber, questState }) {
+  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState }) {
     super();
     this.x = x;
     this.y = y;
     this.questUuid = questUuid;
     this.objectiveIndex = objectiveIndex;
     this.displayNumber = displayNumber;
+    this.objectiveState = objectiveState;
   
 
     // ===============================
@@ -20,14 +21,36 @@ export class QuestPin extends PIXI.Container {
     let fontSize = radius - 10; // size of label
     let fontColor = 0xFFFFFF; // white
 
-    if (questState === 'active') {
+    console.log('SQUIRE | QuestPin objectiveState', objectiveState);
+
+    if (objectiveState === 'active') {
+      radius = 40; // Radius of the circular pin
+      borderColor = 0x104A60; // dark green
+      fillColor = 0x1E85AD; // green
+      fillAlpha = 0.2; // Background transparency
+      fontSize = radius - 10; // size of label
+      fontColor = 0xFFFFFF; // white
+    } else if (objectiveState === 'failed') {
+      radius = 40; // Radius of the circular pin
+      borderColor = 0x871010;
+      fillColor = 0xD41A1A; // red
+      fillAlpha = 0.2; // Background transparency
+      fontSize = radius - 10; // size of label
+      fontColor = 0xFFFFFF; // white
+    } else if (objectiveState === 'hidden') {
+      radius = 40; // Radius of the circular pin
+      borderColor = 0x000000;
+      fillColor = 0x000000; // grey
+      fillAlpha = 0.2; // Background transparency
+      fontSize = radius - 10; // size of label
+      fontColor = 0xFFFFFF; // white
+    } else if (objectiveState === 'completed') {
       radius = 40; // Radius of the circular pin
       borderColor = 0x1C4520; // dark green
       fillColor = 0x3C9245; // green
       fillAlpha = 0.2; // Background transparency
       fontSize = radius - 10; // size of label
       fontColor = 0xFFFFFF; // white
-
     } else {
       radius = 40; // Radius of the circular pin
       borderColor = 0x000000;
@@ -36,7 +59,6 @@ export class QuestPin extends PIXI.Container {
       fontSize = radius - 10; // size of label
       fontColor = 0xFFFFFF; // white
     }
-    
   
     // ===============================
     // 1. Draw circular pin background with blurred drop shadow
@@ -80,7 +102,7 @@ export class QuestPin extends PIXI.Container {
       dropShadowAlpha: 0.6
     });
   
-    const refText = new PIXI.Text(displayNumber, refStyle);
+    const refText = new PIXI.Text(objectiveIndex, refStyle);
     refText.anchor.set(0.5);
     refText.position.set(0, 0);
     this.addChild(refText);
@@ -154,9 +176,51 @@ function getQuestNumber(questUuid) {
 
 Hooks.on('dropCanvasData', (canvas, data) => {
     if (data.type !== 'quest-objective') return false;
+    console.log('SQUIRE | Quest Pins | Drop data received:', data);
     const { questUuid, objectiveIndex } = data;
     const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
-    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber });
+    
+    // Look up the objective state from quest data
+    let objectiveState = 'active'; // Default state
+    try {
+        // Debug: Check various possible locations for quest data
+        console.log('SQUIRE | Quest Pins | Checking quest data locations:', {
+            gameSquire: game.squire,
+            gameQuests: game.quests,
+            gameJournal: game.journal,
+            gameActors: game.actors,
+            gameItems: game.items,
+            gameScenes: game.scenes,
+            gameUsers: game.users,
+            gameSettings: game.settings,
+            gameModules: Object.keys(game.modules)
+        });
+        
+        const quest = game.squire?.quests?.get(questUuid) || game.quests?.get(questUuid);
+        console.log('SQUIRE | Quest Pins | Quest lookup result:', {
+            questUuid,
+            questFound: !!quest,
+            questData: quest,
+            squireQuests: game.squire?.quests,
+            gameQuests: game.quests
+        });
+        if (quest && quest.objectives && quest.objectives[objectiveIndex]) {
+            const objective = quest.objectives[objectiveIndex];
+            console.log('SQUIRE | Quest Pins | Objective data:', {
+                objectiveIndex,
+                objective,
+                objectiveState: objective.state,
+                objectiveStatus: objective.status
+            });
+            objectiveState = quest.objectives[objectiveIndex].state || quest.objectives[objectiveIndex].status || 'active';
+        }
+    } catch (e) {
+        console.warn('SQUIRE | Quest Pins | Could not look up objective state:', e);
+    }
+    console.log('SQUIRE | Quest Pins | Looked up objectiveState:', objectiveState);
+    
+    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber, objectiveState });
+    console.log('SQUIRE | Quest Pins | Creating pin with objectiveState:', data.objectiveState || 'active');
     if (canvas.squirePins) {
         console.log('SQUIRE | Adding pin to canvas.squirePins', pin);
         canvas.squirePins.addChild(pin);
