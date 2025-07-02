@@ -1,4 +1,6 @@
 export class QuestPin extends PIXI.Container {
+  
+  
   constructor({ x, y, questUuid, objectiveIndex, displayNumber }) {
     super();
     this.x = x;
@@ -6,80 +8,94 @@ export class QuestPin extends PIXI.Container {
     this.questUuid = questUuid;
     this.objectiveIndex = objectiveIndex;
     this.displayNumber = displayNumber;
-
-    // Draw soft all-sides shadow
+  
+    const pinWidth = 80;
+    const pinHeight = 80;
+    const pinRadius = 8;
+  
+    // ===============================
+    // 1. Draw subtle all-sides shadow
+    // ===============================
     const shadow = new PIXI.Graphics();
-    shadow.beginFill(0x000000, 0.22);
-    shadow.drawRoundedRect(-26, -26, 52, 52, 12); // Larger, softer shadow
+    shadow.beginFill(0x000000, 0.2); // Softer black shadow
+    shadow.drawRoundedRect(-pinWidth / 2, -pinHeight / 2 + 2, pinWidth, pinHeight, pinRadius); // Offset down slightly
     shadow.endFill();
     this.addChildAt(shadow, 0);
-
-    // Draw rounded rectangle for pin background
-    const borderColor = 0x23221d; // Slightly lighter than before
-    const fillColor = 0x23221d;   // Slightly lighter than before
-    const fillAlpha = 0.50;       // More transparent
-    const rectSize = 80;          // Larger size
-    const rectRadius = 6;        // Slightly rounder corners
-    const rectOffset = rectSize / 2;
+  
+    // =====================================
+    // 2. Draw pin background (rounded rect)
+    // =====================================
+    const fillColor = 0x23221d; // Match top pin fill
+    const fillAlpha = 0.4;
+    const borderColor = 0x000000;
+  
     const rect = new PIXI.Graphics();
-    rect.lineStyle(3, borderColor, 1);
+    rect.lineStyle(2, borderColor, 1); // Thin black border
     rect.beginFill(fillColor, fillAlpha);
-    rect.drawRoundedRect(-rectOffset, -rectOffset, rectSize, rectSize, rectRadius);
+    rect.drawRoundedRect(-pinWidth / 2, -pinHeight / 2, pinWidth, pinHeight, pinRadius);
     rect.endFill();
     this.addChild(rect);
     rect.interactive = false;
     rect.eventMode = 'none';
-
-    // Draw Font Awesome flag icon centered in the pin
+  
+    // ==================================
+    // 3. Add Font Awesome flag icon
+    // ==================================
     const iconStyle = new PIXI.TextStyle({
       fontFamily: 'FontAwesome',
-      fontSize: 28,
+      fontSize: 26,
       fill: '#FFFFFF',
       align: 'center',
       dropShadow: true,
-      dropShadowColor: '#000',
-      dropShadowBlur: 3,
+      dropShadowColor: '#000000',
+      dropShadowBlur: 2,
       dropShadowDistance: 1
     });
     const icon = new PIXI.Text('\uf024', iconStyle); // Font Awesome flag icon
     icon.anchor.set(0.5);
-    icon.y = -4; // Centered
+    icon.y = -6; // Slightly above center
     this.addChild(icon);
     icon.interactive = false;
     icon.eventMode = 'none';
-
-    // Draw number/reference text below the icon, inside the pin
+  
+    // ===========================================
+    // 4. Add display number text inside the pin
+    // ===========================================
     const refStyle = new PIXI.TextStyle({
       fontFamily: 'Signika',
-      fontSize: 16,
+      fontSize: 11,
       fill: '#FFFFFF',
-      stroke: '#000',
-      strokeThickness: 4,
+      stroke: '#000000',
+      strokeThickness: 3,
       fontWeight: 'bold',
       align: 'center'
     });
     const refText = new PIXI.Text(displayNumber, refStyle);
     refText.anchor.set(0.5, 0);
-    refText.y = 12; // Below the icon, but inside the pin
+    refText.y = 10;
     this.addChild(refText);
     refText.interactive = false;
     refText.eventMode = 'none';
-
-    // For future: add interactivity, tooltips, etc.
+  
+    // ================================
+    // 5. Add interaction / hit area
+    // ================================
     this.interactive = true;
     this.buttonMode = true;
     this.eventMode = 'static';
     this.hitArea = new PIXI.Circle(0, 0, 28);
     this.cursor = 'pointer';
+  
     this.on('pointerdown', () => {
       console.log('SQUIRE | Quest Pins | Pin clicked!', this);
     });
     this.on('pointerover', this._onPointerOver.bind(this));
     this.on('pointerout', this._onPointerOut.bind(this));
-
-    // Debug log
+  
     console.log('SQUIRE | QuestPin created', this);
   }
+  
+  
 
   _onPointerOver(event) {
     // Lookup quest and objective text
