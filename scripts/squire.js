@@ -327,17 +327,17 @@ Hooks.once('init', async function() {
     // Add quest form to Hooks
     window.QuestForm = QuestForm;
 
-    // Insert SquireLayer before the 'tiles' layer
+    // Insert SquireLayer after the 'foreground' layer
     const layers = CONFIG.Canvas.layers;
     const newLayers = {};
     for (const [key, value] of Object.entries(layers)) {
-        if (key === 'tiles') {
+        newLayers[key] = value;
+        if (key === 'foreground') {
             newLayers['squire'] = {
                 layerClass: SquireLayer,
-                group: 'interface'
+                group: 'foreground'
             };
         }
-        newLayers[key] = value;
     }
     CONFIG.Canvas.layers = newLayers;
 });
@@ -450,77 +450,12 @@ Hooks.on('controlToken', async (token, controlled) => {
 });
 
 // Hooks
-Hooks.on('canvasReady', async () => {
-    // Try to find a suitable actor in this order:
-    // 1. Currently controlled token
-    // 2. User's default character
-    // 3. First owned character-type token
-    // 4. Any owned token
-    let initialActor = null;
-    let selectionReason = "";
-    
-    // 1. Check for controlled token
-    initialActor = canvas.tokens?.controlled[0]?.actor;
-    if (initialActor) {
-        selectionReason = "controlled token";
-    }
-    
-    // 2. Try default character if no controlled token
-    if (!initialActor) {
-        initialActor = game.user.character;
-        if (initialActor) {
-            selectionReason = "default character";
-        }
-    }
-    
-    // 3. Try to find first owned character token
-    if (!initialActor) {
-        const characterToken = canvas.tokens?.placeables.find(token => 
-            token.actor?.isOwner && token.actor?.type === 'character'
-        );
-        initialActor = characterToken?.actor;
-        if (initialActor) {
-            selectionReason = "first owned character token";
-        }
-    }
-    
-    // 4. Fall back to any owned token
-    if (!initialActor) {
-        const anyToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
-        initialActor = anyToken?.actor;
-        if (initialActor) {
-            selectionReason = "first owned token";
-        }
-    }
-
-    // Initialize with the found actor
-    if (initialActor) {
-        if (PanelManager.element) {
-            PanelManager.element.removeClass('expanded');
-        }
-        
-        await PanelManager.initialize(initialActor);
-        
-        // Force a complete tray refresh
-        if (PanelManager.instance) {
-            await PanelManager.instance.updateTray();
-        }
-        
-        // Play tray open sound
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (blacksmith) {
-            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-        }
-        
-        if (PanelManager.element) {
-            PanelManager.element.addClass('expanded');
-        }
-    } else {
-        console.log("SQUIRE | No Initial Actor Found", {
-            reason: "Could not find any suitable token or character"
-        });
-    }
+Hooks.on('canvasInit', () => {
+  if (!canvas.squire) {
+    const squireLayer = new SquireLayer();
+    canvas.stage.addChild(squireLayer);
+    canvas.squire = squireLayer;
+  }
 });
 
 /**
