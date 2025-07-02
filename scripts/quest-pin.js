@@ -14,6 +14,8 @@ export class QuestPin extends PIXI.Container {
     circle.drawCircle(0, 0, 28);
     circle.endFill();
     this.addChild(circle);
+    circle.interactive = false;
+    circle.eventMode = 'none';
 
     // Draw number
     const style = new PIXI.TextStyle({
@@ -28,12 +30,16 @@ export class QuestPin extends PIXI.Container {
     const text = new PIXI.Text(displayNumber, style);
     text.anchor.set(0.5);
     this.addChild(text);
+    text.interactive = false;
+    text.eventMode = 'none';
 
     // For future: add interactivity, tooltips, etc.
     this.interactive = true;
     this.buttonMode = true;
+    this.eventMode = 'static';
+    this.hitArea = new PIXI.Circle(0, 0, 28);
     this.on('pointerdown', () => {
-      console.log('QuestPin clicked!', this);
+      console.log('SQUIRE | Quest Pins | Pin clicked!', this);
     });
 
     // Debug log
@@ -55,11 +61,12 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     const { questUuid, objectiveIndex } = data;
     const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
     const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber });
-    if (canvas.squire) {
-        console.log('SQUIRE | Adding pin to canvas.squire', pin);
-        canvas.squire.addPin(pin);
+    if (canvas.squirePins) {
+        console.log('SQUIRE | Adding pin to canvas.squirePins', pin);
+        canvas.squirePins.addChild(pin);
+        console.log('SQUIRE | canvas.squirePins children after add:', canvas.squirePins.children);
     } else {
-        console.error('SQUIRE | canvas.squire is not available!', canvas);
+        console.error('SQUIRE | canvas.squirePins is not available!', canvas);
     }
     return true;
 }); 

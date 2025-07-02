@@ -6,7 +6,6 @@ import { registerHelpers } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestForm } from './quest-form.js';
 import { QuestParser } from './quest-parser.js';
-import { SquireLayer } from './squire-layer.js';
 import { QuestPin } from './quest-pin.js';
 
 let socket;
@@ -335,7 +334,7 @@ Hooks.once('init', async function() {
         if (key === 'foreground') {
             newLayers['squire'] = {
                 layerClass: SquireLayer,
-                group: 'foreground'
+                group: 'primary'
             };
         }
     }
@@ -449,12 +448,42 @@ Hooks.on('controlToken', async (token, controlled) => {
     await PanelManager.initialize(token.actor);
 });
 
-// Hooks
+// Create a PIXI.Container for quest pins
 Hooks.on('canvasInit', () => {
-  if (!canvas.squire) {
-    const squireLayer = new SquireLayer();
-    canvas.stage.addChild(squireLayer);
-    canvas.squire = squireLayer;
+  if (!canvas.squirePins) {
+    const squirePins = new PIXI.Container();
+    squirePins.sortableChildren = true;
+    squirePins.interactive = true;
+    squirePins.eventMode = 'static';
+    if (canvas.foregroundGroup) {
+      canvas.foregroundGroup.addChild(squirePins);
+      console.log('SQUIRE | Quest Pins | squirePins container added to foregroundGroup', squirePins);
+    } else {
+      canvas.stage.addChild(squirePins);
+      console.log('SQUIRE | Quest Pins | squirePins container added to stage', squirePins);
+    }
+    canvas.squirePins = squirePins;
+  }
+});
+
+// Move squirePins to top after canvasReady (if needed)
+Hooks.on('canvasReady', () => {
+  if (canvas.squirePins) {
+    const parent = canvas.squirePins.parent;
+    if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
+      parent.addChild(canvas.squirePins);
+      console.log('SQUIRE | Quest Pins | squirePins container moved to top of parent');
+    }
+    canvas.squirePins.interactive = true;
+    // Add a blue test pin to squirePins to test pointer events
+    const g = new PIXI.Graphics();
+    g.beginFill(0x0000ff).drawCircle(0, 0, 30).endFill();
+    g.x = 800; g.y = 600;
+    g.interactive = true;
+    g.eventMode = 'static';
+    g.hitArea = new PIXI.Circle(0, 0, 30);
+    g.on('pointerdown', () => ui.notifications.info('SQUIRE | Quest Pins | Test squirePins pin clicked!'));
+    canvas.squirePins.addChild(g);
   }
 });
 
@@ -774,12 +803,12 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     const { questUuid, objectiveIndex } = data;
     const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
     const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber });
-    if (canvas.squire) {
-      console.log('SQUIRE | Adding pin to canvas.squire', pin);
-      canvas.squire.addPin(pin);
-      console.log('SQUIRE | canvas.squire children after add:', canvas.squire.children);
+    if (canvas.squirePins) {
+      console.log('SQUIRE | Adding pin to canvas.squirePins', pin);
+      canvas.squirePins.addChild(pin);
+      console.log('SQUIRE | canvas.squirePins children after add:', canvas.squirePins.children);
     } else {
-      console.error('SQUIRE | canvas.squire is not available!', canvas);
+      console.error('SQUIRE | canvas.squirePins is not available!', canvas);
     }
     return true;
   }
