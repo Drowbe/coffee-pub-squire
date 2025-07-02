@@ -9,94 +9,67 @@ export class QuestPin extends PIXI.Container {
     this.objectiveIndex = objectiveIndex;
     this.displayNumber = displayNumber;
   
-    const pinWidth = 74;
-    const pinHeight = 74;
-    const pinRadius = 4;
-  
-    // ===============================
-    // 1. Draw subtle all-sides shadow
-    // ===============================
-
-    // === 1. Fake soft shadow ===
-    // Draw a slightly larger, transparent shape underneath
-    const shadow = new PIXI.Graphics();
-    shadow.beginFill(0x000000, 0.12); // Very subtle black
-    shadow.drawRoundedRect(
-      -pinWidth / 2 - 2,   // X - slightly bigger
-      -pinHeight / 2 - 2,  // Y - slightly bigger
-      pinWidth + 4,        // Width + blur effect
-      pinHeight + 4,       // Height + blur effect
-      pinRadius + 2        // Slightly more rounded
-    );
-    shadow.endFill();
-    this.addChildAt(shadow, 0); // Make sure it's behind everything
-
-  
-    // =====================================
-    // 2. Draw pin background (rounded rect)
-    // =====================================
-    const fillColor = 0x23221d; // Match top pin fill
-    const fillAlpha = 0.2;
+    const radius = 30; // Radius of the circular pin
     const borderColor = 0x000000;
+    const fillColor = 0x23221d;
+    const fillAlpha = 0.2;
   
-    const rect = new PIXI.Graphics();
-    rect.lineStyle(2, borderColor, 1); // Thin black border
-    rect.beginFill(fillColor, fillAlpha);
-    rect.drawRoundedRect(-pinWidth / 2, -pinHeight / 2, pinWidth, pinHeight, pinRadius);
-    rect.endFill();
-    this.addChild(rect);
-    rect.interactive = false;
-    rect.eventMode = 'none';
+    // ===============================
+    // 1. Draw circular pin background with blurred drop shadow
+    // ===============================
+    const circle = new PIXI.Graphics();
+    circle.lineStyle(2, borderColor, 1); // Thin black border
+    circle.beginFill(fillColor, fillAlpha);
+    circle.drawCircle(0, 0, radius);
+    circle.endFill();
   
-    // ==================================
-    // 3. Add Font Awesome flag icon
-    // ==================================
-    const iconStyle = new PIXI.TextStyle({
-      fontFamily: 'FontAwesome',
-      fontSize: 40,
-      fill: '#FFFFFF',
-      align: 'center',
-      stroke: '#000000',
-      strokeThickness: 3,
-      dropShadow: true,
-      dropShadowColor: '#000000',
-      dropShadowBlur: 2,       // A bit more for softness
-      dropShadowDistance: 0,    // Centered = all sides
-      dropShadowAlpha: 0.60 // Makes the shadow more subtle
-    });
-    const icon = new PIXI.Text('\uf024', iconStyle); // Font Awesome flag icon
-    icon.anchor.set(0.5);
-    icon.y = -6; // Slightly above center
-    this.addChild(icon);
-    icon.interactive = false;
-    icon.eventMode = 'none';
+    // Apply soft drop shadow filter
+    circle.filters = [
+      new PIXI.filters.DropShadowFilter({
+        color: 0x000000,
+        alpha: 0.6,
+        blur: 6,
+        distance: 0,
+        rotation: 0
+      })
+    ];
   
-    // ===========================================
-    // 4. Add display number text inside the pin
-    // ===========================================
+    this.addChild(circle);
+    circle.interactive = false;
+    circle.eventMode = 'none';
+  
+    // ===============================
+    // 2. Display number centered inside circle
+    // ===============================
     const refStyle = new PIXI.TextStyle({
       fontFamily: 'Signika',
-      fontSize: 16,
+      fontSize: 20,
       fill: '#FFFFFF',
-      stroke: '#000000',
-      strokeThickness: 3,
       fontWeight: 'bold',
-      align: 'center'
+      stroke: '#000000',
+      strokeThickness: 2,
+      align: 'center',
+      dropShadow: true,
+      dropShadowColor: '#000000',
+      dropShadowBlur: 2,
+      dropShadowDistance: 0,
+      dropShadowAlpha: 0.6
     });
+  
     const refText = new PIXI.Text(displayNumber, refStyle);
-    refText.anchor.set(0.5, 0);
-    refText.y = 10;
+    refText.anchor.set(0.5);
+    refText.position.set(0, 0);
     this.addChild(refText);
     refText.interactive = false;
     refText.eventMode = 'none';
   
     // ================================
-    // 5. Add interaction / hit area
+    // 3. Add interaction / hit area
     // ================================
     this.interactive = true;
     this.buttonMode = true;
     this.eventMode = 'static';
-    this.hitArea = new PIXI.Circle(0, 0, 28);
+    this.hitArea = new PIXI.Circle(0, 0, radius);
     this.cursor = 'pointer';
   
     this.on('pointerdown', () => {
@@ -107,6 +80,8 @@ export class QuestPin extends PIXI.Container {
   
     console.log('SQUIRE | QuestPin created', this);
   }
+  
+  
   
   
 
