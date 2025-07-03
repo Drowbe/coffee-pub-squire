@@ -8,7 +8,7 @@ function getBlacksmith() {
 export class QuestPin extends PIXI.Container {
   
   
-  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState, visible = true }) {
+  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState }) {
     super();
     this.x = x;
     this.y = y;
@@ -16,84 +16,31 @@ export class QuestPin extends PIXI.Container {
     this.objectiveIndex = objectiveIndex;
     this.displayNumber = displayNumber;
     this.objectiveState = objectiveState;
-    this.visible = visible;
     this.pinId = this._generatePinId();
     this.isDragging = false;
     this.dragData = null;
   
+    // Debug logging for constructor state
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Constructor called', {
+      pinId: this.pinId,
+      objectiveState: this.objectiveState,
+      questUuid: this.questUuid,
+      objectiveIndex: this.objectiveIndex,
+      displayNumber: this.displayNumber,
+      note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags'
+    });
 
     // ===============================
-    // 0. Define pin properties
+    // 0. Initialize pin properties
     // ===============================
-    let radius = 40; // Radius of the circular pin
-    let borderColor = 0x000000;
-    let fillColor = 0x000000; // grey
-    let fillAlpha = 0.2; // Background transparency
-    let fontSize = radius - 5; // size of label
-    let fontColor = 0xFFFFFF; // white
-
-    if (objectiveState === 'active') {
-      radius = 40; // Radius of the circular pin
-      borderColor = 0x104A60; // dark green
-      fillColor = 0x1E85AD; // green
-      fillAlpha = 0.2; // Background transparency
-      fontSize = radius - 10; // size of label
-      fontColor = 0xFFFFFF; // white
-    } else if (objectiveState === 'failed') {
-      radius = 40; // Radius of the circular pin
-      borderColor = 0x871010;
-      fillColor = 0xD41A1A; // red
-      fillAlpha = 0.2; // Background transparency
-      fontSize = radius - 10; // size of label
-      fontColor = 0xFFFFFF; // white
-    } else if (objectiveState === 'hidden') {
-      radius = 40; // Radius of the circular pin
-      borderColor = 0x000000;
-      fillColor = 0x000000; // grey
-      fillAlpha = 0.2; // Background transparency
-      fontSize = radius - 10; // size of label
-      fontColor = 0xFFFFFF; // white
-    } else if (objectiveState === 'completed') {
-      radius = 40; // Radius of the circular pin
-      borderColor = 0x1C4520; // dark green
-      fillColor = 0x3C9245; // green
-      fillAlpha = 0.2; // Background transparency
-      fontSize = radius - 10; // size of label
-      fontColor = 0xFFFFFF; // white
-    } else {
-      radius = 40; // Radius of the circular pin
-      borderColor = 0x000000;
-      fillColor = 0x000000; // grey
-      fillAlpha = 0.2; // Background transparency
-      fontSize = radius - 10; // size of label
-      fontColor = 0xFFFFFF; // white
-    }
-
-    // Store radius for later use
-    this.radius = radius;
-    this.originalBorderColor = borderColor;
-    this.originalFillColor = fillColor;
-  
+    this.radius = 40; // Default radius
+    this.fontSize = 35; // Default font size
+    this.fontColor = 0xFFFFFF; // Default font color
+    
     // ===============================
     // 1. Draw circular pin background with blurred drop shadow
     // ===============================
     const circle = new PIXI.Graphics();
-    circle.lineStyle(2, borderColor, 1); // Thin black border
-    circle.beginFill(fillColor, fillAlpha);
-    circle.drawCircle(0, 0, radius);
-    circle.endFill();
-  
-    // Apply soft drop shadow filter
-    circle.filters = [
-      new PIXI.filters.DropShadowFilter({
-        color: 0x000000,
-        alpha: 0.6,
-        blur: 6,
-        distance: 0,
-        rotation: 0
-      })
-    ];
-  
     this.addChild(circle);
     this.circle = circle; // Store reference for later updates
     circle.interactive = false;
@@ -104,8 +51,8 @@ export class QuestPin extends PIXI.Container {
     // ===============================
     const refStyle = new PIXI.TextStyle({
       fontFamily: 'Signika',
-      fontSize: fontSize,
-      fill: fontColor,
+      fontSize: this.fontSize,
+      fill: this.fontColor,
       fontWeight: 'bold',
       stroke: '#000000',
       strokeThickness: 2,
@@ -131,10 +78,13 @@ export class QuestPin extends PIXI.Container {
     this.interactive = true;
     this.buttonMode = true;
     this.eventMode = 'static';
-    this.hitArea = new PIXI.Circle(0, 0, radius);
+    this.hitArea = new PIXI.Circle(0, 0, this.radius);
     this.cursor = 'pointer';
 
-    // Apply visibility state
+    // Now update the appearance based on the objective state
+    this._updatePinAppearance();
+
+    // Apply visibility state based on objectiveState
     this._updateVisibility();
   
     // Enhanced event handling
@@ -156,9 +106,77 @@ export class QuestPin extends PIXI.Container {
     return `${this.questUuid}-${this.objectiveIndex}-${Date.now()}`;
   }
 
+  // Centralized method to update pin appearance based on objective state
+  _updatePinAppearance() {
+    // Define pin properties based on objective state
+
+   
+    // Fill properties
+    let pinRadius = 40; // Radius of the circular fill
+    let pinColor = 0x1E85AD; // green (default for active)
+    let pinAlpha = 0.8; // Background transparency
+
+    // Border properties
+    let pinBorderColor = 0x214D7F; // pin border color Blue
+    let pinBorderTransparency = 1;
+    let pinBorderWidth = 4;
+    // Text properties
+    let pinFontSize = pinRadius - 10; // size of label
+    let pinFontColor = 0xFFFFFF; // white
+
+    // Update properties based on objective state
+    if (this.objectiveState === 'failed') {
+      pinBorderColor = 0x871010; //red
+      pinColor = 0xD41A1A; // red
+    } else if (this.objectiveState === 'hidden') {
+      pinBorderColor = 0x000000; // black
+      pinColor = 0x000000; // black
+    } else if (this.objectiveState === 'completed') {
+      pinBorderColor = 0x1C4520; // green
+      pinColor = 0x3C9245; // green
+    } else {
+      pinBorderColor = 0x214D7F; // blue
+      pinColor = 0x1E85AD; // blue
+    }
+
+    // Store properties for later use
+    this.radius = pinRadius;
+    this.originalPinBorderColor = pinBorderColor;
+    this.originalPinColor = pinColor;
+    this.pinFontSize = pinFontSize;
+    this.pinFontColor = pinFontColor;
+
+    // Update the circle appearance
+    this.circle.clear();
+    this.circle.lineStyle(pinBorderWidth, pinBorderColor, pinBorderTransparency);
+    this.circle.beginFill(pinColor, pinAlpha);
+    this.circle.drawCircle(0, 0, pinRadius);
+    this.circle.endFill();
+
+    // Apply soft drop shadow filter
+    this.circle.filters = [
+      new PIXI.filters.DropShadowFilter({
+        color: 0x000000,
+        alpha: 0.6,
+        blur: 6,
+        distance: 0,
+        rotation: 0
+      })
+    ];
+
+    // Update the text appearance
+    if (this.refText) {
+      this.refText.style.fontSize = pinFontSize;
+      this.refText.style.fill = pinFontColor;
+    }
+
+    // Update hit area
+    this.hitArea = new PIXI.Circle(0, 0, pinRadius);
+  }
+
   // Update pin visibility - hidden pins are invisible to players, visible to GM
   _updateVisibility() {
-    if (!this.visible) {
+    if (this.objectiveState === 'hidden') {
       if (game.user.isGM) {
         // For GM: show hidden pins with hidden colors (semi-transparent black)
         this.alpha = 0.6;
@@ -174,59 +192,49 @@ export class QuestPin extends PIXI.Container {
         this.interactive = false;
       }
     } else {
-      // Visible for everyone
+      // Visible for everyone (active, completed, failed states)
       this.alpha = 1.0;
       this.interactive = true;
-      // Restore original colors
-      this.circle.clear();
-      this.circle.lineStyle(2, this.originalBorderColor, 1);
-      this.circle.beginFill(this.originalFillColor, 0.2);
-      this.circle.drawCircle(0, 0, this.radius);
-      this.circle.endFill();
+      // Restore original colors using centralized method
+      this._updatePinAppearance();
     }
+    
+    // Debug logging
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Visibility updated', {
+      pinId: this.pinId,
+      objectiveState: this.objectiveState,
+      alpha: this.alpha,
+      interactive: this.interactive,
+      user: game.user.name,
+      isGM: game.user.isGM
+    });
   }
 
   // Toggle visibility - GM only
   toggleVisibility() {
     if (!game.user.isGM) return; // Only GM can toggle visibility
     
-    this.visible = !this.visible;
+    // Toggle between 'active' and 'hidden' states
+    this.objectiveState = this.objectiveState === 'hidden' ? 'active' : 'hidden';
     this._updateVisibility();
     this._saveToPersistence();
   }
 
   // Update pin appearance based on new objective state
   updateObjectiveState(newState) {
+    const oldState = this.objectiveState;
     this.objectiveState = newState;
     
-    // Update colors based on new state
-    let borderColor = 0x000000;
-    let fillColor = 0x000000;
+    // Debug logging for state changes
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Objective state updated', {
+      pinId: this.pinId,
+      oldState: oldState,
+      newState: newState,
+      note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags'
+    });
     
-    if (newState === 'active') {
-      borderColor = 0x104A60;
-      fillColor = 0x1E85AD;
-    } else if (newState === 'failed') {
-      borderColor = 0x871010;
-      fillColor = 0xD41A1A;
-    } else if (newState === 'hidden') {
-      borderColor = 0x000000;
-      fillColor = 0x000000;
-    } else if (newState === 'completed') {
-      borderColor = 0x1C4520;
-      fillColor = 0x3C9245;
-    }
-    
-    // Update the circle appearance
-    this.circle.clear();
-    this.circle.lineStyle(2, borderColor, 1);
-    this.circle.beginFill(fillColor, 0.2);
-    this.circle.drawCircle(0, 0, this.radius);
-    this.circle.endFill();
-    
-    // Store new colors
-    this.originalBorderColor = borderColor;
-    this.originalFillColor = fillColor;
+    // Update pin appearance using centralized method
+    this._updatePinAppearance();
     
     // Save to persistence
     this._saveToPersistence();
@@ -252,8 +260,7 @@ export class QuestPin extends PIXI.Container {
         objectiveIndex: this.objectiveIndex,
         x: this.x,
         y: this.y,
-        objectiveState: this.objectiveState,
-        visible: this.visible
+        objectiveState: this.objectiveState
       };
 
       if (existingIndex >= 0) {
@@ -358,11 +365,14 @@ export class QuestPin extends PIXI.Container {
       this._lastClickTime = null;
     } else {
       this._lastClickTime = Date.now();
-      setTimeout(() => {
-        if (this._lastClickTime === Date.now()) {
-          this.toggleVisibility();
-        }
-      }, 200);
+      // Only GMs can toggle visibility
+      if (game.user.isGM) {
+        setTimeout(() => {
+          if (this._lastClickTime === Date.now()) {
+            this.toggleVisibility();
+          }
+        }, 200);
+      }
     }
   }
 
@@ -521,7 +531,7 @@ export class QuestPin extends PIXI.Container {
     // Add visibility status to tooltip for GM
     const visibilityStatus = game.user.isGM ? 
       `<div style="font-size: 10px; opacity: 0.6; margin-top: 2px;">
-        ${this.visible ? 'Visible to all players' : 'Hidden from players'}
+        ${this.objectiveState === 'hidden' ? 'Hidden from players' : 'Visible to all players'}
       </div>` : '';
     
     tooltip.innerHTML = `
@@ -600,9 +610,6 @@ Hooks.on('canvasSceneChange', (scene) => {
 
 // Function to load persisted pins for current scene
 function loadPersistedPins() {
-    // Only GMs can load and manage quest pins
-    if (!game.user.isGM) return;
-    
     try {
         const sceneId = canvas.scene?.id;
         if (!sceneId) {
@@ -640,58 +647,66 @@ function loadPersistedPins() {
                     questUuid: pinData.questUuid,
                     objectiveIndex: pinData.objectiveIndex,
                     displayNumber: displayNumber,
-                    objectiveState: pinData.objectiveState,
-                    visible: pinData.visible !== false // Default to true if not specified
+                    objectiveState: pinData.objectiveState
                 });
                 
                 // Restore the original pinId for persistence
                 pin.pinId = pinData.pinId;
                 
-                // Update the pin state to match current quest state
-                try {
-                    const questData = pin._getQuestData();
-                    if (questData) {
-                        let content = '';
-                        if (typeof questData.text?.content === 'string') {
-                            content = questData.text.content;
-                        } else if (typeof questData.text === 'string') {
-                            content = questData.text;
-                        }
-                        
-                        if (content) {
-                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                            if (tasksMatch) {
-                                const tasksHtml = tasksMatch[1];
-                                const parser = new DOMParser();
-                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                const ul = ulDoc.querySelector('ul');
-                                if (ul) {
-                                    const liList = Array.from(ul.children);
-                                    const li = liList[pin.objectiveIndex];
-                                    if (li) {
-                                        let currentState = 'active';
-                                        if (li.querySelector('s')) {
-                                            currentState = 'completed';
-                                        } else if (li.querySelector('code')) {
-                                            currentState = 'failed';
-                                        } else if (li.querySelector('em')) {
-                                            currentState = 'hidden';
+                // Update the pin state to match current quest state (GM only)
+                if (game.user.isGM) {
+                    try {
+                        const questData = pin._getQuestData();
+                        if (questData) {
+                            let content = '';
+                            if (typeof questData.text?.content === 'string') {
+                                content = questData.text.content;
+                            } else if (typeof questData.text === 'string') {
+                                content = questData.text;
+                            }
+                            
+                            if (content) {
+                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                                if (tasksMatch) {
+                                    const tasksHtml = tasksMatch[1];
+                                    const parser = new DOMParser();
+                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                    const ul = ulDoc.querySelector('ul');
+                                    if (ul) {
+                                        const liList = Array.from(ul.children);
+                                        const li = liList[pin.objectiveIndex];
+                                        if (li) {
+                                            let currentState = 'active';
+                                            if (li.querySelector('s')) {
+                                                currentState = 'completed';
+                                            } else if (li.querySelector('code')) {
+                                                currentState = 'failed';
+                                            } else if (li.querySelector('em')) {
+                                                currentState = 'hidden';
+                                            }
+                                            pin.updateObjectiveState(currentState);
                                         }
-                                        pin.updateObjectiveState(currentState);
                                     }
                                 }
                             }
                         }
+                    } catch (error) {
+                        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
                     }
-                } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
                 }
                 
                 // Apply visibility state after pin is created
                 pin._updateVisibility();
                 
                 canvas.squirePins.addChild(pin);
-                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { pin });
+                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { 
+                    pin: pin.pinId, 
+                    objectiveState: pin.objectiveState, 
+                    alpha: pin.alpha, 
+                    interactive: pin.interactive,
+                    user: game.user.name,
+                    isGM: game.user.isGM
+                });
             } catch (error) {
                 getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error loading pin', { pinData, error });
             }
