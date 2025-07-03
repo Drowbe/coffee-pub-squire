@@ -1,5 +1,10 @@
 import { MODULE } from './const.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class QuestForm extends FormApplication {
     constructor(quest = null, options = {}) {
         super(quest, options);
@@ -147,7 +152,14 @@ export class QuestForm extends FormApplication {
             
             return true;
         } catch (error) {
-            console.error("Error saving quest:", error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error saving quest',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error(`Failed to save quest: ${error.message}`);
             return false;
         }
