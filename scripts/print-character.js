@@ -1,5 +1,10 @@
 import { MODULE, TEMPLATES } from './const.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 // Configuration object for print functionality
 const PRINT_CONFIG = {
     IMAGE_LOAD_TIMEOUT: 5000,
@@ -233,8 +238,15 @@ export class PrintCharacterSheet {
             ]);
 
         } catch (error) {
-            console.error('Error printing character sheet:', error);
-            ui.notifications.error(`Failed to print character sheet: ${error.message}`);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error printing character sheet',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            ui.notifications.error('Failed to print character sheet. See console for details.');
         }
     }
 
