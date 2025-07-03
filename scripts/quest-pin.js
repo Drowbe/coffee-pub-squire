@@ -422,8 +422,9 @@ function getQuestNumber(questUuid) {
     return Math.abs(hash) % 100 + 1;
 }
 
+// Re-enable only the dropCanvasData hook in quest-pin.js
 Hooks.on('dropCanvasData', (canvas, data) => {
-    if (data.type !== 'quest-objective') return false;
+    if (data.type !== 'quest-objective') return; // Let Foundry handle all other drops!
     console.log('SQUIRE | Quest Pins | Drop data received:', data);
     const { questUuid, objectiveIndex, objectiveState } = data;
     const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
@@ -443,8 +444,13 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     } else {
         console.error('SQUIRE | canvas.squirePins is not available!', canvas);
     }
-    return true;
+    return true; // Only block further handling for quest pins
 });
+
+// Comment out all Hooks.on(...) calls in quest-pin.js
+// Hooks.on('dropCanvasData', ...)
+// Hooks.on('canvasReady', ...)
+// Hooks.on('canvasSceneChange', ...)
 
 // Load persisted pins when canvas is ready
 Hooks.on('canvasReady', (canvas) => {
