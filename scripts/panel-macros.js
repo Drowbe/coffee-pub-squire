@@ -2,6 +2,11 @@ import { MODULE, TEMPLATES } from './const.js';
 import { MacrosWindow } from './window-macros.js';
 import { PanelManager } from './panel-manager.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 // Hide Foundry hotbar if setting is enabled
 function updateHotbarVisibility() {
   // Only run if the setting is registered
@@ -295,7 +300,14 @@ export class MacrosPanel {
                     macros[idx] = { id: null, name: null, img: null };
                 } else {
                     // Else (slot is empty), remove it (unless it's the last slot)
-                    console.log('SQUIRE | MACROS | Slot is empty, removing slot');
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'MACROS | Slot is empty, removing slot',
+                        { macros, idx },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
                     if (macros.length > 1) {
                         removedMacroId = macros[idx]?.id || null;
                         macros.splice(idx, 1);
@@ -303,7 +315,14 @@ export class MacrosPanel {
                 }
                 // Always leave at least one slot
                 if (macros.length === 0) {
-                    console.log('SQUIRE | MACROS | Last slot detected, leaving it empty');
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'MACROS | Last slot detected, leaving it empty',
+                        { macros },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
                     macros = [{ id: null, name: null, img: null }];
                 }
                 await game.settings.set(MODULE.ID, 'userMacros', macros);
@@ -412,7 +431,14 @@ export class MacrosPanel {
         // Get a fresh reference to the main tray
         const mainTray = $('.squire-tray');
         if (!mainTray.length) {
-            console.error(`${MODULE.ID} | Could not find main tray when returning macros panel`);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Could not find main tray when returning macros panel',
+                { mainTray },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             return;
         }
 
@@ -461,7 +487,14 @@ export class MacrosPanel {
             // Activate listeners on the new content
             this._activateListeners(mainTray);
         } catch (error) {
-            console.error(`${MODULE.ID} | Error returning macros panel to main tray:`, error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error returning macros panel to main tray',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error("Error returning macros panel to main tray");
         }
         if (window.PanelManager?.instance) {

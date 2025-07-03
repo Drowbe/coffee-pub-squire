@@ -2,6 +2,11 @@ import { MODULE, TEMPLATES } from './const.js';
 import { CodexParser } from './codex-parser.js';
 import { copyToClipboard } from './helpers.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 class CodexForm extends FormApplication {
     constructor(entry = null, options = {}) {
         super(entry, options);
@@ -90,7 +95,14 @@ class CodexForm extends FormApplication {
             
             return true;
         } catch (error) {
-            console.error("Error saving codex entry:", error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error saving codex entry',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error(`Failed to save codex entry: ${error.message}`);
             return false;
         }
@@ -243,7 +255,14 @@ export class CodexPanel {
                         }
                     }
                 } catch (error) {
-                    console.error("Error parsing codex entry:", error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error parsing codex entry',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                 }
             }
         }

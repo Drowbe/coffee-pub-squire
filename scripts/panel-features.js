@@ -2,6 +2,11 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './panel-manager.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class FeaturesPanel {
     constructor(actor) {
         this.actor = actor;
@@ -163,13 +168,27 @@ export class FeaturesPanel {
                 const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
                 const feature = this.actor.items.get(featureId);
                 if (!feature) {
-                    console.error('Feature not found:', featureId);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Feature not found',
+                        { featureId },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     return;
                 }
 
                 feature.sheet.render(true);
             } catch (error) {
-                console.error('Error rendering feature sheet:', error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error rendering feature sheet',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.error("Error displaying feature sheet.");
             }
         });

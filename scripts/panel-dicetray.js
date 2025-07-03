@@ -1,6 +1,11 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { DiceTrayWindow } from './window-dicetray.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class DiceTrayPanel {
     static isWindowOpen = false;
     static activeWindow = null;
@@ -437,7 +442,14 @@ export class DiceTrayPanel {
             this.currentFormula = '';
 
         } catch (err) {
-            console.error("Dice roll error:", err);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Dice roll error',
+                { err },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error("Invalid dice formula");
         }
     }
@@ -517,7 +529,14 @@ export class DiceTrayPanel {
             // Automatically roll
             this._onRollClick(panel);
         } catch (err) {
-            console.error("Error processing advantage/disadvantage:", err);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error processing advantage/disadvantage',
+                { err },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error("Invalid formula for advantage/disadvantage");
         }
     }
@@ -570,7 +589,14 @@ export class DiceTrayPanel {
         // Get a fresh reference to the main tray
         const mainTray = $('.squire-tray');
         if (!mainTray.length) {
-            console.error(`${MODULE.ID} | Could not find main tray when returning dice tray`);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Could not find main tray when returning dice tray',
+                { mainTray },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             return;
         }
 
@@ -616,7 +642,14 @@ export class DiceTrayPanel {
                 historyList.append(emptyMessage);
             }
         } catch (error) {
-            console.error(`${MODULE.ID} | Error returning dice tray to main tray:`, error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error returning dice tray to main tray',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error("Error returning dice tray to main tray");
         }
     }

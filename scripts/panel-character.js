@@ -1,6 +1,11 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './panel-manager.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 // Register custom Handlebars helper for health percentage
 Handlebars.registerHelper('healthOverlayHeight', function(hp) {
     if (!hp?.max) return '0%';
@@ -216,7 +221,14 @@ export class CharacterPanel {
                                 ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
                             }
                         } catch (error) {
-                            console.error("SQUIRE | Error managing condition:", error);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error managing condition',
+                                { error, conditionId, isActive },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                         }
                     });
@@ -254,7 +266,14 @@ export class CharacterPanel {
                         MODULE.TITLE
                     );
                 } catch (error) {
-                    console.error("SQUIRE | Error refreshing tray:", error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error refreshing tray',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     ui.notifications.error("Failed to refresh tray");
                 } finally {
                     $refreshIcon.removeClass('spinning');

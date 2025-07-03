@@ -2,6 +2,11 @@ import { MODULE, TEMPLATES } from './const.js';
 import { HealthWindow } from './window-health.js';
 import { PanelManager } from './panel-manager.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class HealthPanel {
     static isWindowOpen = false;
     static activeWindow = null;
@@ -163,7 +168,14 @@ export class HealthPanel {
         // Get a fresh reference to the main tray
         const mainTray = $('.squire-tray');
         if (!mainTray.length) {
-            console.error(`${MODULE.ID} | Could not find main tray when returning health panel`);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Could not find main tray when returning health panel',
+                { mainTray },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             return;
         }
 
@@ -200,7 +212,14 @@ export class HealthPanel {
             // Activate listeners on the new content
             this._activateListeners(healthContainer);
         } catch (error) {
-            console.error(`${MODULE.ID} | Error returning health panel to main tray:`, error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error returning health panel to main tray',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error("Error returning health panel to main tray");
         }
     }

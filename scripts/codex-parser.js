@@ -1,3 +1,10 @@
+import { MODULE } from './const.js';
+
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class CodexParser {
     /**
      * Parse HTML content from a journal page into structured codex entries
@@ -194,7 +201,14 @@ export class CodexParser {
 
         // Validate mandatory fields
         if (!entry.category || !entry.description) {
-            console.warn(`SQUIRE | CODEX: Entry "${entry.name}" is missing mandatory fields (Category or Description). HTML:`, enrichedHtml);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                `CODEX: Entry "${entry.name}" is missing mandatory fields (Category or Description)`,
+                { entry, enrichedHtml },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
             return null;
         }
         return entry;

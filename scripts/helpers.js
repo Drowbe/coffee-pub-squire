@@ -1,5 +1,10 @@
 import { MODULE } from './const.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 // Helper function to determine weapon type using activities system
 function getWeaponType(weapon) {
     if (!weapon || weapon.type !== 'weapon') return null;
@@ -210,7 +215,14 @@ export async function copyToClipboard(text) {
             ui.notifications.info('Template copied to clipboard!');
             return true;
         } catch (error) {
-            console.warn('SQUIRE | Modern clipboard API failed:', error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Modern clipboard API failed',
+                { error },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
         }
     }
     
@@ -233,7 +245,14 @@ export async function copyToClipboard(text) {
             return true;
         }
     } catch (error) {
-        console.warn('SQUIRE | Legacy clipboard method failed:', error);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Legacy clipboard method failed',
+            { error },
+            false,
+            false,
+            false,
+            MODULE.TITLE
+        );
     }
     
     // Method 3: Show dialog with text for manual copying

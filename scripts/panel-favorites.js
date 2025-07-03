@@ -1,6 +1,11 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './panel-manager.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class FavoritesPanel {
     static getFavorites(actor) {
         if (!actor) return [];
@@ -507,7 +512,14 @@ export class FavoritesPanel {
             const $item = $(event.currentTarget).closest('.favorite-item');
             const itemId = $item.data('item-id');
             if (!itemId) {
-                console.error("SQUIRE | No item ID found for favorite toggle");
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'No item ID found for favorite toggle',
+                    { $item },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 return;
             }
             await FavoritesPanel.manageFavorite(this.actor, itemId);
@@ -581,7 +593,14 @@ export class FavoritesPanel {
     async _reorderFavorite(itemId, newIndex) {
         const actor = this.actor;
         if (!actor) {
-            console.log("SQUIRE | No actor found in _reorderFavorite");
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'No actor found in _reorderFavorite',
+                { itemId, newIndex },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
             return;
         }
 
@@ -592,7 +611,14 @@ export class FavoritesPanel {
         // Find the current index of the item ID
         const currentIndex = favoriteIds.indexOf(itemId);
         if (currentIndex === -1) {
-            console.log("SQUIRE | Item not found in favorites", itemId);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Item not found in favorites',
+                { itemId, favoriteIds },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
             return;
         }
 
@@ -708,7 +734,14 @@ export class FavoritesPanel {
             }
 
         } catch (error) {
-            console.error("SQUIRE | Error reordering favorites", error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error reordering favorites',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
         }
     }
 } 
