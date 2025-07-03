@@ -1,5 +1,10 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class NotesPanel {
     constructor() {
         this.element = null;
@@ -420,12 +425,26 @@ export class NotesPanel {
         try {
             const contentContainer = html.find('.journal-content');
             if (!contentContainer.length) {
-                console.error("SQUIRE | Journal content container not found");
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Journal content container not found',
+                    { html },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 return;
             }
             
             if (!page) {
-                console.warn("SQUIRE | No page provided to render");
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'No page provided to render',
+                    { page },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
                 return;
             }
             
@@ -434,7 +453,14 @@ export class NotesPanel {
             
             // Verify the page is a valid object
             if (typeof page !== 'object' || page === null) {
-                console.error("SQUIRE | Invalid page object:", page);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Invalid page object',
+                    { page },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 contentContainer.html(`
                     <div class="render-error">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -466,7 +492,14 @@ export class NotesPanel {
                 if (typeof page.renderContent === 'function') {
                     // Validate page type first - renderContent works best with text/markdown
                     if (!['text', 'markdown'].includes(page.type)) {
-                        console.warn(`SQUIRE | Unsupported page type for renderContent: ${page.type}`);
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            `Unsupported page type for renderContent: ${page.type}`,
+                            { pageType: page.type },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
                         // Don't return - let it try but prepare for failure
                     }
                     
@@ -476,7 +509,14 @@ export class NotesPanel {
                         
                         // Check if content is valid
                         if (!renderedContent || (typeof renderedContent === 'string' && renderedContent.trim() === '')) {
-                            console.warn("SQUIRE | renderContent returned empty content, trying fallback with manual enrichment");
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'renderContent returned empty content, trying fallback with manual enrichment',
+                                { renderedContent },
+                                false,
+                                false,
+                                false,
+                                MODULE.TITLE
+                            );
                             
                             // Fallback with Manual Enrichment as suggested
                             let content = page.text?.content ?? page.text ?? '';
@@ -512,7 +552,14 @@ export class NotesPanel {
                         
                         // If no content was rendered, add placeholder text
                         if (!hasContent) {
-                            console.warn("SQUIRE | renderContent didn't produce visible content");
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'renderContent didn\'t produce visible content',
+                                { hasContent },
+                                false,
+                                false,
+                                false,
+                                MODULE.TITLE
+                            );
                             contentContainer.html(`
                                 <div class="empty-page-content">
                                     <p>${canEditPage ? 
@@ -528,12 +575,26 @@ export class NotesPanel {
                         contentContainer.find('a').attr('target', '_blank');
                         return;
                     } catch (innerError) {
-                        console.error("SQUIRE | Error rendering content:", innerError);
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'Error rendering content',
+                            { innerError },
+                            false,
+                            false,
+                            true,
+                            MODULE.TITLE
+                        );
                         throw innerError; // Rethrow to outer catch block
                     }
                 }
             } catch (renderContentError) {
-                console.error("SQUIRE | Error using renderContent method:", renderContentError);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error using renderContent method',
+                    { renderContentError },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 // Continue to fallback methods
             }
             
@@ -559,11 +620,25 @@ export class NotesPanel {
                         contentContainer.find('a').attr('target', '_blank');
                         return;
                     } else {
-                        console.warn("SQUIRE | Failed to extract content from journal UI");
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'Failed to extract content from journal UI',
+                            { uiContent },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
                     }
                 }
             } catch (uiError) {
-                console.warn("SQUIRE | Error using UI extraction method:", uiError);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error using UI extraction method',
+                    { uiError },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
                 // Continue to fallback methods
             }
             
@@ -612,7 +687,14 @@ export class NotesPanel {
                     
                     // If no content was rendered, add placeholder text
                     if (!hasContent) {
-                        console.warn("SQUIRE | Native render didn't produce visible content");
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'Native render didn\'t produce visible content',
+                            { hasContent },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
                         contentContainer.html(`
                             <div class="empty-page-content">
                                 <p>${canEditPage ? 
@@ -629,7 +711,14 @@ export class NotesPanel {
                     return;
                 }
             } catch (error) {
-                console.warn("SQUIRE | Native render method failed:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Native render method failed',
+                    { error },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
                 // Continue to fallback methods
             }
             
@@ -727,7 +816,14 @@ export class NotesPanel {
                                 rolls: true
                             });
                         } catch (enrichError) {
-                            console.error("SQUIRE | Error enriching content:", enrichError);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error enriching content',
+                                { enrichError },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                         }
                     }
                     
@@ -773,11 +869,25 @@ export class NotesPanel {
                     // Make all links open in a new tab
                     contentContainer.find('a:not(.open-journal-button)').attr('target', '_blank');
                 } catch (textError) {
-                    console.error("SQUIRE | Text fallback rendering failed:", textError);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Text fallback rendering failed',
+                        { textError },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                 }
             }
         } catch (globalError) {
-            console.error("SQUIRE | Catastrophic error in _renderJournalContent:", globalError);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Catastrophic error in _renderJournalContent',
+                { globalError },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             try {
                 html.find('.journal-content').html(`
                     <div class="render-error">
@@ -800,7 +910,14 @@ export class NotesPanel {
                     }
                 });
             } catch (e) {
-                console.error("SQUIRE | Failed to display error message:", e);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Failed to display error message',
+                    { e },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
         }
     }
@@ -1040,7 +1157,14 @@ export class NotesPanel {
                 try {
                     page = await page;
                 } catch (pagePromiseError) {
-                    console.error("SQUIRE | Failed to resolve page promise:", pagePromiseError);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Failed to resolve page promise',
+                        { pagePromiseError },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     return '';
                 }
             }
@@ -1058,7 +1182,14 @@ export class NotesPanel {
                             try {
                                 content = await page.text.content;
                             } catch (contentPromiseError) {
-                                console.error("SQUIRE | Failed to resolve content promise:", contentPromiseError);
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'Failed to resolve content promise',
+                                    { contentPromiseError },
+                                    false,
+                                    false,
+                                    true,
+                                    MODULE.TITLE
+                                );
                             }
                         } else {
                             content = page.text.content;
@@ -1080,7 +1211,14 @@ export class NotesPanel {
                         try {
                             content = await page.text;
                         } catch (textPromiseError) {
-                            console.error("SQUIRE | Failed to resolve text promise:", textPromiseError);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Failed to resolve text promise',
+                                { textPromiseError },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                         }
                     }
                 }
@@ -1095,7 +1233,14 @@ export class NotesPanel {
                         try {
                             content = await page.content;
                         } catch (contentPromiseError) {
-                            console.error("SQUIRE | Failed to resolve content promise:", contentPromiseError);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Failed to resolve content promise',
+                                { contentPromiseError },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                         }
                     }
                 }
@@ -1110,7 +1255,14 @@ export class NotesPanel {
                             try {
                                 content = await page.document.text.content;
                             } catch (docContentPromiseError) {
-                                console.error("SQUIRE | Failed to resolve document content promise:", docContentPromiseError);
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'Failed to resolve document content promise',
+                                    { docContentPromiseError },
+                                    false,
+                                    false,
+                                    true,
+                                    MODULE.TITLE
+                                );
                             }
                         } else {
                             content = page.document.text.content;
@@ -1135,7 +1287,14 @@ export class NotesPanel {
                         try {
                             content = await content;
                         } catch (finalPromiseError) {
-                            console.error("SQUIRE | Failed to resolve final content promise:", finalPromiseError);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Failed to resolve final content promise',
+                                { finalPromiseError },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                             content = '';
                         }
                     }
@@ -1147,7 +1306,14 @@ export class NotesPanel {
                         try {
                             content = String(content);
                         } catch (stringError) {
-                            console.error("SQUIRE | Failed to convert content to string:", stringError);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Failed to convert content to string',
+                                { stringError },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                             content = '';
                         }
                     }
@@ -1162,7 +1328,14 @@ export class NotesPanel {
             // For non-text types
             return '';
         } catch (error) {
-            console.error("SQUIRE | Error getting page content:", error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error getting page content',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             return '';
         }
     }
@@ -1247,7 +1420,14 @@ export class NotesPanel {
                             // Return the content
                             resolve(content || null);
                         } catch (extractError) {
-                            console.error("SQUIRE | Error extracting content from temporary journal:", extractError);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error extracting content from temporary journal',
+                                { extractError },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                             
                             // Make sure to close the sheet even if there's an error
                             try { tempSheet.close(); } catch (e) {}
@@ -1279,7 +1459,14 @@ export class NotesPanel {
                 return content || null;
             }
         } catch (error) {
-            console.error("SQUIRE | Error getting content from journal UI:", error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error getting content from journal UI',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             return null;
         }
     }
@@ -1342,7 +1529,14 @@ export class NotesPanel {
             // Return the formatted HTML
             return tempDiv.innerHTML;
         } catch (e) {
-            console.error("SQUIRE | Error applying Foundry styling:", e);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error applying Foundry styling',
+                { e },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             return html;
         }
     }
@@ -1398,7 +1592,14 @@ export class NotesPanel {
                 }
                 // If neither method works, we'll just add a new hook
             } catch (hookError) {
-                console.warn("SQUIRE | Non-critical error removing hook:", hookError);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Non-critical error removing hook',
+                    { hookError },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
                 // Continue execution, this error is not critical
             }
             
@@ -1417,7 +1618,14 @@ export class NotesPanel {
             
             return true;
         } catch (error) {
-            console.error("SQUIRE | Error opening journal page:", error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error opening journal page',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error("Error opening journal page: " + error.message);
             return null;
         }
