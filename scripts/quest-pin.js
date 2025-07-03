@@ -84,8 +84,7 @@ export class QuestPin extends PIXI.Container {
     // Now update the appearance based on the objective state
     this._updatePinAppearance();
 
-    // Apply visibility state based on objectiveState
-    this._updateVisibility();
+
   
     // Enhanced event handling
     this.on('pointerdown', this._onPointerDown.bind(this));
@@ -172,32 +171,17 @@ export class QuestPin extends PIXI.Container {
 
     // Update hit area
     this.hitArea = new PIXI.Circle(0, 0, pinRadius);
-  }
+    this.alpha = 1.0;
+    this.interactive = true;
 
-  // Update pin visibility - hidden pins are invisible to players
-  _updateVisibility() {
+    // Handle visibility in interaction for hidden pins
     if (this.objectiveState === 'hidden' && !game.user.isGM) {
-      // For players: hide hidden pins completely
       this.alpha = 0;
       this.interactive = false;
-    } else {
-      // For everyone else: show pins normally
-      this.alpha = 1.0;
-      this.interactive = true;
-      // Update appearance using centralized method
-      this._updatePinAppearance();
     }
-    
-    // Debug logging
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Visibility updated', {
-      pinId: this.pinId,
-      objectiveState: this.objectiveState,
-      alpha: this.alpha,
-      interactive: this.interactive,
-      user: game.user.name,
-      isGM: game.user.isGM
-    });
   }
+
+
 
   // Toggle visibility - GM only
   async toggleVisibility() {
@@ -273,11 +257,15 @@ export class QuestPin extends PIXI.Container {
       pinId: this.pinId,
       oldState: oldState,
       newState: newState,
+      user: game.user.name,
+      isGM: game.user.isGM,
       note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags'
     });
     
     // Update pin appearance using centralized method
     this._updatePinAppearance();
+    
+
     
     // Save to persistence
     this._saveToPersistence();
@@ -690,11 +678,6 @@ function loadPersistedPins() {
         // Load pins from persistence
         scenePins.forEach(pinData => {
             try {
-                // Skip hidden pins for non-GM users
-                if (pinData.objectiveState === 'hidden' && !game.user.isGM) {
-                    return;
-                }
-                
                 const displayNumber = `${getQuestNumber(pinData.questUuid)}.${pinData.objectiveIndex + 1}`;
                 const pin = new QuestPin({
                     x: pinData.x,
@@ -750,8 +733,7 @@ function loadPersistedPins() {
                     }
                 }
                 
-                // Apply visibility state after pin is created
-                pin._updateVisibility();
+
                 
                 canvas.squirePins.addChild(pin);
                 getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { 
