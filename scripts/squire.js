@@ -8,27 +8,21 @@ import { QuestForm } from './quest-form.js';
 import { QuestParser } from './quest-parser.js';
 import { QuestPin } from './quest-pin.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 let socket;
 
 // Move socketlib registration to its own hook
 Hooks.once('socketlib.ready', () => {
-    console.log("SQUIRE | Socketlib ready hook fired", {
-        socketlib: game.modules.get('socketlib'),
-        api: game.modules.get('socketlib')?.api,
-        globalSocketlib: typeof socketlib !== 'undefined' ? socketlib : undefined
-    });
-    
     try {
         if (typeof socketlib === 'undefined') {
             throw new Error("Global socketlib variable is not defined");
         }
 
         socket = socketlib.registerModule(MODULE.ID);
-        console.log("SQUIRE | Socket registered", { 
-            socket,
-            functions: socket?.functions,
-            socketName: socket?.socketName
-        });
         
         if (!socket) {
             throw new Error("Failed to register socket");
@@ -48,7 +42,14 @@ Hooks.once('socketlib.ready', () => {
                 const sourceItem = sourceActor.items.get(data.sourceItemId);
                 
                 if (!sourceActor || !targetActor || !sourceItem) {
-                    console.error(`SQUIRE | Missing actor or item data for transfer`, data);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Missing actor or item data for transfer',
+                        { data },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     return;
                 }
                 
@@ -80,14 +81,15 @@ Hooks.once('socketlib.ready', () => {
                     await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
                 }
                 
-                console.log(`SQUIRE | Transfer completed successfully:`, {
-                    from: sourceActor.name,
-                    to: targetActor.name,
-                    item: sourceItem.name,
-                    quantity: data.hasQuantity ? data.quantity : 1
-                });
             } catch (error) {
-                console.error(`SQUIRE | Error executing item transfer:`, error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error executing item transfer',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
         });
         
@@ -100,7 +102,14 @@ Hooks.once('socketlib.ready', () => {
                 const targetActor = game.actors.get(data.targetActorId);
                 
                 if (!sourceActor || !targetActor) {
-                    console.error("SQUIRE | Missing required actors for transfer request message", {data});
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Missing required actors for transfer request message',
+                        { data },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     return;
                 }
 
@@ -135,7 +144,14 @@ Hooks.once('socketlib.ready', () => {
                     }
                 });
             } catch (error) {
-                console.error("SQUIRE | Error creating transfer request message:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error creating transfer request message',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
         });
         
@@ -151,7 +167,14 @@ Hooks.once('socketlib.ready', () => {
                 const targetActor = game.actors.get(data.targetActorId);
                 
                 if (!sourceActor || !targetActor) {
-                    console.error("SQUIRE | Missing required actors for transfer complete message", {data});
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Missing required actors for transfer complete message',
+                        { data },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     return;
                 }
                 
@@ -175,7 +198,14 @@ Hooks.once('socketlib.ready', () => {
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
             } catch (error) {
-                console.error("SQUIRE | Error creating transfer complete message:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error creating transfer complete message',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
         });
 
@@ -188,7 +218,14 @@ Hooks.once('socketlib.ready', () => {
                 const targetActor = game.actors.get(data.targetActorId);
                 
                 if (!sourceActor || !targetActor) {
-                    console.error("SQUIRE | Missing required actors for transfer rejected message", {data});
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Missing required actors for transfer rejected message',
+                        { data },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     return;
                 }
                 
@@ -212,7 +249,14 @@ Hooks.once('socketlib.ready', () => {
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
             } catch (error) {
-                console.error("SQUIRE | Error creating transfer rejected message:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error creating transfer rejected message',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
         });
         
@@ -224,34 +268,41 @@ Hooks.once('socketlib.ready', () => {
                 const message = game.messages.get(messageId);
                 if (message) {
                     await message.delete();
-                    console.log(`SQUIRE | Successfully deleted transfer request message ${messageId}`);
                 } else {
-                    console.warn(`SQUIRE | Could not find message with ID ${messageId} to delete`);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        `Could not find message with ID ${messageId} to delete`,
+                        { messageId },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
                 }
             } catch (error) {
-                console.error(`SQUIRE | Error deleting transfer request message:`, error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error deleting transfer request message',
+                    { messageId, error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
         });
         
-        console.log("SQUIRE | Socket handler registered successfully", {
-            registeredFunctions: socket?.functions ? Array.from(socket.functions.keys()) : []
-        });
     } catch (error) {
-        console.error("SQUIRE | Error during socketlib initialization:", error);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Error during socketlib initialization',
+            { error },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
     }
 });
 
-// Add a ready hook to verify socket is available
-Hooks.once('ready', () => {
-    console.log("SQUIRE | Checking socket availability:", {
-        socket: game.modules.get(MODULE.ID).socket,
-        socketlib: game.modules.get('socketlib'),
-        api: game.modules.get('socketlib')?.api,
-        globalSocketlib: typeof socketlib !== 'undefined' ? socketlib : undefined,
-        registeredFunctions: game.modules.get(MODULE.ID).socket?.functions ? 
-            Array.from(game.modules.get(MODULE.ID).socket.functions.keys()) : []
-    });
-});
+
 
 Hooks.once('init', async function() {
     game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification(
@@ -328,9 +379,16 @@ Hooks.once('init', async function() {
 });
 
 Hooks.once('ready', async function() {
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+    const blacksmith = getBlacksmith();
     if (!blacksmith) {
-        console.error(`${MODULE.TITLE} | Required dependency 'coffee-pub-blacksmith' not found!`);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Required dependency coffee-pub-blacksmith not found',
+            { blacksmith },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
         return;
     }
 
@@ -443,10 +501,8 @@ Hooks.on('canvasInit', () => {
     squirePins.eventMode = 'static';
     if (canvas.foregroundGroup) {
       canvas.foregroundGroup.addChild(squirePins);
-      console.log('SQUIRE | Quest Pins | squirePins container added to foregroundGroup', squirePins);
     } else {
       canvas.stage.addChild(squirePins);
-      console.log('SQUIRE | Quest Pins | squirePins container added to stage', squirePins);
     }
     canvas.squirePins = squirePins;
   }
@@ -458,7 +514,6 @@ Hooks.on('canvasReady', () => {
     const parent = canvas.squirePins.parent;
     if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
       parent.addChild(canvas.squirePins);
-      console.log('SQUIRE | Quest Pins | squirePins container moved to top of parent');
     }
     canvas.squirePins.interactive = true;
   }
@@ -500,7 +555,7 @@ async function handleTransferRequest(transferData) {
         const receiverContent = await renderTemplate(`modules/${MODULE.ID}/templates/window-transfer.hbs`, receiverTemplateData);
         
         // Play notification sound
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        const blacksmith = getBlacksmith();
         if (blacksmith) {
             blacksmith.utils.playSound('notification', 0.7, false, false);
         }
@@ -577,7 +632,14 @@ async function handleTransferRequest(transferData) {
                     status: response ? 'accepted' : 'rejected'
                 });
             } catch (error) {
-                console.error('SQUIRE | Error updating transfer request flag:', error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error updating transfer request flag',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
         } else if (game.modules.get('socketlib')?.active) {
             // Ask a GM to update the flag
@@ -596,7 +658,14 @@ async function handleTransferRequest(transferData) {
         }
         
     } catch (error) {
-        console.error('SQUIRE | Error handling transfer request:', error);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Error handling transfer request',
+            { error },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
         ui.notifications.error("Error processing transfer request");
     }
 }
@@ -644,7 +713,14 @@ async function setTransferRequestFlag(targetActorId, flagKey, flagData) {
     
     const targetActor = game.actors.get(targetActorId);
     if (!targetActor) {
-        console.error(`SQUIRE | Could not find actor with ID ${targetActorId}`);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            `Could not find actor with ID ${targetActorId}`,
+            { targetActorId },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
         return;
     }
     
@@ -665,7 +741,14 @@ async function executeItemTransfer(transferData, accepted) {
     const sourceItem = sourceActor.items.get(transferData.sourceItemId);
     
     if (!sourceActor || !targetActor || !sourceItem) {
-        console.error(`SQUIRE | Missing actor or item data for transfer`, transferData);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Missing actor or item data for transfer',
+            { transferData },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
         return;
     }
     
@@ -676,7 +759,6 @@ async function executeItemTransfer(transferData, accepted) {
     });
     
     if (!accepted) {
-        console.log(`SQUIRE | Transfer request ${transferData.timestamp} rejected`);
         
         // Create a rejection chat message as GM
         if (game.modules.get('socketlib')?.active) {
@@ -755,7 +837,14 @@ async function executeItemTransfer(transferData, accepted) {
         }
         
     } catch (error) {
-        console.error(`SQUIRE | Error executing item transfer:`, error);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Error executing item transfer',
+            { error },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
     }
 }
 
