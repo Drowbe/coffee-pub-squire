@@ -978,7 +978,6 @@ export const registerSettings = function() {
             
             const blacksmith = getBlacksmith();
             const choices = blacksmith?.BLACKSMITH?.arrCompendiumChoices;
-            console.log("SQUIRE | choices", choices);
 
             if (choices && Object.keys(choices).length > 0) return { ...choices };
             return { "none": "No compendiums found. Try reloading Foundry after all modules are enabled." };

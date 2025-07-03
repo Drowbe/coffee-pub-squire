@@ -54,7 +54,14 @@ export class PartyStatsPanel {
             // console.log('SQUIRE | STATS Blacksmith API object:', blacksmith);
 
             if (!blacksmith?.stats?.player) {
-                console.warn(`${MODULE.TITLE} | STATS Blacksmith Stats API (player) not available`);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Blacksmith Stats API (player) not available',
+                    { blacksmith },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
                 return data;
             }
 
@@ -101,7 +108,14 @@ export class PartyStatsPanel {
                     if (turnTime > 0) turnTimeByPlayer.set(actor.name, turnTime);
 
                 } catch (error) {
-                    console.error(`${MODULE.TITLE} | STATS Error processing stats for ${actor.name}:`, error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        `Error processing stats for ${actor.name}`,
+                        { actor: actor.name, error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                 }
             }
 
@@ -140,13 +154,27 @@ export class PartyStatsPanel {
                     }
                 }
             } catch (error) {
-                console.error(`${MODULE.TITLE} | STATS Error getting session duration:`, error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error getting session duration',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
             }
 
             // console.log('SQUIRE | STATS Final party stats data:', data);
 
         } catch (error) {
-            console.error(`${MODULE.TITLE} | STATS Error gathering party stats:`, error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error gathering party stats',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
         }
 
         return data;

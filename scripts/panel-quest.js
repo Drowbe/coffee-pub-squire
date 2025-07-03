@@ -129,7 +129,14 @@ export class QuestPanel {
                         }
                     }
                 } catch (error) {
-                    console.error(`SQUIRE | Error processing quest page ${page.name}:`, error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        `Error processing quest page ${page.name}`,
+                        { page: page.name, error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     ui.notifications.error(`Error loading quest: ${page.name}. See console for details.`);
                 }
             }
@@ -427,7 +434,7 @@ export class QuestPanel {
                 
                 // Get objective state from data attribute on the checkbox
                 const objectiveState = checkbox.data('task-state') || 'active';
-                console.log('SQUIRE | Drag data - checkbox:', checkbox, 'data-task-state:', checkbox.data('task-state'), 'objectiveState:', objectiveState);
+
                 
                 // Create drag data
                 const dragData = {
@@ -514,9 +521,16 @@ export class QuestPanel {
                 const newContent = content.replace(tasksMatch[1], newTasksHtml);
                 try {
                     await page.update({ text: { content: newContent } });
-                } catch (error) {
-                    console.error('SQUIRE | Error updating journal page (hidden toggle):', error);
-                }
+                            } catch (error) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error updating journal page (hidden toggle)',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
+            }
                 return;
             }
             
@@ -550,9 +564,16 @@ export class QuestPanel {
                 
                 try {
                     await page.update({ text: { content: newContent } });
-                } catch (error) {
-                    console.error('SQUIRE | Error updating journal page (failed task toggle):', error);
-                }
+                            } catch (error) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error updating journal page (failed task toggle)',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
+            }
                 return;
             }
             
@@ -623,9 +644,16 @@ export class QuestPanel {
                 }
                 try {
                     await page.update({ text: { content: newContent } });
-                } catch (error) {
-                    console.error('SQUIRE | Error updating journal page (completion toggle):', error);
-                }
+                            } catch (error) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error updating journal page (completion toggle)',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
+            }
             }
         });
         
@@ -1075,7 +1103,7 @@ export class QuestPanel {
                 
                 if (isValid) {
                     $(this).addClass('drop-target');
-                    console.log("SQUIRE | Added drop-target class");
+    
                 }
             });
 
@@ -1083,7 +1111,7 @@ export class QuestPanel {
                 event.preventDefault();
                 event.stopPropagation();
                 $(this).removeClass('drop-target');
-                console.log("SQUIRE | Removed drop-target class on dragleave");
+
             });
 
             questEntries.on('dragover.squire', function(event) {
@@ -1101,9 +1129,7 @@ export class QuestPanel {
                 
                 try {
                     const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
-                    console.log("SQUIRE | Quest Panel Raw drop data:", dataTransfer);
                     const data = JSON.parse(dataTransfer);
-                    console.log("SQUIRE | Quest Panel Parsed drop data:", data);
                     const blacksmith = getBlacksmith();
                     if (blacksmith) {
                         const sound = game.settings.get(MODULE.ID, 'dropSound');
@@ -1353,7 +1379,14 @@ export class QuestPanel {
                         this.render(this.element);
                     }
                 } catch (error) {
-                    console.error('SQUIRE | Error handling quest entry drop:', error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error handling quest entry drop',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     ui.notifications.error('Failed to add participant or treasure.');
                 }
             });
@@ -1428,7 +1461,14 @@ export class QuestPanel {
                     ui.notifications.warn("Could not find participants section in the quest.");
                 }
             } catch (error) {
-                console.error('SQUIRE | Error removing participant:', error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error removing participant',
+                    { participantName, error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.error(`Failed to remove ${participantName} from the quest.`);
             }
         });

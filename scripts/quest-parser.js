@@ -293,7 +293,19 @@ export class QuestParser {
                             displayText = displayText.replace(treasureRegex, '').trim();
                         }
                     } catch (error) {
-                        console.error(`${MODULE.TITLE} | Error parsing task hints and treasures:`, error, text);
+                        // Helper function to safely get Blacksmith API
+                        function getBlacksmith() {
+                          return game.modules.get('coffee-pub-blacksmith')?.api;
+                        }
+                        
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'Error parsing task hints and treasures',
+                            { error, text },
+                            false,
+                            false,
+                            true,
+                            MODULE.TITLE
+                        );
                         displayText = text;
                     }
 

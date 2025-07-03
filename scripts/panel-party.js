@@ -168,13 +168,7 @@ export class PartyPanel {
             
             try {
                 const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
-                // Debug log the raw data transfer
-                console.log("SQUIRE | Party Panel Raw drop data:", dataTransfer);
-                
                 const data = JSON.parse(dataTransfer);
-                
-                // Log the parsed data
-                console.log("SQUIRE | Party Panel Parsed drop data:", data);
                 
                 // Play drop sound
                 const blacksmith = getBlacksmith();
@@ -763,7 +757,14 @@ export class PartyPanel {
                 }
                 
             } catch (error) {
-                console.error(`${MODULE.TITLE} | Error handling drop on character card:`, error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error handling drop on character card',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.error("Failed to add item to character.");
             }
         });
@@ -1029,7 +1030,14 @@ export class PartyPanel {
 
             ui.notifications.info(`Transfer request sent to ${targetActor.name}`);
         } catch (error) {
-            console.error("Error sending transfer request:", error);
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error sending transfer request',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
             ui.notifications.error("Failed to send transfer request. Please try again or contact your GM.");
         }
     }
@@ -1107,7 +1115,14 @@ export class PartyPanel {
                         }
                     }
                 } catch (error) {
-                    console.error("Error handling transfer request message:", error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error handling transfer request message',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                 }
 
                 if (isAccept) {
@@ -1125,8 +1140,7 @@ export class PartyPanel {
                         hasQuantity: true
                     });
 
-                    console.log("SQUIRE | TRANSFER | Receiver Users:", receiverUsers.map(u => u.name));
-                    console.log("SQUIRE | TRANSFER | Sender User:", senderUser.name);
+
 
                     // Single completion message for sender - SEND VIA SOCKETLIB
                     if (!game.user.isGM) {
