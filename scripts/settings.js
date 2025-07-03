@@ -509,22 +509,6 @@ export const registerSettings = function() {
         }
     });
     
-    // Shared Journal (legacy - keeping for backwards compatibility)
-    game.settings.register(MODULE.ID, 'notesSharedJournal', {
-        name: 'Shared Journal',
-        hint: 'The journal that will be used for the notes tab. Use the buttons in the notes panel to select a journal.',
-        scope: 'world',
-        config: false,
-        type: String,
-        default: 'none',
-        onChange: () => {
-            // Update the notes panel if it exists
-            if (PanelManager.instance?.notesPanel) {
-                PanelManager.instance.notesPanel.render(PanelManager.element);
-            }
-        }
-    });
-    
     // Notes Shared Journal Page setting
     game.settings.register(MODULE.ID, 'notesSharedJournalPage', {
         name: 'Notes Shared Journal Page',
@@ -535,15 +519,6 @@ export const registerSettings = function() {
         default: 'none'
     });
 
-    
-
-
-
-
-
-
-
-    
     // --------------------------------
     // --- Transfer Settings ---
     // --------------------------------
@@ -1128,13 +1103,10 @@ export const initializeNoteSettings = function() {
     if (game.settings.get(MODULE.ID, 'notesPersistentJournal') === 'none' && 
         game.settings.get(MODULE.ID, 'notesGMJournal') === 'none') {
         
-        const oldJournalId = game.settings.get(MODULE.ID, 'notesSharedJournal');
-        if (oldJournalId !== 'none') {
-            // Copy the old journal ID to both new settings
-            game.settings.set(MODULE.ID, 'notesPersistentJournal', oldJournalId);
-            game.settings.set(MODULE.ID, 'notesGMJournal', oldJournalId);
-            console.log(`SQUIRE | Migrated notes journal settings from old value: ${oldJournalId}`);
-        }
+        // Remove migration logic for oldJournalId from notesSharedJournal
+        // Delete the block:
+        // const oldJournalId = game.settings.get(MODULE.ID, 'notesSharedJournal');
+        // if (oldJournalId !== 'none') { ... }
     }
 };
 

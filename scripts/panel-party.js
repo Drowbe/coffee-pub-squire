@@ -1333,7 +1333,7 @@ export class PartyPanel {
             transferStatus,
             showTransferButtons,
             showExecuteButton,
-            // For legacy/fallback
+            // fallback
             strCardContent: (cardType === "compendium-drop" || cardType === "world-drop") && targetActor && item ? `<p><strong>${targetActor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>` : undefined
         };
     }
