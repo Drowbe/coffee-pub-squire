@@ -19,6 +19,11 @@ import { QuestPanel } from './panel-quest.js';
 import { MacrosPanel } from "./panel-macros.js";
 import { PrintCharacterSheet } from './print-character.js';
 
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class PanelManager {
     static instance = null;
     static currentActor = null;
@@ -443,7 +448,14 @@ export class PanelManager {
                             }
                         }
                     } catch (error) {
-                        console.warn('SQUIRE | Error fetching pinned quest data:', error);
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'Error fetching pinned quest data',
+                            { error },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
                     }
                 }
             }
@@ -652,7 +664,14 @@ export class PanelManager {
                         doc.sheet.render(true);
                     }
                 } catch (error) {
-                    console.warn('SQUIRE | Error opening pinned quest:', error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error opening pinned quest',
+                        { error },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
                     ui.notifications.warn('Could not open pinned quest.');
                 }
             }
@@ -790,7 +809,14 @@ export class PanelManager {
                     height: "auto"
                 }).render(true);
             } catch (error) {
-                console.error("SQUIRE | Error getting condition description:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error getting condition description',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.warn("Could not load condition description.");
             }
         }).on('contextmenu', async (event) => {
@@ -813,7 +839,14 @@ export class PanelManager {
                     ui.notifications.info(`Removed ${conditionName} from ${this.actor.name}`);
                 }
             } catch (error) {
-                console.error("SQUIRE | Error removing condition:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error removing condition',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.error(`Could not remove ${conditionName}`);
             }
         });
@@ -959,7 +992,14 @@ export class PanelManager {
                                 ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
                             }
                         } catch (error) {
-                            console.error("SQUIRE | Error managing condition:", error);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error managing condition',
+                                { error },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                         }
                     });
@@ -1051,7 +1091,14 @@ export class PanelManager {
                         new AwardClass(actors).render(true);
                     }
                 } catch (error) {
-                    console.error("SQUIRE | Error launching Award dialog:", error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error launching Award dialog',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
                     ui.notifications.error("Error launching Award dialog. See console for details.");
                 }
                 
@@ -1168,23 +1215,51 @@ export class PanelManager {
                 // Get the current actor
                 const actor = PanelManager.currentActor;
                 if (!actor) {
-                    console.log("SQUIRE | DROPZONE | No actor found");
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'DROPZONE | No actor found',
+                        { actor },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
                     ui.notifications.warn("No character selected.");
                     return;
                 }
-                console.log("SQUIRE | DROPZONE | Current actor:", actor.name);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'DROPZONE | Current actor',
+                    { actorName: actor.name },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
                 
                 // Handle different drop types
                 let item;
                 switch (data.type) {
                     case 'Item':
-                        console.log("SQUIRE | DROPZONE | Processing Item drop");
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'DROPZONE | Processing Item drop',
+                            { dataType: data.type },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
                         // This could be either a world item OR a drag from character sheet
                         if ((data.actorId && (data.data?.itemId || data.embedId)) || 
                             data.fromInventory || 
                             (data.uuid && data.uuid.startsWith("Actor."))) {
                             
-                            console.log("SQUIRE | DROPZONE | Item is from character sheet");
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'DROPZONE | Item is from character sheet',
+                                { data },
+                                false,
+                                false,
+                                false,
+                                MODULE.TITLE
+                            );
                             // This is a drag from character sheet
                             let sourceActorId;
                             let itemId;
@@ -1203,7 +1278,14 @@ export class PanelManager {
                             
                             const sourceActor = game.actors.get(sourceActorId);
                             if (!sourceActor || !itemId) {
-                                console.log("SQUIRE | DROPZONE | No source actor or item ID");
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'DROPZONE | No source actor or item ID',
+                                    { sourceActorId, itemId },
+                                    false,
+                                    false,
+                                    false,
+                                    MODULE.TITLE
+                                );
                                 ui.notifications.warn("Could not determine the source actor or item.");
                                 return;
                             }
@@ -1211,7 +1293,14 @@ export class PanelManager {
                             // Get the item from the source actor
                             const sourceItem = sourceActor.items.get(itemId);
                             if (!sourceItem) {
-                                console.log("SQUIRE | DROPZONE | No source item found");
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'DROPZONE | No source item found',
+                                    { sourceActorId, itemId },
+                                    false,
+                                    false,
+                                    false,
+                                    MODULE.TITLE
+                                );
                                 ui.notifications.warn("Could not find the item on the source character.");
                                 return;
                             }
@@ -1433,12 +1522,26 @@ export class PanelManager {
                                 return;
                             }
                         } else {
-                            console.log("SQUIRE | DROPZONE | Item is from world");
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'DROPZONE | Item is from world',
+                                { data },
+                                false,
+                                false,
+                                false,
+                                MODULE.TITLE
+                            );
                             try {
                                 // Get the item from the UUID
                                 const item = await fromUuid(data.uuid);
                                 if (!item) {
-                                    console.log("SQUIRE | DROPZONE | Failed to get item from UUID");
+                                    getBlacksmith()?.utils.postConsoleAndNotification(
+                                        'DROPZONE | Failed to get item from UUID',
+                                        { uuid: data.uuid },
+                                        false,
+                                        false,
+                                        false,
+                                        MODULE.TITLE
+                                    );
                                     return;
                                 }
                                 // Create the item on the actor
@@ -1490,7 +1593,14 @@ export class PanelManager {
                                         break;
                                 }
                             } catch (error) {
-                                console.error("SQUIRE | DROPZONE | Error processing world item:", error);
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'DROPZONE | Error processing world item',
+                                    { error },
+                                    false,
+                                    false,
+                                    true,
+                                    MODULE.TITLE
+                                );
                                 ui.notifications.error("Error processing dropped item. See console for details.");
                             }
                         }
@@ -1499,7 +1609,14 @@ export class PanelManager {
                 }
                 
             } catch (error) {
-                console.error("SQUIRE | DROPZONE | Error handling drop:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'DROPZONE | Error handling drop',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.error("Error handling drop. See console for details.");
             }
         });
@@ -1616,7 +1733,14 @@ export class PanelManager {
                         }
                     }
                 } catch (error) {
-                    console.warn('SQUIRE | Error fetching pinned quest data:', error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error fetching pinned quest data',
+                        { error },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
                 }
             }
         }
@@ -1716,7 +1840,14 @@ export class PanelManager {
                         doc.sheet.render(true);
                     }
                 } catch (error) {
-                    console.warn('SQUIRE | Error opening pinned quest:', error);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error opening pinned quest',
+                        { error },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
                     ui.notifications.warn('Could not open pinned quest.');
                 }
             }
@@ -1816,7 +1947,14 @@ export class PanelManager {
                     height: "auto"
                 }).render(true);
             } catch (error) {
-                console.error("SQUIRE | Error getting condition description:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error getting condition description',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.warn("Could not load condition description.");
             }
         }).on('contextmenu', async (event) => {
@@ -1839,7 +1977,14 @@ export class PanelManager {
                     ui.notifications.info(`Removed ${conditionName} from ${this.actor.name}`);
                 }
             } catch (error) {
-                console.error("SQUIRE | Error removing condition:", error);
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error removing condition',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
                 ui.notifications.error(`Could not remove ${conditionName}`);
             }
         });
@@ -1985,7 +2130,14 @@ export class PanelManager {
                                 ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
                             }
                         } catch (error) {
-                            console.error("SQUIRE | Error managing condition:", error);
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error managing condition',
+                                { error },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
                             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                         }
                     });
@@ -2389,9 +2541,14 @@ Hooks.on('canvasReady', async () => {
             PanelManager.element.addClass('expanded');
         }
     } else {
-        console.log("SQUIRE | No Initial Actor Found", {
-            reason: "Could not find any suitable token or character"
-        });
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'No Initial Actor Found',
+            { reason: "Could not find any suitable token or character" },
+            false,
+            false,
+            false,
+            MODULE.TITLE
+        );
     }
 });
 
