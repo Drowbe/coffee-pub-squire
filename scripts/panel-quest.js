@@ -70,8 +70,8 @@ export class QuestPanel {
                 await this._refreshData();
                 this.render(this.element);
                 
-                // Update quest pins if they exist for this quest
-                if (canvas.squirePins) {
+                // Update quest pins if they exist for this quest (GM only)
+                if (game.user.isGM && canvas.squirePins) {
                     const questPins = canvas.squirePins.children.filter(child => 
                         child instanceof QuestPin && child.questUuid === page.uuid
                     );

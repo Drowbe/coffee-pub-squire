@@ -234,6 +234,9 @@ export class QuestPin extends PIXI.Container {
 
   // Save pin data to persistence
   _saveToPersistence() {
+    // Only GMs can save pin data
+    if (!game.user.isGM) return;
+    
     try {
       const sceneId = canvas.scene?.id;
       if (!sceneId) return;
@@ -267,6 +270,9 @@ export class QuestPin extends PIXI.Container {
 
   // Remove pin from persistence
   _removeFromPersistence() {
+    // Only GMs can remove pin data
+    if (!game.user.isGM) return;
+    
     try {
       const sceneId = canvas.scene?.id;
       if (!sceneId) return;
@@ -553,6 +559,10 @@ function getQuestNumber(questUuid) {
 // Re-enable only the dropCanvasData hook in quest-pin.js
 Hooks.on('dropCanvasData', (canvas, data) => {
     if (data.type !== 'quest-objective') return; // Let Foundry handle all other drops!
+    
+    // Only GMs can create quest pins
+    if (!game.user.isGM) return false;
+    
     const { questUuid, objectiveIndex, objectiveState } = data;
     const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
     
@@ -590,6 +600,9 @@ Hooks.on('canvasSceneChange', (scene) => {
 
 // Function to load persisted pins for current scene
 function loadPersistedPins() {
+    // Only GMs can load and manage quest pins
+    if (!game.user.isGM) return;
+    
     try {
         const sceneId = canvas.scene?.id;
         if (!sceneId) {
