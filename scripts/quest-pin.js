@@ -117,7 +117,7 @@ export class QuestPin extends PIXI.Container {
       dropShadowAlpha: 0.6
     });
   
-    const refText = new PIXI.Text(objectiveIndex, refStyle);
+    const refText = new PIXI.Text(displayNumber, refStyle);
     refText.anchor.set(0.5);
     refText.position.set(0, 0);
     this.addChild(refText);
@@ -188,6 +188,43 @@ export class QuestPin extends PIXI.Container {
     
     this.visible = !this.visible;
     this._updateVisibility();
+    this._saveToPersistence();
+  }
+
+  // Update pin appearance based on new objective state
+  updateObjectiveState(newState) {
+    this.objectiveState = newState;
+    
+    // Update colors based on new state
+    let borderColor = 0x000000;
+    let fillColor = 0x000000;
+    
+    if (newState === 'active') {
+      borderColor = 0x104A60;
+      fillColor = 0x1E85AD;
+    } else if (newState === 'failed') {
+      borderColor = 0x871010;
+      fillColor = 0xD41A1A;
+    } else if (newState === 'hidden') {
+      borderColor = 0x000000;
+      fillColor = 0x000000;
+    } else if (newState === 'completed') {
+      borderColor = 0x1C4520;
+      fillColor = 0x3C9245;
+    }
+    
+    // Update the circle appearance
+    this.circle.clear();
+    this.circle.lineStyle(2, borderColor, 1);
+    this.circle.beginFill(fillColor, 0.2);
+    this.circle.drawCircle(0, 0, this.radius);
+    this.circle.endFill();
+    
+    // Store new colors
+    this.originalBorderColor = borderColor;
+    this.originalFillColor = fillColor;
+    
+    // Save to persistence
     this._saveToPersistence();
   }
 
@@ -334,43 +371,128 @@ export class QuestPin extends PIXI.Container {
     if (this.parent) {
       this.parent.removeChild(this);
     }
+    // Clean up tooltip if it exists
+    const tooltip = document.getElementById('squire-questpin-tooltip');
+    if (tooltip) {
+      tooltip.remove();
+    }
   }
 
   _openQuestJournal() {
     try {
-      const quest = game.squire?.quests?.get(this.questUuid) || game.quests?.get(this.questUuid);
-      if (quest && quest.uuid) {
-        const journalEntry = game.journal.get(quest.uuid);
-        if (journalEntry) {
-          journalEntry.sheet.render(true);
-        } else {
-          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest journal entry not found', { uuid: quest.uuid }, false, true, false, MODULE.TITLE);
-        }
+      // Get the journal entry directly from the questUuid
+      const journalEntry = game.journal.get(this.questUuid);
+      if (journalEntry) {
+        journalEntry.sheet.render(true);
       } else {
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest not found', { questUuid: this.questUuid }, false, true, false, MODULE.TITLE);
+        // Try to find the journal entry by searching through all journals
+        const journalId = game.settings.get(MODULE.ID, 'questJournal');
+        if (journalId && journalId !== 'none') {
+          const journal = game.journal.get(journalId);
+          if (journal) {
+            const page = journal.pages.find(p => p.uuid === this.questUuid);
+            if (page) {
+              journal.sheet.render(true);
+              return;
+            }
+          }
+        }
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest journal entry not found', { uuid: this.questUuid }, false, true, false, MODULE.TITLE);
       }
     } catch (error) {
       getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error opening quest journal', { error }, false, true, true, MODULE.TITLE);
     }
   }
-  
-  
-  
-  
+
+  // Helper method to get quest data
+  _getQuestData() {
+    try {
+      // First try to get the journal entry directly
+      const journalEntry = game.journal.get(this.questUuid);
+      if (journalEntry) {
+        return journalEntry;
+      }
+
+      // If not found, try to find it in the quest journal
+      const journalId = game.settings.get(MODULE.ID, 'questJournal');
+      if (journalId && journalId !== 'none') {
+        const journal = game.journal.get(journalId);
+        if (journal) {
+          const page = journal.pages.find(p => p.uuid === this.questUuid);
+          if (page) {
+            return page;
+          }
+        }
+      }
+
+      // If still not found, try searching through all journals
+      for (const journal of game.journal.contents) {
+        const page = journal.pages.find(p => p.uuid === this.questUuid);
+        if (page) {
+          return page;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest data', { error }, false, true, true, MODULE.TITLE);
+      return null;
+    }
+  }
+
+  // Helper method to get task text
+  _getTaskText() {
+    try {
+      const questData = this._getQuestData();
+      if (!questData) return 'Objective';
+
+      // Parse the quest content to get tasks
+      let content = '';
+      if (typeof questData.text?.content === 'string') {
+        content = questData.text.content;
+      } else if (typeof questData.text === 'string') {
+        content = questData.text;
+      }
+
+      if (!content) return 'Objective';
+
+      // Parse tasks from the content
+      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+      if (tasksMatch) {
+        const tasksHtml = tasksMatch[1];
+        const parser = new DOMParser();
+        const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+        const ul = ulDoc.querySelector('ul');
+        if (ul) {
+          const liList = Array.from(ul.children);
+          const li = liList[this.objectiveIndex];
+          if (li) {
+            // Get the text content, removing any HTML tags
+            return li.textContent.trim();
+          }
+        }
+      }
+
+      return 'Objective';
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting task text', { error }, false, true, true, MODULE.TITLE);
+      return 'Objective';
+    }
+  }
 
   _onPointerOver(event) {
     // Lookup quest and objective text
-    let text = 'Objective';
+    let text = this._getTaskText();
     let questName = 'Unknown Quest';
+    
     try {
-      const quest = game.squire?.quests?.get(this.questUuid) || game.quests?.get(this.questUuid);
-      if (quest) {
-        questName = quest.name || 'Unknown Quest';
-        if (quest.objectives && quest.objectives[this.objectiveIndex]) {
-          text = quest.objectives[this.objectiveIndex].text || quest.objectives[this.objectiveIndex].name || 'Objective';
-        }
+      const questData = this._getQuestData();
+      if (questData) {
+        questName = questData.name || 'Unknown Quest';
       }
-    } catch (e) {}
+    } catch (e) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest name', { error: e }, false, true, true, MODULE.TITLE);
+    }
     
     // Create or get tooltip element
     let tooltip = document.getElementById('squire-questpin-tooltip');
@@ -438,11 +560,6 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     return true; // Only block further handling for quest pins
 });
 
-// Comment out all Hooks.on(...) calls in quest-pin.js
-// Hooks.on('dropCanvasData', ...)
-// Hooks.on('canvasReady', ...)
-// Hooks.on('canvasSceneChange', ...)
-
 // Load persisted pins when canvas is ready
 Hooks.on('canvasReady', (canvas) => {
     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Canvas ready, loading persisted pins');
@@ -505,6 +622,46 @@ function loadPersistedPins() {
                 
                 // Restore the original pinId for persistence
                 pin.pinId = pinData.pinId;
+                
+                // Update the pin state to match current quest state
+                try {
+                    const questData = pin._getQuestData();
+                    if (questData) {
+                        let content = '';
+                        if (typeof questData.text?.content === 'string') {
+                            content = questData.text.content;
+                        } else if (typeof questData.text === 'string') {
+                            content = questData.text;
+                        }
+                        
+                        if (content) {
+                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                            if (tasksMatch) {
+                                const tasksHtml = tasksMatch[1];
+                                const parser = new DOMParser();
+                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                const ul = ulDoc.querySelector('ul');
+                                if (ul) {
+                                    const liList = Array.from(ul.children);
+                                    const li = liList[pin.objectiveIndex];
+                                    if (li) {
+                                        let currentState = 'active';
+                                        if (li.querySelector('s')) {
+                                            currentState = 'completed';
+                                        } else if (li.querySelector('code')) {
+                                            currentState = 'failed';
+                                        } else if (li.querySelector('em')) {
+                                            currentState = 'hidden';
+                                        }
+                                        pin.updateObjectiveState(currentState);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
+                }
                 
                 canvas.squirePins.addChild(pin);
                 getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { pin });

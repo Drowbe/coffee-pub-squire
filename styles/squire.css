@@ -1,3 +1,6 @@
+/* Import quest marker styles */
+@import url('./quest-markers.css');
+
 /* Main Squire Styles
 .squire-tray {
     position: fixed;

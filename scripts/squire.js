@@ -508,6 +508,22 @@ Hooks.on('canvasInit', () => {
   }
 });
 
+// Also ensure squirePins exists when canvas is ready
+Hooks.on('canvasReady', () => {
+  if (!canvas.squirePins) {
+    const squirePins = new PIXI.Container();
+    squirePins.sortableChildren = true;
+    squirePins.interactive = true;
+    squirePins.eventMode = 'static';
+    if (canvas.foregroundGroup) {
+      canvas.foregroundGroup.addChild(squirePins);
+    } else {
+      canvas.stage.addChild(squirePins);
+    }
+    canvas.squirePins = squirePins;
+  }
+});
+
 // Move squirePins to top after canvasReady (if needed)
 Hooks.on('canvasReady', () => {
   if (canvas.squirePins) {

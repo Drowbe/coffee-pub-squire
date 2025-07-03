@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './quest-parser.js';
+import { QuestPin } from './quest-pin.js';
 import { copyToClipboard } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
@@ -68,6 +69,51 @@ export class QuestPanel {
             if (this.element && this._isPageInSelectedJournal(page)) {
                 await this._refreshData();
                 this.render(this.element);
+                
+                // Update quest pins if they exist for this quest
+                if (canvas.squirePins) {
+                    const questPins = canvas.squirePins.children.filter(child => 
+                        child instanceof QuestPin && child.questUuid === page.uuid
+                    );
+                    
+                    questPins.forEach(pin => {
+                        // Get the current task state from the updated page
+                        try {
+                            let content = page.text.content;
+                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                            if (tasksMatch) {
+                                const tasksHtml = tasksMatch[1];
+                                const parser = new DOMParser();
+                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                const ul = ulDoc.querySelector('ul');
+                                if (ul) {
+                                    const liList = Array.from(ul.children);
+                                    const li = liList[pin.objectiveIndex];
+                                    if (li) {
+                                        let newState = 'active';
+                                        if (li.querySelector('s')) {
+                                            newState = 'completed';
+                                        } else if (li.querySelector('code')) {
+                                            newState = 'failed';
+                                        } else if (li.querySelector('em')) {
+                                            newState = 'hidden';
+                                        }
+                                        pin.updateObjectiveState(newState);
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error updating quest pin state',
+                                { error, pin, page },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
+                        }
+                    });
+                }
             }
         });
     }
