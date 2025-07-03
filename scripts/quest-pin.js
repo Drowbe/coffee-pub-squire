@@ -211,13 +211,67 @@ export class QuestPin extends PIXI.Container {
   }
 
   // Toggle visibility - GM only
-  toggleVisibility() {
+  async toggleVisibility() {
     if (!game.user.isGM) return; // Only GM can toggle visibility
     
-    // Toggle between 'active' and 'hidden' states
-    this.objectiveState = this.objectiveState === 'hidden' ? 'active' : 'hidden';
-    this._updateVisibility();
-    this._saveToPersistence();
+    try {
+      // Get the journal page for this quest
+      const journalId = game.settings.get(MODULE.ID, 'questJournal');
+      if (!journalId || journalId === 'none') return;
+      
+      const journal = game.journal.get(journalId);
+      if (!journal) return;
+      
+      const page = journal.pages.find(p => p.uuid === this.questUuid);
+      if (!page) return;
+      
+      let content = page.text.content;
+      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+      if (!tasksMatch) return;
+      
+      const tasksHtml = tasksMatch[1];
+      const parser = new DOMParser();
+      const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+      const ul = ulDoc.querySelector('ul');
+      const liList = ul ? Array.from(ul.children) : [];
+      const li = liList[this.objectiveIndex];
+      if (!li) return;
+      
+      // Toggle hidden state by adding/removing <em> tags
+      const emTag = li.querySelector('em');
+      if (emTag) {
+        // Task is already hidden, unhide it - unwrap <em>
+        emTag.replaceWith(...emTag.childNodes);
+      } else {
+        // Task is not hidden, hide it - wrap in <em> and remove other states
+        // First, unwrap any existing state tags to ensure clean state
+        const sTag = li.querySelector('s');
+        const codeTag = li.querySelector('code');
+        
+        if (sTag) {
+          // If completed, unwrap <s> first
+          li.innerHTML = sTag.innerHTML;
+        } else if (codeTag) {
+          // If failed, unwrap <code> first
+          li.innerHTML = codeTag.innerHTML;
+        }
+        
+        // Now wrap in <em>
+        li.innerHTML = `<em>${li.innerHTML}</em>`;
+      }
+      
+      const newTasksHtml = ul.innerHTML;
+      const newContent = content.replace(tasksMatch[1], newTasksHtml);
+      
+      // Update the journal page
+      await page.update({ text: { content: newContent } });
+      
+      // The pin will be automatically updated by the updateJournalEntryPage hook
+      // No need to manually update the pin or save to persistence
+      
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling visibility', { error }, false, true, true, MODULE.TITLE);
+    }
   }
 
   // Update pin appearance based on new objective state
@@ -367,9 +421,9 @@ export class QuestPin extends PIXI.Container {
       this._lastClickTime = Date.now();
       // Only GMs can toggle visibility
       if (game.user.isGM) {
-        setTimeout(() => {
+        setTimeout(async () => {
           if (this._lastClickTime === Date.now()) {
-            this.toggleVisibility();
+            await this.toggleVisibility();
           }
         }, 200);
       }
@@ -382,8 +436,8 @@ export class QuestPin extends PIXI.Container {
     this._removePin();
   }
 
-  _onDoubleClick(event) {
-    this._openQuestJournal();
+  async _onDoubleClick(event) {
+    await this._openQuestJournal();
   }
 
   _removePin() {
@@ -398,27 +452,34 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  _openQuestJournal() {
+  async _openQuestJournal() {
     try {
-      // Get the journal entry directly from the questUuid
-      const journalEntry = game.journal.get(this.questUuid);
-      if (journalEntry) {
-        journalEntry.sheet.render(true);
-      } else {
-        // Try to find the journal entry by searching through all journals
-        const journalId = game.settings.get(MODULE.ID, 'questJournal');
-        if (journalId && journalId !== 'none') {
-          const journal = game.journal.get(journalId);
-          if (journal) {
-            const page = journal.pages.find(p => p.uuid === this.questUuid);
-            if (page) {
-              journal.sheet.render(true);
-              return;
-            }
+      // The questUuid is actually the UUID of the journal page
+      // First try to get the page directly
+      const page = await fromUuid(this.questUuid);
+      if (page) {
+        // Open the journal and navigate to this specific page
+        const journal = page.parent;
+        if (journal) {
+          journal.sheet.render(true, {pageId: page.id});
+          return;
+        }
+      }
+      
+      // Fallback: try to find the page in the quest journal
+      const journalId = game.settings.get(MODULE.ID, 'questJournal');
+      if (journalId && journalId !== 'none') {
+        const journal = game.journal.get(journalId);
+        if (journal) {
+          const page = journal.pages.find(p => p.uuid === this.questUuid);
+          if (page) {
+            journal.sheet.render(true, {pageId: page.id});
+            return;
           }
         }
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest journal entry not found', { uuid: this.questUuid }, false, true, false, MODULE.TITLE);
       }
+      
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest journal page not found', { uuid: this.questUuid }, false, true, false, MODULE.TITLE);
     } catch (error) {
       getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error opening quest journal', { error }, false, true, true, MODULE.TITLE);
     }
