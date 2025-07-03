@@ -156,19 +156,23 @@ export class QuestPin extends PIXI.Container {
     return `${this.questUuid}-${this.objectiveIndex}-${Date.now()}`;
   }
 
-  // Update pin visibility - only affects visual appearance for GM
+  // Update pin visibility - hidden pins are invisible to players, visible to GM
   _updateVisibility() {
-    if (!this.visible && game.user.isGM) {
-      // For GM: show hidden pins with hidden colors
-      this.circle.clear();
-      this.circle.lineStyle(2, 0x000000, 1);
-      this.circle.beginFill(0x000000, 0.2);
-      this.circle.drawCircle(0, 0, this.radius);
-      this.circle.endFill();
-    } else if (!this.visible && !game.user.isGM) {
-      // For players: hide pins completely
-      this.alpha = 0;
-      this.interactive = false;
+    if (!this.visible) {
+      if (game.user.isGM) {
+        // For GM: show hidden pins with hidden colors (semi-transparent black)
+        this.alpha = 0.6;
+        this.interactive = true;
+        this.circle.clear();
+        this.circle.lineStyle(2, 0x000000, 1);
+        this.circle.beginFill(0x000000, 0.2);
+        this.circle.drawCircle(0, 0, this.radius);
+        this.circle.endFill();
+      } else {
+        // For players: hide pins completely
+        this.alpha = 0;
+        this.interactive = false;
+      }
     } else {
       // Visible for everyone
       this.alpha = 1.0;
@@ -508,6 +512,12 @@ export class QuestPin extends PIXI.Container {
       'Left-click: Toggle visibility | Right-click: Delete | Double-click: Open quest | Drag to move' :
       'Double-click: Open quest';
     
+    // Add visibility status to tooltip for GM
+    const visibilityStatus = game.user.isGM ? 
+      `<div style="font-size: 10px; opacity: 0.6; margin-top: 2px;">
+        ${this.visible ? 'Visible to all players' : 'Hidden from players'}
+      </div>` : '';
+    
     tooltip.innerHTML = `
       <div style="font-weight: bold; margin-bottom: 4px;">${questName}</div>
       <div style="font-size: 12px; opacity: 0.8;">Objective ${this.objectiveIndex + 1}</div>
@@ -515,6 +525,7 @@ export class QuestPin extends PIXI.Container {
       <div style="font-size: 10px; opacity: 0.6; margin-top: 4px;">
         ${controls}
       </div>
+      ${visibilityStatus}
     `;
     tooltip.style.display = 'block';
     
@@ -662,6 +673,9 @@ function loadPersistedPins() {
                 } catch (error) {
                     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
                 }
+                
+                // Apply visibility state after pin is created
+                pin._updateVisibility();
                 
                 canvas.squirePins.addChild(pin);
                 getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { pin });
