@@ -174,28 +174,17 @@ export class QuestPin extends PIXI.Container {
     this.hitArea = new PIXI.Circle(0, 0, pinRadius);
   }
 
-  // Update pin visibility - hidden pins are invisible to players, visible to GM
+  // Update pin visibility - hidden pins are invisible to players
   _updateVisibility() {
-    if (this.objectiveState === 'hidden') {
-      if (game.user.isGM) {
-        // For GM: show hidden pins with hidden colors (semi-transparent black)
-        this.alpha = 0.6;
-        this.interactive = true;
-        this.circle.clear();
-        this.circle.lineStyle(2, 0x000000, 1);
-        this.circle.beginFill(0x000000, 0.2);
-        this.circle.drawCircle(0, 0, this.radius);
-        this.circle.endFill();
-      } else {
-        // For players: hide pins completely
-        this.alpha = 0;
-        this.interactive = false;
-      }
+    if (this.objectiveState === 'hidden' && !game.user.isGM) {
+      // For players: hide hidden pins completely
+      this.alpha = 0;
+      this.interactive = false;
     } else {
-      // Visible for everyone (active, completed, failed states)
+      // For everyone else: show pins normally
       this.alpha = 1.0;
       this.interactive = true;
-      // Restore original colors using centralized method
+      // Update appearance using centralized method
       this._updatePinAppearance();
     }
     
@@ -701,6 +690,11 @@ function loadPersistedPins() {
         // Load pins from persistence
         scenePins.forEach(pinData => {
             try {
+                // Skip hidden pins for non-GM users
+                if (pinData.objectiveState === 'hidden' && !game.user.isGM) {
+                    return;
+                }
+                
                 const displayNumber = `${getQuestNumber(pinData.questUuid)}.${pinData.objectiveIndex + 1}`;
                 const pin = new QuestPin({
                     x: pinData.x,
