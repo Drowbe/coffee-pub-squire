@@ -1059,6 +1059,16 @@ export const registerSettings = function() {
         default: ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]
     });
 
+    // Quest Pin Persistence (Internal)
+    game.settings.register(MODULE.ID, 'questPinsData', {
+        name: "Quest Pins Data",
+        hint: "Internal storage for quest pins on each scene",
+        scope: "world",
+        config: false,
+        type: Object,
+        default: {}
+    });
+
     game.settings.register(MODULE.ID, 'macrosWindowPosition', {
         scope: 'client',
         config: false,

@@ -107,24 +107,24 @@
                                         <ul>
                                             {{#each entry.tasks}}
                                                 {{#if @root.isGM}}
-                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}">
-                                                        <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}"></i>
+                                                    <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}" data-task-state="{{this.state}}" data-task-index="{{@index}}">
+                                                        <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}" data-task-state="{{this.state}}"></i>
                                                         <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                     </li>
                                                 {{else}}
                                                     {{#if (eq this.state 'hidden')}}
-                                                        <li class="task-hidden">
+                                                        <li class="task-hidden" data-task-state="{{this.state}}" data-task-index="{{@index}}">
                                                             
                                                             <i class="fas fa-square-question"></i>
                                                             Objective not discovered
                                                         </li>
                                                     {{else if (eq this.state 'failed')}}
-                                                        <li class="task-failed">
+                                                        <li class="task-failed" data-task-state="{{this.state}}" data-task-index="{{@index}}">
                                                             <i class="fas fa-square-xmark"></i>
                                                             {{{renderTask this @root.isGM}}}
                                                         </li>
                                                     {{else}}
-                                                        <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}">
+                                                        <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}" data-task-state="{{this.state}}" data-task-index="{{@index}}">
                                                             <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}}"></i>
                                                             <span class="objective-text">{{{renderTask this @root.isGM}}}</span>
                                                         </li>

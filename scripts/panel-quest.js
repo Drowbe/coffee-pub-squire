@@ -420,13 +420,18 @@ export class QuestPanel {
                 const questName = questEntry.find('.quest-entry-name').text().trim();
                 const objectiveText = listItem.find('.objective-text').text().trim();
                 
+                // Get objective state from data attribute on the checkbox
+                const objectiveState = checkbox.data('task-state') || 'active';
+                console.log('SQUIRE | Drag data - checkbox:', checkbox, 'data-task-state:', checkbox.data('task-state'), 'objectiveState:', objectiveState);
+                
                 // Create drag data
                 const dragData = {
                     type: 'quest-objective',
                     questUuid: questUuid,
                     objectiveIndex: taskIndex,
                     questName: questName,
-                    objectiveText: objectiveText
+                    objectiveText: objectiveText,
+                    objectiveState: objectiveState
                 };
                 
                 event.originalEvent.dataTransfer.setData('text/plain', JSON.stringify(dragData));

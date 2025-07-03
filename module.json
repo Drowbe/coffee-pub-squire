@@ -42,7 +42,8 @@
         "scripts/panel-dicetray.js",
         "scripts/panel-abilities.js",
         "scripts/panel-party.js",
-        "scripts/panel-party-stats.js"
+        "scripts/panel-party-stats.js",
+        "scripts/quest-pin.js"
     ],
     "styles": [
         "styles/default.css"

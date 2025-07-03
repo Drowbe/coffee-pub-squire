@@ -325,20 +325,6 @@ Hooks.once('init', async function() {
 
     // Add quest form to Hooks
     window.QuestForm = QuestForm;
-
-    // Insert SquireLayer after the 'foreground' layer
-    const layers = CONFIG.Canvas.layers;
-    const newLayers = {};
-    for (const [key, value] of Object.entries(layers)) {
-        newLayers[key] = value;
-        if (key === 'foreground') {
-            newLayers['squire'] = {
-                layerClass: SquireLayer,
-                group: 'primary'
-            };
-        }
-    }
-    CONFIG.Canvas.layers = newLayers;
 });
 
 Hooks.once('ready', async function() {
@@ -448,7 +434,7 @@ Hooks.on('controlToken', async (token, controlled) => {
     await PanelManager.initialize(token.actor);
 });
 
-// Create a PIXI.Container for quest pins
+// Restore the squirePins container creation in the canvasInit hook
 Hooks.on('canvasInit', () => {
   if (!canvas.squirePins) {
     const squirePins = new PIXI.Container();
@@ -787,20 +773,3 @@ function getQuestNumber(questUuid) {
   }
   return Math.abs(hash) % 100 + 1;
 }
-
-Hooks.on('dropCanvasData', (canvas, data) => {
-  console.log('SQUIRE | dropCanvasData event fired', data);
-  if (data.type === 'quest-objective') {
-    const { questUuid, objectiveIndex } = data;
-    const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
-    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber });
-    if (canvas.squirePins) {
-      console.log('SQUIRE | Adding pin to canvas.squirePins', pin);
-      canvas.squirePins.addChild(pin);
-      console.log('SQUIRE | canvas.squirePins children after add:', canvas.squirePins.children);
-    } else {
-      console.error('SQUIRE | canvas.squirePins is not available!', canvas);
-    }
-    return true;
-  }
-});
