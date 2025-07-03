@@ -1,3 +1,10 @@
+import { MODULE, SQUIRE } from './const.js';
+
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
 export class QuestPin extends PIXI.Container {
   
   
@@ -24,8 +31,6 @@ export class QuestPin extends PIXI.Container {
     let fillAlpha = 0.2; // Background transparency
     let fontSize = radius - 5; // size of label
     let fontColor = 0xFFFFFF; // white
-
-    console.log('SQUIRE | QuestPin objectiveState', objectiveState);
 
     if (objectiveState === 'active') {
       radius = 40; // Radius of the circular pin
@@ -144,7 +149,6 @@ export class QuestPin extends PIXI.Container {
     this.on('pointerupoutside', this._onDragEnd.bind(this));
     this.on('pointermove', this._onDragMove.bind(this));
   
-    console.log('SQUIRE | QuestPin created', this);
   }
 
   // Generate unique pin ID for persistence
@@ -185,7 +189,6 @@ export class QuestPin extends PIXI.Container {
     this.visible = !this.visible;
     this._updateVisibility();
     this._saveToPersistence();
-    console.log('SQUIRE | QuestPin visibility toggled:', this.visible);
   }
 
   // Save pin data to persistence
@@ -216,9 +219,8 @@ export class QuestPin extends PIXI.Container {
       }
 
       game.settings.set('coffee-pub-squire', 'questPinsData', pinsData);
-      console.log('SQUIRE | QuestPin saved to persistence:', pinData);
     } catch (error) {
-      console.error('SQUIRE | Error saving quest pin:', error);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error saving quest pin', { error }, false, true, true, MODULE.TITLE);
     }
   }
 
@@ -232,10 +234,9 @@ export class QuestPin extends PIXI.Container {
       if (pinsData[sceneId]) {
         pinsData[sceneId] = pinsData[sceneId].filter(pin => pin.pinId !== this.pinId);
         game.settings.set('coffee-pub-squire', 'questPinsData', pinsData);
-        console.log('SQUIRE | QuestPin removed from persistence:', this.pinId);
       }
     } catch (error) {
-      console.error('SQUIRE | Error removing quest pin:', error);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error removing quest pin', { error }, false, true, true, MODULE.TITLE);
     }
   }
 
@@ -261,7 +262,6 @@ export class QuestPin extends PIXI.Container {
     this.on('pointermove', this._onDragMove, this);
     this.on('pointerup', this._onDragEnd, this);
     this.on('pointerupoutside', this._onDragEnd, this);
-    console.log('SQUIRE | QuestPin drag started');
   }
 
   _onDragEnd(event) {
@@ -286,7 +286,6 @@ export class QuestPin extends PIXI.Container {
     this.off('pointerup', this._onDragEnd, this);
     this.off('pointerupoutside', this._onDragEnd, this);
     this._saveToPersistence();
-    console.log('SQUIRE | QuestPin drag ended at:', this.x, this.y);
   }
 
   _onDragMove(event) {
@@ -306,7 +305,6 @@ export class QuestPin extends PIXI.Container {
     // Set cursor to grabbing immediately for GM
     if (game.user.isGM) document.body.style.cursor = 'grabbing';
     // Usual click/double-click logic
-    console.log('SQUIRE | Quest Pins | Pin left-clicked!', this);
     if (this.isDragging) return;
     if (this._lastClickTime && (Date.now() - this._lastClickTime) < 500) {
       this._onDoubleClick(event);
@@ -324,12 +322,10 @@ export class QuestPin extends PIXI.Container {
   _onRightDown(event) {
     if (!game.user.isGM) return; // Only GM can delete
     
-    console.log('SQUIRE | Quest Pins | Pin right-clicked!', this);
     this._removePin();
   }
 
   _onDoubleClick(event) {
-    console.log('SQUIRE | Quest Pins | Pin double-clicked!', this);
     this._openQuestJournal();
   }
 
@@ -338,7 +334,6 @@ export class QuestPin extends PIXI.Container {
     if (this.parent) {
       this.parent.removeChild(this);
     }
-    console.log('SQUIRE | QuestPin removed:', this);
   }
 
   _openQuestJournal() {
@@ -349,13 +344,13 @@ export class QuestPin extends PIXI.Container {
         if (journalEntry) {
           journalEntry.sheet.render(true);
         } else {
-          console.warn('SQUIRE | Quest journal entry not found:', quest.uuid);
+          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest journal entry not found', { uuid: quest.uuid }, false, true, false, MODULE.TITLE);
         }
       } else {
-        console.warn('SQUIRE | Quest not found:', this.questUuid);
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest not found', { questUuid: this.questUuid }, false, true, false, MODULE.TITLE);
       }
     } catch (error) {
-      console.error('SQUIRE | Error opening quest journal:', error);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error opening quest journal', { error }, false, true, true, MODULE.TITLE);
     }
   }
   
@@ -425,24 +420,20 @@ function getQuestNumber(questUuid) {
 // Re-enable only the dropCanvasData hook in quest-pin.js
 Hooks.on('dropCanvasData', (canvas, data) => {
     if (data.type !== 'quest-objective') return; // Let Foundry handle all other drops!
-    console.log('SQUIRE | Quest Pins | Drop data received:', data);
     const { questUuid, objectiveIndex, objectiveState } = data;
     const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
     
     // Use the objective state from the drag data (default to 'active' if not provided)
     const finalObjectiveState = objectiveState || 'active';
-    console.log('SQUIRE | Quest Pins | Using objectiveState from drag data:', finalObjectiveState);
     
     const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber, objectiveState: finalObjectiveState });
     if (canvas.squirePins) {
-        console.log('SQUIRE | Adding pin to canvas.squirePins', pin);
         canvas.squirePins.addChild(pin);
-        console.log('SQUIRE | canvas.squirePins children after add:', canvas.squirePins.children);
         
         // Save to persistence
         pin._saveToPersistence();
     } else {
-        console.error('SQUIRE | canvas.squirePins is not available!', canvas);
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | canvas.squirePins is not available', { canvas }, false, true, false, MODULE.TITLE);
     }
     return true; // Only block further handling for quest pins
 });
@@ -454,7 +445,7 @@ Hooks.on('dropCanvasData', (canvas, data) => {
 
 // Load persisted pins when canvas is ready
 Hooks.on('canvasReady', (canvas) => {
-    console.log('SQUIRE | Quest Pins | Canvas ready, loading persisted pins');
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Canvas ready, loading persisted pins');
     setTimeout(() => {
         loadPersistedPins();
     }, 1500);
@@ -462,7 +453,7 @@ Hooks.on('canvasReady', (canvas) => {
 
 // Load persisted pins when scene changes
 Hooks.on('canvasSceneChange', (scene) => {
-    console.log('SQUIRE | Quest Pins | Scene changed, loading persisted pins');
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Scene changed, loading persisted pins');
     // Delay loading to ensure scene is fully loaded
     setTimeout(() => {
         loadPersistedPins();
@@ -474,12 +465,12 @@ function loadPersistedPins() {
     try {
         const sceneId = canvas.scene?.id;
         if (!sceneId) {
-            console.log('SQUIRE | Quest Pins | No scene available');
+            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | No scene available');
             return;
         }
         
         if (!canvas.squirePins) {
-            console.log('SQUIRE | Quest Pins | squirePins container not available, retrying...');
+            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | squirePins container not available, retrying...');
             // Try again in a moment
             setTimeout(() => {
                 loadPersistedPins();
@@ -490,7 +481,7 @@ function loadPersistedPins() {
         const pinsData = game.settings.get('coffee-pub-squire', 'questPinsData') || {};
         const scenePins = pinsData[sceneId] || [];
         
-        console.log('SQUIRE | Quest Pins | Loading pins for scene:', sceneId, scenePins);
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loading pins for scene', { sceneId, scenePins });
 
         // Clear existing pins for this scene
         const existingPins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
@@ -516,14 +507,14 @@ function loadPersistedPins() {
                 pin.pinId = pinData.pinId;
                 
                 canvas.squirePins.addChild(pin);
-                console.log('SQUIRE | Quest Pins | Loaded persisted pin:', pin);
+                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { pin });
             } catch (error) {
-                console.error('SQUIRE | Quest Pins | Error loading pin:', pinData, error);
+                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error loading pin', { pinData, error });
             }
         });
 
-        console.log('SQUIRE | Quest Pins | Successfully loaded', scenePins.length, 'pins for scene', sceneId);
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Successfully loaded', scenePins.length, 'pins for scene', sceneId);
     } catch (error) {
-        console.error('SQUIRE | Quest Pins | Error loading persisted pins:', error);
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error loading persisted pins', { error });
     }
 } 
