@@ -1,4 +1,4 @@
-import { MODULE } from './const.js';
+import { MODULE, SQUIRE } from './const.js';
 
 export class QuestParser {
     /**
@@ -293,7 +293,7 @@ export class QuestParser {
                             displayText = displayText.replace(treasureRegex, '').trim();
                         }
                     } catch (error) {
-                        console.error('SQUIRE | Error parsing task hints and treasures:', error, text);
+                        console.error(`${MODULE.TITLE} | Error parsing task hints and treasures:`, error, text);
                         displayText = text;
                     }
 

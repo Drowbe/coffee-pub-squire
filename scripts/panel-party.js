@@ -1,5 +1,10 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './panel-manager.js';
+
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
 
 export class PartyPanel {
     constructor() {
@@ -125,7 +130,7 @@ export class PartyPanel {
                     $(event.currentTarget).addClass('drop-target');
                     
                     // Play hover sound
-                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    const blacksmith = getBlacksmith();
                     if (blacksmith) {
                         const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
                         blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
@@ -172,7 +177,7 @@ export class PartyPanel {
                 console.log("SQUIRE | Party Panel Parsed drop data:", data);
                 
                 // Play drop sound
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                const blacksmith = getBlacksmith();
                 if (blacksmith) {
                     const sound = game.settings.get(MODULE.ID, 'dropSound');
                     blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);

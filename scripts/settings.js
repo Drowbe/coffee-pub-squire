@@ -971,9 +971,13 @@ export const registerSettings = function() {
           default: "none",
           choices: (() => {
                                
-            // const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            // const choices = blacksmith?.BLACKSMITH?.arrCompendiumChoices;
-            const choices = game.modules.get('coffee-pub-blacksmith').api.BLACKSMITH.arrCompendiumChoices;
+            // Helper function to safely get Blacksmith API
+            function getBlacksmith() {
+              return game.modules.get('coffee-pub-blacksmith')?.api;
+            }
+            
+            const blacksmith = getBlacksmith();
+            const choices = blacksmith?.BLACKSMITH?.arrCompendiumChoices;
             console.log("SQUIRE | choices", choices);
 
             if (choices && Object.keys(choices).length > 0) return { ...choices };

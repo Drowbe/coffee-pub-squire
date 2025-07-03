@@ -1,6 +1,11 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './quest-parser.js';
 import { copyToClipboard } from './helpers.js';
+
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
 
 export class QuestPanel {
     constructor() {
@@ -1099,7 +1104,7 @@ export class QuestPanel {
                     console.log("SQUIRE | Quest Panel Raw drop data:", dataTransfer);
                     const data = JSON.parse(dataTransfer);
                     console.log("SQUIRE | Quest Panel Parsed drop data:", data);
-                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    const blacksmith = getBlacksmith();
                     if (blacksmith) {
                         const sound = game.settings.get(MODULE.ID, 'dropSound');
                         blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);

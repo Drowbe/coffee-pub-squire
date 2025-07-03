@@ -1,9 +1,13 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
+
+// Helper function to safely get Blacksmith API
+function getBlacksmith() {
+  return game.modules.get('coffee-pub-blacksmith')?.api;
+}
 
 export class PartyStatsPanel {
     constructor() {
         this.element = null;
-        this._blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         this._boundUpdateHandler = this._onStatsUpdate.bind(this);
     }
 
@@ -46,11 +50,11 @@ export class PartyStatsPanel {
 
         try {
             // Get fresh reference to Blacksmith API
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            const blacksmith = getBlacksmith();
             // console.log('SQUIRE | STATS Blacksmith API object:', blacksmith);
 
             if (!blacksmith?.stats?.player) {
-                console.warn('SQUIRE | STATS Blacksmith Stats API (player) not available');
+                console.warn(`${MODULE.TITLE} | STATS Blacksmith Stats API (player) not available`);
                 return data;
             }
 
@@ -97,7 +101,7 @@ export class PartyStatsPanel {
                     if (turnTime > 0) turnTimeByPlayer.set(actor.name, turnTime);
 
                 } catch (error) {
-                    console.error(`SQUIRE | STATS Error processing stats for ${actor.name}:`, error);
+                    console.error(`${MODULE.TITLE} | STATS Error processing stats for ${actor.name}:`, error);
                 }
             }
 
@@ -136,13 +140,13 @@ export class PartyStatsPanel {
                     }
                 }
             } catch (error) {
-                console.error('SQUIRE | STATS Error getting session duration:', error);
+                console.error(`${MODULE.TITLE} | STATS Error getting session duration:`, error);
             }
 
             // console.log('SQUIRE | STATS Final party stats data:', data);
 
         } catch (error) {
-            console.error('SQUIRE | STATS Error gathering party stats:', error);
+            console.error(`${MODULE.TITLE} | STATS Error gathering party stats:`, error);
         }
 
         return data;
