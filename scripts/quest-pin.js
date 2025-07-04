@@ -88,74 +88,20 @@ export class QuestPin extends PIXI.Container {
 
     // Draw the pin
     this._updatePinAppearance();
-
-    // ===============================
-    // 0. Initialize pin properties
-    // ===============================
-    this.radius = 40; // Default radius
-    this.fontSize = 35; // Default font size
-    this.fontColor = 0xFFFFFF; // Default font color
-  
-    // ===============================
-    // 1. Draw circular pin background with blurred drop shadow
-    // ===============================
-    const circle = new PIXI.Graphics();
-    this.addChild(circle);
-    circle.interactive = false;
-    circle.eventMode = 'none';
-  
-    // ===============================
-    // 2. Display number centered inside circle
-    // ===============================
-    const refStyle = new PIXI.TextStyle({
-      fontFamily: 'Signika',
-      fontSize: this.fontSize,
-      fill: this.fontColor,
-      fontWeight: 'bold',
-      stroke: '#000000',
-      strokeThickness: 2,
-      align: 'center',
-      dropShadow: true,
-      dropShadowColor: '#000000',
-      dropShadowBlur: 2,
-      dropShadowDistance: 0,
-      dropShadowAlpha: 0.6
-    });
-  
-    const refText = new PIXI.Text(displayNumber, refStyle);
-    refText.anchor.set(0.5);
-    refText.position.set(0, 0);
-    this.addChild(refText);
-    refText.interactive = false;
-    refText.eventMode = 'none';
-  
-    // ================================
-    // 3. Add interaction / hit area
-    // ================================
+    // Enable pointer events
     this.interactive = true;
-    this.buttonMode = true;
-    this.eventMode = 'static';
-    this.hitArea = new PIXI.Circle(0, 0, this.radius);
     this.cursor = 'pointer';
-
-    // Now update the appearance based on the objective state
-    this._updatePinAppearance();
-
-
-  
     // Enhanced event handling
     this.on('pointerdown', this._onPointerDown.bind(this));
     this.on('rightdown', this._onRightDown.bind(this));
     this.on('middleclick', this._onMiddleDown.bind(this));
     this.on('pointerover', this._onPointerOver.bind(this));
     this.on('pointerout', this._onPointerOut.bind(this));
-    
     // Drag functionality
     this.on('pointerdown', this._onDragStart.bind(this));
     this.on('pointerup', this._onDragEnd.bind(this));
     this.on('pointerupoutside', this._onDragEnd.bind(this));
     this.on('pointermove', this._onDragMove.bind(this));
-  
   }
 
   // Generate unique pin ID for persistence
@@ -267,11 +213,15 @@ export class QuestPin extends PIXI.Container {
       statusIcon.position.set(cfg.inner.width/2 - padX, centerY);
       this.addChild(statusIcon);
     }
+    // Set hit area to match the inner pill shape
+    this.hitArea = new PIXI.RoundedRectangle(
+      -cfg.inner.width/2,
+      -cfg.inner.height/2,
+      cfg.inner.width,
+      cfg.inner.height,
+      cfg.inner.borderRadius
+    );
   }
-
-
-
-
 
   // Update pin appearance based on new objective state
   updateObjectiveState(newState) {
@@ -290,8 +240,6 @@ export class QuestPin extends PIXI.Container {
     
     // Update pin appearance using centralized method
     this._updatePinAppearance();
-    
-
     
     // Save to persistence
     this._saveToPersistence();
@@ -807,8 +755,6 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-
-
   // Helper method to get quest data
   _getQuestData() {
     try {
@@ -1099,8 +1045,6 @@ function loadPersistedPins() {
                         getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
                     }
                 }
-                
-
                 
                 canvas.squirePins.addChild(pin);
                 getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { 
