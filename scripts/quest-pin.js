@@ -44,8 +44,9 @@ const DEFAULT_PIN_CONFIG = {
     size: 32,
     color: 0xFFFFFF,
     faFamily: 'FontAwesome',
-    faSize: 32,
-    faColor: 0xFFFFFF
+    faSize: 30,
+    faColor: 0xFFFFFF,
+    numberPadding: 8 // Horizontal offset from center for quest/objective numbers
   }
 };
 
@@ -110,126 +111,209 @@ export class QuestPin extends PIXI.Container {
   _updatePinAppearance() {
     // Remove previous children
     this.removeChildren();
-    const cfg = this.config;
+
+    // === PIN APPEARANCE VARIABLES (all values set at top for clarity) ===
+    // General
+    const pinFontFamily = "Signika";
+    const pinIconFamily = "FontAwesome";
+    const pinDataPadding = 20;
+    const pinIconSizeAdjustment = 5; // adds a bit more to the size of the icons
+    const pinIconPadding = 10; // adds a bit of space between the icon and edge of the container
+
+    // Main Pin
+    const pinInnerWidth = 300;
+    const pinInnerHeight = 60;
+    const pinInnerBorderRadius = 10;
+    const pinInnerColor = 0x000000;
+    const pinInnerTransparency = 1.0;
+    const pinInnerDropShadow = { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 };
+
+    // Pin Ring
+    const pinRingWidth = 8;
+    const pinRingGap = 6;
+    let pinRingColor = 0x1E85AD; // usually same as default below
+    const pinRingTransparency = 1.0;
+    const pinRingStyle = "solid"; // or 'dashed'
+    const pinRingColorFailed = 0xD41A1A;
+    const pinRingColorHidden = 0x4A4A4A;
+    const pinRingColorCompleted = 0x3C9245;
+    const pinRingColorDefault = 0x1E85AD;
+ 
+    // Main Quest Icon
+    const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
+    const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeAdjustment;;
+    const pinIconMainQuestColor = 0xFFFFFF;
+
+    // Side Quest Icon
+    const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
+    const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinIconSideQuestColor = 0xFFFFFF;
+
+    // State Icons
+    const pinIconStateCompletedStyle = "\uf024";
+    const pinIconStateCompletedSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinIconStateCompletedColor = 0xFFFFFF;
+
+    const pinIconStateFailedStyle = "\uf00d";
+    const pinIconStateFailedSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinIconStateFailedColor = 0xFFFFFF;
+
+    const pinIconStateHiddenStyle = "\uf06e";
+    const pinIconStateHiddenSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinIconStateHiddenColor = 0xFFFFFF;
+
+    // Quest Data
+    const pinDataQuestColor = 0xFFFFFF;
+    const pinDataQuestSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+
+    // State Data
+    const pinDataStateColor = 0xFFFFFF;
+    const pinDataStateSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+
+    // Data Separator
+    const pinDataSeparatorColor = 0xFFFFFF;
+    const pinDataSeparatorWidth = 3;
+    const pinDataSeparatorStyle = "solid"; // or 'dotted'
+
+
+
+
+
     // === State-based ring color override ===
-    let ringColor = cfg.outer.color;
-    if (this.objectiveState === 'failed') ringColor = 0xD41A1A;
-    else if (this.objectiveState === 'hidden') ringColor = 0x4A4A4A;
-    else if (this.objectiveState === 'completed') ringColor = 0x3C9245;
-    else ringColor = 0x1E85AD;
+    if (this.objectiveState === 'failed') pinRingColor = pinRingColorFailed;
+    else if (this.objectiveState === 'hidden') pinRingColor = pinRingColorHidden;
+    else if (this.objectiveState === 'completed') pinRingColor = pinRingColorCompleted;
+    else pinRingColor = pinRingColorDefault;
+
     // === Outer ring ===
-    const outerW = cfg.inner.width + 2 * (cfg.outer.ringWidth + cfg.outer.gap);
-    const outerH = cfg.inner.height + 2 * (cfg.outer.ringWidth + cfg.outer.gap);
+    const outerW = pinInnerWidth + 2 * (pinRingWidth + pinRingGap);
+    const outerH = pinInnerHeight + 2 * (pinRingWidth + pinRingGap);
     const outer = new PIXI.Graphics();
-    // Use object syntax for clarity; native: false (default) so border does NOT scale with zoom
     outer.lineStyle({
-      width: cfg.outer.ringWidth,      // Border thickness in screen pixels
-      color: ringColor,               // Border color
-      alpha: cfg.outer.alpha,         // Border alpha
-      alignment: 0.5,                 // Centered on the edge
-      native: false                   // Do NOT scale with zoom (default)
+      width: pinRingWidth,
+      color: pinRingColor,
+      alpha: pinRingTransparency,
+      alignment: 0.5,
+      native: false
     });
-    if (cfg.outer.style === 'dotted') {
+    if (pinRingStyle === 'dotted') {
       outer.setLineDash([8, 8]);
     }
-    outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, cfg.inner.borderRadius + cfg.outer.ringWidth + cfg.outer.gap);
+    outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingWidth + pinRingGap);
     this.addChild(outer);
+
     // === Inner shape ===
     const inner = new PIXI.Graphics();
-    inner.beginFill(cfg.inner.color, cfg.inner.alpha);
-    inner.drawRoundedRect(-cfg.inner.width/2, -cfg.inner.height/2, cfg.inner.width, cfg.inner.height, cfg.inner.borderRadius);
+    inner.beginFill(pinInnerColor, pinInnerTransparency);
+    inner.drawRoundedRect(-pinInnerWidth/2, -pinInnerHeight/2, pinInnerWidth, pinInnerHeight, pinInnerBorderRadius);
     inner.endFill();
-    // Drop shadow
     inner.filters = [
-      new PIXI.filters.DropShadowFilter({
-        color: cfg.inner.dropShadow.color,
-        alpha: cfg.inner.dropShadow.alpha,
-        blur: cfg.inner.dropShadow.blur,
-        distance: cfg.inner.dropShadow.distance
-      })
+      new PIXI.filters.DropShadowFilter(pinInnerDropShadow)
     ];
     this.addChild(inner);
+
     // === Icons and numbers ===
-    // Layout constants
-    const padX = 18;
-    const iconSize = cfg.font.faSize;
-    const textSize = cfg.font.size;
-    let x = -cfg.inner.width/2 + padX;
+    const padX = pinDataPadding;
     const centerY = 0;
+    const centerX = 0;
+    // --- Left side ---
+    let leftX = -pinInnerWidth/2 + padX;
     // Quest category icon
-    let questIconUnicode = cfg.icons.quest.main;
-    if (this.questCategory === 'Side Quest') questIconUnicode = cfg.icons.quest.side;
+    let questIconUnicode = pinIconMainQuestStyle;
+    let questIconSize = pinIconMainQuestSize;
+    let questIconColor = pinIconMainQuestColor;
+    if (this.questCategory === 'Side Quest') {
+      questIconUnicode = pinIconSideQuestStyle;
+      questIconSize = pinIconSideQuestSize;
+      questIconColor = pinIconSideQuestColor;
+    }
     const questIcon = new PIXI.Text(questIconUnicode, {
-      fontFamily: 'FontAwesome',
-      fontSize: iconSize,
-      fill: cfg.font.faColor
+      fontFamily: pinIconFamily,
+      fontSize: questIconSize,
+      fill: questIconColor
     });
     questIcon.anchor.set(0.5);
-    questIcon.position.set(x, centerY);
+    questIcon.position.set(leftX, centerY);
     this.addChild(questIcon);
-    x += iconSize + 8;
+    leftX += questIconSize + padX;
     // Quest index number (show '??' if missing)
     const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null && this.questIndex !== '')
       ? String(this.questIndex)
       : '??';
     const questIndexText = new PIXI.Text(questIndexValue, {
-      fontFamily: cfg.font.family,
-      fontSize: textSize,
-      fill: cfg.font.color,
+      fontFamily: pinFontFamily,
+      fontSize: pinDataQuestSize,
+      fill: pinDataQuestColor,
       fontWeight: 'bold',
       align: 'center'
     });
     questIndexText.anchor.set(0.5);
-    questIndexText.position.set(x, centerY);
+    questIndexText.position.set(centerX - pinDataQuestSize/2 - padX, centerY);
     this.addChild(questIndexText);
-    x += textSize + 8;
-    // Separator line
-    const sepX = x;
+
+    // --- Separator line at center ---
     const sep = new PIXI.Graphics();
-    sep.lineStyle(cfg.separator.thickness, cfg.separator.color, 1);
-    if (cfg.separator.style === 'dashed') sep.setLineDash([6, 6]);
-    sep.moveTo(sepX, -cfg.inner.height/2 + 10);
-    sep.lineTo(sepX, cfg.inner.height/2 - 10);
+    sep.lineStyle({
+      width: pinDataSeparatorWidth,
+      color: pinDataSeparatorColor,
+      alpha: 1,
+      alignment: 0.5,
+      native: false
+    });
+    if (pinDataSeparatorStyle === 'dashed') sep.setLineDash([6, 6]);
+    sep.moveTo(centerX, -pinInnerHeight/2 + 10);
+    sep.lineTo(centerX, pinInnerHeight/2 - 10);
     this.addChild(sep);
-    x += 16;
+
+    // --- Right side ---
     // Objective number (show '??' if missing)
     const objNumValue = (this.objectiveIndex !== undefined && this.objectiveIndex !== null && this.objectiveIndex !== '')
       ? String(this.objectiveIndex + 1).padStart(2, '0')
       : '??';
     const objNumText = new PIXI.Text(objNumValue, {
-      fontFamily: cfg.font.family,
-      fontSize: textSize,
-      fill: cfg.font.color,
+      fontFamily: pinFontFamily,
+      fontSize: pinDataStateSize,
+      fill: pinDataStateColor,
       fontWeight: 'bold',
       align: 'center'
     });
     objNumText.anchor.set(0.5);
-    objNumText.position.set(x, centerY);
+    objNumText.position.set(centerX + pinDataStateSize/2 + padX, centerY);
     this.addChild(objNumText);
-    x += textSize + 8;
-    // Status icon
+    // Status icon (right edge)
     let statusIconUnicode = '';
-    if (this.objectiveState === 'completed') statusIconUnicode = cfg.icons.status.completed;
-    else if (this.objectiveState === 'failed') statusIconUnicode = cfg.icons.status.failed;
-    else if (this.objectiveState === 'hidden') statusIconUnicode = cfg.icons.status.hidden;
-    // (active: no icon)
+    let statusIconSize = pinIconStateCompletedSize;
+    let statusIconColor = pinIconStateCompletedColor;
+    if (this.objectiveState === 'completed') {
+      statusIconUnicode = pinIconStateCompletedStyle;
+      statusIconSize = pinIconStateCompletedSize;
+      statusIconColor = pinIconStateCompletedColor;
+    } else if (this.objectiveState === 'failed') {
+      statusIconUnicode = pinIconStateFailedStyle;
+      statusIconSize = pinIconStateFailedSize;
+      statusIconColor = pinIconStateFailedColor;
+    } else if (this.objectiveState === 'hidden') {
+      statusIconUnicode = pinIconStateHiddenStyle;
+      statusIconSize = pinIconStateHiddenSize;
+      statusIconColor = pinIconStateHiddenColor;
+    }
     if (statusIconUnicode) {
       const statusIcon = new PIXI.Text(statusIconUnicode, {
-        fontFamily: 'FontAwesome',
-        fontSize: iconSize,
-        fill: cfg.font.faColor
+        fontFamily: pinIconFamily,
+        fontSize: statusIconSize,
+        fill: statusIconColor
       });
       statusIcon.anchor.set(0.5);
-      statusIcon.position.set(cfg.inner.width/2 - padX, centerY);
+      statusIcon.position.set(pinInnerWidth/2 - padX, centerY);
       this.addChild(statusIcon);
     }
     // Set hit area to match the inner pill shape
     this.hitArea = new PIXI.RoundedRectangle(
-      -cfg.inner.width/2,
-      -cfg.inner.height/2,
-      cfg.inner.width,
-      cfg.inner.height,
-      cfg.inner.borderRadius
+      -pinInnerWidth/2,
+      -pinInnerHeight/2,
+      pinInnerWidth,
+      pinInnerHeight,
+      pinInnerBorderRadius
     );
   }
 
