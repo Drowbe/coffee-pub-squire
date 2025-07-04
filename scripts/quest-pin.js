@@ -161,10 +161,10 @@ export class QuestPin extends PIXI.Container {
     questIcon.position.set(x, centerY);
     this.addChild(questIcon);
     x += iconSize + 8;
-    // Quest index number (fallback to left part of displayNumber if questIndex is missing)
-    const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null)
+    // Quest index number (show '??' if missing)
+    const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null && this.questIndex !== '')
       ? String(this.questIndex)
-      : '';
+      : '??';
     const questIndexText = new PIXI.Text(questIndexValue, {
       fontFamily: cfg.font.family,
       fontSize: textSize,
@@ -185,8 +185,11 @@ export class QuestPin extends PIXI.Container {
     sep.lineTo(sepX, cfg.inner.height/2 - 10);
     this.addChild(sep);
     x += 16;
-    // Objective number
-    const objNumText = new PIXI.Text(this.objectiveIndex !== undefined ? String(this.objectiveIndex + 1).padStart(2, '0') : '', {
+    // Objective number (show '??' if missing)
+    const objNumValue = (this.objectiveIndex !== undefined && this.objectiveIndex !== null && this.objectiveIndex !== '')
+      ? String(this.objectiveIndex + 1).padStart(2, '0')
+      : '??';
+    const objNumText = new PIXI.Text(objNumValue, {
       fontFamily: cfg.font.family,
       fontSize: textSize,
       fill: cfg.font.color,
@@ -994,8 +997,8 @@ function loadPersistedPins() {
                     questUuid: pinData.questUuid,
                     objectiveIndex: pinData.objectiveIndex,
                     objectiveState: pinData.objectiveState,
-                    questIndex: pinData.questIndex,
-                    questCategory: pinData.questCategory
+                    questIndex: (pinData.questIndex !== undefined && pinData.questIndex !== null && pinData.questIndex !== '') ? pinData.questIndex : '??',
+                    questCategory: (pinData.questCategory !== undefined && pinData.questCategory !== null && pinData.questCategory !== '') ? pinData.questCategory : '??'
                 });
                 
                 // Restore the original pinId for persistence
