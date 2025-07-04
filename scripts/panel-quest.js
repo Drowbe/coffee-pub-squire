@@ -460,23 +460,23 @@ export class QuestPanel {
         
         // Add drag functionality for quest objectives (GM only)
         if (game.user.isGM) {
-            // Make the entire objective list item draggable
-            const objectiveItems = html.find('.quest-entry-tasks li');
-            objectiveItems.attr('draggable', 'true');
-            objectiveItems.on('dragstart', (event) => {
+            // Make the objective text draggable (not the entire list item)
+            const objectiveTexts = html.find('.quest-entry-tasks .objective-text-draggable');
+            objectiveTexts.on('dragstart', (event) => {
                 // Prevent drag if clicking on the checkbox
                 if ($(event.target).hasClass('task-checkbox')) {
                     event.preventDefault();
                     return;
                 }
                 
-                const listItem = $(event.currentTarget);
+                const textElement = $(event.currentTarget);
+                const listItem = textElement.closest('li');
                 const checkbox = listItem.find('.task-checkbox');
                 const taskIndex = parseInt(checkbox.data('task-index'));
                 const questEntry = listItem.closest('.quest-entry');
                 const questUuid = questEntry.find('.quest-entry-feather').data('uuid');
                 const questName = questEntry.find('.quest-entry-name').text().trim();
-                const objectiveText = listItem.find('.objective-text').text().trim();
+                const objectiveText = listItem.find('.objective-text-draggable').text().trim();
                 
                 // Get objective state from data attribute on the checkbox
                 const objectiveState = checkbox.data('task-state') || 'active';
@@ -496,12 +496,12 @@ export class QuestPanel {
                 event.originalEvent.dataTransfer.effectAllowed = 'copy';
                 
                 // Add visual feedback
-                listItem.addClass('dragging');
+                textElement.addClass('dragging');
             });
             
-            objectiveItems.on('dragend', (event) => {
-                const listItem = $(event.currentTarget);
-                listItem.removeClass('dragging');
+            objectiveTexts.on('dragend', (event) => {
+                const textElement = $(event.currentTarget);
+                textElement.removeClass('dragging');
             });
         }
         

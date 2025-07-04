@@ -416,25 +416,25 @@
 }
 
 /* Drag and drop styles for quest objectives */
-.squire-tray[data-position="left"] .quest-entry-tasks li[draggable="true"] {
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-text-draggable {
     cursor: grab;
+    flex: 1;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks li[draggable="true"]:active {
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-text-draggable:active {
     cursor: grabbing;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks li.dragging {
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-text-draggable.dragging {
     opacity: 0.5;
     transform: scale(1.02);
     transition: all 0.2s ease;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
+    padding: 2px 4px;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks li i {
-    cursor: pointer;
-}
+
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
     opacity: 0.9;
