@@ -601,6 +601,7 @@
     width: 100%;
     max-width: none;
 }
+
 .squire-tray[data-position="left"] .handle-quest-progress-square {
     height: 24px;
     width: 24px;

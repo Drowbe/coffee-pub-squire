@@ -3,6 +3,16 @@ import { QuestParser } from './quest-parser.js';
 import { QuestPin } from './quest-pin.js';
 import { copyToClipboard } from './helpers.js';
 
+// Helper function to get quest number from UUID
+function getQuestNumber(questUuid) {
+    let hash = 0;
+    for (let i = 0; i < questUuid.length; i++) {
+        hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash) % 100 + 1;
+}
+
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
@@ -165,6 +175,17 @@ export class QuestPanel {
                             let visible = await page.getFlag(MODULE.ID, 'visible');
                             if (typeof visible === 'undefined') visible = true;
                             entry.visible = visible;
+                            
+                            // Add quest number
+                            entry.questNumber = getQuestNumber(page.uuid);
+                            
+                            // Add objective numbers to tasks
+                            if (entry.tasks && Array.isArray(entry.tasks)) {
+                                entry.tasks.forEach((task, index) => {
+                                    task.objectiveNumber = String(index + 1).padStart(2, '0');
+                                });
+                            }
+                            
                             const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
                             this.data[category].push(entry);
                             

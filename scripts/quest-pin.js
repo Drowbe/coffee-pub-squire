@@ -36,7 +36,7 @@ export class QuestPin extends PIXI.Container {
     this.radius = 40; // Default radius
     this.fontSize = 35; // Default font size
     this.fontColor = 0xFFFFFF; // Default font color
-    
+  
     // ===============================
     // 1. Draw circular pin background with blurred drop shadow
     // ===============================
@@ -121,7 +121,7 @@ export class QuestPin extends PIXI.Container {
     let pinBorderTransparency = 1;
     let pinBorderWidth = 4;
     // Text properties
-    let pinFontSize = pinRadius - 10; // size of label
+    let pinFontSize = pinRadius - 20; // size of label
     let pinFontColor = 0xFFFFFF; // white
 
     // Update properties based on objective state
@@ -147,11 +147,11 @@ export class QuestPin extends PIXI.Container {
     this.pinFontColor = pinFontColor;
 
     // Update the circle appearance
-    this.circle.clear();
+      this.circle.clear();
     this.circle.lineStyle(pinBorderWidth, pinBorderColor, pinBorderTransparency);
     this.circle.beginFill(pinColor, pinAlpha);
     this.circle.drawCircle(0, 0, pinRadius);
-    this.circle.endFill();
+      this.circle.endFill();
 
     // Apply soft drop shadow filter
     this.circle.filters = [
@@ -665,7 +665,7 @@ export class QuestPin extends PIXI.Container {
     try {
       // First try to get the journal entry directly
       const journalEntry = game.journal.get(this.questUuid);
-      if (journalEntry) {
+        if (journalEntry) {
         return journalEntry;
       }
 
@@ -811,7 +811,7 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     if (!game.user.isGM) return false;
     
     const { questUuid, objectiveIndex, objectiveState } = data;
-    const displayNumber = `${getQuestNumber(questUuid)}.${objectiveIndex + 1}`;
+    const displayNumber = `${getQuestNumber(questUuid)}.${String(objectiveIndex + 1).padStart(2, '0')}`;
     
     // Use the objective state from the drag data (default to 'active' if not provided)
     const finalObjectiveState = objectiveState || 'active';
@@ -877,7 +877,7 @@ function loadPersistedPins() {
         // Load pins from persistence
         scenePins.forEach(pinData => {
             try {
-                const displayNumber = `${getQuestNumber(pinData.questUuid)}.${pinData.objectiveIndex + 1}`;
+                const displayNumber = `${getQuestNumber(pinData.questUuid)}.${String(pinData.objectiveIndex + 1).padStart(2, '0')}`;
                 const pin = new QuestPin({
                     x: pinData.x,
                     y: pinData.y,

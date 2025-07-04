@@ -263,6 +263,69 @@
     font-size: 0.85em;
     margin-right: 2px;
 }
+
+
+
+
+
+
+
+
+
+/* Quest Number Styling */
+.squire-tray[data-position="left"] .quest-number {
+    font-weight: 900;
+    font-size: .9em;
+    margin-right: 2px;
+    margin-left: 4px;
+    
+    border: 1px solid rgba(145, 134, 108, 0.7);
+    background-color: rgba(145, 134, 108, 0.05);
+    border-radius: 3px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+/* Objective Number Styling */
+.squire-tray[data-position="left"] .objective-number {
+    font-weight: bold;
+    margin-right: 0px;
+    display: inline-block;
+    
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(145, 134, 108, 0.05);
+    border-radius: 3px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 2px;
+    padding-right: 2px;
+
+    min-width: 20px;
+    text-align: center;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .squire-tray[data-position="left"] .quest-entry-image {
     float: left;
     margin: 0 8px 8px 0;
