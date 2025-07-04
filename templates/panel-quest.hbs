@@ -47,7 +47,7 @@
                 </div>
                 <div class="quest-entries">
                     {{#each statusGroups.inProgress as |entry|}}
-                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}">
+                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}">
                             
                             <!-- ENTRY HEADER -->
                             <div class="quest-entry-header">
@@ -284,7 +284,7 @@
                 </div>
                 <div class="quest-entries">
                     {{#each statusGroups.notStarted as |entry|}}
-                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}">
+                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}">
                             
                             <!-- ENTRY HEADER -->
                             <div class="quest-entry-header">
@@ -520,7 +520,7 @@
                 </div>
                 <div class="quest-entries">
                     {{#each statusGroups.completed as |entry|}}
-                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}">
+                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}">
                             <div class="quest-entry-header">
                                 <div class="quest-entry-name">
                                     {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
@@ -712,7 +712,7 @@
                 </div>
                 <div class="quest-entries">
                     {{#each statusGroups.failed as |entry|}}
-                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}">
+                        <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}">
                             <div class="quest-entry-header">
                                 <div class="quest-entry-name">
                                     {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
