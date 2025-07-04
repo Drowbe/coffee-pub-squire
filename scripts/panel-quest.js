@@ -510,7 +510,9 @@ export class QuestPanel {
                     objectiveIndex: taskIndex,
                     questName: questName,
                     objectiveText: objectiveText,
-                    objectiveState: objectiveState
+                    objectiveState: objectiveState,
+                    questIndex: questEntry.data('quest-number') || undefined,
+                    questCategory: questEntry.data('category') || undefined
                 };
                 
                 event.originalEvent.dataTransfer.setData('text/plain', JSON.stringify(dragData));

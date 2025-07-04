@@ -8,9 +8,9 @@ function getBlacksmith() {
 // === Configurable Pin Appearance ===
 const DEFAULT_PIN_CONFIG = {
   inner: {
-    width: 160,
+    width: 300,
     height: 60,
-    borderRadius: 30,
+    borderRadius: 10,
     color: 0x000000,
     alpha: 1.0,
     dropShadow: { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 }
@@ -52,13 +52,12 @@ const DEFAULT_PIN_CONFIG = {
 export class QuestPin extends PIXI.Container {
   
   
-  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState, questIndex, questCategory, config }) {
+  constructor({ x, y, questUuid, objectiveIndex, objectiveState, questIndex, questCategory, config }) {
     super();
     this.x = x;
     this.y = y;
     this.questUuid = questUuid;
     this.objectiveIndex = objectiveIndex;
-    this.displayNumber = displayNumber;
     this.objectiveState = objectiveState;
     this.questIndex = questIndex;
     this.questCategory = questCategory;
@@ -78,12 +77,10 @@ export class QuestPin extends PIXI.Container {
       objectiveState: this.objectiveState,
       questUuid: this.questUuid,
       objectiveIndex: this.objectiveIndex,
-      displayNumber: this.displayNumber,
       questIndex: this.questIndex,
       questCategory: this.questCategory,
       config: this.config,
       note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags',
-      
     }, false, true, false, MODULE.TITLE);
 
     // Draw the pin
@@ -164,8 +161,11 @@ export class QuestPin extends PIXI.Container {
     questIcon.position.set(x, centerY);
     this.addChild(questIcon);
     x += iconSize + 8;
-    // Quest index number
-    const questIndexText = new PIXI.Text(this.questIndex !== undefined ? String(this.questIndex) : '', {
+    // Quest index number (fallback to left part of displayNumber if questIndex is missing)
+    const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null)
+      ? String(this.questIndex)
+      : '';
+    const questIndexText = new PIXI.Text(questIndexValue, {
       fontFamily: cfg.font.family,
       fontSize: textSize,
       fill: cfg.font.color,
@@ -923,12 +923,11 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     if (!game.user.isGM) return false;
     
     const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory } = data;
-    const displayNumber = `${getQuestNumber(questUuid)}.${String(objectiveIndex + 1).padStart(2, '0')}`;
     
     // Use the objective state from the drag data (default to 'active' if not provided)
     const finalObjectiveState = objectiveState || 'active';
     
-    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber, objectiveState: finalObjectiveState, questIndex, questCategory });
+    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, objectiveState: finalObjectiveState, questIndex, questCategory });
     if (canvas.squirePins) {
         canvas.squirePins.addChild(pin);
         
@@ -989,13 +988,11 @@ function loadPersistedPins() {
         // Load pins from persistence
         scenePins.forEach(pinData => {
             try {
-                const displayNumber = `${getQuestNumber(pinData.questUuid)} | ${String(pinData.objectiveIndex + 1).padStart(2, '0')}`;
                 const pin = new QuestPin({
                     x: pinData.x,
                     y: pinData.y,
                     questUuid: pinData.questUuid,
                     objectiveIndex: pinData.objectiveIndex,
-                    displayNumber: displayNumber,
                     objectiveState: pinData.objectiveState,
                     questIndex: pinData.questIndex,
                     questCategory: pinData.questCategory
