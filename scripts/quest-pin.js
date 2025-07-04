@@ -8,7 +8,7 @@ function getBlacksmith() {
 export class QuestPin extends PIXI.Container {
   
   
-  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState }) {
+  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState, questIndex, questCategory }) {
     super();
     this.x = x;
     this.y = y;
@@ -16,6 +16,8 @@ export class QuestPin extends PIXI.Container {
     this.objectiveIndex = objectiveIndex;
     this.displayNumber = displayNumber;
     this.objectiveState = objectiveState;
+    this.questIndex = questIndex;
+    this.questCategory = questCategory;
     this.pinId = this._generatePinId();
     this.isDragging = false;
     this.dragData = null;
@@ -27,8 +29,11 @@ export class QuestPin extends PIXI.Container {
       questUuid: this.questUuid,
       objectiveIndex: this.objectiveIndex,
       displayNumber: this.displayNumber,
-      note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags'
-    });
+      questIndex: this.questIndex,
+      questCategory: this.questCategory,
+      note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags',
+      
+    }, false, true, false, MODULE.TITLE);
 
     // ===============================
     // 0. Initialize pin properties
@@ -230,7 +235,9 @@ export class QuestPin extends PIXI.Container {
         objectiveIndex: this.objectiveIndex,
         x: this.x,
         y: this.y,
-        objectiveState: this.objectiveState
+        objectiveState: this.objectiveState,
+        questIndex: this.questIndex,
+        questCategory: this.questCategory
       };
 
       if (existingIndex >= 0) {
@@ -887,13 +894,13 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     // Only GMs can create quest pins
     if (!game.user.isGM) return false;
     
-    const { questUuid, objectiveIndex, objectiveState } = data;
+    const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory } = data;
     const displayNumber = `${getQuestNumber(questUuid)}.${String(objectiveIndex + 1).padStart(2, '0')}`;
     
     // Use the objective state from the drag data (default to 'active' if not provided)
     const finalObjectiveState = objectiveState || 'active';
     
-    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber, objectiveState: finalObjectiveState });
+    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, displayNumber, objectiveState: finalObjectiveState, questIndex, questCategory });
     if (canvas.squirePins) {
         canvas.squirePins.addChild(pin);
         
@@ -954,14 +961,16 @@ function loadPersistedPins() {
         // Load pins from persistence
         scenePins.forEach(pinData => {
             try {
-                const displayNumber = `${getQuestNumber(pinData.questUuid)}.${String(pinData.objectiveIndex + 1).padStart(2, '0')}`;
+                const displayNumber = `${getQuestNumber(pinData.questUuid)} | ${String(pinData.objectiveIndex + 1).padStart(2, '0')}`;
                 const pin = new QuestPin({
                     x: pinData.x,
                     y: pinData.y,
                     questUuid: pinData.questUuid,
                     objectiveIndex: pinData.objectiveIndex,
                     displayNumber: displayNumber,
-                    objectiveState: pinData.objectiveState
+                    objectiveState: pinData.objectiveState,
+                    questIndex: pinData.questIndex,
+                    questCategory: pinData.questCategory
                 });
                 
                 // Restore the original pinId for persistence
