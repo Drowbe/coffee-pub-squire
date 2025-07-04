@@ -89,6 +89,7 @@ export class QuestPin extends PIXI.Container {
     // Enhanced event handling
     this.on('pointerdown', this._onPointerDown.bind(this));
     this.on('rightdown', this._onRightDown.bind(this));
+    this.on('middleclick', this._onMiddleDown.bind(this));
     this.on('pointerover', this._onPointerOver.bind(this));
     this.on('pointerout', this._onPointerOut.bind(this));
     
@@ -183,69 +184,7 @@ export class QuestPin extends PIXI.Container {
 
 
 
-  // Toggle visibility - GM only
-  async toggleVisibility() {
-    if (!game.user.isGM) return; // Only GM can toggle visibility
-    
-    try {
-      // Get the journal page for this quest
-      const journalId = game.settings.get(MODULE.ID, 'questJournal');
-      if (!journalId || journalId === 'none') return;
-      
-      const journal = game.journal.get(journalId);
-      if (!journal) return;
-      
-      const page = journal.pages.find(p => p.uuid === this.questUuid);
-      if (!page) return;
-      
-      let content = page.text.content;
-      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-      if (!tasksMatch) return;
-      
-      const tasksHtml = tasksMatch[1];
-      const parser = new DOMParser();
-      const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-      const ul = ulDoc.querySelector('ul');
-      const liList = ul ? Array.from(ul.children) : [];
-      const li = liList[this.objectiveIndex];
-      if (!li) return;
-      
-      // Toggle hidden state by adding/removing <em> tags
-      const emTag = li.querySelector('em');
-      if (emTag) {
-        // Task is already hidden, unhide it - unwrap <em>
-        emTag.replaceWith(...emTag.childNodes);
-      } else {
-        // Task is not hidden, hide it - wrap in <em> and remove other states
-        // First, unwrap any existing state tags to ensure clean state
-        const sTag = li.querySelector('s');
-        const codeTag = li.querySelector('code');
-        
-        if (sTag) {
-          // If completed, unwrap <s> first
-          li.innerHTML = sTag.innerHTML;
-        } else if (codeTag) {
-          // If failed, unwrap <code> first
-          li.innerHTML = codeTag.innerHTML;
-        }
-        
-        // Now wrap in <em>
-        li.innerHTML = `<em>${li.innerHTML}</em>`;
-      }
-      
-      const newTasksHtml = ul.innerHTML;
-      const newContent = content.replace(tasksMatch[1], newTasksHtml);
-      
-      // Update the journal page
-      await page.update({ text: { content: newContent } });
-      
-      // The pin will be automatically updated by the updateJournalEntryPage hook
-      // No need to manually update the pin or save to persistence
-      
-    } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling visibility', { error }, false, true, true, MODULE.TITLE);
-    }
-  }
+
 
   // Update pin appearance based on new objective state
   updateObjectiveState(newState) {
@@ -389,32 +328,322 @@ export class QuestPin extends PIXI.Container {
   _onPointerDown(event) {
     // Set cursor to grabbing immediately for GM
     if (game.user.isGM) document.body.style.cursor = 'grabbing';
+    
     // Usual click/double-click logic
     if (this.isDragging) return;
+    
+    // Check for double-click (500ms window)
     if (this._lastClickTime && (Date.now() - this._lastClickTime) < 500) {
       this._onDoubleClick(event);
       this._lastClickTime = null;
     } else {
       this._lastClickTime = Date.now();
-      // Only GMs can toggle visibility
-      if (game.user.isGM) {
-        setTimeout(async () => {
-          if (this._lastClickTime === Date.now()) {
-            await this.toggleVisibility();
-          }
-        }, 200);
+      
+      // Left-click: Select pin and jump to quest in tracker
+      if (event.data.button === 0) {
+        // Check for Shift+Left-click to toggle hidden state (GM only)
+        if (game.user.isGM && event.data.originalEvent.shiftKey) {
+          this._toggleHiddenState();
+        } else {
+          this._selectPinAndJumpToQuest();
+        }
       }
     }
   }
 
   _onRightDown(event) {
-    if (!game.user.isGM) return; // Only GM can delete
+    if (!game.user.isGM) return; // Only GM can interact with right-click
     
-    this._removePin();
+    // Check for double right-click (500ms window)
+    if (this._lastRightClickTime && (Date.now() - this._lastRightClickTime) < 500) {
+      this._removePin(); // Double right-click: remove pin
+      this._lastRightClickTime = null;
+    } else {
+      this._lastRightClickTime = Date.now();
+      
+      // Single right-click: fail the objective
+      setTimeout(async () => {
+        if (this._lastRightClickTime === Date.now()) {
+          await this._failObjective();
+        }
+      }, 200);
+    }
+  }
+
+  // Middle-click or Shift+Left-click: toggle hidden state
+  _onMiddleDown(event) {
+    if (!game.user.isGM) return; // Only GM can toggle hidden state
+    
+    this._toggleHiddenState();
   }
 
   async _onDoubleClick(event) {
-    await this._openQuestJournal();
+    if (!game.user.isGM) return; // Only GM can complete objectives
+    
+    await this._completeObjective();
+  }
+
+  // Select pin and jump to quest in tracker
+  _selectPinAndJumpToQuest() {
+    // Highlight the pin briefly
+    this.alpha = 0.6;
+    setTimeout(() => {
+      this.alpha = 1.0;
+    }, 200);
+    
+    // Jump to quest in the quest tracker
+    if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
+      const panelManager = game.modules.get('coffee-pub-squire').api.PanelManager.instance;
+      
+      // Switch to quest panel
+      panelManager.setViewMode('quest');
+      
+      // Find and expand the quest entry
+      setTimeout(() => {
+        const questEntry = document.querySelector(`.quest-entry:has(.quest-entry-feather[data-uuid="${this.questUuid}"])`);
+        if (questEntry) {
+          // Expand the quest entry
+          questEntry.classList.remove('collapsed');
+          
+          // Scroll to the quest entry
+          questEntry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Highlight the specific objective
+          const objectiveItems = questEntry.querySelectorAll('li[data-task-index]');
+          const targetObjective = objectiveItems[this.objectiveIndex];
+          if (targetObjective) {
+            targetObjective.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+            setTimeout(() => {
+              targetObjective.style.backgroundColor = '';
+            }, 2000);
+          }
+        }
+      }, 100);
+    }
+  }
+
+  // Toggle hidden state (middle-click or shift+left-click)
+  async _toggleHiddenState() {
+    try {
+      // Get the journal page for this quest
+      const journalId = game.settings.get(MODULE.ID, 'questJournal');
+      if (!journalId || journalId === 'none') return;
+      
+      const journal = game.journal.get(journalId);
+      if (!journal) return;
+      
+      const page = journal.pages.find(p => p.uuid === this.questUuid);
+      if (!page) return;
+      
+      let content = page.text.content;
+      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+      if (!tasksMatch) return;
+      
+      const tasksHtml = tasksMatch[1];
+      const parser = new DOMParser();
+      const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+      const ul = ulDoc.querySelector('ul');
+      const liList = ul ? Array.from(ul.children) : [];
+      const li = liList[this.objectiveIndex];
+      if (!li) return;
+      
+      // Toggle hidden state by adding/removing <em> tags
+      const emTag = li.querySelector('em');
+      if (emTag) {
+        // Task is already hidden, unhide it - unwrap <em>
+        emTag.replaceWith(...emTag.childNodes);
+      } else {
+        // Task is not hidden, hide it - wrap in <em> and remove other states
+        // First, unwrap any existing state tags to ensure clean state
+        const sTag = li.querySelector('s');
+        const codeTag = li.querySelector('code');
+        
+        if (sTag) {
+          // If completed, unwrap <s> first
+          li.innerHTML = sTag.innerHTML;
+        } else if (codeTag) {
+          // If failed, unwrap <code> first
+          li.innerHTML = codeTag.innerHTML;
+        }
+        
+        // Now wrap in <em>
+        li.innerHTML = `<em>${li.innerHTML}</em>`;
+      }
+      
+      const newTasksHtml = ul.innerHTML;
+      const newContent = content.replace(tasksMatch[1], newTasksHtml);
+      
+      // Update the journal page
+      await page.update({ text: { content: newContent } });
+      
+      // The pin will be automatically updated by the updateJournalEntryPage hook
+      
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling hidden state', { error }, false, true, true, MODULE.TITLE);
+    }
+  }
+
+  // Complete the objective (left double-click)
+  async _completeObjective() {
+    try {
+      // Get the journal page for this quest
+      const journalId = game.settings.get(MODULE.ID, 'questJournal');
+      if (!journalId || journalId === 'none') return;
+      
+      const journal = game.journal.get(journalId);
+      if (!journal) return;
+      
+      const page = journal.pages.find(p => p.uuid === this.questUuid);
+      if (!page) return;
+      
+      let content = page.text.content;
+      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+      if (!tasksMatch) return;
+      
+      const tasksHtml = tasksMatch[1];
+      const parser = new DOMParser();
+      const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+      const ul = ulDoc.querySelector('ul');
+      const liList = ul ? Array.from(ul.children) : [];
+      const li = liList[this.objectiveIndex];
+      if (!li) return;
+      
+      // Check if already completed
+      const sTag = li.querySelector('s');
+      if (sTag) {
+        // Already completed, uncomplete it
+        li.innerHTML = sTag.innerHTML;
+      } else {
+        // Not completed, complete it - wrap in <s> and remove other states
+        // First, unwrap any existing state tags to ensure clean state
+        const codeTag = li.querySelector('code');
+        const emTag = li.querySelector('em');
+        
+        if (codeTag) {
+          // If failed, unwrap <code> first
+          li.innerHTML = codeTag.innerHTML;
+        } else if (emTag) {
+          // If hidden, unwrap <em> first
+          li.innerHTML = emTag.innerHTML;
+        }
+        
+        // Now wrap in <s>
+        li.innerHTML = `<s>${li.innerHTML}</s>`;
+      }
+      
+      const newTasksHtml = ul.innerHTML;
+      let newContent = content.replace(tasksMatch[1], newTasksHtml);
+      
+      // After toggling, check if all tasks are completed
+      const allLis = Array.from(ul.children);
+      const allCompleted = allLis.length > 0 && allLis.every(l => l.querySelector('s'));
+      
+      // Find current status and category
+      const statusMatch = newContent.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+      let currentStatus = statusMatch ? statusMatch[1].trim() : '';
+      const categoryMatch = newContent.match(/<strong>Category:<\/strong>\s*([^<]*)/);
+      const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
+      
+      if (allCompleted) {
+        // Change status to Complete
+        if (currentStatus !== 'Complete') {
+          if (statusMatch) {
+            newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Complete');
+          } else {
+            newContent += `<p><strong>Status:</strong> Complete</p>`;
+          }
+          
+          // Get or store original category
+          let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+          if (!originalCategory && currentCategory && currentCategory !== 'Completed') {
+            originalCategory = currentCategory;
+            await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
+          }
+        }
+      } else {
+        // If status is Complete and not all tasks are completed, set to In Progress
+        if (currentStatus === 'Complete') {
+          newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
+          
+          // Restore original category if quest is in Completed
+          if (currentCategory === 'Completed') {
+            const originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+            if (originalCategory && categoryMatch) {
+              newContent = newContent.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
+            }
+          }
+        }
+      }
+      
+      // Update the journal page
+      await page.update({ text: { content: newContent } });
+      
+      // The pin will be automatically updated by the updateJournalEntryPage hook
+      
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error completing objective', { error }, false, true, true, MODULE.TITLE);
+    }
+  }
+
+  // Fail the objective (right-click)
+  async _failObjective() {
+    try {
+      // Get the journal page for this quest
+      const journalId = game.settings.get(MODULE.ID, 'questJournal');
+      if (!journalId || journalId === 'none') return;
+      
+      const journal = game.journal.get(journalId);
+      if (!journal) return;
+      
+      const page = journal.pages.find(p => p.uuid === this.questUuid);
+      if (!page) return;
+      
+      let content = page.text.content;
+      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+      if (!tasksMatch) return;
+      
+      const tasksHtml = tasksMatch[1];
+      const parser = new DOMParser();
+      const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+      const ul = ulDoc.querySelector('ul');
+      const liList = ul ? Array.from(ul.children) : [];
+      const li = liList[this.objectiveIndex];
+      if (!li) return;
+      
+      // Check if already failed
+      const codeTag = li.querySelector('code');
+      if (codeTag) {
+        // Already failed, unfail it
+        li.innerHTML = codeTag.innerHTML;
+      } else {
+        // Not failed, fail it - wrap in <code> and remove other states
+        // First, unwrap any existing state tags to ensure clean state
+        const sTag = li.querySelector('s');
+        const emTag = li.querySelector('em');
+        
+        if (sTag) {
+          // If completed, unwrap <s> first
+          li.innerHTML = sTag.innerHTML;
+        } else if (emTag) {
+          // If hidden, unwrap <em> first
+          li.innerHTML = emTag.innerHTML;
+        }
+        
+        // Now wrap in <code>
+        li.innerHTML = `<code>${li.innerHTML}</code>`;
+      }
+      
+      const newTasksHtml = ul.innerHTML;
+      const newContent = content.replace(tasksMatch[1], newTasksHtml);
+      
+      // Update the journal page
+      await page.update({ text: { content: newContent } });
+      
+      // The pin will be automatically updated by the updateJournalEntryPage hook
+      
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error failing objective', { error }, false, true, true, MODULE.TITLE);
+    }
   }
 
   _removePin() {
@@ -429,38 +658,7 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  async _openQuestJournal() {
-    try {
-      // The questUuid is actually the UUID of the journal page
-      // First try to get the page directly
-      const page = await fromUuid(this.questUuid);
-      if (page) {
-        // Open the journal and navigate to this specific page
-        const journal = page.parent;
-        if (journal) {
-          journal.sheet.render(true, {pageId: page.id});
-          return;
-        }
-      }
-      
-      // Fallback: try to find the page in the quest journal
-      const journalId = game.settings.get(MODULE.ID, 'questJournal');
-      if (journalId && journalId !== 'none') {
-        const journal = game.journal.get(journalId);
-        if (journal) {
-          const page = journal.pages.find(p => p.uuid === this.questUuid);
-          if (page) {
-            journal.sheet.render(true, {pageId: page.id});
-            return;
-          }
-        }
-      }
-      
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest journal page not found', { uuid: this.questUuid }, false, true, false, MODULE.TITLE);
-    } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error opening quest journal', { error }, false, true, true, MODULE.TITLE);
-    }
-  }
+
 
   // Helper method to get quest data
   _getQuestData() {
@@ -563,8 +761,8 @@ export class QuestPin extends PIXI.Container {
     
     // Enhanced tooltip content
     const controls = game.user.isGM ? 
-      'Left-click: Toggle visibility | Right-click: Delete | Double-click: Open quest | Drag to move' :
-      'Double-click: Open quest';
+      'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
+      'Left-click: Select & jump to quest';
     
     // Add visibility status to tooltip for GM
     const visibilityStatus = game.user.isGM ? 
@@ -576,10 +774,11 @@ export class QuestPin extends PIXI.Container {
       <div style="font-weight: bold; margin-bottom: 4px;">${questName}</div>
       <div style="font-size: 12px; opacity: 0.8;">Objective ${this.objectiveIndex + 1}</div>
       <div style="margin-top: 4px;">${text}</div>
+      ${visibilityStatus}
       <div style="font-size: 10px; opacity: 0.6; margin-top: 4px;">
         ${controls}
       </div>
-      ${visibilityStatus}
+      
     `;
     tooltip.style.display = 'block';
     
