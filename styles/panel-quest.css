@@ -287,22 +287,15 @@
     padding-left: 2px;
     padding-right: 2px;
 }
-
 /* Objective Number Styling */
 .squire-tray[data-position="left"] .objective-number {
     font-weight: bold;
     margin-right: 0px;
     display: inline-block;
-    
     border: 1px solid rgba(255, 255, 255, 0.2);
     background-color: rgba(145, 134, 108, 0.05);
     border-radius: 3px;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 2px;
-    padding-right: 2px;
-
-    min-width: 20px;
+    min-width: 26px;
     text-align: center;
 }
 
