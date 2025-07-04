@@ -117,60 +117,59 @@ export class QuestPin extends PIXI.Container {
     const pinFontFamily = "Signika";
     const pinIconFamily = "FontAwesome";
     const pinDataPadding = 10;
-    const pinIconSizeAdjustment = 3; // adds a bit more to the size of the icons
+    const pinIconSizeQuestAdjustment = 3; // adds a bit more to the size of the icons
+    const pinIconSizeStateAdjustment = 0; // adds a bit more to the size of the icons
     const pinTextSizeAdjustment = 5; // adds a bit more to the size of the text
     const pinIconPadding = 12; // adds a bit of space between the icon and edge of the container
 
     // Main Pin
-    const pinInnerWidth = 150;
+    const pinInnerWidth = 175;
     const pinInnerHeight = 40;
     const pinInnerBorderRadius = 6;
     const pinInnerColor = 0x000000;
-    const pinInnerTransparency = 0.9;
+    const pinInnerTransparency = 0.8;
     const pinInnerDropShadow = { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 };
 
     // Pin Ring
     const pinRingThickness = 3;
     const pinRingGap = 2;
     let pinRingColor = 0x1E85AD; // usually same as default below
-    const pinRingTransparency = 0.9;
+    const pinRingTransparency = 0.8;
     const pinRingStyle = "solid"; // or 'dashed'
     const pinRingStyleQuestVisible = "solid"; // or 'dashed'
     const pinRingStyleQuestHidden = "dashed"; // or 'dashed'
 
-
+    // State Colors
     const pinRingColorFailed = 0xD41A1A;
-    const pinRingColorHidden = 0x4A4A4A;
+    const pinRingColorHidden = 0x141414;
     const pinRingColorCompleted = 0x3C9245;
-    const pinRingColorDefault = 0x1E85AD;
+    const pinRingColorDefault = 0xFFFFFF;
  
-
-
     // Main Quest Icon
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
-    const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeAdjustment;;
+    const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeQuestAdjustment;;
     const pinIconMainQuestColor = 0xFFFFFF;
 
     // Side Quest Icon
     const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
-    const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeQuestAdjustment;
     const pinIconSideQuestColor = 0xFFFFFF;
 
     // State Icons
     const pinIconStateCompletedStyle = "\uf00c";
-    const pinIconStateCompletedSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
-    const pinIconStateCompletedColor = 0xFFFFFF;
+    const pinIconStateCompletedSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
+    const pinIconStateCompletedColor = 0x3C9245;
 
     const pinIconStateFailedStyle = "\uf00d";
-    const pinIconStateFailedSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
-    const pinIconStateFailedColor = 0xFFFFFF;
+    const pinIconStateFailedSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
+    const pinIconStateFailedColor = 0xC91B1A;
 
     const pinIconStateHiddenStyle = "\uf06e";
-    const pinIconStateHiddenSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
-    const pinIconStateHiddenColor = 0xFFFFFF;
+    const pinIconStateHiddenSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
+    const pinIconStateHiddenColor = 0x606060;
 
     const pinIconStateDefaultStyle = "\uf021";
-    const pinIconStateeDefaultSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinIconStateeDefaultSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
     const pinIconStateeDefaultColor = 0xFFFFFF;
 
     // Quest Data
@@ -997,6 +996,7 @@ export class QuestPin extends PIXI.Container {
     tooltip.innerHTML = `
       <div class="quest-pin-tooltip-title">${questName}</div>
       <div class="quest-pin-tooltip-objective">Objective ${this.objectiveIndex + 1}</div>
+      <div class="quest-pin-tooltip-state">State: ${this.objectiveState.charAt(0).toUpperCase() + this.objectiveState.slice(1)}</div>
       <div class="quest-pin-tooltip-description">${text}</div>
       ${visibilityStatus}
       <div class="quest-pin-tooltip-controls">
