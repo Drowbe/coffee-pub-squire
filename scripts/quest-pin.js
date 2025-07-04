@@ -116,29 +116,36 @@ export class QuestPin extends PIXI.Container {
     // General
     const pinFontFamily = "Signika";
     const pinIconFamily = "FontAwesome";
-    const pinDataPadding = 20;
-    const pinIconSizeAdjustment = 5; // adds a bit more to the size of the icons
-    const pinIconPadding = 10; // adds a bit of space between the icon and edge of the container
+    const pinDataPadding = 10;
+    const pinIconSizeAdjustment = 3; // adds a bit more to the size of the icons
+    const pinTextSizeAdjustment = 5; // adds a bit more to the size of the text
+    const pinIconPadding = 12; // adds a bit of space between the icon and edge of the container
 
     // Main Pin
-    const pinInnerWidth = 300;
-    const pinInnerHeight = 60;
-    const pinInnerBorderRadius = 10;
+    const pinInnerWidth = 150;
+    const pinInnerHeight = 40;
+    const pinInnerBorderRadius = 6;
     const pinInnerColor = 0x000000;
-    const pinInnerTransparency = 1.0;
+    const pinInnerTransparency = 0.9;
     const pinInnerDropShadow = { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 };
 
     // Pin Ring
-    const pinRingWidth = 8;
-    const pinRingGap = 6;
+    const pinRingThickness = 3;
+    const pinRingGap = 2;
     let pinRingColor = 0x1E85AD; // usually same as default below
-    const pinRingTransparency = 1.0;
+    const pinRingTransparency = 0.9;
     const pinRingStyle = "solid"; // or 'dashed'
+    const pinRingStyleQuestVisible = "solid"; // or 'dashed'
+    const pinRingStyleQuestHidden = "dashed"; // or 'dashed'
+
+
     const pinRingColorFailed = 0xD41A1A;
     const pinRingColorHidden = 0x4A4A4A;
     const pinRingColorCompleted = 0x3C9245;
     const pinRingColorDefault = 0x1E85AD;
  
+
+
     // Main Quest Icon
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
     const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeAdjustment;;
@@ -150,7 +157,7 @@ export class QuestPin extends PIXI.Container {
     const pinIconSideQuestColor = 0xFFFFFF;
 
     // State Icons
-    const pinIconStateCompletedStyle = "\uf024";
+    const pinIconStateCompletedStyle = "\uf00c";
     const pinIconStateCompletedSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
     const pinIconStateCompletedColor = 0xFFFFFF;
 
@@ -162,13 +169,17 @@ export class QuestPin extends PIXI.Container {
     const pinIconStateHiddenSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
     const pinIconStateHiddenColor = 0xFFFFFF;
 
+    const pinIconStateDefaultStyle = "\uf021";
+    const pinIconStateeDefaultSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinIconStateeDefaultColor = 0xFFFFFF;
+
     // Quest Data
     const pinDataQuestColor = 0xFFFFFF;
-    const pinDataQuestSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinDataQuestSize = pinInnerHeight / 2 + pinTextSizeAdjustment;
 
     // State Data
     const pinDataStateColor = 0xFFFFFF;
-    const pinDataStateSize = pinInnerHeight / 2 + pinIconSizeAdjustment;
+    const pinDataStateSize = pinInnerHeight / 2 + pinTextSizeAdjustment;
 
     // Data Separator
     const pinDataSeparatorColor = 0xFFFFFF;
@@ -186,11 +197,11 @@ export class QuestPin extends PIXI.Container {
     else pinRingColor = pinRingColorDefault;
 
     // === Outer ring ===
-    const outerW = pinInnerWidth + 2 * (pinRingWidth + pinRingGap);
-    const outerH = pinInnerHeight + 2 * (pinRingWidth + pinRingGap);
+    const outerW = pinInnerWidth + 2 * (pinRingThickness + pinRingGap);
+    const outerH = pinInnerHeight + 2 * (pinRingThickness + pinRingGap);
     const outer = new PIXI.Graphics();
     outer.lineStyle({
-      width: pinRingWidth,
+      width: pinRingThickness,
       color: pinRingColor,
       alpha: pinRingTransparency,
       alignment: 0.5,
@@ -199,7 +210,7 @@ export class QuestPin extends PIXI.Container {
     if (pinRingStyle === 'dotted') {
       outer.setLineDash([8, 8]);
     }
-    outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingWidth + pinRingGap);
+    outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingThickness + pinRingGap);
     this.addChild(outer);
 
     // === Inner shape ===
@@ -233,7 +244,8 @@ export class QuestPin extends PIXI.Container {
       fill: questIconColor
     });
     questIcon.anchor.set(0.5);
-    questIcon.position.set(leftX, centerY);
+    // Position quest icon at left edge of inner pin plus ring and gap and pinIconPadding
+    questIcon.position.set(-pinInnerWidth/2 + pinRingThickness + pinRingGap + pinIconPadding, centerY);
     this.addChild(questIcon);
     leftX += questIconSize + padX;
     // Quest index number (show '??' if missing)
@@ -296,6 +308,10 @@ export class QuestPin extends PIXI.Container {
       statusIconUnicode = pinIconStateHiddenStyle;
       statusIconSize = pinIconStateHiddenSize;
       statusIconColor = pinIconStateHiddenColor;
+    } else {
+      statusIconUnicode = pinIconStateDefaultStyle;
+      statusIconSize = pinIconStateeDefaultSize;
+      statusIconColor = pinIconStateeDefaultColor;
     }
     if (statusIconUnicode) {
       const statusIcon = new PIXI.Text(statusIconUnicode, {
@@ -304,7 +320,8 @@ export class QuestPin extends PIXI.Container {
         fill: statusIconColor
       });
       statusIcon.anchor.set(0.5);
-      statusIcon.position.set(pinInnerWidth/2 - padX, centerY);
+      // Position state icon at right edge of inner pin minus ring, gap, and pinIconPadding
+      statusIcon.position.set(pinInnerWidth/2 - pinRingThickness - pinRingGap - pinIconPadding, centerY);
       this.addChild(statusIcon);
     }
     // Set hit area to match the inner pill shape
