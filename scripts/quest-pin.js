@@ -151,7 +151,7 @@ export class QuestPin extends PIXI.Container {
     const centerY = 0;
     // Quest category icon
     let questIconUnicode = cfg.icons.quest.main;
-    if (this.questCategory === 'side') questIconUnicode = cfg.icons.quest.side;
+    if (this.questCategory === 'Side Quest') questIconUnicode = cfg.icons.quest.side;
     const questIcon = new PIXI.Text(questIconUnicode, {
       fontFamily: 'FontAwesome',
       fontSize: iconSize,
