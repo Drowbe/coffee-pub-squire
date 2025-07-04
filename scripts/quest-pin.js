@@ -391,6 +391,14 @@ export class QuestPin extends PIXI.Container {
       this.alpha = 1.0;
     }, 200);
     
+    // Debug logging
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Selecting pin and jumping to quest', {
+      questUuid: this.questUuid,
+      objectiveIndex: this.objectiveIndex,
+      user: game.user.name,
+      isGM: game.user.isGM
+    });
+    
     // Jump to quest in the quest tracker
     if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
       const panelManager = game.modules.get('coffee-pub-squire').api.PanelManager.instance;
@@ -398,9 +406,35 @@ export class QuestPin extends PIXI.Container {
       // Switch to quest panel
       panelManager.setViewMode('quest');
       
-      // Find and expand the quest entry
-      setTimeout(() => {
-        const questEntry = document.querySelector(`.quest-entry:has(.quest-entry-feather[data-uuid="${this.questUuid}"])`);
+      // Find and expand the quest entry with retry logic
+      const findAndHighlightQuest = () => {
+        // Use the new data-quest-uuid attribute that both GMs and players have
+        let questEntry = document.querySelector(`.quest-entry[data-quest-uuid="${this.questUuid}"]`);
+        
+        // Fallback: try to find by quest name if not found
+        if (!questEntry) {
+          const questData = this._getQuestData();
+          if (questData && questData.name) {
+            const allEntries = document.querySelectorAll('.quest-entry');
+            for (const entry of allEntries) {
+              const nameElement = entry.querySelector('.quest-entry-name');
+              if (nameElement && nameElement.textContent.trim() === questData.name.trim()) {
+                questEntry = entry;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Debug logging for quest entry search
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest entry search result', {
+          questUuid: this.questUuid,
+          questEntryFound: !!questEntry,
+          allQuestEntries: document.querySelectorAll('.quest-entry').length,
+          entriesWithUuid: document.querySelectorAll('.quest-entry[data-quest-uuid]').length,
+          user: game.user.name
+        });
+        
         if (questEntry) {
           // Expand the quest entry
           questEntry.classList.remove('collapsed');
@@ -411,14 +445,40 @@ export class QuestPin extends PIXI.Container {
           // Highlight the specific objective
           const objectiveItems = questEntry.querySelectorAll('li[data-task-index]');
           const targetObjective = objectiveItems[this.objectiveIndex];
+          
+          // Debug logging for objective highlighting
+          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Objective highlighting result', {
+            objectiveIndex: this.objectiveIndex,
+            totalObjectives: objectiveItems.length,
+            targetObjectiveFound: !!targetObjective,
+            user: game.user.name
+          });
+          
           if (targetObjective) {
-            targetObjective.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+            targetObjective.classList.add('objective-highlighted');
             setTimeout(() => {
-              targetObjective.style.backgroundColor = '';
+              targetObjective.classList.remove('objective-highlighted');
             }, 2000);
           }
+        } else {
+          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest entry not found', {
+            questUuid: this.questUuid,
+            user: game.user.name,
+            isGM: game.user.isGM
+          });
         }
-      }, 100);
+      };
+      
+      // Try immediately, then retry with increasing delays
+      findAndHighlightQuest();
+      setTimeout(findAndHighlightQuest, 200);
+      setTimeout(findAndHighlightQuest, 500);
+      setTimeout(findAndHighlightQuest, 1000);
+    } else {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | PanelManager not available', {
+        user: game.user.name,
+        isGM: game.user.isGM
+      });
     }
   }
 
