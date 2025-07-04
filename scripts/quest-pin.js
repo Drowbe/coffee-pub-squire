@@ -696,6 +696,22 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
+  // Helper method to clean task text by removing GM notes and treasure links
+  _cleanTaskText(text) {
+    if (!text) return text;
+    
+    // Remove GM notes between || || (including the pipes)
+    text = text.replace(/\|\|[^|]*\|\|/g, '');
+    
+    // Remove treasure links between (( )) (including the parentheses)
+    text = text.replace(/\(\([^)]*\)\)/g, '');
+    
+    // Clean up extra whitespace
+    text = text.replace(/\s+/g, ' ').trim();
+    
+    return text;
+  }
+
   // Helper method to get task text
   _getTaskText() {
     try {
@@ -724,7 +740,9 @@ export class QuestPin extends PIXI.Container {
           const li = liList[this.objectiveIndex];
           if (li) {
             // Get the text content, removing any HTML tags
-            return li.textContent.trim();
+            let rawText = li.textContent.trim();
+            // Clean the text to remove GM notes and treasure links
+            return this._cleanTaskText(rawText);
           }
         }
       }
