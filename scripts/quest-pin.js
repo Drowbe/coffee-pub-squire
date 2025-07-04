@@ -114,7 +114,7 @@ export class QuestPin extends PIXI.Container {
     // Fill properties
     let pinRadius = 40; // Radius of the circular fill
     let pinColor = 0x1E85AD; // green (default for active)
-    let pinAlpha = 0.8; // Background transparency
+    let pinAlpha = 0.7; // Background transparency
 
     // Border properties
     let pinBorderColor = 0x214D7F; // pin border color Blue
@@ -130,7 +130,7 @@ export class QuestPin extends PIXI.Container {
       pinColor = 0xD41A1A; // red
     } else if (this.objectiveState === 'hidden') {
       pinBorderColor = 0x000000; // black
-      pinColor = 0x000000; // black
+      pinColor = 0x4A4A4A; // black
     } else if (this.objectiveState === 'completed') {
       pinBorderColor = 0x1C4520; // green
       pinColor = 0x3C9245; // green
@@ -784,23 +784,22 @@ export class QuestPin extends PIXI.Container {
     
     // Add visibility status to tooltip for GM
     const visibilityStatus = game.user.isGM ? 
-      `<div style="font-size: 10px; opacity: 0.6; margin-top: 2px;">
+      `<div class="quest-pin-tooltip-visibility">
         ${this.objectiveState === 'hidden' ? 'Hidden from players' : 'Visible to all players'}
       </div>` : '';
     
     tooltip.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px;">${questName}</div>
-      <div style="font-size: 12px; opacity: 0.8;">Objective ${this.objectiveIndex + 1}</div>
-      <div style="margin-top: 4px;">${text}</div>
+      <div class="quest-pin-tooltip-title">${questName}</div>
+      <div class="quest-pin-tooltip-objective">Objective ${this.objectiveIndex + 1}</div>
+      <div class="quest-pin-tooltip-description">${text}</div>
       ${visibilityStatus}
-      <div style="font-size: 10px; opacity: 0.6; margin-top: 4px;">
+      <div class="quest-pin-tooltip-controls">
         ${controls}
       </div>
-      
     `;
     tooltip.style.display = 'block';
     
-    // Position tooltip near mouse
+    // Position tooltip near mouse with small offset
     const mouse = event.data.originalEvent;
     tooltip.style.left = (mouse.clientX + 16) + 'px';
     tooltip.style.top = (mouse.clientY + 8) + 'px';
