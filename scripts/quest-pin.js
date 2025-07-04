@@ -5,10 +5,54 @@ function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+// === Configurable Pin Appearance ===
+const DEFAULT_PIN_CONFIG = {
+  inner: {
+    width: 160,
+    height: 60,
+    borderRadius: 30,
+    color: 0x000000,
+    alpha: 1.0,
+    dropShadow: { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 }
+  },
+  outer: {
+    ringWidth: 8,
+    gap: 6,
+    color: 0x1E85AD, // overridden by state
+    alpha: 1.0,
+    style: 'solid' // or 'dotted'
+  },
+  separator: {
+    color: 0xFFFFFF,
+    thickness: 3,
+    style: 'solid' // or 'dashed'
+  },
+  icons: {
+    quest: {
+      main: '\uf024', // fas fa-flag (unicode)
+      side: '\uf277'  // fas fa-map-signs (unicode)
+    },
+    status: {
+      active: '',
+      completed: '\uf00c', // fas fa-check
+      failed: '\uf00d',    // fas fa-xmark
+      hidden: '\uf06e'     // fas fa-eye
+    }
+  },
+  font: {
+    family: 'Signika',
+    size: 32,
+    color: 0xFFFFFF,
+    faFamily: 'FontAwesome',
+    faSize: 32,
+    faColor: 0xFFFFFF
+  }
+};
+
 export class QuestPin extends PIXI.Container {
   
   
-  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState, questIndex, questCategory }) {
+  constructor({ x, y, questUuid, objectiveIndex, displayNumber, objectiveState, questIndex, questCategory, config }) {
     super();
     this.x = x;
     this.y = y;
@@ -21,6 +65,12 @@ export class QuestPin extends PIXI.Container {
     this.pinId = this._generatePinId();
     this.isDragging = false;
     this.dragData = null;
+    // Merge config
+    this.config = foundry.utils.mergeObject(
+      foundry.utils.deepClone(DEFAULT_PIN_CONFIG),
+      config || {},
+      { inplace: false, insertKeys: true, insertValues: true }
+    );
   
     // Debug logging for constructor state
     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Constructor called', {
@@ -31,9 +81,13 @@ export class QuestPin extends PIXI.Container {
       displayNumber: this.displayNumber,
       questIndex: this.questIndex,
       questCategory: this.questCategory,
+      config: this.config,
       note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags',
       
     }, false, true, false, MODULE.TITLE);
+
+    // Draw the pin
+    this._updatePinAppearance();
 
     // ===============================
     // 0. Initialize pin properties
@@ -47,7 +101,6 @@ export class QuestPin extends PIXI.Container {
     // ===============================
     const circle = new PIXI.Graphics();
     this.addChild(circle);
-    this.circle = circle; // Store reference for later updates
     circle.interactive = false;
     circle.eventMode = 'none';
   
@@ -73,7 +126,6 @@ export class QuestPin extends PIXI.Container {
     refText.anchor.set(0.5);
     refText.position.set(0, 0);
     this.addChild(refText);
-    this.refText = refText; // Store reference for later updates
     refText.interactive = false;
     refText.eventMode = 'none';
   
@@ -113,77 +165,107 @@ export class QuestPin extends PIXI.Container {
 
   // Centralized method to update pin appearance based on objective state
   _updatePinAppearance() {
-    // Define pin properties based on objective state
-
-   
-    // Fill properties
-    let pinRadius = 40; // Radius of the circular fill
-    let pinColor = 0x1E85AD; // green (default for active)
-    let pinAlpha = 0.7; // Background transparency
-
-    // Border properties
-    let pinBorderColor = 0x214D7F; // pin border color Blue
-    let pinBorderTransparency = 1;
-    let pinBorderWidth = 4;
-    // Text properties
-    let pinFontSize = pinRadius - 20; // size of label
-    let pinFontColor = 0xFFFFFF; // white
-
-    // Update properties based on objective state
-    if (this.objectiveState === 'failed') {
-      pinBorderColor = 0x871010; //red
-      pinColor = 0xD41A1A; // red
-    } else if (this.objectiveState === 'hidden') {
-      pinBorderColor = 0x000000; // black
-      pinColor = 0x4A4A4A; // black
-    } else if (this.objectiveState === 'completed') {
-      pinBorderColor = 0x1C4520; // green
-      pinColor = 0x3C9245; // green
-    } else {
-      pinBorderColor = 0x214D7F; // blue
-      pinColor = 0x1E85AD; // blue
+    // Remove previous children
+    this.removeChildren();
+    const cfg = this.config;
+    // === State-based ring color override ===
+    let ringColor = cfg.outer.color;
+    if (this.objectiveState === 'failed') ringColor = 0xD41A1A;
+    else if (this.objectiveState === 'hidden') ringColor = 0x4A4A4A;
+    else if (this.objectiveState === 'completed') ringColor = 0x3C9245;
+    else ringColor = 0x1E85AD;
+    // === Outer ring ===
+    const outerW = cfg.inner.width + 2 * (cfg.outer.ringWidth + cfg.outer.gap);
+    const outerH = cfg.inner.height + 2 * (cfg.outer.ringWidth + cfg.outer.gap);
+    const outer = new PIXI.Graphics();
+    outer.lineStyle(cfg.outer.ringWidth, ringColor, cfg.outer.alpha, 0.5, true);
+    if (cfg.outer.style === 'dotted') {
+      outer.setLineDash([8, 8]);
     }
-
-    // Store properties for later use
-    this.radius = pinRadius;
-    this.originalPinBorderColor = pinBorderColor;
-    this.originalPinColor = pinColor;
-    this.pinFontSize = pinFontSize;
-    this.pinFontColor = pinFontColor;
-
-    // Update the circle appearance
-      this.circle.clear();
-    this.circle.lineStyle(pinBorderWidth, pinBorderColor, pinBorderTransparency);
-    this.circle.beginFill(pinColor, pinAlpha);
-    this.circle.drawCircle(0, 0, pinRadius);
-      this.circle.endFill();
-
-    // Apply soft drop shadow filter
-    this.circle.filters = [
+    outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, cfg.inner.borderRadius + cfg.outer.ringWidth + cfg.outer.gap);
+    this.addChild(outer);
+    // === Inner shape ===
+    const inner = new PIXI.Graphics();
+    inner.beginFill(cfg.inner.color, cfg.inner.alpha);
+    inner.drawRoundedRect(-cfg.inner.width/2, -cfg.inner.height/2, cfg.inner.width, cfg.inner.height, cfg.inner.borderRadius);
+    inner.endFill();
+    // Drop shadow
+    inner.filters = [
       new PIXI.filters.DropShadowFilter({
-        color: 0x000000,
-        alpha: 0.6,
-        blur: 6,
-        distance: 0,
-        rotation: 0
+        color: cfg.inner.dropShadow.color,
+        alpha: cfg.inner.dropShadow.alpha,
+        blur: cfg.inner.dropShadow.blur,
+        distance: cfg.inner.dropShadow.distance
       })
     ];
-
-    // Update the text appearance
-    if (this.refText) {
-      this.refText.style.fontSize = pinFontSize;
-      this.refText.style.fill = pinFontColor;
-    }
-
-    // Update hit area
-    this.hitArea = new PIXI.Circle(0, 0, pinRadius);
-    this.alpha = 1.0;
-    this.interactive = true;
-
-    // Handle visibility in interaction for hidden pins
-    if (this.objectiveState === 'hidden' && !game.user.isGM) {
-      this.alpha = 0;
-      this.interactive = false;
+    this.addChild(inner);
+    // === Icons and numbers ===
+    // Layout constants
+    const padX = 18;
+    const iconSize = cfg.font.faSize;
+    const textSize = cfg.font.size;
+    let x = -cfg.inner.width/2 + padX;
+    const centerY = 0;
+    // Quest category icon
+    let questIconUnicode = cfg.icons.quest.main;
+    if (this.questCategory === 'side') questIconUnicode = cfg.icons.quest.side;
+    const questIcon = new PIXI.Text(questIconUnicode, {
+      fontFamily: 'FontAwesome',
+      fontSize: iconSize,
+      fill: cfg.font.faColor
+    });
+    questIcon.anchor.set(0.5);
+    questIcon.position.set(x, centerY);
+    this.addChild(questIcon);
+    x += iconSize + 8;
+    // Quest index number
+    const questIndexText = new PIXI.Text(this.questIndex !== undefined ? String(this.questIndex) : '', {
+      fontFamily: cfg.font.family,
+      fontSize: textSize,
+      fill: cfg.font.color,
+      fontWeight: 'bold',
+      align: 'center'
+    });
+    questIndexText.anchor.set(0.5);
+    questIndexText.position.set(x, centerY);
+    this.addChild(questIndexText);
+    x += textSize + 8;
+    // Separator line
+    const sepX = x;
+    const sep = new PIXI.Graphics();
+    sep.lineStyle(cfg.separator.thickness, cfg.separator.color, 1);
+    if (cfg.separator.style === 'dashed') sep.setLineDash([6, 6]);
+    sep.moveTo(sepX, -cfg.inner.height/2 + 10);
+    sep.lineTo(sepX, cfg.inner.height/2 - 10);
+    this.addChild(sep);
+    x += 16;
+    // Objective number
+    const objNumText = new PIXI.Text(this.objectiveIndex !== undefined ? String(this.objectiveIndex + 1).padStart(2, '0') : '', {
+      fontFamily: cfg.font.family,
+      fontSize: textSize,
+      fill: cfg.font.color,
+      fontWeight: 'bold',
+      align: 'center'
+    });
+    objNumText.anchor.set(0.5);
+    objNumText.position.set(x, centerY);
+    this.addChild(objNumText);
+    x += textSize + 8;
+    // Status icon
+    let statusIconUnicode = '';
+    if (this.objectiveState === 'completed') statusIconUnicode = cfg.icons.status.completed;
+    else if (this.objectiveState === 'failed') statusIconUnicode = cfg.icons.status.failed;
+    else if (this.objectiveState === 'hidden') statusIconUnicode = cfg.icons.status.hidden;
+    // (active: no icon)
+    if (statusIconUnicode) {
+      const statusIcon = new PIXI.Text(statusIconUnicode, {
+        fontFamily: 'FontAwesome',
+        fontSize: iconSize,
+        fill: cfg.font.faColor
+      });
+      statusIcon.anchor.set(0.5);
+      statusIcon.position.set(cfg.inner.width/2 - padX, centerY);
+      this.addChild(statusIcon);
     }
   }
 
