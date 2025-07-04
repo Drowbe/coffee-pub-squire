@@ -121,7 +121,14 @@ export class QuestPin extends PIXI.Container {
     const outerW = cfg.inner.width + 2 * (cfg.outer.ringWidth + cfg.outer.gap);
     const outerH = cfg.inner.height + 2 * (cfg.outer.ringWidth + cfg.outer.gap);
     const outer = new PIXI.Graphics();
-    outer.lineStyle(cfg.outer.ringWidth, ringColor, cfg.outer.alpha, 0.5, true);
+    // Use object syntax for clarity; native: false (default) so border does NOT scale with zoom
+    outer.lineStyle({
+      width: cfg.outer.ringWidth,      // Border thickness in screen pixels
+      color: ringColor,               // Border color
+      alpha: cfg.outer.alpha,         // Border alpha
+      alignment: 0.5,                 // Centered on the edge
+      native: false                   // Do NOT scale with zoom (default)
+    });
     if (cfg.outer.style === 'dotted') {
       outer.setLineDash([8, 8]);
     }
