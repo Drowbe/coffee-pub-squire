@@ -117,7 +117,7 @@ export class QuestPanel {
                                 'Error updating quest pin state',
                                 { error, pin, page },
                                 false,
-                                false,
+                                true,
                                 true,
                                 MODULE.TITLE
                             );
@@ -524,6 +524,9 @@ export class QuestPanel {
                 const objectiveState = checkbox.data('task-state') || 'active';
 
                 
+                // Get quest visibility state
+                const questState = questEntry.data('visible') === false ? 'hidden' : 'visible';
+                
                 // Create drag data
                 const dragData = {
                     type: 'quest-objective',
@@ -533,7 +536,8 @@ export class QuestPanel {
                     objectiveText: objectiveText,
                     objectiveState: objectiveState,
                     questIndex: questEntry.data('quest-number') || '??',
-                    questCategory: questEntry.data('category') || '??'
+                    questCategory: questEntry.data('category') || '??',
+                    questState: questState
                 };
                 
                 event.originalEvent.dataTransfer.setData('text/plain', JSON.stringify(dragData));

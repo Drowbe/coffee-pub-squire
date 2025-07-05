@@ -53,7 +53,7 @@ const DEFAULT_PIN_CONFIG = {
 export class QuestPin extends PIXI.Container {
   
   
-  constructor({ x, y, questUuid, objectiveIndex, objectiveState, questIndex, questCategory, config }) {
+  constructor({ x, y, questUuid, objectiveIndex, objectiveState, questIndex, questCategory, questState, config }) {
     super();
     this.x = x;
     this.y = y;
@@ -62,6 +62,7 @@ export class QuestPin extends PIXI.Container {
     this.objectiveState = objectiveState;
     this.questIndex = questIndex;
     this.questCategory = questCategory;
+    this.questState = questState || 'visible'; // Default to visible if not provided
     this.pinId = this._generatePinId();
     this.isDragging = false;
     this.dragData = null;
@@ -87,6 +88,10 @@ export class QuestPin extends PIXI.Container {
 
     // Draw the pin
     this._updatePinAppearance();
+    
+    // Set initial visibility
+    this.updateVisibility();
+    
     // Enable pointer events
     this.interactive = true;
     this.cursor = 'pointer';
@@ -104,6 +109,89 @@ export class QuestPin extends PIXI.Container {
   // Generate unique pin ID for persistence
   _generatePinId() {
     return `${this.questUuid}-${this.objectiveIndex}-${Date.now()}`;
+  }
+
+  /**
+   * Check if this pin should be visible to the current user
+   * @returns {boolean} True if pin should be visible
+   */
+  shouldBeVisible() {
+    // GMs always see all pins
+    if (game.user.isGM) return true;
+
+    // Check quest-level visibility first
+    if (this.questState === 'hidden') {
+      return false;
+    }
+
+    // Check objective-level visibility
+    if (this.objectiveState === 'hidden') {
+      return false;
+    }
+
+    // Check vision-based visibility
+    if (!this._isInPlayerVision()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if pin is within player token vision
+   * @returns {boolean} True if pin is visible to player tokens
+   */
+  _isInPlayerVision() {
+    try {
+      // Get all player-owned tokens
+      const playerTokens = canvas.tokens.placeables.filter(token => 
+        token.actor?.hasPlayerOwner && token.actor?.isOwner
+      );
+
+      if (playerTokens.length === 0) {
+        // No player tokens, show pin
+        return true;
+      }
+
+      // Check if any player token can see this pin location
+      for (const token of playerTokens) {
+        if (token.vision && token.vision.los) {
+          // Check if the pin location is within the token's line of sight
+          const pinPoint = new PIXI.Point(this.x, this.y);
+          if (token.vision.los.testVisibility(pinPoint)) {
+            return true;
+          }
+        }
+      }
+
+      // If no token can see it, hide the pin
+      return false;
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error checking vision', { error }, false, true, true, MODULE.TITLE);
+      // On error, show the pin to be safe
+      return true;
+    }
+  }
+
+  /**
+   * Update pin visibility based on current conditions
+   */
+  updateVisibility() {
+    const shouldShow = this.shouldBeVisible();
+    
+    if (shouldShow) {
+      this.visible = true;
+      this.alpha = 1.0;
+    } else {
+      // For GMs, show pins but with reduced alpha to indicate they're hidden from players
+      if (game.user.isGM) {
+        this.visible = true;
+        this.alpha = 1.0;
+      } else {
+        this.visible = false;
+        this.alpha = 0.0;
+      }
+    }
   }
 
   // Centralized method to update pin appearance based on objective state
@@ -134,9 +222,7 @@ export class QuestPin extends PIXI.Container {
     const pinRingGap = 2;
     let pinRingColor = 0x1E85AD; // usually same as default below
     const pinRingTransparency = 0.8;
-    const pinRingStyle = "solid"; // or 'dashed'
-    const pinRingStyleQuestVisible = "solid"; // or 'dashed'
-    const pinRingStyleQuestHidden = "dashed"; // or 'dashed'
+    const pinRingColorQuestHidden = 0xFF7E28; // color for GM ring when quest is hidden
 
     // State Colors
     const pinRingColorFailed = 0xD41A1A;
@@ -181,12 +267,8 @@ export class QuestPin extends PIXI.Container {
 
     // Data Separator
     const pinDataSeparatorColor = 0xFFFFFF;
-    const pinDataSeparatorWidth = 3;
+    const pinDataSeparatorWidth = 1;
     const pinDataSeparatorStyle = "solid"; // or 'dotted'
-
-
-
-
 
     // === State-based ring color override ===
     if (this.objectiveState === 'failed') pinRingColor = pinRingColorFailed;
@@ -198,6 +280,8 @@ export class QuestPin extends PIXI.Container {
     const outerW = pinInnerWidth + 2 * (pinRingThickness + pinRingGap);
     const outerH = pinInnerHeight + 2 * (pinRingThickness + pinRingGap);
     const outer = new PIXI.Graphics();
+    
+    // Draw the main ring
     outer.lineStyle({
       width: pinRingThickness,
       color: pinRingColor,
@@ -205,11 +289,25 @@ export class QuestPin extends PIXI.Container {
       alignment: 0.5,
       native: false
     });
-    if (pinRingStyle === 'dotted') {
-      outer.setLineDash([8, 8]);
-    }
     outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingThickness + pinRingGap);
     this.addChild(outer);
+    
+    // Add second ring for hidden quests (GM only)
+    if (this.questState === 'hidden' && game.user.isGM) {
+      const secondRingW = outerW + 2 * (pinRingThickness + pinRingGap);
+      const secondRingH = outerH + 2 * (pinRingThickness + pinRingGap);
+      const secondRing = new PIXI.Graphics();
+      
+      secondRing.lineStyle({
+        width: pinRingThickness,
+        color: pinRingColorQuestHidden,
+        alpha: pinRingTransparency,
+        alignment: 0.5,
+        native: false
+      });
+      secondRing.drawRoundedRect(-secondRingW/2, -secondRingH/2, secondRingW, secondRingH, pinInnerBorderRadius + 2 * (pinRingThickness + pinRingGap));
+      this.addChild(secondRing);
+    }
 
     // === Inner shape ===
     const inner = new PIXI.Graphics();
@@ -266,13 +364,30 @@ export class QuestPin extends PIXI.Container {
     sep.lineStyle({
       width: pinDataSeparatorWidth,
       color: pinDataSeparatorColor,
-      alpha: 1,
+      alpha: 0.6,
       alignment: 0.5,
       native: false
     });
-    if (pinDataSeparatorStyle === 'dashed') sep.setLineDash([6, 6]);
-    sep.moveTo(centerX, -pinInnerHeight/2 + 10);
-    sep.lineTo(centerX, pinInnerHeight/2 - 10);
+    
+    if (pinDataSeparatorStyle === 'dashed') {
+      // Create dashed separator line
+      const dashLength = 6;
+      const gapLength = 6;
+      const totalLength = dashLength + gapLength;
+      const startY = -pinInnerHeight/2 + 10;
+      const endY = pinInnerHeight/2 - 10;
+      
+      for (let y = startY; y < endY; y += totalLength) {
+        const lineEndY = Math.min(y + dashLength, endY);
+        sep.moveTo(centerX, y);
+        sep.lineTo(centerX, lineEndY);
+      }
+    } else {
+      // Solid separator line
+      sep.moveTo(centerX, -pinInnerHeight/2 + 10);
+      sep.lineTo(centerX, pinInnerHeight/2 - 10);
+    }
+    
     this.addChild(sep);
 
     // --- Right side ---
@@ -376,7 +491,8 @@ export class QuestPin extends PIXI.Container {
         y: this.y,
         objectiveState: this.objectiveState,
         questIndex: this.questIndex,
-        questCategory: this.questCategory
+        questCategory: this.questCategory,
+        questState: this.questState
       };
 
       if (existingIndex >= 0) {
@@ -1089,12 +1205,21 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     // Only GMs can create quest pins
     if (!game.user.isGM) return false;
     
-    const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory } = data;
+    const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory, questState } = data;
     
     // Use the objective state from the drag data (default to 'active' if not provided)
     const finalObjectiveState = objectiveState || 'active';
     
-    const pin = new QuestPin({ x: data.x, y: data.y, questUuid, objectiveIndex, objectiveState: finalObjectiveState, questIndex, questCategory });
+    const pin = new QuestPin({ 
+        x: data.x, 
+        y: data.y, 
+        questUuid, 
+        objectiveIndex, 
+        objectiveState: finalObjectiveState, 
+        questIndex, 
+        questCategory,
+        questState: questState || 'visible'
+    });
     if (canvas.squirePins) {
         canvas.squirePins.addChild(pin);
         
@@ -1186,7 +1311,8 @@ function loadPersistedPins() {
                     objectiveIndex: pinData.objectiveIndex,
                     objectiveState: pinData.objectiveState,
                     questIndex: (pinData.questIndex !== undefined && pinData.questIndex !== null && pinData.questIndex !== '') ? pinData.questIndex : '??',
-                    questCategory: (pinData.questCategory !== undefined && pinData.questCategory !== null && pinData.questCategory !== '') ? pinData.questCategory : '??'
+                    questCategory: (pinData.questCategory !== undefined && pinData.questCategory !== null && pinData.questCategory !== '') ? pinData.questCategory : '??',
+                    questState: pinData.questState || 'visible'
                 });
                 
                 // Restore the original pinId for persistence
@@ -1341,4 +1467,50 @@ Hooks.on('disableModule', (moduleId) => {
 
 Hooks.on('closeGame', () => {
     cleanupQuestPins();
-}); 
+});
+
+// Update pin visibility when tokens move or vision changes
+Hooks.on('updateToken', (token, changes) => {
+    if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {
+        updateAllPinVisibility();
+    }
+});
+
+Hooks.on('createToken', (token) => {
+    updateAllPinVisibility();
+});
+
+Hooks.on('deleteToken', (token) => {
+    updateAllPinVisibility();
+});
+
+// Update pin visibility when quest state changes
+Hooks.on('updateJournalEntryPage', (page, changes) => {
+    if (changes.flags && changes.flags[MODULE.ID]) {
+        updateAllPinVisibility();
+    }
+});
+
+/**
+ * Update visibility for all quest pins
+ */
+async function updateAllPinVisibility() {
+    if (!canvas.squirePins) return;
+    
+    const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
+    
+    for (const pin of pins) {
+        try {
+            // Update quest state from journal if available
+            const questData = pin._getQuestData();
+            if (questData) {
+                const isVisible = await questData.getFlag(MODULE.ID, 'visible');
+                pin.questState = (isVisible === false) ? 'hidden' : 'visible';
+            }
+            
+            pin.updateVisibility();
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin visibility', { error, pinId: pin.pinId }, false, true, true, MODULE.TITLE);
+        }
+    }
+} 
