@@ -532,21 +532,32 @@ export class QuestPin extends PIXI.Container {
       }
       this._removePin();
     } else {
-      this._lastRightClickTime = Date.now();
+      const clickTime = Date.now();
+      this._lastRightClickTime = clickTime;
       
       // Single right-click: toggle failed state with delay to allow for double-click detection
       getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Single right-click - setting timeout', {
         pinId: this.pinId,
+        clickTime: clickTime,
         user: game.user.name
       });
       this._rightClickTimeout = setTimeout(async () => {
         // Only execute if this is still the most recent right-click
-        if (this._lastRightClickTime === Date.now()) {
+        if (this._lastRightClickTime === clickTime) {
           getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Executing right-click action', {
             pinId: this.pinId,
+            clickTime: clickTime,
+            lastRightClickTime: this._lastRightClickTime,
             user: game.user.name
           });
           await this._failObjective();
+        } else {
+          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Right-click timeout cancelled - newer click detected', {
+            pinId: this.pinId,
+            clickTime: clickTime,
+            lastRightClickTime: this._lastRightClickTime,
+            user: game.user.name
+          });
         }
         this._rightClickTimeout = null;
       }, 300); // Increased delay to be more reliable
