@@ -178,12 +178,16 @@ export const registerHelpers = function() {
 
     // Helper to render a task with GM hints and treasure unlocks (show treasure always for GM)
     Handlebars.registerHelper('renderTask', function(task, isGM, options) {
+        if (!task || typeof task !== 'object') {
+            return new Handlebars.SafeString('');
+        }
+        
         let html = '';
         // Start the task text with tooltip if GM hint exists
         if (isGM && task.gmHint) {
-            html += `<span data-tooltip=\"GM Note: ${task.gmHint}\">${task.text}</span>`;
+            html += `<span data-tooltip=\"GM Note: ${task.gmHint}\">${task.text || ''}</span>`;
         } else {
-            html += task.text;
+            html += task.text || '';
         }
         // Only GMs see the treasure text in the objective list
         if (isGM && Array.isArray(task.treasureUnlocks) && task.treasureUnlocks.length > 0) {

@@ -179,10 +179,23 @@ export class QuestPanel {
                             // Add quest number
                             entry.questNumber = getQuestNumber(page.uuid);
                             
+                            // Ensure all required properties exist
+                            entry.tasks = entry.tasks || [];
+                            entry.reward = entry.reward || { xp: 0, treasure: [] };
+                            entry.participants = entry.participants || [];
+                            entry.tags = entry.tags || [];
+                            entry.timeframe = entry.timeframe || { duration: '' };
+                            entry.progress = entry.progress || 0;
+                            
                             // Add objective numbers to tasks
                             if (entry.tasks && Array.isArray(entry.tasks)) {
                                 entry.tasks.forEach((task, index) => {
                                     task.objectiveNumber = String(index + 1).padStart(2, '0');
+                                    // Ensure task properties exist
+                                    task.text = task.text || '';
+                                    task.completed = task.completed || false;
+                                    task.state = task.state || 'active';
+                                    task.treasureUnlocks = task.treasureUnlocks || [];
                                 });
                             }
                             
@@ -1676,7 +1689,8 @@ export class QuestPanel {
             },
             filters: {
                 ...this.filters,
-                search: this.filters.search || ""
+                search: this.filters.search || "",
+                tags: this.filters.tags || []
             },
             allTags: Array.from(allTags).sort(),
             isTagCloudCollapsed,
@@ -1688,15 +1702,28 @@ export class QuestPanel {
             let entries = this._applyFilters(this.data[category] || []);
             // Process each entry to add status and pinning info
             entries.forEach(entry => {
+                // Ensure entry is valid
+                if (!entry || typeof entry !== 'object') return;
+                
                 // Add additional properties needed for the template
                 entry.category = category; // Ensure category is included in the entry
                 entry.isPinned = entry.uuid === pinnedQuestUuid;
+
+                // Ensure all required properties exist
+                entry.tasks = entry.tasks || [];
+                entry.reward = entry.reward || { xp: 0, treasure: [] };
+                entry.participants = entry.participants || [];
+                entry.tags = entry.tags || [];
+                entry.timeframe = entry.timeframe || { duration: '' };
+                entry.progress = entry.progress || 0;
+                entry.status = entry.status || 'Not Started';
 
                 // --- UNLOCKED TREASURE LOGIC ---
                 if (entry.reward && Array.isArray(entry.reward.treasure)) {
                     // Collect all treasure unlock names from all tasks
                     const allUnlockNames = (Array.isArray(entry.tasks) ? entry.tasks.flatMap(task => Array.isArray(task.treasureUnlocks) ? task.treasureUnlocks : []) : []).map(n => n && n.trim().toLowerCase());
                     entry.reward.treasure.forEach(treasure => {
+                        if (!treasure) return;
                         // Get the treasure name or text
                         const treasureName = (treasure.name || treasure.text || '').trim().toLowerCase();
                         // Is this treasure referenced by any objective?

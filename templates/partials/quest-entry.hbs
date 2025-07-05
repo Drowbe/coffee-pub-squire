@@ -1,0 +1,232 @@
+<div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}">
+  <!-- ENTRY HEADER -->
+  <div class="quest-entry-header">
+    <div class="quest-entry-name">
+      {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
+      <span class="quest-number">{{entry.questNumber}}</span>
+      {{entry.name}}
+    </div>
+    <div class="quest-toolbar">
+      <i class="fas fa-thumbtack quest-pin {{#if entry.isPinned}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{entry.category}}" title="Pin this quest"></i>
+      {{#if isGM}}
+        <i class="fas fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
+        <i class="fas {{#if entry.visible}}fa-eye quest-entry-visibility visible{{else}}fa-eye-slash quest-entry-visibility{{/if}} toggle-visible" data-uuid="{{entry.uuid}}" title="{{#if entry.visible}}Hide from players{{else}}Show to players{{/if}}"></i>
+        <i class="fas fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Change Status"></i>
+        <div class="quest-status-dropdown" style="display:none;">
+          <div class="quest-status-option" data-status="Not Started">Not Started</div>
+          <div class="quest-status-option" data-status="In Progress">In Progress</div>
+          <div class="quest-status-option" data-status="Complete">Complete</div>
+          <div class="quest-status-option" data-status="Failed">Failed</div>
+        </div>
+      {{/if}}
+      <i class="fas fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
+    </div>
+  </div>
+  <!-- PROGRESS BAR -->
+  {{#if entry.tasks}}
+    {{#if entry.tasks.length}}
+      {{#if (gt entry.progress 0)}}
+        <div class="quest-entry-progressbar">
+          <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
+        </div>
+      {{/if}}
+    {{/if}}
+  {{/if}}
+  <!-- ENTRY CONTENT -->
+  <div class="quest-entry-content">
+    <!-- DESCRIPTION -->
+    {{#if entry.description}}
+      <div class="quest-entry-divider"></div>
+      <div class="quest-entry-description">
+        {{#if entry.img}}
+          <div class="quest-entry-image">
+            <img src="{{entry.img}}" alt="{{entry.name}}">
+          </div>
+        {{/if}}
+        <span class="quest-entry-label">Description</span>
+        <p>{{entry.description}}</p>
+      </div>
+    {{/if}}
+    <!-- OBJECTIVES -->
+    {{#if entry.tasks}}
+      {{#if entry.tasks.length}}
+        <div class="quest-entry-tasks">
+          <span class="quest-entry-label">Objectives</span>
+          <ul>
+            {{#each entry.tasks}}
+              {{#if ../isGM}}
+                <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}" data-task-state="{{this.state}}" data-task-index="{{@index}}">
+                  <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else}}fa-square{{/if}} task-checkbox" data-task-index="{{@index}}" data-task-state="{{this.state}}"></i>
+                  <span class="objective-number">{{this.objectiveNumber}}</span>
+                  <div class="objective-text-draggable" draggable="true">{{{renderTask this ../isGM}}}
+                    {{#if this.treasure}}
+                      {{#each this.treasure}}
+                        <div>{{{this}}}</div>
+                      {{/each}}
+                    {{/if}}
+                  </div>
+                </li>
+              {{else}}
+                {{#if (eq this.state 'hidden')}}
+                  <li class="task-hidden" data-task-state="{{this.state}}" data-task-index="{{@index}}">
+                    <i class="fas fa-square-question task-checkbox"></i>
+                    <span class="objective-number">{{this.objectiveNumber}}</span>
+                    Objective not discovered
+                  </li>
+                {{else if (eq this.state 'failed')}}
+                  <li class="task-failed" data-task-state="{{this.state}}" data-task-index="{{@index}}">
+                    <i class="fas fa-square-xmark task-checkbox"></i>
+                    <span class="objective-number">{{this.objectiveNumber}}</span>
+                    {{{renderTask this ../isGM}}}
+                  </li>
+                {{else}}
+                  <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}}" data-task-state="{{this.state}}" data-task-index="{{@index}}">
+                    <i class="fas {{#if this.completed}}fa-check-square{{else}}fa-square{{/if}} task-checkbox"></i>
+                    <span class="objective-number">{{this.objectiveNumber}}</span>
+                    <span class="objective-text">{{{renderTask this ../isGM}}}
+                      {{#if this.treasure}}
+                        {{#each this.treasure}}
+                          <div>{{{this}}}</div>
+                        {{/each}}
+                      {{/if}}
+                    </span>
+                  </li>
+                {{/if}}
+              {{/if}}
+            {{/each}}
+          </ul>
+        </div>
+        {{/if}}
+      {{/if}}
+    <!-- PLOT HOOK -->
+    {{#if isGM}}
+      {{#if entry.plotHook}}
+        <div class="quest-entry-plothook">
+          <span class="quest-entry-label">Plot Hook</span>
+          <p>{{entry.plotHook}}</p>
+        </div>
+      {{/if}}
+    {{/if}}
+    <!-- TREASURE -->
+    {{#if entry.reward}}
+      {{#if entry.reward.treasure}}
+        {{#if entry.reward.treasure.length}}
+          <div class="quest-entry-divider"></div>
+          <div class="quest-entry-reward">
+            <span class="quest-entry-label">Treasure</span>
+            <ul>
+          {{#if isGM}}
+            {{#each entry.reward.treasure}}
+              <li>
+                {{#if this.boundToObjective}}
+                  {{#unless this.unlocked}}
+                    <i class="fas fa-lock treasure-lock"></i>
+                  {{/unless}}
+                {{/if}}
+                {{#if this.uuid}}
+                  <i class="fas fa-gem treasure-icon"></i>
+                  <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
+                {{else if this.name}}
+                  <i class="fas fa-gem treasure-icon"></i>
+                  <span class="treasure-name">{{this.name}}</span>
+                {{else}}
+                  {{this.text}}
+                {{/if}}
+              </li>
+            {{/each}}
+          {{else}}
+            {{#each entry.reward.treasure}}
+              {{#unless this.boundToObjective}}
+                <li>
+                  {{#if this.uuid}}
+                    <i class="fas fa-gem treasure-icon"></i>
+                    <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
+                  {{else}}
+                    {{#if this.name}}
+                      <i class="fas fa-gem treasure-icon"></i>
+                      <span class="treasure-name">{{this.name}}</span>
+                    {{else}}
+                      {{this.text}}
+                    {{/if}}
+                  {{/if}}
+                </li>
+              {{else}}
+                {{#if this.unlocked}}
+                  <li class="treasure-unlocked">
+                    {{#if this.uuid}}
+                      <i class="fas fa-gem treasure-icon"></i>
+                      <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
+                    {{else}}
+                      {{#if this.name}}
+                        <i class="fas fa-gem treasure-icon"></i>
+                        <span class="treasure-name">{{this.name}}</span>
+                      {{else}}
+                        {{this.text}}
+                      {{/if}}
+                    {{/if}}
+                  </li>
+                {{/if}}
+              {{/unless}}
+            {{/each}}
+                      {{/if}}
+          </ul>
+        </div>
+        {{/if}}
+      {{/if}}
+    {{/if}}
+    <!-- DIVIDER -->
+    <div class="quest-entry-divider"></div>
+    <!-- REWARD -->
+    {{#if entry.reward}}
+      {{#if entry.reward.xp}}
+        <div class="quest-entry-reward">
+          <span class="quest-entry-label">Experience</span> {{entry.reward.xp}}
+        </div>
+      {{/if}}
+    {{/if}}
+    <!-- LOCATION -->
+    {{#if entry.location}}
+      <div class="quest-entry-location">
+        <span class="quest-entry-label">Location</span> {{entry.location}}
+      </div>
+    {{/if}}
+    <!-- TIMEFRAME -->
+    {{#if entry.timeframe}}
+      {{#if entry.timeframe.duration}}
+        <div class="quest-entry-timeframe">
+          <span class="quest-entry-label">Timeframe</span> {{entry.timeframe.duration}}
+        </div>
+      {{/if}}
+    {{/if}}
+    <!-- STATUS -->
+    {{#if entry.status}}
+      <div class="quest-entry-progress">
+        <span class="quest-entry-label">Status</span> {{entry.status}}
+      </div>
+    {{/if}}
+    <!-- PARTICIPANTS -->
+    {{#if entry.participants}}
+      {{#if entry.participants.length}}
+        <div class="quest-entry-participants">
+          <div class="participant-portraits">
+            {{#each entry.participants}}
+            <div class="participant-portrait" data-uuid="{{this.uuid}}" title="{{this.name}}">
+              <img src="{{this.img}}" alt="{{this.name}}">
+            </div>
+                      {{/each}}
+          </div>
+        </div>
+        {{/if}}
+      {{/if}}
+    <!-- TAGS -->
+    {{#if entry.tags}}
+      {{#if entry.tags.length}}
+        <div class="quest-entry-tags">
+          {{#each entry.tags}}
+            <span class="quest-tag {{#if (includes filters.tags this)}}selected{{/if}}" data-tag="{{this}}">{{this}}</span>
+          {{/each}}
+        </div>
+      {{/if}}
+    {{/if}}
+  </div>
+</div> 

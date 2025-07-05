@@ -352,6 +352,10 @@ Hooks.once('init', async function() {
     const handleNotesTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-notes.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-notes', handleNotesTemplate);
     
+    // Register quest-entry partial
+    const questEntryPartial = await fetch(`modules/${MODULE.ID}/templates/partials/quest-entry.hbs`).then(response => response.text());
+    Handlebars.registerPartial('quest-entry', questEntryPartial);
+    
     // Set up API to expose PanelManager to other modules
     game.modules.get(MODULE.ID).api = {
         PanelManager
