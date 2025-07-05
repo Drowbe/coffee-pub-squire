@@ -124,6 +124,14 @@ export class QuestPanel {
                         }
                     });
                 }
+                
+                // Update the handle if we're in quest view mode
+                if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
+                    const panelManager = game.modules.get('coffee-pub-squire').api.PanelManager.instance;
+                    if (game.modules.get('coffee-pub-squire').api.PanelManager.viewMode === 'quest') {
+                        await panelManager.updateHandle();
+                    }
+                }
             }
         });
     }

@@ -376,6 +376,86 @@ export class PanelManager {
         }, 100);
     }
 
+    /**
+     * Get pinned quest data for the handle display
+     * @returns {Promise<Object|null>} Pinned quest data or null if no quest is pinned
+     */
+    async _getPinnedQuestData() {
+        const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+        const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+        
+        if (!pinnedQuestUuid) return null;
+        
+        try {
+            const doc = await fromUuid(pinnedQuestUuid);
+            if (!doc) return null;
+            
+            const pinnedQuest = {
+                name: doc.name,
+                status: 'Unknown',
+                uuid: pinnedQuestUuid,
+                tasks: []
+            };
+            
+            // Try to extract status and tasks from the journal page content
+            if (doc.text?.content) {
+                const content = doc.text.content;
+                const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+                if (statusMatch) {
+                    pinnedQuest.status = statusMatch[1].trim();
+                }
+                
+                // Parse tasks from the content
+                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                if (tasksMatch) {
+                    const tasksHtml = tasksMatch[1];
+                    const parser = new DOMParser();
+                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                    const ul = ulDoc.querySelector('ul');
+                    if (ul) {
+                        const liList = Array.from(ul.children);
+                        pinnedQuest.tasks = liList.map((li, index) => {
+                            const text = li.textContent.trim();
+                            const isCompleted = li.querySelector('s') !== null;
+                            const isHidden = li.querySelector('em') !== null;
+                            const isFailed = li.querySelector('code') !== null;
+                            const objectiveNumber = String(index + 1).padStart(2, '0');
+
+                            let state = 'active';
+                            if (isCompleted) state = 'completed';
+                            else if (isFailed) state = 'failed';
+                            else if (isHidden) state = 'hidden';
+                            
+                            return {
+                                text: text,
+                                completed: isCompleted,
+                                state: state,
+                                index: index,
+                                objectiveNumber: objectiveNumber
+                            };
+                        });
+                        // Reverse the order of tasks for the handle only, so the last objective is at the top
+                        if (pinnedQuest && Array.isArray(pinnedQuest.tasks)) {
+                            pinnedQuest.tasks = [...pinnedQuest.tasks].reverse();
+                        }
+                    }
+                }
+            }
+            
+            return pinnedQuest;
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error fetching pinned quest data',
+                { error },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
+            return null;
+        }
+    }
+
     async updateHandle() {
         if (PanelManager.element) {
             // Build favorite macros array
@@ -388,76 +468,7 @@ export class PanelManager {
             // Fetch pinned quest data for quest handle
             let pinnedQuest = null;
             if (PanelManager.viewMode === 'quest') {
-                const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-                const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-                
-                if (pinnedQuestUuid) {
-                    try {
-                        const doc = await fromUuid(pinnedQuestUuid);
-                        if (doc) {
-                            pinnedQuest = {
-                                name: doc.name,
-                                status: 'Unknown', // We'll need to parse this from the content
-                                uuid: pinnedQuestUuid,
-                                tasks: [] // Initialize empty tasks array
-                            };
-                            
-                            // Try to extract status and tasks from the journal page content
-                            if (doc.text?.content) {
-                                const content = doc.text.content;
-                                const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
-                                if (statusMatch) {
-                                    pinnedQuest.status = statusMatch[1].trim();
-                                }
-                                
-                                // Parse tasks from the content
-                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                                if (tasksMatch) {
-                                    const tasksHtml = tasksMatch[1];
-                                    const parser = new DOMParser();
-                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                    const ul = ulDoc.querySelector('ul');
-                                    if (ul) {
-                                        const liList = Array.from(ul.children);
-                                        pinnedQuest.tasks = liList.map((li, index) => {
-                                            const text = li.textContent.trim();
-                                            const isCompleted = li.querySelector('s') !== null;
-                                            const isHidden = li.querySelector('em') !== null;
-                                            const isFailed = li.querySelector('code') !== null;
-                                            const objectiveNumber = index + 1;
-
-                                            let state = 'active';
-                                            if (isCompleted) state = 'completed';
-                                            else if (isFailed) state = 'failed';
-                                            else if (isHidden) state = 'hidden';
-                                            
-                                            return {
-                                                text: text,
-                                                completed: isCompleted,
-                                                state: state,
-                                                index: index,
-                                                objectiveNumber: objectiveNumber
-                                            };
-                                        });
-                                        // Reverse the order of tasks for the handle only, so the last objective is at the top
-                                        if (pinnedQuest && Array.isArray(pinnedQuest.tasks)) {
-                                            pinnedQuest.tasks = [...pinnedQuest.tasks].reverse();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (error) {
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'Error fetching pinned quest data',
-                            { error },
-                            false,
-                            false,
-                            false,
-                            MODULE.TITLE
-                        );
-                    }
-                }
+                pinnedQuest = await this._getPinnedQuestData();
             }
 
             // Always gather party context
@@ -1676,76 +1687,7 @@ export class PanelManager {
         // Fetch pinned quest data for quest handle
         let pinnedQuest = null;
         if (mode === 'quest') {
-            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-            
-            if (pinnedQuestUuid) {
-                try {
-                    const doc = await fromUuid(pinnedQuestUuid);
-                    if (doc) {
-                        pinnedQuest = {
-                            name: doc.name,
-                            status: 'Unknown', // We'll need to parse this from the content
-                            uuid: pinnedQuestUuid,
-                            tasks: [] // Initialize empty tasks array
-                        };
-                        
-                        // Try to extract status and tasks from the journal page content
-                        if (doc.text?.content) {
-                            const content = doc.text.content;
-                            const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
-                            if (statusMatch) {
-                                pinnedQuest.status = statusMatch[1].trim();
-                            }
-                            
-                            // Parse tasks from the content
-                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                            if (tasksMatch) {
-                                const tasksHtml = tasksMatch[1];
-                                const parser = new DOMParser();
-                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                const ul = ulDoc.querySelector('ul');
-                                if (ul) {
-                                    const liList = Array.from(ul.children);
-                                    pinnedQuest.tasks = liList.map((li, index) => {
-                                        const text = li.textContent.trim();
-                                        const isCompleted = li.querySelector('s') !== null;
-                                        const isHidden = li.querySelector('em') !== null;
-                                        const isFailed = li.querySelector('code') !== null;
-                                        const objectiveNumber = index + 1;
-
-                                        let state = 'active';
-                                        if (isCompleted) state = 'completed';
-                                        else if (isFailed) state = 'failed';
-                                        else if (isHidden) state = 'hidden';
-                                        
-                                        return {
-                                            text: text,
-                                            completed: isCompleted,
-                                            state: state,
-                                            index: index,
-                                            objectiveNumber: objectiveNumber
-                                        };
-                                    });
-                                    // Reverse the order of tasks for the handle only, so the last objective is at the top
-                                    if (pinnedQuest && Array.isArray(pinnedQuest.tasks)) {
-                                        pinnedQuest.tasks = [...pinnedQuest.tasks].reverse();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Error fetching pinned quest data',
-                        { error },
-                        false,
-                        false,
-                        false,
-                        MODULE.TITLE
-                    );
-                }
-            }
+            pinnedQuest = await this._getPinnedQuestData();
         }
 
         let handleData = {
