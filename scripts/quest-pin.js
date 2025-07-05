@@ -65,6 +65,7 @@ export class QuestPin extends PIXI.Container {
     this.pinId = this._generatePinId();
     this.isDragging = false;
     this.dragData = null;
+    this._rightClickTimeout = null;
     // Merge config
     this.config = foundry.utils.mergeObject(
       foundry.utils.deepClone(DEFAULT_PIN_CONFIG),
@@ -414,6 +415,9 @@ export class QuestPin extends PIXI.Container {
   // Drag functionality
   _onDragStart(event) {
     if (!game.user.isGM) return;
+    // Only allow drag with left mouse button (button 0)
+    if (event.data.button !== 0) return;
+    
     // Prevent Foundry selection box and event bubbling
     if (event.data && event.data.originalEvent) {
       event.data.originalEvent.stopPropagation();
@@ -503,17 +507,36 @@ export class QuestPin extends PIXI.Container {
     
     // Check for double right-click (500ms window)
     if (this._lastRightClickTime && (Date.now() - this._lastRightClickTime) < 500) {
-      this._removePin(); // Double right-click: remove pin
+      // Double right-click: remove pin only
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Double right-click - removing pin', {
+        pinId: this.pinId,
+        user: game.user.name
+      });
       this._lastRightClickTime = null;
+      // Clear any pending timeout
+      if (this._rightClickTimeout) {
+        clearTimeout(this._rightClickTimeout);
+        this._rightClickTimeout = null;
+      }
+      this._removePin();
     } else {
       this._lastRightClickTime = Date.now();
       
-      // Single right-click: fail the objective
-      setTimeout(async () => {
+      // Single right-click: toggle failed state with delay to allow for double-click detection
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Single right-click - setting timeout', {
+        pinId: this.pinId,
+        user: game.user.name
+      });
+      this._rightClickTimeout = setTimeout(async () => {
         if (this._lastRightClickTime === Date.now()) {
+          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Executing right-click action', {
+            pinId: this.pinId,
+            user: game.user.name
+          });
           await this._failObjective();
         }
-      }, 200);
+        this._rightClickTimeout = null;
+      }, 250);
     }
   }
 
@@ -1065,6 +1088,23 @@ Hooks.on('canvasSceneChange', (scene) => {
     setTimeout(() => {
         loadPersistedPins();
     }, 1000); // Increased delay for scene changes
+});
+
+// Listen for world setting changes to reload pins when GM creates/moves pins
+Hooks.on('settingChange', (moduleId, settingKey, value, options) => {
+    if (moduleId === 'coffee-pub-squire' && settingKey === 'questPinsData') {
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | World setting changed, reloading pins', {
+            moduleId,
+            settingKey,
+            sceneId: canvas.scene?.id,
+            user: game.user.name,
+            isGM: game.user.isGM
+        });
+        // Delay loading to ensure the setting change is fully processed
+        setTimeout(() => {
+            loadPersistedPins();
+        }, 500);
+    }
 });
 
 // Function to load persisted pins for current scene

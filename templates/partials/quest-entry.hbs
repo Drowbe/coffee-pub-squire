@@ -60,27 +60,26 @@
                 <!-- Objective Number -->
                 <span class="objective-number">{{this.objectiveNumber}}</span>
                 <!-- Objective Text -->
-                <{{#if ../isGM}}div class="objective-text-draggable" draggable="true"{{else}}span class="objective-text"{{/if}}>
-                  {{#if (eq this.state 'hidden')}}
-                    Objective not discovered
-                  {{else}}
-                    <!-- Objective Text -->
-                    <span {{#if (and ../isGM this.gmHint)}}data-tooltip="GM Note: {{this.gmHint}}"{{/if}}>{{this.text}}</span>
-                    <!-- Treasure -->
-                    {{#if (and ../isGM this.treasureUnlocks this.treasureUnlocks.length)}}
-                      {{#unless this.completed}}
-                        <span class="locked-objective-treasure">
-                          <i class="fas fa-lock"></i>
-                          {{#each this.treasureUnlocks}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
-                        </span>
-                      {{else}}
-                        <span class="unlocked-objective-treasure">
-                          {{#each this.treasureUnlocks}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
-                        </span>
-                      {{/unless}}
+                <div {{#if ../isGM}}class="objective-text-draggable" draggable="true" {{#if this.gmHint}}data-tooltip="GM Note: {{this.gmHint}}"{{/if}}{{/if}} class="objective-text">
+                    {{#if (and (eq this.state 'hidden') (not ../isGM))}}
+                      Objective not discovered
+                    {{else}}
+                      {{this.text}}
                     {{/if}}
+                  <!-- Treasure -->
+                  {{#if (and ../isGM this.treasureUnlocks this.treasureUnlocks.length)}}
+                    {{#unless this.completed}}
+                      <span class="locked-objective-treasure">
+                        <i class="fas fa-lock"></i>
+                        {{#each this.treasureUnlocks}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
+                      </span>
+                    {{else}}
+                      <span class="unlocked-objective-treasure">
+                        {{#each this.treasureUnlocks}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
+                      </span>
+                    {{/unless}}
                   {{/if}}
-                </{{#if ../isGM}}div{{else}}span{{/if}}>
+                </div>
               </li>
             {{/each}}
           </ul>
