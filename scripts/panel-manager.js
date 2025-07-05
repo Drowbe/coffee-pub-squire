@@ -34,6 +34,9 @@ export class PanelManager {
     static _cleanupInterval = null;
     static _initializationInProgress = false;
     static _lastInitTime = 0;
+    static _eventListeners = new Map(); // Track event listeners for cleanup
+    static _timeouts = new Set(); // Track timeouts for cleanup
+    static _intervals = new Set(); // Track intervals for cleanup
 
     constructor(actor) {
         this.actor = actor;
@@ -108,13 +111,15 @@ export class PanelManager {
 
             // Set up cleanup interval if not already set
             if (!PanelManager._cleanupInterval) {
-                PanelManager._cleanupInterval = setInterval(() => {
+                const intervalId = setInterval(() => {
                     PanelManager.cleanupNewlyAddedItems();
                     // Force a re-render of the inventory panel if it exists
                     if (PanelManager.instance?.inventoryPanel?.element) {
                         PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
                     }
                 }, 30000); // Check every 30 seconds
+                PanelManager._cleanupInterval = intervalId;
+                PanelManager.trackInterval(intervalId);
             }
 
             // Preserve window states from old instance
@@ -253,8 +258,10 @@ export class PanelManager {
         updateTrayHandleFade();
         // Re-check on window resize
         window.addEventListener('resize', updateTrayHandleFade);
+        PanelManager.trackEventListener(window, 'resize', updateTrayHandleFade);
         // Optionally, re-check after a short delay in case of async content
-        setTimeout(updateTrayHandleFade, 250);
+        const timeoutId = setTimeout(updateTrayHandleFade, 250);
+        PanelManager.trackTimeout(timeoutId);
     }
 
     async updateTray() {
@@ -2405,6 +2412,88 @@ export class PanelManager {
             await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
         }
     }
+
+    /**
+     * Comprehensive cleanup method to prevent memory leaks
+     */
+    static cleanup() {
+        // Clear all intervals
+        PanelManager._intervals.forEach(intervalId => {
+            clearInterval(intervalId);
+        });
+        PanelManager._intervals.clear();
+
+        // Clear all timeouts
+        PanelManager._timeouts.forEach(timeoutId => {
+            clearTimeout(timeoutId);
+        });
+        PanelManager._timeouts.clear();
+
+        // Remove all event listeners
+        PanelManager._eventListeners.forEach(({ element, event, handler }, key) => {
+            if (element && element.removeEventListener) {
+                element.removeEventListener(event, handler);
+            }
+        });
+        PanelManager._eventListeners.clear();
+
+        // Clear the cleanup interval
+        if (PanelManager._cleanupInterval) {
+            clearInterval(PanelManager._cleanupInterval);
+            PanelManager._cleanupInterval = null;
+        }
+
+        // Clear the newly added items map
+        PanelManager.newlyAddedItems.clear();
+
+        // Remove the tray element
+        if (PanelManager.element) {
+            PanelManager.element.remove();
+            PanelManager.element = null;
+        }
+
+        // Reset static properties
+        PanelManager.instance = null;
+        PanelManager.currentActor = null;
+        PanelManager.isPinned = false;
+        PanelManager.viewMode = 'player';
+        PanelManager._initializationInProgress = false;
+        PanelManager._lastInitTime = 0;
+
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'PanelManager cleanup completed',
+            {},
+            false,
+            false,
+            false,
+            MODULE.TITLE
+        );
+    }
+
+    /**
+     * Track a timeout for cleanup
+     */
+    static trackTimeout(timeoutId) {
+        PanelManager._timeouts.add(timeoutId);
+        return timeoutId;
+    }
+
+    /**
+     * Track an interval for cleanup
+     */
+    static trackInterval(intervalId) {
+        PanelManager._intervals.add(intervalId);
+        return intervalId;
+    }
+
+    /**
+     * Track an event listener for cleanup
+     */
+    static trackEventListener(element, event, handler) {
+        const key = `${element.id || 'unknown'}-${event}`;
+        PanelManager._eventListeners.set(key, { element, event, handler });
+        return key;
+    }
 }
 
 // =====================================================
@@ -2671,7 +2760,7 @@ Hooks.on('deleteItem', async (item) => {
 });
 
 // Set up periodic cleanup of newly added items
-setInterval(() => {
+const globalCleanupInterval = setInterval(() => {
     if (PanelManager.instance) {
         PanelManager.cleanupNewlyAddedItems();
         // Update the tray if there are any changes
@@ -2679,4 +2768,32 @@ setInterval(() => {
             PanelManager.instance.updateTray();
         }
     }
-}, 60000); // Check every minute 
+}, 60000); // Check every minute
+PanelManager.trackInterval(globalCleanupInterval);
+
+// Cleanup hooks to prevent memory leaks
+Hooks.on('closeApplication', () => {
+    // Clean up when any application is closed
+    if (PanelManager.instance) {
+        PanelManager.cleanup();
+    }
+});
+
+Hooks.on('canvasReady', () => {
+    // Clean up any existing instances before initializing new ones
+    if (PanelManager.instance && !PanelManager._initializationInProgress) {
+        PanelManager.cleanup();
+    }
+});
+
+// Clean up when the module is disabled
+Hooks.on('disableModule', (moduleId) => {
+    if (moduleId === MODULE.ID) {
+        PanelManager.cleanup();
+    }
+});
+
+// Clean up when the game is closed
+Hooks.on('closeGame', () => {
+    PanelManager.cleanup();
+}); 

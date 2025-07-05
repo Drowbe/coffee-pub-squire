@@ -1106,21 +1106,28 @@ Hooks.on('dropCanvasData', (canvas, data) => {
     return true; // Only block further handling for quest pins
 });
 
+// Track timeouts for cleanup
+const questPinTimeouts = new Set();
+
 // Load persisted pins when canvas is ready
 Hooks.on('canvasReady', (canvas) => {
     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Canvas ready, loading persisted pins');
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
         loadPersistedPins();
+        questPinTimeouts.delete(timeoutId);
     }, 1500);
+    questPinTimeouts.add(timeoutId);
 });
 
 // Load persisted pins when scene changes
 Hooks.on('canvasSceneChange', (scene) => {
     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Scene changed, loading persisted pins');
     // Delay loading to ensure scene is fully loaded
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
         loadPersistedPins();
+        questPinTimeouts.delete(timeoutId);
     }, 1000); // Increased delay for scene changes
+    questPinTimeouts.add(timeoutId);
 });
 
 // Listen for scene flag changes to reload pins when GM creates/moves pins
@@ -1150,9 +1157,11 @@ function loadPersistedPins() {
         if (!canvas.squirePins) {
             getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | squirePins container not available, retrying...');
             // Try again in a moment
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 loadPersistedPins();
+                questPinTimeouts.delete(timeoutId);
             }, 1000);
+            questPinTimeouts.add(timeoutId);
             return;
         }
 
@@ -1243,7 +1252,11 @@ function loadPersistedPins() {
         
         // Clean up orphaned pins (pins that reference non-existent quests)
         if (game.user.isGM) {
-            setTimeout(async () => await cleanupOrphanedPins(), 1000);
+            const timeoutId = setTimeout(async () => {
+                await cleanupOrphanedPins();
+                questPinTimeouts.delete(timeoutId);
+            }, 1000);
+            questPinTimeouts.add(timeoutId);
         }
     } catch (error) {
         getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error loading persisted pins', { error });
@@ -1294,4 +1307,38 @@ async function cleanupOrphanedPins() {
     } catch (error) {
         getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error cleaning up orphaned pins', { error });
     }
-} 
+}
+
+// Cleanup function for quest pins
+function cleanupQuestPins() {
+    // Clear all tracked timeouts
+    questPinTimeouts.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+    });
+    questPinTimeouts.clear();
+
+    // Clear existing pins
+    if (canvas.squirePins) {
+        const existingPins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
+        existingPins.forEach(pin => {
+            canvas.squirePins.removeChild(pin);
+        });
+    }
+
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin cleanup completed', {}, false, false, false, MODULE.TITLE);
+}
+
+// Cleanup hooks for quest pins
+Hooks.on('closeApplication', () => {
+    cleanupQuestPins();
+});
+
+Hooks.on('disableModule', (moduleId) => {
+    if (moduleId === 'coffee-pub-squire') {
+        cleanupQuestPins();
+    }
+});
+
+Hooks.on('closeGame', () => {
+    cleanupQuestPins();
+}); 

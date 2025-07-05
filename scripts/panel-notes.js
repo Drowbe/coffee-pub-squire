@@ -651,6 +651,11 @@ export class NotesPanel {
                             reject(new Error("Render timeout"));
                         }, 3000);
                         
+                        // Track timeout for cleanup
+                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
+                            game.modules.get('coffee-pub-squire').api.PanelManager.trackTimeout(timeout);
+                        }
+                        
                         try {
                             // Check if render returns a Promise - if not, handle it accordingly
                             const renderResult = page.render(contentContainer[0], { editable: false });

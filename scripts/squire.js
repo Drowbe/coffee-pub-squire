@@ -875,10 +875,72 @@ Handlebars.registerHelper('getFlag', function(flags, itemId, flagName) {
 });
 
 function getQuestNumber(questUuid) {
-  let hash = 0;
-  for (let i = 0; i < questUuid.length; i++) {
-    hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
-    hash = hash & hash;
-  }
-  return Math.abs(hash) % 100 + 1;
+    let hash = 0;
+    for (let i = 0; i < questUuid.length; i++) {
+        hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash) % 100 + 1;
 }
+
+/**
+ * Comprehensive cleanup function for the entire module
+ */
+function cleanupModule() {
+    try {
+        // Clean up PanelManager
+        if (PanelManager.cleanup) {
+            PanelManager.cleanup();
+        }
+
+        // Clean up socket
+        if (socket) {
+            socket.close();
+            socket = null;
+        }
+
+        // Remove any remaining DOM elements
+        $('.squire-tray').remove();
+        $('.squire-questpin-tooltip').remove();
+
+        // Clear any remaining timeouts or intervals
+        const highestTimeoutId = setTimeout(() => {}, 0);
+        for (let i = 0; i < highestTimeoutId; i++) {
+            clearTimeout(i);
+        }
+
+        const highestIntervalId = setInterval(() => {}, 0);
+        for (let i = 0; i < highestIntervalId; i++) {
+            clearInterval(i);
+        }
+
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Squire module cleanup completed',
+            {},
+            false,
+            false,
+            false,
+            MODULE.TITLE
+        );
+    } catch (error) {
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Error during module cleanup',
+            { error },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
+    }
+}
+
+// Register cleanup hooks
+Hooks.on('disableModule', (moduleId) => {
+    if (moduleId === MODULE.ID) {
+        cleanupModule();
+    }
+});
+
+Hooks.on('closeGame', () => {
+    cleanupModule();
+});
