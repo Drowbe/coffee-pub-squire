@@ -1629,11 +1629,6 @@ export class QuestPanel {
         if (!element) return;
         this.element = element;
 
-        // Set view mode to quest so the tray does not intercept drops
-        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-            game.modules.get('coffee-pub-squire').api.PanelManager.viewMode = "quest";
-        }
-
         const questContainer = element.find('[data-panel="panel-quest"]');
         if (!questContainer.length) return;
 
