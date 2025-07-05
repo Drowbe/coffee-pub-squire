@@ -129,48 +129,7 @@ export class QuestPin extends PIXI.Container {
       return false;
     }
 
-    // Check vision-based visibility
-    if (!this._isInPlayerVision()) {
-      return false;
-    }
-
     return true;
-  }
-
-  /**
-   * Check if pin is within player token vision
-   * @returns {boolean} True if pin is visible to player tokens
-   */
-  _isInPlayerVision() {
-    try {
-      // Get all player-owned tokens
-      const playerTokens = canvas.tokens.placeables.filter(token => 
-        token.actor?.hasPlayerOwner && token.actor?.isOwner
-      );
-
-      if (playerTokens.length === 0) {
-        // No player tokens, show pin
-        return true;
-      }
-
-      // Check if any player token can see this pin location
-      for (const token of playerTokens) {
-        if (token.vision && token.vision.los) {
-          // Check if the pin location is within the token's line of sight
-          const pinPoint = new PIXI.Point(this.x, this.y);
-          if (token.vision.los.testVisibility(pinPoint)) {
-            return true;
-          }
-        }
-      }
-
-      // If no token can see it, hide the pin
-      return false;
-    } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error checking vision', { error }, false, true, true, MODULE.TITLE);
-      // On error, show the pin to be safe
-      return true;
-    }
   }
 
   /**
@@ -1472,24 +1431,40 @@ Hooks.on('closeGame', () => {
 // Update pin visibility when tokens move or vision changes
 Hooks.on('updateToken', (token, changes) => {
     if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {
-        updateAllPinVisibility();
+        debouncedUpdateAllPinVisibility();
     }
 });
 
 Hooks.on('createToken', (token) => {
-    updateAllPinVisibility();
+    debouncedUpdateAllPinVisibility();
 });
 
 Hooks.on('deleteToken', (token) => {
-    updateAllPinVisibility();
+    debouncedUpdateAllPinVisibility();
 });
 
 // Update pin visibility when quest state changes
 Hooks.on('updateJournalEntryPage', (page, changes) => {
     if (changes.flags && changes.flags[MODULE.ID]) {
-        updateAllPinVisibility();
+        debouncedUpdateAllPinVisibility();
     }
 });
+
+// Debounce for updateAllPinVisibility
+let questPinVisibilityDebounce = null;
+
+function debouncedUpdateAllPinVisibility() {
+  if (questPinVisibilityDebounce) clearTimeout(questPinVisibilityDebounce);
+  questPinVisibilityDebounce = setTimeout(() => {
+    // Only run if the global vision polygon exists
+    if (canvas.effects?.visibility?.los) {
+      updateAllPinVisibility();
+    } else {
+      console.log('QuestPin DEBUG: Debounced update skipped, no global vision polygon available.');
+    }
+    questPinVisibilityDebounce = null;
+  }, 50);
+}
 
 /**
  * Update visibility for all quest pins
@@ -1513,4 +1488,9 @@ async function updateAllPinVisibility() {
             getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin visibility', { error, pinId: pin.pinId }, false, true, true, MODULE.TITLE);
         }
     }
-} 
+}
+
+// Update pin visibility when vision polygons are refreshed
+Hooks.on('sightRefresh', () => {
+  debouncedUpdateAllPinVisibility();
+}); 
