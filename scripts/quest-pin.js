@@ -92,7 +92,6 @@ export class QuestPin extends PIXI.Container {
     this.cursor = 'pointer';
     // Enhanced event handling
     this.on('pointerdown', this._onPointerDown.bind(this));
-    this.on('middleclick', this._onMiddleDown.bind(this));
     this.on('pointerover', this._onPointerOver.bind(this));
     this.on('pointerout', this._onPointerOut.bind(this));
     // Drag functionality
@@ -504,6 +503,17 @@ export class QuestPin extends PIXI.Container {
           this._selectPinAndJumpToQuest();
         }
       }
+      
+      // Middle-click: toggle hidden state (GM only)
+      if (event.data.button === 1) {
+        if (game.user.isGM) {
+          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Middle-click detected - toggling hidden state', {
+            pinId: this.pinId,
+            user: game.user.name
+          });
+          this._toggleHiddenState();
+        }
+      }
     }
   }
 
@@ -564,12 +574,7 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  // Middle-click or Shift+Left-click: toggle hidden state
-  _onMiddleDown(event) {
-    if (!game.user.isGM) return; // Only GM can toggle hidden state
-    
-    this._toggleHiddenState();
-  }
+
 
   async _onDoubleClick(event) {
     if (!game.user.isGM) return; // Only GM can complete objectives
