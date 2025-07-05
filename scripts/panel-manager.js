@@ -581,7 +581,10 @@ export class PanelManager {
                 $(event.target).closest('.tray-refresh').length ||
                 $(event.target).closest('.handle-favorite-icon').length ||
                 $(event.target).closest('.handle-health-bar').length ||
-                $(event.target).closest('.handle-dice-tray').length) return;
+                $(event.target).closest('.handle-dice-tray').length ||
+                $(event.target).closest('.handle-party-member-portrait').length ||
+                $(event.target).closest('.handle-party-member-health-bar').length ||
+                $(event.target).closest('.handle-character-portrait').length) return;
             
             event.preventDefault();
             event.stopPropagation();
