@@ -2462,7 +2462,10 @@ export class PanelManager {
     }
 }
 
-// Hooks
+// =====================================================
+// ======================  Hooks  ======================    
+// =====================================================
+
 Hooks.on('canvasReady', async () => {
     // Try to find a suitable actor in this order:
     // 1. Currently controlled token(s) - prioritizing player character tokens
