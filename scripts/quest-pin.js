@@ -360,14 +360,14 @@ export class QuestPin extends PIXI.Container {
     if (!game.user.isGM) return;
     
     try {
-      const sceneId = canvas.scene?.id;
-      if (!sceneId) return;
+      const scene = canvas.scene;
+      if (!scene) return;
 
-      const pinsData = game.settings.get('coffee-pub-squire', 'questPinsData') || {};
-      if (!pinsData[sceneId]) pinsData[sceneId] = [];
-
+      // Get existing pins data from scene flags
+      const pinsData = scene.getFlag(MODULE.ID, 'questPins') || [];
+      
       // Find existing pin or add new one
-      const existingIndex = pinsData[sceneId].findIndex(pin => pin.pinId === this.pinId);
+      const existingIndex = pinsData.findIndex(pin => pin.pinId === this.pinId);
       const pinData = {
         pinId: this.pinId,
         questUuid: this.questUuid,
@@ -380,12 +380,13 @@ export class QuestPin extends PIXI.Container {
       };
 
       if (existingIndex >= 0) {
-        pinsData[sceneId][existingIndex] = pinData;
+        pinsData[existingIndex] = pinData;
       } else {
-        pinsData[sceneId].push(pinData);
+        pinsData.push(pinData);
       }
 
-      game.settings.set('coffee-pub-squire', 'questPinsData', pinsData);
+      // Save to scene flags
+      scene.setFlag(MODULE.ID, 'questPins', pinsData);
     } catch (error) {
       getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error saving quest pin', { error }, false, true, true, MODULE.TITLE);
     }
@@ -397,14 +398,17 @@ export class QuestPin extends PIXI.Container {
     if (!game.user.isGM) return;
     
     try {
-      const sceneId = canvas.scene?.id;
-      if (!sceneId) return;
+      const scene = canvas.scene;
+      if (!scene) return;
 
-      const pinsData = game.settings.get('coffee-pub-squire', 'questPinsData') || {};
-      if (pinsData[sceneId]) {
-        pinsData[sceneId] = pinsData[sceneId].filter(pin => pin.pinId !== this.pinId);
-        game.settings.set('coffee-pub-squire', 'questPinsData', pinsData);
-      }
+      // Get existing pins data from scene flags
+      const pinsData = scene.getFlag(MODULE.ID, 'questPins') || [];
+      
+      // Remove this pin
+      const updatedPinsData = pinsData.filter(pin => pin.pinId !== this.pinId);
+      
+      // Save updated data to scene flags
+      scene.setFlag(MODULE.ID, 'questPins', updatedPinsData);
     } catch (error) {
       getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error removing quest pin', { error }, false, true, true, MODULE.TITLE);
     }
@@ -1119,17 +1123,15 @@ Hooks.on('canvasSceneChange', (scene) => {
     }, 1000); // Increased delay for scene changes
 });
 
-// Listen for world setting changes to reload pins when GM creates/moves pins
-Hooks.on('settingChange', (moduleId, settingKey, value, options) => {
-    if (moduleId === 'coffee-pub-squire' && settingKey === 'questPinsData') {
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | World setting changed, reloading pins', {
-            moduleId,
-            settingKey,
-            sceneId: canvas.scene?.id,
+// Listen for scene flag changes to reload pins when GM creates/moves pins
+Hooks.on('updateScene', (scene, changes, options, userId) => {
+    if (scene.id === canvas.scene?.id && changes.flags && changes.flags[MODULE.ID]) {
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Scene flags changed, reloading pins', {
+            sceneId: scene.id,
             user: game.user.name,
             isGM: game.user.isGM
         });
-        // Delay loading to ensure the setting change is fully processed
+        // Delay loading to ensure the scene update is fully processed
         setTimeout(() => {
             loadPersistedPins();
         }, 500);
@@ -1139,8 +1141,8 @@ Hooks.on('settingChange', (moduleId, settingKey, value, options) => {
 // Function to load persisted pins for current scene
 function loadPersistedPins() {
     try {
-        const sceneId = canvas.scene?.id;
-        if (!sceneId) {
+        const scene = canvas.scene;
+        if (!scene) {
             getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | No scene available');
             return;
         }
@@ -1154,10 +1156,10 @@ function loadPersistedPins() {
             return;
         }
 
-        const pinsData = game.settings.get('coffee-pub-squire', 'questPinsData') || {};
-        const scenePins = pinsData[sceneId] || [];
+        // Get pins data from scene flags
+        const scenePins = scene.getFlag(MODULE.ID, 'questPins') || [];
         
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loading pins for scene', { sceneId, scenePins });
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loading pins for scene', { sceneId: scene.id, scenePins });
 
         // Clear existing pins for this scene
         const existingPins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
@@ -1237,8 +1239,59 @@ function loadPersistedPins() {
             }
         });
 
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Successfully loaded', scenePins.length, 'pins for scene', sceneId);
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Successfully loaded', scenePins.length, 'pins for scene', scene.id);
+        
+        // Clean up orphaned pins (pins that reference non-existent quests)
+        if (game.user.isGM) {
+            setTimeout(async () => await cleanupOrphanedPins(), 1000);
+        }
     } catch (error) {
         getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error loading persisted pins', { error });
+    }
+}
+
+// Function to clean up orphaned pins (pins that reference non-existent quests)
+async function cleanupOrphanedPins() {
+    try {
+        const scene = canvas.scene;
+        if (!scene) return;
+        
+        const scenePins = scene.getFlag(MODULE.ID, 'questPins') || [];
+        const validPins = [];
+        let orphanedCount = 0;
+        
+        for (const pinData of scenePins) {
+            try {
+                // Try to find the quest
+                const questData = await fromUuid(pinData.questUuid);
+                if (questData) {
+                    validPins.push(pinData);
+                } else {
+                    orphanedCount++;
+                    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Found orphaned pin', { 
+                        pinId: pinData.pinId, 
+                        questUuid: pinData.questUuid 
+                    });
+                }
+            } catch (error) {
+                orphanedCount++;
+                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Found orphaned pin (error)', { 
+                    pinId: pinData.pinId, 
+                    questUuid: pinData.questUuid,
+                    error 
+                });
+            }
+        }
+        
+        // If we found orphaned pins, update the scene flags
+        if (orphanedCount > 0) {
+            await scene.setFlag(MODULE.ID, 'questPins', validPins);
+            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Cleaned up orphaned pins', { 
+                orphanedCount, 
+                remainingPins: validPins.length 
+            });
+        }
+    } catch (error) {
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error cleaning up orphaned pins', { error });
     }
 } 
