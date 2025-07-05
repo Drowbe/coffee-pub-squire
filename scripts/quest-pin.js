@@ -92,7 +92,6 @@ export class QuestPin extends PIXI.Container {
     this.cursor = 'pointer';
     // Enhanced event handling
     this.on('pointerdown', this._onPointerDown.bind(this));
-    this.on('rightdown', this._onRightDown.bind(this));
     this.on('middleclick', this._onMiddleDown.bind(this));
     this.on('pointerover', this._onPointerOver.bind(this));
     this.on('pointerout', this._onPointerOut.bind(this));
@@ -480,6 +479,12 @@ export class QuestPin extends PIXI.Container {
     // Set cursor to grabbing immediately for GM
     if (game.user.isGM) document.body.style.cursor = 'grabbing';
     
+    // Handle right-click (button 2) here instead of separate handler
+    if (event.data.button === 2) {
+      this._onRightDown(event);
+      return;
+    }
+    
     // Usual click/double-click logic
     if (this.isDragging) return;
     
@@ -505,6 +510,13 @@ export class QuestPin extends PIXI.Container {
   _onRightDown(event) {
     if (!game.user.isGM) return; // Only GM can interact with right-click
     
+    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Right-click detected', {
+      pinId: this.pinId,
+      lastRightClickTime: this._lastRightClickTime,
+      timeSinceLastClick: this._lastRightClickTime ? (Date.now() - this._lastRightClickTime) : 'N/A',
+      user: game.user.name
+    });
+    
     // Check for double right-click (500ms window)
     if (this._lastRightClickTime && (Date.now() - this._lastRightClickTime) < 500) {
       // Double right-click: remove pin only
@@ -528,6 +540,7 @@ export class QuestPin extends PIXI.Container {
         user: game.user.name
       });
       this._rightClickTimeout = setTimeout(async () => {
+        // Only execute if this is still the most recent right-click
         if (this._lastRightClickTime === Date.now()) {
           getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Executing right-click action', {
             pinId: this.pinId,
@@ -536,7 +549,7 @@ export class QuestPin extends PIXI.Container {
           await this._failObjective();
         }
         this._rightClickTimeout = null;
-      }, 250);
+      }, 300); // Increased delay to be more reliable
     }
   }
 
