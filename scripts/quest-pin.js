@@ -557,7 +557,10 @@ export class QuestPin extends PIXI.Container {
     this._dragStartTime = null;
     this._hasStartedDrag = false;
     this.alpha = 1.0;
+    
+    // Always reset cursor to default
     document.body.style.cursor = '';
+    document.body.style.cursor = 'default';
     
     // Remove drag listeners
     this.off('pointermove', this._onDragMove, this);
@@ -565,8 +568,12 @@ export class QuestPin extends PIXI.Container {
     this.off('pointerupoutside', this._onDragEnd, this);
     
     // Remove global listeners
-    document.removeEventListener('pointermove', this._onGlobalDragMove);
-    document.removeEventListener('pointerup', this._onGlobalDragEnd);
+    if (this._onGlobalDragMove) {
+      document.removeEventListener('pointermove', this._onGlobalDragMove);
+    }
+    if (this._onGlobalDragEnd) {
+      document.removeEventListener('pointerup', this._onGlobalDragEnd);
+    }
     
     // Only save if we actually dragged
     if (wasDragging) {
@@ -1232,6 +1239,12 @@ export class QuestPin extends PIXI.Container {
   _onPointerOut(event) {
     const tooltip = document.getElementById('squire-questpin-tooltip');
     if (tooltip) tooltip.style.display = 'none';
+    
+    // Reset cursor when leaving pin area (but only if not dragging)
+    if (game.user.isGM && !this.isDragging) {
+      document.body.style.cursor = '';
+      document.body.style.cursor = 'default';
+    }
   }
 }
 
@@ -1518,6 +1531,10 @@ function cleanupQuestPins() {
             canvas.squirePins.removeChild(pin);
         });
     }
+
+    // Always reset cursor to default
+    document.body.style.cursor = '';
+    document.body.style.cursor = 'default';
 
     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin cleanup completed', {}, false, false, false, MODULE.TITLE);
 }
