@@ -434,13 +434,28 @@ export class PanelManager {
                             if (isCompleted) state = 'completed';
                             else if (isFailed) state = 'failed';
                             else if (isHidden) state = 'hidden';
-                            
+
+                            // Mark if a pin exists on the canvas for this objective (GM: any pin, Player: only visible pins)
+                            let hasPinOnCanvas = false;
+                            if (canvas.squirePins && canvas.squirePins.children) {
+                                if (game.user.isGM) {
+                                    hasPinOnCanvas = canvas.squirePins.children.some(child =>
+                                        child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === index
+                                    );
+                                } else {
+                                    hasPinOnCanvas = canvas.squirePins.children.some(child =>
+                                        child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === index && child.shouldBeVisible()
+                                    );
+                                }
+                            }
+
                             return {
                                 text: text,
                                 completed: isCompleted,
                                 state: state,
                                 index: index,
-                                objectiveNumber: objectiveNumber
+                                objectiveNumber: objectiveNumber,
+                                hasPinOnCanvas: hasPinOnCanvas
                             };
                         });
                         // Reverse the order of tasks for the handle only, so the last objective is at the top

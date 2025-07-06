@@ -13,7 +13,7 @@
 {{#if pinnedQuest}}
     <div class="handle-quest-progress-container">
         {{#each pinnedQuest.tasks as |task index|}}
-            <div class="handle-quest-progress-square">
+            <div class="handle-quest-progress-square{{#if task.hasPinOnCanvas}} objective-pins-oncanvas{{/if}}">
                 <div class="handle-quest-progress-fill objective-{{task.state}}" 
                     data-task-index="{{task.index}}">
                     {{#if (eq task.state "completed")}}
