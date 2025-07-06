@@ -60,7 +60,7 @@
                 <!-- Objective Number -->
                 <span class="objective-number">{{this.objectiveNumber}}</span>
                 <!-- Objective Text -->
-                <div {{#if ../isGM}}class="objective-text-draggable" draggable="true" {{#if this.gmHint}}data-tooltip="GM Note: {{this.gmHint}}"{{/if}}{{/if}} class="objective-text">
+                <div class="objective-text{{#if ../isGM}} objective-text-draggable{{/if}}" draggable="{{#if ../isGM}}true{{else}}false{{/if}}" {{#if (and ../isGM this.gmHint)}}data-tooltip="GM Note: {{this.gmHint}}"{{/if}}>
                     {{#if (and (eq this.state 'hidden') (not ../isGM))}}
                       Objective not discovered
                     {{else}}
