@@ -2564,6 +2564,9 @@ export class PanelManager {
         // Handle objective clicks in quest progress (handle)
         console.log('SQUIRE | Setting up objective handler, found elements:', handle.find('.handle-quest-progress-fill').length);
         
+        // Remove existing handlers first to prevent duplicates
+        handle.find('.handle-quest-progress-fill').off('click mouseenter mouseleave');
+        
         handle.find('.handle-quest-progress-fill').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
