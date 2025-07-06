@@ -67,6 +67,7 @@ export class QuestPin extends PIXI.Container {
     this.isDragging = false;
     this.dragData = null;
     this._rightClickTimeout = null;
+    this._hasStartedDrag = false;
     // Merge config
     this.config = foundry.utils.mergeObject(
       foundry.utils.deepClone(DEFAULT_PIN_CONFIG),
@@ -495,11 +496,9 @@ export class QuestPin extends PIXI.Container {
     // Only allow drag with left mouse button (button 0)
     if (event.data.button !== 0) return;
     
-    // Cancel any pending click action
-    if (this._clickTimeout) {
-      clearTimeout(this._clickTimeout);
-      this._clickTimeout = null;
-    }
+    // Store initial position for distance calculation
+    this._dragStartPosition = { x: event.data.global.x, y: event.data.global.y };
+    this._dragStartTime = Date.now();
     
     // Prevent Foundry selection box and event bubbling
     if (event.data && event.data.originalEvent) {
@@ -512,10 +511,7 @@ export class QuestPin extends PIXI.Container {
         } catch (e) { /* ignore if not supported */ }
       }
     }
-    this.isDragging = true;
-    this.dragData = event.data;
-    this.alpha = 0.8;
-    document.body.style.cursor = 'grabbing';
+    
     // Listen for pointermove and pointerup on the pin only
     this.on('pointermove', this._onDragMove, this);
     this.on('pointerup', this._onDragEnd, this);
@@ -523,7 +519,6 @@ export class QuestPin extends PIXI.Container {
   }
 
   _onDragEnd(event) {
-    if (!this.isDragging) return;
     // Prevent Foundry selection box and event bubbling
     if (event && event.data && event.data.originalEvent) {
       event.data.originalEvent.stopPropagation();
@@ -535,27 +530,67 @@ export class QuestPin extends PIXI.Container {
         } catch (e) { /* ignore if not supported */ }
       }
     }
+    
+    // Check if we actually dragged before cleaning up
+    const wasDragging = this.isDragging;
+    
+    // Clean up drag state
     this.isDragging = false;
     this.dragData = null;
+    this._dragStartPosition = null;
+    this._dragStartTime = null;
+    this._hasStartedDrag = false;
     this.alpha = 1.0;
     document.body.style.cursor = '';
+    
     // Remove drag listeners
     this.off('pointermove', this._onDragMove, this);
     this.off('pointerup', this._onDragEnd, this);
     this.off('pointerupoutside', this._onDragEnd, this);
-    this._saveToPersistence();
+    
+    // Only save if we actually dragged
+    if (wasDragging) {
+      this._saveToPersistence();
+    }
   }
 
   _onDragMove(event) {
-    if (!this.isDragging || !this.dragData) return;
-    // Prevent Foundry selection box and event bubbling
-    if (event.data && event.data.originalEvent) {
-      event.data.originalEvent.stopPropagation();
-      event.data.originalEvent.stopImmediatePropagation();
+    if (!this._dragStartPosition) return;
+    
+    // Calculate distance moved
+    const distance = Math.sqrt(
+      Math.pow(event.data.global.x - this._dragStartPosition.x, 2) + 
+      Math.pow(event.data.global.y - this._dragStartPosition.y, 2)
+    );
+    
+    // Start dragging immediately on any movement (more responsive)
+    if (!this.isDragging && distance > 1) {
+      // Cancel any pending click action
+      if (this._clickTimeout) {
+        clearTimeout(this._clickTimeout);
+        this._clickTimeout = null;
+      }
+      
+      this.isDragging = true;
+      this._hasStartedDrag = true;
+      this.alpha = 0.8;
+      document.body.style.cursor = 'grabbing';
     }
-    const newPosition = this.dragData.getLocalPosition(this.parent);
-    this.x = newPosition.x;
-    this.y = newPosition.y;
+    
+    // If we're dragging, update position
+    if (this.isDragging) {
+      // Prevent Foundry selection box and event bubbling
+      if (event.data && event.data.originalEvent) {
+        event.data.originalEvent.stopPropagation();
+        event.data.originalEvent.stopImmediatePropagation();
+      }
+      
+      // Use global position and convert to local for better performance
+      const globalPos = event.data.global;
+      const localPos = this.parent.toLocal(globalPos);
+      this.x = localPos.x;
+      this.y = localPos.y;
+    }
   }
 
   // Event handlers
@@ -587,11 +622,11 @@ export class QuestPin extends PIXI.Container {
         } else {
           // Delay the click action to allow for drag detection
           this._clickTimeout = setTimeout(() => {
-            // Only execute if we're not dragging
-            if (!this.isDragging) {
+            // Only execute if we're not dragging and haven't started dragging
+            if (!this.isDragging && !this._hasStartedDrag) {
               this._selectPinAndJumpToQuest();
             }
-          }, 150); // Small delay to detect drag
+          }, 100); // Shorter delay for more responsive drag detection
         }
       }
       
@@ -1427,6 +1462,11 @@ function cleanupQuestPins() {
             if (pin._rightClickTimeout) {
                 clearTimeout(pin._rightClickTimeout);
                 pin._rightClickTimeout = null;
+            }
+            // Clear any pending click timeouts
+            if (pin._clickTimeout) {
+                clearTimeout(pin._clickTimeout);
+                pin._clickTimeout = null;
             }
             canvas.squirePins.removeChild(pin);
         });
