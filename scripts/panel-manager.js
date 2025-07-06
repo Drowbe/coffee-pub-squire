@@ -18,6 +18,7 @@ import { CodexPanel } from "./panel-codex.js";
 import { QuestPanel } from './panel-quest.js';
 import { MacrosPanel } from "./panel-macros.js";
 import { PrintCharacterSheet } from './print-character.js';
+import { QuestPin } from './quest-pin.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -464,6 +465,7 @@ export class PanelManager {
     }
 
     async updateHandle() {
+        console.log('SQUIRE | updateHandle called');
         if (PanelManager.element) {
             // Build favorite macros array
             let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
@@ -539,6 +541,55 @@ export class PanelManager {
             
             const handle = PanelManager.element.find('.handle-left');
             handle.html(handleContent);
+            
+            // Handle objective clicks in quest progress (handle)
+            console.log('SQUIRE | Setting up objective handler, found elements:', handle.find('.handle-quest-progress-fill').length);
+            handle.find('.handle-quest-progress-fill').on('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                console.log('SQUIRE | Objective clicked!');
+                
+                const objectiveElement = $(event.currentTarget);
+                const taskIndex = parseInt(objectiveElement.data('task-index'));
+                
+                console.log('SQUIRE | Task index:', taskIndex);
+                
+                // Get the pinned quest UUID from the current data
+                const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+                const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+                
+                console.log('SQUIRE | Pinned quest UUID:', pinnedQuestUuid);
+                
+                if (!pinnedQuestUuid) {
+                    ui.notifications.warn('No quest is currently pinned.');
+                    return;
+                }
+                
+                // Find the corresponding quest pin on the canvas
+                if (canvas.squirePins && canvas.squirePins.children) {
+                    const questPins = canvas.squirePins.children.filter(child =>
+                        child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === taskIndex
+                    );
+                    
+                    console.log('SQUIRE | Found quest pins:', questPins.length);
+                    
+                    if (questPins.length > 0) {
+                        const pin = questPins[0];
+                        console.log('SQUIRE | Panning to pin at:', pin.x, pin.y);
+                        // Pan to the pin location
+                        canvas.animatePan({ x: pin.x, y: pin.y });
+                        // Highlight the pin briefly
+                        pin.alpha = 0.6;
+                        setTimeout(() => { pin.alpha = 1.0; }, 200);
+                    } else {
+                        ui.notifications.warn(`No pin found for objective ${taskIndex + 1}.`);
+                    }
+                } else {
+                    ui.notifications.warn('Quest pins are not available on this scene.');
+                }
+            });
+            
             this.activateListeners(PanelManager.element);
 
             // Add click handler for favorite macros in handle
@@ -602,7 +653,8 @@ export class PanelManager {
                 $(event.target).closest('.handle-dice-tray').length ||
                 $(event.target).closest('.handle-party-member-portrait').length ||
                 $(event.target).closest('.handle-party-member-health-bar').length ||
-                $(event.target).closest('.handle-character-portrait').length) return;
+                $(event.target).closest('.handle-character-portrait').length ||
+                $(event.target).closest('.handle-quest-progress-fill').length) return;
             
             event.preventDefault();
             event.stopPropagation();
@@ -1641,6 +1693,8 @@ export class PanelManager {
                 ui.notifications.error("Error handling drop. See console for details.");
             }
         });
+
+
     }
 
     async setViewMode(mode) {
