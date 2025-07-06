@@ -495,6 +495,12 @@ export class QuestPin extends PIXI.Container {
     // Only allow drag with left mouse button (button 0)
     if (event.data.button !== 0) return;
     
+    // Cancel any pending click action
+    if (this._clickTimeout) {
+      clearTimeout(this._clickTimeout);
+      this._clickTimeout = null;
+    }
+    
     // Prevent Foundry selection box and event bubbling
     if (event.data && event.data.originalEvent) {
       event.data.originalEvent.stopPropagation();
@@ -579,7 +585,13 @@ export class QuestPin extends PIXI.Container {
         if (game.user.isGM && event.data.originalEvent.shiftKey) {
           this._toggleHiddenState();
         } else {
-          this._selectPinAndJumpToQuest();
+          // Delay the click action to allow for drag detection
+          this._clickTimeout = setTimeout(() => {
+            // Only execute if we're not dragging
+            if (!this.isDragging) {
+              this._selectPinAndJumpToQuest();
+            }
+          }, 150); // Small delay to detect drag
         }
       }
       
@@ -1402,10 +1414,20 @@ function cleanupQuestPins() {
     });
     questPinTimeouts.clear();
 
-    // Clear existing pins
+    // Clear existing pins and their timeouts
     if (canvas.squirePins) {
         const existingPins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
         existingPins.forEach(pin => {
+            // Clear any pending click timeouts
+            if (pin._clickTimeout) {
+                clearTimeout(pin._clickTimeout);
+                pin._clickTimeout = null;
+            }
+            // Clear any pending right-click timeouts
+            if (pin._rightClickTimeout) {
+                clearTimeout(pin._rightClickTimeout);
+                pin._rightClickTimeout = null;
+            }
             canvas.squirePins.removeChild(pin);
         });
     }
@@ -1459,8 +1481,6 @@ function debouncedUpdateAllPinVisibility() {
     // Only run if the global vision polygon exists
     if (canvas.effects?.visibility?.los) {
       updateAllPinVisibility();
-    } else {
-      console.log('QuestPin DEBUG: Debounced update skipped, no global vision polygon available.');
     }
     questPinVisibilityDebounce = null;
   }, 50);
