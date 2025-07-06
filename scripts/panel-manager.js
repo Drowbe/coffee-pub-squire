@@ -444,8 +444,13 @@ export class PanelManager {
                             };
                         });
                         // Reverse the order of tasks for the handle only, so the last objective is at the top
+                        // But preserve the original index for proper pin mapping
                         if (pinnedQuest && Array.isArray(pinnedQuest.tasks)) {
-                            pinnedQuest.tasks = [...pinnedQuest.tasks].reverse();
+                            const totalTasks = pinnedQuest.tasks.length;
+                            pinnedQuest.tasks = pinnedQuest.tasks.map((task, reversedIndex) => ({
+                                ...task,
+                                displayIndex: totalTasks - 1 - reversedIndex // This will be used for data-task-index
+                            })).reverse();
                         }
                     }
                 }
