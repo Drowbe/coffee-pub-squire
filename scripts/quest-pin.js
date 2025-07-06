@@ -1,4 +1,5 @@
 import { MODULE, SQUIRE } from './const.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1186,25 +1187,17 @@ export class QuestPin extends PIXI.Container {
 
   _onPointerOver(event) {
     // Lookup quest and objective text
-    let text = this._getTaskText();
+    const questData = this._getQuestData();
+    let text = 'Objective';
     let questName = 'Unknown Quest';
     
     try {
-      const questData = this._getQuestData();
       if (questData) {
         questName = questData.name || 'Unknown Quest';
+        text = getTaskText(questData, this.objectiveIndex);
       }
     } catch (e) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest name', { error: e }, false, true, true, MODULE.TITLE);
-    }
-    
-    // Create or get tooltip element
-    let tooltip = document.getElementById('squire-questpin-tooltip');
-    if (!tooltip) {
-      tooltip = document.createElement('div');
-      tooltip.id = 'squire-questpin-tooltip';
-      tooltip.className = 'quest-marker-tooltip';
-      document.body.appendChild(tooltip);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest data', { error: e }, false, true, true, MODULE.TITLE);
     }
     
     // Enhanced tooltip content
@@ -1212,33 +1205,18 @@ export class QuestPin extends PIXI.Container {
       'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
       'Left-click: Select & jump to quest';
     
-    // Add visibility status to tooltip for GM
-    const visibilityStatus = game.user.isGM ? 
-      `<div class="quest-pin-tooltip-visibility">
-        ${this.objectiveState === 'hidden' ? 'Hidden from players' : 'Visible to all players'}
-      </div>` : '';
-    
-    tooltip.innerHTML = `
-      <div class="quest-pin-tooltip-title">${questName}</div>
-      <div class="quest-pin-tooltip-objective">Objective ${this.objectiveIndex + 1}</div>
-      <div class="quest-pin-tooltip-state">State: ${this.objectiveState.charAt(0).toUpperCase() + this.objectiveState.slice(1)}</div>
-      <div class="quest-pin-tooltip-description">${text}</div>
-      ${visibilityStatus}
-      <div class="quest-pin-tooltip-controls">
-        ${controls}
-      </div>
-    `;
-    tooltip.style.display = 'block';
-    
-    // Position tooltip near mouse with small offset
-    const mouse = event.data.originalEvent;
-    tooltip.style.left = (mouse.clientX + 16) + 'px';
-    tooltip.style.top = (mouse.clientY + 8) + 'px';
+    showQuestTooltip('squire-questpin-tooltip', {
+      questName,
+      objectiveIndex: this.objectiveIndex,
+      objectiveState: this.objectiveState,
+      description: text,
+      controls,
+      isGM: game.user.isGM
+    }, event, 500); // 500ms delay before showing tooltip
   }
 
   _onPointerOut(event) {
-    const tooltip = document.getElementById('squire-questpin-tooltip');
-    if (tooltip) tooltip.style.display = 'none';
+    hideQuestTooltip('squire-questpin-tooltip');
     
     // Reset cursor when leaving pin area (but only if not dragging)
     if (game.user.isGM && !this.isDragging) {

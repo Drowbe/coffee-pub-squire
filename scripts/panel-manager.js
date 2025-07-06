@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
@@ -2562,22 +2563,17 @@ export class PanelManager {
     _attachObjectiveClickHandlers(handle) {
         // Handle objective clicks in quest progress (handle)
         console.log('SQUIRE | Setting up objective handler, found elements:', handle.find('.handle-quest-progress-fill').length);
+        
         handle.find('.handle-quest-progress-fill').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
-            console.log('SQUIRE | Objective clicked!');
-            
             const objectiveElement = $(event.currentTarget);
             const taskIndex = parseInt(objectiveElement.data('task-index'));
-            
-            console.log('SQUIRE | Task index:', taskIndex);
             
             // Get the pinned quest UUID from the current data
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
             const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-            
-            console.log('SQUIRE | Pinned quest UUID:', pinnedQuestUuid);
             
             if (!pinnedQuestUuid) {
                 ui.notifications.warn('No quest is currently pinned.');
@@ -2589,15 +2585,9 @@ export class PanelManager {
                 const questPins = canvas.squirePins.children.filter(child =>
                     child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === taskIndex
                 );
-                
-                console.log('SQUIRE | Found quest pins:', questPins.length);
-                
                 if (questPins.length > 0) {
                     const pin = questPins[0];
-                    console.log('SQUIRE | Panning to pin at:', pin.x, pin.y);
-                    // Pan to the pin location
                     canvas.animatePan({ x: pin.x, y: pin.y });
-                    // Highlight the pin briefly
                     pin.alpha = 0.6;
                     setTimeout(() => { pin.alpha = 1.0; }, 200);
                 } else {
@@ -2606,6 +2596,29 @@ export class PanelManager {
             } else {
                 ui.notifications.warn('Quest pins are not available on this scene.');
             }
+        });
+
+        // Add enhanced tooltip functionality
+        handle.find('.handle-quest-progress-fill').on('mouseenter', async (event) => {
+            const objectiveElement = $(event.currentTarget);
+            const taskIndex = parseInt(objectiveElement.data('task-index'));
+            // Get the pinned quest UUID from the current data
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+            if (!pinnedQuestUuid) return;
+            try {
+                const tooltipData = await getObjectiveTooltipData(pinnedQuestUuid, taskIndex);
+                if (!tooltipData) return;
+                // Add handle-specific controls text
+                tooltipData.controls = 'Left-click: Pan to objective pin on map';
+                showQuestTooltip('squire-handle-objective-tooltip', tooltipData, event, 500); // 500ms delay before showing tooltip
+            } catch (error) {
+                console.error('Error creating tooltip:', error);
+            }
+        });
+
+        handle.find('.handle-quest-progress-fill').on('mouseleave', (event) => {
+            hideQuestTooltip('squire-handle-objective-tooltip');
         });
     }
 }
