@@ -516,6 +516,12 @@ export class QuestPin extends PIXI.Container {
     this.on('pointermove', this._onDragMove, this);
     this.on('pointerup', this._onDragEnd, this);
     this.on('pointerupoutside', this._onDragEnd, this);
+    
+    // Also listen for global mouse events to continue drag even when mouse leaves pin
+    this._onGlobalDragMove = this._onGlobalDragMove.bind(this);
+    this._onGlobalDragEnd = this._onGlobalDragEnd.bind(this);
+    document.addEventListener('pointermove', this._onGlobalDragMove, { passive: false });
+    document.addEventListener('pointerup', this._onGlobalDragEnd, { passive: false });
   }
 
   _onDragEnd(event) {
@@ -531,6 +537,16 @@ export class QuestPin extends PIXI.Container {
       }
     }
     
+    this._endDrag();
+  }
+
+  // Global drag end handler (for when mouse is released anywhere)
+  _onGlobalDragEnd(event) {
+    this._endDrag();
+  }
+
+  // Centralized drag end logic
+  _endDrag() {
     // Check if we actually dragged before cleaning up
     const wasDragging = this.isDragging;
     
@@ -547,6 +563,10 @@ export class QuestPin extends PIXI.Container {
     this.off('pointermove', this._onDragMove, this);
     this.off('pointerup', this._onDragEnd, this);
     this.off('pointerupoutside', this._onDragEnd, this);
+    
+    // Remove global listeners
+    document.removeEventListener('pointermove', this._onGlobalDragMove);
+    document.removeEventListener('pointerup', this._onGlobalDragEnd);
     
     // Only save if we actually dragged
     if (wasDragging) {
@@ -591,6 +611,26 @@ export class QuestPin extends PIXI.Container {
       this.x = localPos.x;
       this.y = localPos.y;
     }
+  }
+
+  // Global drag move handler (for when mouse leaves pin area)
+  _onGlobalDragMove(event) {
+    if (!this.isDragging) return;
+    
+    // Prevent default behavior
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Convert DOM event to PIXI coordinates
+    const rect = canvas.app.view.getBoundingClientRect();
+    const globalX = event.clientX - rect.left;
+    const globalY = event.clientY - rect.top;
+    
+    // Convert to local coordinates and update position
+    const globalPos = { x: globalX, y: globalY };
+    const localPos = this.parent.toLocal(globalPos);
+    this.x = localPos.x;
+    this.y = localPos.y;
   }
 
   // Event handlers
@@ -1467,6 +1507,13 @@ function cleanupQuestPins() {
             if (pin._clickTimeout) {
                 clearTimeout(pin._clickTimeout);
                 pin._clickTimeout = null;
+            }
+            // Remove global event listeners
+            if (pin._onGlobalDragMove) {
+                document.removeEventListener('pointermove', pin._onGlobalDragMove);
+            }
+            if (pin._onGlobalDragEnd) {
+                document.removeEventListener('pointerup', pin._onGlobalDragEnd);
             }
             canvas.squirePins.removeChild(pin);
         });
