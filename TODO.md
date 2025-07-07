@@ -16,8 +16,8 @@
    - **Status**: COMPLETED - Fixed by removing problematic cleanup hooks that were triggered on every window close
 
 5. **Fix squire tray disappearing on scene change** - The squire tray is removed from the DOM when changing scenes
-   - **Status**: PENDING - Need to investigate why tray is being removed during scene transitions
-   - **Files**: `scripts/panel-manager.js`, `scripts/squire.js`
+   - **Status**: COMPLETED - Fixed by removing duplicate canvasReady hook that was calling PanelManager.cleanup() during scene transitions
+   - **Files**: `scripts/panel-manager.js`
 
 6. **Fix handle quest progress order and index mapping** - The handle shows objectives in reverse order (1st on top) but click events and mouseover events have them reversed
    - **Status**: COMPLETED - Fixed by removing array reversal and using correct index mapping
@@ -68,9 +68,9 @@
       - Potential for hook conflicts or race conditions
 
 ## Summary
-- **Completed**: 7 out of 12 items (58%)
-- **Pending**: 5 items
-- **Next Priority**: Item #5 (Squire tray disappearing on scene change) or #9 (Error handling for tooltip data)
+- **Completed**: 8 out of 12 items (67%)
+- **Pending**: 4 items
+- **Next Priority**: Item #9 (Error handling for tooltip data) or #12 (Unified hook system)
 
 ## Notes
 - Most critical bugs have been resolved

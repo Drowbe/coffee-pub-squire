@@ -2929,21 +2929,9 @@ Hooks.on('closeGame', () => {
     }
 });
 
-Hooks.on('canvasReady', () => {
-    // Clean up any existing instances before initializing new ones
-    if (PanelManager.instance && !PanelManager._initializationInProgress) {
-        PanelManager.cleanup();
-    }
-});
-
 // Clean up when the module is disabled
 Hooks.on('disableModule', (moduleId) => {
     if (moduleId === MODULE.ID) {
         PanelManager.cleanup();
     }
-});
-
-// Clean up when the game is closed
-Hooks.on('closeGame', () => {
-    PanelManager.cleanup();
 }); 
