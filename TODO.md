@@ -147,9 +147,14 @@
       - Hide all pins/objectives
 
 24. **Quest visibility logic** - If quest is not visible to player, no pins are visible regardless of state
-    - **Status**: PENDING - New feature request
+    - **Status**: COMPLETED - Implemented comprehensive quest visibility logic with automatic pin hiding
     - **Priority**: Medium
-    - **Note**: Show this in pin design too
+    - **Note**: Quest-level visibility now properly controls all objective pin visibility for players
+    - **Files**: `scripts/quest-pin.js`, `scripts/panel-quest.js`
+    - **Implementation**: 
+      - `shouldBeVisible()` method checks quest-level visibility first
+      - `updateVisibility()` properly hides pins from players when quest is hidden
+      - Automatic unpinning when quests are hidden from players
 
 25. **Quest assignment visibility** - Should quests only be visible if player is assigned?
     - **Status**: PENDING - New feature request
@@ -169,9 +174,9 @@
     - **Priority**: Medium
 
 ## Summary
-- **Completed**: 13 out of 28 items (46%)
-- **Pending**: 15 items
-- **Next Priority**: New feature requests or code architecture improvements
+- **Completed**: 14 out of 28 items (50%)
+- **Pending**: 14 items
+- **Next Priority**: New feature requests
 
 ## Notes
 - Most critical bugs have been resolved
