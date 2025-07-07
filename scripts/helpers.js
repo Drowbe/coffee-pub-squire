@@ -1,4 +1,4 @@
-import { MODULE, SQUIRE } from './const.js';
+import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { QuestParser } from './quest-parser.js';
 
 // Helper function to safely get Blacksmith API
@@ -309,7 +309,7 @@ export function getOrCreateQuestTooltip(tooltipId) {
  * @param {Object} event - Mouse event for positioning
  * @param {number} delay - Delay in milliseconds before showing tooltip (default: 500ms)
  */
-export function showQuestTooltip(tooltipId, data, event, delay = 500) {
+export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
     try {
         // Validate input parameters
         if (!tooltipId || typeof tooltipId !== 'string') {
@@ -317,8 +317,8 @@ export function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 'showQuestTooltip: Invalid tooltipId parameter',
                 { tooltipId, data },
                 false,
-                false,
                 true,
+                false,
                 MODULE.TITLE
             );
             return;
@@ -329,8 +329,8 @@ export function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 'showQuestTooltip: Invalid data parameter',
                 { tooltipId, data },
                 false,
-                false,
                 true,
+                false,
                 MODULE.TITLE
             );
             return;
@@ -341,8 +341,8 @@ export function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 'showQuestTooltip: Missing event parameter',
                 { tooltipId, data },
                 false,
-                false,
                 true,
+                false,
                 MODULE.TITLE
             );
             return;
@@ -355,43 +355,19 @@ export function showQuestTooltip(tooltipId, data, event, delay = 500) {
         }
         
         // Set new timeout to show tooltip after delay
-        const timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(async () => {
             try {
                 const tooltip = getOrCreateQuestTooltip(tooltipId);
-                
-                // Validate required data properties with defaults
-                const questName = data.questName || 'Unknown Quest';
-                const objectiveIndex = typeof data.objectiveIndex === 'number' ? data.objectiveIndex : 0;
-                const objectiveState = data.objectiveState || 'active';
-                const description = data.description || 'No description available';
-                const controls = data.controls || '';
-                const isGM = Boolean(data.isGM);
-                
-                // Add visibility status to tooltip for GM
-                const visibilityStatus = isGM ? 
-                    `<div class="quest-pin-tooltip-visibility">
-                        ${objectiveState === 'hidden' ? 'Hidden from players' : 'Visible to all players'}
-                    </div>` : '';
-                
-                tooltip.innerHTML = `
-                    <div class="quest-pin-tooltip-title">${questName}</div>
-                    <div class="quest-pin-tooltip-objective">Objective ${objectiveIndex + 1}</div>
-                    <div class="quest-pin-tooltip-state">State: ${objectiveState.charAt(0).toUpperCase() + objectiveState.slice(1)}</div>
-                    <div class="quest-pin-tooltip-description">${description}</div>
-                    ${visibilityStatus}
-                    <div class="quest-pin-tooltip-controls">
-                        ${controls}
-                    </div>
-                `;
+                // Render the tooltip using the Handlebars template
+                const html = await renderTemplate(TEMPLATES.TOOLTIP_QUEST, data);
+                tooltip.innerHTML = html;
                 tooltip.style.display = 'block';
-                
                 // Position tooltip near mouse with small offset
                 const mouse = event.data?.originalEvent || event;
                 if (mouse && typeof mouse.clientX === 'number' && typeof mouse.clientY === 'number') {
                     tooltip.style.left = (mouse.clientX + 16) + 'px';
                     tooltip.style.top = (mouse.clientY + 8) + 'px';
                 }
-                
                 // Clear the timeout reference
                 tooltipTimeouts.delete(tooltipId);
             } catch (error) {
@@ -405,7 +381,6 @@ export function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 );
             }
         }, delay);
-        
         // Store the timeout reference
         tooltipTimeouts.set(tooltipId, timeoutId);
     } catch (error) {
@@ -522,8 +497,8 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
                 'SQUIRE | QUESTS getObjectiveTooltipData: Journal page not found',
                 { questPageUuid, objectiveIndex },
                 false,
-                false,
                 true,
+                false,
                 MODULE.TITLE
             );
             return null;
@@ -538,8 +513,8 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
                 'SQUIRE | QUESTS getObjectiveTooltipData: Failed to parse quest entry',
                 { questPageUuid, objectiveIndex },
                 false,
-                false,
                 true,
+                false,
                 MODULE.TITLE
             );
             return null;
@@ -552,19 +527,31 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
                 'SQUIRE | QUESTS getObjectiveTooltipData: Objective not found',
                 { questPageUuid, objectiveIndex },
                 false,
-                false,
                 true,
+                false,
                 MODULE.TITLE
             );
             return null;
         }
 
-        // Return the relevant fields for tooltips
+        let visibility;
+        if (game.user.isGM) {
+            if (task.state === 'hidden') {
+                visibility = 'Only Visible to GM';
+            } else {
+                visibility = 'Visible to GM and Players';
+            }
+        }
         return {
             questName: entry.name,
+            questNumber: entry.questNumber,
             objectiveIndex,
+            objectiveNumber: objectiveIndex + 1,
+            objectiveNumberPadded: String(objectiveIndex + 1).padStart(2, '0'),
             objectiveState: task.state || 'active',
             description: task.text || 'Objective',
+            gmHint: (game.user.isGM && task.gmHint) ? task.gmHint : undefined,
+            visibility,
             isGM: game.user.isGM
         };
     } catch (error) {
@@ -572,8 +559,8 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
             'SQUIRE | QUESTS getObjectiveTooltipData: Unexpected error',
             { questPageUuid, objectiveIndex, error: error.message },
             false,
-            false,
             true,
+            false,
             MODULE.TITLE
         );
         return null;

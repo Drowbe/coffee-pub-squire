@@ -1,0 +1,14 @@
+<div>
+  <div class="quest-pin-tooltip-title"><span class="quest-pin-tooltip-quest-number">{{questNumber}}</span><span class="quest-pin-tooltip-objective">{{objectiveNumberPadded}}</span>{{questName}}</div>
+  <div class="quest-pin-tooltip-state state-{{objectiveState}}">{{objectiveState}}</div>
+  <div class="quest-pin-tooltip-description">{{description}}</div>
+  {{#if gmHint}}
+    <div class="quest-pin-gm-hint">GM Note:{{gmHint}}</div>
+  {{/if}}
+  {{#if visibility}}
+    <div class="quest-pin-tooltip-visibility">{{visibility}}</div>
+  {{/if}}
+  {{#if controls}}
+    <div class="quest-pin-tooltip-controls">{{controls}}</div>
+  {{/if}}
+</div> 
