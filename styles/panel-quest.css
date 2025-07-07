@@ -672,7 +672,37 @@
 
 /* OBJECTIVE TREASURE INDICATOR */
 
-
+.squire-tray[data-position="left"] .quest-entry-tasks .unlocked-objective-treasure,
+.squire-tray[data-position="left"] .quest-entry-tasks .locked-objective-treasure {
+    display: block;
+    color: rgba(96, 148, 255, 0.9);
+    margin-left: 0px;
+    font-size: 0.80em;
+    vertical-align: baseline;
+}
+.squire-tray[data-position="left"] .quest-entry-tasks .locked-objective-treasure i.fas.fa-lock {
+    margin-right: 4px;
+    margin-left: 0px;
+    opacity: 0.7;
+    font-size: 0.8em;
+    vertical-align: baseline;
+}
+.squire-tray[data-position="left"] .quest-entry-reward .treasure-link {
+    color: #e2551d;
+    font-weight: 200;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.squire-tray[data-position="left"] .quest-entry-reward .treasure-link:hover {
+    color: #ff7a3c;
+    text-decoration: underline;
+}
+.squire-tray[data-position="left"] .quest-entry-reward .treasure-lock,
+.squire-tray[data-position="left"] .quest-entry-reward .treasure-icon {
+    margin-right: 0px;
+    vertical-align: baseline;
+    font-size: .8em;
+}
 
 
 
