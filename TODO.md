@@ -106,14 +106,17 @@
     - **Priority**: Medium
 
 15. **Remember window states** - Remember if macros, dice tray, and health windows were open
-    - **Status**: COMPLETED - Implemented persistent window state management
+    - **Status**: COMPLETED - Implemented persistent window state management with viewport validation
     - **Priority**: Medium
-    - **Files**: `scripts/panel-manager.js`, `scripts/panel-health.js`, `scripts/panel-dicetray.js`, `scripts/panel-macros.js`
+    - **Files**: `scripts/panel-manager.js`, `scripts/panel-health.js`, `scripts/panel-dicetray.js`, `scripts/panel-macros.js`, `scripts/window-health.js`, `scripts/window-dicetray.js`, `scripts/window-macros.js`
     - **Implementation**:
       - Added user flags to store window states (`windowStates` flag)
       - Save window states when windows are opened/closed
       - Restore window states when panel manager initializes
       - Added `_saveWindowState()` method to each panel class
+      - Added viewport validation to ensure windows open within screen bounds
+      - Fixed null reference errors during state restoration
+      - Enhanced health window update detection for real-time HP changes
       - Proper error handling with Blacksmith logging
 
 16. **Select multiple tokens for bulk health update** - Allow selecting multiple tokens on canvas for health management
