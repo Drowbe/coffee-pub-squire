@@ -140,11 +140,19 @@
 
 ### Quest Features
 23. **Quest tools** - Add quest management tools
-    - **Status**: PENDING - New feature request
+    - **Status**: COMPLETED - Implemented comprehensive quest management tools
     - **Priority**: Medium
     - **Features**:
-      - Clear all quest pins
-      - Hide all pins/objectives
+      - Clear all quest pins (scene-level and all-scenes options)
+      - Clear quest pins for specific quests
+      - Hide/show objective pins toggle for players
+    - **Files**: `scripts/panel-quest.js`, `scripts/quest-pin.js`, `templates/panel-quest.hbs`, `templates/partials/quest-entry.hbs`
+    - **Implementation**:
+      - GM scene-level button with dialog for "This Scene" or "All Scenes"
+      - GM quest-level button with confirmation dialog
+      - Player toggle button with icon state changes
+      - Proper pin removal from scene flags and canvas
+      - User flag persistence for pin visibility preferences
 
 24. **Quest visibility logic** - If quest is not visible to player, no pins are visible regardless of state
     - **Status**: COMPLETED - Implemented comprehensive quest visibility logic with automatic pin hiding
@@ -157,8 +165,10 @@
       - Automatic unpinning when quests are hidden from players
 
 25. **Quest assignment visibility** - Should quests only be visible if player is assigned?
-    - **Status**: PENDING - New feature request
-    - **Priority**: Medium
+    - **Status**: DEFERRED - Major feature with broad system impact
+    - **Priority**: Low
+    - **Impact**: Would affect quest panels, handles, pins, and overall quest visibility system
+    - **Complexity**: Requires changes to multiple systems and data structures
 
 ### Codex Features
 26. **Add canvas tokens to handle** - Include tokens from canvas in the handle
@@ -174,8 +184,9 @@
     - **Priority**: Medium
 
 ## Summary
-- **Completed**: 14 out of 28 items (50%)
-- **Pending**: 14 items
+- **Completed**: 15 out of 28 items (54%)
+- **Pending**: 12 items
+- **Deferred**: 1 item
 - **Next Priority**: New feature requests
 
 ## Notes
