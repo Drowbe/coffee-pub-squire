@@ -812,6 +812,15 @@ export class PanelManager {
             }
         });
 
+        // Handle health tray icon clicks (GM only)
+        handle.find('.handle-health-tray').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (game.user.isGM && this.healthPanel && !this.healthPanel.isPoppedOut) {
+                await this.healthPanel._onPopOut();
+            }
+        });
+
         // Handle favorite item clicks
         handle.find('.handle-favorite-icon').on('click', async (event) => {
             if ($(event.target).hasClass('handle-favorite-roll-overlay')) {
@@ -1917,6 +1926,15 @@ export class PanelManager {
             event.preventDefault();
             event.stopPropagation();
             if (this.healthPanel && !this.healthPanel.isPoppedOut) {
+                await this.healthPanel._onPopOut();
+            }
+        });
+
+        // Handle health tray icon clicks (GM only)
+        handle.find('.handle-health-tray').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (game.user.isGM && this.healthPanel && !this.healthPanel.isPoppedOut) {
                 await this.healthPanel._onPopOut();
             }
         });

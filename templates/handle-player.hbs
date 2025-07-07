@@ -100,7 +100,15 @@
     </div>
 {{/if}}
 
-{{!-- DICETRAY --}} 
+{{!-- HEALTH TRAY --}} 
+{{#if showHandleHealthBar}}
+    <span class="tray-handle-separator line"></span>
+    <div class="handle-health-tray" title="Health Tray" data-tooltip="Open Health Tray">
+        <i class="fas fa-heart health-tray-icon"></i>
+    </div>
+{{/if}}
+
+{{!-- DICE TRAY --}} 
 {{#if showHandleDiceTray}}
     <span class="tray-handle-separator line"></span>
     <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">

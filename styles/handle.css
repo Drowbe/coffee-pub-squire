@@ -366,6 +366,7 @@
 /* Dice Tray / Macros / Contitions Icon  */
 
 
+.squire-tray[data-position="left"] .health-tray-icon,
 .squire-tray[data-position="left"] .add-effect-icon,
 .squire-tray[data-position="left"] .macros-icon,
 .squire-tray[data-position="left"] .dice-tray-icon {
@@ -379,6 +380,7 @@
     filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
 
+.squire-tray[data-position="left"] .health-tray-icon:hover,
 .squire-tray[data-position="left"] .add-effect-icon:hover,
 .squire-tray[data-position="left"] .macros-icon:hover,
 .squire-tray[data-position="left"] .dice-tray-icon:hover {
@@ -386,6 +388,11 @@
     box-shadow: 0 0 10px var(--color-shadow-highlight);
     transform: scale(1.1,1.1);
 }
+
+.squire-tray[data-position="left"] .health-tray-icon {
+    transform: rotate(180deg);
+}
+
 .squire-tray[data-position="left"] .dice-tray-icon img:hover {
     transform: rotate(180deg);
 }
