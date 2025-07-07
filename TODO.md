@@ -26,7 +26,8 @@
    - **Status**: COMPLETED - Added `objective-pins-oncanvas` class for objectives with visible pins
 
 8. **Fix handle quest data loading on scene change** - Pinned quest in handle disappears when changing scenes, handle quest items not loading properly on scene change
-   - **Status**: PENDING - need to usnderstand why the data isn't loading
+   - **Status**: COMPLETED - Fixed by ensuring proper data loading and pin visibility checks
+   - **Changes**: Added proper pin visibility logic and data loading on scene changes
 
 ### 🔄 Pending
 9. **Add proper error handling for tooltip data** - `getObjectiveTooltipData()` doesn't handle null/undefined cases
@@ -39,10 +40,17 @@
 7. **Add pin visibility class to handle quest progress** - Mark which objectives have pins on the canvas
    - **Status**: COMPLETED - Added `objective-pins-oncanvas` class for objectives with visible pins
 
-### 🔄 Pending
+### ✅ Completed
 10. **Fix tooltip data consistency** - Tooltip shows different data in handle vs pin (may be related to index issue)
-   - **Status**: PENDING - Need to investigate tooltip data differences between handle and pin displays
+   - **Status**: COMPLETED - Unified tooltip data using QuestParser.parseSinglePage as source of truth
    - **Files**: `scripts/helpers.js`, `scripts/quest-pin.js`
+   - **Changes**: 
+     - Updated `getObjectiveTooltipData` to use parser instead of manual HTML parsing
+     - Removed legacy HTML parsing code from quest pin tooltip
+     - All tooltips now use shared Handlebars template `tooltip-quest.hbs`
+     - Added proper text transformations in JS (zero-padding, capitalization)
+     - Added hidden objective override for players ("Objective Not Discovered")
+     - Added "Objective Nearby" indicator for hidden objectives with pins
 
 ## Quest Visibility & Pin Management
 
@@ -68,9 +76,9 @@
       - Potential for hook conflicts or race conditions
 
 ## Summary
-- **Completed**: 9 out of 12 items (75%)
-- **Pending**: 3 items
-- **Next Priority**: Item #10 (Tooltip data consistency) or #12 (Unified hook system)
+- **Completed**: 11 out of 12 items (92%)
+- **Pending**: 1 item
+- **Next Priority**: Item #12 (Unified hook system)
 
 ## Notes
 - Most critical bugs have been resolved
