@@ -1,5 +1,5 @@
 import { MODULE, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -748,8 +748,6 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-
-
   async _onDoubleClick(event) {
     if (!game.user.isGM) return; // Only GM can complete objectives
     
@@ -1185,34 +1183,19 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  _onPointerOver(event) {
-    // Lookup quest and objective text
-    const questData = this._getQuestData();
-    let text = 'Objective';
-    let questName = 'Unknown Quest';
-    
+  async _onPointerOver(event) {
+    // Use unified tooltip data function
     try {
-      if (questData) {
-        questName = questData.name || 'Unknown Quest';
-        text = getTaskText(questData, this.objectiveIndex);
-      }
+      const tooltipData = await getObjectiveTooltipData(this.questUuid, this.objectiveIndex);
+      if (!tooltipData) return;
+      // Add pin-specific controls text
+      tooltipData.controls = game.user.isGM ?
+        'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
+        'Left-click: Select & jump to quest';
+      showQuestTooltip('squire-questpin-tooltip', tooltipData, event, 500);
     } catch (e) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest data', { error: e }, false, true, true, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting tooltip data', { error: e }, false, true, true, MODULE.TITLE);
     }
-    
-    // Enhanced tooltip content
-    const controls = game.user.isGM ? 
-      'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
-      'Left-click: Select & jump to quest';
-    
-    showQuestTooltip('squire-questpin-tooltip', {
-      questName,
-      objectiveIndex: this.objectiveIndex,
-      objectiveState: this.objectiveState,
-      description: text,
-      controls,
-      isGM: game.user.isGM
-    }, event, 500); // 500ms delay before showing tooltip
   }
 
   _onPointerOut(event) {

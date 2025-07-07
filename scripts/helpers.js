@@ -1,4 +1,5 @@
 import { MODULE, SQUIRE } from './const.js';
+import { QuestParser } from './quest-parser.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -504,17 +505,22 @@ export function getTaskText(questData, objectiveIndex) {
 
 /**
  * Async helper to fetch quest and objective data for tooltips
- * @param {string} questUuid - The quest UUID
+ * @param {string} questPageUuid - The quest UUID
  * @param {number} objectiveIndex - The objective index (0-based)
  * @returns {Promise<Object|null>} Tooltip data or null if not found
  */
-export async function getObjectiveTooltipData(questUuid, objectiveIndex) {
+export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
     try {
-        // Validate input parameters
-        if (!questUuid || typeof questUuid !== 'string') {
+        // Find the journal page by UUID
+        let page = null;
+        for (const journal of game.journal.contents) {
+            page = journal.pages.find(p => p.uuid === questPageUuid);
+            if (page) break;
+        }
+        if (!page) {
             getBlacksmith()?.utils.postConsoleAndNotification(
-                'getObjectiveTooltipData: Invalid questUuid parameter',
-                { questUuid, objectiveIndex },
+                'SQUIRE | QUESTS getObjectiveTooltipData: Journal page not found',
+                { questPageUuid, objectiveIndex },
                 false,
                 false,
                 true,
@@ -523,10 +529,14 @@ export async function getObjectiveTooltipData(questUuid, objectiveIndex) {
             return null;
         }
 
-        if (typeof objectiveIndex !== 'number' || objectiveIndex < 0) {
+        // Enrich the page HTML if needed
+        const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
+        // Parse the quest entry using the source of truth
+        const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
+        if (!entry) {
             getBlacksmith()?.utils.postConsoleAndNotification(
-                'getObjectiveTooltipData: Invalid objectiveIndex parameter',
-                { questUuid, objectiveIndex },
+                'SQUIRE | QUESTS getObjectiveTooltipData: Failed to parse quest entry',
+                { questPageUuid, objectiveIndex },
                 false,
                 false,
                 true,
@@ -535,12 +545,12 @@ export async function getObjectiveTooltipData(questUuid, objectiveIndex) {
             return null;
         }
 
-        // Fetch the quest document
-        const doc = await fromUuid(questUuid);
-        if (!doc) {
+        // Get the relevant objective/task
+        const task = entry.tasks[objectiveIndex];
+        if (!task) {
             getBlacksmith()?.utils.postConsoleAndNotification(
-                'getObjectiveTooltipData: Quest document not found',
-                { questUuid, objectiveIndex },
+                'SQUIRE | QUESTS getObjectiveTooltipData: Objective not found',
+                { questPageUuid, objectiveIndex },
                 false,
                 false,
                 true,
@@ -549,49 +559,22 @@ export async function getObjectiveTooltipData(questUuid, objectiveIndex) {
             return null;
         }
 
-        // Validate document structure
-        if (!doc.system) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'getObjectiveTooltipData: Quest document missing system data',
-                { questUuid, objectiveIndex, docName: doc.name },
-                false,
-                false,
-                true,
-                MODULE.TITLE
-            );
-            return null;
-        }
-
-        const questData = doc.system;
-        const questName = doc.name || 'Unknown Quest';
-
-        // Get task description with error handling
-        const description = getTaskText(questData, objectiveIndex);
-
-        // Determine objective state with proper null checks
-        let objectiveState = 'active';
-        if (questData.tasks && Array.isArray(questData.tasks)) {
-            const task = questData.tasks[objectiveIndex];
-            if (task && typeof task === 'object' && task.state) {
-                objectiveState = task.state;
-            }
-        }
-
+        // Return the relevant fields for tooltips
         return {
-            questName,
+            questName: entry.name,
             objectiveIndex,
-            objectiveState,
-            description,
+            objectiveState: task.state || 'active',
+            description: task.text || 'Objective',
             isGM: game.user.isGM
         };
     } catch (error) {
         getBlacksmith()?.utils.postConsoleAndNotification(
-            'getObjectiveTooltipData: Unexpected error',
-            { questUuid, objectiveIndex, error: error.message },
+            'SQUIRE | QUESTS getObjectiveTooltipData: Unexpected error',
+            { questPageUuid, objectiveIndex, error: error.message },
             false,
-                false,
-                true,
-                MODULE.TITLE
+            false,
+            true,
+            MODULE.TITLE
         );
         return null;
     }
