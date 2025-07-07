@@ -1,0 +1,71 @@
+ERROR: excludedUsers seesm to load too soon now that we moved register setting into ready from init.. we also have to readys… one is async.
+
+make some of the tools always availale
+
+remember last tab
+
+remember if macros was open.
+
+remember if dice tray was open
+
+remember if health was open
+
+add heart icon for health
+
+select multiple for health
+
+notes toolbar —
+
+add name of cuurent note,
+
+add some note tools,
+
+maybe let them drag fragments to the note?
+
+add note?
+
+quick toggle between notes?
+
+pin notes
+
+quests —
+
+segmented tracker for pinned quest
+
+quest count
+
+quest stats failed/success/current
+
+quest tools
+
+clear all quest pins
+
+hide all pins/objectives
+
+Quest awareness… if a note pin in on the viewable canvas, highlight the quest/objective
+
+left click should toggle complete and not… right click shoudl toggle failed and not. middile should toggle hidden and not.
+
+better pins == maybe longer with leading icon
+
+handle quests no longer update
+
+clicking the handle quest number jumps to quest and pin if visible
+
+double digit quest in handle
+
+jump to pin
+
+if quest is not visible to player, no pins are visibale regardless of their state… show this in the pin design too
+
+should quests only be visible if player assigned?
+
+switch the quest number and the quest tye icon
+
+Codex —
+
+add tokens od canvas to handle?
+
+auto-enable codecs for tokens on canvas
+
+pin codex to handle?
