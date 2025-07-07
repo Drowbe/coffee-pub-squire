@@ -309,45 +309,114 @@ export function getOrCreateQuestTooltip(tooltipId) {
  * @param {number} delay - Delay in milliseconds before showing tooltip (default: 500ms)
  */
 export function showQuestTooltip(tooltipId, data, event, delay = 500) {
-    // Clear any existing timeout for this tooltip
-    if (tooltipTimeouts.has(tooltipId)) {
-        clearTimeout(tooltipTimeouts.get(tooltipId));
-        tooltipTimeouts.delete(tooltipId);
+    try {
+        // Validate input parameters
+        if (!tooltipId || typeof tooltipId !== 'string') {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'showQuestTooltip: Invalid tooltipId parameter',
+                { tooltipId, data },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            return;
+        }
+
+        if (!data || typeof data !== 'object') {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'showQuestTooltip: Invalid data parameter',
+                { tooltipId, data },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            return;
+        }
+
+        if (!event) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'showQuestTooltip: Missing event parameter',
+                { tooltipId, data },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            return;
+        }
+
+        // Clear any existing timeout for this tooltip
+        if (tooltipTimeouts.has(tooltipId)) {
+            clearTimeout(tooltipTimeouts.get(tooltipId));
+            tooltipTimeouts.delete(tooltipId);
+        }
+        
+        // Set new timeout to show tooltip after delay
+        const timeoutId = setTimeout(() => {
+            try {
+                const tooltip = getOrCreateQuestTooltip(tooltipId);
+                
+                // Validate required data properties with defaults
+                const questName = data.questName || 'Unknown Quest';
+                const objectiveIndex = typeof data.objectiveIndex === 'number' ? data.objectiveIndex : 0;
+                const objectiveState = data.objectiveState || 'active';
+                const description = data.description || 'No description available';
+                const controls = data.controls || '';
+                const isGM = Boolean(data.isGM);
+                
+                // Add visibility status to tooltip for GM
+                const visibilityStatus = isGM ? 
+                    `<div class="quest-pin-tooltip-visibility">
+                        ${objectiveState === 'hidden' ? 'Hidden from players' : 'Visible to all players'}
+                    </div>` : '';
+                
+                tooltip.innerHTML = `
+                    <div class="quest-pin-tooltip-title">${questName}</div>
+                    <div class="quest-pin-tooltip-objective">Objective ${objectiveIndex + 1}</div>
+                    <div class="quest-pin-tooltip-state">State: ${objectiveState.charAt(0).toUpperCase() + objectiveState.slice(1)}</div>
+                    <div class="quest-pin-tooltip-description">${description}</div>
+                    ${visibilityStatus}
+                    <div class="quest-pin-tooltip-controls">
+                        ${controls}
+                    </div>
+                `;
+                tooltip.style.display = 'block';
+                
+                // Position tooltip near mouse with small offset
+                const mouse = event.data?.originalEvent || event;
+                if (mouse && typeof mouse.clientX === 'number' && typeof mouse.clientY === 'number') {
+                    tooltip.style.left = (mouse.clientX + 16) + 'px';
+                    tooltip.style.top = (mouse.clientY + 8) + 'px';
+                }
+                
+                // Clear the timeout reference
+                tooltipTimeouts.delete(tooltipId);
+            } catch (error) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'showQuestTooltip: Error in timeout callback',
+                    { tooltipId, error: error.message },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
+            }
+        }, delay);
+        
+        // Store the timeout reference
+        tooltipTimeouts.set(tooltipId, timeoutId);
+    } catch (error) {
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'showQuestTooltip: Unexpected error',
+            { tooltipId, error: error.message },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
     }
-    
-    // Set new timeout to show tooltip after delay
-    const timeoutId = setTimeout(() => {
-        const tooltip = getOrCreateQuestTooltip(tooltipId);
-        
-        // Add visibility status to tooltip for GM
-        const visibilityStatus = data.isGM ? 
-            `<div class="quest-pin-tooltip-visibility">
-                ${data.objectiveState === 'hidden' ? 'Hidden from players' : 'Visible to all players'}
-            </div>` : '';
-        
-        tooltip.innerHTML = `
-            <div class="quest-pin-tooltip-title">${data.questName}</div>
-            <div class="quest-pin-tooltip-objective">Objective ${data.objectiveIndex + 1}</div>
-            <div class="quest-pin-tooltip-state">State: ${data.objectiveState.charAt(0).toUpperCase() + data.objectiveState.slice(1)}</div>
-            <div class="quest-pin-tooltip-description">${data.description}</div>
-            ${visibilityStatus}
-            <div class="quest-pin-tooltip-controls">
-                ${data.controls}
-            </div>
-        `;
-        tooltip.style.display = 'block';
-        
-        // Position tooltip near mouse with small offset
-        const mouse = event.data?.originalEvent || event;
-        tooltip.style.left = (mouse.clientX + 16) + 'px';
-        tooltip.style.top = (mouse.clientY + 8) + 'px';
-        
-        // Clear the timeout reference
-        tooltipTimeouts.delete(tooltipId);
-    }, delay);
-    
-    // Store the timeout reference
-    tooltipTimeouts.set(tooltipId, timeoutId);
 }
 
 /**
@@ -440,22 +509,90 @@ export function getTaskText(questData, objectiveIndex) {
  * @returns {Promise<Object|null>} Tooltip data or null if not found
  */
 export async function getObjectiveTooltipData(questUuid, objectiveIndex) {
-    if (!questUuid) return null;
-    const doc = await fromUuid(questUuid);
-    if (!doc) return null;
-    const questData = doc.system;
-    const questName = doc.name;
-    const description = getTaskText(questData, objectiveIndex);
-    // Determine state (if available)
-    let objectiveState = 'active';
-    if (questData.tasks && Array.isArray(questData.tasks) && questData.tasks[objectiveIndex]) {
-        objectiveState = questData.tasks[objectiveIndex].state || 'active';
+    try {
+        // Validate input parameters
+        if (!questUuid || typeof questUuid !== 'string') {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'getObjectiveTooltipData: Invalid questUuid parameter',
+                { questUuid, objectiveIndex },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            return null;
+        }
+
+        if (typeof objectiveIndex !== 'number' || objectiveIndex < 0) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'getObjectiveTooltipData: Invalid objectiveIndex parameter',
+                { questUuid, objectiveIndex },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            return null;
+        }
+
+        // Fetch the quest document
+        const doc = await fromUuid(questUuid);
+        if (!doc) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'getObjectiveTooltipData: Quest document not found',
+                { questUuid, objectiveIndex },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            return null;
+        }
+
+        // Validate document structure
+        if (!doc.system) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'getObjectiveTooltipData: Quest document missing system data',
+                { questUuid, objectiveIndex, docName: doc.name },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            return null;
+        }
+
+        const questData = doc.system;
+        const questName = doc.name || 'Unknown Quest';
+
+        // Get task description with error handling
+        const description = getTaskText(questData, objectiveIndex);
+
+        // Determine objective state with proper null checks
+        let objectiveState = 'active';
+        if (questData.tasks && Array.isArray(questData.tasks)) {
+            const task = questData.tasks[objectiveIndex];
+            if (task && typeof task === 'object' && task.state) {
+                objectiveState = task.state;
+            }
+        }
+
+        return {
+            questName,
+            objectiveIndex,
+            objectiveState,
+            description,
+            isGM: game.user.isGM
+        };
+    } catch (error) {
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'getObjectiveTooltipData: Unexpected error',
+            { questUuid, objectiveIndex, error: error.message },
+            false,
+                false,
+                true,
+                MODULE.TITLE
+        );
+        return null;
     }
-    return {
-        questName,
-        objectiveIndex,
-        objectiveState,
-        description,
-        isGM: game.user.isGM
-    };
 } 
