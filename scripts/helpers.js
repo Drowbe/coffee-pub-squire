@@ -48,6 +48,16 @@ function getDamageInfo(item) {
     return null;
 }
 
+// Helper function to get quest number from UUID
+function getQuestNumber(questUuid) {
+    let hash = 0;
+    for (let i = 0; i < questUuid.length; i++) {
+        hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash) % 100 + 1;
+}
+
 export const registerHelpers = function() {
     // Helper for repeating n times
     Handlebars.registerHelper('times', function(n, options) {
@@ -290,7 +300,7 @@ export function getOrCreateQuestTooltip(tooltipId) {
     if (!tooltip) {
         tooltip = document.createElement('div');
         tooltip.id = tooltipId;
-        tooltip.className = 'quest-marker-tooltip';
+        tooltip.className = 'quest-tooltip-container';
         document.body.appendChild(tooltip);
     }
     return tooltip;
@@ -544,7 +554,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
         }
         return {
             questName: entry.name,
-            questNumber: entry.questNumber,
+            questNumber: getQuestNumber(page.uuid),
             objectiveIndex,
             objectiveNumber: objectiveIndex + 1,
             objectiveNumberPadded: String(objectiveIndex + 1).padStart(2, '0'),

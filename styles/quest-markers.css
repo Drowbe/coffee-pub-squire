@@ -55,7 +55,7 @@
 }
 
 /* Quest Marker Tooltip Styles */
-.quest-marker-tooltip {
+.quest-tooltip-container {
     position: fixed;
     pointer-events: none;
     background: rgba(30, 30, 30, 0.829);
@@ -66,70 +66,100 @@
     font-family: 'Signika', sans-serif;
     z-index: 10000;
     display: none;
-    max-width: 320px;
+    max-width: 400px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(235, 119, 24, 0.8);
     backdrop-filter: blur(4px);
     animation: tooltip-fade-in 0.2s ease-out;
 }
+@keyframes tooltip-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 0.9;
+        transform: translateY(0);
+    }
+} 
 
 /* Quest Pin Tooltip Content Styles */
-.quest-pin-tooltip-title {
+.quest-tooltip-title {
     font-size: 1.6em;
     font-weight: bold;
-    margin-bottom: 4px;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 12px;
 }
 
-.quest-pin-tooltip-objective {
+.quest-tooltip-quest-number{
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    opacity: 0.8;
+    margin-right: 6px;
+    padding: 0px 4px 0px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.95);
+}
+.quest-tooltip-objective {
     font-weight: 700;
     color: rgba(37, 197, 237, 0.95);
     opacity: 0.8;
-    margin-right: 4px;
+    margin-right: 6px;
 }
 
-.quest-pin-tooltip-state {
+.quest-tooltip-state {
     font-size: 1.0em;
     font-weight: 200;
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(37, 197, 237, 0.95);
     margin-top: 4px;
     margin-bottom: 4px;
     text-transform: uppercase;
+    padding: 0px 4px 0px 4px;
+    border-radius: 3px;
 }
-.quest-pin-tooltip-state.state-active {
+.quest-tooltip-state.state-active {
     color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(37, 197, 237, 0.95);
 }
-.quest-pin-tooltip-state.state-completed {
-    color: rgba(56, 134, 64, 0.95);
+.quest-tooltip-state.state-completed {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(56, 134, 64, 0.95);
 }
-.quest-pin-tooltip-state.state-failed {
-    color: rgba(232, 45, 32, 0.95);
+.quest-tooltip-state.state-failed {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(232, 45, 32, 0.95);
 }
-.quest-pin-tooltip-state.state-hidden {
-    color: rgba(123, 123, 123, 0.95);
+.quest-tooltip-state.state-hidden {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(123, 123, 123, 0.95);
 }
 
-.quest-pin-tooltip-description {
+.quest-tooltip-description {
     font-size: 1.0em;
-    margin-top: 4px;
-    margin-bottom: 4px;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
-
 .quest-pin-gm-hint {
     font-size: .8em;
     font-weight: 200;
-    color: rgba(235, 119, 24, 0.95);
-    margin-top: 4px;
-    margin-bottom: 4px;
+    color: rgba(37, 197, 237, 0.95);
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 4px 4px 4px 4px;
+    border-radius: 3px;
+    border: 1px dotted rgba(255, 255, 255, 0.4);
 }
 
-.quest-pin-tooltip-visibility {
+.quest-tooltip-visibility {
     font-size: .8em;
     font-weight: 200;
     color: rgba(235, 119, 24, 0.95);
-    margin-top: 4px;
-    margin-bottom: 4px;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
-.quest-pin-tooltip-controls {
+.quest-tooltip-controls {
     font-size: .6em;
     font-weight: 200;
     opacity: 0.8;
@@ -138,13 +168,3 @@
     padding-top: 8px;
 }
 
-@keyframes tooltip-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-} 
