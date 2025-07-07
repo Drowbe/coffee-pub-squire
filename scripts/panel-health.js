@@ -20,9 +20,13 @@ export class HealthPanel {
         this.isPoppedOut = HealthPanel.isWindowOpen;
         this.previousSibling = null; // Store reference for position
 
-        // Register for actor updates
-        if (this.actor) {
-            this.actor.apps[this.id] = this;
+        // Register for actor updates from all actors
+        if (this.actors && this.actors.length > 0) {
+            this.actors.forEach(a => {
+                if (a) {
+                    a.apps[this.id] = this;
+                }
+            });
         }
     }
 
@@ -40,12 +44,25 @@ export class HealthPanel {
             return; // No change, don't update
         }
         
+        // Unregister from old actors
+        if (this.actors && this.actors.length > 0) {
+            this.actors.forEach(actor => {
+                if (actor) {
+                    delete actor.apps[this.id];
+                }
+            });
+        }
+        
         this.actors = actors || [];
         this.actor = actors?.[0] || null; // Keep first actor as primary for compatibility
         
-        // Re-register for updates
-        if (this.actor) {
-            this.actor.apps[this.id] = this;
+        // Re-register for updates from all actors
+        if (this.actors && this.actors.length > 0) {
+            this.actors.forEach(actor => {
+                if (actor) {
+                    actor.apps[this.id] = this;
+                }
+            });
         }
         
         // Update window if popped out
@@ -264,6 +281,15 @@ export class HealthPanel {
 
     // Update actor reference and window if needed
     updateActor(actor) {
+        // Unregister from all actors
+        if (this.actors && this.actors.length > 0) {
+            this.actors.forEach(a => {
+                if (a) {
+                    delete a.apps[this.id];
+                }
+            });
+        }
+        
         // Update actor reference
         this.actor = actor;
         this.actors = actor ? [actor] : [];

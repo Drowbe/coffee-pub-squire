@@ -5,8 +5,14 @@ export class HealthWindow extends Application {
         super(options);
         this.panel = options.panel;
         
-        // Register for actor updates
-        if (this.panel?.actor) {
+        // Register for actor updates from all actors in the selection
+        if (this.panel?.actors && this.panel.actors.length > 0) {
+            this.panel.actors.forEach(actor => {
+                if (actor) {
+                    actor.apps[this.appId] = this;
+                }
+            });
+        } else if (this.panel?.actor) {
             this.panel.actor.apps[this.appId] = this;
         }
     }
@@ -15,7 +21,13 @@ export class HealthWindow extends Application {
         const result = await super.render(force, options);
         
         // Ensure we're registered for actor updates after rendering
-        if (this.panel?.actor && !this.panel.actor.apps[this.appId]) {
+        if (this.panel?.actors && this.panel.actors.length > 0) {
+            this.panel.actors.forEach(actor => {
+                if (actor && !actor.apps[this.appId]) {
+                    actor.apps[this.appId] = this;
+                }
+            });
+        } else if (this.panel?.actor && !this.panel.actor.apps[this.appId]) {
             this.panel.actor.apps[this.appId] = this;
         }
         
@@ -114,8 +126,14 @@ export class HealthWindow extends Application {
     }
 
     async close(options={}) {
-        // Unregister from actor updates
-        if (this.panel?.actor) {
+        // Unregister from actor updates from all actors
+        if (this.panel?.actors && this.panel.actors.length > 0) {
+            this.panel.actors.forEach(actor => {
+                if (actor) {
+                    delete actor.apps[this.appId];
+                }
+            });
+        } else if (this.panel?.actor) {
             delete this.panel.actor.apps[this.appId];
         }
         
@@ -160,14 +178,21 @@ export class HealthWindow extends Application {
 
     // Update the panel reference and re-register for updates when the actor changes
     updateActor(actor) {
-        // Unregister from old actor
-        if (this.panel?.actor) {
+        // Unregister from all actors
+        if (this.panel?.actors && this.panel.actors.length > 0) {
+            this.panel.actors.forEach(a => {
+                if (a) {
+                    delete a.apps[this.appId];
+                }
+            });
+        } else if (this.panel?.actor) {
             delete this.panel.actor.apps[this.appId];
         }
         
         // Update panel's actor
         if (this.panel) {
             this.panel.actor = actor;
+            this.panel.actors = actor ? [actor] : [];
         }
         
         // Register with new actor
@@ -192,9 +217,13 @@ export class HealthWindow extends Application {
             this.panel.actor = actors?.[0] || null;
         }
         
-        // Register with new primary actor
-        if (this.panel?.actor) {
-            this.panel.actor.apps[this.appId] = this;
+        // Register with ALL actors in the selection for updates
+        if (actors && actors.length > 0) {
+            actors.forEach(actor => {
+                if (actor) {
+                    actor.apps[this.appId] = this;
+                }
+            });
         }
         
         // Re-render with new actor data
