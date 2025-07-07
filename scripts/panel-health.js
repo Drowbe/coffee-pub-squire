@@ -13,6 +13,7 @@ export class HealthPanel {
 
     constructor(actor) {
         this.actor = actor;
+        this.actors = actor ? [actor] : []; // Support multiple actors for bulk operations
         this.element = null;
         // Check if there's an active window and restore state
         this.window = HealthPanel.activeWindow;
@@ -26,7 +27,31 @@ export class HealthPanel {
     }
 
     get id() {
-        return `squire-health-${this.actor.id}`;
+        return `squire-health-${this.actor?.id || 'multi'}`;
+    }
+
+    // Method to update actors for bulk operations
+    updateActors(actors) {
+        // Prevent infinite loops by checking if actors have actually changed
+        const currentActorIds = (this.actors || []).map(a => a.id).sort();
+        const newActorIds = (actors || []).map(a => a.id).sort();
+        
+        if (JSON.stringify(currentActorIds) === JSON.stringify(newActorIds)) {
+            return; // No change, don't update
+        }
+        
+        this.actors = actors || [];
+        this.actor = actors?.[0] || null; // Keep first actor as primary for compatibility
+        
+        // Re-register for updates
+        if (this.actor) {
+            this.actor.apps[this.id] = this;
+        }
+        
+        // Update window if popped out
+        if (this.isPoppedOut && this.window) {
+            this.window.updateActors(actors);
+        }
     }
 
     static get defaultOptions() {
@@ -46,6 +71,7 @@ export class HealthPanel {
 
         const templateData = {
             actor: this.actor,
+            actors: this.actors, // Pass all actors for bulk operations
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             isGM: game.user.isGM,
             isHealthPopped: this.isPoppedOut
@@ -240,6 +266,7 @@ export class HealthPanel {
     updateActor(actor) {
         // Update actor reference
         this.actor = actor;
+        this.actors = actor ? [actor] : [];
         
         // Re-register for updates
         if (actor) {
@@ -254,26 +281,74 @@ export class HealthPanel {
 
     async _onHPChange(direction) {
         const amount = parseInt(this.element.find('.hp-amount').val()) || 1;
-        const hp = this.actor.system.attributes.hp;
-        const newValue = Math.clamp(hp.value + (amount * direction), 0, hp.max);
-        await this.actor.update({'system.attributes.hp.value': newValue});
+        
+        // Handle bulk operations if multiple actors
+        if (this.actors.length > 1) {
+            const updates = this.actors.map(actor => {
+                const hp = actor.system.attributes.hp;
+                const newValue = Math.clamp(hp.value + (amount * direction), 0, hp.max);
+                return { _id: actor.id, 'system.attributes.hp.value': newValue };
+            });
+            await Actor.updateDocuments(updates);
+        } else if (this.actor) {
+            // Single actor operation
+            const hp = this.actor.system.attributes.hp;
+            const newValue = Math.clamp(hp.value + (amount * direction), 0, hp.max);
+            await this.actor.update({'system.attributes.hp.value': newValue});
+        }
     }
 
     async _onFullHeal() {
-        const hp = this.actor.system.attributes.hp;
-        await this.actor.update({'system.attributes.hp.value': hp.max});
+        // Handle bulk operations if multiple actors
+        if (this.actors.length > 1) {
+            const updates = this.actors.map(actor => {
+                const hp = actor.system.attributes.hp;
+                return { _id: actor.id, 'system.attributes.hp.value': hp.max };
+            });
+            await Actor.updateDocuments(updates);
+        } else if (this.actor) {
+            // Single actor operation
+            const hp = this.actor.system.attributes.hp;
+            await this.actor.update({'system.attributes.hp.value': hp.max});
+        }
     }
 
     async _onDeathToggle() {
-        const isDead = this.actor.effects.find(e => e.statuses.has('dead'));
-        if (isDead) {
-            await this.actor.deleteEmbeddedDocuments('ActiveEffect', [isDead.id]);
-        } else {
-            const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
-            if (effect) {
-                await this.actor.createEmbeddedDocuments('ActiveEffect', [effect]);
-                // Set HP to 0 when applying dead status
-                await this.actor.update({'system.attributes.hp.value': 0});
+        // Handle bulk operations if multiple actors
+        if (this.actors.length > 1) {
+            const updates = [];
+            const effectUpdates = [];
+            
+            for (const actor of this.actors) {
+                const isDead = actor.effects.find(e => e.statuses.has('dead'));
+                if (isDead) {
+                    // Remove dead status
+                    effectUpdates.push({ _id: actor.id, embedded: { ActiveEffect: [{ _id: isDead.id, _operation: 2 }] } });
+                } else {
+                    // Add dead status and set HP to 0
+                    const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
+                    if (effect) {
+                        effectUpdates.push({ _id: actor.id, embedded: { ActiveEffect: [effect] } });
+                        updates.push({ _id: actor.id, 'system.attributes.hp.value': 0 });
+                    }
+                }
+            }
+            
+            // Apply all updates
+            if (updates.length > 0) await Actor.updateDocuments(updates);
+            if (effectUpdates.length > 0) await Actor.updateDocuments(effectUpdates);
+        } else if (this.actor) {
+            // Single actor operation
+            const isDead = this.actor.effects.find(e => e.statuses.has('dead'));
+            if (isDead) {
+                await this.actor.deleteEmbeddedDocuments('ActiveEffect', [isDead.id]);
+            } else {
+                const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
+                if (effect) {
+                    await this.actor.createEmbeddedDocuments('ActiveEffect', [effect]);
+                    // Set HP to 0 when applying dead status
+                    await this.actor.update({'system.attributes.hp.value': 0});
+                }
             }
         }
     }

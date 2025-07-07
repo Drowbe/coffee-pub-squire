@@ -56,12 +56,17 @@ export class HealthWindow extends Application {
     getData() {
         const data = {
             actor: this.panel.actor,
+            actors: this.panel.actors, // Pass all actors for bulk operations
             position: "left",
             isGM: game.user.isGM,
             isHealthPopped: true
         };
-        // Update window title with actor name
-        this.options.title = `Health: ${this.panel.actor?.name || 'No Character Selected'}`;
+        // Update window title with actor name or multiple selection
+        if (this.panel.actors && this.panel.actors.length > 1) {
+            this.options.title = `Health: Multiple Selected (${this.panel.actors.length})`;
+        } else {
+            this.options.title = `Health: ${this.panel.actor?.name || 'No Character Selected'}`;
+        }
         return data;
     }
 
@@ -168,6 +173,28 @@ export class HealthWindow extends Application {
         // Register with new actor
         if (actor) {
             actor.apps[this.appId] = this;
+        }
+        
+        // Re-render with new actor data
+        this.render(false);
+    }
+
+    // Update the panel with multiple actors for bulk operations
+    updateActors(actors) {
+        // Unregister from old actor
+        if (this.panel?.actor) {
+            delete this.panel.actor.apps[this.appId];
+        }
+        
+        // Update panel's actors directly (avoid recursive call)
+        if (this.panel) {
+            this.panel.actors = actors || [];
+            this.panel.actor = actors?.[0] || null;
+        }
+        
+        // Register with new primary actor
+        if (this.panel?.actor) {
+            this.panel.actor.apps[this.appId] = this;
         }
         
         // Re-render with new actor data

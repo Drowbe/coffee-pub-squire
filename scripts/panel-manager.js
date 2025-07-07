@@ -361,6 +361,13 @@ export class PanelManager {
         // Only create health panel if not popped out
         if (!HealthPanel.isWindowOpen) {
             this.healthPanel = new HealthPanel(this.actor);
+            
+            // Update health panel with all controlled actors for bulk operations
+            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+            const controlledActors = controlledTokens.map(t => t.actor);
+            if (controlledActors.length > 0) {
+                this.healthPanel.updateActors(controlledActors);
+            }
         }
 
         // Only create dice tray panel if not popped out
@@ -2839,7 +2846,10 @@ Hooks.on('controlToken', async (token, controlled) => {
     // If no tokens are controlled, return
     if (!controlledTokens.length) return;
 
-    // Determine which actor to use:
+    // Get all controlled actors for bulk operations
+    const controlledActors = controlledTokens.map(t => t.actor);
+
+    // Determine which actor to use for primary operations:
     // - If the list includes player-owned characters, use the most recent player character
     // - Otherwise, use the most recently selected token's actor
     let actorToUse = token.actor; // Default to the current token that triggered the hook
@@ -2860,6 +2870,22 @@ Hooks.on('controlToken', async (token, controlled) => {
         PanelManager.element.removeClass('expanded');
         await PanelManager.initialize(actorToUse);
         
+        // Update health panel with all controlled actors for bulk operations
+        if (PanelManager.instance && PanelManager.instance.healthPanel) {
+            // Only update if the actors have actually changed
+            const currentActors = PanelManager.instance.healthPanel.actors || [];
+            const currentActorIds = currentActors.map(a => a.id).sort();
+            const newActorIds = controlledActors.map(a => a.id).sort();
+            
+            if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
+                PanelManager.instance.healthPanel.updateActors(controlledActors);
+                // Only render if not popped out
+                if (!PanelManager.instance.healthPanel.isPoppedOut) {
+                    await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
+                }
+            }
+        }
+        
         // Play tray open sound
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         if (blacksmith) {
@@ -2877,6 +2903,23 @@ Hooks.on('controlToken', async (token, controlled) => {
 
     // If pinned, just update the data immediately
     await PanelManager.initialize(actorToUse);
+    
+    // Update health panel with all controlled actors for bulk operations
+    if (PanelManager.instance && PanelManager.instance.healthPanel) {
+        // Only update if the actors have actually changed
+        const currentActors = PanelManager.instance.healthPanel.actors || [];
+        const currentActorIds = currentActors.map(a => a.id).sort();
+        const newActorIds = controlledActors.map(a => a.id).sort();
+        
+        if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
+            PanelManager.instance.healthPanel.updateActors(controlledActors);
+            // Only render if not popped out
+            if (!PanelManager.instance.healthPanel.isPoppedOut) {
+                await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
+            }
+        }
+    }
+    
     // Restore the previous view mode after initializing
     if (PanelManager.instance) {
         await PanelManager.instance.setViewMode(currentViewMode);

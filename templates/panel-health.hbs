@@ -2,7 +2,7 @@
     
     {{#unless isHealthPopped}}
     <div class="tray-title-small">
-        <span>Health: {{#if actor}}{{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}{{else}}No Character Selected{{/if}}</span>
+        <span>Health: {{#if actors}}{{#if (gt actors.length 1)}}Multiple Selected ({{actors.length}}){{else}}{{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}{{/if}}{{else}}No Character Selected{{/if}}</span>
         <div class="health-controls">
             <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
             <i class="fas fa-chevron-down health-toggle" title="Toggle Health Panel"></i>
@@ -11,9 +11,13 @@
     {{/unless}}
     <div class="health-content">
         <div class="bars">
-            <div class="bar-section">
-                <div class="hp-bar">
-                    {{#if actor}}
+            {{#if actors}}
+                {{#each actors as |actor|}}
+                <div class="bar-section {{#if (gt ../actors.length 1)}}multi-token{{/if}}">
+                    {{#if (gt ../actors.length 1)}}
+                    <div class="token-name">{{actor.name}}</div>
+                    {{/if}}
+                    <div class="hp-bar">
                         <div class="hp-current">
                             <span class="hp-label">REMAINING</span>
                             <span class="hp-value">{{actor.system.attributes.hp.value}}</span>
@@ -23,28 +27,50 @@
                             <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
                             <span class="hp-label">MAX</span>
                         </div>
-                    {{else}}
-                        <div class="hp-fill hp-no-actor">No Health to Display</div>
-                    {{/if}}
+                    </div>
                 </div>
+                {{/each}}
                 {{#if isGM}}
-                <div class="hp-controls {{#unless actor}}disabled{{/unless}}">
-                    <button class="hp-btn death-toggle" {{#unless actor}}disabled{{/unless}} title="{{#if actor}}Toggle Dead Status{{else}}No character selected{{/if}}">
+                <div class="hp-controls">
+                    <button class="hp-btn death-toggle" title="{{#if (gt actors.length 1)}}Toggle Dead Status for All{{else}}Toggle Dead Status{{/if}}">
                         <i class="fas fa-skull"></i>
                     </button>
-                    <button class="hp-btn hp-down" {{#unless actor}}disabled{{/unless}} title="{{#if actor}}Decrease HP{{else}}No character selected{{/if}}">
+                    <button class="hp-btn hp-down" title="{{#if (gt actors.length 1)}}Decrease HP for All{{else}}Decrease HP{{/if}}">
                         <i class="fas fa-caret-down"></i>
                     </button>
-                    <input type="number" class="hp-amount" value="" placeholder="1" {{#unless actor}}disabled{{/unless}}>
-                    <button class="hp-btn hp-up" {{#unless actor}}disabled{{/unless}} title="{{#if actor}}Increase HP{{else}}No character selected{{/if}}">
+                    <input type="number" class="hp-amount" value="" placeholder="1">
+                    <button class="hp-btn hp-up" title="{{#if (gt actors.length 1)}}Increase HP for All{{else}}Increase HP{{/if}}">
                         <i class="fas fa-caret-up"></i>
                     </button>
-                    <button class="hp-btn hp-full" {{#unless actor}}disabled{{/unless}} title="{{#if actor}}Full Heal{{else}}No character selected{{/if}}">
+                    <button class="hp-btn hp-full" title="{{#if (gt actors.length 1)}}Full Heal All{{else}}Full Heal{{/if}}">
                         <i class="fas fa-heart"></i>
                     </button>
                 </div>
                 {{/if}}
-            </div>
+            {{else}}
+                <div class="bar-section">
+                    <div class="hp-bar">
+                        <div class="hp-fill hp-no-actor">No Health to Display</div>
+                    </div>
+                    {{#if isGM}}
+                    <div class="hp-controls disabled">
+                        <button class="hp-btn death-toggle" disabled title="No character selected">
+                            <i class="fas fa-skull"></i>
+                        </button>
+                        <button class="hp-btn hp-down" disabled title="No character selected">
+                            <i class="fas fa-caret-down"></i>
+                        </button>
+                        <input type="number" class="hp-amount" value="" placeholder="1" disabled>
+                        <button class="hp-btn hp-up" disabled title="No character selected">
+                            <i class="fas fa-caret-up"></i>
+                        </button>
+                        <button class="hp-btn hp-full" disabled title="No character selected">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                    {{/if}}
+                </div>
+            {{/if}}
         </div>
     </div>
     
