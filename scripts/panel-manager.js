@@ -437,15 +437,28 @@ export class PanelManager {
 
                             // Mark if a pin exists on the canvas for this objective (GM: any pin, Player: only visible pins)
                             let hasPinOnCanvas = false;
+                            let hasPinNearby = false;
                             if (canvas.squirePins && canvas.squirePins.children) {
                                 if (game.user.isGM) {
                                     hasPinOnCanvas = canvas.squirePins.children.some(child =>
                                         child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === index
                                     );
+                                    // For hidden objectives, check if there's a pin on the canvas (for GM awareness)
+                                    if (state === 'hidden') {
+                                        hasPinNearby = canvas.squirePins.children.some(child =>
+                                            child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === index
+                                        );
+                                    }
                                 } else {
                                     hasPinOnCanvas = canvas.squirePins.children.some(child =>
                                         child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === index && child.shouldBeVisible()
                                     );
+                                    // For hidden objectives, check if there's a pin on the canvas (even if not visible to player)
+                                    if (state === 'hidden') {
+                                        hasPinNearby = canvas.squirePins.children.some(child =>
+                                            child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === index
+                                        );
+                                    }
                                 }
                             }
 
@@ -455,7 +468,8 @@ export class PanelManager {
                                 state: state,
                                 index: index,
                                 objectiveNumber: objectiveNumber,
-                                hasPinOnCanvas: hasPinOnCanvas
+                                hasPinOnCanvas: hasPinOnCanvas,
+                                hasPinNearby: hasPinNearby
                             };
                         });
                         // Reverse the order of tasks for the handle only, so the last objective is at the top

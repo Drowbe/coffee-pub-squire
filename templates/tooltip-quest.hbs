@@ -1,6 +1,9 @@
 <div>
   <div class="quest-tooltip-title"><span class="quest-tooltip-quest-number">{{questNumber}}</span><span class="quest-tooltip-objective">{{objectiveNumberPadded}}</span>{{questName}}</div>
   <span class="quest-tooltip-state state-{{objectiveState}}">{{objectiveState}}</span>
+  {{#if objectiveNearby}}
+    <span class="quest-tooltip-state state-nearby">Objective Nearby</span>
+  {{/if}}
   <div class="quest-tooltip-description">{{description}}</div>
   {{#if gmHint}}
     <div class="quest-pin-gm-hint">GM Note: {{gmHint}}</div>

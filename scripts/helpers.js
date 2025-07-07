@@ -1,5 +1,6 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { QuestParser } from './quest-parser.js';
+import { QuestPin } from './quest-pin.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -562,6 +563,16 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
             description = 'You have not uncovered this quest objective yet.';
         }
         
+        // Check if there's a pin nearby for hidden objectives
+        let objectiveNearby = false;
+        if (task.state === 'hidden') {
+            if (canvas.squirePins && canvas.squirePins.children) {
+                objectiveNearby = canvas.squirePins.children.some(child =>
+                    child instanceof QuestPin && child.questUuid === questPageUuid && child.objectiveIndex === objectiveIndex
+                );
+            }
+        }
+        
         return {
             questName,
             questNumber: getQuestNumber(page.uuid),
@@ -572,7 +583,8 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
             description,
             gmHint: (game.user.isGM && task.gmHint) ? task.gmHint : undefined,
             visibility,
-            isGM: game.user.isGM
+            isGM: game.user.isGM,
+            objectiveNearby
         };
     } catch (error) {
         getBlacksmith()?.utils.postConsoleAndNotification(
