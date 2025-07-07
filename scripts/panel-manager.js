@@ -2603,6 +2603,35 @@ export class PanelManager {
                 return;
             }
             
+            // Check if the objective is hidden for non-GM users
+            if (!game.user.isGM) {
+                try {
+                    // Find the journal page by UUID
+                    let page = null;
+                    for (const journal of game.journal.contents) {
+                        page = journal.pages.find(p => p.uuid === pinnedQuestUuid);
+                        if (page) break;
+                    }
+                    
+                    if (page) {
+                        // Enrich the page HTML if needed
+                        const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
+                        // Parse the quest entry using the source of truth
+                        const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
+                        
+                        if (entry && entry.tasks[taskIndex]) {
+                            const task = entry.tasks[taskIndex];
+                            if (task.state === 'hidden') {
+                                ui.notifications.warn(`No pin found for objective ${taskIndex + 1}.`);
+                                return;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking objective visibility:', error);
+                }
+            }
+            
             // Find the corresponding quest pin on the canvas
             if (canvas.squirePins && canvas.squirePins.children) {
                 const questPins = canvas.squirePins.children.filter(child =>

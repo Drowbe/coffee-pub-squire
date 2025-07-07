@@ -621,6 +621,10 @@
 .squire-tray[data-position="left"] .handle-quest-progress-square.objective-pins-oncanvas {
     border: 1px solid rgba(42, 100, 165, 0.7);
 }
+.squire-tray[data-position="left"] .handle-quest-progress-square.objective-pins-nearby {
+    border: 1px solid rgba(165, 81, 42, 0.7);
+}
+
 
 .squire-tray[data-position="left"] .handle-quest-progress-fill {
     width: 100%;

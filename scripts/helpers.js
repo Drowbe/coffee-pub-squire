@@ -552,14 +552,24 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
                 visibility = 'Visible to GM and Players';
             }
         }
+        
+        // For non-GM users, if the objective is hidden, show placeholder text
+        let questName = entry.name;
+        let description = task.text || 'Objective';
+        
+        if (!game.user.isGM && task.state === 'hidden') {
+            questName = 'Objective Not Discovered';
+            description = 'You have not uncovered this quest objective yet.';
+        }
+        
         return {
-            questName: entry.name,
+            questName,
             questNumber: getQuestNumber(page.uuid),
             objectiveIndex,
             objectiveNumber: objectiveIndex + 1,
             objectiveNumberPadded: String(objectiveIndex + 1).padStart(2, '0'),
             objectiveState: task.state || 'active',
-            description: task.text || 'Objective',
+            description,
             gmHint: (game.user.isGM && task.gmHint) ? task.gmHint : undefined,
             visibility,
             isGM: game.user.isGM
