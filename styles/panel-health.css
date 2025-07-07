@@ -69,6 +69,18 @@
     transition: none !important;
 }
 
+.hp-fill.hp-no-actor {
+    width: 100%; 
+    height: 100%;
+    display: flex;
+    align-items: center;     /* Vertical alignment */
+    justify-content: center; /* Horizontal alignment */
+    text-transform: uppercase;
+    font-size: .8em;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5)
+}
+
 .squire-tray[data-position="left"] [data-panel="health"] .hp-controls {
     display: flex;
     gap: 6px;

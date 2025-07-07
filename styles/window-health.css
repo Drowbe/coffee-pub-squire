@@ -114,8 +114,8 @@
     align-items: center !important;
     justify-content: space-between !important;
     padding: 0 8px !important;
+    margin-bottom: 4px;
 }
-
 /* Window-specific HP fill */
 .squire-window-health[data-position="left"] [data-panel="health"] .hp-fill {
     position: absolute !important;
@@ -228,10 +228,11 @@
     order: 2 !important;
 }
 
+
 /* Window-specific multi-token styling */
 .squire-window-health[data-position="left"] [data-panel="health"] .bar-section.multi-token {
-    margin-bottom: 8px !important;
-    padding-bottom: 8px !important;
+    margin-bottom: 2px !important;
+    padding-bottom: 0px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
