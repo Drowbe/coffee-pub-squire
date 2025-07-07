@@ -22,7 +22,7 @@
    - **Status**: COMPLETED - Added `objective-pins-oncanvas` class for objectives with visible pins
 
 7. **Fix handle quest data loading on scene change** - Pinned quest in handle disappears when changing scenes, handle quest items not loading properly on scene change
-   - **Status**: COMPLETED - Added missing `canvasSceneChange` hook to `panel-manager.js` to refresh handle quest data
+   - **Status**: PENDING - need to usnderstand why the data isn't loading
 
 ### 🔄 Pending
 8. **Add proper error handling for tooltip data** - `getObjectiveTooltipData()` doesn't handle null/undefined cases
