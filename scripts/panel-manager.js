@@ -21,6 +21,13 @@ import { MacrosPanel } from "./panel-macros.js";
 import { PrintCharacterSheet } from './print-character.js';
 import { QuestPin } from './quest-pin.js';
 
+// Add multi-select tracking variables at the top of the file
+let _multiSelectTimeout = null;
+let _lastSelectionTime = 0;
+let _selectionCount = 0;
+const MULTI_SELECT_DELAY = 150; // ms to wait after last selection event
+const SINGLE_SELECT_THRESHOLD = 300; // ms threshold to consider as single selection
+
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
@@ -2840,8 +2847,51 @@ Hooks.on('controlToken', async (token, controlled) => {
     // Only proceed if it's a GM or the token owner
     if (!game.user.isGM && !token.actor?.isOwner) return;
 
+    // Track selection timing and count
+    const now = Date.now();
+    const timeSinceLastSelection = now - _lastSelectionTime;
+    _lastSelectionTime = now;
+    _selectionCount++;
+
+    // Clear any existing timeout
+    if (_multiSelectTimeout) {
+        clearTimeout(_multiSelectTimeout);
+        _multiSelectTimeout = null;
+    }
+
+    // Determine if this is likely multi-selection
+    const isMultiSelect = _selectionCount > 1 && timeSinceLastSelection < SINGLE_SELECT_THRESHOLD;
+
+    // Debug logging
+    console.log(`${MODULE.ID} | Selection: count=${_selectionCount}, timeSince=${timeSinceLastSelection}ms, isMulti=${isMultiSelect}`);
+
+    // For multi-selection, debounce the update
+    if (isMultiSelect) {
+        console.log(`${MODULE.ID} | Multi-select detected, debouncing update...`);
+        _multiSelectTimeout = setTimeout(async () => {
+            console.log(`${MODULE.ID} | Executing debounced multi-select update`);
+            await _updateHealthPanelFromSelection();
+            _selectionCount = 0; // Reset counter
+        }, MULTI_SELECT_DELAY);
+        return;
+    }
+
+    // For single selection or first selection, update immediately
+    await _updateHealthPanelFromSelection();
+    
+    // Reset counter if enough time has passed
+    if (timeSinceLastSelection > SINGLE_SELECT_THRESHOLD) {
+        _selectionCount = 0;
+    }
+});
+
+// Helper function to update health panel from current selection
+async function _updateHealthPanelFromSelection() {
     // Get a list of all controlled tokens that the user owns
     const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+    
+    // Debug logging
+    console.log(`${MODULE.ID} | Updating health panel: ${controlledTokens.length} controlled tokens`);
     
     // If no tokens are controlled, return
     if (!controlledTokens.length) return;
@@ -2852,7 +2902,7 @@ Hooks.on('controlToken', async (token, controlled) => {
     // Determine which actor to use for primary operations:
     // - If the list includes player-owned characters, use the most recent player character
     // - Otherwise, use the most recently selected token's actor
-    let actorToUse = token.actor; // Default to the current token that triggered the hook
+    let actorToUse = controlledActors[0]; // Default to the first actor
    
     // Look for player character tokens
     const playerTokens = controlledTokens.filter(t => t.actor?.type === 'character' && t.actor?.hasPlayerOwner);
@@ -2878,11 +2928,14 @@ Hooks.on('controlToken', async (token, controlled) => {
             const newActorIds = controlledActors.map(a => a.id).sort();
             
             if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
+                console.log(`${MODULE.ID} | Health panel actors changed, updating...`);
                 PanelManager.instance.healthPanel.updateActors(controlledActors);
                 // Only render if not popped out
                 if (!PanelManager.instance.healthPanel.isPoppedOut) {
                     await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
                 }
+            } else {
+                console.log(`${MODULE.ID} | Health panel actors unchanged, skipping update`);
             }
         }
         
@@ -2912,11 +2965,14 @@ Hooks.on('controlToken', async (token, controlled) => {
         const newActorIds = controlledActors.map(a => a.id).sort();
         
         if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
+            console.log(`${MODULE.ID} | Health panel actors changed (pinned), updating...`);
             PanelManager.instance.healthPanel.updateActors(controlledActors);
             // Only render if not popped out
             if (!PanelManager.instance.healthPanel.isPoppedOut) {
                 await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
             }
+        } else {
+            console.log(`${MODULE.ID} | Health panel actors unchanged (pinned), skipping update`);
         }
     }
     
@@ -2924,7 +2980,7 @@ Hooks.on('controlToken', async (token, controlled) => {
     if (PanelManager.instance) {
         await PanelManager.instance.setViewMode(currentViewMode);
     }
-});
+}
 
 // Also handle when tokens are deleted or actors are updated
 Hooks.on('deleteToken', async (token) => {
@@ -3061,6 +3117,15 @@ Hooks.on('closeGame', () => {
 // Clean up when the module is disabled
 Hooks.on('disableModule', (moduleId) => {
     if (moduleId === MODULE.ID) {
+        // Clear any pending multi-select timeout
+        if (_multiSelectTimeout) {
+            clearTimeout(_multiSelectTimeout);
+            _multiSelectTimeout = null;
+        }
+        // Reset selection tracking
+        _selectionCount = 0;
+        _lastSelectionTime = 0;
+        
         PanelManager.cleanup();
     }
 }); 
@@ -3072,24 +3137,19 @@ Hooks.on('canvasReady', () => {
     canvas.selectObjects = function(...args) {
         const result = originalSelectObjects.apply(this, args);
         
+        // Clear any existing multi-select timeout since we're using a different selection method
+        if (_multiSelectTimeout) {
+            clearTimeout(_multiSelectTimeout);
+            _multiSelectTimeout = null;
+        }
+        
+        // Reset selection tracking since this is a different selection method
+        _selectionCount = 0;
+        
         // After selection, update the health panel if needed
         setTimeout(async () => {
-            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-            if (controlledTokens.length > 0 && PanelManager.instance && PanelManager.instance.healthPanel) {
-                const controlledActors = controlledTokens.map(t => t.actor);
-                const currentActors = PanelManager.instance.healthPanel.actors || [];
-                const currentActorIds = currentActors.map(a => a.id).sort();
-                const newActorIds = controlledActors.map(a => a.id).sort();
-                
-                if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
-                    PanelManager.instance.healthPanel.updateActors(controlledActors);
-                    // Only render if not popped out
-                    if (!PanelManager.instance.healthPanel.isPoppedOut) {
-                        await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
-                    }
-                }
-            }
-        }, 50); // Small delay to ensure selection is complete
+            await _updateHealthPanelFromSelection();
+        }, 100); // Slightly longer delay for canvas selection methods
         
         return result;
     };
