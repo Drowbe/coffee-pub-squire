@@ -23,7 +23,7 @@ export class HealthWindow extends Application {
     }
 
     get appId() {
-        return `squire-health-window-${this.panel.actor.id}`;
+        return `squire-health-window-${this.panel.actor?.id || 'no-actor'}`;
     }
 
     static get defaultOptions() {
@@ -61,7 +61,7 @@ export class HealthWindow extends Application {
             isHealthPopped: true
         };
         // Update window title with actor name
-        this.options.title = `Health: ${this.panel.actor.name}`;
+        this.options.title = `Health: ${this.panel.actor?.name || 'No Character Selected'}`;
         return data;
     }
 

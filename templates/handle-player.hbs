@@ -102,10 +102,12 @@
 
 {{!-- HEALTH TRAY --}} 
 {{#if showHandleHealthBar}}
+    {{#if isGM}}
     <span class="tray-handle-separator line"></span>
     <div class="handle-health-tray" title="Health Tray" data-tooltip="Open Health Tray">
         <i class="fas fa-heart health-tray-icon"></i>
     </div>
+    {{/if}}
 {{/if}}
 
 {{!-- DICE TRAY --}} 

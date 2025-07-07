@@ -51,12 +51,13 @@ export class PanelManager {
             this.weaponsPanel = new WeaponsPanel(actor);
             this.inventoryPanel = new InventoryPanel(actor);
             this.featuresPanel = new FeaturesPanel(actor);
-            this.dicetrayPanel = new DiceTrayPanel({ actor });
             this.experiencePanel = new ExperiencePanel(actor);
-            this.healthPanel = new HealthPanel(actor);
             this.statsPanel = new StatsPanel(actor);
             this.abilitiesPanel = new AbilitiesPanel(actor);
         }
+        // Always create these panels regardless of actor (for handle icons)
+        this.dicetrayPanel = new DiceTrayPanel({ actor });
+        this.healthPanel = new HealthPanel(actor);
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
@@ -362,6 +363,11 @@ export class PanelManager {
             this.healthPanel = new HealthPanel(this.actor);
         }
 
+        // Only create dice tray panel if not popped out
+        if (!DiceTrayPanel.isWindowOpen) {
+            this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
+        }
+
         // Only create macros panel if not popped out
         if (!MacrosPanel.isWindowOpen) {
             this.macrosPanel = new MacrosPanel({ actor: this.actor });
@@ -384,6 +390,9 @@ export class PanelManager {
         this.experiencePanel.element = PanelManager.element;
         if (!HealthPanel.isWindowOpen) {
             this.healthPanel.element = PanelManager.element;
+        }
+        if (!DiceTrayPanel.isWindowOpen) {
+            this.dicetrayPanel.element = PanelManager.element;
         }
         if (!MacrosPanel.isWindowOpen) {
             this.macrosPanel.element = PanelManager.element;
