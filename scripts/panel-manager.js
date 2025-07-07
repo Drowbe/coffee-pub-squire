@@ -3064,3 +3064,33 @@ Hooks.on('disableModule', (moduleId) => {
         PanelManager.cleanup();
     }
 }); 
+
+// Handle canvas selection changes for bulk selections (lasso, shift-click, etc.)
+Hooks.on('canvasReady', () => {
+    // Monitor canvas selection changes
+    const originalSelectObjects = canvas.selectObjects;
+    canvas.selectObjects = function(...args) {
+        const result = originalSelectObjects.apply(this, args);
+        
+        // After selection, update the health panel if needed
+        setTimeout(async () => {
+            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+            if (controlledTokens.length > 0 && PanelManager.instance && PanelManager.instance.healthPanel) {
+                const controlledActors = controlledTokens.map(t => t.actor);
+                const currentActors = PanelManager.instance.healthPanel.actors || [];
+                const currentActorIds = currentActors.map(a => a.id).sort();
+                const newActorIds = controlledActors.map(a => a.id).sort();
+                
+                if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
+                    PanelManager.instance.healthPanel.updateActors(controlledActors);
+                    // Only render if not popped out
+                    if (!PanelManager.instance.healthPanel.isPoppedOut) {
+                        await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
+                    }
+                }
+            }
+        }, 50); // Small delay to ensure selection is complete
+        
+        return result;
+    };
+});

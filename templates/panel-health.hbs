@@ -14,10 +14,10 @@
             {{#if actors}}
                 {{#each actors as |actor|}}
                 <div class="bar-section {{#if (gt ../actors.length 1)}}multi-token{{/if}}">
-                    {{#if (gt ../actors.length 1)}}
-                    <div class="token-name">{{actor.name}}</div>
-                    {{/if}}
                     <div class="hp-bar">
+                        {{#if (gt ../actors.length 1)}}
+                        <div class="token-name-overlay">{{actor.name}}</div>
+                        {{/if}}
                         <div class="hp-current">
                             <span class="hp-label">REMAINING</span>
                             <span class="hp-value">{{actor.system.attributes.hp.value}}</span>

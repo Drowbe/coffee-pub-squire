@@ -39,14 +39,14 @@
 
 .squire-tray[data-position="left"] [data-panel="health"] .health-content,
 .squire-popout[data-position="left"] [data-panel="health"] .health-content {
-    max-height: 200px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
+    overflow: visible;
+    transition: none;
 }
 
 .squire-tray[data-position="left"] [data-panel="health"] .health-content.collapsed,
 .squire-popout[data-position="left"] [data-panel="health"] .health-content.collapsed {
     max-height: 0;
+    overflow: hidden;
 }
 
 .squire-tray[data-position="left"] [data-panel="health"] .hp-bar,
@@ -239,6 +239,28 @@
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
+}
+
+/* Token name overlay on health bar */
+.squire-tray[data-position="left"] [data-panel="health"] .token-name-overlay,
+.squire-popout[data-position="left"] [data-panel="health"] .token-name-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.7em;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 3;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80%;
 }
 
 .squire-tray[data-position="left"] [data-panel="health"] .token-name,

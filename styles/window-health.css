@@ -137,14 +137,14 @@
 /* Content Area */
 .squire-tray[data-position="left"] [data-panel="health"] .health-content,
 .squire-popout[data-position="left"] [data-panel="health"] .health-content {
-    max-height: 200px !important;
-    overflow: hidden !important;
-    transition: max-height 0.3s ease-in-out !important;
+    overflow: visible !important;
+    transition: none !important;
 }
 
 .squire-tray[data-position="left"] [data-panel="health"] .health-content.collapsed,
 .squire-popout[data-position="left"] [data-panel="health"] .health-content.collapsed {
     max-height: 0 !important;
+    overflow: hidden !important;
 }
 
 /* HP Bar */
@@ -361,4 +361,52 @@
     display: flex !important;
     flex-direction: column !important;
     gap: 4px !important;
+}
+
+/* Multiple token styling */
+.squire-tray[data-position="left"] [data-panel="health"] .bar-section.multi-token,
+.squire-popout[data-position="left"] [data-panel="health"] .bar-section.multi-token {
+    margin-bottom: 8px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.squire-tray[data-position="left"] [data-panel="health"] .bar-section.multi-token:last-child,
+.squire-popout[data-position="left"] [data-panel="health"] .bar-section.multi-token:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+/* Token name overlay on health bar */
+.squire-tray[data-position="left"] [data-panel="health"] .token-name-overlay,
+.squire-popout[data-position="left"] [data-panel="health"] .token-name-overlay {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 0.7em !important;
+    font-weight: bold !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    z-index: 3 !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 80% !important;
+}
+
+.squire-tray[data-position="left"] [data-panel="health"] .token-name,
+.squire-popout[data-position="left"] [data-panel="health"] .token-name {
+    font-size: 0.75em !important;
+    font-weight: bold !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-align: center !important;
+    margin-bottom: 4px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
 } 
