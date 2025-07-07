@@ -547,7 +547,7 @@ export class DiceTrayPanel {
         // Set state before creating window
         DiceTrayPanel.isWindowOpen = true;
         this.isPoppedOut = true;
-        
+
         // Save window state to user flags
         await this._saveWindowState(true);
 

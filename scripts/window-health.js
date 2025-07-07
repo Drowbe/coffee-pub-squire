@@ -75,9 +75,9 @@ export class HealthWindow extends Application {
         };
         // Update window title with actor name or multiple selection
         if (this.panel.actors && this.panel.actors.length > 1) {
-            this.options.title = `Health: Multiple Selected (${this.panel.actors.length})`;
+            this.options.title = `Health: (${this.panel.actors.length}) Selected`;
         } else {
-            this.options.title = `Health: ${this.panel.actor?.name || 'No Character Selected'}`;
+            this.options.title = `Health: ${this.panel.actor?.name || 'None Selected'}`;
         }
         return data;
     }
@@ -86,9 +86,9 @@ export class HealthWindow extends Application {
         // First render the template
         const content = await renderTemplate(this.options.template, data);
         
-        // Create the wrapper structure
+        // Create the wrapper structure with window namespace
         const html = `
-            <div class="squire-popout" data-position="left">
+            <div class="squire-popout squire-window-health" data-position="left">
                 <div class="tray-content">
                     <div class="panel-container" data-panel="health">
                         ${content}

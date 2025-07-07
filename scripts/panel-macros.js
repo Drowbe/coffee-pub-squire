@@ -381,7 +381,7 @@ export class MacrosPanel {
         // Set state before creating window
         MacrosPanel.isWindowOpen = true;
         this.isPoppedOut = true;
-        
+
         // Save window state to user flags
         await this._saveWindowState(true);
 
@@ -390,8 +390,8 @@ export class MacrosPanel {
             // Find and remove the panel container
             const container = this.element.find('[data-panel="macros"]').closest('.panel-container');
             if (container && container.length) {
-                // Store previous sibling for reinsertion
-                this.previousSibling = container.prev();
+            // Store previous sibling for reinsertion
+            this.previousSibling = container.prev();
                 // Also check for and remove any wrapper divs that might be left behind
                 const wrappers = container.parents().filter(function() {
                     // Only target empty wrappers that are specific to the macros panel

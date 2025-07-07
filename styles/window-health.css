@@ -89,11 +89,10 @@
     height: 100% !important;
 }
 
-/* ----- HEALTH PANEL ----- */
+/* ----- WINDOW HEALTH NAMESPACE ----- */
 
-/* Panel Container */
-.squire-tray[data-position="left"] [data-panel="health"],
-.squire-popout[data-position="left"] [data-panel="health"] {
+/* Window Health Namespace - for window-specific styling */
+.squire-window-health[data-position="left"] [data-panel="health"] {
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
@@ -103,54 +102,9 @@
     border-radius: 6px !important;
 }
 
-/* Header */
-.squire-tray[data-position="left"] [data-panel="health"] .health-header,
-.squire-popout[data-position="left"] [data-panel="health"] .health-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    cursor: pointer !important;
-    padding: 0 !important;
-}
-
-/* Controls */
-.squire-tray[data-position="left"] [data-panel="health"] .health-controls,
-.squire-popout[data-position="left"] [data-panel="health"] .health-controls {
-    display: flex !important;
-    gap: 8px !important;
-    align-items: center !important;
-}
-
-/* Toggle Button */
-.squire-tray[data-position="left"] [data-panel="health"] .health-toggle,
-.squire-popout[data-position="left"] [data-panel="health"] .health-toggle {
-    color: #9f9275 !important;
-    transition: transform 0.3s ease !important;
-    cursor: pointer !important;
-}
-
-.squire-tray[data-position="left"] [data-panel="health"] .health-toggle:hover,
-.squire-popout[data-position="left"] [data-panel="health"] .health-toggle:hover {
-    color: #fff !important;
-}
-
-/* Content Area */
-.squire-tray[data-position="left"] [data-panel="health"] .health-content,
-.squire-popout[data-position="left"] [data-panel="health"] .health-content {
-    overflow: visible !important;
-    transition: none !important;
-}
-
-.squire-tray[data-position="left"] [data-panel="health"] .health-content.collapsed,
-.squire-popout[data-position="left"] [data-panel="health"] .health-content.collapsed {
-    max-height: 0 !important;
-    overflow: hidden !important;
-}
-
-/* HP Bar */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-bar,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-bar {
-    height: 26px !important;
+/* Window-specific health bar styling */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-bar {
+    height: 30px !important; /* Slightly taller for window */
     background: #000000 !important;
     border-radius: 6px !important;
     overflow: hidden !important;
@@ -162,9 +116,8 @@
     padding: 0 8px !important;
 }
 
-/* HP Fill */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-fill,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-fill {
+/* Window-specific HP fill */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-fill {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
@@ -176,9 +129,8 @@
     transition: none !important;
 }
 
-/* HP Controls */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-controls,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-controls {
+/* Window-specific controls */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-controls {
     display: flex !important;
     gap: 6px !important;
     align-items: center !important;
@@ -186,9 +138,8 @@
     padding: 0px !important;
 }
 
-/* HP Buttons */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-btn,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-btn {
+/* Window-specific buttons */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-btn {
     background: #2a2a2a !important;
     border: 1px solid #666 !important;
     color: #ccc !important;
@@ -202,15 +153,13 @@
     justify-content: center !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-btn:hover,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-btn:hover {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-btn:hover {
     background: #3a3a3a !important;
     border-color: #888 !important;
 }
 
-/* HP Amount Input */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-amount,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-amount {
+/* Window-specific amount input */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-amount {
     width: 75px !important;
     min-width: 60px !important;
     text-align: center !important;
@@ -222,73 +171,112 @@
     font-size: 16px !important;
 }
 
-/* Special Buttons */
-.squire-tray[data-position="left"] [data-panel="health"] .death-toggle,
-.squire-popout[data-position="left"] [data-panel="health"] .death-toggle {
+/* Window-specific special buttons */
+.squire-window-health[data-position="left"] [data-panel="health"] .death-toggle {
     color: #9c1a1a !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-full,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-full {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-full {
     color: #4d8826 !important;
 }
 
-/* Labels and Values */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-label,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-label {
+/* Window-specific labels and values */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-label {
     color: #aaa !important;
     font-size: 0.75em !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-value,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-value {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-value {
     color: #fff !important;
     font-size: 1em !important;
     font-weight: 500 !important;
 }
 
-/* Current and Max HP Displays */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-current,
-.squire-tray[data-position="left"] [data-panel="health"] .hp-max,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-current,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-max {
+/* Window-specific current and max HP displays */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-current,
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-max {
     display: flex !important;
     align-items: center !important;
     gap: 4px !important;
     z-index: 2 !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-max,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-max {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-max {
     justify-content: flex-end !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-current,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-current {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-current {
     justify-content: flex-start !important;
 }
 
-/* Label and Value Ordering */
-.squire-tray[data-position="left"] [data-panel="health"] .hp-current .hp-label,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-current .hp-label {
+/* Window-specific label and value ordering */
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-current .hp-label {
     order: 1 !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-current .hp-value,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-current .hp-value {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-current .hp-value {
     order: 2 !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-max .hp-value,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-max .hp-value {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-max .hp-value {
     order: 1 !important;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .hp-max .hp-label,
-.squire-popout[data-position="left"] [data-panel="health"] .hp-max .hp-label {
+.squire-window-health[data-position="left"] [data-panel="health"] .hp-max .hp-label {
     order: 2 !important;
+}
+
+/* Window-specific multi-token styling */
+.squire-window-health[data-position="left"] [data-panel="health"] .bar-section.multi-token {
+    margin-bottom: 8px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.squire-window-health[data-position="left"] [data-panel="health"] .bar-section.multi-token:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+/* Window-specific token name overlay */
+.squire-window-health[data-position="left"] [data-panel="health"] .token-name-overlay {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 0.7em !important;
+    font-weight: bold !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    z-index: 3 !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 80% !important;
+}
+
+/* Window-specific multi-token health bar */
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-bar {
+    height: 24px !important; /* Slightly smaller for multiple tokens in window */
+}
+
+/* Window-specific multi-token values */
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-value,
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-value {
+    font-size: 0.7em !important; /* Smaller font for multiple tokens */
+}
+
+/* Window-specific multi-token labels */
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-label,
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-label {
+    font-size: 0.6em !important; /* Smaller font for multiple tokens */
 }
 
 /* ----- SCROLLBAR ----- */
@@ -341,26 +329,6 @@
 /* Target the window wrapper */
 .app.window-app#squire-health-window > .window-content {
     min-width: 300px !important;
-}
-
-/* Common styles */
-.tray-title-small {
-    color: #9f9275 !important;
-    font-size: 0.85em !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    font-weight: bold !important;
-    margin-top: 4px !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    cursor: pointer !important;
-}
-
-.bar-section {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 4px !important;
 }
 
 /* Multiple token styling */

@@ -86,13 +86,28 @@ export class HealthPanel {
         // Skip rendering in tray if popped out
         if (!this.element || this.isPoppedOut) return;
 
-        const templateData = {
-            actor: this.actor,
-            actors: this.actors, // Pass all actors for bulk operations
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
-            isGM: game.user.isGM,
-            isHealthPopped: this.isPoppedOut
-        };
+        // Determine if we are in player view mode
+        const isPlayerView = PanelManager.viewMode === 'player';
+        let templateData;
+        if (isPlayerView) {
+            // Only show the tray's character, never multiple
+            templateData = {
+                actor: this.actor,
+                actors: this.actor ? [this.actor] : [],
+                position: game.settings.get(MODULE.ID, 'trayPosition'),
+                isGM: game.user.isGM,
+                isHealthPopped: this.isPoppedOut
+            };
+        } else {
+            // Allow multi-token health as before
+            templateData = {
+                actor: this.actor,
+                actors: this.actors,
+                position: game.settings.get(MODULE.ID, 'trayPosition'),
+                isGM: game.user.isGM,
+                isHealthPopped: this.isPoppedOut
+            };
+        }
 
         const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
         this.element.find('[data-panel="health"]').html(content);
@@ -252,8 +267,10 @@ export class HealthPanel {
             // Render the content into the new container
             const templateData = {
                 actor: this.actor,
+                actors: this.actors, // Always pass actors array
                 position: game.settings.get(MODULE.ID, 'trayPosition'),
-                isGM: game.user.isGM
+                isGM: game.user.isGM,
+                isHealthPopped: false
             };
             const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
             healthContainer.html(content);

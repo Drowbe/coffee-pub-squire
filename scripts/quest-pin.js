@@ -1286,9 +1286,9 @@ function loadPersistedPins() {
                 pin.pinId = pinData.pinId;
                 
                 // Update the pin state to match current quest state (all users)
-                try {
-                    const questData = pin._getQuestData();
-                    if (questData) {
+                    try {
+                        const questData = pin._getQuestData();
+                        if (questData) {
                         // Update quest visibility state
                         const isVisible = await questData.getFlag(MODULE.ID, 'visible');
                         const newQuestState = (isVisible === false) ? 'hidden' : 'visible';
@@ -1330,13 +1330,13 @@ function loadPersistedPins() {
                                             }
                                             pin.updateObjectiveState(currentState);
                                         }
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
+                    } catch (error) {
+                        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
                 }
                 
                 canvas.squirePins.addChild(pin);

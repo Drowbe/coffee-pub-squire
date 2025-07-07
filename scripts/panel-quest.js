@@ -144,49 +144,49 @@ export class QuestPanel {
                     }
                 } else {
                     // Regular quest content update (not visibility change)
-                    // Update quest pins if they exist for this quest (all users)
-                    if (canvas.squirePins) {
-                        const questPins = canvas.squirePins.children.filter(child => 
-                            child instanceof QuestPin && child.questUuid === page.uuid
-                        );
-                        
-                        questPins.forEach(pin => {
-                            // Get the current task state from the updated page
-                            try {
-                                let content = page.text.content;
-                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                                if (tasksMatch) {
-                                    const tasksHtml = tasksMatch[1];
-                                    const parser = new DOMParser();
-                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                    const ul = ulDoc.querySelector('ul');
-                                    if (ul) {
-                                        const liList = Array.from(ul.children);
-                                        const li = liList[pin.objectiveIndex];
-                                        if (li) {
-                                            let newState = 'active';
-                                            if (li.querySelector('s')) {
-                                                newState = 'completed';
-                                            } else if (li.querySelector('code')) {
-                                                newState = 'failed';
-                                            } else if (li.querySelector('em')) {
-                                                newState = 'hidden';
-                                            }
-                                            pin.updateObjectiveState(newState);
+                // Update quest pins if they exist for this quest (all users)
+                if (canvas.squirePins) {
+                    const questPins = canvas.squirePins.children.filter(child => 
+                        child instanceof QuestPin && child.questUuid === page.uuid
+                    );
+                    
+                    questPins.forEach(pin => {
+                        // Get the current task state from the updated page
+                        try {
+                            let content = page.text.content;
+                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                            if (tasksMatch) {
+                                const tasksHtml = tasksMatch[1];
+                                const parser = new DOMParser();
+                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                const ul = ulDoc.querySelector('ul');
+                                if (ul) {
+                                    const liList = Array.from(ul.children);
+                                    const li = liList[pin.objectiveIndex];
+                                    if (li) {
+                                        let newState = 'active';
+                                        if (li.querySelector('s')) {
+                                            newState = 'completed';
+                                        } else if (li.querySelector('code')) {
+                                            newState = 'failed';
+                                        } else if (li.querySelector('em')) {
+                                            newState = 'hidden';
                                         }
+                                        pin.updateObjectiveState(newState);
                                     }
                                 }
-                            } catch (error) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'Error updating quest pin state',
-                                    { error, pin, page },
-                                    false,
-                                    true,
-                                    true,
-                                    MODULE.TITLE
-                                );
                             }
-                        });
+                        } catch (error) {
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error updating quest pin state',
+                                { error, pin, page },
+                                false,
+                                true,
+                                true,
+                                MODULE.TITLE
+                            );
+                        }
+                    });
                     }
                 }
                 
