@@ -114,7 +114,7 @@
     align-items: center !important;
     justify-content: space-between !important;
     padding: 0 8px !important;
-    margin-bottom: 4px;
+    margin-bottom: 0px;
 }
 /* Window-specific HP fill */
 .squire-window-health[data-position="left"] [data-panel="health"] .hp-fill {
@@ -229,18 +229,9 @@
 }
 
 
-/* Window-specific multi-token styling */
-.squire-window-health[data-position="left"] [data-panel="health"] .bar-section.multi-token {
-    margin-bottom: 2px !important;
-    padding-bottom: 0px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
 
-.squire-window-health[data-position="left"] [data-panel="health"] .bar-section.multi-token:last-child {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-    border-bottom: none !important;
-}
+
+
 
 /* Window-specific token name overlay */
 .squire-window-health[data-position="left"] [data-panel="health"] .token-name-overlay {
@@ -263,22 +254,16 @@
     max-width: 80% !important;
 }
 
-/* Window-specific multi-token health bar */
-.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-bar {
-    height: 24px !important; /* Slightly smaller for multiple tokens in window */
-}
 
-/* Window-specific multi-token values */
-.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-value,
-.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-value {
-    font-size: 0.7em !important; /* Smaller font for multiple tokens */
-}
 
-/* Window-specific multi-token labels */
-.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-label,
-.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-label {
-    font-size: 0.6em !important; /* Smaller font for multiple tokens */
-}
+
+
+
+
+
+
+
+
 
 /* ----- SCROLLBAR ----- */
 
@@ -332,21 +317,6 @@
     min-width: 300px !important;
 }
 
-/* Multiple token styling */
-.squire-tray[data-position="left"] [data-panel="health"] .bar-section.multi-token,
-.squire-popout[data-position="left"] [data-panel="health"] .bar-section.multi-token {
-    margin-bottom: 8px !important;
-    padding-bottom: 8px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.squire-tray[data-position="left"] [data-panel="health"] .bar-section.multi-token:last-child,
-.squire-popout[data-position="left"] [data-panel="health"] .bar-section.multi-token:last-child {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-    border-bottom: none !important;
-}
-
 /* Token name overlay on health bar */
 .squire-tray[data-position="left"] [data-panel="health"] .token-name-overlay,
 .squire-popout[data-position="left"] [data-panel="health"] .token-name-overlay {
@@ -379,3 +349,28 @@
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
 } 
+
+/* ===== MULTI-TOKEN STYLES ===== 
+
+/* multi-token inner Sectionbar */
+.squire-popout[data-position="left"] [data-panel="health"] .bar-section.multi-token {
+    margin-bottom: 3px !important;
+    padding-bottom: 3px !important;
+    border-bottom: 0px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* multi-token inner health bar */
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-bar {
+    height: 26px !important; /* Slightly smaller for multiple tokens in window */
+}
+
+/*  multi-token health bar labels */
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-label,
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-label {
+    font-size: 0.6em !important; /* Smaller font for multiple tokens */
+}
+/* multi-token health bar labels */
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-value,
+.squire-window-health[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-value {
+    font-size: 0.7em !important; /* Smaller font for multiple tokens */
+}

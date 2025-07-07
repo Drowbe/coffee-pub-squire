@@ -194,17 +194,7 @@
     order: 2;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .bar-section.multi-token {
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
 
-.squire-tray[data-position="left"] [data-panel="health"] .bar-section.multi-token:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
 
 .squire-tray[data-position="left"] [data-panel="health"] .token-name-overlay {
     position: absolute;
@@ -236,16 +226,3 @@
     letter-spacing: 0.5px;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .multi-token .hp-bar {
-    height: 20px; /* Slightly smaller for multiple tokens */
-}
-
-.squire-tray[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-value,
-.squire-tray[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-value {
-    font-size: 0.7em; /* Smaller font for multiple tokens */
-}
-
-.squire-tray[data-position="left"] [data-panel="health"] .multi-token .hp-current .hp-label,
-.squire-tray[data-position="left"] [data-panel="health"] .multi-token .hp-max .hp-label {
-    font-size: 0.6em; /* Smaller font for multiple tokens */
-}
