@@ -2922,8 +2922,8 @@ const globalCleanupInterval = setInterval(() => {
 PanelManager.trackInterval(globalCleanupInterval);
 
 // Cleanup hooks to prevent memory leaks
-Hooks.on('closeApplication', () => {
-    // Clean up when any application is closed
+// Only clean up when the game is actually closing, not when module is disabled
+Hooks.on('closeGame', () => {
     if (PanelManager.instance) {
         PanelManager.cleanup();
     }

@@ -1518,16 +1518,7 @@ function cleanupQuestPins() {
 }
 
 // Cleanup hooks for quest pins
-Hooks.on('closeApplication', () => {
-    cleanupQuestPins();
-});
-
-Hooks.on('disableModule', (moduleId) => {
-    if (moduleId === 'coffee-pub-squire') {
-        cleanupQuestPins();
-    }
-});
-
+// Only clean up when the game is actually closing, not when module is disabled
 Hooks.on('closeGame', () => {
     cleanupQuestPins();
 });
