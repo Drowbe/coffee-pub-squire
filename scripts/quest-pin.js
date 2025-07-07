@@ -1125,64 +1125,6 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  // Helper method to clean task text by removing GM notes and treasure links
-  _cleanTaskText(text) {
-    if (!text) return text;
-    
-    // Remove GM notes between || || (including the pipes)
-    text = text.replace(/\|\|[^|]*\|\|/g, '');
-    
-    // Remove treasure links between (( )) (including the parentheses)
-    text = text.replace(/\(\([^)]*\)\)/g, '');
-    
-    // Clean up extra whitespace
-    text = text.replace(/\s+/g, ' ').trim();
-    
-    return text;
-  }
-
-  // Helper method to get task text
-  _getTaskText() {
-    try {
-      const questData = this._getQuestData();
-      if (!questData) return 'Objective';
-
-      // Parse the quest content to get tasks
-      let content = '';
-      if (typeof questData.text?.content === 'string') {
-        content = questData.text.content;
-      } else if (typeof questData.text === 'string') {
-        content = questData.text;
-      }
-
-      if (!content) return 'Objective';
-
-      // Parse tasks from the content
-      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-      if (tasksMatch) {
-        const tasksHtml = tasksMatch[1];
-        const parser = new DOMParser();
-        const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-        const ul = ulDoc.querySelector('ul');
-        if (ul) {
-          const liList = Array.from(ul.children);
-          const li = liList[this.objectiveIndex];
-          if (li) {
-            // Get the text content, removing any HTML tags
-            let rawText = li.textContent.trim();
-            // Clean the text to remove GM notes and treasure links
-            return this._cleanTaskText(rawText);
-          }
-        }
-      }
-
-      return 'Objective';
-    } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting task text', { error }, false, true, true, MODULE.TITLE);
-      return 'Objective';
-    }
-  }
-
   async _onPointerOver(event) {
     // Use unified tooltip data function
     try {
