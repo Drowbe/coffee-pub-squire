@@ -381,14 +381,17 @@ export class MacrosPanel {
         // Set state before creating window
         MacrosPanel.isWindowOpen = true;
         this.isPoppedOut = true;
+        
+        // Save window state to user flags
+        await this._saveWindowState(true);
 
         // Remove the entire panel structure first
         if (this.element) {
             // Find and remove the panel container
             const container = this.element.find('[data-panel="macros"]').closest('.panel-container');
-            // Store previous sibling for reinsertion
-            this.previousSibling = container.prev();
-            if (container.length) {
+            if (container && container.length) {
+                // Store previous sibling for reinsertion
+                this.previousSibling = container.prev();
                 // Also check for and remove any wrapper divs that might be left behind
                 const wrappers = container.parents().filter(function() {
                     // Only target empty wrappers that are specific to the macros panel
@@ -421,6 +424,9 @@ export class MacrosPanel {
         MacrosPanel.activeWindow = null;
         this.window = null;
         this.isPoppedOut = false;
+        
+        // Save window state to user flags
+        await this._saveWindowState(false);
 
         // Check if macros panel is enabled in settings
         const isMacrosEnabled = game.settings.get(MODULE.ID, 'showMacrosPanel');
@@ -529,6 +535,28 @@ export class MacrosPanel {
 
     updateElement(element) {
         this.element = element;
+    }
+
+    /**
+     * Save window state to user flags
+     * @param {boolean} isOpen - Whether the window is open
+     * @private
+     */
+    async _saveWindowState(isOpen) {
+        try {
+            const windowStates = game.user.getFlag(MODULE.ID, 'windowStates') || {};
+            windowStates.macros = isOpen;
+            await game.user.setFlag(MODULE.ID, 'windowStates', windowStates);
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error saving macros window state',
+                { error, isOpen },
+                false,
+                true,
+                true,
+                MODULE.TITLE
+            );
+        }
     }
 }
 

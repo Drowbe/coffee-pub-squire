@@ -116,32 +116,35 @@ export class HealthPanel {
         if (this.window || this.isPoppedOut) return;
 
         // Store position information before removing
-        const container = this.element.find('[data-panel="health"]').closest('.panel-container');
-        if (container.length) {
-            this.previousSibling = container.prev('.panel-container');
-            if (!this.previousSibling.length) {
-                this.previousSibling = container.parent();
+        let container = null;
+        if (this.element) {
+            container = this.element.find('[data-panel="health"]').closest('.panel-container');
+            if (container.length) {
+                this.previousSibling = container.prev('.panel-container');
+                if (!this.previousSibling.length) {
+                    this.previousSibling = container.parent();
+                }
             }
         }
 
         // Set state before creating window
         HealthPanel.isWindowOpen = true;
         this.isPoppedOut = true;
+        
+        // Save window state to user flags
+        await this._saveWindowState(true);
 
         // Remove the entire panel structure first
-        if (this.element) {
-            // Find and remove the panel container
-            if (container.length) {
-                // Also check for and remove any wrapper divs that might be left behind
-                const wrappers = container.parents().filter(function() {
-                    // Only target empty wrappers that are specific to the health panel
-                    return ($(this).children().length === 0 || 
-                           ($(this).children().length === 1 && $(this).find('[data-panel="health"]').length > 0)) &&
-                           !$(this).is('.squire-tray'); // Don't remove the main tray
-                });
-                wrappers.remove();
-                container.remove();
-            }
+        if (this.element && container && container.length) {
+            // Also check for and remove any wrapper divs that might be left behind
+            const wrappers = container.parents().filter(function() {
+                // Only target empty wrappers that are specific to the health panel
+                return ($(this).children().length === 0 || 
+                       ($(this).children().length === 1 && $(this).find('[data-panel="health"]').length > 0)) &&
+                       !$(this).is('.squire-tray'); // Don't remove the main tray
+            });
+            wrappers.remove();
+            container.remove();
         }
 
         // Create and render the window
@@ -158,6 +161,9 @@ export class HealthPanel {
         HealthPanel.activeWindow = null;
         this.window = null;
         this.isPoppedOut = false;
+        
+        // Save window state to user flags
+        await this._saveWindowState(false);
 
         // Check if health panel is enabled in settings
         const isHealthEnabled = game.settings.get(MODULE.ID, 'showHealthPanel');
@@ -280,6 +286,28 @@ export class HealthPanel {
             } else {
                 this.render();
             }
+        }
+    }
+
+    /**
+     * Save window state to user flags
+     * @param {boolean} isOpen - Whether the window is open
+     * @private
+     */
+    async _saveWindowState(isOpen) {
+        try {
+            const windowStates = game.user.getFlag(MODULE.ID, 'windowStates') || {};
+            windowStates.health = isOpen;
+            await game.user.setFlag(MODULE.ID, 'windowStates', windowStates);
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error saving health window state',
+                { error, isOpen },
+                false,
+                true,
+                true,
+                MODULE.TITLE
+            );
         }
     }
 } 

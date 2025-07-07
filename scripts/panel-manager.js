@@ -141,6 +141,9 @@ export class PanelManager {
                 await FavoritesPanel.initializeNpcFavorites(actor);
             }
             
+            // Restore window states from user flags
+            const savedWindowStates = game.user.getFlag(MODULE.ID, 'windowStates') || {};
+            
             // Restore health window state if it was open
             if (hadHealthWindow && PanelManager.instance.healthPanel) {
                 PanelManager.instance.healthPanel.isPoppedOut = true;
@@ -150,6 +153,9 @@ export class PanelManager {
                 HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
                 // Update the panel and window with the new actor
                 PanelManager.instance.healthPanel.updateActor(actor);
+            } else if (savedWindowStates.health && PanelManager.instance.healthPanel) {
+                // Restore from saved state
+                await PanelManager.instance.healthPanel._onPopOut();
             }
 
             // Restore dice tray window state if it was open
@@ -161,6 +167,15 @@ export class PanelManager {
                 DiceTrayPanel.activeWindow = PanelManager.instance.dicetrayPanel.window;
                 // Update the panel and window with the new actor
                 PanelManager.instance.dicetrayPanel.updateActor(actor);
+            } else if (savedWindowStates.diceTray && PanelManager.instance.dicetrayPanel) {
+                // Restore from saved state
+                await PanelManager.instance.dicetrayPanel._onPopOut();
+            }
+
+            // Restore macros window state if it was open
+            if (savedWindowStates.macros && PanelManager.instance.macrosPanel) {
+                // Restore from saved state
+                await PanelManager.instance.macrosPanel._onPopOut();
             }
 
             // Remove any existing trays first

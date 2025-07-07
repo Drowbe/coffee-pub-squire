@@ -114,6 +114,22 @@ export class DiceTrayWindow extends Application {
 
     // Override setPosition to ensure window stays in place when re-rendering
     setPosition(options={}) {
+        // Validate position is within viewport
+        if (options.top !== undefined || options.left !== undefined) {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const windowWidth = options.width || this.position.width || 400;
+            const windowHeight = options.height || this.position.height || 300;
+            
+            // Ensure window doesn't go off-screen
+            if (options.left !== undefined) {
+                options.left = Math.max(0, Math.min(options.left, viewportWidth - windowWidth));
+            }
+            if (options.top !== undefined) {
+                options.top = Math.max(0, Math.min(options.top, viewportHeight - windowHeight));
+            }
+        }
+        
         const pos = super.setPosition(options);
         // Save position to settings
         if (this.rendered) {

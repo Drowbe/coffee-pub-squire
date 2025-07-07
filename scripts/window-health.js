@@ -11,6 +11,17 @@ export class HealthWindow extends Application {
         }
     }
 
+    async render(force = false, options = {}) {
+        const result = await super.render(force, options);
+        
+        // Ensure we're registered for actor updates after rendering
+        if (this.panel?.actor && !this.panel.actor.apps[this.appId]) {
+            this.panel.actor.apps[this.appId] = this;
+        }
+        
+        return result;
+    }
+
     get appId() {
         return `squire-health-window-${this.panel.actor.id}`;
     }
@@ -111,13 +122,28 @@ export class HealthWindow extends Application {
 
     // Handler for actor updates
     async _onUpdateActor(actor, changes) {
-        if (changes.system?.attributes?.hp) {
-            this.render(false);
-        }
+        // Always re-render when the actor updates to ensure we catch all changes
+        this.render(false);
     }
 
     // Override setPosition to ensure window stays in place when re-rendering
     setPosition(options={}) {
+        // Validate position is within viewport
+        if (options.top !== undefined || options.left !== undefined) {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const windowWidth = options.width || this.position.width || 400;
+            const windowHeight = options.height || this.position.height || 300;
+            
+            // Ensure window doesn't go off-screen
+            if (options.left !== undefined) {
+                options.left = Math.max(0, Math.min(options.left, viewportWidth - windowWidth));
+            }
+            if (options.top !== undefined) {
+                options.top = Math.max(0, Math.min(options.top, viewportHeight - windowHeight));
+            }
+        }
+        
         const pos = super.setPosition(options);
         // Save position to settings
         if (this.rendered) {

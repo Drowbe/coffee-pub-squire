@@ -98,7 +98,7 @@
 
 ### Player / General Features
 13. **Make some tools always available** - Ensure certain tools are accessible regardless of context
-    - **Status**: PENDING - New feature request
+    - **Status**: COMPLETED - Tools are now accessible regardless of context
     - **Priority**: Medium
 
 14. **Remember last tab** - Persist the last active tab across sessions
@@ -106,8 +106,15 @@
     - **Priority**: Medium
 
 15. **Remember window states** - Remember if macros, dice tray, and health windows were open
-    - **Status**: PENDING - New feature request
+    - **Status**: COMPLETED - Implemented persistent window state management
     - **Priority**: Medium
+    - **Files**: `scripts/panel-manager.js`, `scripts/panel-health.js`, `scripts/panel-dicetray.js`, `scripts/panel-macros.js`
+    - **Implementation**:
+      - Added user flags to store window states (`windowStates` flag)
+      - Save window states when windows are opened/closed
+      - Restore window states when panel manager initializes
+      - Added `_saveWindowState()` method to each panel class
+      - Proper error handling with Blacksmith logging
 
 16. **Select multiple tokens for bulk health update** - Allow selecting multiple tokens on canvas for health management
     - **Status**: PENDING - New feature request
@@ -184,8 +191,8 @@
     - **Priority**: Medium
 
 ## Summary
-- **Completed**: 15 out of 28 items (54%)
-- **Pending**: 12 items
+- **Completed**: 16 out of 28 items (57%)
+- **Pending**: 11 items
 - **Deferred**: 1 item
 - **Next Priority**: New feature requests
 

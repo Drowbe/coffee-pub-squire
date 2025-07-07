@@ -547,12 +547,15 @@ export class DiceTrayPanel {
         // Set state before creating window
         DiceTrayPanel.isWindowOpen = true;
         this.isPoppedOut = true;
+        
+        // Save window state to user flags
+        await this._saveWindowState(true);
 
         // Remove the entire panel structure first
         if (this.element) {
             // Find and remove the panel container
             const container = this.element.find('[data-panel="dicetray"]').closest('.panel-container');
-            if (container.length) {
+            if (container && container.length) {
                 // Also check for and remove any wrapper divs that might be left behind
                 const wrappers = container.parents().filter(function() {
                     // Only target empty wrappers that are specific to the dice tray
@@ -579,6 +582,9 @@ export class DiceTrayPanel {
         DiceTrayPanel.activeWindow = null;
         this.window = null;
         this.isPoppedOut = false;
+        
+        // Save window state to user flags
+        await this._saveWindowState(false);
 
         // Check if dice tray panel is enabled in settings
         const isDiceTrayEnabled = game.settings.get(MODULE.ID, 'showDiceTrayPanel');
@@ -682,6 +688,28 @@ export class DiceTrayPanel {
         } else {
             // Re-render in tray if not popped out
             this.render();
+        }
+    }
+
+    /**
+     * Save window state to user flags
+     * @param {boolean} isOpen - Whether the window is open
+     * @private
+     */
+    async _saveWindowState(isOpen) {
+        try {
+            const windowStates = game.user.getFlag(MODULE.ID, 'windowStates') || {};
+            windowStates.diceTray = isOpen;
+            await game.user.setFlag(MODULE.ID, 'windowStates', windowStates);
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error saving dice tray window state',
+                { error, isOpen },
+                false,
+                true,
+                true,
+                MODULE.TITLE
+            );
         }
     }
 } 
