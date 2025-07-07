@@ -1196,15 +1196,15 @@ Hooks.on('dropCanvasData', (canvas, data) => {
 // Track timeouts for cleanup
 const questPinTimeouts = new Set();
 
-// Load persisted pins when canvas is ready
-Hooks.on('canvasReady', (canvas) => {
+// Load persisted pins when canvas is ready (now called from ready hook)
+export function loadPersistedPinsOnCanvasReady() {
     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Canvas ready, loading persisted pins');
     const timeoutId = setTimeout(() => {
         loadPersistedPins();
         questPinTimeouts.delete(timeoutId);
     }, 1500);
     questPinTimeouts.add(timeoutId);
-});
+}
 
 // Load persisted pins when scene changes
 Hooks.on('canvasSceneChange', (scene) => {

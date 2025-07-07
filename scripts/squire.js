@@ -6,7 +6,7 @@ import { registerHelpers } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestForm } from './quest-form.js';
 import { QuestParser } from './quest-parser.js';
-import { QuestPin } from './quest-pin.js';
+import { QuestPin, loadPersistedPinsOnCanvasReady } from './quest-pin.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -475,8 +475,15 @@ Hooks.once('ready', async function() {
         MODULE.TITLE
     );
 
-    const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
-    await PanelManager.initialize(firstOwnedToken?.actor || null);
+    // Initialize Squire after settings are registered (with delay to ensure everything is ready)
+    setTimeout(async () => {
+        // Load quest pins first
+        loadPersistedPinsOnCanvasReady();
+        
+        // Then initialize the main interface
+        const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
+        await PanelManager.initialize(firstOwnedToken?.actor || null);
+    }, 1000); // 1 second delay to ensure settings and canvas are fully ready
 });
 
 // Initialize panel when character sheet is rendered
@@ -512,7 +519,7 @@ Hooks.on('canvasInit', () => {
   }
 });
 
-// Also ensure squirePins exists when canvas is ready
+// Ensure squirePins exists and is properly positioned when canvas is ready
 Hooks.on('canvasReady', () => {
   if (!canvas.squirePins) {
     const squirePins = new PIXI.Container();
@@ -526,10 +533,8 @@ Hooks.on('canvasReady', () => {
     }
     canvas.squirePins = squirePins;
   }
-});
-
-// Move squirePins to top after canvasReady (if needed)
-Hooks.on('canvasReady', () => {
+  
+  // Move squirePins to top of display order
   if (canvas.squirePins) {
     const parent = canvas.squirePins.parent;
     if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {

@@ -60,11 +60,15 @@
     - **Files**: `scripts/panel-quest.js`
 
 12. **Fix excludedUsers settings issue** - "coffee-pub-squire.excludedUsers" is not a registered game setting error
-    - **Status**: PENDING - Settings registration timing issue
-    - **Files**: `scripts/squire.js`, `scripts/settings.js`, `scripts/panel-manager.js`
-    - **Root Cause**: PanelManager.initialize() is called during canvasReady hook (line 2756 in panel-manager.js) before registerSettings() completes in the ready hook
-    - **Error Location**: panel-manager.js line 71 where it tries to access the setting before it's registered
-    - **Impact**: Module fails to initialize for excluded users, causing startup errors
+    - **Status**: COMPLETED - Consolidated canvasReady hooks to fix timing issue
+    - **Files**: `scripts/squire.js`, `scripts/settings.js`, `scripts/panel-manager.js`, `scripts/quest-pin.js`
+    - **Root Cause**: PanelManager.initialize() was called during canvasReady hook before registerSettings() completed in the ready hook
+    - **Solution**: 
+      - Consolidated all initialization into a single delayed call in the ready hook
+      - Removed duplicate canvasReady hooks from panel-manager.js and quest-pin.js
+      - Added 1-second delay to ensure settings are registered before initialization
+      - Exported quest pin loading function for proper coordination
+    - **Impact**: Fixed critical startup error for all users
 
 ## Code Architecture & Maintenance
 
@@ -157,9 +161,9 @@
     - **Priority**: Medium
 
 ## Summary
-- **Completed**: 11 out of 28 items (39%)
-- **Pending**: 17 items
-- **Next Priority**: Item #12 (excludedUsers settings issue) - Critical startup error
+- **Completed**: 12 out of 28 items (43%)
+- **Pending**: 16 items
+- **Next Priority**: Item #11 (Quest visibility toggle pin refresh) or new feature requests
 
 ## Notes
 - Most critical bugs have been resolved

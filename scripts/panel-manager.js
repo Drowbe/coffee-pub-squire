@@ -2693,7 +2693,8 @@ export class PanelManager {
 // ======================  Hooks  ======================    
 // =====================================================
 
-Hooks.on('canvasReady', async () => {
+// Consolidated initialization function - called after settings are registered
+async function initializeSquireAfterSettings() {
     // Try to find a suitable actor in this order:
     // 1. Currently controlled token(s) - prioritizing player character tokens
     // 2. User's default character
@@ -2780,7 +2781,7 @@ Hooks.on('canvasReady', async () => {
             MODULE.TITLE
         );
     }
-});
+}
 
 // Also handle when tokens are selected
 Hooks.on('controlToken', async (token, controlled) => {
