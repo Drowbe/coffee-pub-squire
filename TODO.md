@@ -54,10 +54,18 @@
 
 ## Quest Visibility & Pin Management
 
-### 🔄 Pending
+### ✅ Completed
 11. **Fix quest visibility toggle pin refresh** - When hiding/showing entire quest, function doesn't call pin refresh to change pin style for GM and hide/show pins for players
-    - **Status**: PENDING - Need to add pin refresh call when quest visibility is toggled
-    - **Files**: `scripts/panel-quest.js`
+    - **Status**: COMPLETED - Added comprehensive quest visibility handling with automatic unpinning, pin appearance updates, and proper state synchronization
+    - **Files**: `scripts/panel-quest.js`, `scripts/quest-pin.js`
+    - **Changes**:
+      - Enhanced `updateJournalEntryPage` hook to detect quest visibility changes
+      - Added `_unpinHiddenQuestFromPlayers()` method for automatic unpinning
+      - Added player notifications when quests are automatically unpinned
+      - Enhanced pin visibility updates with proper appearance refresh
+      - Fixed second ring (orange ring) display for hidden quests
+      - Added proper quest state synchronization across all components
+      - Added `renderQuestPanel` hook for additional pin updates
 
 12. **Fix excludedUsers settings issue** - "coffee-pub-squire.excludedUsers" is not a registered game setting error
     - **Status**: COMPLETED - Consolidated canvasReady hooks to fix timing issue
@@ -161,9 +169,9 @@
     - **Priority**: Medium
 
 ## Summary
-- **Completed**: 12 out of 28 items (43%)
-- **Pending**: 16 items
-- **Next Priority**: Item #11 (Quest visibility toggle pin refresh) or new feature requests
+- **Completed**: 13 out of 28 items (46%)
+- **Pending**: 15 items
+- **Next Priority**: New feature requests or code architecture improvements
 
 ## Notes
 - Most critical bugs have been resolved

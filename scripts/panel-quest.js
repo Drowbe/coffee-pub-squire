@@ -80,49 +80,114 @@ export class QuestPanel {
                 await this._refreshData();
                 this.render(this.element);
                 
-                // Update quest pins if they exist for this quest (all users)
-                if (canvas.squirePins) {
-                    const questPins = canvas.squirePins.children.filter(child => 
-                        child instanceof QuestPin && child.questUuid === page.uuid
-                    );
+                // Handle quest visibility changes
+                if (changes.flags && changes.flags[MODULE.ID] && changes.flags[MODULE.ID].visible !== undefined) {
+                    const isVisible = changes.flags[MODULE.ID].visible;
                     
-                    questPins.forEach(pin => {
-                        // Get the current task state from the updated page
-                        try {
-                            let content = page.text.content;
-                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                            if (tasksMatch) {
-                                const tasksHtml = tasksMatch[1];
-                                const parser = new DOMParser();
-                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                const ul = ulDoc.querySelector('ul');
-                                if (ul) {
-                                    const liList = Array.from(ul.children);
-                                    const li = liList[pin.objectiveIndex];
-                                    if (li) {
-                                        let newState = 'active';
-                                        if (li.querySelector('s')) {
-                                            newState = 'completed';
-                                        } else if (li.querySelector('code')) {
-                                            newState = 'failed';
-                                        } else if (li.querySelector('em')) {
-                                            newState = 'hidden';
+                    // If quest is being hidden from players, unpin it from all players
+                    if (isVisible === false) {
+                        await this._unpinHiddenQuestFromPlayers(page.uuid);
+                    }
+                    
+                    // Update quest pins if they exist for this quest (all users)
+                    if (canvas.squirePins) {
+                        const questPins = canvas.squirePins.children.filter(child => 
+                            child instanceof QuestPin && child.questUuid === page.uuid
+                        );
+                        
+                        questPins.forEach(pin => {
+                            try {
+                                // Update quest state
+                                pin.questState = isVisible ? 'visible' : 'hidden';
+                                
+                                // Update pin appearance to show/hide second ring for GMs
+                                pin._updatePinAppearance();
+                                
+                                // Update visibility for players
+                                pin.updateVisibility();
+                                
+                                // Get the current task state from the updated page
+                                let content = page.text.content;
+                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                                if (tasksMatch) {
+                                    const tasksHtml = tasksMatch[1];
+                                    const parser = new DOMParser();
+                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                    const ul = ulDoc.querySelector('ul');
+                                    if (ul) {
+                                        const liList = Array.from(ul.children);
+                                        const li = liList[pin.objectiveIndex];
+                                        if (li) {
+                                            let newState = 'active';
+                                            if (li.querySelector('s')) {
+                                                newState = 'completed';
+                                            } else if (li.querySelector('code')) {
+                                                newState = 'failed';
+                                            } else if (li.querySelector('em')) {
+                                                newState = 'hidden';
+                                            }
+                                            pin.updateObjectiveState(newState);
                                         }
-                                        pin.updateObjectiveState(newState);
                                     }
                                 }
+                            } catch (error) {
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'Error updating quest pin state',
+                                    { error, pin, page },
+                                    false,
+                                    true,
+                                    true,
+                                    MODULE.TITLE
+                                );
                             }
-                        } catch (error) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Error updating quest pin state',
-                                { error, pin, page },
-                                false,
-                                true,
-                                true,
-                                MODULE.TITLE
-                            );
-                        }
-                    });
+                        });
+                    }
+                } else {
+                    // Regular quest content update (not visibility change)
+                    // Update quest pins if they exist for this quest (all users)
+                    if (canvas.squirePins) {
+                        const questPins = canvas.squirePins.children.filter(child => 
+                            child instanceof QuestPin && child.questUuid === page.uuid
+                        );
+                        
+                        questPins.forEach(pin => {
+                            // Get the current task state from the updated page
+                            try {
+                                let content = page.text.content;
+                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                                if (tasksMatch) {
+                                    const tasksHtml = tasksMatch[1];
+                                    const parser = new DOMParser();
+                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                    const ul = ulDoc.querySelector('ul');
+                                    if (ul) {
+                                        const liList = Array.from(ul.children);
+                                        const li = liList[pin.objectiveIndex];
+                                        if (li) {
+                                            let newState = 'active';
+                                            if (li.querySelector('s')) {
+                                                newState = 'completed';
+                                            } else if (li.querySelector('code')) {
+                                                newState = 'failed';
+                                            } else if (li.querySelector('em')) {
+                                                newState = 'hidden';
+                                            }
+                                            pin.updateObjectiveState(newState);
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'Error updating quest pin state',
+                                    { error, pin, page },
+                                    false,
+                                    true,
+                                    true,
+                                    MODULE.TITLE
+                                );
+                            }
+                        });
+                    }
                 }
                 
                 // Update the handle if we're in quest view mode
@@ -134,6 +199,66 @@ export class QuestPanel {
                 }
             }
         });
+    }
+
+    /**
+     * Unpin a hidden quest from all players
+     * @param {string} questUuid - The UUID of the quest to unpin
+     * @private
+     */
+    async _unpinHiddenQuestFromPlayers(questUuid) {
+        // Get the quest page for the name
+        const questPage = await fromUuid(questUuid);
+        const questName = questPage?.name || 'Unknown Quest';
+        try {
+            // Get all users who are not GMs
+            const nonGMUsers = game.users.filter(user => !user.isGM);
+            
+            for (const user of nonGMUsers) {
+                const pinnedQuests = await user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+                
+                // Check if this quest is pinned for this user
+                let isPinned = false;
+                let pinnedCategory = null;
+                
+                for (const [category, uuid] of Object.entries(pinnedQuests)) {
+                    if (uuid === questUuid) {
+                        isPinned = true;
+                        pinnedCategory = category;
+                        break;
+                    }
+                }
+                
+                // If pinned, unpin it
+                if (isPinned && pinnedCategory) {
+                    pinnedQuests[pinnedCategory] = null;
+                    await user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
+                    
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Unpinned hidden quest from player',
+                        { user: user.name, questUuid, category: pinnedCategory },
+                        false,
+                        true,
+                        false,
+                        MODULE.TITLE
+                    );
+                    
+                    // Notify the player if they're online
+                    if (user.active) {
+                        ui.notifications.info(`${user.name}: Your pinned quest "${questName}" has been hidden by the GM and automatically unpinned.`);
+                    }
+                }
+            }
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error unpinning hidden quest from players',
+                { error, questUuid },
+                false,
+                true,
+                true,
+                MODULE.TITLE
+            );
+        }
     }
 
     _isPageInSelectedJournal(page) {
@@ -1782,6 +1907,9 @@ export class QuestPanel {
         if (!isTagCloudCollapsed) {
             questContainer.find('.toggle-tags-button').addClass('active');
         }
+        
+        // Trigger hook for pin visibility updates
+        Hooks.call('renderQuestPanel');
         
         // Auto-expand pinned quests
         if (pinnedQuestUuid) {

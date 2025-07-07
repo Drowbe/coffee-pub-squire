@@ -1264,7 +1264,7 @@ function loadPersistedPins() {
         });
 
         // Load pins from persistence
-        scenePins.forEach(pinData => {
+        scenePins.forEach(async (pinData) => {
             try {
                 const pin = new QuestPin({
                     x: pinData.x,
@@ -1280,11 +1280,23 @@ function loadPersistedPins() {
                 // Restore the original pinId for persistence
                 pin.pinId = pinData.pinId;
                 
-                // Update the pin state to match current quest state (GM only)
-                if (game.user.isGM) {
-                    try {
-                        const questData = pin._getQuestData();
-                        if (questData) {
+                // Update the pin state to match current quest state (all users)
+                try {
+                    const questData = pin._getQuestData();
+                    if (questData) {
+                        // Update quest visibility state
+                        const isVisible = await questData.getFlag(MODULE.ID, 'visible');
+                        const newQuestState = (isVisible === false) ? 'hidden' : 'visible';
+                        pin.questState = newQuestState;
+                        
+                        // Update pin appearance to show/hide second ring for GMs
+                        pin._updatePinAppearance();
+                        
+                        // Update visibility
+                        pin.updateVisibility();
+                        
+                        // Update objective state (GM only)
+                        if (game.user.isGM) {
                             let content = '';
                             if (typeof questData.text?.content === 'string') {
                                 content = questData.text.content;
@@ -1317,9 +1329,9 @@ function loadPersistedPins() {
                                 }
                             }
                         }
-                    } catch (error) {
-                        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
                     }
+                } catch (error) {
+                    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
                 }
                 
                 canvas.squirePins.addChild(pin);
@@ -1470,6 +1482,11 @@ Hooks.on('updateJournalEntryPage', (page, changes) => {
     }
 });
 
+// Update pin visibility when quest panel is refreshed
+Hooks.on('renderQuestPanel', () => {
+    debouncedUpdateAllPinVisibility();
+});
+
 // Debounce for updateAllPinVisibility
 let questPinVisibilityDebounce = null;
 
@@ -1498,7 +1515,14 @@ async function updateAllPinVisibility() {
             const questData = pin._getQuestData();
             if (questData) {
                 const isVisible = await questData.getFlag(MODULE.ID, 'visible');
-                pin.questState = (isVisible === false) ? 'hidden' : 'visible';
+                const newQuestState = (isVisible === false) ? 'hidden' : 'visible';
+                
+                // Only update if the state actually changed
+                if (pin.questState !== newQuestState) {
+                    pin.questState = newQuestState;
+                    // Update pin appearance to show/hide second ring for GMs
+                    pin._updatePinAppearance();
+                }
             }
             
             pin.updateVisibility();
