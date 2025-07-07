@@ -42,11 +42,6 @@
         </div>
     {{/if}}
 
-
-
-
-
-
     {{!-- CONDITIONS --}} 
     {{#if showHandleConditions}}
         <span class="tray-handle-separator line"></span>
@@ -61,12 +56,6 @@
 
         </div>
     {{/if}}
-
-
-
-
-
-
 
     {{!-- PRIMARY STATS --}} 
     {{#if showHandleStatsPrimary}}
@@ -88,9 +77,11 @@
         </span>
     {{/if}}
 
-
 {{else}}
-    <div class="handle-no-character">Select a Character</div>
+    {{!-- NO CHARACTER SELECTED --}} 
+    <div class="handle-info-container">
+        <span class="handle-info-title">Select a Character</span>
+    </div>
 {{/if}}
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
