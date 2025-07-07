@@ -202,6 +202,104 @@ export class QuestPanel {
     }
 
     /**
+     * Clear all quest pins from specified scenes
+     * @param {string} scope - 'thisScene' or 'allScenes'
+     * @private
+     */
+    async _clearAllQuestPins(scope) {
+        console.log('SQUIRE | _clearAllQuestPins called with scope:', scope);
+        try {
+            if (scope === 'thisScene') {
+                // Clear pins from current scene only
+                if (canvas.scene && canvas.squirePins) {
+                    const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
+                    let clearedCount = 0;
+                    
+                    for (const pin of pins) {
+                        pin._removeFromPersistence();
+                        canvas.squirePins.removeChild(pin);
+                        clearedCount++;
+                    }
+                    
+                    ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
+                }
+            } else if (scope === 'allScenes') {
+                // Clear pins from all scenes
+                let totalCleared = 0;
+                
+                for (const scene of game.scenes.contents) {
+                    const scenePins = scene.getFlag(MODULE.ID, 'questPins') || [];
+                    if (scenePins.length > 0) {
+                        await scene.setFlag(MODULE.ID, 'questPins', []);
+                        totalCleared += scenePins.length;
+                    }
+                }
+                
+                // Also clear pins from current canvas if they exist
+                if (canvas.squirePins) {
+                    const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
+                    pins.forEach(pin => {
+                        canvas.squirePins.removeChild(pin);
+                    });
+                }
+                
+                ui.notifications.info(`Cleared ${totalCleared} quest pins from all scenes.`);
+            }
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error clearing quest pins',
+                { error, scope },
+                false,
+                true,
+                true,
+                MODULE.TITLE
+            );
+            ui.notifications.error('Error clearing quest pins. See console for details.');
+        }
+    }
+
+    /**
+     * Clear quest pins for a specific quest from the current scene
+     * @param {string} questUuid - The UUID of the quest
+     * @private
+     */
+    async _clearQuestPins(questUuid) {
+        console.log('SQUIRE | _clearQuestPins called with questUuid:', questUuid);
+        try {
+            if (!canvas.scene || !canvas.squirePins) return;
+            
+            // First, remove pins from the scene flags
+            const scenePins = canvas.scene.getFlag(MODULE.ID, 'questPins') || [];
+            const updatedScenePins = scenePins.filter(pinData => pinData.questUuid !== questUuid);
+            await canvas.scene.setFlag(MODULE.ID, 'questPins', updatedScenePins);
+            
+            // Then remove pins from the canvas
+            const pins = canvas.squirePins.children.filter(child => 
+                child instanceof QuestPin && child.questUuid === questUuid
+            );
+            
+            let clearedCount = 0;
+            for (const pin of pins) {
+                canvas.squirePins.removeChild(pin);
+                clearedCount++;
+            }
+            
+            console.log('SQUIRE | Cleared', clearedCount, 'pins for quest', questUuid);
+            ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error clearing quest pins',
+                { error, questUuid },
+                false,
+                true,
+                true,
+                MODULE.TITLE
+            );
+            ui.notifications.error('Error clearing quest pins. See console for details.');
+        }
+    }
+
+    /**
      * Unpin a hidden quest from all players
      * @param {string} questUuid - The UUID of the quest to unpin
      * @private
@@ -1001,6 +1099,111 @@ export class QuestPanel {
             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
                 await game.modules.get('coffee-pub-squire').api.PanelManager.instance.updateHandle();
             }
+        });
+
+        // Clear All Quest Pins (GM only)
+        html.find('.clear-all-quest-pins').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!game.user.isGM) return;
+            
+            console.log('SQUIRE | Clear all quest pins button clicked');
+            
+            console.log('SQUIRE | Creating clear all pins dialog');
+            new Dialog({
+                title: 'Clear All Quest Pins',
+                content: `
+                    <p>Choose which scenes to clear quest pins from:</p>
+                    <div style="margin: 10px 0;">
+                        <label><input type="radio" name="clearScope" value="thisScene" checked> This Scene Only</label>
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <label><input type="radio" name="clearScope" value="allScenes"> All Scenes</label>
+                    </div>
+                `,
+                buttons: {
+                    clear: {
+                        icon: '<i class="fas fa-trash-alt"></i>',
+                        label: 'Clear Pins',
+                        callback: async (dlgHtml) => {
+                            const scope = dlgHtml.find('input[name="clearScope"]:checked').val();
+                            await this._clearAllQuestPins(scope);
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: 'Cancel'
+                    }
+                }
+            }).render(true);
+        });
+
+        // Clear Quest Pins for specific quest (GM only)
+        html.find('.clear-quest-pins').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!game.user.isGM) return;
+            
+            console.log('SQUIRE | Clear quest pins button clicked');
+            
+            const icon = $(event.currentTarget);
+            const uuid = icon.data('uuid');
+            if (!uuid) return;
+            
+            const page = await fromUuid(uuid);
+            if (!page) return;
+            
+            console.log('SQUIRE | Creating clear quest pins dialog for:', page.name);
+            new Dialog({
+                title: `Clear Pins for "${page.name}"`,
+                content: `
+                    <p>This will remove all quest pins for "${page.name}" from the current scene.</p>
+                    <p><strong>This action cannot be undone.</strong></p>
+                `,
+                buttons: {
+                    clear: {
+                        icon: '<i class="fas fa-trash-alt"></i>',
+                        label: 'Clear Quest Pins',
+                        callback: async () => {
+                            await this._clearQuestPins(uuid);
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: 'Cancel'
+                    }
+                }
+            }).render(true);
+        });
+
+        // Toggle Pin Visibility (Players only)
+        html.find('.toggle-pin-visibility').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (game.user.isGM) return;
+            
+            const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
+            const newVisibility = !currentVisibility;
+            
+            await game.user.setFlag(MODULE.ID, 'hideQuestPins', newVisibility);
+            
+            // Update the icon
+            const icon = $(event.currentTarget);
+            if (newVisibility) {
+                icon.removeClass('fa-location-dot-slash').addClass('fa-location-dot').attr('title', 'Show Objective Pins');
+            } else {
+                icon.removeClass('fa-location-dot').addClass('fa-location-dot-slash').attr('title', 'Hide Objective Pins');
+            }
+            
+            // Update pin visibility on canvas
+            if (canvas.squirePins) {
+                const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
+                pins.forEach(pin => {
+                    pin.updateVisibility();
+                });
+            }
+            
+            ui.notifications.info(`Quest pins ${newVisibility ? 'hidden' : 'shown'}.`);
         });
 
         // Import Quests from JSON (GM only)
@@ -1906,6 +2109,17 @@ export class QuestPanel {
         }
         if (!isTagCloudCollapsed) {
             questContainer.find('.toggle-tags-button').addClass('active');
+        }
+        
+        // Set initial state of pin visibility toggle for players
+        if (!game.user.isGM) {
+            const hideQuestPins = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
+            const toggleButton = questContainer.find('.toggle-pin-visibility');
+            if (hideQuestPins) {
+                toggleButton.removeClass('fa-location-dot-slash').addClass('fa-location-dot').attr('title', 'Show Objective Pins');
+            } else {
+                toggleButton.removeClass('fa-location-dot').addClass('fa-location-dot-slash').attr('title', 'Hide Objective Pins');
+            }
         }
         
         // Trigger hook for pin visibility updates

@@ -11,6 +11,7 @@
       {{#if isGM}}
         <i class="fas fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
         <i class="fas {{#if entry.visible}}fa-eye quest-entry-visibility visible{{else}}fa-eye-slash quest-entry-visibility{{/if}} toggle-visible" data-uuid="{{entry.uuid}}" title="{{#if entry.visible}}Hide from players{{else}}Show to players{{/if}}"></i>
+        <i class="fas fa-location-xmark clear-quest-pins" data-uuid="{{entry.uuid}}" title="Clear Quest Pins"></i>
         <i class="fas fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Change Status"></i>
         <div class="quest-status-dropdown" style="display:none;">
           <div class="quest-status-option" data-status="Not Started">Not Started</div>

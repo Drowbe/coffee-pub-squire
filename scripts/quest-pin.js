@@ -121,6 +121,11 @@ export class QuestPin extends PIXI.Container {
     // GMs always see all pins
     if (game.user.isGM) return true;
 
+    // Check if player has hidden all quest pins
+    if (game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
+      return false;
+    }
+
     // Check quest-level visibility first
     if (this.questState === 'hidden') {
       return false;
