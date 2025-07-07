@@ -678,7 +678,6 @@
     color: rgba(96, 148, 255, 0.9);
     margin-left: 0px;
     font-size: 0.80em;
-    vertical-align: baseline;
 }
 .squire-tray[data-position="left"] .quest-entry-tasks .locked-objective-treasure i.fas.fa-lock {
     margin-right: 4px;
