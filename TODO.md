@@ -82,9 +82,83 @@
       - Scattered hook logic makes maintenance difficult
       - Potential for hook conflicts or race conditions
 
+## New Feature Requests
+
+### Player / General Features
+13. **Make some tools always available** - Ensure certain tools are accessible regardless of context
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+14. **Remember last tab** - Persist the last active tab across sessions
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+15. **Remember window states** - Remember if macros, dice tray, and health windows were open
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+16. **Select multiple tokens for bulk health update** - Allow selecting multiple tokens on canvas for health management
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+### Notes Toolbar Features
+17. **Add current note name to toolbar** - Display the name of the currently active note
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+18. **Add note tools to toolbar** - Include note-specific tools in the toolbar
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+19. **Drag fragments to notes** - Allow dragging text fragments directly to notes
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+20. **Add note functionality** - Quick add note feature
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+21. **Quick toggle between notes** - Fast switching between different notes
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+22. **Pin notes** - Ability to pin specific notes for quick access
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+### Quest Features
+23. **Quest tools** - Add quest management tools
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+    - **Features**:
+      - Clear all quest pins
+      - Hide all pins/objectives
+
+24. **Quest visibility logic** - If quest is not visible to player, no pins are visible regardless of state
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+    - **Note**: Show this in pin design too
+
+25. **Quest assignment visibility** - Should quests only be visible if player is assigned?
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+### Codex Features
+26. **Add canvas tokens to handle** - Include tokens from canvas in the handle
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+27. **Auto-enable codex for canvas tokens** - Automatically enable codex entries for tokens on canvas
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
+28. **Pin codex to handle** - Ability to pin codex entries to the handle
+    - **Status**: PENDING - New feature request
+    - **Priority**: Medium
+
 ## Summary
-- **Completed**: 11 out of 13 items (85%)
-- **Pending**: 2 items
+- **Completed**: 11 out of 28 items (39%)
+- **Pending**: 17 items
 - **Next Priority**: Item #12 (excludedUsers settings issue) - Critical startup error
 
 ## Notes
