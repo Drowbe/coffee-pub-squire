@@ -75,7 +75,7 @@ export class HealthWindow extends Application {
         };
         // Update window title with actor name or multiple selection
         if (this.panel.actors && this.panel.actors.length > 1) {
-            this.options.title = `Health: (${this.panel.actors.length}) Selected`;
+            this.options.title = `Health: ${this.panel.actors.length} Selected`;
         } else {
             this.options.title = `Health: ${this.panel.actor?.name || 'None Selected'}`;
         }
