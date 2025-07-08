@@ -269,6 +269,7 @@ export class FavoritesPanel {
         }];
         
         // Auto-favorite for NPC/Monster
+        // (No longer auto-adds to handle; only user can set isHandleFavorite)
         if (this.actor && this.actor.type !== "character") {
             FavoritesPanel.initializeNpcFavorites(this.actor);
         }
@@ -296,7 +297,8 @@ export class FavoritesPanel {
                 equipped: item.system.equipped,
                 hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                 showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                showStarIcon: item.type === 'feat'
+                showStarIcon: item.type === 'feat',
+                isHandleFavorite: item.getFlag(MODULE.ID, 'isHandleFavorite') === true
             }));
             
         return favoritedItems;
@@ -581,6 +583,26 @@ export class FavoritesPanel {
                     // Update the handle to reflect the new equipped state
                     await PanelManager.instance.updateHandle();
                 }
+            }
+        });
+
+        // Toggle handle favorite
+        panel.on('click', '.tray-buttons .handle-favorite-toggle', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const $item = $(event.currentTarget).closest('.favorite-item');
+            const itemId = $item.data('item-id');
+            if (!itemId) return;
+            const item = this.actor.items.get(itemId);
+            if (!item) return;
+            const current = item.getFlag(MODULE.ID, 'isHandleFavorite') === true;
+            await item.setFlag(MODULE.ID, 'isHandleFavorite', !current);
+            // Re-render the panel and update the handle
+            if (PanelManager.instance) {
+                if (PanelManager.instance.favoritesPanel?.element) {
+                    await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                }
+                await PanelManager.instance.updateHandle();
             }
         });
 

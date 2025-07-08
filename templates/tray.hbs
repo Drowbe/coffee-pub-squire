@@ -76,14 +76,13 @@
             <div class="panel-container" data-panel="character"></div>
 
             <!-- HEALTH -->
-            {{#unless isHealthPopped}}
-              <div id="health-panel-placeholder" class="panel-placeholder">
-                {{#if @root.settings.showHealthPanel}}
-                  <div class="panel-container" data-panel="health"></div>
-                {{/if}}
-              </div>
-            {{/unless}}
-
+            {{#if @root.settings.showHealthPanel}}
+                {{#unless isHealthPopped}}
+                <div id="health-panel-placeholder" class="panel-placeholder">
+                    <div class="panel-container" data-panel="health"></div>
+                </div>
+                {{/unless}}
+            {{/if}}
             <!-- EXPERIENCE -->  
             {{#if @root.settings.showExperiencePanel}}
             <div class="panel-container" data-panel="experience"></div>
@@ -100,23 +99,22 @@
             {{/if}}
 
             <!-- DICE TRAY -->
-            {{#unless isDiceTrayPopped}}
-              <div id="dicetray-panel-placeholder" class="panel-placeholder">
-                {{#if @root.settings.showDiceTrayPanel}}
-                  <div class="panel-container" data-panel="dicetray"></div>
-                {{/if}}
-              </div>
-            {{/unless}}
+            {{#if @root.settings.showDiceTrayPanel}}
+                {{#unless isDiceTrayPopped}}
+                <div id="dicetray-panel-placeholder" class="panel-placeholder">
+                    <div class="panel-container" data-panel="dicetray"></div>
+                </div>
+                {{/unless}}
+            {{/if}}
 
             <!-- MACROS -->
-            {{#unless isMacrosPopped}}
-              <div id="macros-panel-placeholder" class="panel-placeholder">
-                {{#if @root.settings.showMacrosPanel}}
-                  <div class="panel-container" data-panel="macros"></div>
-                {{/if}}
-              </div>
-            {{/unless}}
-
+            {{#if @root.settings.showMacrosPanel}}
+                {{#unless isMacrosPopped}}
+                <div id="macros-panel-placeholder" class="panel-placeholder">
+                    <div class="panel-container" data-panel="macros"></div>
+                </div>
+                {{/unless}}
+            {{/if}}
             <!-- CONTROL PANEL - FOR FAVORITES - ALWAYS SHOWN -->  
             <div class="panel-container" data-panel="control"></div>
 

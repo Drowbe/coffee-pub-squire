@@ -269,19 +269,6 @@ export class PanelManager {
             await this.setViewMode('player');
         }
 
-        // --- NEW: Render health panel into placeholder if not popped out ---
-        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
-            if (!this.healthPanel) this.healthPanel = new HealthPanel(this.actor);
-            // Update health panel with all controlled actors for bulk operations
-            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-            const controlledActors = controlledTokens.map(t => t.actor);
-            if (controlledActors.length > 0) {
-                this.healthPanel.updateActors(controlledActors);
-            }
-            // Render into placeholder
-            await this.healthPanel.render();
-        }
-
         // After rendering the tray handle, check for overflow and toggle fade
         function updateTrayHandleFade() {
             const handle = trayElement.find('.tray-handle');
@@ -300,21 +287,6 @@ export class PanelManager {
         // Optionally, re-check after a short delay in case of async content
         const timeoutId = setTimeout(updateTrayHandleFade, 250);
         PanelManager.trackTimeout(timeoutId);
-
-        // --- Ensure all panels are instantiated and rendered into their placeholders if not popped out ---
-        // Only create and render panels if they are enabled in settings
-        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
-            if (!this.healthPanel) this.healthPanel = new HealthPanel(this.actor);
-            await this.healthPanel.render();
-        }
-        if (!DiceTrayPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
-            if (!this.dicetrayPanel) this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
-            await this.dicetrayPanel.render();
-        }
-        if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
-            if (!this.macrosPanel) this.macrosPanel = new MacrosPanel({ actor: this.actor });
-            await this.macrosPanel.render();
-        }
     }
 
     async updateTray() {
@@ -403,16 +375,22 @@ export class PanelManager {
             if (controlledActors.length > 0) {
                 this.healthPanel.updateActors(controlledActors);
             }
+        } else {
+            this.healthPanel = null;
         }
 
         // Only create dice tray panel if not popped out and enabled in settings
         if (!DiceTrayPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
             this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
+        } else {
+            this.dicetrayPanel = null;
         }
 
         // Only create macros panel if not popped out and enabled in settings
         if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
             this.macrosPanel = new MacrosPanel({ actor: this.actor });
+        } else {
+            this.macrosPanel = null;
         }
 
         this.statsPanel = new StatsPanel(this.actor);
@@ -608,7 +586,7 @@ export class PanelManager {
                     name: e.name,
                     icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
-                favorites: FavoritesPanel.getFavorites(this.actor),
+                favorites: FavoritesPanel.getFavorites(this.actor).filter(f => f.isHandleFavorite),
                 favoriteMacros,
                 pinnedQuest, // Add pinned quest data
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
@@ -708,35 +686,55 @@ export class PanelManager {
             this.weaponsPanel?.render(element);
             this.inventoryPanel?.render(element);
             this.featuresPanel?.render(element);
-            
+
             // Only render panels if they are enabled in settings
             if (game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
-                this.dicetrayPanel?.render(element);
+                if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
+                    this.dicetrayPanel.render(element);
+                }
+            } else {
+                PanelManager.removePanelDom(this.dicetrayPanel);
             }
             if (game.settings.get(MODULE.ID, 'showExperiencePanel')) {
                 this.experiencePanel?.render(element);
+            } else {
+                PanelManager.removePanelDom(this.experiencePanel);
             }
             if (game.settings.get(MODULE.ID, 'showHealthPanel')) {
-                this.healthPanel?.render(element);
+                if (this.healthPanel && !this.healthPanel.isPoppedOut) {
+                    this.healthPanel.render(element);
+                }
+            } else {
+                PanelManager.removePanelDom(this.healthPanel);
             }
             if (game.settings.get(MODULE.ID, 'showStatsPanel')) {
                 this.statsPanel?.render(element);
+            } else {
+                PanelManager.removePanelDom(this.statsPanel);
             }
             if (game.settings.get(MODULE.ID, 'showAbilitiesPanel')) {
                 this.abilitiesPanel?.render(element);
+            } else {
+                PanelManager.removePanelDom(this.abilitiesPanel);
             }
         }
-        
+
         // These panels don't require an actor
         this.partyPanel?.render(element);
         if (game.settings.get(MODULE.ID, 'showPartyStatsPanel')) {
             this.partyStatsPanel?.render(element);
+        } else {
+            PanelManager.removePanelDom(this.partyStatsPanel);
         }
         this.notesPanel?.render(element);
         this.codexPanel?.render(element);
         this.questPanel?.render(element);
-        if (this.macrosPanel && !this.macrosPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
-            await this.macrosPanel.render(element);
+        if (game.settings.get(MODULE.ID, 'showMacrosPanel')) {
+            if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
+                this.macrosPanel.render(element);
+            }
+        } else {
+            PanelManager.removePanelDom(this.macrosPanel);
         }
     }
 
@@ -2775,6 +2773,14 @@ export class PanelManager {
             hideQuestTooltip('squire-handle-objective-tooltip');
         });
     }
+
+    // Utility to remove a panel's DOM from the tray
+    static removePanelDom(panel) {
+        if (panel && panel.element) {
+            const dom = $(panel.element).find(`#${panel.constructor.name.toLowerCase()}-panel, .${panel.constructor.name.toLowerCase()}-panel`);
+            if (dom.length) dom.remove();
+        }
+    }
 }
 
 // =====================================================
@@ -3081,7 +3087,7 @@ Hooks.on('createItem', async (item) => {
 });
 
 // Handle item updates
-Hooks.on('updateItem', async (item) => {
+Hooks.on('updateItem', async (item, changes) => {
     if (!item.parent) return;
     if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
         // Check if this is an NPC/monster and the item is a weapon being equipped
@@ -3099,8 +3105,20 @@ Hooks.on('updateItem', async (item) => {
             }
         }
         
-        await PanelManager.instance.updateTray();
-        await PanelManager.instance.renderPanels(PanelManager.element);
+        // Only update tray for changes that affect the handle or require full re-render
+        const needsFullUpdate = changes.flags || // Flag changes (like handle favorites)
+                               changes.name || // Name changes
+                               changes.img || // Image changes
+                               changes.system?.equipped || // Equipment status
+                               changes.system?.preparation?.prepared; // Spell preparation
+        
+        if (needsFullUpdate) {
+            await PanelManager.instance.updateTray();
+            await PanelManager.instance.renderPanels(PanelManager.element);
+        } else {
+            // For other changes, just update the handle
+            await PanelManager.instance.updateHandle();
+        }
     }
 });
 
