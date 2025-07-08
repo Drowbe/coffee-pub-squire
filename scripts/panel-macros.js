@@ -398,10 +398,10 @@ export class MacrosPanel {
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
-        // Empty the panel container but keep the placeholder
+        // Remove the panel container from the placeholder
         const container = $('#macros-panel-placeholder .panel-container[data-panel="macros"]');
         if (container.length) {
-            container.empty();
+            container.remove();
         }
 
         // Set state before creating window
@@ -429,7 +429,15 @@ export class MacrosPanel {
         const isMacrosEnabled = game.settings.get(MODULE.ID, 'showMacrosPanel');
         if (!isMacrosEnabled) return;
 
-        // Re-render into the panel container inside the placeholder
+        // (Re)create the panel container inside the placeholder if missing
+        const placeholder = $('#macros-panel-placeholder');
+        let container = placeholder.find('.panel-container[data-panel="macros"]');
+        if (!container.length) {
+            container = $('<div class="panel-container" data-panel="macros"></div>');
+            placeholder.append(container);
+        }
+        this.element = container;
+        // Re-render into the panel container
         await this.render();
     }
 

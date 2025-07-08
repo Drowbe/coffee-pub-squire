@@ -188,10 +188,10 @@ export class HealthPanel {
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
-        // Empty the panel container but keep the placeholder
+        // Remove the panel container from the placeholder
         const container = $('#health-panel-placeholder .panel-container[data-panel="health"]');
         if (container.length) {
-            container.empty();
+            container.remove();
         }
 
         // Set state before creating window
@@ -219,7 +219,15 @@ export class HealthPanel {
         const isHealthEnabled = game.settings.get(MODULE.ID, 'showHealthPanel');
         if (!isHealthEnabled) return;
 
-        // Re-render into the panel container inside the placeholder
+        // (Re)create the panel container inside the placeholder if missing
+        const placeholder = $('#health-panel-placeholder');
+        let container = placeholder.find('.panel-container[data-panel="health"]');
+        if (!container.length) {
+            container = $('<div class="panel-container" data-panel="health"></div>');
+            placeholder.append(container);
+        }
+        this.element = container;
+        // Re-render into the panel container
         await this.render();
     }
 

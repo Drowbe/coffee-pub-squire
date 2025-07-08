@@ -562,10 +562,10 @@ export class DiceTrayPanel {
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
-        // Empty the panel container but keep the placeholder
+        // Remove the panel container from the placeholder
         const container = $('#dicetray-panel-placeholder .panel-container[data-panel="dicetray"]');
         if (container.length) {
-            container.empty();
+            container.remove();
         }
 
         // Set state before creating window
@@ -593,7 +593,15 @@ export class DiceTrayPanel {
         const isDiceTrayEnabled = game.settings.get(MODULE.ID, 'showDiceTrayPanel');
         if (!isDiceTrayEnabled) return;
 
-        // Re-render into the panel container inside the placeholder
+        // (Re)create the panel container inside the placeholder if missing
+        const placeholder = $('#dicetray-panel-placeholder');
+        let container = placeholder.find('.panel-container[data-panel="dicetray"]');
+        if (!container.length) {
+            container = $('<div class="panel-container" data-panel="dicetray"></div>');
+            placeholder.append(container);
+        }
+        this.element = container;
+        // Re-render into the panel container
         await this.render();
     }
 
