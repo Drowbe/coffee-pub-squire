@@ -93,13 +93,10 @@ export class MacrosPanel {
 
         console.log('SQUIRE | PANELS | MacrosPanel.render: templateData', templateData);
         // Skip rendering in tray if popped out
-        if (!this.element || this.isPoppedOut) {
-            // If popped out, only update the window content
-            if (this.isPoppedOut && this.window?.element) {
-                const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
-                console.log('SQUIRE | PANELS | MacrosPanel.render: rendered content (window)', content);
-                this.window.element.find('.window-content').html(content);
-                this._activateListeners(this.window.element);
+        if (this.isPoppedOut) {
+            // Let the MacrosWindow handle its own rendering
+            if (this.window?.rendered) {
+                this.window.render(false);
             }
             return;
         }
@@ -395,6 +392,11 @@ export class MacrosPanel {
         });
     }
 
+    // Helper to get current macros from settings
+    getCurrentMacros() {
+        return game.settings.get(MODULE.ID, 'userMacros') || [];
+    }
+
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
@@ -409,8 +411,8 @@ export class MacrosPanel {
         this.isPoppedOut = true;
         await this._saveWindowState(true);
 
-        // Create and render the window
-        this.window = new MacrosWindow({ panel: this });
+        // Create and render the window, passing current macros
+        this.window = new MacrosWindow({ panel: this, macros: this.getCurrentMacros() });
         MacrosPanel.activeWindow = this.window;
         await this.window.render(true);
     }
