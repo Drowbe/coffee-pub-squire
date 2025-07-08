@@ -38,11 +38,26 @@ export class DiceTrayPanel {
     }
 
     async render(html) {
-        if (html) {
+        console.log('SQUIRE | PANELS | DiceTrayPanel.render called, isPoppedOut:', this.isPoppedOut);
+        // Always render into the panel container inside the placeholder if not popped out
+        if (!this.isPoppedOut) {
+            const placeholder = $('#dicetray-panel-placeholder');
+            let container = placeholder.find('.panel-container[data-panel="dicetray"]');
+            if (!container.length) {
+                // Create the panel container if it doesn't exist
+                container = $('<div class="panel-container" data-panel="dicetray"></div>');
+                placeholder.append(container);
+            }
+            this.element = container;
+            console.log('SQUIRE | PANELS | DiceTrayPanel.render: using container', this.element.get(0));
+        } else if (html) {
             this.element = html;
+            console.log('SQUIRE | PANELS | DiceTrayPanel.render: using html argument');
         }
-        // Skip rendering in tray if popped out
-        if (!this.element || this.isPoppedOut) return;
+        if (!this.element || this.isPoppedOut) {
+            console.log('SQUIRE | PANELS | DiceTrayPanel.render: skipping, element missing or popped out');
+            return;
+        }
 
         const templateData = {
             actor: this.actor,
@@ -50,11 +65,13 @@ export class DiceTrayPanel {
             isDiceTrayPopped: this.isPoppedOut
         };
 
+        console.log('SQUIRE | PANELS | DiceTrayPanel.render: templateData', templateData);
         // If popped out, only update the window content and don't render in tray
         if (this.isPoppedOut) {
             if (this.window?.element) {
                 const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-                this.window.element.find('[data-panel="dicetray"]').html(content);
+                console.log('SQUIRE | PANELS | DiceTrayPanel.render: rendered content (window)', content);
+                this.window.element.find('.window-content').html(content);
                 this._activateListeners(this.window.element);
             }
             return; // Don't render in tray if popped out
@@ -62,11 +79,12 @@ export class DiceTrayPanel {
 
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-        this.element.find('[data-panel="dicetray"]').html(content);
+        console.log('SQUIRE | PANELS | DiceTrayPanel.render: rendered content', content);
+        this.element.html(content);
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
-        const panel = this.element.find('[data-panel="dicetray"]');
+        const panel = this.element;
         const isCollapsed = game.settings.get(MODULE.ID, 'isDiceTrayPanelCollapsed');
         if (isCollapsed) {
             const dicetrayContent = panel.find('.dicetray-content');
@@ -79,7 +97,7 @@ export class DiceTrayPanel {
     _activateListeners(html) {
         if (!html) return;
 
-        const panel = html.find('[data-panel="dicetray"]');
+        const panel = html;
 
         // Add dice tray toggle handler
         panel.find('.tray-title-small').click(() => {
@@ -544,29 +562,16 @@ export class DiceTrayPanel {
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
+        // Empty the panel container but keep the placeholder
+        const container = $('#dicetray-panel-placeholder .panel-container[data-panel="dicetray"]');
+        if (container.length) {
+            container.empty();
+        }
+
         // Set state before creating window
         DiceTrayPanel.isWindowOpen = true;
         this.isPoppedOut = true;
-
-        // Save window state to user flags
         await this._saveWindowState(true);
-
-        // Remove the entire panel structure first
-        if (this.element) {
-            // Find and remove the panel container
-            const container = this.element.find('[data-panel="dicetray"]').closest('.panel-container');
-            if (container && container.length) {
-                // Also check for and remove any wrapper divs that might be left behind
-                const wrappers = container.parents().filter(function() {
-                    // Only target empty wrappers that are specific to the dice tray
-                    return ($(this).children().length === 0 || 
-                           ($(this).children().length === 1 && $(this).find('[data-panel="dicetray"]').length > 0)) &&
-                           !$(this).is('.squire-tray'); // Don't remove the main tray
-                });
-                wrappers.remove();
-                container.remove();
-            }
-        }
 
         // Create and render the window
         this.window = new DiceTrayWindow({ panel: this });
@@ -575,89 +580,21 @@ export class DiceTrayPanel {
     }
 
     async returnToTray() {
-        if (!this.isPoppedOut) return; // Don't do anything if not popped out
+        if (!this.isPoppedOut) return;
 
         // Reset state
         DiceTrayPanel.isWindowOpen = false;
+        this.isPoppedOut = false;
         DiceTrayPanel.activeWindow = null;
         this.window = null;
-        this.isPoppedOut = false;
-        
-        // Save window state to user flags
         await this._saveWindowState(false);
 
         // Check if dice tray panel is enabled in settings
         const isDiceTrayEnabled = game.settings.get(MODULE.ID, 'showDiceTrayPanel');
-        if (!isDiceTrayEnabled) {
-            return; // Don't return to tray if panel is disabled
-        }
+        if (!isDiceTrayEnabled) return;
 
-        // Get a fresh reference to the main tray
-        const mainTray = $('.squire-tray');
-        if (!mainTray.length) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Could not find main tray when returning dice tray',
-                { mainTray },
-                false,
-                false,
-                true,
-                MODULE.TITLE
-            );
-            return;
-        }
-
-        // Update our element reference
-        this.element = mainTray;
-
-        // Find the correct insertion point - after health panel
-        const healthPanel = mainTray.find('[data-panel="health"]').closest('.panel-container');
-        const diceTrayContainer = $('<div class="panel-container" data-panel="dicetray"></div>');
-        
-        // Insert after health panel if found, otherwise before the stacked panels
-        if (healthPanel.length) {
-            diceTrayContainer.insertAfter(healthPanel);
-        } else {
-            const stackedPanels = mainTray.find('.panel-containers.stacked');
-            if (stackedPanels.length) {
-                diceTrayContainer.insertBefore(stackedPanels);
-            } else {
-                // Fallback - append to tray content
-                mainTray.find('.tray-content').append(diceTrayContainer);
-            }
-        }
-
-        try {
-            // Render the content into the new container
-            const templateData = {
-                position: game.settings.get(MODULE.ID, 'trayPosition'),
-                actor: this.actor,
-                isDiceTrayPopped: false
-            };
-            const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-            diceTrayContainer.html(content);
-            
-            // Activate listeners on the new content
-            this._activateListeners(mainTray);
-            
-            // Add initial "No recent rolls" message if needed
-            const historyList = diceTrayContainer.find('.squire-history-list');
-            if (!historyList.children().length) {
-                const emptyMessage = document.createElement('div');
-                emptyMessage.classList.add('history-entry', 'empty-message');
-                emptyMessage.textContent = 'No recent rolls';
-                historyList.append(emptyMessage);
-            }
-        } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error returning dice tray to main tray',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.TITLE
-            );
-            ui.notifications.error("Error returning dice tray to main tray");
-        }
+        // Re-render into the panel container inside the placeholder
+        await this.render();
     }
 
     // Update the element reference - new method

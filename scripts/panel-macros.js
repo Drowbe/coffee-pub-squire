@@ -50,6 +50,26 @@ export class MacrosPanel {
     }
 
     async render(html, { showAddSlot = false } = {}) {
+        console.log('SQUIRE | PANELS | MacrosPanel.render called, isPoppedOut:', this.isPoppedOut);
+        // Always render into the panel container inside the placeholder if not popped out
+        if (!this.isPoppedOut) {
+            const placeholder = $('#macros-panel-placeholder');
+            let container = placeholder.find('.panel-container[data-panel="macros"]');
+            if (!container.length) {
+                // Create the panel container if it doesn't exist
+                container = $('<div class="panel-container" data-panel="macros"></div>');
+                placeholder.append(container);
+            }
+            this.element = container;
+            console.log('SQUIRE | PANELS | MacrosPanel.render: using container', this.element.get(0));
+        } else if (html) {
+            this.element = html;
+            console.log('SQUIRE | PANELS | MacrosPanel.render: using html argument');
+        }
+        if (!this.element || this.isPoppedOut) {
+            console.log('SQUIRE | PANELS | MacrosPanel.render: skipping, element missing or popped out');
+            return;
+        }
         // Load macros and favorites from settings
         let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
         // Ensure at least one empty slot if macros is empty
@@ -71,15 +91,14 @@ export class MacrosPanel {
             favoriteMacros
         };
 
-        if (html) {
-            this.element = html;
-        }
+        console.log('SQUIRE | PANELS | MacrosPanel.render: templateData', templateData);
         // Skip rendering in tray if popped out
         if (!this.element || this.isPoppedOut) {
             // If popped out, only update the window content
             if (this.isPoppedOut && this.window?.element) {
                 const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
-                this.window.element.find('[data-panel="macros"]').html(content);
+                console.log('SQUIRE | PANELS | MacrosPanel.render: rendered content (window)', content);
+                this.window.element.find('.window-content').html(content);
                 this._activateListeners(this.window.element);
             }
             return;
@@ -87,11 +106,12 @@ export class MacrosPanel {
 
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
-        this.element.find('[data-panel="macros"]').html(content);
+        console.log('SQUIRE | PANELS | MacrosPanel.render: rendered content', content);
+        this.element.html(content);
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
-        const panel = this.element.find('[data-panel="macros"]');
+        const panel = this.element;
         const isCollapsed = game.settings.get(MODULE.ID, 'isMacrosPanelCollapsed');
         if (isCollapsed) {
             const macrosContent = panel.find('.macros-content');
@@ -104,7 +124,7 @@ export class MacrosPanel {
     _activateListeners(html) {
         if (!html) return;
 
-        const panel = html.find('[data-panel="macros"]');
+        const panel = html;
         let showAddSlot = false;
         let dragActive = false;
 
@@ -378,134 +398,39 @@ export class MacrosPanel {
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
+        // Empty the panel container but keep the placeholder
+        const container = $('#macros-panel-placeholder .panel-container[data-panel="macros"]');
+        if (container.length) {
+            container.empty();
+        }
+
         // Set state before creating window
         MacrosPanel.isWindowOpen = true;
         this.isPoppedOut = true;
-
-        // Save window state to user flags
         await this._saveWindowState(true);
 
-        // Remove the entire panel structure first
-        if (this.element) {
-            // Find and remove the panel container
-            const container = this.element.find('[data-panel="macros"]').closest('.panel-container');
-            if (container && container.length) {
-            // Store previous sibling for reinsertion
-            this.previousSibling = container.prev();
-                // Also check for and remove any wrapper divs that might be left behind
-                const wrappers = container.parents().filter(function() {
-                    // Only target empty wrappers that are specific to the macros panel
-                    return ($(this).children().length === 0 || 
-                           ($(this).children().length === 1 && $(this).find('[data-panel="macros"]').length > 0)) &&
-                           !$(this).is('.squire-tray'); // Don't remove the main tray
-                });
-                wrappers.remove();
-                container.remove();
-            }
-        }
-
         // Create and render the window
-        this.window = new MacrosWindow({ 
-            panel: this,
-            macros: game.settings.get(MODULE.ID, 'userMacros') || []
-        });
+        this.window = new MacrosWindow({ panel: this });
         MacrosPanel.activeWindow = this.window;
         await this.window.render(true);
-        if (window.PanelManager?.instance) {
-            window.PanelManager.instance.updateHandle();
-        }
     }
 
     async returnToTray() {
-        if (!this.isPoppedOut) return; // Don't do anything if not popped out
+        if (!this.isPoppedOut) return;
 
         // Reset state
         MacrosPanel.isWindowOpen = false;
+        this.isPoppedOut = false;
         MacrosPanel.activeWindow = null;
         this.window = null;
-        this.isPoppedOut = false;
-        
-        // Save window state to user flags
         await this._saveWindowState(false);
 
         // Check if macros panel is enabled in settings
         const isMacrosEnabled = game.settings.get(MODULE.ID, 'showMacrosPanel');
-        if (!isMacrosEnabled) {
-            return; // Don't return to tray if panel is disabled
-        }
+        if (!isMacrosEnabled) return;
 
-        // Get a fresh reference to the main tray
-        const mainTray = $('.squire-tray');
-        if (!mainTray.length) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Could not find main tray when returning macros panel',
-                { mainTray },
-                false,
-                false,
-                true,
-                MODULE.TITLE
-            );
-            return;
-        }
-
-        // Update our element reference
-        this.element = mainTray;
-
-        // Create the new panel container
-        const macrosContainer = $('<div class="panel-container" data-panel="macros"></div>');
-        
-        // Insert at the stored position
-        if (this.previousSibling && this.previousSibling.length) {
-            if (this.previousSibling.is('.squire-tray')) {
-                // If the previous sibling was the tray itself, we were first
-                this.previousSibling.find('.tray-content').prepend(macrosContainer);
-            } else {
-                // Otherwise insert after the stored sibling
-                macrosContainer.insertAfter(this.previousSibling);
-            }
-        } else {
-            // Fallback to prepending to tray content if no position info
-            mainTray.find('.tray-content').prepend(macrosContainer);
-        }
-
-        try {
-            // Get current macros and favorites from settings
-            let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-            let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
-            let favoriteMacros = favoriteMacroIds.map(id => {
-                const macro = game.macros.get(id);
-                return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
-            }).filter(Boolean);
-
-            // Render the content into the new container
-            const templateData = {
-                position: game.settings.get(MODULE.ID, 'trayPosition'),
-                actor: this.actor,
-                isMacrosPopped: false,
-                macros,
-                showAddSlot: false,
-                favoriteMacroIds,
-                favoriteMacros
-            };
-            const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
-            macrosContainer.html(content);
-            
-            // Activate listeners on the new content
-            this._activateListeners(mainTray);
-        } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error returning macros panel to main tray',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.TITLE
-            );
-            ui.notifications.error("Error returning macros panel to main tray");
-        }
-        if (window.PanelManager?.instance) {
-            window.PanelManager.instance.updateHandle();
-        }
+        // Re-render into the panel container inside the placeholder
+        await this.render();
     }
 
     // Update actor reference and window if needed

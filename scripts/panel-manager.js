@@ -269,6 +269,19 @@ export class PanelManager {
             await this.setViewMode('player');
         }
 
+        // --- NEW: Render health panel into placeholder if not popped out ---
+        if (!HealthPanel.isWindowOpen) {
+            if (!this.healthPanel) this.healthPanel = new HealthPanel(this.actor);
+            // Update health panel with all controlled actors for bulk operations
+            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+            const controlledActors = controlledTokens.map(t => t.actor);
+            if (controlledActors.length > 0) {
+                this.healthPanel.updateActors(controlledActors);
+            }
+            // Render into placeholder
+            await this.healthPanel.render();
+        }
+
         // After rendering the tray handle, check for overflow and toggle fade
         function updateTrayHandleFade() {
             const handle = trayElement.find('.tray-handle');
@@ -287,6 +300,20 @@ export class PanelManager {
         // Optionally, re-check after a short delay in case of async content
         const timeoutId = setTimeout(updateTrayHandleFade, 250);
         PanelManager.trackTimeout(timeoutId);
+
+        // --- Ensure all panels are instantiated and rendered into their placeholders if not popped out ---
+        if (!HealthPanel.isWindowOpen) {
+            if (!this.healthPanel) this.healthPanel = new HealthPanel(this.actor);
+            await this.healthPanel.render();
+        }
+        if (!DiceTrayPanel.isWindowOpen) {
+            if (!this.dicetrayPanel) this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
+            await this.dicetrayPanel.render();
+        }
+        if (!MacrosPanel.isWindowOpen) {
+            if (!this.macrosPanel) this.macrosPanel = new MacrosPanel({ actor: this.actor });
+            await this.macrosPanel.render();
+        }
     }
 
     async updateTray() {

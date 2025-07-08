@@ -80,11 +80,26 @@ export class HealthPanel {
     }
 
     async render(html) {
-        if (html) {
+        console.log('SQUIRE | PANELS | HealthPanel.render called, isPoppedOut:', this.isPoppedOut);
+        // Always render into the panel container inside the placeholder if not popped out
+        if (!this.isPoppedOut) {
+            const placeholder = $('#health-panel-placeholder');
+            let container = placeholder.find('.panel-container[data-panel="health"]');
+            if (!container.length) {
+                // Create the panel container if it doesn't exist
+                container = $('<div class="panel-container" data-panel="health"></div>');
+                placeholder.append(container);
+            }
+            this.element = container;
+            console.log('SQUIRE | PANELS | HealthPanel.render: using container', this.element.get(0));
+        } else if (html) {
             this.element = html;
+            console.log('SQUIRE | PANELS | HealthPanel.render: using html argument');
         }
-        // Skip rendering in tray if popped out
-        if (!this.element || this.isPoppedOut) return;
+        if (!this.element || this.isPoppedOut) {
+            console.log('SQUIRE | PANELS | HealthPanel.render: skipping, element missing or popped out');
+            return;
+        }
 
         // Determine if we are in player view mode
         const isPlayerView = PanelManager.viewMode === 'player';
@@ -109,13 +124,14 @@ export class HealthPanel {
             };
         }
 
+        console.log('SQUIRE | PANELS | HealthPanel.render: templateData', templateData);
         const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
-        this.element.find('[data-panel="health"]').html(content);
-        
+        console.log('SQUIRE | PANELS | HealthPanel.render: rendered content', content);
+        this.element.html(content);
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
-        const panel = this.element.find('[data-panel="health"]');
+        const panel = this.element;
         const isCollapsed = game.settings.get(MODULE.ID, 'isHealthPanelCollapsed');
         if (isCollapsed) {
             const healthContent = panel.find('.health-content');
@@ -128,9 +144,8 @@ export class HealthPanel {
     _activateListeners(html) {
         if (!html) return;
 
-        // Find the panel container
-        const panel = html.is('[data-panel="health"]') ? html : html.find('[data-panel="health"]');
-        if (!panel.length) return;
+        // Find the panel container - the element itself is the panel
+        const panel = html;
 
         // Health toggle
         panel.find('.tray-title-small').click(ev => {
@@ -173,37 +188,16 @@ export class HealthPanel {
     async _onPopOut() {
         if (this.window || this.isPoppedOut) return;
 
-        // Store position information before removing
-        let container = null;
-        if (this.element) {
-            container = this.element.find('[data-panel="health"]').closest('.panel-container');
-            if (container.length) {
-                this.previousSibling = container.prev('.panel-container');
-                if (!this.previousSibling.length) {
-                    this.previousSibling = container.parent();
-                }
-            }
+        // Empty the panel container but keep the placeholder
+        const container = $('#health-panel-placeholder .panel-container[data-panel="health"]');
+        if (container.length) {
+            container.empty();
         }
 
         // Set state before creating window
         HealthPanel.isWindowOpen = true;
         this.isPoppedOut = true;
-        
-        // Save window state to user flags
         await this._saveWindowState(true);
-
-        // Remove the entire panel structure first
-        if (this.element && container && container.length) {
-            // Also check for and remove any wrapper divs that might be left behind
-            const wrappers = container.parents().filter(function() {
-                // Only target empty wrappers that are specific to the health panel
-                return ($(this).children().length === 0 || 
-                       ($(this).children().length === 1 && $(this).find('[data-panel="health"]').length > 0)) &&
-                       !$(this).is('.squire-tray'); // Don't remove the main tray
-            });
-            wrappers.remove();
-            container.remove();
-        }
 
         // Create and render the window
         this.window = new HealthWindow({ panel: this });
@@ -212,82 +206,21 @@ export class HealthPanel {
     }
 
     async returnToTray() {
-        if (!this.isPoppedOut) return; // Don't do anything if not popped out
+        if (!this.isPoppedOut) return;
 
         // Reset state
         HealthPanel.isWindowOpen = false;
+        this.isPoppedOut = false;
         HealthPanel.activeWindow = null;
         this.window = null;
-        this.isPoppedOut = false;
-        
-        // Save window state to user flags
         await this._saveWindowState(false);
 
         // Check if health panel is enabled in settings
         const isHealthEnabled = game.settings.get(MODULE.ID, 'showHealthPanel');
-        if (!isHealthEnabled) {
-            return; // Don't return to tray if panel is disabled
-        }
+        if (!isHealthEnabled) return;
 
-        // Get a fresh reference to the main tray
-        const mainTray = $('.squire-tray');
-        if (!mainTray.length) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Could not find main tray when returning health panel',
-                { mainTray },
-                false,
-                false,
-                true,
-                MODULE.TITLE
-            );
-            return;
-        }
-
-        // Update our element reference
-        this.element = mainTray;
-
-        // Create the new panel container
-        const healthContainer = $('<div class="panel-container" data-panel="health"></div>');
-        
-        // Insert at the stored position
-        if (this.previousSibling && this.previousSibling.length) {
-            if (this.previousSibling.is('.squire-tray')) {
-                // If the previous sibling was the tray itself, we were first
-                this.previousSibling.find('.tray-content').prepend(healthContainer);
-            } else {
-                // Otherwise insert after the stored sibling
-                healthContainer.insertAfter(this.previousSibling);
-            }
-        } else {
-            // Fallback to prepending to tray content if no position info
-            mainTray.find('.tray-content').prepend(healthContainer);
-        }
-
-        try {
-            // Render the content into the new container
-            const templateData = {
-                actor: this.actor,
-                actors: this.actors, // Always pass actors array
-                position: game.settings.get(MODULE.ID, 'trayPosition'),
-                isGM: game.user.isGM,
-                isHealthPopped: false
-            };
-            const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
-            healthContainer.html(content);
-            
-            // Activate listeners on the new content
-            this._activateListeners(healthContainer);
-        } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error returning health panel to main tray',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.TITLE
-            );
-            ui.notifications.error("Error returning health panel to main tray");
-        }
+        // Re-render into the panel container inside the placeholder
+        await this.render();
     }
 
     // Update the element reference - new method

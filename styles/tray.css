@@ -154,6 +154,17 @@
     border-radius: 6px;
 }
 
+/* Panel Placeholder - for docking panels back into tray */
+.squire-tray[data-position="left"] .panel-placeholder {
+    display: block;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
 /* TRAY Panel Bottom Container */
 .squire-tray[data-position="left"] .panel-containers {
     flex: 1;

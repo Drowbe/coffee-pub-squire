@@ -72,32 +72,57 @@
         
         <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
             {{#if actor}}
+            <!-- CHARACTER - ALWAYS SHOW -->  
             <div class="panel-container" data-panel="character"></div>
+            
+            <!-- EXPERIENCE -->  
             {{#if @root.settings.showExperiencePanel}}
             <div class="panel-container" data-panel="experience"></div>
             {{/if}}
+
+
+            <!-- ABILITIES -->  
             {{#if @root.settings.showAbilitiesPanel}}
-            <div class="panel-container" data-panel="abilities"></div>
+                <div class="panel-container" data-panel="abilities"></div>
             {{/if}}
+
+
+            <!-- HEALTH -->
             {{#unless isHealthPopped}}
+              <div id="health-panel-placeholder" class="panel-placeholder">
                 {{#if @root.settings.showHealthPanel}}
-                <div class="panel-container" data-panel="health"></div>
+                  <div class="panel-container" data-panel="health"></div>
                 {{/if}}
+              </div>
             {{/unless}}
+
+            <!-- STATS -->  
             {{#if @root.settings.showStatsPanel}}
-            <div class="panel-container" data-panel="stats"></div>
+                <div class="panel-container" data-panel="stats"></div>
             {{/if}}
+
+            <!-- DICE TRAY -->
             {{#unless isDiceTrayPopped}}
+              <div id="dicetray-panel-placeholder" class="panel-placeholder">
                 {{#if @root.settings.showDiceTrayPanel}}
-                <div class="panel-container" data-panel="dicetray"></div>
+                  <div class="panel-container" data-panel="dicetray"></div>
                 {{/if}}
+              </div>
             {{/unless}}
+
+            <!-- MACROS -->
             {{#unless isMacrosPopped}}
+              <div id="macros-panel-placeholder" class="panel-placeholder">
                 {{#if @root.settings.showMacrosPanel}}
-                <div class="panel-container" data-panel="macros"></div>
+                  <div class="panel-container" data-panel="macros"></div>
                 {{/if}}
+              </div>
             {{/unless}}
+
+            <!-- CONTROL PANEL - FOR FAVORITES -->  
             <div class="panel-container" data-panel="control"></div>
+
+            <!-- FAVORITES -->  
             <div class="panel-containers stacked">
                 <div class="panel-container" data-panel="favorites"></div>
                 <div class="panel-container" data-panel="weapons"></div>
