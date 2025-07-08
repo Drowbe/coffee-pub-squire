@@ -565,7 +565,6 @@ export class PanelManager {
     }
 
     async updateHandle() {
-        console.log('SQUIRE | updateHandle called');
         if (PanelManager.element) {
             // Build favorite macros array
             let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
@@ -643,23 +642,16 @@ export class PanelManager {
             handle.html(handleContent);
             
             // Handle objective clicks in quest progress (handle)
-            console.log('SQUIRE | Setting up objective handler, found elements:', handle.find('.handle-quest-progress-fill').length);
             handle.find('.handle-quest-progress-fill').on('click', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
                 
-                console.log('SQUIRE | Objective clicked!');
-                
                 const objectiveElement = $(event.currentTarget);
                 const taskIndex = parseInt(objectiveElement.data('task-index'));
-                
-                console.log('SQUIRE | Task index:', taskIndex);
                 
                 // Get the pinned quest UUID from the current data
                 const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
                 const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-                
-                console.log('SQUIRE | Pinned quest UUID:', pinnedQuestUuid);
                 
                 if (!pinnedQuestUuid) {
                     ui.notifications.warn('No quest is currently pinned.');
@@ -672,11 +664,8 @@ export class PanelManager {
                         child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === taskIndex
                     );
                     
-                    console.log('SQUIRE | Found quest pins:', questPins.length);
-                    
                     if (questPins.length > 0) {
                         const pin = questPins[0];
-                        console.log('SQUIRE | Panning to pin at:', pin.x, pin.y);
                         // Pan to the pin location
                         canvas.animatePan({ x: pin.x, y: pin.y });
                         // Highlight the pin briefly
@@ -2679,7 +2668,6 @@ export class PanelManager {
      */
     _attachObjectiveClickHandlers(handle) {
         // Handle objective clicks in quest progress (handle)
-        console.log('SQUIRE | Setting up objective handler, found elements:', handle.find('.handle-quest-progress-fill').length);
         
         // Remove existing handlers first to prevent duplicates
         handle.find('.handle-quest-progress-fill').off('click mouseenter mouseleave');
@@ -2889,14 +2877,9 @@ Hooks.on('controlToken', async (token, controlled) => {
     // Determine if this is likely multi-selection
     const isMultiSelect = _selectionCount > 1 && timeSinceLastSelection < SINGLE_SELECT_THRESHOLD;
 
-    // Debug logging
-    console.log(`${MODULE.ID} | Selection: count=${_selectionCount}, timeSince=${timeSinceLastSelection}ms, isMulti=${isMultiSelect}`);
-
     // For multi-selection, debounce the update
     if (isMultiSelect) {
-        console.log(`${MODULE.ID} | Multi-select detected, debouncing update...`);
         _multiSelectTimeout = setTimeout(async () => {
-            console.log(`${MODULE.ID} | Executing debounced multi-select update`);
             await _updateHealthPanelFromSelection();
             _selectionCount = 0; // Reset counter
         }, MULTI_SELECT_DELAY);
@@ -2916,9 +2899,6 @@ Hooks.on('controlToken', async (token, controlled) => {
 async function _updateHealthPanelFromSelection() {
     // Get a list of all controlled tokens that the user owns
     const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-    
-    // Debug logging
-    console.log(`${MODULE.ID} | Updating health panel: ${controlledTokens.length} controlled tokens`);
     
     // If no tokens are controlled, return
     if (!controlledTokens.length) return;
@@ -2955,14 +2935,11 @@ async function _updateHealthPanelFromSelection() {
             const newActorIds = controlledActors.map(a => a.id).sort();
             
             if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
-                console.log(`${MODULE.ID} | Health panel actors changed, updating...`);
                 PanelManager.instance.healthPanel.updateActors(controlledActors);
                 // Only render if not popped out
                 if (!PanelManager.instance.healthPanel.isPoppedOut) {
                     await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
                 }
-            } else {
-                console.log(`${MODULE.ID} | Health panel actors unchanged, skipping update`);
             }
         }
         
@@ -2992,14 +2969,11 @@ async function _updateHealthPanelFromSelection() {
         const newActorIds = controlledActors.map(a => a.id).sort();
         
         if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
-            console.log(`${MODULE.ID} | Health panel actors changed (pinned), updating...`);
             PanelManager.instance.healthPanel.updateActors(controlledActors);
             // Only render if not popped out
             if (!PanelManager.instance.healthPanel.isPoppedOut) {
                 await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
             }
-        } else {
-            console.log(`${MODULE.ID} | Health panel actors unchanged (pinned), skipping update`);
         }
     }
     

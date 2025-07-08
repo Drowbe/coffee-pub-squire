@@ -40,14 +40,18 @@ export class MacrosWindow extends Application {
     }
 
     getData() {
+        // Load macros and favorites from settings
+        let macros = this.macros || game.settings.get(MODULE.ID, 'userMacros') || [];
+        // Ensure at least one empty slot if macros is empty
+        if (!macros.length) {
+            macros = [{ id: null, name: null, img: null }];
+        }
         let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
         let favoriteMacros = favoriteMacroIds.map(id => {
             const macro = game.macros.get(id);
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
-        // Ensure at least one empty slot if macros is empty
-        let macros = this.macros && this.macros.length ? this.macros : [{ id: null, name: null, img: null }];
-        console.log('SQUIRE | MacrosWindow.getData macros:', macros, 'favoriteMacros:', favoriteMacros);
+        
         return {
             actor: this.panel?.actor,
             position: "left",

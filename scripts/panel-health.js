@@ -80,7 +80,6 @@ export class HealthPanel {
     }
 
     async render(html) {
-        console.log('SQUIRE | PANELS | HealthPanel.render called, isPoppedOut:', this.isPoppedOut);
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
             const placeholder = $('#health-panel-placeholder');
@@ -91,13 +90,10 @@ export class HealthPanel {
                 placeholder.append(container);
             }
             this.element = container;
-            console.log('SQUIRE | PANELS | HealthPanel.render: using container', this.element.get(0));
         } else if (html) {
             this.element = html;
-            console.log('SQUIRE | PANELS | HealthPanel.render: using html argument');
         }
         if (!this.element || this.isPoppedOut) {
-            console.log('SQUIRE | PANELS | HealthPanel.render: skipping, element missing or popped out');
             return;
         }
 
@@ -124,9 +120,7 @@ export class HealthPanel {
             };
         }
 
-        console.log('SQUIRE | PANELS | HealthPanel.render: templateData', templateData);
         const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
-        console.log('SQUIRE | PANELS | HealthPanel.render: rendered content', content);
         this.element.html(content);
         this._activateListeners(this.element);
 

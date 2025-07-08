@@ -207,7 +207,6 @@ export class QuestPanel {
      * @private
      */
     async _clearAllQuestPins(scope) {
-        console.log('SQUIRE | _clearAllQuestPins called with scope:', scope);
         try {
             if (scope === 'thisScene') {
                 // Clear pins from current scene only
@@ -264,7 +263,6 @@ export class QuestPanel {
      * @private
      */
     async _clearQuestPins(questUuid) {
-        console.log('SQUIRE | _clearQuestPins called with questUuid:', questUuid);
         try {
             if (!canvas.scene || !canvas.squirePins) return;
             
@@ -284,7 +282,6 @@ export class QuestPanel {
                 clearedCount++;
             }
             
-            console.log('SQUIRE | Cleared', clearedCount, 'pins for quest', questUuid);
             ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
         } catch (error) {
             getBlacksmith()?.utils.postConsoleAndNotification(

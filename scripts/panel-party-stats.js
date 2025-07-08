@@ -51,7 +51,6 @@ export class PartyStatsPanel {
         try {
             // Get fresh reference to Blacksmith API
             const blacksmith = getBlacksmith();
-            // console.log('SQUIRE | STATS Blacksmith API object:', blacksmith);
 
             if (!blacksmith?.stats?.player) {
                 getBlacksmith()?.utils.postConsoleAndNotification(
@@ -69,7 +68,6 @@ export class PartyStatsPanel {
             const playerCharacters = game.actors.filter(actor => 
                 actor.type === 'character' && actor.hasPlayerOwner
             );
-            // console.log('SQUIRE | STATS Found player characters:', playerCharacters.map(pc => pc.name));
 
             // Initialize stat tracking
             let hitsByPlayer = new Map();
@@ -79,15 +77,11 @@ export class PartyStatsPanel {
             // Process each player's stats
             for (const actor of playerCharacters) {
                 try {
-                    // console.log(`SQUIRE | STATS Getting lifetime stats for ${actor.name}...`);
                     const stats = await blacksmith.stats.player.getLifetimeStats(actor.id);
                     
                     if (!stats) {
-                        // console.log(`SQUIRE | STATS No lifetime stats found for ${actor.name}`);
                         continue;
                     }
-
-                    // console.log(`SQUIRE | STATS Raw stats for ${actor.name}:`, stats);
 
                     // Extract stats with null checks
                     const hits = stats.attacks?.totalHits ?? 0;
@@ -163,8 +157,6 @@ export class PartyStatsPanel {
                     MODULE.TITLE
                 );
             }
-
-            // console.log('SQUIRE | STATS Final party stats data:', data);
 
         } catch (error) {
             getBlacksmith()?.utils.postConsoleAndNotification(

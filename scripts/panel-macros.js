@@ -50,7 +50,6 @@ export class MacrosPanel {
     }
 
     async render(html, { showAddSlot = false } = {}) {
-        console.log('SQUIRE | PANELS | MacrosPanel.render called, isPoppedOut:', this.isPoppedOut);
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
             const placeholder = $('#macros-panel-placeholder');
@@ -61,13 +60,10 @@ export class MacrosPanel {
                 placeholder.append(container);
             }
             this.element = container;
-            console.log('SQUIRE | PANELS | MacrosPanel.render: using container', this.element.get(0));
         } else if (html) {
             this.element = html;
-            console.log('SQUIRE | PANELS | MacrosPanel.render: using html argument');
         }
         if (!this.element || this.isPoppedOut) {
-            console.log('SQUIRE | PANELS | MacrosPanel.render: skipping, element missing or popped out');
             return;
         }
         // Load macros and favorites from settings
@@ -91,7 +87,6 @@ export class MacrosPanel {
             favoriteMacros
         };
 
-        console.log('SQUIRE | PANELS | MacrosPanel.render: templateData', templateData);
         // Skip rendering in tray if popped out
         if (this.isPoppedOut) {
             // Let the MacrosWindow handle its own rendering
@@ -103,7 +98,6 @@ export class MacrosPanel {
 
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
-        console.log('SQUIRE | PANELS | MacrosPanel.render: rendered content', content);
         this.element.html(content);
         this._activateListeners(this.element);
 

@@ -38,7 +38,6 @@ export class DiceTrayPanel {
     }
 
     async render(html) {
-        console.log('SQUIRE | PANELS | DiceTrayPanel.render called, isPoppedOut:', this.isPoppedOut);
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
             const placeholder = $('#dicetray-panel-placeholder');
@@ -49,13 +48,10 @@ export class DiceTrayPanel {
                 placeholder.append(container);
             }
             this.element = container;
-            console.log('SQUIRE | PANELS | DiceTrayPanel.render: using container', this.element.get(0));
         } else if (html) {
             this.element = html;
-            console.log('SQUIRE | PANELS | DiceTrayPanel.render: using html argument');
         }
         if (!this.element || this.isPoppedOut) {
-            console.log('SQUIRE | PANELS | DiceTrayPanel.render: skipping, element missing or popped out');
             return;
         }
 
@@ -65,12 +61,10 @@ export class DiceTrayPanel {
             isDiceTrayPopped: this.isPoppedOut
         };
 
-        console.log('SQUIRE | PANELS | DiceTrayPanel.render: templateData', templateData);
         // If popped out, only update the window content and don't render in tray
         if (this.isPoppedOut) {
             if (this.window?.element) {
                 const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-                console.log('SQUIRE | PANELS | DiceTrayPanel.render: rendered content (window)', content);
                 this.window.element.find('.window-content').html(content);
                 this._activateListeners(this.window.element);
             }
@@ -79,7 +73,6 @@ export class DiceTrayPanel {
 
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-        console.log('SQUIRE | PANELS | DiceTrayPanel.render: rendered content', content);
         this.element.html(content);
         this._activateListeners(this.element);
 
