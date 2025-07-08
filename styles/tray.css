@@ -160,9 +160,9 @@
     background: transparent;
     border: none;
     padding: 0;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    min-height: 20px;
+    margin-bottom: 0px;
+    border-radius: 0px;
+    min-height: 0px;
 }
 
 /* Collapse placeholder when empty to remove gap */
