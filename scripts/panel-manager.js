@@ -270,7 +270,7 @@ export class PanelManager {
         }
 
         // --- NEW: Render health panel into placeholder if not popped out ---
-        if (!HealthPanel.isWindowOpen) {
+        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             if (!this.healthPanel) this.healthPanel = new HealthPanel(this.actor);
             // Update health panel with all controlled actors for bulk operations
             const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
@@ -302,15 +302,16 @@ export class PanelManager {
         PanelManager.trackTimeout(timeoutId);
 
         // --- Ensure all panels are instantiated and rendered into their placeholders if not popped out ---
-        if (!HealthPanel.isWindowOpen) {
+        // Only create and render panels if they are enabled in settings
+        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             if (!this.healthPanel) this.healthPanel = new HealthPanel(this.actor);
             await this.healthPanel.render();
         }
-        if (!DiceTrayPanel.isWindowOpen) {
+        if (!DiceTrayPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
             if (!this.dicetrayPanel) this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
             await this.dicetrayPanel.render();
         }
-        if (!MacrosPanel.isWindowOpen) {
+        if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
             if (!this.macrosPanel) this.macrosPanel = new MacrosPanel({ actor: this.actor });
             await this.macrosPanel.render();
         }
@@ -392,8 +393,8 @@ export class PanelManager {
         this.featuresPanel = new FeaturesPanel(this.actor);
         this.experiencePanel = new ExperiencePanel(this.actor);
 
-        // Only create health panel if not popped out
-        if (!HealthPanel.isWindowOpen) {
+        // Only create health panel if not popped out and enabled in settings
+        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             this.healthPanel = new HealthPanel(this.actor);
             
             // Update health panel with all controlled actors for bulk operations
@@ -404,13 +405,13 @@ export class PanelManager {
             }
         }
 
-        // Only create dice tray panel if not popped out
-        if (!DiceTrayPanel.isWindowOpen) {
+        // Only create dice tray panel if not popped out and enabled in settings
+        if (!DiceTrayPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
             this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
         }
 
-        // Only create macros panel if not popped out
-        if (!MacrosPanel.isWindowOpen) {
+        // Only create macros panel if not popped out and enabled in settings
+        if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
             this.macrosPanel = new MacrosPanel({ actor: this.actor });
         }
 
@@ -429,13 +430,13 @@ export class PanelManager {
         this.inventoryPanel.element = PanelManager.element;
         this.featuresPanel.element = PanelManager.element;
         this.experiencePanel.element = PanelManager.element;
-        if (!HealthPanel.isWindowOpen) {
+        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             this.healthPanel.element = PanelManager.element;
         }
-        if (!DiceTrayPanel.isWindowOpen) {
+        if (!DiceTrayPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
             this.dicetrayPanel.element = PanelManager.element;
         }
-        if (!MacrosPanel.isWindowOpen) {
+        if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
             this.macrosPanel.element = PanelManager.element;
         }
         this.statsPanel.element = PanelManager.element;
@@ -707,20 +708,36 @@ export class PanelManager {
             this.weaponsPanel?.render(element);
             this.inventoryPanel?.render(element);
             this.featuresPanel?.render(element);
-            this.dicetrayPanel?.render(element);
-            this.experiencePanel?.render(element);
-            this.healthPanel?.render(element);
-            this.statsPanel?.render(element);
-            this.abilitiesPanel?.render(element);
+            
+            // Only render panels if they are enabled in settings
+            if (game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
+                this.dicetrayPanel?.render(element);
+            }
+            if (game.settings.get(MODULE.ID, 'showExperiencePanel')) {
+                this.experiencePanel?.render(element);
+            }
+            if (game.settings.get(MODULE.ID, 'showHealthPanel')) {
+                this.healthPanel?.render(element);
+            }
+            if (game.settings.get(MODULE.ID, 'showStatsPanel')) {
+                this.statsPanel?.render(element);
+            }
+            if (game.settings.get(MODULE.ID, 'showAbilitiesPanel')) {
+                this.abilitiesPanel?.render(element);
+            }
         }
         
         // These panels don't require an actor
         this.partyPanel?.render(element);
-        this.partyStatsPanel?.render(element);
+        if (game.settings.get(MODULE.ID, 'showPartyStatsPanel')) {
+            this.partyStatsPanel?.render(element);
+        }
         this.notesPanel?.render(element);
         this.codexPanel?.render(element);
         this.questPanel?.render(element);
-        if (this.macrosPanel && !this.macrosPanel.isPoppedOut) await this.macrosPanel.render(element);
+        if (this.macrosPanel && !this.macrosPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
+            await this.macrosPanel.render(element);
+        }
     }
 
     activateListeners(tray) {
@@ -2928,7 +2945,7 @@ async function _updateHealthPanelFromSelection() {
         await PanelManager.initialize(actorToUse);
         
         // Update health panel with all controlled actors for bulk operations
-        if (PanelManager.instance && PanelManager.instance.healthPanel) {
+        if (PanelManager.instance && PanelManager.instance.healthPanel && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             // Only update if the actors have actually changed
             const currentActors = PanelManager.instance.healthPanel.actors || [];
             const currentActorIds = currentActors.map(a => a.id).sort();
@@ -2962,7 +2979,7 @@ async function _updateHealthPanelFromSelection() {
     await PanelManager.initialize(actorToUse);
     
     // Update health panel with all controlled actors for bulk operations
-    if (PanelManager.instance && PanelManager.instance.healthPanel) {
+    if (PanelManager.instance && PanelManager.instance.healthPanel && game.settings.get(MODULE.ID, 'showHealthPanel')) {
         // Only update if the actors have actually changed
         const currentActors = PanelManager.instance.healthPanel.actors || [];
         const currentActorIds = currentActors.map(a => a.id).sort();

@@ -74,18 +74,6 @@
             {{#if actor}}
             <!-- CHARACTER - ALWAYS SHOW -->  
             <div class="panel-container" data-panel="character"></div>
-            
-            <!-- EXPERIENCE -->  
-            {{#if @root.settings.showExperiencePanel}}
-            <div class="panel-container" data-panel="experience"></div>
-            {{/if}}
-
-
-            <!-- ABILITIES -->  
-            {{#if @root.settings.showAbilitiesPanel}}
-                <div class="panel-container" data-panel="abilities"></div>
-            {{/if}}
-
 
             <!-- HEALTH -->
             {{#unless isHealthPopped}}
@@ -95,6 +83,16 @@
                 {{/if}}
               </div>
             {{/unless}}
+
+            <!-- EXPERIENCE -->  
+            {{#if @root.settings.showExperiencePanel}}
+            <div class="panel-container" data-panel="experience"></div>
+            {{/if}}
+
+            <!-- ABILITIES -->  
+            {{#if @root.settings.showAbilitiesPanel}}
+                <div class="panel-container" data-panel="abilities"></div>
+            {{/if}}
 
             <!-- STATS -->  
             {{#if @root.settings.showStatsPanel}}
@@ -119,7 +117,7 @@
               </div>
             {{/unless}}
 
-            <!-- CONTROL PANEL - FOR FAVORITES -->  
+            <!-- CONTROL PANEL - FOR FAVORITES - ALWAYS SHOWN -->  
             <div class="panel-container" data-panel="control"></div>
 
             <!-- FAVORITES -->  
@@ -132,8 +130,8 @@
             </div>
             {{else}}
             <div class="no-character-message">
-                <p>- No Owned Token Selected -</p>
-                <p>Select an owned token to get started</p>
+                <p>NO TOKEN SELECTED OR OWNED</p>
+                <p>Select an owned token to get started.</p>
             </div>
             {{/if}}
         </div>
