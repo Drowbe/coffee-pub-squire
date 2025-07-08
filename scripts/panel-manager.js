@@ -1055,7 +1055,7 @@ export class PanelManager {
         });
 
         // Handle add effect icon clicks
-        tray.find('.add-effect-icon').click(async (event) => {
+        tray.find('.add-effect-icon').off('click').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -1064,6 +1064,10 @@ export class PanelManager {
                 ui.notifications.warn("Only GMs can add effects.");
                 return;
             }
+
+            // Close any existing Add Effect dialog
+            const existing = Object.values(ui.windows).find(w => w.title && w.title.includes('Add Effect'));
+            if (existing) existing.close();
 
             // Get all available conditions from CONFIG.DND5E.conditionTypes
             const conditions = Object.entries(CONFIG.DND5E.conditionTypes).map(([id, condition]) => ({
@@ -2135,7 +2139,7 @@ export class PanelManager {
         });
 
         // Handle add effect icon clicks
-        tray.find('.add-effect-icon').click(async (event) => {
+        tray.find('.add-effect-icon').off('click').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -2144,6 +2148,10 @@ export class PanelManager {
                 ui.notifications.warn("Only GMs can add effects.");
                 return;
             }
+
+            // Close any existing Add Effect dialog
+            const existing = Object.values(ui.windows).find(w => w.title && w.title.includes('Add Effect'));
+            if (existing) existing.close();
 
             // Get all available conditions from CONFIG.DND5E.conditionTypes
             const conditions = Object.entries(CONFIG.DND5E.conditionTypes).map(([id, condition]) => ({

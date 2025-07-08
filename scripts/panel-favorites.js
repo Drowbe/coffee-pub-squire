@@ -192,29 +192,36 @@ export class FavoritesPanel {
             
             // Get all items from the actor
             const newFavorites = [];
+            const newHandleFavorites = [];
             
             // Add equipped weapons to favorites
             const weapons = actor.items.filter(item => 
                 item.type === "weapon" && 
                 item.system.equipped === true
             );
-            
             // Add prepared spells to favorites
             const spells = actor.items.filter(item => 
                 item.type === "spell" && 
                 item.system.preparation?.prepared === true
             );
-            
+            // Add monster features that are actions
+            const monsterFeatures = actor.items.filter(item => 
+                (item.type === "feat" || item.type === "feature") &&
+                item.system.featureType === "Monster Feature" &&
+                !!item.system.activation?.type
+            );
             // Get the IDs of all items to favorite
-            const itemsToFavorite = [...weapons, ...spells].map(item => item.id);
-            
+            const itemsToFavorite = [...weapons, ...spells, ...monsterFeatures].map(item => item.id);
+            // Add all to handle favorites as well
+            newHandleFavorites.push(...itemsToFavorite);
             // If no items to favorite, don't do anything
             if (itemsToFavorite.length === 0) return false;
-            
             // Save the new favorites
             await actor.unsetFlag(MODULE.ID, 'favorites');
             await actor.setFlag(MODULE.ID, 'favorites', itemsToFavorite);
-            
+            // Save the new handle favorites
+            await actor.unsetFlag(MODULE.ID, 'handleFavorites');
+            await actor.setFlag(MODULE.ID, 'handleFavorites', newHandleFavorites);
             // Log the action
             blacksmith?.utils.postConsoleAndNotification(
                 "SQUIRE | Auto-favorited items for NPC/Monster",
@@ -223,6 +230,7 @@ export class FavoritesPanel {
                     actorType: actor.type,
                     weaponsCount: weapons.length, 
                     spellsCount: spells.length,
+                    monsterFeaturesCount: monsterFeatures.length,
                     totalFavorites: itemsToFavorite.length 
                 },
                 false,
@@ -230,14 +238,12 @@ export class FavoritesPanel {
                 false,
                 MODULE.TITLE
             );
-            
             // Refresh the panels if they exist
             if (PanelManager.instance && PanelManager.currentActor?.id === actor.id) {
                 // First update the favorites panel
                 if (PanelManager.instance.favoritesPanel?.element) {
                     await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
                 }
-
                 // Then update all other panels
                 if (PanelManager.instance.inventoryPanel?.element) {
                     await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
@@ -248,11 +254,9 @@ export class FavoritesPanel {
                 if (PanelManager.instance.spellsPanel?.element) {
                     await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
                 }
-
                 // Update just the handle to refresh favorites
                 await PanelManager.instance.updateHandle();
             }
-            
             return true;
         } catch (error) {
             blacksmith?.utils.postConsoleAndNotification(
