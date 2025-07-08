@@ -165,6 +165,15 @@
     min-height: 20px;
 }
 
+/* Collapse placeholder when empty to remove gap */
+.squire-tray[data-position="left"] .panel-placeholder:empty {
+    min-height: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
 /* TRAY Panel Bottom Container */
 .squire-tray[data-position="left"] .panel-containers {
     flex: 1;
