@@ -12,6 +12,74 @@ export class FavoritesPanel {
         return actor.getFlag(MODULE.ID, 'favorites') || [];
     }
 
+    // NEW: Handle favorites methods using array-based approach
+    static getHandleFavorites(actor) {
+        if (!actor) return [];
+        return actor.getFlag(MODULE.ID, 'handleFavorites') || [];
+    }
+
+    static async setHandleFavorites(actor, ids) {
+        await actor.setFlag(MODULE.ID, 'handleFavorites', ids);
+    }
+
+    static async addHandleFavorite(actor, itemId) {
+        const ids = new Set(this.getHandleFavorites(actor));
+        ids.add(itemId);
+        await this.setHandleFavorites(actor, Array.from(ids));
+    }
+
+    static async removeHandleFavorite(actor, itemId) {
+        const ids = new Set(this.getHandleFavorites(actor));
+        ids.delete(itemId);
+        await this.setHandleFavorites(actor, Array.from(ids));
+    }
+
+    static isHandleFavorite(actor, itemId) {
+        return this.getHandleFavorites(actor).includes(itemId);
+    }
+
+    /**
+     * Migrate from old per-item flag system to new array-based system
+     * @param {Actor} actor - The actor to migrate
+     * @returns {Promise<boolean>} - Returns true if migration was performed
+     */
+    static async migrateHandleFavorites(actor) {
+        if (!actor) return false;
+        
+        // Check if we already have handle favorites array
+        const currentHandleFavorites = this.getHandleFavorites(actor);
+        if (currentHandleFavorites.length > 0) return false; // Already migrated
+        
+        // Find all items with the old flag
+        const itemsWithOldFlag = actor.items.filter(item => 
+            item.getFlag(MODULE.ID, 'isHandleFavorite') === true
+        );
+        
+        if (itemsWithOldFlag.length === 0) return false; // Nothing to migrate
+        
+        // Get the IDs of items with the old flag
+        const itemIds = itemsWithOldFlag.map(item => item.id);
+        
+        // Set the new array-based handle favorites
+        await this.setHandleFavorites(actor, itemIds);
+        
+        // Remove the old flags from all items
+        for (const item of itemsWithOldFlag) {
+            await item.unsetFlag(MODULE.ID, 'isHandleFavorite');
+        }
+        
+        return true;
+    }
+
+    static async clearHandleFavorites(actor) {
+        await actor.unsetFlag(MODULE.ID, 'handleFavorites');
+        if (PanelManager.instance) {
+            // Update the handle to reflect the cleared handle favorites
+            await PanelManager.instance.updateHandle();
+        }
+        return [];
+    }
+
     static async clearFavorites(actor) {
         await actor.unsetFlag(MODULE.ID, 'favorites');
         if (PanelManager.instance) {
@@ -273,6 +341,9 @@ export class FavoritesPanel {
         if (this.actor && this.actor.type !== "character") {
             FavoritesPanel.initializeNpcFavorites(this.actor);
         }
+        
+        // Migrate from old per-item flag system to new array-based system
+        FavoritesPanel.migrateHandleFavorites(this.actor);
     }
 
     _getFavorites() {
@@ -298,7 +369,7 @@ export class FavoritesPanel {
                 hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                 showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                 showStarIcon: item.type === 'feat',
-                isHandleFavorite: item.getFlag(MODULE.ID, 'isHandleFavorite') === true
+                isHandleFavorite: FavoritesPanel.isHandleFavorite(this.actor, item.id)
             }));
             
         return favoritedItems;
@@ -595,8 +666,12 @@ export class FavoritesPanel {
             if (!itemId) return;
             const item = this.actor.items.get(itemId);
             if (!item) return;
-            const current = item.getFlag(MODULE.ID, 'isHandleFavorite') === true;
-            await item.setFlag(MODULE.ID, 'isHandleFavorite', !current);
+            const current = FavoritesPanel.isHandleFavorite(this.actor, itemId);
+            if (current) {
+                await FavoritesPanel.removeHandleFavorite(this.actor, itemId);
+            } else {
+                await FavoritesPanel.addHandleFavorite(this.actor, itemId);
+            }
             // Re-render the panel and update the handle
             if (PanelManager.instance) {
                 if (PanelManager.instance.favoritesPanel?.element) {

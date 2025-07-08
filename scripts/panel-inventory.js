@@ -49,7 +49,7 @@ export class InventoryPanel {
             img: item.img || 'icons/svg/item-bag.svg',
             type: item.type,
             system: item.system,
-            isFavorite: item.getFlag(MODULE.ID, 'isHandleFavorite') === true,
+                            isFavorite: FavoritesPanel.isHandleFavorite(this.actor, item.id),
             categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
             actionType: this._getActionType(item),
             flags: item.flags || {},

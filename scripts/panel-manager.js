@@ -586,7 +586,21 @@ export class PanelManager {
                     name: e.name,
                     icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
-                favorites: FavoritesPanel.getFavorites(this.actor).filter(f => f.isHandleFavorite),
+                favorites: FavoritesPanel.getHandleFavorites(this.actor).map(id => {
+                    const item = this.actor.items.get(id);
+                    return item ? {
+                        id: item.id,
+                        name: item.name,
+                        img: item.img || 'icons/svg/item-bag.svg',
+                        type: item.type,
+                        system: item.system,
+                        equipped: item.system.equipped,
+                        hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                        showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                        showStarIcon: item.type === 'feat',
+                        isHandleFavorite: true
+                    } : null;
+                }).filter(Boolean),
                 favoriteMacros,
                 pinnedQuest, // Add pinned quest data
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),

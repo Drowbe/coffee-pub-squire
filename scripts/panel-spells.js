@@ -21,7 +21,7 @@ export class SpellsPanel {
         
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
-            const isFavorite = spell.getFlag(MODULE.ID, 'isHandleFavorite') === true;
+            const isFavorite = FavoritesPanel.isHandleFavorite(this.actor, spell.id);
             const level = spell.system.level;
             const isAtWill = spell.system.preparation?.mode === 'atwill';
             
