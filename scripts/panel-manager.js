@@ -62,9 +62,9 @@ export class PanelManager {
             this.statsPanel = new StatsPanel(actor);
             this.abilitiesPanel = new AbilitiesPanel(actor);
         }
-        // Always create these panels regardless of actor (for handle icons)
+        // Always create these panels regardless of actor (for handle icons and multi-select functionality)
         this.dicetrayPanel = new DiceTrayPanel({ actor });
-        this.healthPanel = new HealthPanel(actor);
+        this.healthPanel = new HealthPanel(actor); // Always create for multi-select
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
@@ -2945,7 +2945,7 @@ async function _updateHealthPanelFromSelection() {
         await PanelManager.initialize(actorToUse);
         
         // Update health panel with all controlled actors for bulk operations
-        if (PanelManager.instance && PanelManager.instance.healthPanel && game.settings.get(MODULE.ID, 'showHealthPanel')) {
+        if (PanelManager.instance && PanelManager.instance.healthPanel) {
             // Only update if the actors have actually changed
             const currentActors = PanelManager.instance.healthPanel.actors || [];
             const currentActorIds = currentActors.map(a => a.id).sort();
@@ -2953,8 +2953,8 @@ async function _updateHealthPanelFromSelection() {
             
             if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
                 PanelManager.instance.healthPanel.updateActors(controlledActors);
-                // Only render if not popped out
-                if (!PanelManager.instance.healthPanel.isPoppedOut) {
+                // Only render if not popped out and health panel is enabled
+                if (!PanelManager.instance.healthPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showHealthPanel')) {
                     await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
                 }
             }
@@ -2979,7 +2979,7 @@ async function _updateHealthPanelFromSelection() {
     await PanelManager.initialize(actorToUse);
     
     // Update health panel with all controlled actors for bulk operations
-    if (PanelManager.instance && PanelManager.instance.healthPanel && game.settings.get(MODULE.ID, 'showHealthPanel')) {
+    if (PanelManager.instance && PanelManager.instance.healthPanel) {
         // Only update if the actors have actually changed
         const currentActors = PanelManager.instance.healthPanel.actors || [];
         const currentActorIds = currentActors.map(a => a.id).sort();
@@ -2987,8 +2987,8 @@ async function _updateHealthPanelFromSelection() {
         
         if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
             PanelManager.instance.healthPanel.updateActors(controlledActors);
-            // Only render if not popped out
-            if (!PanelManager.instance.healthPanel.isPoppedOut) {
+            // Only render if not popped out and health panel is enabled
+            if (!PanelManager.instance.healthPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showHealthPanel')) {
                 await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
             }
         }
