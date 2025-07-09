@@ -1103,10 +1103,6 @@ export class QuestPanel {
             event.preventDefault();
             event.stopPropagation();
             if (!game.user.isGM) return;
-            
-            console.log('SQUIRE | Clear all quest pins button clicked');
-            
-            console.log('SQUIRE | Creating clear all pins dialog');
             new Dialog({
                 title: 'Clear All Quest Pins',
                 content: `
@@ -1141,16 +1137,12 @@ export class QuestPanel {
             event.stopPropagation();
             if (!game.user.isGM) return;
             
-            console.log('SQUIRE | Clear quest pins button clicked');
-            
             const icon = $(event.currentTarget);
             const uuid = icon.data('uuid');
             if (!uuid) return;
             
             const page = await fromUuid(uuid);
             if (!page) return;
-            
-            console.log('SQUIRE | Creating clear quest pins dialog for:', page.name);
             new Dialog({
                 title: `Clear Pins for "${page.name}"`,
                 content: `

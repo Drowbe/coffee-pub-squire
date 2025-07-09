@@ -545,10 +545,6 @@ export class PanelManager {
 
     async updateHandle() {
         if (PanelManager.element) {
-            // DEBUG: Log the actor and favorites before rendering
-            console.log('SQUIRE | updateHandle actor', this.actor?.name, this.actor?.id);
-            console.log('SQUIRE | updateHandle favorites', FavoritesPanel.getFavorites(this.actor));
-            console.log('SQUIRE | updateHandle handleFavorites', FavoritesPanel.getHandleFavorites(this.actor));
             // Build favorite macros array
             let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
             let favoriteMacros = favoriteMacroIds.map(id => {
@@ -585,7 +581,6 @@ export class PanelManager {
 
             // Fetch handle favorites
             const handleFavoriteIds = FavoritesPanel.getHandleFavorites(this.actor);
-            console.log('SQUIRE | updateHandle handleFavoriteIds', handleFavoriteIds);
             const handleFavorites = handleFavoriteIds.map(id => {
                 const item = this.actor.items.get(id);
                 return item ? {
@@ -601,7 +596,6 @@ export class PanelManager {
                     isHandleFavorite: true
                 } : null;
             }).filter(Boolean);
-            console.log('SQUIRE | updateHandle handleFavorites', handleFavorites);
 
             const handleData = {
                 actor: this.actor,
@@ -642,12 +636,8 @@ export class PanelManager {
             const handleContent = tempDiv.querySelector('.handle-left').innerHTML;
             
             const handle = PanelManager.element.find('.handle-left');
-            // DEBUG: Before DOM update
-            console.log('SQUIRE | updateHandle DOM before', handle.html());
             handle.empty();
             handle.html(handleContent);
-            // DEBUG: After DOM update
-            console.log('SQUIRE | updateHandle DOM after', handle.html());
             
             // Handle objective clicks in quest progress (handle)
             handle.find('.handle-quest-progress-fill').on('click', async (event) => {
