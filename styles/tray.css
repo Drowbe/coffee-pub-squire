@@ -798,6 +798,11 @@
     text-shadow: 0 0 3px #ffd700;
 }
 
+.handle-favorite-icon.enabled {
+    color: #ff2f2f !important;
+    filter: drop-shadow(0 0 2px #ff2f2f);
+}
+
 
 /* Party View Placeholder */
 .party-view-placeholder {

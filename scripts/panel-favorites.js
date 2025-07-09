@@ -222,6 +222,16 @@ export class FavoritesPanel {
             // Save the new handle favorites
             await actor.unsetFlag(MODULE.ID, 'handleFavorites');
             await actor.setFlag(MODULE.ID, 'handleFavorites', newHandleFavorites);
+            // Force refresh of items collection to ensure up-to-date data
+            if (actor.items && typeof actor.items._flush === 'function') {
+                await actor.items._flush();
+            }
+            // DEBUG: Log the values after setting
+            console.log('SQUIRE | initializeNpcFavorites', {
+                actor: actor.name,
+                favorites: itemsToFavorite,
+                handleFavorites: newHandleFavorites
+            });
             // Log the action
             blacksmith?.utils.postConsoleAndNotification(
                 "SQUIRE | Auto-favorited items for NPC/Monster",
@@ -380,6 +390,9 @@ export class FavoritesPanel {
     }
 
     async render(html) {
+        console.log('SQUIRE | FavoritesPanel.render actor', this.actor?.name, this.actor?.id);
+        console.log('SQUIRE | FavoritesPanel.render favorites', FavoritesPanel.getFavorites(this.actor));
+        console.log('SQUIRE | FavoritesPanel.render handleFavorites', FavoritesPanel.getHandleFavorites(this.actor));
         if (!html) return;
         
         // Store the element reference

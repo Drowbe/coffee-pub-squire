@@ -545,6 +545,10 @@ export class PanelManager {
 
     async updateHandle() {
         if (PanelManager.element) {
+            // DEBUG: Log the actor and favorites before rendering
+            console.log('SQUIRE | updateHandle actor', this.actor?.name, this.actor?.id);
+            console.log('SQUIRE | updateHandle favorites', FavoritesPanel.getFavorites(this.actor));
+            console.log('SQUIRE | updateHandle handleFavorites', FavoritesPanel.getHandleFavorites(this.actor));
             // Build favorite macros array
             let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
             let favoriteMacros = favoriteMacroIds.map(id => {
@@ -579,6 +583,26 @@ export class PanelManager {
                     isOwner: token.actor.isOwner
                 }));
 
+            // Fetch handle favorites
+            const handleFavoriteIds = FavoritesPanel.getHandleFavorites(this.actor);
+            console.log('SQUIRE | updateHandle handleFavoriteIds', handleFavoriteIds);
+            const handleFavorites = handleFavoriteIds.map(id => {
+                const item = this.actor.items.get(id);
+                return item ? {
+                    id: item.id,
+                    name: item.name,
+                    img: item.img || 'icons/svg/item-bag.svg',
+                    type: item.type,
+                    system: item.system,
+                    equipped: item.system.equipped,
+                    hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                    showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                    showStarIcon: item.type === 'feat',
+                    isHandleFavorite: true
+                } : null;
+            }).filter(Boolean);
+            console.log('SQUIRE | updateHandle handleFavorites', handleFavorites);
+
             const handleData = {
                 actor: this.actor,
                 isGM: game.user.isGM,
@@ -586,21 +610,7 @@ export class PanelManager {
                     name: e.name,
                     icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
                 })) || [],
-                favorites: FavoritesPanel.getHandleFavorites(this.actor).map(id => {
-                    const item = this.actor.items.get(id);
-                    return item ? {
-                        id: item.id,
-                        name: item.name,
-                        img: item.img || 'icons/svg/item-bag.svg',
-                        type: item.type,
-                        system: item.system,
-                        equipped: item.system.equipped,
-                        hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                        showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                        showStarIcon: item.type === 'feat',
-                        isHandleFavorite: true
-                    } : null;
-                }).filter(Boolean),
+                handleFavorites, // <-- pass as handleFavorites
                 favoriteMacros,
                 pinnedQuest, // Add pinned quest data
                 showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
@@ -632,7 +642,12 @@ export class PanelManager {
             const handleContent = tempDiv.querySelector('.handle-left').innerHTML;
             
             const handle = PanelManager.element.find('.handle-left');
+            // DEBUG: Before DOM update
+            console.log('SQUIRE | updateHandle DOM before', handle.html());
+            handle.empty();
             handle.html(handleContent);
+            // DEBUG: After DOM update
+            console.log('SQUIRE | updateHandle DOM after', handle.html());
             
             // Handle objective clicks in quest progress (handle)
             handle.find('.handle-quest-progress-fill').on('click', async (event) => {
@@ -2972,6 +2987,11 @@ async function _updateHealthPanelFromSelection() {
         PanelManager.element.removeClass('expanded');
         await PanelManager.initialize(actorToUse);
         
+        // Force refresh of items collection to ensure up-to-date handle favorites
+        if (PanelManager.instance && PanelManager.instance.actor?.items && typeof PanelManager.instance.actor.items._flush === 'function') {
+            await PanelManager.instance.actor.items._flush();
+        }
+        
         // Update health panel with all controlled actors for bulk operations
         if (PanelManager.instance && PanelManager.instance.healthPanel) {
             // Only update if the actors have actually changed
@@ -3022,6 +3042,11 @@ async function _updateHealthPanelFromSelection() {
         }
     }
     
+    // Always update the handle for the new actor
+    if (PanelManager.instance) {
+        await PanelManager.instance.updateHandle();
+    }
+    
     // Restore the previous view mode after initializing
     if (PanelManager.instance) {
         await PanelManager.instance.setViewMode(currentViewMode);
@@ -3033,11 +3058,13 @@ Hooks.on('deleteToken', async (token) => {
     if (PanelManager.currentActor?.id === token.actor?.id) {
         PanelManager.instance = null;
         PanelManager.currentActor = null;
-        
         // Try to find another token to display
         const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
         if (nextToken) {
             await PanelManager.initialize(nextToken.actor);
+            if (PanelManager.instance) {
+                await PanelManager.instance.updateHandle();
+            }
         }
     }
 });
@@ -3054,10 +3081,10 @@ Hooks.on('updateActor', async (actor, changes) => {
 
     if (PanelManager.currentActor?.id === actor.id && needsFullUpdate) {
         await PanelManager.initialize(actor);
-        
         // Force a re-render of all panels
         if (PanelManager.instance) {
             await PanelManager.instance.renderPanels(PanelManager.element);
+            await PanelManager.instance.updateHandle();
         }
     }
     // For health, effects, and spell slot changes, update appropriately
@@ -3067,7 +3094,6 @@ Hooks.on('updateActor', async (actor, changes) => {
             if (changes.system?.attributes?.hp || changes.effects) {
                 await PanelManager.instance.updateHandle();
             }
-            
             // Handle spell slot changes
             if (changes.system?.spells) {
                 // Re-render just the spells panel
@@ -3105,6 +3131,7 @@ Hooks.on('createItem', async (item) => {
     if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
         await PanelManager.instance.updateTray();
         await PanelManager.instance.renderPanels(PanelManager.element);
+        await PanelManager.instance.updateHandle();
     }
 });
 
@@ -3149,6 +3176,7 @@ Hooks.on('deleteItem', async (item) => {
     if (PanelManager.currentActor?.id === item.parent?.id && PanelManager.instance) {
         await PanelManager.instance.updateTray();
         await PanelManager.instance.renderPanels(PanelManager.element);
+        await PanelManager.instance.updateHandle();
     }
 });
 
@@ -3211,4 +3239,17 @@ Hooks.on('canvasReady', () => {
         
         return result;
     };
+});
+
+// On Foundry ready, update the handle if possible
+Hooks.once('ready', async function() {
+    if (PanelManager.instance && PanelManager.currentActor) {
+        await PanelManager.instance.updateHandle();
+    }
+});
+// On token creation, update the handle if the token is owned by the user
+Hooks.on('createToken', async (token) => {
+    if (token.actor?.isOwner && PanelManager.instance) {
+        await PanelManager.instance.updateHandle();
+    }
 });
