@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.18] - Quest Overhaul
+
+### Added
+- Comprehensive quest management tools: clear all quest pins (scene-level and all-scenes), clear quest pins for specific quests, hide/show objective pins toggle for players.
+- Pin visibility class to handle quest progress: objectives with visible pins are now visually marked.
+- Player toggle button for pin visibility with icon state changes and user flag persistence.
+- GM scene-level and quest-level buttons with confirmation dialogs for pin management.
+- Player notifications when quests are automatically unpinned.
+- Proper quest state synchronization across all components.
+- Persistent window state management for macros, dice tray, and health windows, including viewport validation and error handling.
+- Tools are now accessible regardless of context.
+
+### Changed
+- Unified tooltip data for quests: all tooltips now use a shared Handlebars template and QuestParser as the source of truth.
+- Enhanced pin visibility updates with proper appearance refresh and automatic unpinning when quests are hidden from players.
+- Quest-level visibility now properly controls all objective pin visibility for players.
+- Enhanced health window update detection for real-time HP changes.
+- Improved error handling and Blacksmith logging for window state restoration.
+
+### Fixed
+- Fixed syntax error in quest pin state update (panel-quest.js).
+- Removed duplicate event handler setup in panel-manager.js.
+- Fixed duplicate class attribute in partials/quest-entry.hbs.
+- Fixed tray window click issue that caused the tray to disappear.
+- Fixed squire tray disappearing on scene change.
+- Fixed handle quest progress order and index mapping.
+- Fixed handle quest data loading on scene change.
+- Fixed tooltip data consistency between handle and pin.
+- Fixed quest visibility toggle pin refresh and pin appearance for GM/players.
+- Fixed excludedUsers settings issue and critical startup error.
+- Fixed quest import/export and tooltip data consistency.
+- Fixed most critical bugs and improved data consistency and code architecture.
+
 ## [1.0.17] - Printing Character Sheets
 
 ### Added
