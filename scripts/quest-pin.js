@@ -1499,7 +1499,7 @@ function debouncedUpdateAllPinVisibility() {
   if (questPinVisibilityDebounce) clearTimeout(questPinVisibilityDebounce);
   questPinVisibilityDebounce = setTimeout(() => {
     // Only run if the global vision polygon exists
-    if (canvas.effects?.visibility?.los) {
+    if (canvas.visibility?.los) {
       updateAllPinVisibility();
     }
     questPinVisibilityDebounce = null;

@@ -5,8 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.20] - Readiness
 
-## [1.0.19] - Debug removal
+### Fixed
+- Fixed deprecated `EffectsCanvasGroup#visibility` API usage in quest pins, now using `Canvas#visibility` for FoundryVTT v12+ compatibility
+
+## [1.0.19] - Debug Removal
+
+### Fixed
 - Debug removal
 
 ## [1.0.18] - Quest Overhaul
