@@ -75,8 +75,25 @@ export class PanelManager {
     }
 
     static async initialize(actor = null) {
-        // Check if user is excluded
-        const excludedUsers = game.settings.get(MODULE.ID, 'excludedUsers').split(',').map(id => id.trim());
+        // Check if user is excluded - with safety check for setting registration
+        let excludedUsers = [];
+        try {
+            const excludedUsersSetting = game.settings.get(MODULE.ID, 'excludedUsers');
+            if (excludedUsersSetting) {
+                excludedUsers = excludedUsersSetting.split(',').map(id => id.trim());
+            }
+        } catch (error) {
+            // Setting not registered yet, treat as not excluded
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Settings not yet registered, treating user as not excluded',
+                { error },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+        }
+        
         if (excludedUsers.includes(game.user.id)) {
             // If we have an existing tray, remove it
             if (PanelManager.element) {
