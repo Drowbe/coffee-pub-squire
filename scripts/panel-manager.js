@@ -1858,8 +1858,21 @@ export class PanelManager {
         PanelManager.viewMode = mode;
         await game.settings.set(MODULE.ID, 'viewMode', mode);
         
-        // Update tab buttons
+        // Safety check: ensure tray element exists before manipulating it
         const tray = PanelManager.element;
+        if (!tray) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'PanelManager.setViewMode: Tray element is null, skipping view mode update',
+                { mode },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            return;
+        }
+        
+        // Update tab buttons
         tray.find('.tray-tab-button').removeClass('active');
         tray.find(`.tray-tab-button[data-view="${mode}"]`).addClass('active');
         
@@ -3024,7 +3037,7 @@ async function _updateHealthPanelFromSelection() {
         
         PanelManager.element.addClass('expanded');
         // Restore the previous view mode after initializing
-        if (PanelManager.instance) {
+        if (PanelManager.instance && PanelManager.element) {
             await PanelManager.instance.setViewMode(currentViewMode);
         }
         return;
@@ -3055,7 +3068,7 @@ async function _updateHealthPanelFromSelection() {
     }
     
     // Restore the previous view mode after initializing
-    if (PanelManager.instance) {
+    if (PanelManager.instance && PanelManager.element) {
         await PanelManager.instance.setViewMode(currentViewMode);
     }
 }
