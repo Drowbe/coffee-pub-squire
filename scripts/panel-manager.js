@@ -163,7 +163,28 @@ export class PanelManager {
 
             // Check if this is a monster/NPC and auto-favorite items
             if (actor && actor.type !== "character") {
-                await FavoritesPanel.initializeNpcFavorites(actor);
+                // Check if actor is from a compendium before trying to modify it
+                const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+                if (isFromCompendium) {
+                    // Skip auto-favoriting for actors from compendiums
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    blacksmith?.utils.postConsoleAndNotification(
+                        "SQUIRE | Skipping auto-favorites initialization for actor from compendium",
+                        { 
+                            actorName: actor.name, 
+                            actorType: actor.type,
+                            pack: actor.pack,
+                            collectionName: actor.collection?.metadata?.name || 'Unknown',
+                            collectionId: actor.collection?.id || 'Unknown'
+                        },
+                        false,
+                        true,
+                        false,
+                        MODULE.TITLE
+                    );
+                } else {
+                    await FavoritesPanel.initializeNpcFavorites(actor);
+                }
             }
             
             // Restore window states from user flags
@@ -3162,15 +3183,38 @@ Hooks.on('updateItem', async (item, changes) => {
         // Check if this is an NPC/monster and the item is a weapon being equipped
         // or a spell being prepared
         if (item.parent.type !== "character") {
-            // For weapons, check if equipped status changed to true
-            if (item.type === "weapon" && item.system.equipped === true) {
-                // Add to favorites if it's now equipped
-                await FavoritesPanel.manageFavorite(item.parent, item.id);
-            }
-            // For spells, check if prepared status changed to true
-            else if (item.type === "spell" && item.system.preparation?.prepared === true) {
-                // Add to favorites if it's now prepared
-                await FavoritesPanel.manageFavorite(item.parent, item.id);
+            // Check if actor is from a compendium before trying to modify it
+            const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
+            if (isFromCompendium) {
+                // Skip auto-favoriting for actors from compendiums
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                blacksmith?.utils.postConsoleAndNotification(
+                    "SQUIRE | Skipping auto-favorite for item update on actor from compendium",
+                    { 
+                        actorName: item.parent.name, 
+                        actorType: item.parent.type,
+                        itemName: item.name,
+                        itemType: item.type,
+                        pack: item.parent.pack,
+                        collectionName: item.parent.collection?.metadata?.name || 'Unknown',
+                        collectionId: item.parent.collection?.id || 'Unknown'
+                    },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+            } else {
+                // For weapons, check if equipped status changed to true
+                if (item.type === "weapon" && item.system.equipped === true) {
+                    // Add to favorites if it's now equipped
+                    await FavoritesPanel.manageFavorite(item.parent, item.id);
+                }
+                // For spells, check if prepared status changed to true
+                else if (item.type === "spell" && item.system.preparation?.prepared === true) {
+                    // Add to favorites if it's now prepared
+                    await FavoritesPanel.manageFavorite(item.parent, item.id);
+                }
             }
         }
         
