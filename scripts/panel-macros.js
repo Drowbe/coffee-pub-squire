@@ -1,4 +1,4 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { MacrosWindow } from './window-macros.js';
 import { PanelManager } from './panel-manager.js';
 
@@ -50,6 +50,19 @@ export class MacrosPanel {
     }
 
     async render(html, { showAddSlot = false } = {}) {
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'MACROS | MacrosPanel.render called',
+            {
+                isPoppedOut: this.isPoppedOut,
+                hasHtmlParam: Boolean(html),
+                showAddSlot,
+                hasElement: Boolean(this.element)
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
             const placeholder = $('#macros-panel-placeholder');
@@ -64,6 +77,17 @@ export class MacrosPanel {
             this.element = html;
         }
         if (!this.element || this.isPoppedOut) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'MACROS | MacrosPanel.render early-exit (popped-out or missing element)',
+                {
+                    isPoppedOut: this.isPoppedOut,
+                    hasElement: Boolean(this.element)
+                },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
             return;
         }
         // Load macros and favorites from settings
@@ -99,6 +123,17 @@ export class MacrosPanel {
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
         this.element.html(content);
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'MACROS | MacrosPanel.render populated HTML',
+            {
+                showAddSlot,
+                macrosLength: (templateData.macros || []).length
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
@@ -116,6 +151,17 @@ export class MacrosPanel {
         if (!html) return;
 
         const panel = html;
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'MACROS | _activateListeners for panel',
+            {
+                isPoppedOut: this.isPoppedOut,
+                gridCount: panel.find('.macros-grid').length
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
         let showAddSlot = false;
         let dragActive = false;
 
@@ -151,7 +197,26 @@ export class MacrosPanel {
                 // Only show add slot if there are no empty slots
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                 macros = macros.filter(m => m && m.id);
-                this.render(undefined, { showAddSlot: true });
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'MACROS | dragenter on .macros-grid (will request add-slot)',
+                    {
+                        isPoppedOut: this.isPoppedOut,
+                        hasMacrosGrid: Boolean(macrosGrid.length),
+                        nonEmptyCount: macros.length
+                    },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                if (this.isPoppedOut && this.window) {
+                    // Popped-out window path: ask the window to show add slot and re-render
+                    this.window.showAddSlot = true;
+                    this.window.render(false);
+                } else {
+                    // Tray path: re-render panel with add slot
+                    this.render(undefined, { showAddSlot: true });
+                }
             }
         });
         macrosGrid.on('dragleave.macroDnd', (e) => {
@@ -159,7 +224,20 @@ export class MacrosPanel {
             e.stopPropagation();
             if (dragActive) {
                 dragActive = false;
-                this.render();
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'MACROS | dragleave on .macros-grid (remove add-slot)',
+                    {},
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                if (this.isPoppedOut && this.window) {
+                    this.window.showAddSlot = false;
+                    this.window.render(false);
+                } else {
+                    this.render();
+                }
             }
         });
         macrosGrid.on('dragover.macroDnd', (e) => {
@@ -169,7 +247,20 @@ export class MacrosPanel {
         });
         macrosGrid.on('drop.macroDnd', (e) => {
             dragActive = false;
-            this.render();
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'MACROS | drop on .macros-grid (tray/window agnostic)',
+                { isPoppedOut: this.isPoppedOut },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            if (this.isPoppedOut && this.window) {
+                this.window.showAddSlot = false;
+                this.window.render(false);
+            } else {
+                this.render();
+            }
         });
 
         // Handle favorite macro click in handle
@@ -237,6 +328,14 @@ export class MacrosPanel {
                     macros = macros.filter(m => m && typeof m === 'object');
                     const [moved] = macros.splice(data.fromIndex, 1);
                     macros.splice(idx, 0, moved);
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'MACROS | internal reorder',
+                        { fromIndex: data.fromIndex, toIndex: idx },
+                        false,
+                        true,
+                        false,
+                        MODULE.TITLE
+                    );
                     await game.settings.set(MODULE.ID, 'userMacros', macros);
                     if (self.isPoppedOut && self.window) {
                         self.window.macros = macros;
@@ -264,6 +363,14 @@ export class MacrosPanel {
                         } else {
                             macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
                         }
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'MACROS | external drop from directory',
+                            { macroId, droppedOnAddSlot: slot.hasClass('add-slot'), targetIndex: idx },
+                            false,
+                            true,
+                            false,
+                            MODULE.TITLE
+                        );
                         await game.settings.set(MODULE.ID, 'userMacros', macros);
                         if (self.isPoppedOut && self.window) {
                             self.window.macros = macros;

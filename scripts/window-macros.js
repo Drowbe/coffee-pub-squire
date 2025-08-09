@@ -1,10 +1,11 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 
 export class MacrosWindow extends Application {
     constructor(options = {}) {
         super(options);
         this.panel = options.panel;
         this.macros = options.macros || [];
+        this.showAddSlot = false;
         
         // Register for actor updates
         if (this.panel?.actor) {
@@ -51,12 +52,23 @@ export class MacrosWindow extends Application {
             const macro = game.macros.get(id);
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
+        try {
+            game.modules.get('coffee-pub-blacksmith')?.api?.utils.postConsoleAndNotification(
+                'MACROS | MacrosWindow.getData',
+                { macrosLength: macros.length, favoriteCount: favoriteMacroIds.length },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+        } catch (_) { /* no-op */ }
         
         return {
             actor: this.panel?.actor,
             position: "left",
             isMacrosPopped: true,
             macros,
+            showAddSlot: this.showAddSlot === true,
             favoriteMacroIds,
             favoriteMacros
         };
@@ -75,6 +87,16 @@ export class MacrosWindow extends Application {
                 </div>
             </div>
         `;
+        try {
+            game.modules.get('coffee-pub-blacksmith')?.api?.utils.postConsoleAndNotification(
+                'MACROS | MacrosWindow._renderInner',
+                {},
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+        } catch (_) { /* no-op */ }
         return $(html);
     }
 
@@ -86,6 +108,16 @@ export class MacrosWindow extends Application {
             // Update the panel's element reference with the panel container
             this.panel.updateElement(panelContainer);
         }
+        try {
+            game.modules.get('coffee-pub-blacksmith')?.api?.utils.postConsoleAndNotification(
+                'MACROS | MacrosWindow.activateListeners',
+                { gridCount: html.find('.macros-grid').length },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+        } catch (_) { /* no-op */ }
         // Add close button handler
         html.closest('.app').find('.close').click(ev => {
             ev.preventDefault();
@@ -97,18 +129,21 @@ export class MacrosWindow extends Application {
         if (this.panel) {
             this.panel._activateListeners(html);
         }
-        // --- Add open macro folder icon to window header ---
-        const header = html.closest('.app').find('.window-header');
-        if (header.length && !header.find('.open-macro-folder').length) {
-            // Insert before the close button
-            const closeBtn = header.find('.close');
-            const macroBtn = $('<a class="header-button open-macro-folder" title="Open Macro Folder"><i class="fas fa-folder-open"></i></a>');
-            macroBtn.insertBefore(closeBtn);
-            macroBtn.on('click', (e) => {
-                e.preventDefault();
+        // Header button is now provided by _getHeaderButtons
+    }
+
+    _getHeaderButtons() {
+        const buttons = super._getHeaderButtons();
+        buttons.splice(buttons.length - 1, 0, {
+            label: 'Open Macro Folder',
+            class: 'open-macro-folder',
+            icon: 'fas fa-folder-open',
+            onclick: (ev) => {
+                ev?.preventDefault();
                 if (ui.macros && typeof ui.macros.renderPopout === 'function') ui.macros.renderPopout();
-            });
-        }
+            }
+        });
+        return buttons;
     }
 
     get appId() {
