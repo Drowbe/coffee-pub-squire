@@ -135,7 +135,7 @@ export class MacrosWindow extends Application {
     _getHeaderButtons() {
         const buttons = super._getHeaderButtons();
         buttons.splice(buttons.length - 1, 0, {
-            label: 'Open Macro Folder',
+            label: 'Macros',
             class: 'open-macro-folder',
             icon: 'fas fa-folder-open',
             onclick: (ev) => {

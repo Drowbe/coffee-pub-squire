@@ -213,6 +213,14 @@ export class MacrosPanel {
                     // Popped-out window path: ask the window to show add slot and re-render
                     this.window.showAddSlot = true;
                     this.window.render(false);
+                    // Ensure we hide add-slot when drag ends anywhere
+                    $(document).off('dragend.squireMacros').on('dragend.squireMacros', () => {
+                        if (this.window) {
+                            this.window.showAddSlot = false;
+                            this.window.render(false);
+                        }
+                        $(document).off('dragend.squireMacros');
+                    });
                 } else {
                     // Tray path: re-render panel with add slot
                     this.render(undefined, { showAddSlot: true });
@@ -235,6 +243,7 @@ export class MacrosPanel {
                 if (this.isPoppedOut && this.window) {
                     this.window.showAddSlot = false;
                     this.window.render(false);
+                    $(document).off('dragend.squireMacros');
                 } else {
                     this.render();
                 }
@@ -258,6 +267,7 @@ export class MacrosPanel {
             if (this.isPoppedOut && this.window) {
                 this.window.showAddSlot = false;
                 this.window.render(false);
+                $(document).off('dragend.squireMacros');
             } else {
                 this.render();
             }
@@ -338,6 +348,7 @@ export class MacrosPanel {
                     );
                     await game.settings.set(MODULE.ID, 'userMacros', macros);
                     if (self.isPoppedOut && self.window) {
+                        self.window.showAddSlot = false;
                         self.window.macros = macros;
                         await self.window.render(false);
                     }
@@ -373,14 +384,23 @@ export class MacrosPanel {
                         );
                         await game.settings.set(MODULE.ID, 'userMacros', macros);
                         if (self.isPoppedOut && self.window) {
+                            self.window.showAddSlot = false;
                             self.window.macros = macros;
                             await self.window.render(false);
                         }
                         await self.render();
                     } else {
+                        if (self.isPoppedOut && self.window) {
+                            self.window.showAddSlot = false;
+                            await self.window.render(false);
+                        }
                         ui.notifications.warn('Macro not found.');
                     }
                 } else {
+                    if (self.isPoppedOut && self.window) {
+                        self.window.showAddSlot = false;
+                        await self.window.render(false);
+                    }
                     ui.notifications.warn('Only macros can be dropped here.');
                 }
             });
