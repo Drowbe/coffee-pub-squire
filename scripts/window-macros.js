@@ -130,6 +130,9 @@ export class MacrosWindow extends Application {
             this.panel._activateListeners(html);
         }
         // Header button is now provided by _getHeaderButtons
+        // Add tooltip to the header button
+        const tooltipHtml = "<div class='squire-data-tooltip-label'>Open Macros Folder</div><div class='squire-data-tooltip-text'>Once open, drag macros to the macro window. Dragging over an existing macro replaces it.</div>";
+        html.closest('.app').find('.window-header .open-macro-folder').attr('data-tooltip', tooltipHtml);
     }
 
     _getHeaderButtons() {
