@@ -404,10 +404,10 @@ export class MacrosPanel {
                     ui.notifications.warn('Only macros can be dropped here.');
                 }
             });
-            // Left click: run macro
+            // Left click: run macro (unless Shift is held)
             slot.on('click.macroDnd', async function(e) {
                 if (slot.hasClass('empty')) return;
-                if (e.button === 0) {
+                if (e.button === 0 && !e.shiftKey) {
                     let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                     const macroId = macros[idx]?.id;
                     const macro = game.macros.get(macroId);
@@ -425,85 +425,86 @@ export class MacrosPanel {
                     }
                 }
             });
-            // Right click: clear macro or remove slot
+            // Right click: toggle favorite on/off
             slot.on('contextmenu.macroDnd', async function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                if (slot.hasClass('empty')) return;
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                let removedMacroId = null;
-                // Treat as having a macro only if id is a non-empty string
-                if (macros[idx] && typeof macros[idx].id === 'string' && macros[idx].id.length > 0) {
-                    // If slot has a macro, clear it
-                    removedMacroId = macros[idx].id;
-                    macros[idx] = { id: null, name: null, img: null };
+                let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+                const macroId = macros[idx]?.id;
+                if (!macroId) return;
+                const isFav = favoriteMacroIds.includes(macroId);
+                if (isFav) {
+                    favoriteMacroIds = favoriteMacroIds.filter(id => id !== macroId);
                 } else {
-                    // Else (slot is empty), remove it (unless it's the last slot)
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'MACROS | Slot is empty, removing slot',
-                        { macros, idx },
-                        false,
-                        false,
-                        false,
-                        MODULE.TITLE
-                    );
-                    if (macros.length > 1) {
-                        removedMacroId = macros[idx]?.id || null;
-                        macros.splice(idx, 1);
-                    }
+                    favoriteMacroIds.push(macroId);
                 }
-                // Always leave at least one slot
-                if (macros.length === 0) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'MACROS | Last slot detected, leaving it empty',
-                        { macros },
-                        false,
-                        false,
-                        false,
-                        MODULE.TITLE
-                    );
-                    macros = [{ id: null, name: null, img: null }];
-                }
-                await game.settings.set(MODULE.ID, 'userMacros', macros);
-                // Remove from favorites if no longer present
-                if (removedMacroId) {
-                    const stillPresent = macros.some(m => m.id === removedMacroId);
-                    if (!stillPresent) {
-                        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
-                        favoriteMacroIds = favoriteMacroIds.filter(id => id !== removedMacroId);
-                        await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
-                    }
-                }
+                await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
                 if (self.isPoppedOut && self.window) {
                     self.window.macros = macros;
                     await self.window.render(false);
                 }
                 await self.render();
-                // Ensure we update the handle in case a favorite macro was deleted
                 const panelManager = PanelManager.instance;
                 if (panelManager) {
                     await panelManager.updateHandle();
                 }
             });
-            // Middle click or Shift+Left click: toggle favorite
+            // Middle click or Shift+Left click: clear/remove slot
             slot.on('mousedown.macroDnd', async function(e) {
-                if (!slot.hasClass('empty') && (e.button === 1 || (e.button === 0 && e.shiftKey))) {
+                if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                    let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
-                    const macroId = macros[idx]?.id;
-                    if (!macroId) return;
-                    const isFav = favoriteMacroIds.includes(macroId);
-                    if (isFav) {
-                        favoriteMacroIds = favoriteMacroIds.filter(id => id !== macroId);
+                    let removedMacroId = null;
+                    // Treat as having a macro only if id is a non-empty string
+                    if (macros[idx] && typeof macros[idx].id === 'string' && macros[idx].id.length > 0) {
+                        // If slot has a macro, clear it
+                        removedMacroId = macros[idx].id;
+                        macros[idx] = { id: null, name: null, img: null };
                     } else {
-                        favoriteMacroIds.push(macroId);
+                        // Else (slot is empty), remove it (unless it's the last slot)
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'MACROS | Slot is empty, removing slot',
+                            { macros, idx },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
+                        if (macros.length > 1) {
+                            removedMacroId = macros[idx]?.id || null;
+                            macros.splice(idx, 1);
+                        }
                     }
-                    await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
+                    // Always leave at least one slot
+                    if (macros.length === 0) {
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            'MACROS | Last slot detected, leaving it empty',
+                            { macros },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
+                        macros = [{ id: null, name: null, img: null }];
+                    }
+                    await game.settings.set(MODULE.ID, 'userMacros', macros);
+                    // Remove from favorites if no longer present
+                    if (removedMacroId) {
+                        const stillPresent = macros.some(m => m.id === removedMacroId);
+                        if (!stillPresent) {
+                            let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+                            favoriteMacroIds = favoriteMacroIds.filter(id => id !== removedMacroId);
+                            await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
+                        }
+                    }
                     if (self.isPoppedOut && self.window) {
                         self.window.macros = macros;
                         await self.window.render(false);
                     }
                     await self.render();
-                    // Ensure we update the handle immediately after toggling favorite
                     const panelManager = PanelManager.instance;
                     if (panelManager) {
                         await panelManager.updateHandle();

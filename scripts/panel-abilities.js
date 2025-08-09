@@ -56,17 +56,25 @@ export class AbilitiesPanel {
             game.settings.set(MODULE.ID, 'isAbilitiesPanelCollapsed', abilitiesContent.hasClass('collapsed'));
         });
 
-        // Ability check and save handlers
-        panel.find('.ability-btn').click(async (event) => {
-            const ability = event.currentTarget.dataset.ability;
-            if (event.type === 'click') {
-                await this.actor.rollAbilityTest(ability);
-            }
-        });
-
-        panel.find('.ability-btn').contextmenu(async (event) => {
-            const ability = event.currentTarget.dataset.ability;
-            await this.actor.rollAbilitySave(ability);
-        });
+        // Ability check and save handlers (namespaced and guarded)
+        const abilityButtons = panel.find('.ability-btn');
+        abilityButtons.off('.abilities')
+            .on('click.abilities', async (event) => {
+                const ability = event.currentTarget?.dataset?.ability;
+                if (!ability) {
+                    ui.notifications?.warn('Invalid ability button.');
+                    return;
+                }
+                await this.actor.rollAbilityCheck(ability);
+            })
+            .on('contextmenu.abilities', async (event) => {
+                event.preventDefault();
+                const ability = event.currentTarget?.dataset?.ability;
+                if (!ability) {
+                    ui.notifications?.warn('Invalid ability button.');
+                    return;
+                }
+                await this.actor.rollAbilitySave(ability);
+            });
     }
 } 

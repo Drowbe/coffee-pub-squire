@@ -3,7 +3,7 @@
 <div class="tray-title-small">
     {{#if actor}}Macros: {{actor.name}}{{else}}Macros: No Character{{/if}}
     <div class="macros-controls">
-        <i class="fas fa-folder-open open-macro-folder" title="Macros"></i>
+        <i class="fas fa-folder-open open-macro-folder" data-tooltip="<div class='squire-data-tooltip-label'>Macros</div><div class='squire-data-tooltip-text'>Open macor folder and then drag macros to the macro window.</div>"></i>
         <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
         <i class="fas fa-chevron-down macros-toggle" title="Toggle Macros Panel"></i>
     </div>
@@ -13,11 +13,11 @@
 <div class="macros-content">
     <div class="macros-grid">
         {{#each macros as |macro idx|}}
-            <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false" {{#if macro.id}}title="{{macro.name}}"{{/if}}>
+            <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false" {{#if macro.id}}data-tooltip="<div class='squire-data-tooltip-label'>{{macro.name}}</div><div class='squire-data-tooltip-text'>Left-Click: Execute Macro<br>Right-Click: Favorite Macro<br>Middle-Click or Shift-Click: Remove Macro or Empty Slot</div>"{{/if}}>
                 {{#if macro.id}}
-                    <img src="{{macro.img}}" title="{{macro.name}}" draggable="false" />
+                    <img src="{{macro.img}}" data-tooltip="{{macro.name}}" draggable="false" />
                     {{#if (includes ../favoriteMacroIds macro.id)}}
-                      <i class="fas fa-heart macro-favorite" title="Favorited"></i>
+                      <i class="fas fa-heart macro-favorite" data-tooltip="Favorited"></i>
                     {{/if}}
                 {{else}}
                     <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
