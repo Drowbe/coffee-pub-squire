@@ -1,5 +1,5 @@
 import { MODULE, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1336,17 +1336,34 @@ export class QuestPin extends PIXI.Container {
       return; // Don't show tooltip if mouse is over a window
     }
 
-    // Use unified tooltip data function
     try {
-      const tooltipData = await getObjectiveTooltipData(this.questUuid, this.objectiveIndex);
-      if (!tooltipData) return;
-      // Add pin-specific controls text
-      tooltipData.controls = game.user.isGM ?
-        'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
-        'Left-click: Select & jump to quest';
+      let tooltipData;
+      let tooltipId;
       
-      // Show tooltip with pin-specific ID
-      showQuestTooltip('squire-questpin-tooltip', tooltipData, event);
+      if (this.pinType === 'quest') {
+        // For quest-level pins, use quest tooltip data
+        tooltipData = await getQuestTooltipData(this.questUuid);
+        tooltipId = 'squire-questpin-quest-tooltip';
+        if (tooltipData) {
+          tooltipData.controls = game.user.isGM ?
+            'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
+            'Left-click: Select & jump to quest';
+        }
+      } else {
+        // For objective pins, use objective tooltip data
+        tooltipData = await getObjectiveTooltipData(this.questUuid, this.objectiveIndex);
+        tooltipId = 'squire-questpin-objective-tooltip';
+        if (tooltipData) {
+          tooltipData.controls = game.user.isGM ?
+            'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
+            'Left-click: Select & jump to quest';
+        }
+      }
+      
+      if (!tooltipData) return;
+      
+      // Show tooltip with appropriate ID
+      showQuestTooltip(tooltipId, tooltipData, event);
     } catch (error) {
       getBlacksmith()?.utils.postConsoleAndNotification(
         'Error showing quest pin tooltip',
@@ -1407,7 +1424,11 @@ export class QuestPin extends PIXI.Container {
 
   _onPointerOut(event) {
     // Always hide the tooltip when leaving the pin area
-    hideQuestTooltip('squire-questpin-tooltip');
+    if (this.pinType === 'quest') {
+      hideQuestTooltip('squire-questpin-quest-tooltip');
+    } else {
+      hideQuestTooltip('squire-questpin-objective-tooltip');
+    }
     
     // Reset cursor when leaving pin area (but only if not dragging)
     if (game.user.isGM && !this.isDragging) {

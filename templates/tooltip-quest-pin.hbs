@@ -1,0 +1,40 @@
+<div>
+  <div class="quest-tooltip-title">
+    <span class="quest-tooltip-quest-icon">{{questCategory}}</span>
+    <span class="quest-tooltip-quest-number">{{questNumber}}</span>
+    <span class="quest-tooltip-quest-name">{{questName}}</span>
+  </div>
+  
+  {{#if participants.length}}
+    <div class="quest-tooltip-participants">
+      {{#each participants}}
+        <span class="quest-tooltip-participant" data-tooltip="{{this.name}}">
+          <img src="{{this.img}}" alt="{{this.name}}" class="quest-tooltip-portrait" />
+        </span>
+      {{/each}}
+    </div>
+  {{/if}}
+  
+  <div class="quest-tooltip-status">
+    <span class="quest-tooltip-status-text">{{questStatus}}</span>
+    <span class="quest-tooltip-objectives">{{completedObjectives}} of {{totalObjectives}} objectives completed</span>
+  </div>
+  
+  <div class="quest-tooltip-description">{{description}}</div>
+  
+  {{#if plotHook}}
+    <div class="quest-tooltip-plot-hook">Plot Hook: {{plotHook}}</div>
+  {{/if}}
+  
+  {{#if location}}
+    <div class="quest-tooltip-location">Location: {{location}}</div>
+  {{/if}}
+  
+  {{#if visibility}}
+    <div class="quest-tooltip-visibility">{{visibility}}</div>
+  {{/if}}
+  
+  {{#if controls}}
+    <div class="quest-tooltip-controls">{{controls}}</div>
+  {{/if}}
+</div>

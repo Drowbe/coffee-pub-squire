@@ -369,8 +369,17 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
         const timeoutId = setTimeout(async () => {
             try {
                 const tooltip = getOrCreateQuestTooltip(tooltipId);
-                // Render the tooltip using the Handlebars template
-                const html = await renderTemplate(TEMPLATES.TOOLTIP_QUEST, data);
+                
+                // Choose template based on tooltip ID
+                let template;
+                if (tooltipId.includes('quest-tooltip')) {
+                    template = TEMPLATES.TOOLTIP_QUEST_PIN;
+                } else {
+                    template = TEMPLATES.TOOLTIP_QUEST;
+                }
+                
+                // Render the tooltip using the appropriate Handlebars template
+                const html = await renderTemplate(template, data);
                 tooltip.innerHTML = html;
                 tooltip.style.display = 'block';
                 // Position tooltip near mouse with small offset
@@ -597,4 +606,130 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
         );
         return null;
     }
-} 
+}
+
+/**
+ * Async helper to fetch quest data for quest-level tooltips
+ * @param {string} questPageUuid - The quest UUID
+ * @returns {Promise<Object|null>} Tooltip data or null if not found
+ */
+export async function getQuestTooltipData(questPageUuid) {
+    try {
+        // Find the journal page by UUID
+        let page = null;
+        for (const journal of game.journal.contents) {
+            page = journal.pages.find(p => p.uuid === questPageUuid);
+            if (page) break;
+        }
+        if (!page) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'SQUIRE | QUESTS getQuestTooltipData: Journal page not found',
+                { questPageUuid },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            return null;
+        }
+
+        // Enrich the page HTML if needed
+        const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
+        // Parse the quest entry using the source of truth
+        const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
+        if (!entry) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'SQUIRE | QUESTS getQuestTooltipData: Failed to parse quest entry',
+                { questPageUuid },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            return null;
+        }
+
+        // Get quest status and objectives info
+        const totalObjectives = entry.tasks?.length || 0;
+        const completedObjectives = entry.tasks?.filter(task => task.state === 'completed').length || 0;
+        const questStatus = entry.status || 'Not Started';
+        
+        // Get participants info for portraits
+        const participants = [];
+        if (entry.participants && Array.isArray(entry.participants)) {
+            for (const participantUuid of entry.participants) {
+                try {
+                    if (participantUuid && participantUuid.trim()) {
+                        const actor = await fromUuid(participantUuid);
+                        if (actor && actor.name) {
+                            participants.push({
+                                uuid: participantUuid,
+                                name: actor.name,
+                                img: actor.img
+                            });
+                        }
+                    }
+                } catch (error) {
+                    // Skip failed participant lookups
+                }
+            }
+        }
+
+        // Get location info if available
+        let location = '';
+        if (entry.location) {
+            location = entry.location;
+        } else if (entry.gmNotes && entry.gmNotes.location) {
+            location = entry.gmNotes.location;
+        }
+
+        // Get plot hook if GM
+        let plotHook = '';
+        if (game.user.isGM && entry.plotHook) {
+            plotHook = entry.plotHook;
+        }
+
+        let visibility;
+        if (game.user.isGM) {
+            if (entry.state === 'hidden') {
+                visibility = 'Only Visible to GM';
+            } else {
+                visibility = 'Visible to GM and Players';
+            }
+        }
+        
+        // For non-GM users, if the quest is hidden, show placeholder text
+        let questName = entry.name;
+        let description = entry.description || 'Quest description not available';
+        
+        if (!game.user.isGM && entry.state === 'hidden') {
+            questName = 'Quest Not Discovered';
+            description = 'You have not uncovered this quest yet.';
+        }
+        
+        return {
+            questName,
+            questNumber: getQuestNumber(page.uuid),
+            questCategory: entry.category || 'Quest',
+            questStatus,
+            totalObjectives,
+            completedObjectives,
+            description,
+            plotHook,
+            location,
+            participants,
+            visibility,
+            isGM: game.user.isGM
+        };
+    } catch (error) {
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'SQUIRE | QUESTS getQuestTooltipData: Unexpected error',
+            { questPageUuid, error: error.message },
+            false,
+            true,
+            false,
+                MODULE.TITLE
+        );
+        return null;
+    }
+}
