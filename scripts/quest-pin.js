@@ -875,6 +875,7 @@ export class QuestPin extends PIXI.Container {
     getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Selecting pin and jumping to quest', {
       questUuid: this.questUuid,
       objectiveIndex: this.objectiveIndex,
+      pinType: this.pinType,
       user: game.user.name,
       isGM: game.user.isGM
     });
@@ -922,23 +923,37 @@ export class QuestPin extends PIXI.Container {
           // Scroll to the quest entry
           questEntry.scrollIntoView({ behavior: 'smooth', block: 'center' });
           
-          // Highlight the specific objective
-          const objectiveItems = questEntry.querySelectorAll('li[data-task-index]');
-          const targetObjective = objectiveItems[this.objectiveIndex];
-          
-          // Debug logging for objective highlighting
-          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Objective highlighting result', {
-            objectiveIndex: this.objectiveIndex,
-            totalObjectives: objectiveItems.length,
-            targetObjectiveFound: !!targetObjective,
-            user: game.user.name
-          });
-          
-          if (targetObjective) {
-            targetObjective.classList.add('objective-highlighted');
+          if (this.pinType === 'quest') {
+            // For quest-level pins, highlight the entire quest entry
+            questEntry.classList.add('quest-highlighted');
             setTimeout(() => {
-              targetObjective.classList.remove('objective-highlighted');
+              questEntry.classList.remove('quest-highlighted');
             }, 2000);
+            
+            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest entry highlighted', {
+              questUuid: this.questUuid,
+              pinType: this.pinType,
+              user: game.user.name
+            });
+          } else {
+            // For objective pins, highlight the specific objective
+            const objectiveItems = questEntry.querySelectorAll('li[data-task-index]');
+            const targetObjective = objectiveItems[this.objectiveIndex];
+            
+            // Debug logging for objective highlighting
+            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Objective highlighting result', {
+              objectiveIndex: this.objectiveIndex,
+              totalObjectives: objectiveItems.length,
+              targetObjectiveFound: !!targetObjective,
+              user: game.user.name
+            });
+            
+            if (targetObjective) {
+              targetObjective.classList.add('objective-highlighted');
+              setTimeout(() => {
+                targetObjective.classList.remove('objective-highlighted');
+              }, 2000);
+            }
           }
         } else {
           getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest entry not found', {
