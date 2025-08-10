@@ -177,6 +177,8 @@
 
 /* Quest Pin Tooltip Specific Styles */
 .quest-tooltip-quest-icon {
+    font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 6 Free", "Font Awesome 6 Pro", "FontAwesome";
+    font-weight: 900;
     font-size: 1.2em;
     margin-right: 8px;
     opacity: 0.9;

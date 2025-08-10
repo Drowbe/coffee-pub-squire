@@ -707,10 +707,21 @@ export async function getQuestTooltipData(questPageUuid) {
             description = 'You have not uncovered this quest yet.';
         }
         
+        // Get quest category icon based on category
+        let questCategoryIcon = '';
+        if (entry.category === 'Main Quest') {
+            questCategoryIcon = '\uf024'; // fas fa-flag
+        } else if (entry.category === 'Side Quest') {
+            questCategoryIcon = '\uf277'; // fas fa-map-signs
+        } else {
+            questCategoryIcon = '\uf059'; // fas fa-question-circle (default)
+        }
+
         return {
             questName,
             questNumber: getQuestNumber(page.uuid),
             questCategory: entry.category || 'Quest',
+            questCategoryIcon,
             questStatus,
             totalObjectives,
             completedObjectives,
