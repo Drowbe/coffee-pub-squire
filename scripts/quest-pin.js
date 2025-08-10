@@ -1131,6 +1131,11 @@ export class QuestPin extends PIXI.Container {
   }
 
   async _onPointerOver(event) {
+    // Check if the mouse is over any open window before showing tooltip
+    if (this._isMouseOverWindow(event)) {
+      return; // Don't show tooltip if mouse is over a window
+    }
+
     // Use unified tooltip data function
     try {
       const tooltipData = await getObjectiveTooltipData(this.questUuid, this.objectiveIndex);
@@ -1139,13 +1144,69 @@ export class QuestPin extends PIXI.Container {
       tooltipData.controls = game.user.isGM ?
         'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
         'Left-click: Select & jump to quest';
-      showQuestTooltip('squire-questpin-tooltip', tooltipData, event, 500);
-    } catch (e) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting tooltip data', { error: e }, false, true, true, MODULE.TITLE);
+      
+      // Show tooltip with pin-specific ID
+      showQuestTooltip('squire-questpin-tooltip', tooltipData, event);
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification(
+        'Error showing quest pin tooltip',
+        { questUuid: this.questUuid, objectiveIndex: this.objectiveIndex, error: error.message },
+        false,
+        true,
+        false,
+        MODULE.TITLE
+      );
+    }
+  }
+
+  /**
+   * Check if the mouse position is within any open window's bounds
+   * @param {Object} event - The pointer event
+   * @returns {boolean} True if mouse is over a window
+   */
+  _isMouseOverWindow(event) {
+    try {
+      // Get mouse position from the event
+      const mouse = event.data?.originalEvent || event;
+      if (!mouse || typeof mouse.clientX !== 'number' || typeof mouse.clientY !== 'number') {
+        return false; // Can't determine position, allow tooltip
+      }
+
+      const mouseX = mouse.clientX;
+      const mouseY = mouse.clientY;
+
+      // Check all open Foundry windows
+      const windows = document.querySelectorAll('.app.window-app');
+      
+      for (const window of windows) {
+        if (window.style.display === 'none') continue; // Skip hidden windows
+        
+        const rect = window.getBoundingClientRect();
+        
+        // Check if mouse is within this window's bounds
+        if (mouseX >= rect.left && mouseX <= rect.right && 
+            mouseY >= rect.top && mouseY <= rect.bottom) {
+          return true; // Mouse is over this window
+        }
+      }
+      
+      return false; // Mouse is not over any window
+    } catch (error) {
+      // If there's an error checking, default to allowing tooltips
+      getBlacksmith()?.utils.postConsoleAndNotification(
+        'Error checking mouse position vs windows',
+        { error: error.message },
+        false,
+        true,
+        false,
+        MODULE.TITLE
+      );
+      return false;
     }
   }
 
   _onPointerOut(event) {
+    // Always hide the tooltip when leaving the pin area
     hideQuestTooltip('squire-questpin-tooltip');
     
     // Reset cursor when leaving pin area (but only if not dragging)
