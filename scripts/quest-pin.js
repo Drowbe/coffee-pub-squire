@@ -193,10 +193,10 @@ export class QuestPin extends PIXI.Container {
     const pinTextSizeAdjustment = 5; // adds a bit more to the size of the text
     const pinIconPadding = 12; // adds a bit of space between the icon and edge of the container
 
-    // Main Pin
-    const pinInnerWidth = 175;
-    const pinInnerHeight = 40;
-    const pinInnerBorderRadius = 6;
+    // Main Pin - Make quest pins round, objectives remain rectangular
+    const pinInnerWidth = this.pinType === 'quest' ? 80 : 175; // Round for quest pins
+    const pinInnerHeight = this.pinType === 'quest' ? 80 : 40;  // Round for quest pins
+    const pinInnerBorderRadius = this.pinType === 'quest' ? 40 : 6; // Full circle for quest pins
     const pinInnerColor = 0x000000;
     const pinInnerTransparency = 0.8;
     const pinInnerDropShadow = { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 };
@@ -214,14 +214,18 @@ export class QuestPin extends PIXI.Container {
     const pinRingColorCompleted = 0x3C9245;
     const pinRingColorDefault = 0xFFFFFF;
  
-    // Main Quest Icon
+    // Main Quest Icon - Scale up for quest pins
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
-    const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeQuestAdjustment;;
+    const pinIconMainQuestSize = this.pinType === 'quest' ? 
+      pinInnerHeight / 2 + pinIconSizeQuestAdjustment + 10 : // Larger for quest pins
+      pinInnerHeight / 2 + pinIconSizeQuestAdjustment;
     const pinIconMainQuestColor = 0xFFFFFF;
 
-    // Side Quest Icon
+    // Side Quest Icon - Scale up for quest pins
     const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
-    const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeQuestAdjustment;
+    const pinIconSideQuestSize = this.pinType === 'quest' ? 
+      pinInnerHeight / 2 + pinIconSizeQuestAdjustment + 10 : // Larger for quest pins
+      pinInnerHeight / 2 + pinIconSizeQuestAdjustment;
     const pinIconSideQuestColor = 0xFFFFFF;
 
     // State Icons
@@ -241,9 +245,11 @@ export class QuestPin extends PIXI.Container {
     const pinIconStateeDefaultSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
     const pinIconStateeDefaultColor = 0xFFFFFF;
 
-    // Quest Data
+    // Quest Data - Scale up for quest pins
     const pinDataQuestColor = 0xFFFFFF;
-    const pinDataQuestSize = pinInnerHeight / 2 + pinTextSizeAdjustment;
+    const pinDataQuestSize = this.pinType === 'quest' ? 
+      pinInnerHeight / 2 + pinTextSizeAdjustment + 10 : // Larger for quest pins
+      pinInnerHeight / 2 + pinTextSizeAdjustment;
 
     // State Data
     const pinDataStateColor = 0xFFFFFF;
@@ -270,42 +276,67 @@ export class QuestPin extends PIXI.Container {
     }
 
     // === Outer ring ===
-    const outerW = pinInnerWidth + 2 * (pinRingThickness + pinRingGap);
-    const outerH = pinInnerHeight + 2 * (pinRingThickness + pinRingGap);
-    const outer = new PIXI.Graphics();
-    
-    // Draw the main ring
-    outer.lineStyle({
-      width: pinRingThickness,
-      color: pinRingColor,
-      alpha: pinRingTransparency,
-      alignment: 0.5,
-      native: false
-    });
-    outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingThickness + pinRingGap);
-    this.addChild(outer);
-    
-    // Add second ring for hidden quests (GM only)
-    if (this.questState === 'hidden' && game.user.isGM) {
-      const secondRingW = outerW + 2 * (pinRingThickness + pinRingGap);
-      const secondRingH = outerH + 2 * (pinRingThickness + pinRingGap);
-      const secondRing = new PIXI.Graphics();
+    if (this.pinType === 'quest') {
+      // For quest pins, draw circular rings
+      const outerRadius = pinInnerHeight/2 + pinRingThickness + pinRingGap;
+      const outer = new PIXI.Graphics();
       
-      secondRing.lineStyle({
+      // Draw the main ring
+      outer.lineStyle({
         width: pinRingThickness,
-        color: pinRingColorQuestHidden,
+        color: pinRingColor,
         alpha: pinRingTransparency,
         alignment: 0.5,
         native: false
       });
-      secondRing.drawRoundedRect(-secondRingW/2, -secondRingH/2, secondRingW, secondRingH, pinInnerBorderRadius + 2 * (pinRingThickness + pinRingGap));
-      this.addChild(secondRing);
+      outer.drawCircle(0, 0, outerRadius);
+      this.addChild(outer);
+      
+      // Add second ring for hidden quests (GM only)
+      if (this.questState === 'hidden' && game.user.isGM) {
+        const secondRingRadius = outerRadius + pinRingThickness + pinRingGap;
+        const secondRing = new PIXI.Graphics();
+        
+        secondRing.lineStyle({
+          width: pinRingThickness,
+          color: pinRingColorQuestHidden,
+          alpha: pinRingTransparency,
+          alignment: 0.5,
+          native: false
+        });
+        secondRing.drawCircle(0, 0, secondRingRadius);
+        this.addChild(secondRing);
+      }
+    } else {
+      // For objective pins, keep rectangular rings
+      const outerW = pinInnerWidth + 2 * (pinRingThickness + pinRingGap);
+      const outerH = pinInnerHeight + 2 * (pinRingThickness + pinRingGap);
+      const outer = new PIXI.Graphics();
+      
+      // Draw the main ring
+      outer.lineStyle({
+        width: pinRingThickness,
+        color: pinRingColor,
+        alpha: pinRingTransparency,
+        alignment: 0.5,
+        native: false
+      });
+      outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingThickness + pinRingGap);
+      this.addChild(outer);
     }
 
     // === Inner shape ===
     const inner = new PIXI.Graphics();
     inner.beginFill(pinInnerColor, pinInnerTransparency);
-    inner.drawRoundedRect(-pinInnerWidth/2, -pinInnerHeight/2, pinInnerWidth, pinInnerHeight, pinInnerBorderRadius);
+    
+    if (this.pinType === 'quest') {
+      // For quest pins, draw circle
+      inner.drawCircle(0, 0, pinInnerHeight/2);
+    } else {
+      // For objective pins, draw rounded rectangle
+      inner.drawRoundedRect(-pinInnerWidth/2, -pinInnerHeight/2, pinInnerWidth, pinInnerHeight, pinInnerBorderRadius);
+    }
+    
     inner.endFill();
     inner.filters = [
       new PIXI.filters.DropShadowFilter(pinInnerDropShadow)
@@ -316,113 +347,102 @@ export class QuestPin extends PIXI.Container {
     const padX = pinDataPadding;
     const centerY = 0;
     const centerX = 0;
-    // --- Left side ---
-    let leftX = -pinInnerWidth/2 + padX;
-    // Quest category icon
-    let questIconUnicode = pinIconMainQuestStyle;
-    let questIconSize = pinIconMainQuestSize;
-    let questIconColor = pinIconMainQuestColor;
-    if (this.questCategory === 'Side Quest') {
-      questIconUnicode = pinIconSideQuestStyle;
-      questIconSize = pinIconSideQuestSize;
-      questIconColor = pinIconSideQuestColor;
-    }
-    const questIcon = new PIXI.Text(questIconUnicode, {
-      fontFamily: pinIconFamily,
-      fontSize: questIconSize,
-      fill: questIconColor
-    });
-    questIcon.anchor.set(0.5);
-    // Position quest icon at left edge of inner pin plus ring and gap and pinIconPadding
-    questIcon.position.set(-pinInnerWidth/2 + pinRingThickness + pinRingGap + pinIconPadding, centerY);
-    this.addChild(questIcon);
-    leftX += questIconSize + padX;
-    // Quest index number (show '??' if missing)
-    const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null && this.questIndex !== '')
-      ? String(this.questIndex)
-      : '??';
-    const questIndexText = new PIXI.Text(questIndexValue, {
-      fontFamily: pinFontFamily,
-      fontSize: pinDataQuestSize,
-      fill: pinDataQuestColor,
-      fontWeight: 'bold',
-      align: 'center'
-    });
-    questIndexText.anchor.set(0.5);
-    questIndexText.position.set(centerX - pinDataQuestSize/2 - padX, centerY);
-    this.addChild(questIndexText);
-
-    // --- Separator line at center ---
-    const sep = new PIXI.Graphics();
-    sep.lineStyle({
-      width: pinDataSeparatorWidth,
-      color: pinDataSeparatorColor,
-      alpha: 0.6,
-      alignment: 0.5,
-      native: false
-    });
     
-    if (pinDataSeparatorStyle === 'dashed') {
-      // Create dashed separator line
-      const dashLength = 6;
-      const gapLength = 6;
-      const totalLength = dashLength + gapLength;
-      const startY = -pinInnerHeight/2 + 10;
-      const endY = pinInnerHeight/2 - 10;
-      
-      for (let y = startY; y < endY; y += totalLength) {
-        const lineEndY = Math.min(y + dashLength, endY);
-        sep.moveTo(centerX, y);
-        sep.lineTo(centerX, lineEndY);
-      }
-    } else {
-      // Solid separator line
-      sep.moveTo(centerX, -pinInnerHeight/2 + 10);
-      sep.lineTo(centerX, pinInnerHeight/2 - 10);
-    }
-    
-    this.addChild(sep);
-
-    // --- Right side ---
     if (this.pinType === 'quest') {
-      // For quest-level pins, show quest status and participants count
+      // For quest pins, just show centered icon
+      let questIconUnicode = pinIconMainQuestStyle;
+      let questIconSize = pinIconMainQuestSize;
+      let questIconColor = pinIconMainQuestColor;
       
-      // Quest status text
-      const questStatusValue = this.questStatus || 'Not Started';
-      const questStatusText = new PIXI.Text(questStatusValue, {
-        fontFamily: pinFontFamily,
-        fontSize: pinDataStateSize,
-        fill: pinDataStateColor,
-        fontWeight: 'bold',
-        align: 'center'
-      });
-      questStatusText.anchor.set(0.5);
-      questStatusText.position.set(centerX + pinDataStateSize/2 + padX, centerY);
-      this.addChild(questStatusText);
+      if (this.questCategory === 'Side Quest') {
+        questIconUnicode = pinIconSideQuestStyle;
+        questIconSize = pinIconSideQuestSize;
+        questIconColor = pinIconSideQuestColor;
+      }
       
-      // Participants count icon (right edge)
-      const participantsCount = this.participants.length || 0;
-      const participantsIcon = new PIXI.Text('\uf007', { // fas fa-user (unicode)
+      const questIcon = new PIXI.Text(questIconUnicode, {
         fontFamily: pinIconFamily,
-        fontSize: pinIconStateCompletedSize,
-        fill: pinIconStateCompletedColor
+        fontSize: questIconSize,
+        fill: questIconColor
       });
-      participantsIcon.anchor.set(0.5);
-      participantsIcon.position.set(pinInnerWidth/2 - pinRingThickness - pinRingGap - pinIconPadding, centerY);
-      this.addChild(participantsIcon);
+      questIcon.anchor.set(0.5);
+      questIcon.position.set(centerX, centerY); // Center the icon
+      this.addChild(questIcon);
       
-      // Participants count text (small, positioned above icon)
-      const participantsText = new PIXI.Text(String(participantsCount), {
+    } else {
+      // For objective pins, keep existing layout
+      // --- Left side ---
+      let leftX = -pinInnerWidth/2 + padX;
+      // Quest category icon
+      let questIconUnicode = pinIconMainQuestStyle;
+      let questIconSize = pinIconMainQuestSize;
+      let questIconColor = pinIconMainQuestColor;
+      if (this.questCategory === 'Side Quest') {
+        questIconUnicode = pinIconSideQuestStyle;
+        questIconSize = pinIconSideQuestSize;
+        questIconColor = pinIconSideQuestColor;
+      }
+      const questIcon = new PIXI.Text(questIconUnicode, {
+        fontFamily: pinIconFamily,
+        fontSize: questIconSize,
+        fill: questIconColor
+      });
+      questIcon.anchor.set(0.5);
+      // Position quest icon at left edge of inner pin plus ring and gap and pinIconPadding
+      questIcon.position.set(-pinInnerWidth/2 + pinRingThickness + pinRingGap + pinIconPadding, centerY);
+      this.addChild(questIcon);
+      leftX += questIconSize + padX;
+      // Quest index number (show '??' if missing)
+      const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null && this.questIndex !== '')
+        ? String(this.questIndex)
+        : '??';
+      const questIndexText = new PIXI.Text(questIndexValue, {
         fontFamily: pinFontFamily,
-        fontSize: pinDataStateSize - 2,
-        fill: pinDataStateColor,
+        fontSize: pinDataQuestSize,
+        fill: pinDataQuestColor,
         fontWeight: 'bold',
         align: 'center'
       });
-      participantsText.anchor.set(0.5);
-      participantsText.position.set(pinInnerWidth/2 - pinRingThickness - pinRingGap - pinIconPadding, centerY - pinDataStateSize);
-      this.addChild(participantsText);
+      questIndexText.anchor.set(0.5);
+      questIndexText.position.set(centerX - pinDataQuestSize/2 - padX, centerY);
+      this.addChild(questIndexText);
+
+      // --- Separator line at center ---
+      const sep = new PIXI.Graphics();
+      sep.lineStyle({
+        width: pinDataSeparatorWidth,
+        color: pinDataSeparatorColor,
+        alpha: 0.6,
+        alignment: 0.5,
+        native: false
+      });
       
+      if (pinDataSeparatorStyle === 'dashed') {
+        // Create dashed separator line
+        const dashLength = 6;
+        const gapLength = 6;
+        const totalLength = dashLength + gapLength;
+        const startY = -pinInnerHeight/2 + 10;
+        const endY = pinInnerHeight/2 - 10;
+        
+        for (let y = startY; y < endY; y += totalLength) {
+          const lineEndY = Math.min(y + dashLength, endY);
+          sep.moveTo(centerX, y);
+          sep.lineTo(centerX, lineEndY);
+        }
+      } else {
+        // Solid separator line
+        sep.moveTo(centerX, -pinInnerHeight/2 + 10);
+        sep.lineTo(centerX, pinInnerHeight/2 - 10);
+      }
+      
+      this.addChild(sep);
+    }
+
+        // --- Right side ---
+    if (this.pinType === 'quest') {
+      // For quest pins, no portraits for now - just the centered icon is enough
+      // Portraits will be added back later
     } else {
       // For objective pins, show objective number and status icon
       
@@ -482,6 +502,31 @@ export class QuestPin extends PIXI.Container {
       pinInnerHeight,
       pinInnerBorderRadius
     );
+  }
+
+  // Helper method to add fallback portrait when image loading fails
+  _addFallbackPortrait(container, participant, portraitSize) {
+    const playerInitial = participant.name ? participant.name.charAt(0).toUpperCase() : '?';
+    const playerText = new PIXI.Text(playerInitial, {
+      fontFamily: "Signika",
+      fontSize: portraitSize * 0.6,
+      fill: 0xffffff,
+      fontWeight: 'bold',
+      align: 'center'
+    });
+    playerText.anchor.set(0.5);
+    
+    // Add text shadow for better readability
+    playerText.filters = [
+      new PIXI.filters.DropShadowFilter({
+        color: 0x000000,
+        alpha: 0.8,
+        blur: 2,
+        distance: 1
+      })
+    ];
+    
+    container.addChild(playerText);
   }
 
   // Update pin appearance based on new objective state
@@ -828,7 +873,7 @@ export class QuestPin extends PIXI.Container {
       const clickTime = Date.now();
       this._lastRightClickTime = clickTime;
       
-      // Single right-click: toggle failed state with delay to allow for double-click detection
+      // Single right-click: toggle visibility for quest pins, fail objective for objective pins
       getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Single right-click - setting timeout', {
         pinId: this.pinId,
         clickTime: clickTime,
@@ -843,7 +888,14 @@ export class QuestPin extends PIXI.Container {
             lastRightClickTime: this._lastRightClickTime,
             user: game.user.name
           });
-          await this._failObjective();
+          
+          if (this.pinType === 'quest') {
+            // For quest pins, toggle visibility
+            await this._toggleHiddenState();
+          } else {
+            // For objective pins, fail objective
+            await this._failObjective();
+          }
         } else {
           getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Right-click timeout cancelled - newer click detected', {
             pinId: this.pinId,
@@ -980,58 +1032,87 @@ export class QuestPin extends PIXI.Container {
   // Toggle hidden state (middle-click or shift+left-click)
   async _toggleHiddenState() {
     try {
-      // Get the journal page for this quest
-      const journalId = game.settings.get(MODULE.ID, 'questJournal');
-      if (!journalId || journalId === 'none') return;
-      
-      const journal = game.journal.get(journalId);
-      if (!journal) return;
-      
-      const page = journal.pages.find(p => p.uuid === this.questUuid);
-      if (!page) return;
-      
-      let content = page.text.content;
-      const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-      if (!tasksMatch) return;
-      
-      const tasksHtml = tasksMatch[1];
-      const parser = new DOMParser();
-      const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-      const ul = ulDoc.querySelector('ul');
-      const liList = ul ? Array.from(ul.children) : [];
-      const li = liList[this.objectiveIndex];
-      if (!li) return;
-      
-      // Toggle hidden state by adding/removing <em> tags
-      const emTag = li.querySelector('em');
-      if (emTag) {
-        // Task is already hidden, unhide it - unwrap <em>
-        emTag.replaceWith(...emTag.childNodes);
-      } else {
-        // Task is not hidden, hide it - wrap in <em> and remove other states
-        // First, unwrap any existing state tags to ensure clean state
-        const sTag = li.querySelector('s');
-        const codeTag = li.querySelector('code');
+      if (this.pinType === 'quest') {
+        // For quest-level pins, toggle quest visibility
+        const page = await fromUuid(this.questUuid);
+        if (!page) return;
         
-        if (sTag) {
-          // If completed, unwrap <s> first
-          li.innerHTML = sTag.innerHTML;
-        } else if (codeTag) {
-          // If failed, unwrap <code> first
-          li.innerHTML = codeTag.innerHTML;
+        let visible = await page.getFlag(MODULE.ID, 'visible');
+        if (typeof visible === 'undefined') visible = true;
+        visible = !visible;
+        await page.setFlag(MODULE.ID, 'visible', visible);
+        
+        // Update quest state locally
+        this.questState = visible ? 'visible' : 'hidden';
+        
+        // Update pin appearance to show/hide second ring for GMs
+        this._updatePinAppearance();
+        
+        // Update visibility for players
+        this.updateVisibility();
+        
+        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest visibility toggled', {
+          pinId: this.pinId,
+          questUuid: this.questUuid,
+          newVisibility: visible,
+          user: game.user.name
+        });
+        
+      } else {
+        // For objective pins, toggle objective hidden state
+        // Get the journal page for this quest
+        const journalId = game.settings.get(MODULE.ID, 'questJournal');
+        if (!journalId || journalId === 'none') return;
+        
+        const journal = game.journal.get(journalId);
+        if (!journal) return;
+        
+        const page = journal.pages.find(p => p.uuid === this.questUuid);
+        if (!page) return;
+        
+        let content = page.text.content;
+        const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+        if (!tasksMatch) return;
+        
+        const tasksHtml = tasksMatch[1];
+        const parser = new DOMParser();
+        const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+        const ul = ulDoc.querySelector('ul');
+        const liList = ul ? Array.from(ul.children) : [];
+        const li = liList[this.objectiveIndex];
+        if (!li) return;
+        
+        // Toggle hidden state by adding/removing <em> tags
+        const emTag = li.querySelector('em');
+        if (emTag) {
+          // Task is already hidden, unhide it - unwrap <em>
+          emTag.replaceWith(...emTag.childNodes);
+        } else {
+          // Task is not hidden, hide it - wrap in <em> and remove other states
+          // First, unwrap any existing state tags to ensure clean state
+          const sTag = li.querySelector('s');
+          const codeTag = li.querySelector('code');
+          
+          if (sTag) {
+            // If completed, unwrap <s> first
+            li.innerHTML = sTag.innerHTML;
+          } else if (codeTag) {
+            // If failed, unwrap <code> first
+            li.innerHTML = codeTag.innerHTML;
+          }
+          
+          // Now wrap in <em>
+          li.innerHTML = `<em>${li.innerHTML}</em>`;
         }
         
-        // Now wrap in <em>
-        li.innerHTML = `<em>${li.innerHTML}</em>`;
+        const newTasksHtml = ul.innerHTML;
+        const newContent = content.replace(tasksMatch[1], newTasksHtml);
+        
+        // Update the journal page
+        await page.update({ text: { content: newContent } });
+        
+        // The pin will be automatically updated by the updateJournalEntryPage hook
       }
-      
-      const newTasksHtml = ul.innerHTML;
-      const newContent = content.replace(tasksMatch[1], newTasksHtml);
-      
-      // Update the journal page
-      await page.update({ text: { content: newContent } });
-      
-      // The pin will be automatically updated by the updateJournalEntryPage hook
       
     } catch (error) {
       getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling hidden state', { error }, false, true, true, MODULE.TITLE);
@@ -1346,7 +1427,7 @@ function getQuestNumber(questUuid) {
 }
 
 // Re-enable only the dropCanvasData hook in quest-pin.js
-Hooks.on('dropCanvasData', (canvas, data) => {
+Hooks.on('dropCanvasData', async (canvas, data) => {
     if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return; // Let Foundry handle all other drops!
     
     // Only GMs can create quest pins
@@ -1382,6 +1463,37 @@ Hooks.on('dropCanvasData', (canvas, data) => {
         // Handle quest-level pins
         const { questUuid, questIndex, questCategory, questState, questStatus, participants } = data;
         
+        // Convert participant UUIDs to participant objects with names
+        const processedParticipants = [];
+        if (participants && Array.isArray(participants)) {
+            for (const participantUuid of participants) {
+                try {
+                    if (participantUuid && participantUuid.trim()) {
+                        // Try to get actor name from UUID
+                        const actor = await fromUuid(participantUuid);
+                        if (actor && actor.name) {
+                            processedParticipants.push({
+                                uuid: participantUuid,
+                                name: actor.name
+                            });
+                        } else {
+                            // Fallback: use UUID as name
+                            processedParticipants.push({
+                                uuid: participantUuid,
+                                name: participantUuid
+                            });
+                        }
+                    }
+                } catch (error) {
+                    // If UUID lookup fails, use UUID as name
+                    processedParticipants.push({
+                        uuid: participantUuid,
+                        name: participantUuid
+                    });
+                }
+            }
+        }
+        
         const pin = new QuestPin({ 
             x: data.x, 
             y: data.y, 
@@ -1392,7 +1504,7 @@ Hooks.on('dropCanvasData', (canvas, data) => {
             questCategory,
             questState: questState || 'visible',
             questStatus: questStatus || 'Not Started',
-            participants: participants || []
+            participants: processedParticipants
         });
         
         if (canvas.squirePins) {
