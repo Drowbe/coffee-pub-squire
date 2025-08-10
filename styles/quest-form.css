@@ -127,4 +127,11 @@
 .quest-form .checkbox input[type="checkbox"] {
     width: 1rem;
     height: 1rem;
+}
+
+.quest-form .hint {
+    font-size: 0.8em;
+    color: var(--color-text-dark);
+    font-style: italic;
+    margin-top: 0.25rem;
 } 

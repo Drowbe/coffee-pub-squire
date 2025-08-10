@@ -41,6 +41,12 @@
     </div>
 
     <div class="form-group">
+        <label>Participants (comma-separated UUIDs)</label>
+        <input type="text" name="participants" value="{{quest.participants}}" placeholder="Actor UUIDs separated by commas">
+        <p class="hint">Enter actor UUIDs separated by commas to assign participants to this quest</p>
+    </div>
+
+    <div class="form-group">
         <label>Tasks (one per line)</label>
         <textarea name="tasks" rows="4">{{quest.tasks}}</textarea>
     </div>

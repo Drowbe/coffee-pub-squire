@@ -654,26 +654,21 @@ export async function getQuestTooltipData(questPageUuid) {
         const completedObjectives = entry.tasks?.filter(task => task.state === 'completed').length || 0;
         const questStatus = entry.status || 'Not Started';
         
-        // Get participants info for portraits
-        const participants = [];
-        if (entry.participants && Array.isArray(entry.participants)) {
-            for (const participantUuid of entry.participants) {
-                try {
-                    if (participantUuid && participantUuid.trim()) {
-                        const actor = await fromUuid(participantUuid);
-                        if (actor && actor.name) {
-                            participants.push({
-                                uuid: participantUuid,
-                                name: actor.name,
-                                img: actor.img
-                            });
-                        }
-                    }
-                } catch (error) {
-                    // Skip failed participant lookups
-                }
-            }
-        }
+        // Get participants info for portraits - use the already parsed data
+        const participants = entry.participants || [];
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'SQUIRE | QUESTS getQuestTooltipData: Using participants data',
+            { 
+                entryParticipants: entry.participants,
+                isArray: Array.isArray(entry.participants),
+                length: participants.length,
+                participants: participants
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
 
         // Get location info if available
         let location = '';
@@ -717,7 +712,7 @@ export async function getQuestTooltipData(questPageUuid) {
             questCategoryIcon = '\uf059'; // fas fa-question-circle (default)
         }
 
-        return {
+        const result = {
             questName,
             questNumber: getQuestNumber(page.uuid),
             questCategory: entry.category || 'Quest',
@@ -732,6 +727,21 @@ export async function getQuestTooltipData(questPageUuid) {
             visibility,
             isGM: game.user.isGM
         };
+        
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'SQUIRE | QUESTS getQuestTooltipData: Returning data',
+            { 
+                participantsCount: participants.length,
+                participants: participants,
+                resultKeys: Object.keys(result)
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
+        
+        return result;
     } catch (error) {
         getBlacksmith()?.utils.postConsoleAndNotification(
             'SQUIRE | QUESTS getQuestTooltipData: Unexpected error',

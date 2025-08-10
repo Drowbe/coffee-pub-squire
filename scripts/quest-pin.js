@@ -1344,6 +1344,29 @@ export class QuestPin extends PIXI.Container {
         // For quest-level pins, use quest tooltip data
         tooltipData = await getQuestTooltipData(this.questUuid);
         tooltipId = 'squire-questpin-quest-tooltip';
+        
+        // If the tooltip data doesn't have participants but the pin does, use the pin's participants
+        if (tooltipData && (!tooltipData.participants || tooltipData.participants.length === 0) && this.participants && this.participants.length > 0) {
+          tooltipData.participants = this.participants;
+        }
+        
+        // Debug logging for participants
+        if (tooltipData) {
+          getBlacksmith()?.utils.postConsoleAndNotification(
+            'SQUIRE | QUEST PIN: Tooltip participants data',
+            { 
+              pinParticipants: this.participants, 
+              tooltipParticipants: tooltipData.participants,
+              hasPinParticipants: this.participants && this.participants.length > 0,
+              hasTooltipParticipants: tooltipData.participants && tooltipData.participants.length > 0
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+          );
+        }
+        
         if (tooltipData) {
           tooltipData.controls = game.user.isGM ?
             'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
@@ -1495,13 +1518,15 @@ Hooks.on('dropCanvasData', async (canvas, data) => {
                         if (actor && actor.name) {
                             processedParticipants.push({
                                 uuid: participantUuid,
-                                name: actor.name
+                                name: actor.name,
+                                img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
                             });
                         } else {
                             // Fallback: use UUID as name
                             processedParticipants.push({
                                 uuid: participantUuid,
-                                name: participantUuid
+                                name: participantUuid,
+                                img: 'icons/svg/mystery-man.svg'
                             });
                         }
                     }
@@ -1509,7 +1534,8 @@ Hooks.on('dropCanvasData', async (canvas, data) => {
                     // If UUID lookup fails, use UUID as name
                     processedParticipants.push({
                         uuid: participantUuid,
-                        name: participantUuid
+                        name: participantUuid,
+                        img: 'icons/svg/mystery-man.svg'
                     });
                 }
             }

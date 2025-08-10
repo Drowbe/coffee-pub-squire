@@ -26,6 +26,11 @@ export class QuestForm extends FormApplication {
     }
 
     getData() {
+        // Ensure participants is properly formatted for display
+        if (this.quest.participants && Array.isArray(this.quest.participants)) {
+            this.quest.participants = this.quest.participants.join(', ');
+        }
+        
         return {
             quest: this.quest,
             categories: game.settings.get(MODULE.ID, 'questCategories'),
@@ -60,6 +65,7 @@ export class QuestForm extends FormApplication {
             plotHook: '',
             status: 'Not Started',
             tags: [],
+            participants: [],
             uuid: '',
             visible: false
         };
@@ -83,6 +89,11 @@ export class QuestForm extends FormApplication {
         // Convert tags to array
         if (typeof quest.tags === 'string') {
             quest.tags = quest.tags.split(',').map(t => t.trim()).filter(t => t);
+        }
+
+        // Convert participants to array
+        if (typeof quest.participants === 'string') {
+            quest.participants = quest.participants.split(',').map(p => p.trim()).filter(p => p);
         }
 
         // Convert numeric values
@@ -231,6 +242,19 @@ export class QuestForm extends FormApplication {
 
         if (quest.tags && quest.tags.length) {
             content += `<p><strong>Tags:</strong> ${quest.tags.join(', ')}</p>\n\n`;
+        }
+
+        // Add participants section if there are any
+        if (quest.participants && quest.participants.length) {
+            content += `<p><strong>Participants:</strong></p>\n<ul>\n`;
+            quest.participants.forEach(participant => {
+                if (participant.uuid) {
+                    content += `<li>@UUID[${participant.uuid}]{${participant.name || 'Unknown'}}</li>\n`;
+                } else {
+                    content += `<li>${participant.name || 'Unknown'}</li>\n`;
+                }
+            });
+            content += `</ul>\n\n`;
         }
 
         return content;
