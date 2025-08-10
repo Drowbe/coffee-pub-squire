@@ -1,7 +1,7 @@
-<div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}">
+<div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}" data-quest-status="{{entry.status}}" data-participants="{{#if entry.participants}}{{#each entry.participants}}{{#unless @first}},{{/unless}}{{this.uuid}}{{/each}}{{/if}}">
   <!-- ENTRY HEADER -->
   <div class="quest-entry-header">
-    <div class="quest-entry-name">
+    <div class="quest-entry-name" {{#if isGM}}draggable="true"{{/if}}>
       {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
       <span class="quest-number">{{entry.questNumber}}</span>
       {{entry.name}}

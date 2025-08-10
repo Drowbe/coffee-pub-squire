@@ -251,6 +251,14 @@
     background: rgba(96, 54, 51, 0.0);
     padding: 4px 2px 4px 0px;
     border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .quest-entry-name:hover {
+    background: rgba(96, 54, 51, 0.1);
+    border-radius: 6px;
+    padding: 2px 4px;
+    margin: -2px -4px;
 }
 .squire-tray[data-position="left"] .quest-entry-name {
     flex: 1 1 auto;
@@ -258,10 +266,24 @@
     font-weight: 500;
     color: rgba(159, 146, 117, 0.9);
     font-size: 1.2em;
+    cursor: grab;
+    transition: all 0.2s ease;
 }
 .squire-tray[data-position="left"] .quest-entry-name i {
     font-size: 0.85em;
     margin-right: 2px;
+}
+
+.squire-tray[data-position="left"] .quest-entry-name:active {
+    cursor: grabbing;
+}
+
+.squire-tray[data-position="left"] .quest-entry-name.dragging {
+    opacity: 0.6;
+    transform: scale(1.01);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 /* Quest Number Styling */
@@ -465,6 +487,8 @@
     border-radius: 4px;
     padding: 2px 4px;
 }
+
+
 
 
 

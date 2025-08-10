@@ -771,6 +771,59 @@ export class QuestPanel {
                 const textElement = $(event.currentTarget);
                 textElement.removeClass('dragging');
             });
+            
+            // Make quest names draggable for quest-level pins (GM only)
+            const questNames = html.find('.quest-entry-name');
+            questNames.on('dragstart', (event) => {
+                // Prevent drag if clicking on interactive elements
+                if ($(event.target).hasClass('quest-entry-feather') ||
+                    $(event.target).hasClass('quest-entry-visibility') ||
+                    $(event.target).hasClass('quest-entry-toggle') ||
+                    $(event.target).closest('.quest-entry-feather').length > 0 ||
+                    $(event.target).closest('.quest-entry-visibility').length > 0 ||
+                    $(event.target).closest('.quest-entry-toggle').length > 0) {
+                    event.preventDefault();
+                    return;
+                }
+                
+                const questName = $(event.currentTarget);
+                const questEntry = questName.closest('.quest-entry');
+                const questUuid = questEntry.find('.quest-entry-feather').data('uuid');
+                const questNameText = questName.text().trim();
+                
+                // Get quest visibility state
+                const questState = questEntry.data('visible') === false ? 'hidden' : 'visible';
+                
+                // Get quest status from data attribute or default
+                const questStatus = questEntry.data('quest-status') || 'Not Started';
+                
+                // Get participants from data attribute or default
+                const participantsData = questEntry.data('participants') || '';
+                const participants = participantsData ? participantsData.split(',').filter(p => p.trim()) : [];
+                
+                // Create drag data for quest-level pin
+                const dragData = {
+                    type: 'quest-quest',
+                    questUuid: questUuid,
+                    questName: questNameText,
+                    questIndex: questEntry.data('quest-number') || '??',
+                    questCategory: questEntry.data('category') || '??',
+                    questState: questState,
+                    questStatus: questStatus,
+                    participants: participants
+                };
+                
+                event.originalEvent.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+                event.originalEvent.dataTransfer.effectAllowed = 'copy';
+                
+                // Add visual feedback
+                questName.addClass('dragging');
+            });
+            
+            questNames.on('dragend', (event) => {
+                const questName = $(event.currentTarget);
+                questName.removeClass('dragging');
+            });
         }
         
         // Use mousedown to detect different click types
