@@ -727,13 +727,6 @@
     font-size: .8em;
 }
 
-
-
-
-
-
-
-
 /* Quest objective highlight when pin is clicked */
 .squire-tray[data-position="left"] .quest-entry-tasks li.objective-highlighted {
     background-color: rgba(255, 255, 255, 0.10);
