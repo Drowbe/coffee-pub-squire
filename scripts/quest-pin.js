@@ -190,8 +190,19 @@ export class QuestPin extends PIXI.Container {
     const pinDataPadding = 10;
     const pinIconSizeMainQuestAdjustment = 0; // adds a bit more to the size of the icons
     const pinIconSizeSideQuestAdjustment = 4; // adds a bit more to the size of the icons
-    const pinIconSizeStateAdjustment = 0; // adds a bit more to the size of the icons
-    const pinTextSizeAdjustment = 5; // adds a bit more to the size of the text
+
+
+    // Pin Title Text
+    const pinTitleFontSize = 20;
+    const pinTitleFontColor = 0xFFFFFF;
+    const pinTitleFontWeight = 'bold';
+    const pinTitleFontStroke = 0x000000;
+    const pinTitleFontStrokeThickness = 4;
+    const pinTitleFontAlign = 'center';
+    const pinTitleOffset = 25;
+
+
+
 
     // Main Pin - Make quest pins round, objectives are now square but same height
     const pinInnerWidth = this.pinType === 'quest' ? 80 : 80; // Square for objective pins, same width as quest pins
@@ -407,7 +418,25 @@ export class QuestPin extends PIXI.Container {
       });
       questLabel.anchor.set(0.5);
       questLabel.position.set(centerX, centerY + labelMainQuestVerticleOffset); // Centered below icon
-      this.addChild(questLabel);
+      
+      // Only add the label if the setting allows it
+      if (game.settings.get(MODULE.ID, 'showQuestPinText')) {
+        this.addChild(questLabel);
+        
+        // Quest title text below the quest number
+        const questTitle = new PIXI.Text(this.questName || 'Unknown Quest', {
+          fontFamily: pinFontFamily,
+          fontSize: pinTitleFontSize,
+          fill: pinTitleFontColor, // White text for better visibility
+          fontWeight: pinTitleFontWeight,
+          align: pinTitleFontAlign,
+          stroke: pinTitleFontStroke,
+          strokeThickness: pinTitleFontStrokeThickness
+        });
+        questTitle.anchor.set(0.5);
+        questTitle.position.set(centerX, centerY + pinInnerHeight/2 + pinTitleOffset); // BelowPin
+        this.addChild(questTitle);
+      }
       
     } else {
 
@@ -446,18 +475,36 @@ export class QuestPin extends PIXI.Container {
         ? String(this.objectiveIndex + 1).padStart(2, '0')
         : '??';
       
-      // Combined quest and objective number in Q85.03 format
-      const combinedText = `Q${questIndexValue}.${objNumValue}`;
-      const combinedLabel = new PIXI.Text(combinedText, {
-        fontFamily: pinFontFamily,
-        fontSize: 16,
-        fill: 0xFFFFFF, // White text for better visibility
-        fontWeight: 'bold',
-        align: 'center'
-      });
-      combinedLabel.anchor.set(0.5);
-      combinedLabel.position.set(centerX, centerY + labelSideQuestVerticleOffset); // Centered below icon
-      this.addChild(combinedLabel);
+                    // Combined quest and objective number in Q85.03 format
+              const combinedText = `Q${questIndexValue}.${objNumValue}`;
+              const combinedLabel = new PIXI.Text(combinedText, {
+                fontFamily: pinFontFamily,
+                fontSize: 16,
+                fill: 0xFFFFFF, // White text for better visibility
+                fontWeight: 'bold',
+                align: 'center'
+              });
+              combinedLabel.anchor.set(0.5);
+              combinedLabel.position.set(centerX, centerY + labelSideQuestVerticleOffset); // Centered below icon
+              
+              // Only add the label if the setting allows it
+              if (game.settings.get(MODULE.ID, 'showQuestPinText')) {
+                this.addChild(combinedLabel);
+                
+                // Objective title text below the combined label
+                const objectiveTitle = new PIXI.Text(this.objectiveName || 'Unknown Objective', {
+                  fontFamily: pinFontFamily,
+                  fontSize: pinTitleFontSize,
+                  fill: pinTitleFontColor, // White text for better visibility
+                  fontWeight: pinTitleFontWeight,
+                  align: pinTitleFontAlign,
+                  stroke: pinTitleFontStroke,
+                  strokeThickness: pinTitleFontStrokeThickness
+                });
+                objectiveTitle.anchor.set(0.5);
+                objectiveTitle.position.set(centerX, centerY + pinInnerHeight/2 + pinTitleOffset); // Below combined label
+                this.addChild(objectiveTitle);
+              }
     }
 
         // --- Right side ---

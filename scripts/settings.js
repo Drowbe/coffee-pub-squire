@@ -925,16 +925,38 @@ export const registerSettings = function() {
     // --------------------------------
     // ---      QUEST Settings     ---
     // --------------------------------
-
+    
     // ---------- Quest Heading ----------
     game.settings.register(MODULE.ID, "headingH3QuestConfiguration", {
         name: 'Quest Configuration',
-        hint: 'Settings for the quest system that organizes main quests and side quests.',
+        hint: 'Settings for quest pins and their display on the canvas.',
         scope: "world",
         config: true,
         default: "",
         type: String,
     });
+    
+    // Quest Pin Title Display
+    game.settings.register(MODULE.ID, 'showQuestPinText', {
+        name: 'Show Quest Pin Titles',
+        hint: 'Display quest and objective names as title text under the pins (like journal pins). When disabled, only icons and rings are shown.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            // Update all quest pins on the canvas when this setting changes
+            if (canvas.squirePins) {
+                canvas.squirePins.children.forEach(child => {
+                    if (child._updatePinAppearance) {
+                        child._updatePinAppearance();
+                    }
+                });
+            }
+        }
+    });
+
+
 
 
 	// -- Search World Items First --
