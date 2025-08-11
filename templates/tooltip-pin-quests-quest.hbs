@@ -1,7 +1,7 @@
 <div>
-  <div class="quest-tooltip-title">
-    <span class="quest-tooltip-quest-icon">{{{questCategoryIcon}}}</span>
+  <div class="quest-tooltip-header">
     <span class="quest-tooltip-quest-number">{{questNumber}}</span>
+    <span class="quest-tooltip-quest-icon">{{{questCategoryIcon}}}</span>
     <span class="quest-tooltip-quest-name">{{questName}}</span>
   </div>
   
@@ -34,6 +34,6 @@
   {{/if}}
   
   {{#if controls}}
-    <div class="quest-tooltip-controls">{{controls}}</div>
+    <div class="quest-tooltip-hints">{{controls}}</div>
   {{/if}}
 </div>

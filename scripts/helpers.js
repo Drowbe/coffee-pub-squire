@@ -705,11 +705,11 @@ export async function getQuestTooltipData(questPageUuid) {
         // Get quest category icon based on category
         let questCategoryIcon = '';
         if (entry.category === 'Main Quest') {
-            questCategoryIcon = '<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>';
+            questCategoryIcon = '<i class="fas fa-flag" title="Main Quest"></i>';
         } else if (entry.category === 'Side Quest') {
-            questCategoryIcon = '<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>';
+            questCategoryIcon = '<i class="fas fa-map-signs" title="Side Quest"></i>';
         } else {
-            questCategoryIcon = '<i class="fas fa-question quest-type-icon" title="Quest"></i>';
+            questCategoryIcon = '<i class="fas fa-question" title="Quest"></i>';
         }
 
         const result = {

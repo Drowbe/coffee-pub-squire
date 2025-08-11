@@ -1,21 +1,25 @@
 <div>
-  <div class="quest-tooltip-title"><span class="quest-tooltip-quest-number">{{questNumber}}</span><span class="quest-tooltip-objective-number">{{objectiveNumberPadded}}</span>{{questName}}</div>
+  <div class="quest-tooltip-header">
+    <span class="quest-tooltip-quest-number">{{questNumber}}</span>
+    <span class="quest-tooltip-objective-number">{{objectiveNumberPadded}}</span>
+    <span class="quest-tooltip-quest-name">{{questName}}</span>
+  </div>
   <div class="quest-tooltip-metadata-wrapper">
     <span class="quest-tooltip-state state-{{objectiveState}}">{{objectiveState}}</span>
     {{#if visibility}}
       <span class="quest-tooltip-visibility">{{visibility}}</span>
     {{/if}}
+    {{#if objectiveNearby}}
+      <span class="quest-tooltip-state state-nearby">Objective Nearby</span>
+    {{/if}}
   </div>
   
-  {{#if objectiveNearby}}
-    <span class="quest-tooltip-state state-nearby">Objective Nearby</span>
-  {{/if}}
   <div class="quest-tooltip-description">{{description}}</div>
   {{#if gmHint}}
-    <div class="quest-pin-gm-hint">GM Note: {{gmHint}}</div>
+    <div class="quest-pin-gm-hint">GM NOTE: {{gmHint}}</div>
   {{/if}}
 
   {{#if controls}}
-    <div class="quest-tooltip-controls">{{controls}}</div>
+    <div class="quest-tooltip-hints">{{controls}}</div>
   {{/if}}
 </div> 
