@@ -188,10 +188,10 @@ export class QuestPin extends PIXI.Container {
     const pinFontFamily = "Signika";
     const pinIconFamily = "FontAwesome";
     const pinDataPadding = 10;
-    const pinIconSizeQuestAdjustment = 3; // adds a bit more to the size of the icons
+    const pinIconSizeMainQuestAdjustment = 0; // adds a bit more to the size of the icons
+    const pinIconSizeSideQuestAdjustment = 4; // adds a bit more to the size of the icons
     const pinIconSizeStateAdjustment = 0; // adds a bit more to the size of the icons
     const pinTextSizeAdjustment = 5; // adds a bit more to the size of the text
-    const pinIconPadding = 12; // adds a bit of space between the icon and edge of the container
 
     // Main Pin - Make quest pins round, objectives are now square but same height
     const pinInnerWidth = this.pinType === 'quest' ? 80 : 80; // Square for objective pins, same width as quest pins
@@ -210,23 +210,27 @@ export class QuestPin extends PIXI.Container {
 
     // State Colors
     const pinRingColorFailed = 0xD41A1A;
-    const pinRingColorHidden = 0x141414;
+    const pinRingColorHidden = 0xAAA79A;
     const pinRingColorCompleted = 0x3C9245;
-    const pinRingColorDefault = 0xFFFFFF;
+    const pinRingColorDefault = 0x3D527F;
+    const pinIconColorFailed = 0xD41A1A;
+    const pinIconColorHidden = 0xAAA79A;
+    const pinIconColorCompleted = 0x3C9245;
+    const pinIconColorDefault = 0xFFFFFF;
+
  
     // Main Quest Icon - Scale up for quest pins
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
-    const pinIconMainQuestSize = this.pinType === 'quest' ? 
-      pinInnerHeight / 2 + pinIconSizeQuestAdjustment + 10 : // Larger for quest pins
-      pinInnerHeight / 2 + pinIconSizeQuestAdjustment;
+    const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeMainQuestAdjustment;
     const pinIconMainQuestColor = 0xFFFFFF;
+    const labelMainQuestVerticleOffset = 24;
+
 
     // Side Quest Icon - Scale up for quest pins
     const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
-    const pinIconSideQuestSize = this.pinType === 'quest' ? 
-      pinInnerHeight / 2 + pinIconSizeQuestAdjustment + 10 : // Larger for quest pins
-      pinInnerHeight / 2 + pinIconSizeQuestAdjustment;
+    const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeSideQuestAdjustment
     const pinIconSideQuestColor = 0xFFFFFF;
+    const labelSideQuestVerticleOffset = 28;
 
     // State Icons
     const pinIconStateCompletedStyle = "\uf00c";
@@ -244,12 +248,6 @@ export class QuestPin extends PIXI.Container {
     const pinIconStateDefaultStyle = "\uf021";
     const pinIconStateeDefaultSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
     const pinIconStateeDefaultColor = 0xFFFFFF;
-
-    // Quest Data - Scale up for quest pins
-    const pinDataQuestColor = 0xFFFFFF;
-    const pinDataQuestSize = this.pinType === 'quest' ? 
-      pinInnerHeight / 2 + pinTextSizeAdjustment + 10 : // Larger for quest pins
-      pinInnerHeight / 2 + pinTextSizeAdjustment;
 
     // State Data
     const pinDataStateColor = 0xFFFFFF;
@@ -349,15 +347,19 @@ export class QuestPin extends PIXI.Container {
     const centerX = 0;
     
     if (this.pinType === 'quest') {
-      // For quest pins, just show centered icon
-      let questIconUnicode = pinIconMainQuestStyle;
-      let questIconSize = pinIconMainQuestSize;
-      let questIconColor = pinIconMainQuestColor;
+      // For quest pins, use same layout as objectives: icon on top, quest number below
+      let questIconUnicode;
+      let questIconSize; // pinInnerHeight / 1.5 - 2; // Same size as objective pins
+      let questIconColor;
       
       if (this.questCategory === 'Side Quest') {
         questIconUnicode = pinIconSideQuestStyle;
         questIconSize = pinIconSideQuestSize;
         questIconColor = pinIconSideQuestColor;
+      } else {
+        questIconUnicode = pinIconMainQuestStyle;
+        questIconSize = pinIconMainQuestSize;
+        questIconColor = pinIconMainQuestColor; 
       }
       
       const questIcon = new PIXI.Text(questIconUnicode, {
@@ -366,15 +368,32 @@ export class QuestPin extends PIXI.Container {
         fill: questIconColor
       });
       questIcon.anchor.set(0.5);
-      questIcon.position.set(centerX, centerY); // Center the icon
+      questIcon.position.set(centerX, centerY - 8); // Icon above center, same as objectives
       this.addChild(questIcon);
+      
+      // Quest number below (just the quest number, no objective)
+      const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null && this.questIndex !== '')
+        ? String(this.questIndex)
+        : '??';
+      
+      // Add Q prefix for consistency with objective pins
+      const questText = `Q${questIndexValue}`;
+      const questLabel = new PIXI.Text(questText, {
+        fontFamily: pinFontFamily,
+        fontSize: 16,
+        fill: 0xFFFFFF, // White text for better visibility
+        fontWeight: 'bold',
+        align: 'center'
+      });
+      questLabel.anchor.set(0.5);
+      questLabel.position.set(centerX, centerY + labelMainQuestVerticleOffset); // Centered below icon
+      this.addChild(questLabel);
       
     } else {
       // For objective pins, new square layout: icon on top, numbers below
       
       // Quest category icon (large, centered on top)
-      const labelVerticleOffset = 28;
-      const labelHorizantalOffset = 15;
+
       let questIconUnicode = pinIconMainQuestStyle;
       let questIconSize = pinInnerHeight / 1.5 - 2; // Much bigger icon, minimal space for numbers
       let questIconColor = pinIconMainQuestColor;
@@ -408,7 +427,7 @@ export class QuestPin extends PIXI.Container {
         align: 'center'
       });
       combinedLabel.anchor.set(0.5);
-      combinedLabel.position.set(centerX, centerY + labelVerticleOffset); // Centered below icon
+      combinedLabel.position.set(centerX, centerY + labelSideQuestVerticleOffset); // Centered below icon
       this.addChild(combinedLabel);
     }
 
