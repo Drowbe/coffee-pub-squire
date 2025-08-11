@@ -398,36 +398,18 @@ export class QuestPin extends PIXI.Container {
         ? String(this.objectiveIndex + 1).padStart(2, '0')
         : '??';
       
-      // Quest number badge (left) - make it more visible
-      const questIndexText = new PIXI.Text(questIndexValue, {
+      // Combined quest and objective number in Q85.03 format
+      const combinedText = `Q${questIndexValue}.${objNumValue}`;
+      const combinedLabel = new PIXI.Text(combinedText, {
         fontFamily: pinFontFamily,
         fontSize: 16,
         fill: 0xFFFFFF, // White text for better visibility
         fontWeight: 'bold',
         align: 'center'
       });
-      questIndexText.anchor.set(0.5);
-      questIndexText.position.set(centerX - labelHorizantalOffset, centerY + labelVerticleOffset); // Below icon, left side
-      this.addChild(questIndexText);
-      
-      // Separator dot
-      const separatorDot = new PIXI.Graphics();
-      separatorDot.beginFill(0xFFFFFF, 0.8);
-      separatorDot.drawCircle(centerX, centerY + labelVerticleOffset, 1.5);
-      separatorDot.endFill();
-      this.addChild(separatorDot);
-      
-      // Objective number badge (right) - make it more visible
-      const objNumText = new PIXI.Text(objNumValue, {
-        fontFamily: pinFontFamily,
-        fontSize: 16,
-        fill: 0x37C5ED, // Blue color like in tooltips
-        fontWeight: 'bold',
-        align: 'center'
-      });
-      objNumText.anchor.set(0.5);
-      objNumText.position.set(centerX + labelHorizantalOffset, centerY + labelVerticleOffset); // Below icon, right side
-      this.addChild(objNumText);
+      combinedLabel.anchor.set(0.5);
+      combinedLabel.position.set(centerX, centerY + labelVerticleOffset); // Centered below icon
+      this.addChild(combinedLabel);
     }
 
         // --- Right side ---
