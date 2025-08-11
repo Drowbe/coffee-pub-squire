@@ -222,65 +222,37 @@ export class QuestPin extends PIXI.Container {
     // QUEST Ring State Colors
     const pinRingColorQuestHidden = 0xFF7E28;
     const pinRingColorQuestInProgress = 0x161513;
-    const pinRingColorQuestNotStarted = 0x161513;
+    const pinRingColorQuestNotStarted = 0x277487;
     const pinRingColorQuestFailed = 0xD41A1A;
     const pinRingColorQuestCompleted = 0x3C9245;
     
     // QUEST Icon State Colors
     const pinIconColorQuestHidden = 0xFF7E28;
     const pinIconColorInProgress = 0xFFFFFF;
-    const pinIconColorNotStarted = 0xFFFFFF;
+    const pinIconColorNotStarted = 0x277487;
     const pinIconColorQuestFailed = 0xD41A1A;
     const pinIconColorQuestCompleted = 0x3C9245;
     
-
-
-
- 
     // Main Quest Icon - Scale up for quest pins
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
     const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeMainQuestAdjustment;
     const labelMainQuestVerticleOffset = 24;
-
 
     // Side Quest Icon - Scale up for quest pins
     const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
     const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeSideQuestAdjustment
     const labelSideQuestVerticleOffset = 28;
 
-    // State Icons
-    const pinIconStateCompletedStyle = "\uf00c";
-    const pinIconStateCompletedSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
-    const pinIconStateCompletedColor = 0x3C9245;
 
-    const pinIconStateFailedStyle = "\uf00d";
-    const pinIconStateFailedSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
-    const pinIconStateFailedColor = 0xC91B1A;
-
-    const pinIconStateHiddenStyle = "\uf06e";
-    const pinIconStateHiddenSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
-    const pinIconStateHiddenColor = 0x606060;
-
-    const pinIconStateDefaultStyle = "\uf021";
-    const pinIconStateeDefaultSize = pinInnerHeight / 2 + pinIconSizeStateAdjustment;
-    const pinIconStateeDefaultColor = 0xFFFFFF;
-
-    // State Data
-    const pinDataStateColor = 0xFFFFFF;
-    const pinDataStateSize = pinInnerHeight / 2 + pinTextSizeAdjustment;
-
-    // Data Separator
-    const pinDataSeparatorColor = 0xFFFFFF;
-    const pinDataSeparatorWidth = 1;
-    const pinDataSeparatorStyle = "solid"; // or 'dotted'
-
-    // === State-based ring color override ===
-    if (this.pinType === 'quest') {
-      // For quest-level pins, use quest status for ring color
-      if (this.questStatus === 'Failed') pinRingColor = pinRingColorObjectiveFailed;
-      else if (this.questStatus === 'Completed') pinRingColor = pinRingColorObjectiveCompleted;
-      else if (this.questState === 'hidden') pinRingColor = pinRingColorOjectiveHidden;
-      else pinRingColor = pinRingColorObjectiveDefault;
+          // === State-based ring color override ===
+      if (this.pinType === 'quest') {
+        // For quest-level pins, use quest status for ring color
+        if (this.questStatus === 'Failed') pinRingColor = pinRingColorQuestFailed;
+        else if (this.questStatus === 'Complete') pinRingColor = pinRingColorQuestCompleted;
+        else if (this.questStatus === 'In Progress') pinRingColor = pinRingColorQuestInProgress;
+        else if (this.questStatus === 'Not Started') pinRingColor = pinRingColorQuestNotStarted;
+        else if (this.questState === 'hidden') pinRingColor = pinRingColorQuestHidden;
+        else pinRingColor = pinRingColorQuestInProgress; // Default to In Progress
     } else {
       // For objective pins, use objective state for ring color
       if (this.objectiveState === 'failed') pinRingColor = pinRingColorObjectiveFailed;
@@ -289,6 +261,11 @@ export class QuestPin extends PIXI.Container {
       else pinRingColor = pinRingColorObjectiveDefault;
     }
 
+
+
+
+
+    
     // === Outer ring ===
     if (this.pinType === 'quest') {
       // For quest pins, draw circular rings
@@ -363,6 +340,9 @@ export class QuestPin extends PIXI.Container {
     const centerX = 0;
     
     if (this.pinType === 'quest') {
+
+      // *** QUEST PIN ***
+      
       // For quest pins, use same layout as objectives: icon on top, quest number below
       let questIconUnicode;
       let questIconSize; // pinInnerHeight / 1.5 - 2; // Same size as objective pins
@@ -377,11 +357,13 @@ export class QuestPin extends PIXI.Container {
         questIconSize = pinIconMainQuestSize;
       }
       
-      // Set icon color based on quest status (same logic as ring colors)
-      if (this.questStatus === 'Failed') questIconColor = pinIconColorObjectiveFailed;
-      else if (this.questStatus === 'Completed') questIconColor = pinIconColorObectiveCompleted;
-      else if (this.questState === 'hidden') questIconColor = pinIconColorOjectiveHidden;
-      else questIconColor = pinIconColorObjectiveDefault;
+      // Set icon color based on quest status using QUEST-specific colors
+      if (this.questStatus === 'Failed') questIconColor = pinIconColorQuestFailed;
+      else if (this.questStatus === 'Complete') questIconColor = pinIconColorQuestCompleted;
+      else if (this.questStatus === 'In Progress') questIconColor = pinIconColorInProgress;
+      else if (this.questStatus === 'Not Started') questIconColor = pinIconColorNotStarted;
+      else if (this.questState === 'hidden') questIconColor = pinIconColorQuestHidden;
+      else questIconColor = pinIconColorInProgress; // Default to In Progress
       
       const questIcon = new PIXI.Text(questIconUnicode, {
         fontFamily: pinIconFamily,
@@ -411,8 +393,9 @@ export class QuestPin extends PIXI.Container {
       this.addChild(questLabel);
       
     } else {
-      // For objective pins, new square layout: icon on top, numbers below
-      
+
+      // *** OBJECTIVE PIN ***
+
       // Quest category icon (large, centered on top)
 
       let questIconUnicode = pinIconMainQuestStyle;

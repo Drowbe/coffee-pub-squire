@@ -117,10 +117,44 @@
     padding: 1px 6px 1px 6px;
     border-radius: 4px;
 }
-.quest-tooltip-status{
+.quest-tooltip-status.state-complete {
     color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(37, 140, 165, 0.75);
+    background-color: rgba(60, 146, 69, 0.75);
 }
+.quest-tooltip-status.state-failed {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(212, 26, 26, 0.75);
+}
+.quest-tooltip-status.state-not-started {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(39, 116, 135, 0.75);
+}
+.quest-tooltip-status.state-in-progress {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(27, 26, 23, 0.75);
+}
+
+.quest-tooltip-state.state-active {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(27, 26, 23, 0.75);
+}
+.quest-tooltip-state.state-completed {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(60, 146, 69, 0.75);
+}
+.quest-tooltip-state.state-failed {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(212, 26, 26, 0.75);
+}
+.quest-tooltip-state.state-hidden {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(170, 167, 154, 0.75);
+}
+.quest-tooltip-state.state-nearby {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(165, 81, 42, 0.95);
+}
+
 .quest-tooltip-progress {
     color: rgba(255, 255, 255, 0.95);
     background-color: rgba(0, 0, 0, 0.75); 
@@ -128,26 +162,6 @@
 .quest-tooltip-visibility {
     color: rgba(255, 255, 255, 0.95);
     background-color: rgba(235, 119, 24, 0.75); 
-}
-.quest-tooltip-state.state-active {
-    color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(37, 140, 165, 0.95);
-}
-.quest-tooltip-state.state-completed {
-    color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(56, 134, 64, 0.95);
-}
-.quest-tooltip-state.state-failed {
-    color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(232, 45, 32, 0.95);
-}
-.quest-tooltip-state.state-hidden {
-    color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(123, 123, 123, 0.95);
-}
-.quest-tooltip-state.state-nearby {
-    color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(165, 81, 42, 0.95);
 }
 
 /* DESCRIPTION */

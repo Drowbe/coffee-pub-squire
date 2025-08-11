@@ -16,11 +16,11 @@
   {{/if}}
   
   <div class="quest-tooltip-metadata-wrapper">
-    <span class="quest-tooltip-status">{{questStatus}}</span>
+    <span class="quest-tooltip-status state-{{questStatusClass}}">{{questStatus}}</span>
+    <span class="quest-tooltip-progress">{{completedObjectives}} of {{totalObjectives}} complete</span>
     {{#if visibility}}
       <span class="quest-tooltip-visibility">{{visibility}}</span>
     {{/if}}
-    <span class="quest-tooltip-progress">{{completedObjectives}} of {{totalObjectives}} complete</span>
   </div>
 
   <div class="quest-tooltip-description">{{description}}</div>

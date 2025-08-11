@@ -654,6 +654,9 @@ export async function getQuestTooltipData(questPageUuid) {
         const completedObjectives = entry.tasks?.filter(task => task.state === 'completed').length || 0;
         const questStatus = entry.status || 'Not Started';
         
+        // Convert quest status to CSS-friendly class name (spaces to hyphens, lowercase)
+        const questStatusClass = questStatus.toLowerCase().replace(/\s+/g, '-');
+        
         // Get participants info for portraits - use the already parsed data
         const participants = entry.participants || [];
         getBlacksmith()?.utils.postConsoleAndNotification(
@@ -718,6 +721,7 @@ export async function getQuestTooltipData(questPageUuid) {
             questCategory: entry.category || 'Quest',
             questCategoryIcon,
             questStatus,
+            questStatusClass,
             totalObjectives,
             completedObjectives,
             description,
