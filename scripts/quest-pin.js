@@ -314,6 +314,23 @@ export class QuestPin extends PIXI.Container {
       });
       outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingThickness + pinRingGap);
       this.addChild(outer);
+      
+      // Add second ring for hidden quests (GM only) - same logic as quest pins
+      if (this.questState === 'hidden' && game.user.isGM) {
+        const secondRingW = outerW + 2 * (pinRingThickness + pinRingGap);
+        const secondRingH = outerH + 2 * (pinRingThickness + pinRingGap);
+        const secondRing = new PIXI.Graphics();
+        
+        secondRing.lineStyle({
+          width: pinRingThickness,
+          color: pinRingColorQuestHidden,
+          alpha: pinRingTransparency,
+          alignment: 0.5,
+          native: false
+        });
+        secondRing.drawRoundedRect(-secondRingW/2, -secondRingH/2, secondRingW, secondRingH, pinInnerBorderRadius + 2 * (pinRingThickness + pinRingGap));
+        this.addChild(secondRing);
+      }
     }
 
     // === Inner shape ===
@@ -1301,8 +1318,8 @@ export class QuestPin extends PIXI.Container {
       let tooltipId;
       
       if (this.pinType === 'quest') {
-        // For quest-level pins, use quest tooltip data
-        tooltipData = await getQuestTooltipData(this.questUuid);
+        // For quest-level pins, use quest tooltip data with pin's actual state
+        tooltipData = await getQuestTooltipData(this.questUuid, this.questState);
         tooltipId = 'squire-questpin-quest-tooltip';
         
         // If the tooltip data doesn't have participants but the pin does, use the pin's participants
@@ -1333,8 +1350,8 @@ export class QuestPin extends PIXI.Container {
             'Left-click: Select & jump to quest';
         }
       } else {
-        // For objective pins, use objective tooltip data
-        tooltipData = await getObjectiveTooltipData(this.questUuid, this.objectiveIndex);
+        // For objective pins, use objective tooltip data with pin's actual state
+        tooltipData = await getObjectiveTooltipData(this.questUuid, this.objectiveIndex, this.questState, this.objectiveState);
         tooltipId = 'squire-questpin-objective-tooltip';
         if (tooltipData) {
           tooltipData.controls = game.user.isGM ?

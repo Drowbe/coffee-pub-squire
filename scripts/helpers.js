@@ -504,7 +504,7 @@ export function getTaskText(questData, objectiveIndex) {
  * @param {number} objectiveIndex - The objective index (0-based)
  * @returns {Promise<Object|null>} Tooltip data or null if not found
  */
-export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
+export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pinQuestState = null, pinObjectiveState = null) {
     try {
         // Find the journal page by UUID
         let page = null;
@@ -556,7 +556,14 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
 
         let visibility;
         if (game.user.isGM) {
-            if (task.state === 'hidden') {
+            // Use pin's actual states if provided, otherwise fall back to parsed entry/task states
+            const actualQuestState = pinQuestState || entry.state;
+            const actualObjectiveState = pinObjectiveState || task.state;
+            
+            // Check quest-level visibility first
+            if (actualQuestState === 'hidden') {
+                visibility = 'Visible to GM';
+            } else if (actualObjectiveState === 'hidden') {
                 visibility = 'Visible to GM';
             } else {
                 visibility = 'Visible to All';
@@ -588,7 +595,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
             objectiveIndex,
             objectiveNumber: objectiveIndex + 1,
             objectiveNumberPadded: String(objectiveIndex + 1).padStart(2, '0'),
-            objectiveState: task.state || 'active',
+            objectiveState: pinObjectiveState || task.state || 'active',
             description,
             gmHint: (game.user.isGM && task.gmHint) ? task.gmHint : undefined,
             visibility,
@@ -613,7 +620,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
  * @param {string} questPageUuid - The quest UUID
  * @returns {Promise<Object|null>} Tooltip data or null if not found
  */
-export async function getQuestTooltipData(questPageUuid) {
+export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
     try {
         // Find the journal page by UUID
         let page = null;
@@ -689,7 +696,9 @@ export async function getQuestTooltipData(questPageUuid) {
 
         let visibility;
         if (game.user.isGM) {
-            if (entry.state === 'hidden') {
+            // Use pin's actual state if provided, otherwise fall back to parsed entry state
+            const actualQuestState = pinQuestState || entry.state;
+            if (actualQuestState === 'hidden') {
                 visibility = 'Visible to GM';
             } else {
                 visibility = 'Visible to All';
