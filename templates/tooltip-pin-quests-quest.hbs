@@ -15,23 +15,22 @@
     </div>
   {{/if}}
   
-  <div class="quest-tooltip-status">
-    <span class="quest-tooltip-status-text">{{questStatus}}</span>
-    <span class="quest-tooltip-objectives">{{completedObjectives}} of {{totalObjectives}} objectives completed</span>
+  <div class="quest-tooltip-metadata-wrapper">
+    <span class="quest-tooltip-status">{{questStatus}}</span>
+    {{#if visibility}}
+      <span class="quest-tooltip-visibility">{{visibility}}</span>
+    {{/if}}
+    <span class="quest-tooltip-progress">{{completedObjectives}} of {{totalObjectives}} complete</span>
   </div>
-  
+
   <div class="quest-tooltip-description">{{description}}</div>
   
   {{#if plotHook}}
-    <div class="quest-tooltip-plot-hook">Plot Hook: {{plotHook}}</div>
+    <div class="quest-tooltip-plot-hook"><strong>PLOT HOOK</strong>: {{plotHook}}</div>
   {{/if}}
   
   {{#if location}}
-    <div class="quest-tooltip-location">Location: {{location}}</div>
-  {{/if}}
-  
-  {{#if visibility}}
-    <div class="quest-tooltip-visibility">{{visibility}}</div>
+    <div class="quest-tooltip-location"><strong>LOCATION</strong>: {{location}}</div>
   {{/if}}
   
   {{#if controls}}

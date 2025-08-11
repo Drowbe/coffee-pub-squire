@@ -557,9 +557,9 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex) {
         let visibility;
         if (game.user.isGM) {
             if (task.state === 'hidden') {
-                visibility = 'Only Visible to GM';
+                visibility = 'Visible to GM';
             } else {
-                visibility = 'Visible to GM and Players';
+                visibility = 'Visible to All';
             }
         }
         
@@ -687,9 +687,9 @@ export async function getQuestTooltipData(questPageUuid) {
         let visibility;
         if (game.user.isGM) {
             if (entry.state === 'hidden') {
-                visibility = 'Only Visible to GM';
+                visibility = 'Visible to GM';
             } else {
-                visibility = 'Visible to GM and Players';
+                visibility = 'Visible to All';
             }
         }
         

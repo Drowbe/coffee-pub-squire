@@ -83,7 +83,10 @@
     }
 } 
 
-/* Quest Pin Tooltip Content Styles */
+/* ------------------------------------------------------------ */
+/* QUEST PINS: Tooltip Content Styles                           */
+/* ------------------------------------------------------------ */
+
 .quest-tooltip-title {
     font-size: 1.6em;
     font-weight: bold;
@@ -100,25 +103,77 @@
     border-radius: 3px;
     border: 1px solid rgba(255, 255, 255, 0.95);
 }
-.quest-tooltip-objective {
+
+
+.quest-tooltip-objective-number {
     font-weight: 700;
     color: rgba(37, 197, 237, 0.95);
     opacity: 0.8;
     margin-right: 6px;
 }
 
-.quest-tooltip-state {
-    font-size: 0.85em;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(37, 140, 165, 0.95);
+
+
+.quest-tooltip-description {
+    font-size: 1.0em;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.quest-pin-gm-hint {
+    font-size: .8em;
+    font-weight: 200;
+    color: rgba(37, 197, 237, 0.95);
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 4px 4px 4px 4px;
+    border-radius: 3px;
+    border: 1px dotted rgba(255, 255, 255, 0.4);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+.quest-tooltip-metadata-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: inherit;
+    margin: 12px 0;
+    gap: 4px;
+}
+
+.quest-tooltip-state,
+.quest-tooltip-visibility,
+.quest-tooltip-progress,
+.quest-tooltip-status{
+    font-size: 0.75em;
+    font-weight: 500;
     margin-top: 4px;
     margin-bottom: 4px;
     text-transform: uppercase;
-    padding: 1px 4px 1px 4px;
-    border-radius: 3px;
+    padding: 1px 6px 1px 6px;
+    border-radius: 4px;
 }
-
+.quest-tooltip-status{
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(37, 140, 165, 0.75);
+}
+.quest-tooltip-progress {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(0, 0, 0, 0.75); 
+}
+.quest-tooltip-visibility {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(235, 119, 24, 0.75); 
+}
 .quest-tooltip-state.state-active {
     color: rgba(255, 255, 255, 0.95);
     background-color: rgba(37, 140, 165, 0.95);
@@ -142,32 +197,30 @@
 }
 
 
-.quest-tooltip-description {
-    font-size: 1.0em;
-    margin-top: 8px;
-    margin-bottom: 8px;
-}
-.quest-pin-gm-hint {
-    font-size: .8em;
-    font-weight: 200;
-    color: rgba(37, 197, 237, 0.95);
-    margin-top: 8px;
-    margin-bottom: 8px;
-    padding: 4px 4px 4px 4px;
-    border-radius: 3px;
-    border: 1px dotted rgba(255, 255, 255, 0.4);
-}
 
-.quest-tooltip-visibility {
-    font-size: .8em;
-    font-weight: 200;
-    color: rgba(235, 119, 24, 0.95);
-    margin-top: 8px;
-    margin-bottom: 8px;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .quest-tooltip-controls {
-    font-size: .6em;
+    font-size: .7em;
     font-weight: 200;
     opacity: 0.8;
     margin-top: 4px;
@@ -176,13 +229,11 @@
 }
 
 /* Quest Pin Tooltip Specific Styles */
-.quest-tooltip-quest-icon {
-    font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 6 Free", "Font Awesome 6 Pro", "FontAwesome";
-    font-weight: 900;
-    font-size: 1.2em;
-    margin-right: 8px;
-    opacity: 0.9;
-}
+
+
+
+
+
 
 .quest-tooltip-quest-name {
     font-weight: 600;
@@ -208,25 +259,6 @@
     object-fit: cover;
 }
 
-.quest-tooltip-status {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 12px 0;
-    font-size: 0.9em;
-}
-
-.quest-tooltip-status-text {
-    font-weight: 600;
-    color: rgba(37, 197, 237, 0.95);
-    text-transform: uppercase;
-}
-
-.quest-tooltip-objectives {
-    font-size: 0.8em;
-    color: rgba(255, 255, 255, 0.8);
-    opacity: 0.8;
-}
 
 .quest-tooltip-plot-hook {
     font-size: 0.9em;
@@ -243,12 +275,11 @@
 .quest-tooltip-location {
     font-size: 0.9em;
     font-weight: 400;
-    color: rgba(165, 81, 42, 0.95);
+    color: rgba(238, 213, 89, 0.95);
     margin-top: 8px;
     margin-bottom: 8px;
     padding: 6px 8px;
     border-radius: 4px;
-    border-left: 3px solid rgba(165, 81, 42, 0.6);
-    background-color: rgba(165, 81, 42, 0.1);
+    border-left: 3px solid rgba(255, 219, 59, 0.6);
+    background-color: rgba(255, 219, 59, 0.1);
 }
-
