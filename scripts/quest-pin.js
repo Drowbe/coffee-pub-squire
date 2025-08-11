@@ -193,10 +193,10 @@ export class QuestPin extends PIXI.Container {
     const pinTextSizeAdjustment = 5; // adds a bit more to the size of the text
     const pinIconPadding = 12; // adds a bit of space between the icon and edge of the container
 
-    // Main Pin - Make quest pins round, objectives remain rectangular
-    const pinInnerWidth = this.pinType === 'quest' ? 80 : 175; // Round for quest pins
-    const pinInnerHeight = this.pinType === 'quest' ? 80 : 40;  // Round for quest pins
-    const pinInnerBorderRadius = this.pinType === 'quest' ? 40 : 6; // Full circle for quest pins
+    // Main Pin - Make quest pins round, objectives are now square but same height
+    const pinInnerWidth = this.pinType === 'quest' ? 80 : 80; // Square for objective pins, same width as quest pins
+    const pinInnerHeight = this.pinType === 'quest' ? 80 : 80;  // Square for objective pins, same height as quest pins
+    const pinInnerBorderRadius = this.pinType === 'quest' ? 40 : 6; // Square for objective pins
     const pinInnerColor = 0x000000;
     const pinInnerTransparency = 0.8;
     const pinInnerDropShadow = { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 };
@@ -370,16 +370,15 @@ export class QuestPin extends PIXI.Container {
       this.addChild(questIcon);
       
     } else {
-      // For objective pins, keep existing layout
-      // --- Left side ---
-      let leftX = -pinInnerWidth/2 + padX;
-      // Quest category icon
+      // For objective pins, new square layout: icon on top, numbers below
+      
+      // Quest category icon (large, centered on top)
+      const labelVerticleOffset = 28;
+      const labelHorizantalOffset = 15;
       let questIconUnicode = pinIconMainQuestStyle;
-      let questIconSize = pinIconMainQuestSize;
+      let questIconSize = pinInnerHeight / 1.5 - 2; // Much bigger icon, minimal space for numbers
       let questIconColor = pinIconMainQuestColor;
       if (this.questCategory === 'Side Quest') {
-        questIconUnicode = pinIconSideQuestStyle;
-        questIconSize = pinIconSideQuestSize;
         questIconColor = pinIconSideQuestColor;
       }
       const questIcon = new PIXI.Text(questIconUnicode, {
@@ -388,120 +387,68 @@ export class QuestPin extends PIXI.Container {
         fill: questIconColor
       });
       questIcon.anchor.set(0.5);
-      // Position quest icon at left edge of inner pin plus ring and gap and pinIconPadding
-      questIcon.position.set(-pinInnerWidth/2 + pinRingThickness + pinRingGap + pinIconPadding, centerY);
+      questIcon.position.set(centerX, centerY - 8); // Icon above center
       this.addChild(questIcon);
-      leftX += questIconSize + padX;
-      // Quest index number (show '??' if missing)
+      
+      // Quest number and objective number below (as small badges)
       const questIndexValue = (this.questIndex !== undefined && this.questIndex !== null && this.questIndex !== '')
         ? String(this.questIndex)
         : '??';
+      const objNumValue = (this.objectiveIndex !== undefined && this.objectiveIndex !== null && this.objectiveIndex !== '')
+        ? String(this.objectiveIndex + 1).padStart(2, '0')
+        : '??';
+      
+      // Quest number badge (left) - make it more visible
       const questIndexText = new PIXI.Text(questIndexValue, {
         fontFamily: pinFontFamily,
-        fontSize: pinDataQuestSize,
-        fill: pinDataQuestColor,
+        fontSize: 16,
+        fill: 0xFFFFFF, // White text for better visibility
         fontWeight: 'bold',
         align: 'center'
       });
       questIndexText.anchor.set(0.5);
-      questIndexText.position.set(centerX - pinDataQuestSize/2 - padX, centerY);
+      questIndexText.position.set(centerX - labelHorizantalOffset, centerY + labelVerticleOffset); // Below icon, left side
       this.addChild(questIndexText);
-
-      // --- Separator line at center ---
-      const sep = new PIXI.Graphics();
-      sep.lineStyle({
-        width: pinDataSeparatorWidth,
-        color: pinDataSeparatorColor,
-        alpha: 0.6,
-        alignment: 0.5,
-        native: false
+      
+      // Separator dot
+      const separatorDot = new PIXI.Graphics();
+      separatorDot.beginFill(0xFFFFFF, 0.8);
+      separatorDot.drawCircle(centerX, centerY + labelVerticleOffset, 1.5);
+      separatorDot.endFill();
+      this.addChild(separatorDot);
+      
+      // Objective number badge (right) - make it more visible
+      const objNumText = new PIXI.Text(objNumValue, {
+        fontFamily: pinFontFamily,
+        fontSize: 16,
+        fill: 0x37C5ED, // Blue color like in tooltips
+        fontWeight: 'bold',
+        align: 'center'
       });
-      
-      if (pinDataSeparatorStyle === 'dashed') {
-        // Create dashed separator line
-        const dashLength = 6;
-        const gapLength = 6;
-        const totalLength = dashLength + gapLength;
-        const startY = -pinInnerHeight/2 + 10;
-        const endY = pinInnerHeight/2 - 10;
-        
-        for (let y = startY; y < endY; y += totalLength) {
-          const lineEndY = Math.min(y + dashLength, endY);
-          sep.moveTo(centerX, y);
-          sep.lineTo(centerX, lineEndY);
-        }
-      } else {
-        // Solid separator line
-        sep.moveTo(centerX, -pinInnerHeight/2 + 10);
-        sep.lineTo(centerX, pinInnerHeight/2 - 10);
-      }
-      
-      this.addChild(sep);
+      objNumText.anchor.set(0.5);
+      objNumText.position.set(centerX + labelHorizantalOffset, centerY + labelVerticleOffset); // Below icon, right side
+      this.addChild(objNumText);
     }
 
         // --- Right side ---
     if (this.pinType === 'quest') {
       // For quest pins, no portraits for now - just the centered icon is enough
       // Portraits will be added back later
-    } else {
-      // For objective pins, show objective number and status icon
-      
-      // Objective number (show '??' if missing)
-      const objNumValue = (this.objectiveIndex !== undefined && this.objectiveIndex !== null && this.objectiveIndex !== '')
-        ? String(this.objectiveIndex + 1).padStart(2, '0')
-        : '??';
-      const objNumText = new PIXI.Text(objNumValue, {
-        fontFamily: pinFontFamily,
-        fontSize: pinDataStateSize,
-        fill: pinDataStateColor,
-        fontWeight: 'bold',
-        align: 'center'
-      });
-      objNumText.anchor.set(0.5);
-      objNumText.position.set(centerX + pinDataStateSize/2 + padX, centerY);
-      this.addChild(objNumText);
-      
-      // Status icon (right edge)
-      let statusIconUnicode = '';
-      let statusIconSize = pinIconStateCompletedSize;
-      let statusIconColor = pinIconStateCompletedColor;
-      if (this.objectiveState === 'completed') {
-        statusIconUnicode = pinIconStateCompletedStyle;
-        statusIconSize = pinIconStateCompletedSize;
-        statusIconColor = pinIconStateCompletedColor;
-      } else if (this.objectiveState === 'failed') {
-        statusIconUnicode = pinIconStateFailedStyle;
-        statusIconSize = pinIconStateFailedSize;
-        statusIconColor = pinIconStateFailedColor;
-      } else if (this.objectiveState === 'hidden') {
-        statusIconUnicode = pinIconStateHiddenStyle;
-        statusIconSize = pinIconStateHiddenSize;
-        statusIconColor = pinIconStateHiddenColor;
-      } else {
-        statusIconUnicode = pinIconStateDefaultStyle;
-        statusIconSize = pinIconStateeDefaultSize;
-        statusIconColor = pinIconStateeDefaultColor;
-      }
-      if (statusIconUnicode) {
-        const statusIcon = new PIXI.Text(statusIconUnicode, {
-          fontFamily: pinIconFamily,
-          fontSize: statusIconSize,
-          fill: statusIconColor
-        });
-        statusIcon.anchor.set(0.5);
-        // Position state icon at right edge of inner pin minus ring, gap, and pinIconPadding
-        statusIcon.position.set(pinInnerWidth/2 - pinRingThickness - pinRingGap - pinIconPadding, centerY);
-        this.addChild(statusIcon);
-      }
     }
-    // Set hit area to match the inner pill shape
-    this.hitArea = new PIXI.RoundedRectangle(
-      -pinInnerWidth/2,
-      -pinInnerHeight/2,
-      pinInnerWidth,
-      pinInnerHeight,
-      pinInnerBorderRadius
-    );
+    // Note: Objective pins no longer show status icons (suppressed for now)
+    // Set hit area to match the inner shape
+    if (this.pinType === 'quest') {
+      // For quest pins, use circular hit area
+      this.hitArea = new PIXI.Circle(0, 0, pinInnerHeight/2);
+    } else {
+      // For objective pins, use square hit area
+      this.hitArea = new PIXI.Rectangle(
+        -pinInnerWidth/2,
+        -pinInnerHeight/2,
+        pinInnerWidth,
+        pinInnerHeight
+      );
+    }
   }
 
   // Helper method to add fallback portrait when image loading fails
