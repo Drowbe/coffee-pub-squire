@@ -251,7 +251,8 @@ export class QuestPin extends PIXI.Container {
     const pinTitleFontStroke = 0x000000;
     const pinTitleFontStrokeThickness = 4;
     const pinTitleFontAlign = 'center';
-    const pinTitleOffset = 25;
+    const pinTitleOffset = game.settings.get(MODULE.ID, 'questPinTitleOffset') || 50;
+    const pinTitleMaxWidth = game.settings.get(MODULE.ID, 'questPinTitleMaxWidth') || 200; // Maximum width before text wraps
     const pinTitleDropShadow = { color: 0x000000, alpha: 0.8, blur: 4, distance: 2, quality: 3 };
 
 
@@ -483,10 +484,12 @@ export class QuestPin extends PIXI.Container {
           fontWeight: pinTitleFontWeight,
           align: pinTitleFontAlign,
           stroke: pinTitleFontStroke,
-          strokeThickness: pinTitleFontStrokeThickness
+          strokeThickness: pinTitleFontStrokeThickness,
+          wordWrap: true,
+          wordWrapWidth: pinTitleMaxWidth
         });
         questTitle.anchor.set(0.5);
-        questTitle.position.set(centerX, centerY + pinInnerHeight/2 + pinTitleOffset); // BelowPin
+        questTitle.position.set(centerX, centerY + pinTitleOffset); // BelowPin
         
         // Add drop shadow filter to quest title for better readability
         questTitle.filters = [
@@ -553,14 +556,16 @@ export class QuestPin extends PIXI.Container {
                 const objectiveTitle = new PIXI.Text(this.questName || 'Unknown Quest', {
                   fontFamily: pinFontFamily,
                   fontSize: pinTitleFontSize,
-                  fill: pinTitleFontColor, // White text for better visibility
+                  fill: pinTitleFontColor,
                   fontWeight: pinTitleFontWeight,
                   align: pinTitleFontAlign,
                   stroke: pinTitleFontStroke,
-                  strokeThickness: pinTitleFontStrokeThickness
+                  strokeThickness: pinTitleFontStrokeThickness,
+                  wordWrap: true,
+                  wordWrapWidth: pinTitleMaxWidth
                 });
                 objectiveTitle.anchor.set(0.5);
-                objectiveTitle.position.set(centerX, centerY + pinInnerHeight/2 + pinTitleOffset); // Below combined label
+                objectiveTitle.position.set(centerX, centerY + pinTitleOffset); // Below combined label
                 
                 // Add drop shadow filter to objective title for better readability
                 objectiveTitle.filters = [

@@ -959,7 +959,7 @@ export const registerSettings = function() {
     // Quest Pin Title Font Size
     game.settings.register(MODULE.ID, 'questPinTitleSize', {
         name: 'Quest Pin Title Font Size',
-        hint: 'Font size for quest pin titles (in pixels). Default: 20px',
+        hint: 'Font size for quest pin titles (in pixels). Default: 30px',
         scope: 'world',
         config: true,
         type: Number,
@@ -980,8 +980,58 @@ export const registerSettings = function() {
             }
         }
     });
+    
+    // Quest Pin Title Max Width
+    game.settings.register(MODULE.ID, 'questPinTitleMaxWidth', {
+        name: 'Quest Pin Title Max Width',
+        hint: 'Maximum width for quest pin titles before text wraps to new lines (in pixels). Default: 200px',
+        scope: 'world',
+        config: true,
+        type: Number,
+        range: {
+            min: 100,
+            max: 500,
+            step: 10
+        },
+        default: 200,
+        onChange: () => {
+            // Update all quest pins on the canvas when this setting changes
+            if (canvas.squirePins) {
+                canvas.squirePins.children.forEach(child => {
+                    if (child._updatePinAppearance) {
+                        child._updatePinAppearance();
+                    }
+                });
+            }
+        }
+    });
+    
+    // Quest Pin Title Vertical Offset
+    game.settings.register(MODULE.ID, 'questPinTitleOffset', {
+        name: 'Quest Pin Title Vertical Offset',
+        hint: 'Distance below the pin for quest title text (in pixels). Default: 50px',
+        scope: 'world',
+        config: true,
+        type: Number,
+        range: {
+            min: -300,
+            max: 300,
+            step: 1
+        },
+        default: 50,
+        onChange: () => {
+            // Update all quest pins on the canvas when this setting changes
+            if (canvas.squirePins) {
+                canvas.squirePins.children.forEach(child => {
+                    if (child._updatePinAppearance) {
+                        child._updatePinAppearance();
+                    }
+                });
+            }
+        }
+    });
 
-    // Tray Width setting
+
 
 
 	// -- Search World Items First --
