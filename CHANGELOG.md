@@ -7,11 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [12.0.20] - Readiness
 
+### Added
+- Quest pin labels toggle functionality for both GMs and players with independent user preferences
+- Auto-show quest pins feature that automatically displays pins when GMs drag quests/objectives to canvas while pins are hidden
+- Enhanced quest pin visibility system with proper GM and player control
+
+### Changed
+- Renamed quest tooltip templates for better clarity: `tooltip-quest-pin.hbs` → `tooltip-pin-quests-quest.hbs`, `tooltip-quest.hbs` → `tooltip-pin-quests-objective.hbs`
+- Updated quest pin tooltips to use Font Awesome icons instead of unicode characters for consistency
+- Redesigned objective pins to be square with large quest type icons and improved layout
+- Enhanced quest pin tooltips with better participant portrait display and improved styling
+- Updated quest pin icon colors to use state-based coloring matching ring colors
+- Improved quest pin title system with configurable font size, max width, vertical offset, and drop shadows
+- Enhanced quest status dropdown positioning with boundary checking to prevent off-screen display
+- Improved quest pin click behavior to automatically expand collapsed sections when navigating to quests
+
 ### Fixed
 - Fixed deprecated `EffectsCanvasGroup#visibility` API usage in quest pins, now using `Canvas#visibility` for FoundryVTT v12+ compatibility
 - Fixed settings registration timing issue that caused "excludedUsers is not a registered game setting" error by adding safety checks for unregistered settings
 - Fixed error when attempting to modify actors from compendiums during auto-favorite operations for NPCs/monsters, now properly detecting compendium actors using both `actor.pack` and `actor.collection.locked` checks
 - Enhanced compendium detection across all favorite management functions to prevent "You may not modify the Compendium which is currently locked" errors
+- Fixed quest pin visibility toggle to work for both GMs and players (was previously restricted to players only)
+- Fixed quest pin visibility logic to properly respect user preferences for all users including GMs
+- Fixed quest status dropdown menu positioning and boundary issues
+- Fixed quest status changes via dropdown not updating pin icons and appearance
+- Fixed quest pin labels toggle to only hide/show titles while keeping quest numbers visible
+- Fixed quest pin tooltip visibility reporting to use actual pin states instead of parsed journal data
+- Fixed quest pin icon colors and rings for different quest statuses (Hidden, In Progress, Not Started, Failed, Completed)
+- Fixed quest pin title positioning and anchoring for better text placement control
+- Fixed quest pin click navigation to automatically expand collapsed sections
+- Fixed quest pin title display to show actual quest names instead of "Unknown Quest/Objective"
+
+### Cleaned Up
+- Removed unnecessary debug logging from quest pin system while maintaining error trapping for actual problems
+- Cleaned up console noise from constructor, state changes, click events, and loading operations
+- Kept essential error logging for data fetching, persistence operations, and state management failures
 
 ## [1.0.19] - Debug Removal
 
