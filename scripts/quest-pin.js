@@ -1,5 +1,6 @@
 import { MODULE, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData } from './helpers.js';
+import { QuestParser } from './quest-parser.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -97,8 +98,11 @@ export class QuestPin extends PIXI.Container {
       note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags',
     }, false, true, false, MODULE.TITLE);
 
-    // Draw the pin
-    this._updatePinAppearance();
+    // Fetch names from journal entry
+    this.fetchNames().then(() => {
+      // Draw the pin after names are fetched
+      this._updatePinAppearance();
+    });
     
     // Set initial visibility
     this.updateVisibility();
@@ -123,6 +127,54 @@ export class QuestPin extends PIXI.Container {
       return `${this.questUuid}-quest-${Date.now()}`;
     } else {
       return `${this.questUuid}-${this.objectiveIndex}-${Date.now()}`;
+    }
+  }
+
+  /**
+   * Fetch quest and objective names from journal entry
+   */
+  async fetchNames() {
+    try {
+      // Find the journal page by UUID (same approach as tooltip functions)
+      let page = null;
+      for (const journal of game.journal.contents) {
+        page = journal.pages.find(p => p.uuid === this.questUuid);
+        if (page) break;
+      }
+      
+      if (page) {
+        // Enrich the page HTML if needed (same as tooltip functions)
+        const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
+        // Parse the quest entry using the same method as tooltip functions
+        const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
+        
+        if (entry) {
+          // Always use the quest name for both quests and objectives
+          this.questName = entry.name || 'Unknown Quest';
+          
+          if (this.pinType === 'objective' && entry.tasks && entry.tasks[this.objectiveIndex]) {
+            // For objectives, also get the objective name
+            this.objectiveName = entry.tasks[this.objectiveIndex].name || `Objective ${this.objectiveIndex + 1}`;
+          } else if (this.pinType === 'objective') {
+            this.objectiveName = `Objective ${this.objectiveIndex + 1}`;
+          }
+          
+          // Debug logging
+          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Names fetched successfully', { 
+            questName: this.questName, 
+            objectiveName: this.objectiveName,
+            pinType: this.pinType,
+            entryName: entry.name
+          }, false, true, false, MODULE.TITLE);
+        }
+      }
+    } catch (error) {
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error fetching names', { error, questUuid: this.questUuid }, false, true, false, MODULE.TITLE);
+      // Set fallback names
+      this.questName = 'Unknown Quest';
+      if (this.pinType === 'objective') {
+        this.objectiveName = `Objective ${this.objectiveIndex + 1}`;
+      }
     }
   }
 
@@ -491,8 +543,8 @@ export class QuestPin extends PIXI.Container {
               if (game.settings.get(MODULE.ID, 'showQuestPinText')) {
                 this.addChild(combinedLabel);
                 
-                // Objective title text below the combined label
-                const objectiveTitle = new PIXI.Text(this.objectiveName || 'Unknown Objective', {
+                // Quest title text below the combined label (use quest name for both quests and objectives)
+                const objectiveTitle = new PIXI.Text(this.questName || 'Unknown Quest', {
                   fontFamily: pinFontFamily,
                   fontSize: pinTitleFontSize,
                   fill: pinTitleFontColor, // White text for better visibility
