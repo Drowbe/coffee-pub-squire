@@ -511,6 +511,13 @@ export class CodexPanel {
             this.render(this.element);
         });
 
+        // Auto-discover button
+        html.find('.auto-discover-button').click(async () => {
+            if (!game.user.isGM) return;
+            
+            await this._autoDiscoverFromInventories();
+        });
+
         // Add new codex entry button
         html.find('.add-codex-button').click(() => {
             if (!game.user.isGM) return;
@@ -779,6 +786,167 @@ SPECIFIC INSTRUCTIONS HERE`;
             },
             default: 'save'
         }).render(true);
+    }
+
+    /**
+     * Auto-discover codex entries from party inventories
+     * @private
+     */
+    async _autoDiscoverFromInventories() {
+        if (!this.selectedJournal) {
+            ui.notifications.warn("No codex journal selected. Please select a journal first.");
+            return;
+        }
+
+        // Get the button element and show it's working
+        const button = this.element?.find('.auto-discover-button');
+        if (button) {
+            button.addClass('working');
+            button.attr('title', 'Scanning party inventories...');
+        }
+
+        try {
+            // Show initial notification
+            ui.notifications.info("Starting auto-discovery scan...");
+
+            // Get all tokens on the canvas
+            const tokens = canvas.tokens.placeables.filter(token => 
+                token.actor && 
+                token.actor.type === 'character' && 
+                token.actor.hasPlayerOwner
+            );
+
+            if (tokens.length === 0) {
+                ui.notifications.warn("No player character tokens found on the canvas.");
+                return;
+            }
+
+            // Collect all inventory items from party members
+            const inventoryItems = new Set();
+            const characterNames = [];
+            
+            for (const token of tokens) {
+                const actor = token.actor;
+                characterNames.push(actor.name);
+                
+                // Use the same approach as the inventory panel
+                if (actor.items && actor.items.contents) {
+                    // Filter items by type (same as inventory panel)
+                    const items = actor.items.contents.filter(item => 
+                        ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
+                    );
+                    
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        `Scanning ${actor.name}: found ${items.length} inventory items`,
+                        { 
+                            actorName: actor.name,
+                            itemTypes: items.map(i => ({ name: i.name, type: i.type })),
+                            totalActorItems: actor.items.contents.length
+                        },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
+                    
+                    for (const item of items) {
+                        inventoryItems.add(item.name.toLowerCase().trim());
+                        
+                        // If it's a backpack/container, check its contents
+                        if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
+                            for (const containedItem of item.contents) {
+                                inventoryItems.add(containedItem.name.toLowerCase().trim());
+                            }
+                        }
+                    }
+                } else {
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        `No items found for ${actor.name}`,
+                        { 
+                            actorName: actor.name,
+                            hasItems: !!actor.items,
+                            itemsLength: actor.items?.contents?.length || 0
+                        },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
+                }
+            }
+
+            if (inventoryItems.size === 0) {
+                ui.notifications.warn("No inventory items found in party members' inventories.");
+                return;
+            }
+
+            // Show scanning progress
+            ui.notifications.info(`Scanning ${characterNames.join(', ')} for ${inventoryItems.size} items...`);
+
+            // Find matching codex entries
+            const discoveredEntries = [];
+            const updatedPages = [];
+
+            for (const [category, entries] of Object.entries(this.data)) {
+                for (const entry of entries) {
+                    // Check if entry name matches any inventory item
+                    const entryNameLower = entry.name.toLowerCase().trim();
+                    if (inventoryItems.has(entryNameLower)) {
+                        // Check if this entry is already visible
+                        const page = await fromUuid(entry.uuid);
+                        if (page && page.ownership?.default < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+                            // Make it visible
+                            await page.update({ 'ownership.default': CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER });
+                            discoveredEntries.push(entry.name);
+                            updatedPages.push(page);
+                        }
+                    }
+                }
+            }
+
+            if (discoveredEntries.length === 0) {
+                ui.notifications.info(`No new codex entries discovered from party inventories. Scanned ${characterNames.join(', ')} for ${inventoryItems.size} items.`);
+                return;
+            }
+
+            // Show results
+            ui.notifications.info(`Auto-discovered ${discoveredEntries.length} codex entries: ${discoveredEntries.join(', ')}`);
+            
+            // Refresh the panel to show updated visibility
+            await this._refreshData();
+            this.render(this.element);
+            
+            // Log detailed results
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                `Auto-discovered ${discoveredEntries.length} codex entries from party inventories`,
+                { 
+                    characters: characterNames,
+                    discoveredEntries,
+                    totalItemsScanned: inventoryItems.size,
+                    updatedPages: updatedPages.length
+                },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error during auto-discovery',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
+            ui.notifications.error(`Auto-discovery failed: ${error.message}`);
+        } finally {
+            // Reset button state
+            if (button) {
+                button.removeClass('working');
+                button.attr('title', 'Auto-Discover from Party Inventories');
+            }
+        }
     }
 
     /**

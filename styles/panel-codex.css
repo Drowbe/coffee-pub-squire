@@ -60,6 +60,29 @@
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
+
+/* Auto-discover button specific styling */
+.squire-tray[data-position="left"] .codex-toolbar .auto-discover-button {
+    color: rgba(159, 146, 117, 0.9);
+}
+
+.squire-tray[data-position="left"] .codex-toolbar .auto-discover-button:hover {
+    color: var(--color-border-highlight, #ff6400);
+}
+
+/* Working state for auto-discover button */
+.squire-tray[data-position="left"] .codex-toolbar .auto-discover-button.working {
+    color: var(--color-border-highlight, #ff6400);
+    animation: pulse 1.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
 .squire-tray[data-position="left"] .codex-toolbar .identified {
     opacity: 1;
 }
