@@ -1628,6 +1628,20 @@ Hooks.on('dropCanvasData', async (canvas, data) => {
             canvas.squirePins.addChild(pin);
             // Save to persistence
             pin._saveToPersistence();
+            
+            // Auto-show quest pins if they're currently hidden and this is a GM
+            if (game.user.isGM && game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
+                await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
+                ui.notifications.info('Quest pins automatically shown after placing new objective pin.');
+                
+                // Update the toggle button in the quest panel to reflect the new state
+                const toggleButton = document.querySelector('.toggle-pin-visibility');
+                if (toggleButton) {
+                    toggleButton.classList.remove('fa-location-dot');
+                    toggleButton.classList.add('fa-location-dot-slash');
+                    toggleButton.title = 'Hide Quest Pins';
+                }
+            }
         } else {
             getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | canvas.squirePins is not available', { canvas }, false, true, false, MODULE.TITLE);
         }
@@ -1687,6 +1701,20 @@ Hooks.on('dropCanvasData', async (canvas, data) => {
             canvas.squirePins.addChild(pin);
             // Save to persistence
             pin._saveToPersistence();
+            
+            // Auto-show quest pins if they're currently hidden and this is a GM
+            if (game.user.isGM && game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
+                await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
+                ui.notifications.info('Quest pins automatically shown after placing new quest pin.');
+                
+                // Update the toggle button in the quest panel to reflect the new state
+                const toggleButton = document.querySelector('.toggle-pin-visibility');
+                if (toggleButton) {
+                    toggleButton.classList.remove('fa-location-dot');
+                    toggleButton.classList.add('fa-location-dot-slash');
+                    toggleButton.title = 'Hide Quest Pins';
+                }
+            }
         } else {
             getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | canvas.squirePins is not available', { canvas }, false, true, false, MODULE.TITLE);
         }
