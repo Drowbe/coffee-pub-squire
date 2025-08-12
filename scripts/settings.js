@@ -1009,7 +1009,7 @@ export const registerSettings = function() {
     // Quest Pin Title Vertical Offset
     game.settings.register(MODULE.ID, 'questPinTitleOffset', {
         name: 'Quest Pin Title Vertical Offset',
-        hint: 'Distance below the pin for quest title text (in pixels). Default: 50px',
+        hint: 'Distance from pin center to text edge. Positive: below pin (to text top). Negative: above pin (to text bottom). Range: -300 to 300px. Default: 50px',
         scope: 'world',
         config: true,
         type: Number,
