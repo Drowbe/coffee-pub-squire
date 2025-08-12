@@ -183,14 +183,18 @@ export class QuestPin extends PIXI.Container {
    * @returns {boolean} True if pin should be visible
    */
   shouldBeVisible() {
-    // GMs always see all pins
-    if (game.user.isGM) return true;
-
-    // Check if player has hidden all quest pins
+    // Check if user has hidden all quest pins (applies to both GMs and players)
     if (game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
       return false;
     }
 
+    // GMs can see hidden quests/objectives, but still respect the hideQuestPins flag
+    if (game.user.isGM) {
+      // For GMs, only check the hideQuestPins flag - they can see everything else
+      return true;
+    }
+
+    // For players, check quest and objective visibility
     // Check quest-level visibility first
     if (this.questState === 'hidden') {
       return false;
@@ -219,14 +223,9 @@ export class QuestPin extends PIXI.Container {
       this.visible = true;
       this.alpha = 1.0;
     } else {
-      // For GMs, show pins but with reduced alpha to indicate they're hidden from players
-      if (game.user.isGM) {
-        this.visible = true;
-        this.alpha = 1.0;
-      } else {
-        this.visible = false;
-        this.alpha = 0.0;
-      }
+      // Pin should be hidden - hide it completely for all users
+      this.visible = false;
+      this.alpha = 0.0;
     }
   }
 

@@ -1213,11 +1213,10 @@ export class QuestPanel {
             }).render(true);
         });
 
-        // Toggle Pin Visibility (Players only)
+        // Toggle Pin Visibility (GM and Players)
         html.find('.toggle-pin-visibility').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            if (game.user.isGM) return;
             
             const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
             const newVisibility = !currentVisibility;
@@ -1227,9 +1226,9 @@ export class QuestPanel {
             // Update the icon
             const icon = $(event.currentTarget);
             if (newVisibility) {
-                icon.removeClass('fa-location-dot-slash').addClass('fa-location-dot').attr('title', 'Show Objective Pins');
+                icon.removeClass('fa-location-dot-slash').addClass('fa-location-dot').attr('title', 'Show Quest Pins');
             } else {
-                icon.removeClass('fa-location-dot').addClass('fa-location-dot-slash').attr('title', 'Hide Objective Pins');
+                icon.removeClass('fa-location-dot').addClass('fa-location-dot-slash').attr('title', 'Hide Quest Pins');
             }
             
             // Update pin visibility on canvas
@@ -2210,15 +2209,13 @@ export class QuestPanel {
             questContainer.find('.toggle-tags-button').addClass('active');
         }
         
-        // Set initial state of pin visibility toggle for players
-        if (!game.user.isGM) {
-            const hideQuestPins = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
-            const toggleButton = questContainer.find('.toggle-pin-visibility');
-            if (hideQuestPins) {
-                toggleButton.removeClass('fa-location-dot-slash').addClass('fa-location-dot').attr('title', 'Show Objective Pins');
-            } else {
-                toggleButton.removeClass('fa-location-dot').addClass('fa-location-dot-slash').attr('title', 'Hide Objective Pins');
-            }
+        // Set initial state of pin visibility toggle for all users
+        const hideQuestPins = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
+        const toggleButton = questContainer.find('.toggle-pin-visibility');
+        if (hideQuestPins) {
+            toggleButton.removeClass('fa-location-dot-slash').addClass('fa-location-dot').attr('title', 'Show Quest Pins');
+        } else {
+            toggleButton.removeClass('fa-location-dot').addClass('fa-location-dot-slash').attr('title', 'Hide Quest Pins');
         }
         
         // Set initial state of pin labels toggle for all users
