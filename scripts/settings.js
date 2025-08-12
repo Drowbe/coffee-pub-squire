@@ -186,27 +186,27 @@ export const registerSettings = function() {
         }
     });
 
-    // Theme -- THIS IS NOT USED ANYMORE
-    game.settings.register(MODULE.ID, 'theme', {
-        name: 'Color Theme',
-        hint: 'Color scheme for the tray interface',
-        scope: 'client',
-        config: true,
-        type: String,
-        choices: {
-            'dark': 'Dark Theme',
-            'light': 'Light Theme',
-            'custom': 'Custom Theme'
-        },
-        default: 'dark',
-        onChange: value => {
-            // Update theme in real-time
-            const tray = document.querySelector('.squire-tray');
-            if (tray) {
-                tray.dataset.theme = value;
-            }
-        }
-    });
+    // // Theme -- THIS IS NOT USED ANYMORE
+    // game.settings.register(MODULE.ID, 'theme', {
+    //     name: 'Color Theme',
+    //     hint: 'Color scheme for the tray interface',
+    //     scope: 'client',
+    //     config: true,
+    //     type: String,
+    //     choices: {
+    //         'dark': 'Dark Theme',
+    //         'light': 'Light Theme',
+    //         'custom': 'Custom Theme'
+    //     },
+    //     default: 'dark',
+    //     onChange: value => {
+    //         // Update theme in real-time
+    //         const tray = document.querySelector('.squire-tray');
+    //         if (tray) {
+    //             tray.dataset.theme = value;
+    //         }
+    //     }
+    // });
 
 
     // Tray Width setting
@@ -955,8 +955,33 @@ export const registerSettings = function() {
             }
         }
     });
+    
+    // Quest Pin Title Font Size
+    game.settings.register(MODULE.ID, 'questPinTitleSize', {
+        name: 'Quest Pin Title Font Size',
+        hint: 'Font size for quest pin titles (in pixels). Default: 20px',
+        scope: 'world',
+        config: true,
+        type: Number,
+        range: {
+            min: 12,
+            max: 90,
+            step: 1
+        },
+        default: 30,
+        onChange: () => {
+            // Update all quest pins on the canvas when this setting changes
+            if (canvas.squirePins) {
+                canvas.squirePins.children.forEach(child => {
+                    if (child._updatePinAppearance) {
+                        child._updatePinAppearance();
+                    }
+                });
+            }
+        }
+    });
 
-
+    // Tray Width setting
 
 
 	// -- Search World Items First --
@@ -1088,42 +1113,8 @@ export const registerSettings = function() {
 // *** FUNCTIONS           ***
 // ***************************
 
-// Helper function to update custom theme colors
-function updateCustomTheme(colors) {
-    const style = document.getElementById('squire-custom-theme');
-    if (!style) {
-        const styleElement = document.createElement('style');
-        styleElement.id = 'squire-custom-theme';
-        document.head.appendChild(styleElement);
-    }
+// None
 
-    const css = `
-        .squire-tray[data-theme="custom"] {
-            background: ${colors.background};
-            color: ${colors.text};
-            border-color: ${colors.border};
-        }
-        .squire-tray[data-theme="custom"] .tab-item.tab-active {
-            background: ${colors.accent};
-        }
-        .squire-tray[data-theme="custom"] .cast-spell,
-        .squire-tray[data-theme="custom"] .weapon-attack {
-            background: ${colors.accent};
-        }
-    `;
 
-    style.textContent = css;
-}
 
-export const initializeNoteSettings = function() {
-    // Migrate from old notes setting if needed
-    if (game.settings.get(MODULE.ID, 'notesPersistentJournal') === 'none' && 
-        game.settings.get(MODULE.ID, 'notesGMJournal') === 'none') {
-        
-        // Remove migration logic for oldJournalId from notesSharedJournal
-        // Delete the block:
-        // const oldJournalId = game.settings.get(MODULE.ID, 'notesSharedJournal');
-        // if (oldJournalId !== 'none') { ... }
-    }
-};
 

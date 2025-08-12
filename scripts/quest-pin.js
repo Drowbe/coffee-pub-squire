@@ -245,7 +245,7 @@ export class QuestPin extends PIXI.Container {
 
 
     // Pin Title Text
-    const pinTitleFontSize = 20;
+    const pinTitleFontSize = game.settings.get(MODULE.ID, 'questPinTitleSize') || 30;
     const pinTitleFontColor = 0xFFFFFF;
     const pinTitleFontWeight = 'bold';
     const pinTitleFontStroke = 0x000000;
