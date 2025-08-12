@@ -10,9 +10,10 @@
                 <i class="fas fa-feather open-quest-journal" title="Open Quest Journal"></i>
             {{/if}}
             <i class="fas fa-sync-alt refresh-quest-button" title="Refresh Quests"></i>
-            {{#unless isGM}}
-                <i class="fas fa-location-dot-slash toggle-pin-visibility" title="Hide/Show Objective Pins"></i>
-            {{/unless}}
+
+            <i class="fas fa-text-slash toggle-pin-labels" title="Hide/Show Quest Labels"></i>
+            <i class="fas fa-location-dot-slash toggle-pin-visibility" title="Hide/Show Quest Pins"></i>
+
             {{#if isGM}}
                 <i class="fas fa-cog set-quest-button" title="Select Journal for Quests"></i>
                 <i class="fas fa-file-import import-quests-json" title="Import Quests from JSON"></i>

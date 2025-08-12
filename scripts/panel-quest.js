@@ -1243,6 +1243,36 @@ export class QuestPanel {
             ui.notifications.info(`Quest pins ${newVisibility ? 'hidden' : 'shown'}.`);
         });
 
+        // Toggle Pin Labels
+        html.find('.toggle-pin-labels').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const currentLabels = game.settings.get(MODULE.ID, 'showQuestPinText');
+            const newLabels = !currentLabels;
+            
+            await game.settings.set(MODULE.ID, 'showQuestPinText', newLabels);
+            
+            // Update the icon
+            const icon = $(event.currentTarget);
+            if (newLabels) {
+                icon.removeClass('fa-text-slash').addClass('fa-text').attr('title', 'Hide Quest Labels');
+            } else {
+                icon.removeClass('fa-text').addClass('fa-text-slash').attr('title', 'Show Quest Labels');
+            }
+            
+            // Update pin appearance on canvas to show/hide labels
+            if (canvas.squirePins) {
+                canvas.squirePins.children.forEach(child => {
+                    if (child._updatePinAppearance) {
+                        child._updatePinAppearance();
+                    }
+                });
+            }
+            
+            ui.notifications.info(`Quest pin labels ${newLabels ? 'shown' : 'hidden'}.`);
+        });
+
         // Import Quests from JSON (GM only)
         html.find('.import-quests-json').click(async () => {
             if (!game.user.isGM) return;
@@ -2189,6 +2219,15 @@ export class QuestPanel {
             } else {
                 toggleButton.removeClass('fa-location-dot').addClass('fa-location-dot-slash').attr('title', 'Hide Objective Pins');
             }
+        }
+        
+        // Set initial state of pin labels toggle for all users
+        const showQuestPinText = game.settings.get(MODULE.ID, 'showQuestPinText');
+        const labelsToggleButton = questContainer.find('.toggle-pin-labels');
+        if (showQuestPinText) {
+            labelsToggleButton.removeClass('fa-text-slash').addClass('fa-text').attr('title', 'Hide Quest Labels');
+        } else {
+            labelsToggleButton.removeClass('fa-text').addClass('fa-text-slash').attr('title', 'Show Quest Labels');
         }
         
         // Trigger hook for pin visibility updates

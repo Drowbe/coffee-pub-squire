@@ -468,11 +468,11 @@ export class QuestPin extends PIXI.Container {
       questLabel.anchor.set(0.5);
       questLabel.position.set(centerX, centerY + labelMainQuestVerticleOffset); // Centered below icon
       
-      // Only add the label if the setting allows it
+      // Always add the quest number label (Q85)
+      this.addChild(questLabel);
+      
+      // Quest title text below the quest number (only if setting allows it)
       if (game.settings.get(MODULE.ID, 'showQuestPinText')) {
-        this.addChild(questLabel);
-        
-        // Quest title text below the quest number
         const questTitle = new PIXI.Text(this.questName || 'Unknown Quest', {
           fontFamily: pinFontFamily,
           fontSize: pinTitleFontSize,
@@ -555,11 +555,11 @@ export class QuestPin extends PIXI.Container {
               combinedLabel.anchor.set(0.5);
               combinedLabel.position.set(centerX, centerY + labelSideQuestVerticleOffset); // Centered below icon
               
-              // Only add the label if the setting allows it
+              // Always add the combined label (Q85.03)
+              this.addChild(combinedLabel);
+              
+              // Quest title text below the combined label (only if setting allows it)
               if (game.settings.get(MODULE.ID, 'showQuestPinText')) {
-                this.addChild(combinedLabel);
-                
-                // Quest title text below the combined label (use quest name for both quests and objectives)
                 const objectiveTitle = new PIXI.Text(this.questName || 'Unknown Quest', {
                   fontFamily: pinFontFamily,
                   fontSize: pinTitleFontSize,
