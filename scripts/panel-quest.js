@@ -1087,22 +1087,8 @@ export class QuestPanel {
             if (typeof visible === 'undefined') visible = true;
             visible = !visible;
             await page.setFlag(MODULE.ID, 'visible', visible);
-            // If making visible, set status to In Progress if not Complete/Failed
-            if (visible) {
-                let content = page.text.content;
-                // Try to find <strong>Status:</strong> ... and update it
-                const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
-                let currentStatus = statusMatch ? statusMatch[1].trim() : '';
-                if (currentStatus !== 'Complete' && currentStatus !== 'Failed') {
-                    if (statusMatch) {
-                        content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
-                    } else {
-                        // If no status, add it at the end
-                        content += `<p><strong>Status:</strong> In Progress</p>`;
-                    }
-                    await page.update({ text: { content } });
-                }
-            }
+                    // Note: No longer automatically changing quest status when making visible
+        // This allows GMs to show quests to players without forcing them into "In Progress" status
             // No manual refresh; let the updateJournalEntryPage hook handle it
         });
 
