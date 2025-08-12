@@ -252,7 +252,7 @@ export class QuestPin extends PIXI.Container {
     const pinTitleFontStrokeThickness = 4;
     const pinTitleFontAlign = 'center';
     const pinTitleOffset = 25;
-
+    const pinTitleDropShadow = { color: 0x000000, alpha: 0.8, blur: 4, distance: 2, quality: 3 };
 
 
 
@@ -262,7 +262,7 @@ export class QuestPin extends PIXI.Container {
     const pinInnerBorderRadius = this.pinType === 'quest' ? 40 : 6; // Square for objective pins
     const pinInnerColor = 0x000000;
     const pinInnerTransparency = 0.8;
-    const pinInnerDropShadow = { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 };
+    const pinInnerDropShadow = { color: 0x000000, alpha: 0.8, blur: 4, distance: 2, quality: 3 };
 
     // Pin Ring
     const pinRingThickness = 3;
@@ -487,6 +487,12 @@ export class QuestPin extends PIXI.Container {
         });
         questTitle.anchor.set(0.5);
         questTitle.position.set(centerX, centerY + pinInnerHeight/2 + pinTitleOffset); // BelowPin
+        
+        // Add drop shadow filter to quest title for better readability
+        questTitle.filters = [
+          new PIXI.filters.DropShadowFilter(pinTitleDropShadow)
+        ];
+        
         this.addChild(questTitle);
       }
       
@@ -555,6 +561,18 @@ export class QuestPin extends PIXI.Container {
                 });
                 objectiveTitle.anchor.set(0.5);
                 objectiveTitle.position.set(centerX, centerY + pinInnerHeight/2 + pinTitleOffset); // Below combined label
+                
+                // Add drop shadow filter to objective title for better readability
+                objectiveTitle.filters = [
+                  new PIXI.filters.DropShadowFilter({
+                    color: 0x000000,
+                    alpha: 0.8,
+                    blur: 4,
+                    distance: 2,
+                    quality: 3
+                  })
+                ];
+                
                 this.addChild(objectiveTitle);
               }
     }
