@@ -940,7 +940,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showQuestPinText', {
         name: 'Show Quest Pin Titles',
         hint: 'Display quest and objective names as title text below the pins. When disabled, only the quest numbers (Q85, Q85.03) and icons are shown.',
-        scope: 'world',
+        scope: 'client',
         config: true,
         type: Boolean,
         default: true,
