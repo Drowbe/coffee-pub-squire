@@ -144,49 +144,58 @@ export class QuestPanel {
                     }
                 } else {
                     // Regular quest content update (not visibility change)
-                // Update quest pins if they exist for this quest (all users)
-                if (canvas.squirePins) {
-                    const questPins = canvas.squirePins.children.filter(child => 
-                        child instanceof QuestPin && child.questUuid === page.uuid
-                    );
+                    // Check for quest status changes
+                    let content = page.text.content;
+                    const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+                    const newStatus = statusMatch ? statusMatch[1].trim() : '';
                     
-                    questPins.forEach(pin => {
-                        // Get the current task state from the updated page
-                        try {
-                            let content = page.text.content;
-                            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                            if (tasksMatch) {
-                                const tasksHtml = tasksMatch[1];
-                                const parser = new DOMParser();
-                                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                const ul = ulDoc.querySelector('ul');
-                                if (ul) {
-                                    const liList = Array.from(ul.children);
-                                    const li = liList[pin.objectiveIndex];
-                                    if (li) {
-                                        let newState = 'active';
-                                        if (li.querySelector('s')) {
-                                            newState = 'completed';
-                                        } else if (li.querySelector('code')) {
-                                            newState = 'failed';
-                                        } else if (li.querySelector('em')) {
-                                            newState = 'hidden';
+                    // Update quest pins if they exist for this quest (all users)
+                    if (canvas.squirePins) {
+                        const questPins = canvas.squirePins.children.filter(child => 
+                            child instanceof QuestPin && child.questUuid === page.uuid
+                        );
+                        
+                        questPins.forEach(pin => {
+                            try {
+                                // Update quest status for quest-level pins
+                                if (pin.pinType === 'quest' && newStatus) {
+                                    pin.updateQuestStatus(newStatus);
+                                }
+                                
+                                // Get the current task state from the updated page for objective pins
+                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+                                if (tasksMatch && pin.pinType === 'objective') {
+                                    const tasksHtml = tasksMatch[1];
+                                    const parser = new DOMParser();
+                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                                    const ul = ulDoc.querySelector('ul');
+                                    if (ul) {
+                                        const liList = Array.from(ul.children);
+                                        const li = liList[pin.objectiveIndex];
+                                        if (li) {
+                                            let newState = 'active';
+                                            if (li.querySelector('s')) {
+                                                newState = 'completed';
+                                            } else if (li.querySelector('code')) {
+                                                newState = 'failed';
+                                            } else if (li.querySelector('em')) {
+                                                newState = 'hidden';
+                                            }
+                                            pin.updateObjectiveState(newState);
                                         }
-                                        pin.updateObjectiveState(newState);
                                     }
                                 }
+                            } catch (error) {
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'Error updating quest pin state',
+                                    { error, pin, page },
+                                    false,
+                                    true,
+                                    true,
+                                    MODULE.TITLE
+                                );
                             }
-                        } catch (error) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Error updating quest pin state',
-                                { error, pin, page },
-                                false,
-                                true,
-                                true,
-                                MODULE.TITLE
-                            );
-                        }
-                    });
+                        });
                     }
                 }
                 
@@ -1478,7 +1487,7 @@ export class QuestPanel {
             event.stopPropagation();
             const option = $(this);
             const newStatus = option.data('status');
-            const uuid = option.closest('.quest-toolbar').find('.quest-status-menu').data('uuid');
+            const uuid = option.data('uuid');
             if (!uuid) return;
             const page = await fromUuid(uuid);
             if (!page) return;
