@@ -83,20 +83,7 @@ export class QuestPin extends PIXI.Container {
       { inplace: false, insertKeys: true, insertValues: true }
     );
   
-    // Debug logging for constructor state
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Constructor called', {
-      pinId: this.pinId,
-      pinType: this.pinType,
-      objectiveState: this.objectiveState,
-      questUuid: this.questUuid,
-      objectiveIndex: this.objectiveIndex,
-      questIndex: this.questIndex,
-      questCategory: this.questCategory,
-      questStatus: this.questStatus,
-      participants: this.participants,
-      config: this.config,
-      note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags',
-    }, false, true, false, MODULE.TITLE);
+
 
     // Fetch names from journal entry
     this.fetchNames().then(() => {
@@ -159,13 +146,7 @@ export class QuestPin extends PIXI.Container {
             this.objectiveName = `Objective ${this.objectiveIndex + 1}`;
           }
           
-          // Debug logging
-          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Names fetched successfully', { 
-            questName: this.questName, 
-            objectiveName: this.objectiveName,
-            pinType: this.pinType,
-            entryName: entry.name
-          }, false, true, false, MODULE.TITLE);
+
         }
       }
     } catch (error) {
@@ -649,15 +630,7 @@ export class QuestPin extends PIXI.Container {
     const oldState = this.objectiveState;
     this.objectiveState = newState;
     
-    // Debug logging for state changes
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Objective state updated', {
-      pinId: this.pinId,
-      oldState: oldState,
-      newState: newState,
-      user: game.user.name,
-      isGM: game.user.isGM,
-      note: 'active = normal/visible objective (no special HTML tags), hidden = <em> tags, completed = <s> tags, failed = <code> tags'
-    });
+
     
     // Update pin appearance using centralized method
     this._updatePinAppearance();
@@ -669,25 +642,13 @@ export class QuestPin extends PIXI.Container {
   // Update pin appearance based on new quest status (for quest-level pins)
   updateQuestStatus(newStatus) {
     if (this.pinType !== 'quest') {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Cannot update quest status on objective pin', {
-        pinId: this.pinId,
-        pinType: this.pinType,
-        user: game.user.name
-      }, false, true, false, MODULE.TITLE);
       return;
     }
     
     const oldStatus = this.questStatus;
     this.questStatus = newStatus;
     
-    // Debug logging for status changes
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest status updated', {
-      pinId: this.pinId,
-      oldStatus: oldStatus,
-      newStatus: newStatus,
-      user: game.user.name,
-      isGM: game.user.isGM
-    }, false, true, false, MODULE.TITLE);
+
     
     // Update pin appearance using centralized method
     this._updatePinAppearance();
@@ -950,10 +911,6 @@ export class QuestPin extends PIXI.Container {
       // Middle-click: toggle hidden state (GM only)
       if (event.data.button === 1) {
         if (game.user.isGM) {
-          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Middle-click detected - toggling hidden state', {
-            pinId: this.pinId,
-            user: game.user.name
-          });
           this._toggleHiddenState();
         }
       }
@@ -963,20 +920,11 @@ export class QuestPin extends PIXI.Container {
   _onRightDown(event) {
     if (!game.user.isGM) return; // Only GM can interact with right-click
     
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Right-click detected', {
-      pinId: this.pinId,
-      lastRightClickTime: this._lastRightClickTime,
-      timeSinceLastClick: this._lastRightClickTime ? (Date.now() - this._lastRightClickTime) : 'N/A',
-      user: game.user.name
-    });
+
     
     // Check for double right-click (500ms window)
     if (this._lastRightClickTime && (Date.now() - this._lastRightClickTime) < 500) {
       // Double right-click: remove pin only
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Double right-click - removing pin', {
-        pinId: this.pinId,
-        user: game.user.name
-      });
       this._lastRightClickTime = null;
       // Clear any pending timeout
       if (this._rightClickTimeout) {
@@ -989,20 +937,9 @@ export class QuestPin extends PIXI.Container {
       this._lastRightClickTime = clickTime;
       
       // Single right-click: toggle visibility for quest pins, fail objective for objective pins
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Single right-click - setting timeout', {
-        pinId: this.pinId,
-        clickTime: clickTime,
-        user: game.user.name
-      });
       this._rightClickTimeout = setTimeout(async () => {
         // Only execute if this is still the most recent right-click
         if (this._lastRightClickTime === clickTime) {
-          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Executing right-click action', {
-            pinId: this.pinId,
-            clickTime: clickTime,
-            lastRightClickTime: this._lastRightClickTime,
-            user: game.user.name
-          });
           
           if (this.pinType === 'quest') {
             // For quest pins, toggle visibility
@@ -1012,12 +949,6 @@ export class QuestPin extends PIXI.Container {
             await this._failObjective();
           }
         } else {
-          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Right-click timeout cancelled - newer click detected', {
-            pinId: this.pinId,
-            clickTime: clickTime,
-            lastRightClickTime: this._lastRightClickTime,
-            user: game.user.name
-          });
         }
         this._rightClickTimeout = null;
       }, 300); // Increased delay to be more reliable
@@ -1038,14 +969,7 @@ export class QuestPin extends PIXI.Container {
       this.alpha = 1.0;
     }, 200);
     
-    // Debug logging
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Selecting pin and jumping to quest', {
-      questUuid: this.questUuid,
-      objectiveIndex: this.objectiveIndex,
-      pinType: this.pinType,
-      user: game.user.name,
-      isGM: game.user.isGM
-    });
+
     
     // Jump to quest in the quest tracker
     if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
@@ -1074,14 +998,7 @@ export class QuestPin extends PIXI.Container {
           }
         }
         
-        // Debug logging for quest entry search
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest entry search result', {
-          questUuid: this.questUuid,
-          questEntryFound: !!questEntry,
-          allQuestEntries: document.querySelectorAll('.quest-entry').length,
-          entriesWithUuid: document.querySelectorAll('.quest-entry[data-quest-uuid]').length,
-          user: game.user.name
-        });
+
         
         if (questEntry) {
           // First, expand the parent section if it's collapsed
@@ -1111,23 +1028,13 @@ export class QuestPin extends PIXI.Container {
               questEntry.classList.remove('quest-highlighted');
             }, 2000);
             
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest entry highlighted', {
-              questUuid: this.questUuid,
-              pinType: this.pinType,
-              user: game.user.name
-            });
+
           } else {
             // For objective pins, highlight the specific objective
             const objectiveItems = questEntry.querySelectorAll('li[data-task-index]');
             const targetObjective = objectiveItems[this.objectiveIndex];
             
-            // Debug logging for objective highlighting
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Objective highlighting result', {
-              objectiveIndex: this.objectiveIndex,
-              totalObjectives: objectiveItems.length,
-              targetObjectiveFound: !!targetObjective,
-              user: game.user.name
-            });
+
             
             if (targetObjective) {
               targetObjective.classList.add('objective-highlighted');
@@ -1137,11 +1044,6 @@ export class QuestPin extends PIXI.Container {
             }
           }
         } else {
-          getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest entry not found', {
-            questUuid: this.questUuid,
-            user: game.user.name,
-            isGM: game.user.isGM
-          });
         }
       };
       
@@ -1151,10 +1053,6 @@ export class QuestPin extends PIXI.Container {
       setTimeout(findAndHighlightQuest, 500);
       setTimeout(findAndHighlightQuest, 1000);
     } else {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | PanelManager not available', {
-        user: game.user.name,
-        isGM: game.user.isGM
-      });
     }
   }
 
@@ -1180,12 +1078,7 @@ export class QuestPin extends PIXI.Container {
         // Update visibility for players
         this.updateVisibility();
         
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Quest visibility toggled', {
-          pinId: this.pinId,
-          questUuid: this.questUuid,
-          newVisibility: visible,
-          user: game.user.name
-        });
+        
         
       } else {
         // For objective pins, toggle objective hidden state
@@ -1643,7 +1536,7 @@ Hooks.on('dropCanvasData', async (canvas, data) => {
                 }
             }
         } else {
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | canvas.squirePins is not available', { canvas }, false, true, false, MODULE.TITLE);
+            // canvas.squirePins is not available
         }
         return true;
     } else if (data.type === 'quest-quest') {
@@ -1716,7 +1609,7 @@ Hooks.on('dropCanvasData', async (canvas, data) => {
                 }
             }
         } else {
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | canvas.squirePins is not available', { canvas }, false, true, false, MODULE.TITLE);
+            // canvas.squirePins is not available
         }
         return true;
     }
@@ -1729,7 +1622,6 @@ const questPinTimeouts = new Set();
 
 // Load persisted pins when canvas is ready (now called from ready hook)
 export function loadPersistedPinsOnCanvasReady() {
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Canvas ready, loading persisted pins');
     const timeoutId = setTimeout(() => {
         loadPersistedPins();
         questPinTimeouts.delete(timeoutId);
@@ -1739,7 +1631,6 @@ export function loadPersistedPinsOnCanvasReady() {
 
 // Load persisted pins when scene changes
 Hooks.on('canvasSceneChange', (scene) => {
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Scene changed, loading persisted pins');
     // Delay loading to ensure scene is fully loaded
     const timeoutId = setTimeout(() => {
         loadPersistedPins();
@@ -1751,11 +1642,6 @@ Hooks.on('canvasSceneChange', (scene) => {
 // Listen for scene flag changes to reload pins when GM creates/moves pins
 Hooks.on('updateScene', (scene, changes, options, userId) => {
     if (scene.id === canvas.scene?.id && changes.flags && changes.flags[MODULE.ID]) {
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Scene flags changed, reloading pins', {
-            sceneId: scene.id,
-            user: game.user.name,
-            isGM: game.user.isGM
-        });
         // Delay loading to ensure the scene update is fully processed
         setTimeout(() => {
             loadPersistedPins();
@@ -1768,12 +1654,10 @@ function loadPersistedPins() {
     try {
         const scene = canvas.scene;
         if (!scene) {
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | No scene available');
             return;
         }
         
         if (!canvas.squirePins) {
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | squirePins container not available, retrying...');
             // Try again in a moment
             const timeoutId = setTimeout(() => {
                 loadPersistedPins();
@@ -1785,8 +1669,6 @@ function loadPersistedPins() {
 
         // Get pins data from scene flags
         const scenePins = scene.getFlag(MODULE.ID, 'questPins') || [];
-        
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loading pins for scene', { sceneId: scene.id, scenePins });
 
         // Clear existing pins for this scene
         const existingPins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
@@ -1863,25 +1745,17 @@ function loadPersistedPins() {
                                 }
                             }
                         }
-                    } catch (error) {
-                        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin state on load', { error, pinData });
-                }
+                                        } catch (error) {
+                        // Error updating pin state on load
+                    }
                 
                 canvas.squirePins.addChild(pin);
-                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Loaded persisted pin', { 
-                    pin: pin.pinId, 
-                    objectiveState: pin.objectiveState, 
-                    alpha: pin.alpha, 
-                    interactive: pin.interactive,
-                    user: game.user.name,
-                    isGM: game.user.isGM
-                });
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error loading pin', { pinData, error });
+                // Error loading pin
             }
         });
 
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Successfully loaded', scenePins.length, 'pins for scene', scene.id);
+
         
         // Clean up orphaned pins (pins that reference non-existent quests)
         if (game.user.isGM) {
@@ -1892,7 +1766,7 @@ function loadPersistedPins() {
             questPinTimeouts.add(timeoutId);
         }
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error loading persisted pins', { error });
+        // Error loading persisted pins
     }
 }
 
@@ -1914,31 +1788,18 @@ async function cleanupOrphanedPins() {
                     validPins.push(pinData);
                 } else {
                     orphanedCount++;
-                    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Found orphaned pin', { 
-                        pinId: pinData.pinId, 
-                        questUuid: pinData.questUuid 
-                    });
                 }
             } catch (error) {
                 orphanedCount++;
-                getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Found orphaned pin (error)', { 
-                    pinId: pinData.pinId, 
-                    questUuid: pinData.questUuid,
-                    error 
-                });
             }
         }
         
         // If we found orphaned pins, update the scene flags
         if (orphanedCount > 0) {
             await scene.setFlag(MODULE.ID, 'questPins', validPins);
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Cleaned up orphaned pins', { 
-                orphanedCount, 
-                remainingPins: validPins.length 
-            });
         }
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error cleaning up orphaned pins', { error });
+        // Error cleaning up orphaned pins
     }
 }
 
@@ -1983,8 +1844,6 @@ function cleanupQuestPins() {
     // Always reset cursor to default
     document.body.style.cursor = '';
     document.body.style.cursor = 'default';
-
-    getBlacksmith()?.utils.postConsoleAndNotification('QuestPin cleanup completed', {}, false, false, false, MODULE.TITLE);
 }
 
 // Cleanup hooks for quest pins
@@ -2059,9 +1918,9 @@ async function updateAllPinVisibility() {
             }
             
             pin.updateVisibility();
-        } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error updating pin visibility', { error, pinId: pin.pinId }, false, true, true, MODULE.TITLE);
-        }
+            } catch (error) {
+        // Error updating pin visibility
+    }
     }
 }
 
