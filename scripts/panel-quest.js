@@ -1477,7 +1477,39 @@ export class QuestPanel {
             // Show the dropdown next to this button
             const btn = $(this);
             const dropdown = btn.siblings('.quest-status-dropdown');
-            dropdown.toggle();
+            
+            if (dropdown.is(':visible')) {
+                dropdown.hide();
+            } else {
+                // Position the dropdown properly before showing it
+                const btnRect = btn[0].getBoundingClientRect();
+                const toolbar = btn.closest('.quest-toolbar');
+                const toolbarRect = toolbar[0].getBoundingClientRect();
+                
+                // Calculate position relative to the toolbar
+                let left = btnRect.left - toolbarRect.left;
+                const top = btnRect.bottom - toolbarRect.top + 4; // 4px gap
+                
+                // Get dropdown dimensions to check boundaries
+                const dropdownWidth = 120; // min-width from CSS
+                const toolbarWidth = toolbarRect.width;
+                
+                // Check if dropdown would run off the right edge
+                if (left + dropdownWidth > toolbarWidth) {
+                    // Position dropdown to the left of the button instead
+                    left = Math.max(0, btnRect.right - toolbarRect.left - dropdownWidth);
+                }
+                
+                // Apply positioning
+                dropdown.css({
+                    left: left + 'px',
+                    top: top + 'px',
+                    right: 'auto' // Override the CSS right: 0
+                });
+                
+                dropdown.show();
+            }
+            
             // Close on click outside
             $(document).one('click.questStatusDropdown', () => dropdown.hide());
         });

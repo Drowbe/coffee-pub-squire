@@ -42,6 +42,7 @@
     color: rgba(159, 146, 117, 0.9);
     justify-content: flex-end;
     gap: 8px;
+    position: relative; /* Required for absolute positioning of dropdown */
 }
 /* Control Icons */
 
@@ -622,9 +623,8 @@
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     min-width: 120px;
-    margin-top: 4px;
-    right: 0;
     display: none;
+    /* Position will be set dynamically via JavaScript */
 }
 .squire-tray[data-position="left"] .quest-status-option {
     padding: 6px 12px;
