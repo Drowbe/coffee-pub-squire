@@ -1085,6 +1085,20 @@ export class QuestPin extends PIXI.Container {
         });
         
         if (questEntry) {
+          // First, expand the parent section if it's collapsed
+          const parentSection = questEntry.closest('.quest-section');
+          if (parentSection && parentSection.classList.contains('collapsed')) {
+            parentSection.classList.remove('collapsed');
+            
+            // Update the user's collapsed state preference
+            const status = parentSection.dataset.status;
+            if (status) {
+              const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
+              collapsedCategories[status] = false;
+              game.user.setFlag(MODULE.ID, 'questCollapsedCategories', collapsedCategories);
+            }
+          }
+          
           // Expand the quest entry
           questEntry.classList.remove('collapsed');
           
