@@ -886,19 +886,58 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Find matching codex entries
             const discoveredEntries = [];
             const updatedPages = [];
+            const totalEntries = Object.values(this.data).flat().length;
+            let processedEntries = 0;
 
             for (const [category, entries] of Object.entries(this.data)) {
                 for (const entry of entries) {
+                    processedEntries++;
+                    
                     // Check if entry name matches any inventory item
                     const entryNameLower = entry.name.toLowerCase().trim();
                     if (inventoryItems.has(entryNameLower)) {
                         // Check if this entry is already visible
                         const page = await fromUuid(entry.uuid);
                         if (page && page.ownership?.default < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+                            // Find which character(s) had this item
+                            const discoverers = [];
+                            for (const token of tokens) {
+                                const actor = token.actor;
+                                const items = actor.items.contents.filter(item => 
+                                    ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
+                                );
+                                
+                                for (const item of items) {
+                                    if (item.name.toLowerCase().trim() === entryNameLower) {
+                                        discoverers.push(actor.name);
+                                        break;
+                                    }
+                                    
+                                    // Check backpack contents
+                                    if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
+                                        for (const containedItem of item.contents) {
+                                            if (containedItem.name.toLowerCase().trim() === entryNameLower) {
+                                                discoverers.push(actor.name);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
                             // Make it visible
                             await page.update({ 'ownership.default': CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER });
                             discoveredEntries.push(entry.name);
                             updatedPages.push(page);
+                            
+                            // Add "Discovered By" information to the journal entry
+                            if (discoverers.length > 0) {
+                                await this._addDiscoveredByInfo(page, discoverers);
+                            }
+                            
+                            ui.notifications.info(`✓ Discovered: ${entry.name} (found by: ${discoverers.join(', ')})`);
+                        } else {
+                            ui.notifications.info(`- Already visible: ${entry.name}`);
                         }
                     }
                 }
@@ -909,21 +948,52 @@ SPECIFIC INSTRUCTIONS HERE`;
                 return;
             }
 
-            // Show results
-            ui.notifications.info(`Auto-discovered ${discoveredEntries.length} codex entries: ${discoveredEntries.join(', ')}`);
+            // Show results with discoverer information
+            const discoverySummary = discoveredEntries.map(entry => {
+                // Find which character(s) discovered this entry
+                const entryNameLower = entry.toLowerCase().trim();
+                const discoverers = [];
+                for (const token of tokens) {
+                    const actor = token.actor;
+                    const items = actor.items.contents.filter(item => 
+                        ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
+                    );
+                    
+                    for (const item of items) {
+                        if (item.name.toLowerCase().trim() === entryNameLower) {
+                            discoverers.push(actor.name);
+                            break;
+                        }
+                        
+                        // Check backpack contents
+                        if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
+                            for (const containedItem of item.contents) {
+                                if (containedItem.name.toLowerCase().trim() === entryNameLower) {
+                                    discoverers.push(actor.name);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                return `${entry} (by: ${discoverers.join(', ')})`;
+            });
+            
+            ui.notifications.info(`Auto-discovered ${discoveredEntries.length} codex entries: ${discoverySummary.join('; ')}`);
             
             // Refresh the panel to show updated visibility
             await this._refreshData();
             this.render(this.element);
             
-            // Log detailed results
+            // Log detailed results with discoverer information
             getBlacksmith()?.utils.postConsoleAndNotification(
                 `Auto-discovered ${discoveredEntries.length} codex entries from party inventories`,
                 { 
                     characters: characterNames,
                     discoveredEntries,
                     totalItemsScanned: inventoryItems.size,
-                    updatedPages: updatedPages.length
+                    updatedPages: updatedPages.length,
+                    message: `Entries discovered by: ${characterNames.join(', ')}`
                 },
                 false,
                 false,
@@ -946,6 +1016,86 @@ SPECIFIC INSTRUCTIONS HERE`;
                 button.removeClass('working');
                 button.attr('title', 'Auto-Discover from Party Inventories');
             }
+        }
+    }
+
+    /**
+     * Add "Discovered By" information to a journal entry.
+     * @private
+     * @param {JournalEntryPage} page - The journal entry page to update.
+     * @param {string[]} discoverers - An array of character names who discovered the entry.
+     */
+    async _addDiscoveredByInfo(page, discoverers) {
+        try {
+            const enrichedContent = await TextEditor.enrichHTML(page.text.content, {
+                secrets: game.user.isGM,
+                documents: true,
+                links: true,
+                rolls: true
+            });
+
+            const doc = new DOMParser().parseFromString(enrichedContent, 'text/html');
+            const pTags = Array.from(doc.querySelectorAll('p'));
+
+            // Find existing "Discovered By" paragraph
+            let discoveredByParagraph = null;
+            let existingDiscoverers = [];
+            
+            for (let i = pTags.length - 1; i >= 0; i--) {
+                const p = pTags[i];
+                const strong = p.querySelector('strong');
+                if (strong && strong.textContent.trim() === 'Discovered By:') {
+                    discoveredByParagraph = p;
+                    // Extract existing discoverers
+                    const discovererText = p.textContent.replace('Discovered By:', '').trim();
+                    if (discovererText) {
+                        existingDiscoverers = discovererText.split(',').map(d => d.trim());
+                    }
+                    break;
+                }
+            }
+
+            // Combine existing and new discoverers, removing duplicates
+            const allDiscoverers = [...new Set([...existingDiscoverers, ...discoverers])];
+            
+            // Create or update the "Discovered By" paragraph
+            const newDiscoveredByParagraph = document.createElement('p');
+            newDiscoveredByParagraph.className = 'discovered-by-info';
+            newDiscoveredByParagraph.innerHTML = `<strong>Discovered By:</strong> ${allDiscoverers.join(', ')}`;
+            
+            if (discoveredByParagraph) {
+                // Replace existing paragraph
+                discoveredByParagraph.replaceWith(newDiscoveredByParagraph);
+            } else {
+                // Add new paragraph at the end
+                doc.body.appendChild(newDiscoveredByParagraph);
+            }
+
+            // Update the page content
+            await page.update({ 'text.content': doc.body.innerHTML });
+            
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                `Updated "Discovered By" for ${page.name}`,
+                { 
+                    existingDiscoverers,
+                    newDiscoverers: discoverers,
+                    allDiscoverers
+                },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
+            
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error updating "Discovered By" information',
+                { error, pageName: page.name },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
         }
     }
 

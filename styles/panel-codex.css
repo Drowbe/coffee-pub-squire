@@ -100,6 +100,21 @@
     transform: rotate(90deg);
 }
 
+/* Discovered By styling */
+.squire-tray[data-position="left"] .codex-entry .discovered-by-info {
+    background: rgba(255, 100, 0, 0.1);
+    border-left: 3px solid var(--color-border-highlight, #ff6400);
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.squire-tray[data-position="left"] .codex-entry .discovered-by-info strong {
+    color: var(--color-border-highlight, #ff6400);
+    font-weight: 700;
+}
+
 .squire-tray[data-position="left"] .codex-section.collapsed .codex-toolbar i {
     transform: rotate(-90deg);
     transition: transform 0.2s ease;
