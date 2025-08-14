@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [12.0.21] - Enhanced Codex
+
+### Added
+- **Phase 1: Enhanced Add Window with Drag & Drop**
+  - Drag & drop functionality for tokens, items, and journal entries to auto-populate form fields
+  - Smart auto-population: Name, Category, Tags, and Image fields automatically filled based on dropped entity
+  - Category detection: Auto-suggests "Characters" for actors, "Items" for items, and extracts categories from journal content
+  - Tag generation: Auto-generates relevant tags based on entity properties (actor type/race/class, item type/rarity)
+  - Image handling: Automatically sets entity images and provides preview with remove functionality
+  - Enhanced form layout with organized sections and improved visual hierarchy
+
+### Changed
+- **Complete UI Redesign**: Modernized codex form with card-based layout, better spacing, and visual hierarchy
+- **Form Structure**: Reorganized into logical sections (Basic Information, Content, Tags) with clear headings
+- **Label Positioning**: Moved all form labels above their respective form elements for better readability
+- **Dropdown System**: Replaced text inputs with smart dropdowns for categories and locations, including existing options and "New" options
+- **Window Naming**: Renamed window ID to `codex-entry-window` for clarity and added corresponding CSS class
+
+### Fixed
+- **Critical CSS Issue**: Fixed global CSS selectors that were breaking ALL other forms in FoundryVTT by properly namespacing all styles to `.codex-form` only
+- **Dropdown Visibility**: Fixed dropdown text not being visible by using FoundryVTT's proven CSS approach with `var(--color-text-light-highlight)` variables
+- **Description Field**: Fixed description and plot hook fields not being properly saved by implementing robust form data handling
+- **Location Formatting**: Fixed HTML entities (`&gt;`) displaying instead of actual `>` characters in location dropdowns
+- **Form Submission**: Enhanced form submission with manual FormData processing to ensure all fields are captured correctly
+- **Category Selection**: Fixed category dropdown not properly registering selected values
+- **Tag Handling**: Improved tag processing to handle undefined/null values gracefully
+
+### Technical Improvements
+- **Proper Namespacing**: All CSS now properly scoped to avoid conflicts with other FoundryVTT modules
+- **Form Data Handling**: Implemented robust FormData capture and processing for reliable form submission
+- **Error Handling**: Added comprehensive debugging and error logging throughout the form submission process
+- **Code Organization**: Cleaner, more maintainable code structure following FoundryVTT best practices
+
 ## [12.0.20] - Readiness
 
 ### Added
