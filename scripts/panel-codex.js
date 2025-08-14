@@ -16,13 +16,14 @@ class CodexForm extends FormApplication {
 
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
-            id: 'codex-form',
+            id: 'codex-entry-window',
+            classes: ['codex-entry-window'],
             title: 'Add Codex Entry',
             template: 'modules/coffee-pub-squire/templates/codex-form.hbs',
             width: 700,
             height: 'auto',
             resizable: true,
-            closeOnSubmit: true,
+            closeOnSubmit: false,
             submitOnClose: false,
             submitOnChange: false
         });
