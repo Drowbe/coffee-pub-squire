@@ -937,6 +937,7 @@ SPECIFIC INSTRUCTIONS HERE`;
             const updatedPages = [];
             const totalEntries = Object.values(this.data).flat().length;
             let processedEntries = 0;
+            let lastDiscoveryTime = 0; // Track when last discovery was shown
 
             // Update progress for codex scanning phase
             if (progressText) {
@@ -955,7 +956,10 @@ SPECIFIC INSTRUCTIONS HERE`;
                     if (progressFill) {
                         progressFill.css('width', `${progressPercent}%`);
                     }
-                    if (progressText) {
+                    
+                    // Only update progress text if we haven't shown a discovery recently
+                    const now = Date.now();
+                    if (progressText && (now - lastDiscoveryTime) > 1000) {
                         progressText.text(`Scanning: ${entry.name}`);
                     }
                     
@@ -1010,8 +1014,9 @@ SPECIFIC INSTRUCTIONS HERE`;
                             // Show discovery immediately with progress update
                             if (progressText) {
                                 progressText.text(`✓ Found: ${entry.name}`);
-                                // Keep discovery visible for a moment
-                                await new Promise(resolve => setTimeout(resolve, 800));
+                                lastDiscoveryTime = Date.now(); // Mark when discovery was shown
+                                // Keep discovery visible for a moment - increased delay
+                                await new Promise(resolve => setTimeout(resolve, 1200));
                             }
                         }
                     }
@@ -1032,9 +1037,37 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Keep final summary visible for a moment
             await new Promise(resolve => setTimeout(resolve, 1500));
             
+            // Debug: Log that we're about to refresh
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Auto-discovery scan complete, refreshing panel...',
+                { 
+                    discoveredEntries: discoveredEntries.length,
+                    totalEntries: totalEntries
+                },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
+            
+            // Store progress area state before refresh
+            const wasProgressVisible = progressArea && progressArea.is(':visible');
+            
             // Refresh the panel to show updated visibility
             await this._refreshData();
             this.render(this.element);
+            
+            // Re-acquire progress elements after refresh (they might have been recreated)
+            const refreshedProgressArea = this.element?.find('.codex-progress-area');
+            const refreshedProgressFill = this.element?.find('.codex-progress-fill');
+            const refreshedProgressText = this.element?.find('.codex-progress-text');
+            
+            // If we had progress visible before, restore it
+            if (wasProgressVisible && refreshedProgressArea && refreshedProgressFill && refreshedProgressText) {
+                refreshedProgressArea.show();
+                refreshedProgressFill.css('width', '100%');
+                refreshedProgressText.text('Scan complete, updating panel...');
+            }
             
             // Log detailed results with discoverer information
             if (discoveredEntries.length > 0) {
@@ -1055,26 +1088,44 @@ SPECIFIC INSTRUCTIONS HERE`;
             }
             
             // Show completion message and hide progress area after delay
-            if (progressArea && progressFill && progressText) {
+            const finalProgressArea = refreshedProgressArea || progressArea;
+            const finalProgressFill = refreshedProgressFill || progressFill;
+            const finalProgressText = refreshedProgressText || progressText;
+            
+            if (finalProgressArea && finalProgressFill && finalProgressText) {
+                // Debug: Log that we're showing completion
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Showing completion message...',
+                    { 
+                        progressArea: !!finalProgressArea,
+                        progressFill: !!finalProgressFill,
+                        progressText: !!finalProgressText
+                    },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
+                
                 // Show prominent completion message
-                progressText.text('✓ SCAN COMPLETE! ✓');
-                progressFill.css('width', '100%');
+                finalProgressText.text('✓ SCAN COMPLETE! ✓');
+                finalProgressFill.css('width', '100%');
                 
                 // Add a visual completion indicator
-                if (progressArea) {
-                    progressArea.addClass('scan-complete');
+                if (finalProgressArea) {
+                    finalProgressArea.addClass('scan-complete');
                 }
                 
                 // Keep completion message visible for longer - increased to 5 seconds
                 await new Promise(resolve => setTimeout(resolve, 5000));
                 
                 // Remove completion styling
-                if (progressArea) {
-                    progressArea.removeClass('scan-complete');
+                if (finalProgressArea) {
+                    finalProgressArea.removeClass('scan-complete');
                 }
                 
                 // Hide progress area after showing completion
-                progressArea.hide();
+                finalProgressArea.hide();
             }
         } catch (error) {
             getBlacksmith()?.utils.postConsoleAndNotification(
