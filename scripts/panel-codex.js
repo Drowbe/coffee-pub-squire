@@ -874,6 +874,9 @@ SPECIFIC INSTRUCTIONS HERE`;
                     progressText.text(`Scanning ${actor.name}...`);
                 }
                 
+                // Add a small delay to make player scanning visible
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
                 // Use the same approach as the inventory panel
                 if (actor.items && actor.items.contents) {
                     // Filter items by type (same as inventory panel)
@@ -1008,7 +1011,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                             if (progressText) {
                                 progressText.text(`✓ Found: ${entry.name}`);
                                 // Keep discovery visible for a moment
-                                await new Promise(resolve => setTimeout(resolve, 500));
+                                await new Promise(resolve => setTimeout(resolve, 800));
                             }
                         }
                     }
@@ -1027,7 +1030,7 @@ SPECIFIC INSTRUCTIONS HERE`;
             }
             
             // Keep final summary visible for a moment
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1500));
             
             // Refresh the panel to show updated visibility
             await this._refreshData();
