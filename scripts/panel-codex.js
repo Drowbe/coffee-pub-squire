@@ -11,6 +11,7 @@ class CodexForm extends FormApplication {
     constructor(entry = null, options = {}) {
         super(entry, options);
         this.entry = entry || this._getDefaultEntry();
+        this.dragActive = false;
     }
 
     static get defaultOptions() {
@@ -18,7 +19,7 @@ class CodexForm extends FormApplication {
             id: 'codex-form',
             title: 'Add Codex Entry',
             template: 'modules/coffee-pub-squire/templates/codex-form.hbs',
-            width: 600,
+            width: 700,
             height: 'auto',
             resizable: true,
             closeOnSubmit: true,
@@ -30,7 +31,9 @@ class CodexForm extends FormApplication {
     getData() {
         return {
             entry: this.entry,
-            isGM: game.user.isGM
+            isGM: game.user.isGM,
+            existingCategories: this._getExistingCategories(),
+            existingLocations: this._getExistingLocations()
         };
     }
 
@@ -45,6 +48,50 @@ class CodexForm extends FormApplication {
             link: null,
             tags: []
         };
+    }
+
+    _getExistingCategories() {
+        const journalId = game.settings.get(MODULE.ID, 'codexJournal');
+        if (!journalId || journalId === 'none') return [];
+        
+        const journal = game.journal.get(journalId);
+        if (!journal) return [];
+        
+        const categories = new Set();
+        for (const page of journal.pages.contents) {
+            try {
+                const content = page.text?.content || '';
+                const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]+)/);
+                if (categoryMatch) {
+                    categories.add(categoryMatch[1].trim());
+                }
+            } catch (e) {
+                // Skip invalid entries
+            }
+        }
+        return Array.from(categories).sort();
+    }
+
+    _getExistingLocations() {
+        const journalId = game.settings.get(MODULE.ID, 'codexJournal');
+        if (!journalId || journalId === 'none') return [];
+        
+        const journal = game.journal.get(journalId);
+        if (!journal) return [];
+        
+        const locations = new Set();
+        for (const page of journal.pages.contents) {
+            try {
+                const content = page.text?.content || '';
+                const locationMatch = content.match(/<strong>Location:<\/strong>\s*([^<]+)/);
+                if (locationMatch) {
+                    locations.add(locationMatch[1].trim());
+                }
+            } catch (e) {
+                // Skip invalid entries
+            }
+        }
+        return Array.from(locations).sort();
     }
 
     async _updateObject(event, formData) {
@@ -145,6 +192,259 @@ class CodexForm extends FormApplication {
         html.find('button.cancel').on('click', () => {
             this.close();
         });
+
+        // Set up drag and drop zones
+        this._setupDragAndDrop(html);
+        
+        // Set up form field interactions
+        this._setupFormInteractions(html);
+        
+        // Set up image management
+        this._setupImageManagement(html);
+    }
+
+    _setupFormInteractions(html) {
+        // Handle category dropdown changes
+        const categorySelect = html.find('#category');
+        const newCategoryInput = html.find('#new-category');
+        
+        categorySelect.on('change', function() {
+            if ($(this).val() === 'new') {
+                newCategoryInput.show().focus();
+                newCategoryInput.attr('name', 'category');
+                $(this).attr('name', '');
+            } else {
+                newCategoryInput.hide().attr('name', '');
+                $(this).attr('name', 'category');
+            }
+        });
+
+        // Handle location dropdown changes
+        const locationSelect = html.find('#location');
+        const newLocationInput = html.find('#new-location');
+        
+        locationSelect.on('change', function() {
+            if ($(this).val() === 'new') {
+                newLocationInput.show().focus();
+                newLocationInput.attr('name', 'location');
+                $(this).attr('name', '');
+            } else {
+                newLocationInput.hide().attr('name', '');
+                $(this).attr('name', 'location');
+            }
+        });
+
+        // Handle new category input
+        newCategoryInput.on('input', function() {
+            const value = $(this).val().trim();
+            if (value) {
+                categorySelect.attr('name', '');
+                $(this).attr('name', 'category');
+            }
+        });
+
+        // Handle new location input
+        newLocationInput.on('input', function() {
+            const value = $(this).val().trim();
+            if (value) {
+                locationSelect.attr('name', '');
+                $(this).attr('name', 'location');
+            }
+        });
+    }
+
+    _setupImageManagement(html) {
+        // Show image section if we have an image
+        if (this.entry.img) {
+            html.find('.codex-image-section').show();
+            html.find('.codex-image-preview').attr('src', this.entry.img);
+        }
+
+        // Handle remove image button
+        html.find('.codex-remove-image').on('click', () => {
+            this.entry.img = null;
+            html.find('.codex-image-section').hide();
+            html.find('.codex-image-preview').attr('src', '');
+        });
+    }
+
+    _setupDragAndDrop(html) {
+        // Main drag zone for any entity
+        const mainDragZone = html.find('.codex-drag-zone');
+        
+        mainDragZone.off('dragenter.codex dragleave.codex dragover.codex drop.codex');
+        
+        mainDragZone.on('dragenter.codex', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            mainDragZone.addClass('drag-active');
+        });
+
+        mainDragZone.on('dragleave.codex', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            mainDragZone.removeClass('drag-active');
+        });
+
+        mainDragZone.on('dragover.codex', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.originalEvent.dataTransfer.dropEffect = 'copy';
+        });
+
+        mainDragZone.on('drop.codex', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            mainDragZone.removeClass('drag-active');
+            
+            try {
+                const dataTransfer = e.originalEvent.dataTransfer.getData('text/plain');
+                const data = JSON.parse(dataTransfer);
+                
+                if (data.type === 'Actor') {
+                    await this._handleActorDrop(data);
+                } else if (data.type === 'Item') {
+                    await this._handleItemDrop(data);
+                } else if (data.type === 'JournalEntry') {
+                    await this._handleJournalDrop(data);
+                }
+            } catch (error) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error processing dropped entity',
+                    { error, dataTransfer: e.originalEvent.dataTransfer.getData('text/plain') },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
+            }
+        });
+    }
+
+    async _handleActorDrop(data) {
+        const actor = await fromUuid(data.uuid || `Actor.${data.id}`);
+        if (!actor) return;
+
+        // Auto-populate fields for character
+        this.entry.name = actor.name;
+        this.entry.category = 'Characters';
+        this.entry.img = actor.img;
+        
+        // Generate smart tags
+        const tags = ['Characters'];
+        if (actor.type) tags.push(actor.type);
+        if (actor.system?.race?.value) tags.push(actor.system.race.value);
+        if (actor.system?.class?.value) tags.push(actor.system.class.value);
+        
+        this.entry.tags = tags;
+        
+        // Update form
+        this._updateFormFields();
+        
+        ui.notifications.info(`Added character: ${actor.name}`);
+    }
+
+    async _handleItemDrop(data) {
+        const item = await fromUuid(data.uuid || `Item.${data.id}`);
+        if (!item) return;
+
+        // Auto-populate fields for item
+        this.entry.name = item.name;
+        this.entry.category = 'Items';
+        this.entry.img = item.img;
+        
+        // Generate smart tags
+        const tags = ['Items'];
+        if (item.type) tags.push(item.type);
+        if (item.system?.rarity?.value) tags.push(item.system.rarity.value);
+        if (item.system?.equipment?.type) tags.push(item.system.equipment.type);
+        
+        this.entry.tags = tags;
+        
+        // Update form
+        this._updateFormFields();
+        
+        ui.notifications.info(`Added item: ${item.name}`);
+    }
+
+    async _handleJournalDrop(data) {
+        const journal = await fromUuid(data.uuid || `JournalEntry.${data.id}`);
+        if (!journal) return;
+
+        // Auto-populate fields for journal entry
+        this.entry.name = journal.name;
+        this.entry.link = { uuid: journal.uuid, label: journal.name };
+        
+        // Try to extract category from journal content
+        if (journal.pages && journal.pages.contents.length > 0) {
+            const firstPage = journal.pages.contents[0];
+            const content = firstPage.text?.content || '';
+            const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]+)/);
+            if (categoryMatch) {
+                this.entry.category = categoryMatch[1].trim();
+            }
+        }
+        
+        // Update form
+        this._updateFormFields();
+        
+        ui.notifications.info(`Added journal entry: ${journal.name}`);
+    }
+
+    _updateFormFields() {
+        // Update form inputs with new data
+        const form = this.element.find('form');
+        
+        // Update basic fields
+        form.find('input[name="name"]').val(this.entry.name);
+        form.find('input[name="tags"]').val(this.entry.tags.join(', '));
+        
+        // Update category dropdown
+        if (this.entry.category) {
+            const categorySelect = form.find('#category');
+            const newCategoryInput = form.find('#new-category');
+            
+            // Check if category exists in dropdown
+            const existingOption = categorySelect.find(`option[value="${this.entry.category}"]`);
+            if (existingOption.length > 0) {
+                categorySelect.val(this.entry.category);
+                newCategoryInput.hide().attr('name', '');
+                categorySelect.attr('name', 'category');
+            } else {
+                // Set to "new" and populate the new category input
+                categorySelect.val('new');
+                newCategoryInput.show().val(this.entry.category).attr('name', 'category');
+                categorySelect.attr('name', '');
+            }
+        }
+        
+        // Update location dropdown
+        if (this.entry.location) {
+            const locationSelect = form.find('#location');
+            const newLocationInput = form.find('#new-location');
+            
+            // Check if location exists in dropdown
+            const existingOption = locationSelect.find(`option[value="${this.entry.location}"]`);
+            if (existingOption.length > 0) {
+                locationSelect.val(this.entry.location);
+                newLocationInput.hide().attr('name', '');
+                locationSelect.attr('name', 'location');
+            } else {
+                // Set to "new" and populate the new location input
+                locationSelect.val('new');
+                newLocationInput.show().val(this.entry.location).attr('name', 'location');
+                locationSelect.attr('name', '');
+            }
+        }
+        
+        // Update image preview if exists
+        if (this.entry.img) {
+            const imgSection = form.find('.codex-image-section');
+            const imgPreview = form.find('.codex-image-preview');
+            
+            imgSection.show();
+            imgPreview.attr('src', this.entry.img);
+        }
     }
 }
 

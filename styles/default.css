@@ -48,6 +48,10 @@
 
 @import "quest-markers.css";
 
+/* --- Forms ---------------------- */
+
+@import "codex-form.css";
+
 /* --- Stacked Panels ---------------------- */
 
 @import "panel-inventory.css"; 

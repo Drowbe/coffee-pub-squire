@@ -1,39 +1,96 @@
 <form class="codex-form">
-    <div class="form-group">
-        <label>Name</label>
-        <input type="text" name="name" value="{{entry.name}}" required>
+    <!-- Drag & Drop Zone -->
+    <div class="codex-drag-zone">
+        <div class="drag-zone-content">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h3>Drag & Drop Here</h3>
+            <p>Drop tokens, items, or journal entries to auto-populate fields</p>
+            <div class="drag-zone-examples">
+                <span class="drag-example">👤 Characters</span>
+                <span class="drag-example">⚔️ Items</span>
+                <span class="drag-example">📖 Journals</span>
+            </div>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label>Category</label>
-        <input type="text" name="category" value="{{entry.category}}" required>
+    <!-- Image Preview -->
+    <div class="codex-image-section" style="display: none;">
+        <label>Image</label>
+        <div class="codex-image-preview-wrapper">
+            <img class="codex-image-preview" src="" alt="Preview">
+            <button type="button" class="codex-remove-image">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label>Description</label>
-        <textarea name="description" rows="4">{{entry.description}}</textarea>
+    <!-- Basic Information -->
+    <div class="form-section">
+        <h3>Basic Information</h3>
+        
+        <div class="form-group">
+            <label for="name">Name *</label>
+            <input type="text" id="name" name="name" value="{{entry.name}}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category *</label>
+            <select id="category" name="category" required>
+                <option value="">Select Category</option>
+                {{#each existingCategories}}
+                <option value="{{this}}" {{#if (eq ../entry.category this)}}selected{{/if}}>{{this}}</option>
+                {{/each}}
+                <option value="new">+ New Category</option>
+            </select>
+            <input type="text" id="new-category" name="new-category" placeholder="Enter new category" style="display: none;">
+        </div>
+
+        <div class="form-group">
+            <label for="location">Location</label>
+            <select id="location" name="location">
+                <option value="">Select Location</option>
+                {{#each existingLocations}}
+                <option value="{{this}}" {{#if (eq ../entry.location this)}}selected{{/if}}>{{this}}</option>
+                {{/each}}
+                <option value="new">+ New Location</option>
+            </select>
+            <input type="text" id="new-location" name="new-location" placeholder="Enter new location" style="display: none;">
+        </div>
     </div>
 
-    <div class="form-group">
-        <label>Plot Hook</label>
-        <textarea name="plotHook" rows="3">{{entry.plotHook}}</textarea>
+    <!-- Content -->
+    <div class="form-section">
+        <h3>Content</h3>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4" placeholder="Describe what this is, where it's located, and any important details...">{{entry.description}}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="plotHook">Plot Hook</label>
+            <textarea id="plotHook" name="plotHook" rows="3" placeholder="How does this relate to the story? What might the party need from it?">{{entry.plotHook}}</textarea>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label>Location</label>
-        <input type="text" name="location" value="{{entry.location}}">
+    <!-- Tags -->
+    <div class="form-section">
+        <h3>Tags</h3>
+        <div class="form-group">
+            <label for="tags">Tags (comma-separated)</label>
+            <input type="text" id="tags" name="tags" value="{{entry.tags}}" placeholder="Enter tags separated by commas">
+            <div class="tag-suggestions">
+                <small>Common tags: Characters, Items, Locations, Factions, Artifacts, Events</small>
+            </div>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label>Tags (comma-separated)</label>
-        <input type="text" name="tags" value="{{entry.tags}}">
-    </div>
-
-    <div class="form-group buttons">
-        <button type="submit">
+    <!-- Action Buttons -->
+    <div class="form-actions">
+        <button type="submit" class="btn-primary">
             <i class="fas fa-save"></i> Save Entry
         </button>
-        <button type="button" class="cancel">
+        <button type="button" class="btn-secondary cancel">
             <i class="fas fa-times"></i> Cancel
         </button>
     </div>
