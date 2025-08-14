@@ -1,282 +1,302 @@
-/* Codex Form Styles */
+/* Codex Form - Properly Namespaced Styles */
 .codex-form {
+    /* Form container styles */
     padding: 20px;
     background: rgba(0, 0, 0, 0.8);
     border-radius: 8px;
-    color: #cccccc;
-    font-family: 'Roboto', sans-serif;
+    color: #ffffff;
 }
 
 /* Drag & Drop Zone */
-.codex-drag-zone {
-    border: 3px dashed rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
+.codex-form .codex-drag-zone {
+    border: 2px dashed #666;
+    border-radius: 8px;
     padding: 40px 20px;
     text-align: center;
-    margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.05);
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.02);
-    cursor: pointer;
+    margin-bottom: 20px;
 }
 
-.codex-drag-zone:hover {
-    border-color: rgba(255, 111, 48, 0.5);
-    background: rgba(255, 111, 48, 0.05);
+.codex-form .codex-drag-zone:hover {
+    border-color: #ff6400;
+    background: rgba(255, 100, 0, 0.1);
 }
 
-.codex-drag-zone.drag-active {
-    border-color: var(--color-border-highlight, #ff6400);
-    background: rgba(255, 111, 48, 0.1);
+.codex-form .codex-drag-zone.drag-active {
+    border-color: #ff6400;
+    background: rgba(255, 100, 0, 0.2);
     transform: scale(1.02);
-    box-shadow: 0 0 20px rgba(255, 111, 48, 0.3);
 }
 
-.drag-zone-content i {
+.codex-form .codex-drag-zone .drag-zone-content i {
     font-size: 3em;
-    color: rgba(255, 255, 255, 0.4);
-    margin-bottom: 16px;
-    transition: color 0.3s ease;
+    color: #ff6400;
+    margin-bottom: 15px;
 }
 
-.codex-drag-zone:hover i,
-.codex-drag-zone.drag-active i {
-    color: var(--color-border-highlight, #ff6400);
-}
-
-.drag-zone-content h3 {
-    margin: 0 0 8px 0;
-    font-size: 1.4em;
+.codex-form .codex-drag-zone .drag-zone-content h3 {
+    margin: 0 0 10px 0;
     color: #ffffff;
-    font-weight: 600;
+    font-size: 1.5em;
 }
 
-.drag-zone-content p {
+.codex-form .codex-drag-zone .drag-zone-content p {
     margin: 0 0 20px 0;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.95em;
+    color: #cccccc;
 }
 
-.drag-zone-examples {
+.codex-form .codex-drag-zone .drag-zone-examples {
     display: flex;
     justify-content: center;
-    gap: 16px;
+    gap: 15px;
     flex-wrap: wrap;
 }
 
-.drag-example {
-    background: rgba(255, 255, 255, 0.1);
+.codex-form .codex-drag-zone .drag-example {
+    background: rgba(255, 100, 0, 0.2);
     padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.9em;
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 100, 0, 0.3);
 }
 
-.drag-example:hover {
-    background: rgba(255, 111, 48, 0.2);
-    border-color: var(--color-border-highlight, #ff6400);
-    color: #ffffff;
-}
-
-/* Image Preview Section */
-.codex-image-section {
-    margin-bottom: 24px;
-    padding: 16px;
+/* Image Section */
+.codex-form .codex-image-section {
+    margin-bottom: 20px;
+    padding: 15px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.codex-image-section label {
+.codex-form .codex-image-section label {
     display: block;
-    margin-bottom: 12px;
-    font-weight: 600;
+    margin-bottom: 10px;
+    font-weight: bold;
     color: #ffffff;
 }
 
-.codex-image-preview-wrapper {
+.codex-form .codex-image-preview-wrapper {
     position: relative;
     display: inline-block;
 }
 
-.codex-image-preview {
+.codex-form .codex-image-preview {
     max-width: 200px;
     max-height: 150px;
     border-radius: 6px;
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-.codex-remove-image {
+.codex-form .codex-remove-image {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: rgba(255, 0, 0, 0.8);
-    color: white;
+    background: #ff4444;
     border: none;
     border-radius: 50%;
     width: 24px;
     height: 24px;
+    color: white;
     cursor: pointer;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8em;
-    transition: all 0.3s ease;
 }
 
-.codex-remove-image:hover {
-    background: rgba(255, 0, 0, 1);
-    transform: scale(1.1);
+.codex-form .codex-remove-image:hover {
+    background: #cc0000;
 }
 
 /* Form Sections */
-.form-section {
-    margin-bottom: 24px;
+.codex-form .form-section {
+    margin-bottom: 25px;
     padding: 20px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideIn 0.3s ease-out;
 }
 
-.form-section h3 {
+.codex-form .form-section h3 {
     margin: 0 0 20px 0;
-    font-size: 1.2em;
-    color: #ffffff;
-    font-weight: 600;
-    border-bottom: 2px solid rgba(255, 111, 48, 0.3);
+    color: #ff6400;
+    font-size: 1.3em;
+    border-bottom: 2px solid rgba(255, 100, 0, 0.3);
     padding-bottom: 8px;
 }
 
 /* Form Groups */
-.form-group {
+.codex-form .form-group {
     margin-bottom: 20px;
 }
 
-.form-group label {
+.codex-form .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: 600;
+    font-weight: bold;
     color: #ffffff;
     font-size: 0.95em;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+/* Input Fields - NAMESPACED TO CODEX FORM ONLY */
+.codex-form .form-group input[type="text"],
+.codex-form .form-group input[type="email"],
+.codex-form .form-group input[type="password"],
+.codex-form .form-group input[type="number"],
+.codex-form .form-group textarea {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
+    background: rgba(0, 0, 0, 0.6);
     color: #ffffff;
-    font-size: 0.95em;
+    font-size: 14px;
     transition: all 0.3s ease;
     box-sizing: border-box;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.codex-form .form-group input[type="text"]:focus,
+.codex-form .form-group input[type="email"]:focus,
+.codex-form .form-group input[type="password"]:focus,
+.codex-form .form-group input[type="number"]:focus,
+.codex-form .form-group textarea:focus {
     outline: none;
-    border-color: var(--color-border-highlight, #ff6400);
-    box-shadow: 0 0 0 3px rgba(255, 111, 48, 0.2);
+    border-color: #ff6400;
+    box-shadow: 0 0 0 3px rgba(255, 100, 0, 0.2);
     background: rgba(0, 0, 0, 0.8);
 }
 
-.form-group input::placeholder,
-.form-group textarea::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+.codex-form .form-group input[type="text"]::placeholder,
+.codex-form .form-group input[type="email"]::placeholder,
+.codex-form .form-group input[type="password"]::placeholder,
+.codex-form .form-group input[type="number"]::placeholder,
+.codex-form .form-group textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
-.form-group select {
+/* Select Fields - NAMESPACED TO CODEX FORM ONLY */
+.codex-form .form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
+    font-size: 14px;
     cursor: pointer;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
 }
 
-.form-group select option {
+.codex-form .form-group select:focus {
+    outline: none;
+    border-color: #ff6400;
+    box-shadow: 0 0 0 3px rgba(255, 100, 0, 0.2);
+    background: rgba(0, 0, 0, 0.8);
+}
+
+/* Select Options - NAMESPACED TO CODEX FORM ONLY */
+.codex-form .form-group select option {
     background: rgba(0, 0, 0, 0.9);
     color: #ffffff;
     padding: 8px;
 }
 
+.codex-form .form-group select option:checked {
+    background: var(--color-border-highlight, #ff6400);
+    color: #ffffff;
+}
+
+.codex-form .form-group select option:hover {
+    background: rgba(255, 111, 48, 0.3);
+    color: #ffffff;
+}
+
 /* Tag Suggestions */
-.tag-suggestions {
+.codex-form .tag-suggestions {
     margin-top: 8px;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.85em;
+}
+
+.codex-form .tag-suggestions small {
+    color: rgba(255, 255, 255, 0.6);
     font-style: italic;
 }
 
-/* Action Buttons */
-.form-actions {
+/* Form Actions */
+.codex-form .form-actions {
     display: flex;
-    gap: 16px;
+    gap: 15px;
     justify-content: flex-end;
+    margin-top: 30px;
     padding-top: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.btn-primary,
-.btn-secondary {
+.codex-form .btn-primary,
+.codex-form .btn-secondary {
     padding: 12px 24px;
     border: none;
     border-radius: 6px;
-    font-size: 0.95em;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: 120px;
-    justify-content: center;
 }
 
-.btn-primary {
-    background: var(--color-border-highlight, #ff6400);
+.codex-form .btn-primary {
+    background: #ff6400;
     color: #ffffff;
 }
 
-.btn-primary:hover {
-    background: var(--color-border-highlight-hover, #e55a00);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 111, 48, 0.4);
+.codex-form .btn-primary:hover {
+    background: #e55a00;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 100, 0, 0.3);
 }
 
-.btn-secondary {
+.codex-form .btn-secondary {
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.btn-secondary:hover {
+.codex-form .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     .codex-form {
-        padding: 16px;
+        padding: 15px;
     }
     
-    .drag-zone-examples {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .form-actions {
+    .codex-form .form-actions {
         flex-direction: column;
     }
     
-    .btn-primary,
-    .btn-secondary {
+    .codex-form .btn-primary,
+    .codex-form .btn-secondary {
         width: 100%;
+        justify-content: center;
     }
 }
 
-/* Animation for new elements */
+/* Animations */
 @keyframes slideIn {
     from {
         opacity: 0;
@@ -286,16 +306,4 @@
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.form-section {
-    animation: slideIn 0.4s ease-out;
-}
-
-/* Focus states for accessibility */
-.form-group input:focus-visible,
-.form-group select:focus-visible,
-.form-group textarea:focus-visible {
-    outline: 2px solid var(--color-border-highlight, #ff6400);
-    outline-offset: 2px;
 }

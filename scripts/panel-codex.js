@@ -85,7 +85,10 @@ class CodexForm extends FormApplication {
                 const content = page.text?.content || '';
                 const locationMatch = content.match(/<strong>Location:<\/strong>\s*([^<]+)/);
                 if (locationMatch) {
-                    locations.add(locationMatch[1].trim());
+                    // Decode HTML entities and convert &gt; back to >
+                    let location = locationMatch[1].trim();
+                    location = location.replace(/&gt;/g, '>');
+                    locations.add(location);
                 }
             } catch (e) {
                 // Skip invalid entries
@@ -97,9 +100,21 @@ class CodexForm extends FormApplication {
     async _updateObject(event, formData) {
         const entry = expandObject(formData);
         
+        // Debug: Log the form data
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Processing codex form submission',
+            { formData, entry },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
+        
         // Convert tags to array
         if (typeof entry.tags === 'string') {
             entry.tags = entry.tags.split(',').map(t => t.trim()).filter(t => t);
+        } else if (!entry.tags) {
+            entry.tags = [];
         }
 
         // Get the journal
@@ -125,8 +140,28 @@ class CodexForm extends FormApplication {
                 }
             };
 
+            // Debug: Log the page data being created
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Creating journal page',
+                { pageData, journalId: journal.id, journalName: journal.name },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+
             // Create new page
-            await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+            const newPage = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+
+            // Debug: Log successful creation
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Journal page created successfully',
+                { newPage: newPage[0]?.id, pageName: newPage[0]?.name },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
 
             // Show success notification
             ui.notifications.info(`Codex entry "${entry.name}" saved successfully.`);
@@ -144,7 +179,7 @@ class CodexForm extends FormApplication {
         } catch (error) {
             getBlacksmith()?.utils.postConsoleAndNotification(
                 'Error saving codex entry',
-                { error },
+                { error, entry, journalId, journalName: journal?.name },
                 false,
                 false,
                 true,
@@ -193,6 +228,12 @@ class CodexForm extends FormApplication {
             this.close();
         });
 
+        // Handle form submission manually to ensure it works
+        html.find('form').on('submit', (event) => {
+            event.preventDefault();
+            this._handleFormSubmit(event);
+        });
+
         // Set up drag and drop zones
         this._setupDragAndDrop(html);
         
@@ -201,6 +242,56 @@ class CodexForm extends FormApplication {
         
         // Set up image management
         this._setupImageManagement(html);
+    }
+
+    async _handleFormSubmit(event) {
+        event.preventDefault();
+        
+        // Get form data
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        // Convert FormData to object
+        const entry = {};
+        for (const [key, value] of formData.entries()) {
+            // Skip empty values for optional fields
+            if (key === 'img' && !value) continue;
+            if (key === 'location' && !value) continue;
+            if (key === 'plotHook' && !value) continue;
+            
+            entry[key] = value;
+        }
+        
+        // Debug: Log the form submission
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Form submitted manually',
+            { entry, formData: Object.fromEntries(formData) },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
+        
+        // Debug: Check specific fields
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Form field values',
+            { 
+                name: entry.name,
+                category: entry.category,
+                description: entry.description,
+                plotHook: entry.plotHook,
+                location: entry.location,
+                tags: entry.tags,
+                img: entry.img
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
+        
+        // Call the original _updateObject method
+        await this._updateObject(event, entry);
     }
 
     _setupFormInteractions(html) {
@@ -397,7 +488,10 @@ class CodexForm extends FormApplication {
         
         // Update basic fields
         form.find('input[name="name"]').val(this.entry.name);
-        form.find('input[name="tags"]').val(this.entry.tags.join(', '));
+        form.find('textarea[name="description"]').val(this.entry.description || '');
+        form.find('textarea[name="plotHook"]').val(this.entry.plotHook || '');
+        form.find('input[name="tags"]').val((this.entry.tags || []).join(', '));
+        form.find('input[name="img"]').val(this.entry.img || '');
         
         // Update category dropdown
         if (this.entry.category) {
