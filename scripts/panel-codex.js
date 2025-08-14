@@ -820,14 +820,17 @@ SPECIFIC INSTRUCTIONS HERE`;
         }
 
         // Show progress area
-        const progressArea = this.element?.find('.codex-progress-area');
-        const progressFill = this.element?.find('.codex-progress-fill');
-        const progressText = this.element?.find('.codex-progress-text');
+        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
+        const progressFill = this.element?.find('.tray-progress-bar-inner');
+        const progressText = this.element?.find('.tray-progress-bar-text');
         
         if (progressArea && progressFill && progressText) {
             progressArea.show();
             progressFill.css('width', '0%');
             progressText.text('Starting scan...');
+            
+            // Small delay to make progress visible
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         try {
@@ -1050,25 +1053,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                 MODULE.TITLE
             );
             
-            // Store progress area state before refresh
-            const wasProgressVisible = progressArea && progressArea.is(':visible');
-            
-            // Refresh the panel to show updated visibility
-            await this._refreshData();
-            this.render(this.element);
-            
-            // Re-acquire progress elements after refresh (they might have been recreated)
-            const refreshedProgressArea = this.element?.find('.codex-progress-area');
-            const refreshedProgressFill = this.element?.find('.codex-progress-fill');
-            const refreshedProgressText = this.element?.find('.codex-progress-text');
-            
-            // If we had progress visible before, restore it
-            if (wasProgressVisible && refreshedProgressArea && refreshedProgressFill && refreshedProgressText) {
-                refreshedProgressArea.show();
-                refreshedProgressFill.css('width', '100%');
-                refreshedProgressText.text('Scan complete, updating panel...');
-            }
-            
             // Log detailed results with discoverer information
             if (discoveredEntries.length > 0) {
                 getBlacksmith()?.utils.postConsoleAndNotification(
@@ -1088,45 +1072,25 @@ SPECIFIC INSTRUCTIONS HERE`;
             }
             
             // Show completion message and hide progress area after delay
-            const finalProgressArea = refreshedProgressArea || progressArea;
-            const finalProgressFill = refreshedProgressFill || progressFill;
-            const finalProgressText = refreshedProgressText || progressText;
-            
-            if (finalProgressArea && finalProgressFill && finalProgressText) {
-                // Debug: Log that we're showing completion
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Showing completion message...',
-                    { 
-                        progressArea: !!finalProgressArea,
-                        progressFill: !!finalProgressFill,
-                        progressText: !!finalProgressText
-                    },
-                    false,
-                    false,
-                    false,
-                    MODULE.TITLE
-                );
-                
+            if (progressArea && progressFill && progressText) {
                 // Show prominent completion message
-                finalProgressText.text('✓ SCAN COMPLETE! ✓');
-                finalProgressFill.css('width', '100%');
+                progressText.text('Scan Complete!');
+                progressFill.css('width', '100%');
                 
                 // Add a visual completion indicator
-                if (finalProgressArea) {
-                    finalProgressArea.addClass('scan-complete');
-                }
+                progressArea.addClass('scan-complete');
                 
-                // Keep completion message visible for longer - increased to 5 seconds
+                // Keep completion message visible for 5 seconds
                 await new Promise(resolve => setTimeout(resolve, 5000));
                 
-                // Remove completion styling
-                if (finalProgressArea) {
-                    finalProgressArea.removeClass('scan-complete');
-                }
-                
-                // Hide progress area after showing completion
-                finalProgressArea.hide();
+                // Remove completion styling and hide progress area
+                progressArea.removeClass('scan-complete');
+                progressArea.hide();
             }
+            
+            // NOW refresh the panel to show updated visibility (after progress bar is hidden)
+            await this._refreshData();
+            this.render(this.element);
         } catch (error) {
             getBlacksmith()?.utils.postConsoleAndNotification(
                 'Error during auto-discovery',
