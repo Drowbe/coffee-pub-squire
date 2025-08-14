@@ -245,14 +245,17 @@ export class CodexPanel {
                             
                             // Extract "Discovered By" information from the enriched content
                             const doc = new DOMParser().parseFromString(enriched, 'text/html');
-                            const discoveredByParagraph = doc.querySelector('p.discovered-by-info');
-                            if (discoveredByParagraph) {
-                                const strong = discoveredByParagraph.querySelector('strong');
+                            const pTags = Array.from(doc.querySelectorAll('p'));
+                            
+                            // Look for "Discovered By" paragraph by finding the strong tag with that text
+                            for (const p of pTags) {
+                                const strong = p.querySelector('strong');
                                 if (strong && strong.textContent.trim() === 'Discovered By:') {
-                                    const discovererText = discoveredByParagraph.textContent.replace('Discovered By:', '').trim();
+                                    const discovererText = p.textContent.replace('Discovered By:', '').trim();
                                     if (discovererText) {
                                         entry.DiscoveredBy = discovererText;
                                     }
+                                    break;
                                 }
                             }
                             
@@ -905,12 +908,47 @@ SPECIFIC INSTRUCTIONS HERE`;
                         const itemNameLower = item.name.toLowerCase().replace(/\s+/g, ' ').trim();
                         inventoryItems.add(itemNameLower);
                         
+                        // Debug: Log items that match "Test 2" specifically
+                        if (item.name.toLowerCase().includes('test 2') || item.name.toLowerCase().includes('test  2')) {
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                `Found potential "Test 2" item: "${item.name}"`,
+                                { 
+                                    actorName: actor.name,
+                                    itemName: item.name,
+                                    normalizedName: itemNameLower,
+                                    originalLength: item.name.length,
+                                    normalizedLength: itemNameLower.length
+                                },
+                                false,
+                                false,
+                                false,
+                                MODULE.TITLE
+                            );
+                        }
+                        
                         // If it's a backpack/container, check its contents
                         if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                             for (const containedItem of item.contents) {
                                 // Apply same space normalization to contained items
                                 const containedItemNameLower = containedItem.name.toLowerCase().replace(/\s+/g, ' ').trim();
                                 inventoryItems.add(containedItemNameLower);
+                                
+                                // Debug: Log contained items that match "Test 2" specifically
+                                if (containedItem.name.toLowerCase().includes('test 2') || containedItem.name.toLowerCase().includes('test  2')) {
+                                    getBlacksmith()?.utils.postConsoleAndNotification(
+                                        `Found potential "Test 2" contained item: "${containedItem.name}"`,
+                                        { 
+                                            actorName: actor.name,
+                                            containerItem: item.name,
+                                            containedItemName: containedItem.name,
+                                            normalizedName: containedItemNameLower
+                                        },
+                                        false,
+                                        false,
+                                        false,
+                                        MODULE.TITLE
+                                    );
+                                }
                             }
                         }
                     }
@@ -980,29 +1018,70 @@ SPECIFIC INSTRUCTIONS HERE`;
                         if (page && page.ownership?.default < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
                             // Find which character(s) had this item
                             const discoverers = [];
+                            
+                            // Debug: Log what we're looking for
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                `Checking for item: "${entry.name}" (normalized: "${entryNameLower}")`,
+                                { 
+                                    entryName: entry.name,
+                                    entryNameLower: entryNameLower,
+                                    inventoryItems: Array.from(inventoryItems)
+                                },
+                                false,
+                                false,
+                                false,
+                                MODULE.TITLE
+                            );
+                            
                             for (const token of tokens) {
                                 const actor = token.actor;
                                 const items = actor.items.contents.filter(item => 
                                     ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
                                 );
                                 
+                                let foundInThisActor = false;
+                                
                                 for (const item of items) {
-                                    if (item.name.toLowerCase().trim() === entryNameLower) {
-                                        discoverers.push(actor.name);
-                                        break;
+                                    // Normalize the item name the same way we did when building inventoryItems
+                                    const itemNameLower = item.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                                    
+                                    if (itemNameLower === entryNameLower) {
+                                        if (!foundInThisActor) {
+                                            discoverers.push(actor.name);
+                                            foundInThisActor = true;
+                                        }
+                                        // Don't break - continue checking other items in case there are duplicates
                                     }
                                     
                                     // Check backpack contents
                                     if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                                         for (const containedItem of item.contents) {
-                                            if (containedItem.name.toLowerCase().trim() === entryNameLower) {
-                                                discoverers.push(actor.name);
-                                                break;
+                                            const containedItemNameLower = containedItem.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                                            if (containedItemNameLower === entryNameLower) {
+                                                if (!foundInThisActor) {
+                                                    discoverers.push(actor.name);
+                                                    foundInThisActor = true;
+                                                }
+                                                // Don't break - continue checking other contained items
                                             }
                                         }
                                     }
                                 }
                             }
+                            
+                            // Debug: Log what we found
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                `Found "${entry.name}" with discoverers: ${discoverers.join(', ')}`,
+                                { 
+                                    entryName: entry.name,
+                                    discoverers: discoverers,
+                                    totalDiscoverers: discoverers.length
+                                },
+                                false,
+                                false,
+                                false,
+                                MODULE.TITLE
+                            );
                             
                             // Make it visible
                             await page.update({ 'ownership.default': CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER });
@@ -1139,7 +1218,7 @@ SPECIFIC INSTRUCTIONS HERE`;
             const doc = new DOMParser().parseFromString(enrichedContent, 'text/html');
             const pTags = Array.from(doc.querySelectorAll('p'));
 
-            // Find existing "Discovered By" paragraph
+            // Find existing "Discovered By" paragraph by looking for the text content
             let discoveredByParagraph = null;
             let existingDiscoverers = [];
             
@@ -1148,7 +1227,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 const strong = p.querySelector('strong');
                 if (strong && strong.textContent.trim() === 'Discovered By:') {
                     discoveredByParagraph = p;
-                    // Extract existing discoverers
+                    // Extract existing discoverers from the paragraph text
                     const discovererText = p.textContent.replace('Discovered By:', '').trim();
                     if (discovererText) {
                         existingDiscoverers = discovererText.split(',').map(d => d.trim());
@@ -1160,9 +1239,8 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Combine existing and new discoverers, removing duplicates
             const allDiscoverers = [...new Set([...existingDiscoverers, ...discoverers])];
             
-            // Create or update the "Discovered By" paragraph
+            // Create the "Discovered By" paragraph without the class attribute
             const newDiscoveredByParagraph = document.createElement('p');
-            newDiscoveredByParagraph.className = 'discovered-by-info';
             newDiscoveredByParagraph.innerHTML = `<strong>Discovered By:</strong> ${allDiscoverers.join(', ')}`;
             
             if (discoveredByParagraph) {
