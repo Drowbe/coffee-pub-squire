@@ -805,6 +805,17 @@ SPECIFIC INSTRUCTIONS HERE`;
             button.attr('title', 'Scanning party inventories...');
         }
 
+        // Show progress area
+        const progressArea = this.element?.find('.codex-progress-area');
+        const progressFill = this.element?.find('.codex-progress-fill');
+        const progressText = this.element?.find('.codex-progress-text');
+        
+        if (progressArea && progressFill && progressText) {
+            progressArea.show();
+            progressFill.css('width', '0%');
+            progressText.text('Starting scan...');
+        }
+
         try {
             // Show initial notification
             ui.notifications.info("Starting auto-discovery scan...");
@@ -828,6 +839,11 @@ SPECIFIC INSTRUCTIONS HERE`;
             for (const token of tokens) {
                 const actor = token.actor;
                 characterNames.push(actor.name);
+                
+                // Update progress for this character
+                if (progressText) {
+                    progressText.text(`Scanning ${actor.name}...`);
+                }
                 
                 // Use the same approach as the inventory panel
                 if (actor.items && actor.items.contents) {
@@ -889,9 +905,20 @@ SPECIFIC INSTRUCTIONS HERE`;
             const totalEntries = Object.values(this.data).flat().length;
             let processedEntries = 0;
 
+            // Update progress for codex scanning
+            if (progressText) {
+                progressText.text(`Scanning ${totalEntries} codex entries...`);
+            }
+
             for (const [category, entries] of Object.entries(this.data)) {
                 for (const entry of entries) {
                     processedEntries++;
+                    
+                    // Update progress bar
+                    if (progressFill) {
+                        const progressPercent = (processedEntries / totalEntries) * 100;
+                        progressFill.css('width', `${progressPercent}%`);
+                    }
                     
                     // Check if entry name matches any inventory item
                     const entryNameLower = entry.name.toLowerCase().trim();
@@ -1015,6 +1042,17 @@ SPECIFIC INSTRUCTIONS HERE`;
             if (button) {
                 button.removeClass('working');
                 button.attr('title', 'Auto-Discover from Party Inventories');
+            }
+            
+            // Hide progress area and show completion
+            if (progressArea && progressFill && progressText) {
+                progressText.text('Scan complete!');
+                progressFill.css('width', '100%');
+                
+                // Hide progress area after a short delay
+                setTimeout(() => {
+                    progressArea.hide();
+                }, 2000);
             }
         }
     }
@@ -1196,4 +1234,4 @@ SPECIFIC INSTRUCTIONS HERE`;
             }
         }
     }
-} 
+}
