@@ -857,7 +857,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 progressText.text('Scanning party inventories...');
             }
             if (progressFill) {
-                progressFill.css('width', '10%');
+                progressFill.css('width', '0%');
             }
             
             for (const token of tokens) {
@@ -866,7 +866,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 processedPlayers++;
                 
                 // Update progress for this character - REAL PROGRESS
-                const playerProgressPercent = (processedPlayers / totalPlayers) * 10; // 10-20% range for player scanning
+                const playerProgressPercent = (processedPlayers / totalPlayers) * 20; // 0-20% range for player scanning
                 if (progressFill) {
                     progressFill.css('width', `${playerProgressPercent}%`);
                 }
@@ -999,7 +999,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                     processedEntries++;
                     
                     // Update progress bar with current entry info - REAL PROGRESS, no throttling
-                    const progressPercent = Math.min((processedEntries / totalEntries) * 80 + 20, 95); // 20-95% range for codex scanning
+                    const progressPercent = 20 + ((processedEntries / totalEntries) * 80); // 20-100% range for codex scanning
                     if (progressFill) {
                         progressFill.css('width', `${progressPercent}%`);
                     }

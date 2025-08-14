@@ -128,7 +128,7 @@
 .squire-tray[data-position="left"] .codex-progress-text {
     font-size: 0.95em;
     color: rgba(255, 255, 255, 0.9);
-    text-align: center;
+    text-align: left;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
