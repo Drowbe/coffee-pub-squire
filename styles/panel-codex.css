@@ -107,6 +107,24 @@
     animation: slideDown 0.3s ease-out;
 }
 
+/* Completion state styling */
+.squire-tray[data-position="left"] .codex-progress-area.scan-complete {
+    background: rgba(54, 112, 56, 0.4);
+    border: 2px solid rgba(54, 112, 56, 0.8);
+    box-shadow: 0 0 10px rgba(54, 112, 56, 0.5);
+}
+
+.squire-tray[data-position="left"] .codex-progress-area.scan-complete .codex-progress-fill {
+    background: rgba(54, 112, 56, 1);
+    animation: completionPulse 1s ease-in-out infinite;
+}
+
+@keyframes completionPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
 .squire-tray[data-position="left"] .codex-progress-bar {
     width: 100%;
     height: auto;

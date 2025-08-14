@@ -899,50 +899,12 @@ SPECIFIC INSTRUCTIONS HERE`;
                         const itemNameLower = item.name.toLowerCase().replace(/\s+/g, ' ').trim();
                         inventoryItems.add(itemNameLower);
                         
-                        // Debug: Log each item being added
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            `Adding item to inventory set: "${item.name}"`,
-                            { 
-                                originalName: item.name,
-                                normalizedName: itemNameLower,
-                                originalLength: item.name.length,
-                                normalizedLength: itemNameLower.length,
-                                hasSpaces: item.name.includes(' '),
-                                hasLeadingSpaces: item.name.startsWith(' '),
-                                hasTrailingSpaces: item.name.endsWith(' '),
-                                hasMultipleSpaces: /\s{2,}/.test(item.name)
-                            },
-                            false,
-                            false,
-                            false,
-                            MODULE.TITLE
-                        );
-                        
                         // If it's a backpack/container, check its contents
                         if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                             for (const containedItem of item.contents) {
                                 // Apply same space normalization to contained items
                                 const containedItemNameLower = containedItem.name.toLowerCase().replace(/\s+/g, ' ').trim();
                                 inventoryItems.add(containedItemNameLower);
-                                
-                                // Debug: Log contained items too
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    `Adding contained item: "${containedItem.name}"`,
-                                    { 
-                                        originalName: containedItem.name,
-                                        normalizedName: containedItemNameLower,
-                                        originalLength: containedItem.name.length,
-                                        normalizedLength: containedItemNameLower.length,
-                                        hasSpaces: containedItem.name.includes(' '),
-                                        hasLeadingSpaces: containedItem.name.startsWith(' '),
-                                        hasTrailingSpaces: containedItem.name.endsWith(' '),
-                                        hasMultipleSpaces: /\s{2,}/.test(containedItem.name)
-                                    },
-                                    false,
-                                    false,
-                                    false,
-                                    MODULE.TITLE
-                                );
                             }
                         }
                     }
@@ -981,19 +943,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                 progressFill.css('width', '20%');
             }
 
-            // Debug: Log what's in the inventory set
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Inventory items for matching',
-                { 
-                    inventoryItems: Array.from(inventoryItems),
-                    totalInventoryItems: inventoryItems.size
-                },
-                false,
-                false,
-                false,
-                MODULE.TITLE
-            );
-
             for (const [category, entries] of Object.entries(this.data)) {
                 for (const entry of entries) {
                     processedEntries++;
@@ -1007,29 +956,13 @@ SPECIFIC INSTRUCTIONS HERE`;
                         progressText.text(`Scanning: ${entry.name}`);
                     }
                     
-                    // Small delay to make progress visible (every 10 entries to avoid being too slow)
-                    if (processedEntries % 10 === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 50));
+                    // Add a small delay every 5 entries to make progress visible
+                    if (processedEntries % 5 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
                     
                     // Check if entry name matches any inventory item
                     const entryNameLower = entry.name.toLowerCase().trim();
-                    
-                    // Debug: Log the comparison for each entry
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        `Checking entry: "${entry.name}"`,
-                        { 
-                            entryName: entry.name,
-                            entryNameLower: entryNameLower,
-                            entryNameLength: entryNameLower.length,
-                            hasMatch: inventoryItems.has(entryNameLower),
-                            inventoryItems: Array.from(inventoryItems)
-                        },
-                        false,
-                        false,
-                        false,
-                        MODULE.TITLE
-                    );
                     
                     if (inventoryItems.has(entryNameLower)) {
                         // Check if this entry is already visible
@@ -1074,10 +1007,9 @@ SPECIFIC INSTRUCTIONS HERE`;
                             // Show discovery immediately with progress update
                             if (progressText) {
                                 progressText.text(`✓ Found: ${entry.name}`);
+                                // Keep discovery visible for a moment
+                                await new Promise(resolve => setTimeout(resolve, 500));
                             }
-                            
-                            // Small delay to make the discovery visible
-                            await new Promise(resolve => setTimeout(resolve, 100));
                         }
                     }
                 }
@@ -1093,6 +1025,9 @@ SPECIFIC INSTRUCTIONS HERE`;
                     progressText.text(`Found ${discoveredEntries.length} new entries`);
                 }
             }
+            
+            // Keep final summary visible for a moment
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             // Refresh the panel to show updated visibility
             await this._refreshData();
@@ -1118,14 +1053,25 @@ SPECIFIC INSTRUCTIONS HERE`;
             
             // Show completion message and hide progress area after delay
             if (progressArea && progressFill && progressText) {
-                // Show completion message
-                progressText.text('Scan complete!');
+                // Show prominent completion message
+                progressText.text('✓ SCAN COMPLETE! ✓');
                 progressFill.css('width', '100%');
                 
-                // Hide progress area after a delay
-                setTimeout(() => {
-                    progressArea.hide();
-                }, 3000);
+                // Add a visual completion indicator
+                if (progressArea) {
+                    progressArea.addClass('scan-complete');
+                }
+                
+                // Keep completion message visible for longer - increased to 5 seconds
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                // Remove completion styling
+                if (progressArea) {
+                    progressArea.removeClass('scan-complete');
+                }
+                
+                // Hide progress area after showing completion
+                progressArea.hide();
             }
         } catch (error) {
             getBlacksmith()?.utils.postConsoleAndNotification(
