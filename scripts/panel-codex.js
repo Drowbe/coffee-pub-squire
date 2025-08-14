@@ -1,4 +1,4 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './codex-parser.js';
 import { copyToClipboard } from './helpers.js';
 
@@ -849,12 +849,27 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Collect all inventory items from party members
             const inventoryItems = new Set();
             const characterNames = [];
+            const totalPlayers = tokens.length;
+            let processedPlayers = 0;
+            
+            // Update progress for character scanning phase
+            if (progressText) {
+                progressText.text('Scanning party inventories...');
+            }
+            if (progressFill) {
+                progressFill.css('width', '10%');
+            }
             
             for (const token of tokens) {
                 const actor = token.actor;
                 characterNames.push(actor.name);
+                processedPlayers++;
                 
-                // Update progress for this character
+                // Update progress for this character - REAL PROGRESS
+                const playerProgressPercent = (processedPlayers / totalPlayers) * 10; // 10-20% range for player scanning
+                if (progressFill) {
+                    progressFill.css('width', `${playerProgressPercent}%`);
+                }
                 if (progressText) {
                     progressText.text(`Scanning ${actor.name}...`);
                 }
@@ -880,12 +895,54 @@ SPECIFIC INSTRUCTIONS HERE`;
                     );
                     
                     for (const item of items) {
-                        inventoryItems.add(item.name.toLowerCase().trim());
+                        // Normalize spaces: collapse multiple spaces into single spaces, then lowercase and trim
+                        const itemNameLower = item.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                        inventoryItems.add(itemNameLower);
+                        
+                        // Debug: Log each item being added
+                        getBlacksmith()?.utils.postConsoleAndNotification(
+                            `Adding item to inventory set: "${item.name}"`,
+                            { 
+                                originalName: item.name,
+                                normalizedName: itemNameLower,
+                                originalLength: item.name.length,
+                                normalizedLength: itemNameLower.length,
+                                hasSpaces: item.name.includes(' '),
+                                hasLeadingSpaces: item.name.startsWith(' '),
+                                hasTrailingSpaces: item.name.endsWith(' '),
+                                hasMultipleSpaces: /\s{2,}/.test(item.name)
+                            },
+                            false,
+                            false,
+                            false,
+                            MODULE.TITLE
+                        );
                         
                         // If it's a backpack/container, check its contents
                         if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                             for (const containedItem of item.contents) {
-                                inventoryItems.add(containedItem.name.toLowerCase().trim());
+                                // Apply same space normalization to contained items
+                                const containedItemNameLower = containedItem.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                                inventoryItems.add(containedItemNameLower);
+                                
+                                // Debug: Log contained items too
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    `Adding contained item: "${containedItem.name}"`,
+                                    { 
+                                        originalName: containedItem.name,
+                                        normalizedName: containedItemNameLower,
+                                        originalLength: containedItem.name.length,
+                                        normalizedLength: containedItemNameLower.length,
+                                        hasSpaces: containedItem.name.includes(' '),
+                                        hasLeadingSpaces: containedItem.name.startsWith(' '),
+                                        hasTrailingSpaces: containedItem.name.endsWith(' '),
+                                        hasMultipleSpaces: /\s{2,}/.test(containedItem.name)
+                                    },
+                                    false,
+                                    false,
+                                    false,
+                                    MODULE.TITLE
+                                );
                             }
                         }
                     }
@@ -916,23 +973,64 @@ SPECIFIC INSTRUCTIONS HERE`;
             const totalEntries = Object.values(this.data).flat().length;
             let processedEntries = 0;
 
-            // Update progress for codex scanning
+            // Update progress for codex scanning phase
             if (progressText) {
-                progressText.text(`Scanning ${totalEntries} entries...`);
+                progressText.text(`Scanning ${totalEntries} codex entries...`);
             }
+            if (progressFill) {
+                progressFill.css('width', '20%');
+            }
+
+            // Debug: Log what's in the inventory set
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Inventory items for matching',
+                { 
+                    inventoryItems: Array.from(inventoryItems),
+                    totalInventoryItems: inventoryItems.size
+                },
+                false,
+                false,
+                false,
+                MODULE.TITLE
+            );
 
             for (const [category, entries] of Object.entries(this.data)) {
                 for (const entry of entries) {
                     processedEntries++;
                     
-                    // Update progress bar
+                    // Update progress bar with current entry info - REAL PROGRESS, no throttling
+                    const progressPercent = Math.min((processedEntries / totalEntries) * 80 + 20, 95); // 20-95% range for codex scanning
                     if (progressFill) {
-                        const progressPercent = (processedEntries / totalEntries) * 100;
                         progressFill.css('width', `${progressPercent}%`);
+                    }
+                    if (progressText) {
+                        progressText.text(`Scanning: ${entry.name}`);
+                    }
+                    
+                    // Small delay to make progress visible (every 10 entries to avoid being too slow)
+                    if (processedEntries % 10 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
                     }
                     
                     // Check if entry name matches any inventory item
                     const entryNameLower = entry.name.toLowerCase().trim();
+                    
+                    // Debug: Log the comparison for each entry
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        `Checking entry: "${entry.name}"`,
+                        { 
+                            entryName: entry.name,
+                            entryNameLower: entryNameLower,
+                            entryNameLength: entryNameLower.length,
+                            hasMatch: inventoryItems.has(entryNameLower),
+                            inventoryItems: Array.from(inventoryItems)
+                        },
+                        false,
+                        false,
+                        false,
+                        MODULE.TITLE
+                    );
+                    
                     if (inventoryItems.has(entryNameLower)) {
                         // Check if this entry is already visible
                         const page = await fromUuid(entry.uuid);
@@ -973,10 +1071,10 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 await this._addDiscoveredByInfo(page, discoverers);
                             }
                             
-                                        // Show discovery immediately
-            if (progressText) {
-                progressText.text(`✓ Found: ${entry.name}`);
-            }
+                            // Show discovery immediately with progress update
+                            if (progressText) {
+                                progressText.text(`✓ Found: ${entry.name}`);
+                            }
                             
                             // Small delay to make the discovery visible
                             await new Promise(resolve => setTimeout(resolve, 100));
