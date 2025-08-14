@@ -910,9 +910,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                 return;
             }
 
-            // Show scanning progress
-            ui.notifications.info(`Scanning ${characterNames.join(', ')} for ${inventoryItems.size} items...`);
-
             // Find matching codex entries
             const discoveredEntries = [];
             const updatedPages = [];
@@ -921,7 +918,7 @@ SPECIFIC INSTRUCTIONS HERE`;
 
             // Update progress for codex scanning
             if (progressText) {
-                progressText.text(`Scanning ${totalEntries} codex entries...`);
+                progressText.text(`Scanning ${totalEntries} entries...`);
             }
 
             for (const [category, entries] of Object.entries(this.data)) {
@@ -976,69 +973,62 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 await this._addDiscoveredByInfo(page, discoverers);
                             }
                             
-                            ui.notifications.info(`✓ Discovered: ${entry.name} (found by: ${discoverers.join(', ')})`);
+                                        // Show discovery immediately
+            if (progressText) {
+                progressText.text(`✓ Found: ${entry.name}`);
+            }
+                            
+                            // Small delay to make the discovery visible
+                            await new Promise(resolve => setTimeout(resolve, 100));
                         }
                     }
                 }
             }
 
+            // Show final summary regardless of results
             if (discoveredEntries.length === 0) {
-                ui.notifications.info(`No new codex entries discovered from party inventories. Scanned ${characterNames.join(', ')} for ${inventoryItems.size} items.`);
-                return;
-            }
-
-            // Show results with discoverer information
-            const discoverySummary = discoveredEntries.map(entry => {
-                // Find which character(s) discovered this entry
-                const entryNameLower = entry.toLowerCase().trim();
-                const discoverers = [];
-                for (const token of tokens) {
-                    const actor = token.actor;
-                    const items = actor.items.contents.filter(item => 
-                        ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
-                    );
-                    
-                    for (const item of items) {
-                        if (item.name.toLowerCase().trim() === entryNameLower) {
-                            discoverers.push(actor.name);
-                            break;
-                        }
-                        
-                        // Check backpack contents
-                        if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
-                            for (const containedItem of item.contents) {
-                                if (containedItem.name.toLowerCase().trim() === entryNameLower) {
-                                    discoverers.push(actor.name);
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                if (progressText) {
+                    progressText.text(`No new entries found`);
                 }
-                return `${entry} (by: ${discoverers.join(', ')})`;
-            });
-            
-            ui.notifications.info(`Auto-discovered ${discoveredEntries.length} codex entries: ${discoverySummary.join('; ')}`);
+            } else {
+                if (progressText) {
+                    progressText.text(`Found ${discoveredEntries.length} new entries`);
+                }
+            }
             
             // Refresh the panel to show updated visibility
             await this._refreshData();
             this.render(this.element);
             
             // Log detailed results with discoverer information
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                `Auto-discovered ${discoveredEntries.length} codex entries from party inventories`,
-                { 
-                    characters: characterNames,
-                    discoveredEntries,
-                    totalItemsScanned: inventoryItems.size,
-                    updatedPages: updatedPages.length,
-                    message: `Entries discovered by: ${characterNames.join(', ')}`
-                },
-                false,
-                false,
-                false,
-                MODULE.TITLE
-            );
+            if (discoveredEntries.length > 0) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    `Auto-discovered ${discoveredEntries.length} codex entries from party inventories`,
+                    { 
+                        characters: characterNames,
+                        discoveredEntries,
+                        totalItemsScanned: inventoryItems.size,
+                        updatedPages: updatedPages.length,
+                        message: `Entries discovered by: ${characterNames.join(', ')}`
+                    },
+                    false,
+                    false,
+                    false,
+                    MODULE.TITLE
+                );
+            }
+            
+            // Show completion message and hide progress area after delay
+            if (progressArea && progressFill && progressText) {
+                // Show completion message
+                progressText.text('Scan complete!');
+                progressFill.css('width', '100%');
+                
+                // Hide progress area after a delay
+                setTimeout(() => {
+                    progressArea.hide();
+                }, 3000);
+            }
         } catch (error) {
             getBlacksmith()?.utils.postConsoleAndNotification(
                 'Error during auto-discovery',
@@ -1049,22 +1039,22 @@ SPECIFIC INSTRUCTIONS HERE`;
                 MODULE.TITLE
             );
             ui.notifications.error(`Auto-discovery failed: ${error.message}`);
+            
+            // Show error in progress area
+            if (progressArea && progressFill && progressText) {
+                progressText.text(`Error: ${error.message}`);
+                progressFill.css('width', '100%');
+                
+                // Hide progress area after a delay
+                setTimeout(() => {
+                    progressArea.hide();
+                }, 3000);
+            }
         } finally {
             // Reset button state
             if (button) {
                 button.removeClass('working');
                 button.attr('title', 'Auto-Discover from Party Inventories');
-            }
-            
-            // Hide progress area and show completion
-            if (progressArea && progressFill && progressText) {
-                progressText.text('Scan complete!');
-                progressFill.css('width', '100%');
-                
-                // Hide progress area after a short delay
-                setTimeout(() => {
-                    progressArea.hide();
-                }, 2000);
             }
         }
     }
