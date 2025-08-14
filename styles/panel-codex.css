@@ -61,6 +61,14 @@
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
+
+
+
+
+
+
+
+
 /* Auto-discover button specific styling */
 .squire-tray[data-position="left"] .codex-toolbar .auto-discover-button {
     color: rgba(159, 146, 117, 0.9);
@@ -83,6 +91,12 @@
     100% { opacity: 1; }
 }
 
+
+
+
+
+
+
 /* Progress area for auto-discovery */
 .squire-tray[data-position="left"] .codex-progress-area {
     margin-top: 8px;
@@ -95,24 +109,25 @@
 
 .squire-tray[data-position="left"] .codex-progress-bar {
     width: 100%;
-    height: 8px;
+    height: auto;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     overflow: hidden;
-    margin-bottom: 6px;
+    text-align: center;
 }
 
 .squire-tray[data-position="left"] .codex-progress-fill {
     height: 100%;
-    background: var(--color-border-highlight, #ff6400);
+    background: rgba(54, 112, 56, 0.9);
     width: 0%;
     transition: width 0.3s ease;
     animation: progressPulse 2s ease-in-out infinite;
+    padding: 2px;
 }
 
 .squire-tray[data-position="left"] .codex-progress-text {
-    font-size: 0.85em;
-    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95em;
+    color: rgba(255, 255, 255, 0.9);
     text-align: center;
     font-weight: 500;
 }
@@ -127,6 +142,11 @@
     50% { opacity: 0.7; }
     100% { opacity: 1; }
 }
+
+
+
+
+
 
 /* Discovered By information styling */
 .squire-tray[data-position="left"] .discovered-by-info {
@@ -441,6 +461,7 @@
     border-color: rgba(100, 150, 200, 0.8);
 }
 
+.squire-tray[data-position="left"] .codex-entry-discoveredby,
 .squire-tray[data-position="left"] .codex-entry-link,
 .squire-tray[data-position="left"] .codex-entry-location,
 .squire-tray[data-position="left"] .codex-entry-plothook {

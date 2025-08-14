@@ -17,14 +17,16 @@
             {{/if}}
         </div>
         
-        <!-- Progress area for auto-discovery -->
-        <div class="codex-progress-area" style="display: none;">
-            <div class="codex-progress-bar">
-                <div class="codex-progress-fill"></div>
-            </div>
-            <div class="codex-progress-text">Ready to scan...</div>
+
+    </div>
+
+    <!-- Progress area for auto-discovery -->
+    <div class="codex-progress-area" style="display: none;">
+        <div class="codex-progress-bar">
+            <div class="codex-progress-fill"><span class="codex-progress-text">Ready to scan...</span></div>
         </div>
     </div>
+
 
     <div class="codex-filters">
         <div class="codex-search">
@@ -122,6 +124,13 @@
                                 {{else if entry.link}}
                                     <div class="codex-entry-link">
                                         <span class="codex-entry-label">Link:</span> <a href="#" class="codex-entry-link" data-uuid="{{entry.link.uuid}}">{{{entry.link.label}}}</a>
+                                    </div>
+                                {{/if}}
+
+                                <!-- DISCOVERED BY -->
+                                {{#if entry.DiscoveredBy}}
+                                    <div class="codex-entry-discoveredby">
+                                        <span class="codex-entry-label">Discovered By</span> {{{entry.DiscoveredBy}}}
                                     </div>
                                 {{/if}}
 

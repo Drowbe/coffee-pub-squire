@@ -242,6 +242,20 @@ export class CodexPanel {
                             let normCategory = entry.category.trim();
                             // Add ownership info for visibility icon
                             entry.ownership = page.ownership;
+                            
+                            // Extract "Discovered By" information from the enriched content
+                            const doc = new DOMParser().parseFromString(enriched, 'text/html');
+                            const discoveredByParagraph = doc.querySelector('p.discovered-by-info');
+                            if (discoveredByParagraph) {
+                                const strong = discoveredByParagraph.querySelector('strong');
+                                if (strong && strong.textContent.trim() === 'Discovered By:') {
+                                    const discovererText = discoveredByParagraph.textContent.replace('Discovered By:', '').trim();
+                                    if (discovererText) {
+                                        entry.DiscoveredBy = discovererText;
+                                    }
+                                }
+                            }
+                            
                             // Add to categories set
                             this.categories.add(normCategory);
                             // Initialize category array if needed
@@ -963,8 +977,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                             }
                             
                             ui.notifications.info(`✓ Discovered: ${entry.name} (found by: ${discoverers.join(', ')})`);
-                        } else {
-                            ui.notifications.info(`- Already visible: ${entry.name}`);
                         }
                     }
                 }
