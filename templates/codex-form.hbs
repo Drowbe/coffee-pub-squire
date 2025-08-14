@@ -38,26 +38,26 @@
 
         <div class="form-group">
             <label for="category">Category *</label>
-            <select id="category" name="category" required>
+            <select id="category" name="category" class="form-group-select" required>
                 <option value="">Select Category</option>
                 {{#each existingCategories}}
                 <option value="{{this}}" {{#if (eq this ../entry.category)}}selected{{/if}}>{{this}}</option>
                 {{/each}}
                 <option value="new">+ New Category</option>
             </select>
-            <input type="text" id="new-category" name="new-category" placeholder="Enter new category" style="display: none;">
+            <input type="text" id="new-category" name="new-category" placeholder="Enter new category" class="new-category">
         </div>
 
         <div class="form-group">
             <label for="location">Location</label>
-            <select id="location" name="location">
+            <select id="location" name="location"class="form-group-select" >
                 <option value="">Select Location</option>
                 {{#each existingLocations}}
                 <option value="{{this}}" {{#if (eq this ../entry.location)}}selected{{/if}}>{{this}}</option>
                 {{/each}}
                 <option value="new">+ New Location</option>
             </select>
-            <input type="text" id="new-location" name="new-location" placeholder="Enter new location" style="display: none;">
+            <input type="text" id="new-location" name="new-location" placeholder="Enter new location" class="new-category">
         </div>
     </div>
 
