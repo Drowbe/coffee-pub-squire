@@ -1290,7 +1290,16 @@ export class QuestPanel {
             new Dialog({
                 title: 'Import Quests and Scene Pins from JSON',
                 content: `
-                    <button type="button" class="copy-template-button" style="margin-bottom:8px;">Copy a Blank, Pasteable JSON template to the clipboard</button>
+                    <div style="margin-bottom: 16px;">
+                        <strong>Import Methods:</strong><br>
+                        <button type="button" class="browse-file-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-folder-open"></i> Browse & Upload File
+                        </button>
+                        <button type="button" class="copy-template-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-copy"></i> Copy Template to Clipboard
+                        </button>
+                    </div>
+                    
                     <div style="margin-bottom: 8px;">
                         <strong>Import Formats Supported:</strong><br>
                         • <strong>Legacy:</strong> Array of quest objects (quests only)<br>
@@ -1303,7 +1312,13 @@ export class QuestPanel {
                         • Scene pins are merged intelligently<br>
                         • Pin positions and quest associations maintained
                     </div>
-                    <textarea id="import-quests-json-input" style="width:100%;height:500px;resize:vertical;"></textarea>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <strong>Or paste JSON manually:</strong>
+                    </div>
+                    <textarea id="import-quests-json-input" style="width:100%;height:400px;resize:vertical;"></textarea>
+                    
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
                 `,
                 buttons: {
                     import: {
@@ -1435,6 +1450,7 @@ export class QuestPanel {
                 },
                 default: 'import',
                 render: (html) => {
+                    // Copy template button
                     html.find('.copy-template-button').click(() => {
                         let output = template;
                         const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
@@ -1442,6 +1458,68 @@ export class QuestPanel {
                             output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
                         }
                         copyToClipboard(output);
+                        ui.notifications.info('Template copied to clipboard!');
+                    });
+                    
+                    // Browse file button
+                    html.find('.browse-file-button').click(() => {
+                        const fileInput = html.find('#import-file-input');
+                        fileInput.click();
+                    });
+                    
+                    // File input change handler
+                    html.find('#import-file-input').change(async (event) => {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        
+                        try {
+                            // Check file type
+                            if (!file.name.toLowerCase().endsWith('.json')) {
+                                ui.notifications.error('Please select a JSON file.');
+                                return;
+                            }
+                            
+                            // Read file content
+                            const text = await file.text();
+                            let importData;
+                            
+                            try {
+                                importData = JSON.parse(text);
+                            } catch (e) {
+                                ui.notifications.error('Invalid JSON in file: ' + e.message);
+                                return;
+                            }
+                            
+                            // Validate format
+                            let quests, scenePins;
+                            if (Array.isArray(importData)) {
+                                quests = importData;
+                                scenePins = {};
+                            } else if (importData.quests && Array.isArray(importData.quests)) {
+                                quests = importData.quests;
+                                scenePins = importData.scenePins || {};
+                                
+                                if (importData.exportVersion) {
+                                    ui.notifications.info(`File contains enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
+                                }
+                            } else {
+                                ui.notifications.error('Invalid file format: Must be either an array of quests or an object with quests and scenePins properties.');
+                                return;
+                            }
+                            
+                            // Auto-populate the textarea with the file content
+                            html.find('#import-quests-json-input').val(text);
+                            
+                            // Show success message
+                            ui.notifications.info(`File "${file.name}" loaded successfully! Review the content below and click Import when ready.`);
+                            
+                            // Reset file input
+                            event.target.value = '';
+                            
+                        } catch (error) {
+                            getBlacksmith()?.utils.postConsoleAndNotification('Error reading file', { error, fileName: file.name }, false, true, true, MODULE.TITLE);
+                            ui.notifications.error(`Error reading file: ${error.message}`);
+                        }
                     });
                 }
             }).render(true);
