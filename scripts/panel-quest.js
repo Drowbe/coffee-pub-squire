@@ -1558,13 +1558,51 @@ export class QuestPanel {
                         icon: '<i class="fas fa-download"></i>',
                         label: 'Download JSON',
                         callback: () => {
-                            const blob = new Blob([exportData], { type: 'application/json' });
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob);
-                            a.download = `quests-export-${new Date().toISOString().split('T')[0]}.json`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
+                            try {
+                                // Windows-safe filename sanitization
+                                const sanitizeWindowsFilename = (name) => {
+                                    return name
+                                        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
+                                        .replace(/\s+$/g, "")
+                                        .replace(/\.+$/g, "")
+                                        .slice(0, 150); // keep it reasonable
+                                };
+                                
+                                // Build a Windows-safe filename (avoid colons from timestamps!)
+                                const stamp = new Date().toISOString().replace(/[:]/g, "-"); // 2025-08-15T23-10-05.123Z
+                                const filename = sanitizeWindowsFilename(`COFFEEPUB-SQUIRE-quests-export-${stamp}.json`);
+                                
+                                // Use Foundry's built-in helper (v10+) - this handles Blob creation + anchor download correctly
+                                if (typeof saveDataToFile === 'function') {
+                                    saveDataToFile(exportData, "application/json;charset=utf-8", filename);
+                                    ui.notifications.info(`Quest export saved as ${filename}`);
+                                } else {
+                                    // Fallback: use the classic anchor approach with sanitized filename
+                                    const blob = new Blob([exportData], { 
+                                        type: 'application/json;charset=utf-8' 
+                                    });
+                                    const url = URL.createObjectURL(blob);
+                                    
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = filename;
+                                    a.rel = "noopener"; // safety
+                                    a.style.display = 'none';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    a.remove();
+                                    
+                                    // Always revoke after a tick so the download starts
+                                    setTimeout(() => URL.revokeObjectURL(url), 0);
+                                    
+                                    ui.notifications.info(`Quest export downloaded as ${filename}`);
+                                }
+                            } catch (error) {
+                                // Last resort: copy to clipboard
+                                copyToClipboard(exportData);
+                                ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
+                                getBlacksmith()?.utils.postConsoleAndNotification('Export download failed', { error }, false, true, true, MODULE.TITLE);
+                            }
                         }
                     },
                     close: {
