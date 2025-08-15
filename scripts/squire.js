@@ -6,7 +6,7 @@ import { registerHelpers } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestForm } from './quest-form.js';
 import { QuestParser } from './quest-parser.js';
-import { QuestPin, loadPersistedPinsOnCanvasReady } from './quest-pin.js';
+import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

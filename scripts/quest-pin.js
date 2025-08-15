@@ -1650,7 +1650,7 @@ Hooks.on('updateScene', (scene, changes, options, userId) => {
 });
 
 // Function to load persisted pins for current scene
-function loadPersistedPins() {
+export function loadPersistedPins() {
     try {
         const scene = canvas.scene;
         if (!scene) {

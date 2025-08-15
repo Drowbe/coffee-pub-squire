@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './quest-parser.js';
-import { QuestPin } from './quest-pin.js';
+import { QuestPin, loadPersistedPins } from './quest-pin.js';
 import { copyToClipboard } from './helpers.js';
 
 // Helper function to get quest number from UUID
@@ -1288,10 +1288,21 @@ export class QuestPanel {
                 template = 'Failed to load prompt-quests.txt.';
             }
             new Dialog({
-                title: 'Import Quests from JSON',
+                title: 'Import Quests and Scene Pins from JSON',
                 content: `
                     <button type="button" class="copy-template-button" style="margin-bottom:8px;">Copy a Blank, Pasteable JSON template to the clipboard</button>
-                    <div style="margin-bottom: 8px;">Paste your quest JSON below. Each quest should be an object with at least a <code>name</code> field.</div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Import Formats Supported:</strong><br>
+                        • <strong>Legacy:</strong> Array of quest objects (quests only)<br>
+                        • <strong>Enhanced:</strong> Object with quests and scenePins (quests + pin placements)
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Smart Import Features:</strong><br>
+                        • Existing quests are updated, not duplicated<br>
+                        • Quest progress and states are preserved<br>
+                        • Scene pins are merged intelligently<br>
+                        • Pin positions and quest associations maintained
+                    </div>
                     <textarea id="import-quests-json-input" style="width:100%;height:500px;resize:vertical;"></textarea>
                 `,
                 buttons: {
@@ -1300,14 +1311,34 @@ export class QuestPanel {
                         label: 'Import',
                         callback: async (dlgHtml) => {
                             const input = dlgHtml.find('#import-quests-json-input').val();
-                            let quests;
+                            let importData;
                             try {
-                                quests = JSON.parse(input);
-                                if (!Array.isArray(quests)) throw new Error('JSON must be an array of quest objects.');
+                                importData = JSON.parse(input);
                             } catch (e) {
                                 ui.notifications.error('Invalid JSON: ' + e.message);
                                 return;
                             }
+                            
+                            // Handle both legacy and enhanced formats
+                            let quests, scenePins;
+                            if (Array.isArray(importData)) {
+                                // Legacy format: direct array of quests
+                                quests = importData;
+                                scenePins = {};
+                            } else if (importData.quests && Array.isArray(importData.quests)) {
+                                // Enhanced format: object with quests and scenePins
+                                quests = importData.quests;
+                                scenePins = importData.scenePins || {};
+                                
+                                // Show enhanced import info
+                                if (importData.exportVersion) {
+                                    ui.notifications.info(`Importing enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
+                                }
+                            } else {
+                                ui.notifications.error('Invalid format: JSON must be either an array of quests or an object with quests and scenePins properties.');
+                                return;
+                            }
+                            
                             // Ensure categories include all required categories
                             let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
                             let changed = false;
@@ -1382,6 +1413,17 @@ export class QuestPanel {
                                     }
                                 }
                             }
+                            
+                            // Import scene pins if available
+                            if (Object.keys(scenePins).length > 0) {
+                                try {
+                                    await this._importScenePins(scenePins);
+                                } catch (error) {
+                                    getBlacksmith()?.utils.postConsoleAndNotification('Error during scene pin import', { error }, false, true, true, MODULE.TITLE);
+                                    ui.notifications.warn('Scene pins import failed, but quests were imported successfully. Check console for details.');
+                                }
+                            }
+                            
                             ui.notifications.info(`Quest import complete: ${imported} added, ${updated} updated.`);
                             this._refreshData();
                             this.render(this.element);
@@ -1467,12 +1509,48 @@ export class QuestPanel {
                 return quest;
             });
             
-            // Create a download dialog with the JSON
-            const exportData = JSON.stringify(exportQuests, null, 2);
+            // Export scene pins data
+            const scenePins = await this._exportScenePins();
+            
+            // Create enhanced export data with both quests and scene pins
+            const enhancedExportData = {
+                quests: exportQuests,
+                scenePins: scenePins,
+                exportVersion: "1.1",
+                timestamp: new Date().toISOString(),
+                metadata: {
+                    totalQuests: exportQuests.length,
+                    totalScenesWithPins: Object.keys(scenePins).length,
+                    totalPins: Object.values(scenePins).reduce((sum, scene) => sum + (scene.questPins ? scene.questPins.length : 0), 0)
+                }
+            };
+            
+            // Create a download dialog with the enhanced JSON
+            const exportData = JSON.stringify(enhancedExportData, null, 2);
             new Dialog({
-                title: 'Export Quests to JSON',
+                title: 'Export Quests and Scene Pins to JSON',
                 content: `
-                    <div style="margin-bottom: 8px;">Here are your ${exportQuests.length} quests in JSON format. Copy this text to save it, or use the download button.</div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Export Summary:</strong><br>
+                        • ${exportQuests.length} quests<br>
+                        • ${Object.keys(scenePins).length} scenes with quest pins<br>
+                        • ${Object.values(scenePins).reduce((sum, scene) => sum + scene.questPins.length, 0)} total quest pins<br>
+                        • Export version: ${enhancedExportData.exportVersion}<br>
+                        • Timestamp: ${new Date(enhancedExportData.timestamp).toLocaleString()}
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Enhanced Export Format:</strong> This export includes both quest content and scene pin placements.<br>
+                        <strong>Compatibility:</strong> Can be imported into both legacy and enhanced systems.<br>
+                        <strong>Scene Pins:</strong> Pin positions, quest associations, and objective states are preserved.
+                    </div>
+                    ${Object.keys(scenePins).length > 0 ? 
+                        `<div style="margin-bottom: 8px; color: #4CAF50;">
+                            <strong>✓ Scene Pins Included:</strong> ${Object.keys(scenePins).map(id => scenePins[id].sceneName).join(', ')}
+                        </div>` : 
+                        `<div style="margin-bottom: 8px; color: #FF9800;">
+                            <strong>ℹ No Scene Pins:</strong> No scenes currently have quest pins placed.
+                        </div>`
+                    }
                     <textarea id="export-quests-json-output" style="width:100%;height:500px;resize:vertical;">${exportData}</textarea>
                 `,
                 buttons: {
@@ -2349,5 +2427,153 @@ export class QuestPanel {
             content += `<p><strong>Tags:</strong> ${quest.tags.join(', ')}</p>\n\n`;
         }
         return content;
+    }
+
+    /**
+     * Export scene pins data for all scenes that have quest pins
+     * @returns {Object} Object containing scene pin data
+     */
+    async _exportScenePins() {
+        try {
+            const allScenes = game.scenes.contents;
+            const scenePins = {};
+            let totalPins = 0;
+            
+            for (const scene of allScenes) {
+                const pins = scene.getFlag(MODULE.ID, 'questPins') || [];
+                if (pins.length > 0) {
+                    // Validate pin data before export
+                    const validPins = pins.filter(pin => {
+                        return pin && 
+                               pin.questUuid && 
+                               typeof pin.x === 'number' && 
+                               typeof pin.y === 'number';
+                    });
+                    
+                    if (validPins.length > 0) {
+                        scenePins[scene.id] = {
+                            sceneName: scene.name,
+                            sceneId: scene.id,
+                            questPins: validPins
+                        };
+                        totalPins += validPins.length;
+                    }
+                }
+            }
+            
+            getBlacksmith()?.utils.postConsoleAndNotification('Scene pins export completed', { 
+                scenesWithPins: Object.keys(scenePins).length, 
+                totalPins: totalPins 
+            }, false, true, false, MODULE.TITLE);
+            
+            return scenePins;
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification('Error exporting scene pins', { error }, false, true, false, MODULE.TITLE);
+            return {};
+        }
+    }
+
+    /**
+     * Import scene pins data to scenes
+     * @param {Object} scenePins - Scene pin data from export
+     */
+    async _importScenePins(scenePins) {
+        try {
+            let importedScenes = 0;
+            let updatedPins = 0;
+            let skippedScenes = 0;
+            
+            for (const [sceneId, sceneData] of Object.entries(scenePins)) {
+                // Find scene by name (since ID might be different in target world)
+                const scene = game.scenes.find(s => s.name === sceneData.sceneName);
+                if (scene) {
+                    // Get existing pins for this scene
+                    const existingPins = scene.getFlag(MODULE.ID, 'questPins') || [];
+                    const importedPins = sceneData.questPins;
+                    
+                    // Smart merge: avoid duplicates, preserve existing progress
+                    const mergedPins = this._mergePinData(existingPins, importedPins);
+                    
+                    // Only update if there are changes
+                    if (JSON.stringify(existingPins) !== JSON.stringify(mergedPins)) {
+                        await scene.setFlag(MODULE.ID, 'questPins', mergedPins);
+                        updatedPins += mergedPins.length;
+                        importedScenes++;
+                    }
+                } else {
+                    skippedScenes++;
+                }
+            }
+            
+            if (importedScenes > 0) {
+                ui.notifications.info(`Scene pins imported: ${importedScenes} scenes updated with ${updatedPins} total pins.`);
+                
+                // Reload pins on canvas if available
+                if (canvas.squirePins && typeof loadPersistedPins === 'function') {
+                    setTimeout(() => {
+                        loadPersistedPins();
+                    }, 1000);
+                }
+            }
+            
+            if (skippedScenes > 0) {
+                ui.notifications.warn(`${skippedScenes} scenes from import were not found in this world and were skipped.`);
+            }
+            
+            if (importedScenes === 0 && skippedScenes === 0) {
+                ui.notifications.info('No scene pins to import.');
+            }
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification('Error importing scene pins', { error }, false, true, true, MODULE.TITLE);
+            ui.notifications.error('Error importing scene pins. Check console for details.');
+        }
+    }
+
+    /**
+     * Smart merge of existing and imported pin data
+     * @param {Array} existingPins - Current pins on the scene
+     * @param {Array} importedPins - Pins from import data
+     * @returns {Array} Merged pin data
+     */
+    _mergePinData(existingPins, importedPins) {
+        const merged = [...existingPins];
+        
+        for (const importedPin of importedPins) {
+            // Validate imported pin data
+            if (!importedPin || !importedPin.questUuid || 
+                typeof importedPin.x !== 'number' || typeof importedPin.y !== 'number') {
+                getBlacksmith()?.utils.postConsoleAndNotification('Skipping invalid pin data during merge', { 
+                    pin: importedPin 
+                }, false, true, false, MODULE.TITLE);
+                continue;
+            }
+            
+            // Check if pin already exists (by questUuid + objectiveIndex combination)
+            const existingIndex = merged.findIndex(p => 
+                p.questUuid === importedPin.questUuid && 
+                p.objectiveIndex === importedPin.objectiveIndex
+            );
+            
+            if (existingIndex >= 0) {
+                // Update existing pin with new position but preserve state and progress
+                merged[existingIndex] = {
+                    ...importedPin,
+                    // Preserve existing progress and state
+                    objectiveState: merged[existingIndex].objectiveState || importedPin.objectiveState,
+                    questStatus: merged[existingIndex].questStatus || importedPin.questStatus,
+                    questState: merged[existingIndex].questState || importedPin.questState,
+                    // Preserve existing pinId for continuity
+                    pinId: merged[existingIndex].pinId
+                };
+            } else {
+                // Add new pin with generated pinId
+                merged.push({
+                    ...importedPin,
+                    pinId: `${importedPin.questUuid}-${importedPin.objectiveIndex || 'quest'}-${Date.now()}`
+                });
+            }
+        }
+        
+        return merged;
     }
 } 
