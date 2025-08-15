@@ -1378,10 +1378,13 @@ export class QuestPanel {
                                 // Check if a quest with this name already exists
                                 const existingPage = journal.pages.find(p => p.name === quest.name);
                                 if (existingPage) {
-                                    // Update existing quest
+                                    // Update existing quest - PRESERVE EXISTING STATE
+                                    const existingContent = existingPage.text.content;
+                                    const updatedContent = this._mergeJournalContent(existingContent, quest);
+                                    
                                     await existingPage.update({
                                         text: {
-                                            content: this._generateJournalContentFromImport(quest)
+                                            content: updatedContent
                                         }
                                     });
                                     // Update flags if necessary
@@ -2441,7 +2444,227 @@ export class QuestPanel {
     }
 
     /**
-     * Generate journal content from imported quest object
+     * Merge imported quest data with existing journal content, preserving state
+     * @param {string} existingContent - Current journal content
+     * @param {Object} importedQuest - Quest data from import
+     * @returns {string} Merged content with state preserved
+     */
+    _mergeJournalContent(existingContent, importedQuest) {
+        // Parse existing content to extract current state
+        const existingState = this._extractExistingState(existingContent);
+        
+        // Generate new content with preserved state
+        let content = "";
+        
+        // Basic quest info (always update these)
+        if (importedQuest.img) {
+            content += `<img src="${importedQuest.img}" alt="${importedQuest.name}">\n\n`;
+        }
+        if (importedQuest.category) {
+            content += `<p><strong>Category:</strong> ${importedQuest.category}</p>\n\n`;
+        }
+        if (importedQuest.description) {
+            content += `<p><strong>Description:</strong> ${importedQuest.description}</p>\n\n`;
+        }
+        if (importedQuest.location) {
+            content += `<p><strong>Location:</strong> ${importedQuest.location}</p>\n\n`;
+        }
+        if (importedQuest.plotHook) {
+            content += `<p><strong>Plot Hook:</strong> ${importedQuest.plotHook}</p>\n\n`;
+        }
+        
+        // Tasks - PRESERVE EXISTING STATE
+        if (importedQuest.tasks && importedQuest.tasks.length) {
+            content += `<p><strong>Tasks:</strong></p>\n<ul>\n`;
+            importedQuest.tasks.forEach((t, index) => {
+                let taskText = typeof t === 'string' ? t : t.text;
+                
+                // Add GM hint if present
+                if (t.gmHint) {
+                    taskText += ` ||${t.gmHint}||`;
+                }
+                
+                // Add treasure unlocks if present
+                if (t.treasureUnlocks && t.treasureUnlocks.length > 0) {
+                    t.treasureUnlocks.forEach(treasure => {
+                        taskText += ` [[${treasure}]]`;
+                    });
+                }
+                
+                // PRESERVE EXISTING TASK STATE
+                const existingTaskState = existingState.tasks[index];
+                if (existingTaskState) {
+                    // Wrap in appropriate state tags based on existing state
+                    if (existingTaskState.state === 'completed') {
+                        taskText = `<s>${taskText}</s>`;
+                    } else if (existingTaskState.state === 'failed') {
+                        taskText = `<code>${taskText}</code>`;
+                    } else if (existingTaskState.state === 'hidden') {
+                        taskText = `<em>${taskText}</em>`;
+                    }
+                    // If state is 'active', no wrapping needed
+                }
+                
+                content += `<li>${taskText}</li>\n`;
+            });
+            content += `</ul>\n\n`;
+        }
+        
+        // Rewards
+        if (importedQuest.reward) {
+            if (importedQuest.reward.xp) content += `<p><strong>XP:</strong> ${importedQuest.reward.xp}</p>\n\n`;
+            if (Array.isArray(importedQuest.reward.treasure) && importedQuest.reward.treasure.length > 0) {
+                content += `<p><strong>Treasure:</strong></p>\n<ul>\n`;
+                importedQuest.reward.treasure.forEach(t => {
+                    if (t.uuid) {
+                        content += `<li>@UUID[${t.uuid}]{${t.name || 'Item'}}</li>\n`;
+                    } else if (t.name) {
+                        content += `<li>${t.name}</li>\n`;
+                    } else if (t.text) {
+                        content += `<li>${t.text}</li>\n`;
+                    }
+                });
+                content += `</ul>\n\n`;
+            } else if (importedQuest.reward.treasure) {
+                content += `<p><strong>Treasure:</strong> ${importedQuest.reward.treasure}</p>\n\n`;
+            }
+        }
+        
+        // Timeframe
+        if (importedQuest.timeframe && importedQuest.timeframe.duration) {
+            content += `<p><strong>Duration:</strong> ${importedQuest.timeframe.duration}</p>\n\n`;
+        }
+        
+        // Status - PRESERVE EXISTING STATUS
+        const statusToUse = existingState.status || importedQuest.status || 'Not Started';
+        content += `<p><strong>Status:</strong> ${statusToUse}</p>\n\n`;
+        
+        // Participants - PRESERVE EXISTING PARTICIPANTS
+        const participantsToUse = existingState.participants.length > 0 ? existingState.participants : importedQuest.participants;
+        
+        // Auto-add party members if setting is enabled
+        if (game.settings.get(MODULE.ID, 'autoAddPartyMembers')) {
+            const partyActors = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
+            for (const actor of partyActors) {
+                const alreadyPresent = participantsToUse.some(p => {
+                    if (typeof p === 'string') return p === actor.name;
+                    return (p.uuid && p.uuid === actor.uuid) || (p.name && p.name === actor.name);
+                });
+                if (!alreadyPresent) {
+                    participantsToUse.push({
+                        uuid: actor.uuid,
+                        name: actor.name,
+                        img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
+                    });
+                }
+            }
+        }
+        
+        if (participantsToUse && participantsToUse.length) {
+            const participantList = participantsToUse.map(p => {
+                if (typeof p === 'string') return p;
+                if (p.uuid) return `@UUID[${p.uuid}]{${p.name || 'Actor'}}`;
+                return p.name || '';
+            }).filter(p => p).join(', ');
+            content += `<p><strong>Participants:</strong> ${participantList}</p>\n\n`;
+        }
+        
+        // Tags
+        if (importedQuest.tags && importedQuest.tags.length) {
+            content += `<p><strong>Tags:</strong> ${importedQuest.tags.join(', ')}</p>\n\n`;
+        }
+        
+        return content;
+    }
+
+    /**
+     * Extract existing state from journal content
+     * @param {string} content - Journal content
+     * @returns {Object} Extracted state information
+     */
+    _extractExistingState(content) {
+        const state = {
+            tasks: [],
+            status: 'Not Started',
+            participants: []
+        };
+        
+        try {
+            // Extract task states
+            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+            if (tasksMatch) {
+                const tasksHtml = tasksMatch[1];
+                const parser = new DOMParser();
+                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                const ul = ulDoc.querySelector('ul');
+                if (ul) {
+                    const liList = Array.from(ul.children);
+                    liList.forEach(li => {
+                        let taskState = 'active';
+                        if (li.querySelector('s')) {
+                            taskState = 'completed';
+                        } else if (li.querySelector('code')) {
+                            taskState = 'failed';
+                        } else if (li.querySelector('em')) {
+                            taskState = 'hidden';
+                        }
+                        
+                        // Extract task text (remove state tags)
+                        let taskText = li.innerHTML;
+                        taskText = taskText.replace(/<\/?[sema]>/g, ''); // Remove state tags
+                        taskText = taskText.replace(/\|\|[^|]*\|\|/g, ''); // Remove GM hints
+                        taskText = taskText.replace(/\[\[[^\]]*\]\]/g, ''); // Remove treasure unlocks
+                        taskText = taskText.trim();
+                        
+                        state.tasks.push({
+                            text: taskText,
+                            state: taskState
+                        });
+                    });
+                }
+            }
+            
+            // Extract status
+            const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+            if (statusMatch) {
+                state.status = statusMatch[1].trim();
+            }
+            
+            // Extract participants
+            const participantsMatch = content.match(/<strong>Participants:<\/strong>\s*([^<]*)/);
+            if (participantsMatch) {
+                const participantsText = participantsMatch[1].trim();
+                if (participantsText) {
+                    // Parse participant references
+                    const participantRefs = participantsText.match(/@UUID\[([^\]]+)\]\{([^}]+)\}/g);
+                    if (participantRefs) {
+                        participantRefs.forEach(ref => {
+                            const uuidMatch = ref.match(/@UUID\[([^\]]+)\]\{([^}]+)\}/);
+                            if (uuidMatch) {
+                                state.participants.push({
+                                    uuid: uuidMatch[1],
+                                    name: uuidMatch[2]
+                                });
+                            }
+                        });
+                    } else {
+                        // Simple comma-separated names
+                        const names = participantsText.split(',').map(n => n.trim()).filter(n => n);
+                        names.forEach(name => {
+                            state.participants.push({ name });
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification('Error extracting existing state', { error }, false, true, false, MODULE.TITLE);
+        }
+        
+        return state;
+    }
+
+    /**
+     * Generate journal content from imported quest object (for new quests only)
      */
     _generateJournalContentFromImport(quest) {
         let content = "";
