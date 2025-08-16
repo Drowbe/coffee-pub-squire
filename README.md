@@ -22,29 +22,29 @@ A comprehensive FoundryVTT module that provides an extensive suite of character 
 ![Squire Tray Interface](product/squire-tray-collapsed.webp)
 *The sliding tray interface provides quick access to all character tools*
 
-### **Quest Management**
-![Quest System](product/squire-quests.webp)
-*Comprehensive quest creation, editing, and organization with task tracking*
-
-### **Codex & World Building**
-![Codex System](product/squire-codex.webp)
-*Enhanced codex creation with drag & drop functionality and smart form auto-population*
+### **Player Tools**
+![Player Interface](product/squire-player.webp)
+*Character management, health tracking, and combat tools*
 
 ### **Party Management**
 ![Party Features](product/squire-party.webp)
 *Party coordination, participant management, and group statistics*
 
-### **Player Tools**
-![Player Interface](product/squire-player.webp)
-*Character management, health tracking, and combat tools*
+### **Notes & Journal**
+![Notes Panel](product/squire-notes.webp)
+*Quick access to journal entries and notes with live content updates*
+
+### **Codex & World Building**
+![Codex System](product/squire-codex.webp)
+*Enhanced codex creation with drag & drop functionality and smart form auto-population*
+
+### **Quest Management**
+![Quest System](product/squire-quests.webp)
+*Comprehensive quest creation, editing, and organization with task tracking*
 
 ### **Item Transfers**
 ![Transfer System](product/squire-transfers.webp)
 *GM-mediated item transfers with request/accept/reject workflow*
-
-### **Notes & Journal**
-![Notes Panel](product/squire-notes.webp)
-*Quick access to journal entries and notes with live content updates*
 
 ## Features
 
