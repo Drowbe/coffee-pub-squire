@@ -72,6 +72,9 @@ export class PanelManager {
         this.questPanel = new QuestPanel();
         this.hiddenCategories = new Set();
         this.macrosPanel = new MacrosPanel({ actor });
+        
+        // Register panels with the centralized HookManager
+        this._registerPanelsWithHookManager();
     }
 
     static async initialize(actor = null) {
@@ -2857,6 +2860,53 @@ export class PanelManager {
         if (panel && panel.element) {
             const dom = $(panel.element).find(`#${panel.constructor.name.toLowerCase()}-panel, .${panel.constructor.name.toLowerCase()}-panel`);
             if (dom.length) dom.remove();
+        }
+    }
+    
+    /**
+     * Register panels with the centralized HookManager
+     * @private
+     */
+    _registerPanelsWithHookManager() {
+        try {
+            // Import HookManager dynamically to avoid circular dependencies
+            const HookManager = game.modules.get('coffee-pub-squire')?.api?.HookManager;
+            if (HookManager) {
+                HookManager.registerPanel('codex', this.codexPanel);
+                HookManager.registerPanel('quest', this.questPanel);
+                HookManager.registerPanel('notes', this.notesPanel);
+                
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Panels registered with HookManager',
+                    { 
+                        hasCodex: !!this.codexPanel,
+                        hasQuest: !!this.questPanel,
+                        hasNotes: !!this.notesPanel
+                    },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+            } else {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'HookManager not available for panel registration',
+                    {},
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+            }
+        } catch (error) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Error registering panels with HookManager',
+                { error },
+                false,
+                false,
+                true,
+                MODULE.TITLE
+            );
         }
     }
 }

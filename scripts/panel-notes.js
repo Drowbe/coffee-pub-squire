@@ -17,17 +17,16 @@ export class NotesPanel {
      * @private
      */
     _setupGlobalHooks() {
-        // Register for journal page updates to refresh content
-        Hooks.on("updateJournalEntryPage", (page, changes, options, userId) => {
-            // When any journal page is updated, check if we need to refresh
-            if (this.element) {
-                const currentPageId = this.element.find('.journal-content').data('page-id');
-                if (currentPageId === page.id) {
-                    
-                    this.render(this.element);
-                }
-            }
-        });
+        // Journal hooks are now handled by the centralized HookManager
+        // This method is kept for compatibility but no longer registers hooks
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Notes Panel: Hooks now managed by centralized HookManager',
+            {},
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
     }
 
     async render(element) {

@@ -1623,6 +1623,8 @@ const questPinTimeouts = new Set();
 // Load persisted pins when canvas is ready (now called from ready hook)
 export function loadPersistedPinsOnCanvasReady() {
     const timeoutId = setTimeout(() => {
+        // Register with HookManager first
+        registerQuestPinsWithHookManager();
         loadPersistedPins();
         questPinTimeouts.delete(timeoutId);
     }, 1500);
@@ -1649,9 +1651,44 @@ Hooks.on('updateScene', (scene, changes, options, userId) => {
     }
 });
 
+// Function to register quest pins with the HookManager
+function registerQuestPinsWithHookManager() {
+    try {
+        const HookManager = game.modules.get('coffee-pub-squire')?.api?.HookManager;
+        if (HookManager) {
+            // Create a proxy object that provides the updateAllPinVisibility function
+            const questPinsProxy = {
+                updateAllPinVisibility: debouncedUpdateAllPinVisibility
+            };
+            HookManager.registerPanel('questPins', questPinsProxy);
+            
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Quest Pins registered with HookManager',
+                {},
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+        }
+    } catch (error) {
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Error registering quest pins with HookManager',
+            { error },
+            false,
+            false,
+            true,
+            MODULE.TITLE
+        );
+    }
+}
+
 // Function to load persisted pins for current scene
 export function loadPersistedPins() {
     try {
+        // Register with HookManager if not already done
+        registerQuestPinsWithHookManager();
+        
         const scene = canvas.scene;
         if (!scene) {
             return;
@@ -1868,11 +1905,12 @@ Hooks.on('deleteToken', (token) => {
 });
 
 // Update pin visibility when quest state changes
-Hooks.on('updateJournalEntryPage', (page, changes) => {
-    if (changes.flags && changes.flags[MODULE.ID]) {
-        debouncedUpdateAllPinVisibility();
-    }
-});
+// This hook is now handled by the centralized HookManager
+// Hooks.on('updateJournalEntryPage', (page, changes) => {
+//     if (changes.flags && changes.flags[MODULE.ID]) {
+//         debouncedUpdateAllPinVisibility();
+//     }
+// });
 
 // Update pin visibility when quest panel is refreshed
 Hooks.on('renderQuestPanel', () => {

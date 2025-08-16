@@ -75,139 +75,16 @@ export class QuestPanel {
      * @private
      */
     _setupHooks() {
-        Hooks.on("updateJournalEntryPage", async (page, changes, options, userId) => {
-            if (this.element && this._isPageInSelectedJournal(page)) {
-                await this._refreshData();
-                this.render(this.element);
-                
-                // Handle quest visibility changes
-                if (changes.flags && changes.flags[MODULE.ID] && changes.flags[MODULE.ID].visible !== undefined) {
-                    const isVisible = changes.flags[MODULE.ID].visible;
-                    
-                    // If quest is being hidden from players, unpin it from all players
-                    if (isVisible === false) {
-                        await this._unpinHiddenQuestFromPlayers(page.uuid);
-                    }
-                    
-                    // Update quest pins if they exist for this quest (all users)
-                    if (canvas.squirePins) {
-                        const questPins = canvas.squirePins.children.filter(child => 
-                            child instanceof QuestPin && child.questUuid === page.uuid
-                        );
-                        
-                        questPins.forEach(pin => {
-                            try {
-                                // Update quest state
-                                pin.questState = isVisible ? 'visible' : 'hidden';
-                                
-                                // Update pin appearance to show/hide second ring for GMs
-                                pin._updatePinAppearance();
-                                
-                                // Update visibility for players
-                                pin.updateVisibility();
-                                
-                                // Get the current task state from the updated page
-                                let content = page.text.content;
-                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                                if (tasksMatch) {
-                                    const tasksHtml = tasksMatch[1];
-                                    const parser = new DOMParser();
-                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                    const ul = ulDoc.querySelector('ul');
-                                    if (ul) {
-                                        const liList = Array.from(ul.children);
-                                        const li = liList[pin.objectiveIndex];
-                                        if (li) {
-                                            let newState = 'active';
-                                            if (li.querySelector('s')) {
-                                                newState = 'completed';
-                                            } else if (li.querySelector('code')) {
-                                                newState = 'failed';
-                                            } else if (li.querySelector('em')) {
-                                                newState = 'hidden';
-                                            }
-                                            pin.updateObjectiveState(newState);
-                                        }
-                                    }
-                                }
-                            } catch (error) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'Error updating quest pin state',
-                                    { error, pin, page },
-                                    false,
-                                    true,
-                                    true,
-                                    MODULE.TITLE
-                                );
-                            }
-                        });
-                    }
-                } else {
-                    // Regular quest content update (not visibility change)
-                    // Check for quest status changes
-                    let content = page.text.content;
-                    const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
-                    const newStatus = statusMatch ? statusMatch[1].trim() : '';
-                    
-                    // Update quest pins if they exist for this quest (all users)
-                    if (canvas.squirePins) {
-                        const questPins = canvas.squirePins.children.filter(child => 
-                            child instanceof QuestPin && child.questUuid === page.uuid
-                        );
-                        
-                        questPins.forEach(pin => {
-                            try {
-                                // Update quest status for quest-level pins
-                                if (pin.pinType === 'quest' && newStatus) {
-                                    pin.updateQuestStatus(newStatus);
-                                }
-                                
-                                // Get the current task state from the updated page for objective pins
-                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                                if (tasksMatch && pin.pinType === 'objective') {
-                                    const tasksHtml = tasksMatch[1];
-                                    const parser = new DOMParser();
-                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                    const ul = ulDoc.querySelector('ul');
-                                    if (ul) {
-                                        const liList = Array.from(ul.children);
-                                        const li = liList[pin.objectiveIndex];
-                                        if (li) {
-                                            let newState = 'active';
-                                            if (li.querySelector('s')) {
-                                                newState = 'completed';
-                                            } else if (li.querySelector('code')) {
-                                                newState = 'failed';
-                                            } else if (li.querySelector('em')) {
-                                                newState = 'hidden';
-                                            }
-                                            pin.updateObjectiveState(newState);
-                                        }
-                                    }
-                                }
-                            } catch (error) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'Error updating quest pin state',
-                                    { error, pin, page },
-                                    false,
-                                    true,
-                                    true,
-                                    MODULE.TITLE
-                                );
-                            }
-                        });
-                    }
-                }
-                
-                // Update the handle if we're in quest view mode
-                if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
-                    const panelManager = game.modules.get('coffee-pub-squire').api.PanelManager.instance;
-                    if (game.modules.get('coffee-pub-squire').api.PanelManager.viewMode === 'quest') {
-                        await panelManager.updateHandle();
-                    }
-                }
-            }
-        });
+        // Journal hooks are now handled by the centralized HookManager
+        // This method is kept for compatibility but no longer registers hooks
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Quest Panel: Hooks now managed by centralized HookManager',
+            {},
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
     }
 
     /**
@@ -836,7 +713,7 @@ export class QuestPanel {
         }
         
         // Use mousedown to detect different click types
-        taskCheckboxes.on('mousedown', async (event) => {
+        taskCheckboxes.on('mousedown', async function(event) {
             // Check for shift-left-click (same as middle-click for hidden toggle)
             const isShiftLeftClick = event.button === 0 && event.shiftKey;
             const isMiddleClick = event.button === 1;
@@ -897,16 +774,22 @@ export class QuestPanel {
                 const newContent = content.replace(tasksMatch[1], newTasksHtml);
                 try {
                     await page.update({ text: { content: newContent } });
-                            } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error updating journal page (hidden toggle)',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.TITLE
-                );
-            }
+                    
+                    // Refresh the panel display to show the updated checkbox state
+                    if (this.element) {
+                        await this._refreshData();
+                        this.render(this.element);
+                    }
+                } catch (error) {
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error updating journal page (hidden toggle)',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
+                }
                 return;
             }
             
@@ -940,16 +823,22 @@ export class QuestPanel {
                 
                 try {
                     await page.update({ text: { content: newContent } });
-                            } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error updating journal page (failed task toggle)',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.TITLE
-                );
-            }
+                    
+                    // Refresh the panel display to show the updated checkbox state
+                    if (this.element) {
+                        await this._refreshData();
+                        this.render(this.element);
+                    }
+                } catch (error) {
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error updating journal page (failed task toggle)',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
+                }
                 return;
             }
             
@@ -1020,18 +909,24 @@ export class QuestPanel {
                 }
                 try {
                     await page.update({ text: { content: newContent } });
-                            } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error updating journal page (completion toggle)',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.TITLE
-                );
+                    
+                    // Refresh the panel display to show the updated checkbox state
+                    if (this.element) {
+                        await this._refreshData();
+                        this.render(this.element);
+                    }
+                } catch (error) {
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'Error updating journal page (completion toggle)',
+                        { error },
+                        false,
+                        false,
+                        true,
+                        MODULE.TITLE
+                    );
+                }
             }
-            }
-        });
+        }.bind(this));
         
         // Remove double-click handler since we've moved it to right-click
         taskCheckboxes.off('dblclick');
@@ -1096,9 +991,15 @@ export class QuestPanel {
             if (typeof visible === 'undefined') visible = true;
             visible = !visible;
             await page.setFlag(MODULE.ID, 'visible', visible);
-                    // Note: No longer automatically changing quest status when making visible
-        // This allows GMs to show quests to players without forcing them into "In Progress" status
-            // No manual refresh; let the updateJournalEntryPage hook handle it
+            
+            // Refresh the panel display to show the updated visibility state
+            if (this.element) {
+                await this._refreshData();
+                this.render(this.element);
+            }
+            
+            // Note: No longer automatically changing quest status when making visible
+            // This allows GMs to show quests to players without forcing them into "In Progress" status
         });
 
         // Pin quest handler

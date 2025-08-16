@@ -563,63 +563,16 @@ export class CodexPanel {
      * @private
      */
     _setupHooks() {
-        Hooks.on("updateJournalEntryPage", async (page, changes, options, userId) => {
-            // Debug logging for hook execution
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                'CODEX Hook triggered',
-                { 
-                    pageName: page.name, 
-                    journalName: page.parent?.name || 'Unknown',
-                    hasElement: !!this.element,
-                    inSelectedJournal: this._isPageInSelectedJournal(page),
-                    isCodexEntry: this._isCodexEntry(page)
-                },
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
-            
-            // Only process if CODEX panel is active and page belongs to selected journal
-            if (!this.element || !this._isPageInSelectedJournal(page)) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    'CODEX Hook filtered out - panel inactive or wrong journal',
-                    { pageName: page.name },
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
-                return;
-            }
-            
-            // Check if this is actually a CODEX entry by looking for CODEX-specific content
-            // Skip processing if this doesn't appear to be a CODEX entry
-            if (!this._isCodexEntry(page)) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    'CODEX Hook filtered out - not a CODEX entry',
-                    { pageName: page.name },
-                    false,
-                    true,
-                    false,
-                    MODULE.TITLE
-                );
-                return;
-            }
-            
-            blacksmith?.utils.postConsoleAndNotification(
-                'CODEX Hook processing entry',
-                { pageName: page.name },
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
-            
-            await this._refreshData();
-            this.render(this.element);
-        });
+        // Journal hooks are now handled by the centralized HookManager
+        // This method is kept for compatibility but no longer registers hooks
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'CODEX Panel: Hooks now managed by centralized HookManager',
+            {},
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
     }
 
     /**

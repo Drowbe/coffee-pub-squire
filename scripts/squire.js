@@ -7,6 +7,7 @@ import { QuestPanel } from './panel-quest.js';
 import { QuestForm } from './quest-form.js';
 import { QuestParser } from './quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
+import { HookManager } from './hooks.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -30,6 +31,8 @@ Hooks.once('socketlib.ready', () => {
         
         // Store socket in module API for access from other files
         game.modules.get(MODULE.ID).socket = socket;
+        
+        // HookManager is now exposed in the ready hook to ensure proper initialization order
         
         // Register socket functions with socket handlers
         socket.register("executeItemTransfer", async (data) => {
@@ -494,6 +497,15 @@ Hooks.once('ready', async function() {
 
     // Initialize Squire after settings are registered (with delay to ensure everything is ready)
     setTimeout(async () => {
+        // Initialize the centralized hook manager first
+        HookManager.initialize();
+        
+        // Expose HookManager in module API for panel registration
+        game.modules.get(MODULE.ID).api = {
+            ...game.modules.get(MODULE.ID).api,
+            HookManager: HookManager
+        };
+        
         // Load quest pins first
         loadPersistedPinsOnCanvasReady();
         
@@ -910,6 +922,11 @@ function getQuestNumber(questUuid) {
  */
 function cleanupModule() {
     try {
+        // Clean up HookManager
+        if (HookManager.cleanup) {
+            HookManager.cleanup();
+        }
+
         // Clean up PanelManager
         if (PanelManager.cleanup) {
             PanelManager.cleanup();
