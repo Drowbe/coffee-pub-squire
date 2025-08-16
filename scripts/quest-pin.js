@@ -246,7 +246,6 @@ export class QuestPin extends PIXI.Container {
     const pinInnerTransparency = 0.4;
     const pinDropShadowColor = { color: 0x000000, alpha: 0.3 };
     const pinDropShadowOffset = 0;
-    const pinMouseoverRingColor = 0xFF5500;
 
     // Pin Ring
     const pinRingInnerThickness = 2;
@@ -343,9 +342,10 @@ export class QuestPin extends PIXI.Container {
         alpha: pinRingInnerTransparency,
         alignment: 0.5,
         native: false
-      });
-      outer.drawCircle(0, 0, outerRadius);
-      this.addChild(outer);
+             });
+       outer.drawCircle(0, 0, outerRadius);
+       outer._originalColor = pinRingColor; // Store original color for mouseover
+       this.addChild(outer);
       
              // Add second ring for hidden quests (GM only)
        if (this.questState === 'hidden' && game.user.isGM) {
@@ -375,9 +375,10 @@ export class QuestPin extends PIXI.Container {
         alpha: pinRingInnerTransparency,
         alignment: 0.5,
         native: false
-      });
-      outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingInnerThickness + pinRingGap);
-      this.addChild(outer);
+             });
+       outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingInnerThickness + pinRingGap);
+       outer._originalColor = pinRingColor; // Store original color for mouseover
+       this.addChild(outer);
       
              // Add second ring for hidden quests (GM only) - same logic as quest pins
        if (this.questState === 'hidden' && game.user.isGM) {
@@ -1376,11 +1377,18 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  async _onPointerOver(event) {
-    // Check if the mouse is over any open window before showing tooltip
-    if (this._isMouseOverWindow(event)) {
-      return; // Don't show tooltip if mouse is over a window
-    }
+     async _onPointerOver(event) {
+     // Check if the mouse is over any open window before showing tooltip
+     if (this._isMouseOverWindow(event)) {
+       return; // Don't show tooltip if mouse is over a window
+     }
+
+     // Change ring color on mouseover
+     const pinMouseoverRingColor = 0xFF5500;
+     const outerRing = this.children.find(child => child._originalColor !== undefined);
+     if (outerRing) {
+       outerRing.tint = pinMouseoverRingColor;
+     }
 
     try {
       let tooltipData;
@@ -1491,20 +1499,26 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  _onPointerOut(event) {
-    // Always hide the tooltip when leaving the pin area
-    if (this.pinType === 'quest') {
-      hideQuestTooltip('squire-questpin-quest-tooltip');
-    } else {
-      hideQuestTooltip('squire-questpin-objective-tooltip');
-    }
-    
-    // Reset cursor when leaving pin area (but only if not dragging)
-    if (game.user.isGM && !this.isDragging) {
-      document.body.style.cursor = '';
-      document.body.style.cursor = 'default';
-    }
-  }
+     _onPointerOut(event) {
+     // Restore original ring color
+     const outerRing = this.children.find(child => child._originalColor !== undefined);
+     if (outerRing) {
+       outerRing.tint = outerRing._originalColor;
+     }
+
+     // Always hide the tooltip when leaving the pin area
+     if (this.pinType === 'quest') {
+       hideQuestTooltip('squire-questpin-quest-tooltip');
+     } else {
+       hideQuestTooltip('squire-questpin-objective-tooltip');
+     }
+     
+     // Reset cursor when leaving pin area (but only if not dragging)
+     if (game.user.isGM && !this.isDragging) {
+       document.body.style.cursor = '';
+       document.body.style.cursor = 'default';
+     }
+   }
 }
 
 function getQuestNumber(questUuid) {
