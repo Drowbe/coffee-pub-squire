@@ -35,6 +35,7 @@ jobs:
             lang/ \
             images/ \
             transfers/ \
+            product/ \
             -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
 
       # Create release

@@ -16,6 +16,36 @@ If you stumble upon this repository and find it useful, feel free to try it out!
 
 A comprehensive FoundryVTT module that provides an extensive suite of character management tools, quest systems, and quality-of-life features through an intuitive sliding tray interface. Part of the Coffee Pub suite of modules.
 
+## Visual Showcase
+
+### **Main Interface**
+![Squire Tray Interface](product/squire-tray-collapsed.webp)
+*The sliding tray interface provides quick access to all character tools*
+
+### **Quest Management**
+![Quest System](product/squire-quests.webp)
+*Comprehensive quest creation, editing, and organization with task tracking*
+
+### **Codex & World Building**
+![Codex System](product/squire-codex.webp)
+*Enhanced codex creation with drag & drop functionality and smart form auto-population*
+
+### **Party Management**
+![Party Features](product/squire-party.webp)
+*Party coordination, participant management, and group statistics*
+
+### **Player Tools**
+![Player Interface](product/squire-player.webp)
+*Character management, health tracking, and combat tools*
+
+### **Item Transfers**
+![Transfer System](product/squire-transfers.webp)
+*GM-mediated item transfers with request/accept/reject workflow*
+
+### **Notes & Journal**
+![Notes Panel](product/squire-notes.webp)
+*Quick access to journal entries and notes with live content updates*
+
 ## Features
 
 ### **Core Character Management**
