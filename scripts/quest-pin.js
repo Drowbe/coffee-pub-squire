@@ -242,14 +242,14 @@ export class QuestPin extends PIXI.Container {
     const pinInnerHeight = this.pinType === 'quest' ? 80 : 80;  // Square for objective pins, same height as quest pins
     const pinInnerBorderRadius = this.pinType === 'quest' ? 40 : 6; // Square for objective pins
     const pinInnerColor = 0x000000;
-    const pinInnerTransparency = 0.8;
-    const pinInnerDropShadow = { color: 0x000000, alpha: 0.8, blur: 4, distance: 2, quality: 3 };
+    const pinInnerTransparency = 0.4;
+    const pinDropShadowColor = { color: 0x000000, alpha: 0.3 };
 
     // Pin Ring
     const pinRingInnerThickness = 6;
     const pinRingOutterThickness = 6;
     const pinRingGap = 0;
-    let pinRingColor = 0x000000; // usually same as default below
+    let pinRingColor = 0xFFFFFF; // usually same as default below
     const pinRingInnerTransparency = 0.9;
     const pinRingOutterTransparency = 0.7;
 
@@ -266,27 +266,29 @@ export class QuestPin extends PIXI.Container {
 
     // QUEST Ring State Colors
     const pinRingColorQuestHidden = 0xFF6600;
-    const pinRingColorQuestInProgress = 0x161513;
+    const pinRingColorQuestInProgress = 0xFFFFFF;
     const pinRingColorQuestNotStarted = 0x277487;
     const pinRingColorQuestFailed = 0xD41A1A;
     const pinRingColorQuestCompleted = 0x3C9245;
     
     // QUEST Icon State Colors
-    const pinIconColorQuestHidden = 0xFF6600;
+    const pinIconColorQuestHidden = 0xFFFFFF;
     const pinIconColorInProgress = 0xFFFFFF;
-    const pinIconColorNotStarted = 0x277487;
-    const pinIconColorQuestFailed = 0xD41A1A;
-    const pinIconColorQuestCompleted = 0x3C9245;
+    const pinIconColorNotStarted = 0xFFFFFF;
+    const pinIconColorQuestFailed = 0xFFFFFF;
+    const pinIconColorQuestCompleted = 0xFFFFFF;
     
     // Main Quest Icon - Scale up for quest pins
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
     const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeMainQuestAdjustment;
     const labelMainQuestVerticleOffset = 24;
+    const pinMainQuestDropShadowOffset  = 7;
 
     // Side Quest Icon - Scale up for quest pins
     const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
     const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeSideQuestAdjustment
     const labelSideQuestVerticleOffset = 28;
+    const pinSideQuestDropShadowOffset = 7;
 
 
           // === State-based ring color override ===
@@ -306,6 +308,25 @@ export class QuestPin extends PIXI.Container {
       else pinRingColor = pinRingColorObjectiveDefault;
     }
 
+    // === Contact Shadow ===
+    // Add shadow shape FIRST (so it renders behind everything)
+    const shadow = new PIXI.Graphics();
+    shadow.beginFill(pinDropShadowColor.color, pinDropShadowColor.alpha);
+    
+    if (this.pinType === 'quest') {
+      // Quest pin contact shadow - overall size + offset
+      const shadowRadius = pinInnerHeight/2 + pinRingInnerThickness + pinRingGap + pinMainQuestDropShadowOffset;
+      shadow.drawCircle(0, 0, shadowRadius);
+    } else {
+      // Objective pin contact shadow - overall size + offset
+      const shadowW = pinInnerWidth + 2 * (pinRingInnerThickness + pinRingGap + pinSideQuestDropShadowOffset);
+      const shadowH = pinInnerHeight + 2 * (pinRingInnerThickness + pinRingGap + pinSideQuestDropShadowOffset);
+      shadow.drawRoundedRect(-shadowW/2, -shadowH/2, shadowW, shadowH, pinInnerBorderRadius + pinRingInnerThickness + pinRingGap + pinSideQuestDropShadowOffset);
+    }
+    
+    shadow.endFill();
+    this.addChild(shadow); // Add FIRST so it's behind everything
+    
     // === Outer ring ===
     if (this.pinType === 'quest') {
       // For quest pins, draw circular rings
