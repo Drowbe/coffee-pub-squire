@@ -272,7 +272,7 @@ export class QuestPin extends PIXI.Container {
     // QUEST Ring State Colors
     const pinRingColorQuestHidden = 0x000000;
     const pinRingColorQuestInProgress = 0xFFFFFF;
-    const pinRingColorQuestNotStarted = 0x277487;
+    const pinRingColorQuestNotStarted = 0x3779FF;
     const pinRingColorQuestFailed = 0xD41A1A;
     const pinRingColorQuestCompleted = 0x3C9245;
     
