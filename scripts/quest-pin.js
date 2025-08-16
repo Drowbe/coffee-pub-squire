@@ -227,9 +227,9 @@ export class QuestPin extends PIXI.Container {
     // Pin Title Text
     const pinTitleFontSize = game.settings.get(MODULE.ID, 'questPinTitleSize') || 30;
     const pinTitleFontColor = 0xFFFFFF;
-    const pinTitleFontWeight = 'bold';
+    const pinTitleFontWeight = 'normal';
     const pinTitleFontStroke = 0x000000;
-    const pinTitleFontStrokeThickness = 4;
+    const pinTitleFontStrokeThickness = 3;
     const pinTitleFontAlign = 'center';
     const pinTitleOffset = game.settings.get(MODULE.ID, 'questPinTitleOffset') || 50;
     const pinTitleMaxWidth = game.settings.get(MODULE.ID, 'questPinTitleMaxWidth') || 200; // Maximum width before text wraps
@@ -386,9 +386,11 @@ export class QuestPin extends PIXI.Container {
     }
     
     inner.endFill();
-    inner.filters = [
-      new PIXI.filters.DropShadowFilter(pinInnerDropShadow)
-    ];
+    // TODO: PIXI.filters.DropShadowFilter not available in Foundry's default PIXI build
+    // Need to find alternative way to make inner pin stand out
+    // inner.filters = [
+    //   new PIXI.filters.DropShadowFilter(pinInnerDropShadow)
+    // ];
     this.addChild(inner);
 
     // === Icons and numbers ===
@@ -478,10 +480,8 @@ export class QuestPin extends PIXI.Container {
           questTitle.position.set(centerX, centerY + pinTitleOffset);
         }
         
-        // Add drop shadow filter to quest title for better readability
-        questTitle.filters = [
-          new PIXI.filters.DropShadowFilter(pinTitleDropShadow)
-        ];
+        // Add drop shadow to quest title for better readability
+        questTitle.dropShadow = pinTitleDropShadow;
         
         this.addChild(questTitle);
       }
@@ -564,16 +564,14 @@ export class QuestPin extends PIXI.Container {
                   objectiveTitle.position.set(centerX, centerY + pinTitleOffset);
                 }
                 
-                // Add drop shadow filter to objective title for better readability
-                objectiveTitle.filters = [
-                  new PIXI.filters.DropShadowFilter({
-                    color: 0x000000,
-                    alpha: 0.8,
-                    blur: 4,
-                    distance: 2,
-                    quality: 3
-                  })
-                ];
+                // Add drop shadow to objective title for better readability
+                objectiveTitle.dropShadow = {
+                  color: 0x000000,
+                  alpha: 0.8,
+                  blur: 4,
+                  distance: 2,
+                  quality: 3
+                };
                 
                 this.addChild(objectiveTitle);
               }
@@ -613,14 +611,12 @@ export class QuestPin extends PIXI.Container {
     playerText.anchor.set(0.5);
     
     // Add text shadow for better readability
-    playerText.filters = [
-      new PIXI.filters.DropShadowFilter({
-        color: 0x000000,
-        alpha: 0.8,
-        blur: 2,
-        distance: 1
-      })
-    ];
+    playerText.dropShadow = {
+      color: 0x000000,
+      alpha: 0.8,
+      blur: 2,
+      distance: 1
+    };
     
     container.addChild(playerText);
   }
