@@ -564,10 +564,61 @@ export class CodexPanel {
      */
     _setupHooks() {
         Hooks.on("updateJournalEntryPage", async (page, changes, options, userId) => {
-            if (this.element && this._isPageInSelectedJournal(page)) {
-                await this._refreshData();
-                this.render(this.element);
+            // Debug logging for hook execution
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            blacksmith?.utils.postConsoleAndNotification(
+                'CODEX Hook triggered',
+                { 
+                    pageName: page.name, 
+                    journalName: page.parent?.name || 'Unknown',
+                    hasElement: !!this.element,
+                    inSelectedJournal: this._isPageInSelectedJournal(page),
+                    isCodexEntry: this._isCodexEntry(page)
+                },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            
+            // Only process if CODEX panel is active and page belongs to selected journal
+            if (!this.element || !this._isPageInSelectedJournal(page)) {
+                blacksmith?.utils.postConsoleAndNotification(
+                    'CODEX Hook filtered out - panel inactive or wrong journal',
+                    { pageName: page.name },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                return;
             }
+            
+            // Check if this is actually a CODEX entry by looking for CODEX-specific content
+            // Skip processing if this doesn't appear to be a CODEX entry
+            if (!this._isCodexEntry(page)) {
+                blacksmith?.utils.postConsoleAndNotification(
+                    'CODEX Hook filtered out - not a CODEX entry',
+                    { pageName: page.name },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                return;
+            }
+            
+            blacksmith?.utils.postConsoleAndNotification(
+                'CODEX Hook processing entry',
+                { pageName: page.name },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            
+            await this._refreshData();
+            this.render(this.element);
         });
     }
 
@@ -577,6 +628,51 @@ export class CodexPanel {
      */
     _isPageInSelectedJournal(page) {
         return this.selectedJournal && page.parent.id === this.selectedJournal.id;
+    }
+
+    /**
+     * Check if a journal page is actually a CODEX entry
+     * @private
+     * @param {JournalEntryPage} page - The journal page to check
+     * @returns {boolean} True if this appears to be a CODEX entry
+     */
+    _isCodexEntry(page) {
+        try {
+            // Quick check: if no text content, it's not a CODEX entry
+            if (!page.text?.content) return false;
+            
+            // Get the raw text content to check for CODEX structure
+            let content = '';
+            if (typeof page.text.content === 'string') {
+                content = page.text.content;
+            } else if (page.text.content) {
+                // For async content, we'll need to check it differently
+                // For now, assume it might be a CODEX entry if we can't determine otherwise
+                return true;
+            }
+            
+            // Check if the content contains CODEX-specific markers
+            // CODEX entries should have a CATEGORY field
+            if (content && typeof content === 'string') {
+                // Look for CATEGORY field (case-insensitive)
+                const hasCategory = /<strong>category<\/strong>|<strong>category:<\/strong>/i.test(content);
+                if (!hasCategory) return false;
+                
+                // Additional check: look for other CODEX fields
+                const hasDescription = /<strong>description<\/strong>|<strong>description:<\/strong>/i.test(content);
+                const hasTags = /<strong>tags<\/strong>|<strong>tags:<\/strong>/i.test(content);
+                
+                // Must have at least category and one other CODEX field
+                return hasCategory && (hasDescription || hasTags);
+            }
+            
+            // If we can't determine, assume it's not a CODEX entry to be safe
+            return false;
+        } catch (error) {
+            // If there's any error checking, assume it's not a CODEX entry
+            // This prevents crashes and excessive processing
+            return false;
+        }
     }
 
     /**
@@ -1244,6 +1340,15 @@ SPECIFIC INSTRUCTIONS HERE`;
 
             if (tokens.length === 0) {
                 ui.notifications.warn("No player character tokens found on the canvas.");
+                // Clean up progress bar before returning
+                if (progressArea && progressFill && progressText) {
+                    progressText.text('No players found');
+                    progressFill.css('width', '100%');
+                    // Hide progress area after a delay
+                    setTimeout(() => {
+                        progressArea.hide();
+                    }, 2000);
+                }
                 return;
             }
 
@@ -1365,6 +1470,15 @@ SPECIFIC INSTRUCTIONS HERE`;
 
             if (inventoryItems.size === 0) {
                 ui.notifications.warn("No inventory items found in party members' inventories.");
+                // Clean up progress bar before returning
+                if (progressArea && progressFill && progressText) {
+                    progressText.text('No items found');
+                    progressFill.css('width', '100%');
+                    // Hide progress area after a delay
+                    setTimeout(() => {
+                        progressArea.hide();
+                    }, 2000);
+                }
                 return;
             }
 
