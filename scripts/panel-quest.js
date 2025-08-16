@@ -1472,7 +1472,10 @@ export class QuestPanel {
                     tasks: q.tasks?.map(t => ({
                         text: t.text,
                         completed: t.completed || false,
-                        state: t.state || "active"
+                        state: t.state || "active",
+                        gmnotes: t.gmHint || "",
+                        tasktreasure: t.treasureUnlocks || [],
+                        originalText: t.originalText || ""
                     })) || [],
                     reward: {
                         xp: q.reward?.xp || 0,
