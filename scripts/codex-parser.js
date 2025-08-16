@@ -130,8 +130,8 @@ export class CodexParser {
         const entry = {
             name: page.name,
             img: '',
-            category: '',  // Mandatory
-            description: '',  // Mandatory
+            category: '',  // Optional - will default to "No Category" if missing
+            description: '',  // Optional
             plotHook: '',
             location: '',
             link: null,
@@ -199,18 +199,8 @@ export class CodexParser {
             }
         }
 
-        // Validate mandatory fields
-        if (!entry.category || !entry.description) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                `CODEX: Entry "${entry.name}" is missing mandatory fields (Category or Description)`,
-                { entry, enrichedHtml },
-                false,
-                false,
-                false,
-                MODULE.TITLE
-            );
-            return null;
-        }
+        // No longer require mandatory fields - we'll handle missing categories gracefully
+        // Only require that we have a name (which we always do from page.name)
         return entry;
     }
 

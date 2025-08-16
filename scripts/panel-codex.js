@@ -652,18 +652,27 @@ export class CodexPanel {
             }
             
             // Check if the content contains CODEX-specific markers
-            // CODEX entries should have a CATEGORY field
+            // CODEX entries should have a CATEGORY field, but we'll be more lenient
             if (content && typeof content === 'string') {
                 // Look for CATEGORY field (case-insensitive)
                 const hasCategory = /<strong>category<\/strong>|<strong>category:<\/strong>/i.test(content);
-                if (!hasCategory) return false;
                 
-                // Additional check: look for other CODEX fields
+                // If it has a category field, it's definitely a CODEX entry
+                if (hasCategory) return true;
+                
+                // If no category field, check if it has other CODEX-like structure
+                // Look for common CODEX fields to determine if this might be a CODEX entry
                 const hasDescription = /<strong>description<\/strong>|<strong>description:<\/strong>/i.test(content);
                 const hasTags = /<strong>tags<\/strong>|<strong>tags:<\/strong>/i.test(content);
+                const hasPlotHook = /<strong>plot hook<\/strong>|<strong>plot hook:<\/strong>/i.test(content);
+                const hasLocation = /<strong>location<\/strong>|<strong>location:<\/strong>/i.test(content);
                 
-                // Must have at least category and one other CODEX field
-                return hasCategory && (hasDescription || hasTags);
+                // If it has multiple CODEX-like fields, it's probably a CODEX entry
+                const codexFieldCount = [hasDescription, hasTags, hasPlotHook, hasLocation].filter(Boolean).length;
+                if (codexFieldCount >= 2) return true;
+                
+                // If we can't determine, assume it's not a CODEX entry to be safe
+                return false;
             }
             
             // If we can't determine, assume it's not a CODEX entry to be safe
@@ -682,6 +691,7 @@ export class CodexPanel {
      */
     getCategoryIcon(category) {
         const map = {
+            'No Category': 'fa-question-circle',
             'Artifacts': 'fa-gem',
             'Characters': 'fa-user',
             'Events': 'fa-calendar-star',
@@ -728,9 +738,7 @@ export class CodexPanel {
                         });
                         
                         const entry = await CodexParser.parseSinglePage(page, enriched);
-                        if (entry && entry.category) {
-                            // Use the category string exactly as provided (trimmed)
-                            let normCategory = entry.category.trim();
+                        if (entry) {
                             // Add ownership info for visibility icon
                             entry.ownership = page.ownership;
                             
@@ -750,6 +758,12 @@ export class CodexPanel {
                                 }
                             }
                             
+                            // Determine category - if no category, use "No Category"
+                            let normCategory = "No Category";
+                            if (entry.category && entry.category.trim()) {
+                                normCategory = entry.category.trim();
+                            }
+                            
                             // Add to categories set
                             this.categories.add(normCategory);
                             // Initialize category array if needed
@@ -759,7 +773,9 @@ export class CodexPanel {
                             // Add entry to category
                             this.data[normCategory].push(entry);
                             // Add tags
-                            entry.tags.forEach(tag => this.allTags.add(tag));
+                            if (entry.tags && Array.isArray(entry.tags)) {
+                                entry.tags.forEach(tag => this.allTags.add(tag));
+                            }
                         }
                     }
                 } catch (error) {
@@ -1807,7 +1823,14 @@ SPECIFIC INSTRUCTIONS HERE`;
         const isTagCloudCollapsed = game.user.getFlag(MODULE.ID, 'codexTagCloudCollapsed') || false;
 
         // Build categoriesData array for the template
-        const categoriesData = await Promise.all(Array.from(this.categories).sort().map(async category => {
+        // Sort categories with "No Category" always first, then alphabetically for the rest
+        const sortedCategories = Array.from(this.categories).sort((a, b) => {
+            if (a === "No Category") return -1;
+            if (b === "No Category") return 1;
+            return a.localeCompare(b);
+        });
+        
+        const categoriesData = await Promise.all(sortedCategories.map(async category => {
             let entries = this.data[category] || [];
             if (!game.user.isGM) {
                 // Only show visible entries for non-GMs
@@ -1830,6 +1853,12 @@ SPECIFIC INSTRUCTIONS HERE`;
             const totalCount = entries.length;
             const visibleEntries = entries.filter(e => (e.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
             const visibleCount = visibleEntries.length;
+            
+            // For "No Category", only include if it has visible entries
+            if (category === "No Category" && visibleCount === 0) {
+                return null;
+            }
+            
             return {
                 name: category,
                 icon: this.getCategoryIcon(category),
@@ -1840,19 +1869,30 @@ SPECIFIC INSTRUCTIONS HERE`;
                 visibleEntries
             };
         }));
+        
+        // Filter out null entries (empty "No Category" sections)
+        const filteredCategoriesData = categoriesData.filter(cat => cat !== null);
 
         // Build allTags for tag cloud
         let allTags;
         if (game.user.isGM) {
             // GMs see tags from all entries
-            const allEntries = categoriesData.flatMap(cat => cat.entries);
+            const allEntries = filteredCategoriesData.flatMap(cat => cat.entries);
             allTags = new Set();
-            allEntries.forEach(entry => entry.tags.forEach(tag => allTags.add(tag)));
+            allEntries.forEach(entry => {
+                if (entry.tags && Array.isArray(entry.tags)) {
+                    entry.tags.forEach(tag => allTags.add(tag));
+                }
+            });
         } else {
             // Players see tags only from visible entries
-            const allVisibleEntries = categoriesData.flatMap(cat => cat.visibleEntries);
+            const allVisibleEntries = filteredCategoriesData.flatMap(cat => cat.visibleEntries);
             allTags = new Set();
-            allVisibleEntries.forEach(entry => entry.tags.forEach(tag => allTags.add(tag)));
+            allVisibleEntries.forEach(entry => {
+                if (entry.tags && Array.isArray(entry.tags)) {
+                    entry.tags.forEach(tag => allTags.add(tag));
+                }
+            });
         }
 
         // Prepare template data
@@ -1861,7 +1901,7 @@ SPECIFIC INSTRUCTIONS HERE`;
             hasJournal: !!this.selectedJournal,
             journalName: this.selectedJournal ? this.selectedJournal.name : "",
             isGM: game.user.isGM,
-            categoriesData,
+            categoriesData: filteredCategoriesData,
             filters: {
                 ...this.filters,
                 search: this.filters.search || ""
