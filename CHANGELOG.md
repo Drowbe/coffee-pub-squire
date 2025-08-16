@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [12.0.22] - Quest Import/Export Fix
+
+### Fixed
+- **Quest Import/Export Field Mapping**: Fixed critical mismatch between export and import field names that prevented rich quest data from being properly restored
+  - **Field Name Alignment**: Import now correctly maps `gmnotes` → `gmHint` and `tasktreasure` → `treasureUnlocks`
+  - **Treasure Format Conversion**: Import converts export format `[[treasure]]` to expected format `((treasure))`
+  - **Progress Preservation**: Existing quest completion status, task states, visibility settings, and scene pin positions are fully preserved during import
+  - **Backward Compatibility**: Import works with both old and new export formats
+  - **Files Modified**: `scripts/panel-quest.js` - Updated both `_mergeJournalContent()` and `_generateJournalContentFromImport()` methods
+
+### Technical Improvements
+- **Smart Field Mapping**: Import logic now checks for both field name formats to ensure compatibility
+- **Rich Data Restoration**: GM notes and task treasure are now properly restored during import operations
+- **State Preservation**: Enhanced import system maintains all existing quest progress and player states
+- **Format Consistency**: Treasure format is automatically converted to match QuestParser expectations
+
 
 ## [12.0.21] - Enhanced Codex
 
