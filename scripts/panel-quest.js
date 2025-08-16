@@ -2383,15 +2383,17 @@ export class QuestPanel {
             importedQuest.tasks.forEach((t, index) => {
                 let taskText = typeof t === 'string' ? t : t.text;
                 
-                // Add GM hint if present
-                if (t.gmHint) {
-                    taskText += ` ||${t.gmHint}||`;
+                // Add GM hint if present (check both field names)
+                if (t.gmHint || t.gmnotes) {
+                    const hint = t.gmHint || t.gmnotes;
+                    taskText += ` ||${hint}||`;
                 }
                 
-                // Add treasure unlocks if present
-                if (t.treasureUnlocks && t.treasureUnlocks.length > 0) {
-                    t.treasureUnlocks.forEach(treasure => {
-                        taskText += ` [[${treasure}]]`;
+                // Add treasure unlocks if present (check both field names and convert format)
+                const treasures = t.treasureUnlocks || t.tasktreasure || [];
+                if (treasures.length > 0) {
+                    treasures.forEach(treasure => {
+                        taskText += ` ((${treasure}))`;
                     });
                 }
                 
@@ -2592,15 +2594,17 @@ export class QuestPanel {
             quest.tasks.forEach(t => {
                 let taskText = typeof t === 'string' ? t : t.text;
                 
-                // Add GM hint if present
-                if (t.gmHint) {
-                    taskText += ` ||${t.gmHint}||`;
+                // Add GM hint if present (check both field names)
+                if (t.gmHint || t.gmnotes) {
+                    const hint = t.gmHint || t.gmnotes;
+                    taskText += ` ||${hint}||`;
                 }
                 
-                // Add treasure unlocks if present
-                if (t.treasureUnlocks && t.treasureUnlocks.length > 0) {
-                    t.treasureUnlocks.forEach(treasure => {
-                        taskText += ` [[${treasure}]]`;
+                // Add treasure unlocks if present (check both field names and convert format)
+                const treasures = t.treasureUnlocks || t.tasktreasure || [];
+                if (treasures.length > 0) {
+                    treasures.forEach(treasure => {
+                        taskText += ` ((${treasure}))`;
                     });
                 }
                 
