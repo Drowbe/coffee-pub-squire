@@ -335,16 +335,25 @@ export class QuestPin extends PIXI.Container {
       const outerRadius = pinInnerHeight/2 + pinRingGap + pinRingInnerThickness/2;
       const outer = new PIXI.Graphics();
       
-      // Draw the main ring
-      outer.lineStyle({
-        width: pinRingInnerThickness,
-        color: pinRingColor,
-        alpha: pinRingInnerTransparency,
-        alignment: 0.5,
-        native: false
-             });
+             // Draw the main ring
+       outer.lineStyle({
+         width: pinRingInnerThickness,
+         color: pinRingColor,
+         alpha: pinRingInnerTransparency,
+         alignment: 0.5,
+         native: false
+       });
        outer.drawCircle(0, 0, outerRadius);
-       outer._originalColor = pinRingColor; // Store original color for mouseover
+       
+       // Store all ring parameters for redrawing on mouseover
+       outer._ringParams = {
+         width: pinRingInnerThickness,
+         alpha: pinRingInnerTransparency,
+         originalColor: pinRingColor,
+         radius: outerRadius,
+         pinType: 'quest'
+       };
+       
        this.addChild(outer);
       
              // Add second ring for hidden quests (GM only)
@@ -368,16 +377,27 @@ export class QuestPin extends PIXI.Container {
        const outerH = pinInnerHeight + 2 * (pinRingGap + pinRingInnerThickness/2);
        const outer = new PIXI.Graphics();
       
-      // Draw the main ring
-      outer.lineStyle({
-        width: pinRingInnerThickness,
-        color: pinRingColor,
-        alpha: pinRingInnerTransparency,
-        alignment: 0.5,
-        native: false
-             });
+             // Draw the main ring
+       outer.lineStyle({
+         width: pinRingInnerThickness,
+         color: pinRingColor,
+         alpha: pinRingInnerTransparency,
+         alignment: 0.5,
+         native: false
+       });
        outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingInnerThickness + pinRingGap);
-       outer._originalColor = pinRingColor; // Store original color for mouseover
+       
+       // Store all ring parameters for redrawing on mouseover
+       outer._ringParams = {
+         width: pinRingInnerThickness,
+         alpha: pinRingInnerTransparency,
+         originalColor: pinRingColor,
+         rectW: outerW,
+         rectH: outerH,
+         borderRadius: pinInnerBorderRadius + pinRingInnerThickness + pinRingGap,
+         pinType: 'objective'
+       };
+       
        this.addChild(outer);
       
              // Add second ring for hidden quests (GM only) - same logic as quest pins
@@ -1383,11 +1403,25 @@ export class QuestPin extends PIXI.Container {
        return; // Don't show tooltip if mouse is over a window
      }
 
-     // Change ring color on mouseover
+     // Change ring color on mouseover - redraw with new color
      const pinMouseoverRingColor = 0xFF5500;
-     const outerRing = this.children.find(child => child._originalColor !== undefined);
-     if (outerRing) {
-       outerRing.tint = pinMouseoverRingColor;
+     const outerRing = this.children.find(child => child._ringParams !== undefined);
+     if (outerRing && outerRing._ringParams) {
+       const params = outerRing._ringParams;
+       outerRing.clear();
+       outerRing.lineStyle({
+         width: params.width,
+         color: pinMouseoverRingColor,
+         alpha: params.alpha,
+         alignment: 0.5,
+         native: false
+       });
+       
+       if (params.pinType === 'quest') {
+         outerRing.drawCircle(0, 0, params.radius);
+       } else {
+         outerRing.drawRoundedRect(-params.rectW/2, -params.rectH/2, params.rectW, params.rectH, params.borderRadius);
+       }
      }
 
     try {
@@ -1500,10 +1534,24 @@ export class QuestPin extends PIXI.Container {
   }
 
      _onPointerOut(event) {
-     // Restore original ring color
-     const outerRing = this.children.find(child => child._originalColor !== undefined);
-     if (outerRing) {
-       outerRing.tint = outerRing._originalColor;
+     // Restore original ring color - redraw with original color
+     const outerRing = this.children.find(child => child._ringParams !== undefined);
+     if (outerRing && outerRing._ringParams) {
+       const params = outerRing._ringParams;
+       outerRing.clear();
+       outerRing.lineStyle({
+         width: params.width,
+         color: params.originalColor,
+         alpha: params.alpha,
+         alignment: 0.5,
+         native: false
+       });
+       
+       if (params.pinType === 'quest') {
+         outerRing.drawCircle(0, 0, params.radius);
+       } else {
+         outerRing.drawRoundedRect(-params.rectW/2, -params.rectH/2, params.rectW, params.rectH, params.borderRadius);
+       }
      }
 
      // Always hide the tooltip when leaving the pin area
