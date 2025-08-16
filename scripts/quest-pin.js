@@ -219,6 +219,7 @@ export class QuestPin extends PIXI.Container {
     // General
     const pinFontFamily = "Signika";
     const pinIconFamily = "FontAwesome";
+    const pinIconTransparency = 0.9;
     const pinDataPadding = 10;
     const pinIconSizeMainQuestAdjustment = 0; // adds a bit more to the size of the icons
     const pinIconSizeSideQuestAdjustment = 4; // adds a bit more to the size of the icons
@@ -238,34 +239,39 @@ export class QuestPin extends PIXI.Container {
 
 
     // Main Pin - Make quest pins round, objectives are now square but same height
-    const pinInnerWidth = this.pinType === 'quest' ? 80 : 80; // Square for objective pins, same width as quest pins
-    const pinInnerHeight = this.pinType === 'quest' ? 80 : 80;  // Square for objective pins, same height as quest pins
-    const pinInnerBorderRadius = this.pinType === 'quest' ? 40 : 6; // Square for objective pins
+    const pinInnerWidth = 80;
+    const pinInnerHeight = 80; 
+    const pinInnerBorderRadius = 4;
     const pinInnerColor = 0x000000;
     const pinInnerTransparency = 0.4;
     const pinDropShadowColor = { color: 0x000000, alpha: 0.3 };
+    const pinDropShadowOffset = 0;
+    const pinMouseoverRingColor = 0xFF5500;
 
     // Pin Ring
-    const pinRingInnerThickness = 6;
-    const pinRingOutterThickness = 6;
+    const pinRingInnerThickness = 2;
+    const pinRingOutterThickness = 4;
     const pinRingGap = 0;
     let pinRingColor = 0xFFFFFF; // usually same as default below
-    const pinRingInnerTransparency = 0.9;
-    const pinRingOutterTransparency = 0.7;
+    const pinRingInnerTransparency = 0.8;
+    const pinRingOutterTransparency = 0.8;
 
     // OBJECTIVE Ring State Colors
     const pinRingColorObjectiveFailed = 0xD41A1A;
     const pinRingColorOjectiveHidden = 0xAAA79A;
     const pinRingColorObjectiveCompleted = 0x3C9245;
-    const pinRingColorObjectiveDefault = 0x161513;
+    const pinRingColorObjectiveDefault = 0xFFFFFF;
+
     // OBJECTIVE Icon State Colors
-    const pinIconColorObjectiveFailed = 0xD41A1A;
-    const pinIconColorOjectiveHidden = 0xAAA79A;
-    const pinIconColorObectiveCompleted = 0x3C9245;
+    const pinIconColorObjectiveFailed = 0xFFFFFF;
+    const pinIconColorOjectiveHidden = 0xFFFFFF;
+    const pinIconColorObectiveCompleted = 0xFFFFFF;
     const pinIconColorObjectiveDefault = 0xFFFFFF;
 
+
+
     // QUEST Ring State Colors
-    const pinRingColorQuestHidden = 0xFF6600;
+    const pinRingColorQuestHidden = 0x000000;
     const pinRingColorQuestInProgress = 0xFFFFFF;
     const pinRingColorQuestNotStarted = 0x277487;
     const pinRingColorQuestFailed = 0xD41A1A;
@@ -278,18 +284,15 @@ export class QuestPin extends PIXI.Container {
     const pinIconColorQuestFailed = 0xFFFFFF;
     const pinIconColorQuestCompleted = 0xFFFFFF;
     
-    // Main Quest Icon - Scale up for quest pins
+    // MAIN QUEST Icon - Scale up for quest pins
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
     const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeMainQuestAdjustment;
     const labelMainQuestVerticleOffset = 24;
-    const pinMainQuestDropShadowOffset  = 7;
-
-    // Side Quest Icon - Scale up for quest pins
+    
+    // SIDE QUEST Icon - Scale up for quest pins
     const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
     const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeSideQuestAdjustment
     const labelSideQuestVerticleOffset = 28;
-    const pinSideQuestDropShadowOffset = 7;
-
 
           // === State-based ring color override ===
       if (this.pinType === 'quest') {
@@ -315,13 +318,13 @@ export class QuestPin extends PIXI.Container {
     
     if (this.pinType === 'quest') {
       // Quest pin contact shadow - overall size + offset
-      const shadowRadius = pinInnerHeight/2 + pinRingInnerThickness + pinRingGap + pinMainQuestDropShadowOffset;
+      const shadowRadius = pinInnerHeight/2 + pinRingGap + pinRingInnerThickness/2 + pinDropShadowOffset;
       shadow.drawCircle(0, 0, shadowRadius);
     } else {
       // Objective pin contact shadow - overall size + offset
-      const shadowW = pinInnerWidth + 2 * (pinRingInnerThickness + pinRingGap + pinSideQuestDropShadowOffset);
-      const shadowH = pinInnerHeight + 2 * (pinRingInnerThickness + pinRingGap + pinSideQuestDropShadowOffset);
-      shadow.drawRoundedRect(-shadowW/2, -shadowH/2, shadowW, shadowH, pinInnerBorderRadius + pinRingInnerThickness + pinRingGap + pinSideQuestDropShadowOffset);
+      const shadowW = pinInnerWidth + 2 * (pinRingGap + pinRingInnerThickness/2 + pinDropShadowOffset);
+      const shadowH = pinInnerHeight + 2 * (pinRingGap + pinRingInnerThickness/2 + pinDropShadowOffset);
+      shadow.drawRoundedRect(-shadowW/2, -shadowH/2, shadowW, shadowH, pinInnerBorderRadius + pinRingGap + pinRingInnerThickness/2 + pinDropShadowOffset);
     }
     
     shadow.endFill();
@@ -330,7 +333,7 @@ export class QuestPin extends PIXI.Container {
     // === Outer ring ===
     if (this.pinType === 'quest') {
       // For quest pins, draw circular rings
-      const outerRadius = pinInnerHeight/2 + pinRingInnerThickness + pinRingGap;
+      const outerRadius = pinInnerHeight/2 + pinRingGap + pinRingInnerThickness/2;
       const outer = new PIXI.Graphics();
       
       // Draw the main ring
@@ -344,10 +347,10 @@ export class QuestPin extends PIXI.Container {
       outer.drawCircle(0, 0, outerRadius);
       this.addChild(outer);
       
-      // Add second ring for hidden quests (GM only)
-      if (this.questState === 'hidden' && game.user.isGM) {
-        const secondRingRadius = outerRadius + pinRingInnerThickness + pinRingGap;
-        const secondRing = new PIXI.Graphics();
+             // Add second ring for hidden quests (GM only)
+       if (this.questState === 'hidden' && game.user.isGM) {
+         const secondRingRadius = outerRadius + pinRingInnerThickness/2 + pinRingGap + pinRingOutterThickness/2;
+         const secondRing = new PIXI.Graphics();
         
         secondRing.lineStyle({
           width: pinRingOutterThickness,
@@ -359,11 +362,11 @@ export class QuestPin extends PIXI.Container {
         secondRing.drawCircle(0, 0, secondRingRadius);
         this.addChild(secondRing);
       }
-    } else {
-      // For objective pins, keep rectangular rings
-      const outerW = pinInnerWidth + 2 * (pinRingInnerThickness + pinRingGap);
-      const outerH = pinInnerHeight + 2 * (pinRingInnerThickness + pinRingGap);
-      const outer = new PIXI.Graphics();
+         } else {
+       // For objective pins, keep rectangular rings
+       const outerW = pinInnerWidth + 2 * (pinRingGap + pinRingInnerThickness/2);
+       const outerH = pinInnerHeight + 2 * (pinRingGap + pinRingInnerThickness/2);
+       const outer = new PIXI.Graphics();
       
       // Draw the main ring
       outer.lineStyle({
@@ -376,11 +379,11 @@ export class QuestPin extends PIXI.Container {
       outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingInnerThickness + pinRingGap);
       this.addChild(outer);
       
-      // Add second ring for hidden quests (GM only) - same logic as quest pins
-      if (this.questState === 'hidden' && game.user.isGM) {
-        const secondRingW = outerW + 2 * (pinRingInnerThickness + pinRingGap);
-        const secondRingH = outerH + 2 * (pinRingInnerThickness + pinRingGap);
-        const secondRing = new PIXI.Graphics();
+             // Add second ring for hidden quests (GM only) - same logic as quest pins
+       if (this.questState === 'hidden' && game.user.isGM) {
+         const secondRingW = outerW + 2 * (pinRingGap + pinRingInnerThickness/2 + pinRingOutterThickness/2);
+         const secondRingH = outerH + 2 * (pinRingGap + pinRingInnerThickness/2 + pinRingOutterThickness/2);
+         const secondRing = new PIXI.Graphics();
         
         secondRing.lineStyle({
           width: pinRingOutterThickness,
@@ -389,7 +392,7 @@ export class QuestPin extends PIXI.Container {
           alignment: 0.5,
           native: false
         });
-        secondRing.drawRoundedRect(-secondRingW/2, -secondRingH/2, secondRingW, secondRingH, pinInnerBorderRadius + 2 * (pinRingInnerThickness + pinRingGap));
+                 secondRing.drawRoundedRect(-secondRingW/2, -secondRingH/2, secondRingW, secondRingH, pinInnerBorderRadius + pinRingGap + pinRingInnerThickness + pinRingOutterThickness/2);
         this.addChild(secondRing);
       }
     }
@@ -450,6 +453,7 @@ export class QuestPin extends PIXI.Container {
         fontSize: questIconSize,
         fill: questIconColor
       });
+      questIcon.alpha = pinIconTransparency; 
       questIcon.anchor.set(0.5);
       questIcon.position.set(centerX, centerY - 8); // Icon above center, same as objectives
       this.addChild(questIcon);
@@ -464,10 +468,11 @@ export class QuestPin extends PIXI.Container {
       const questLabel = new PIXI.Text(questText, {
         fontFamily: pinFontFamily,
         fontSize: 16,
-        fill: 0xFFFFFF, // White text for better visibility
+        fill: questIconColor, 
         fontWeight: 'bold',
         align: 'center'
       });
+      questLabel.alpha = pinIconTransparency;
       questLabel.anchor.set(0.5);
       questLabel.position.set(centerX, centerY + labelMainQuestVerticleOffset); // Centered below icon
       
@@ -532,6 +537,7 @@ export class QuestPin extends PIXI.Container {
         fontSize: questIconSize,
         fill: questIconColor
       });
+      questIcon.alpha = pinIconTransparency; 
       questIcon.anchor.set(0.5);
       questIcon.position.set(centerX, centerY - 8); // Icon above center
       this.addChild(questIcon);
@@ -549,10 +555,11 @@ export class QuestPin extends PIXI.Container {
               const combinedLabel = new PIXI.Text(combinedText, {
                 fontFamily: pinFontFamily,
                 fontSize: 16,
-                fill: 0xFFFFFF, // White text for better visibility
+                fill: questIconColor,
                 fontWeight: 'bold',
                 align: 'center'
               });
+              combinedLabel.alpha = pinIconTransparency;
               combinedLabel.anchor.set(0.5);
               combinedLabel.position.set(centerX, centerY + labelSideQuestVerticleOffset); // Centered below icon
               
