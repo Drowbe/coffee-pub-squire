@@ -216,41 +216,44 @@ export class QuestPin extends PIXI.Container {
     this.removeChildren();
 
     // === PIN APPEARANCE VARIABLES (all values set at top for clarity) ===
+    // Scale Factor - applies to all pin dimensions
+    const pinScale = game.settings.get(MODULE.ID, 'questPinScale') || 1.0;
+    
     // General
     const pinFontFamily = "Signika";
     const pinIconFamily = "FontAwesome";
     const pinIconTransparency = 0.9;
-    const pinDataPadding = 10;
+    const pinDataPadding = 10 * pinScale;
     const pinIconSizeMainQuestAdjustment = 0; // adds a bit more to the size of the icons
     const pinIconSizeSideQuestAdjustment = 4; // adds a bit more to the size of the icons
 
 
     // Pin Title Text
-    const pinTitleFontSize = game.settings.get(MODULE.ID, 'questPinTitleSize') || 30;
+    const pinTitleFontSize = (game.settings.get(MODULE.ID, 'questPinTitleSize') || 30) * pinScale;
     const pinTitleFontColor = 0xFFFFFF;
     const pinTitleFontWeight = 'normal';
     const pinTitleFontStroke = 0x000000;
-    const pinTitleFontStrokeThickness = 3;
+    const pinTitleFontStrokeThickness = 3 * pinScale;
     const pinTitleFontAlign = 'center';
     const pinTitleOffset = game.settings.get(MODULE.ID, 'questPinTitleOffset') || 50;
-    const pinTitleMaxWidth = game.settings.get(MODULE.ID, 'questPinTitleMaxWidth') || 200; // Maximum width before text wraps
-    const pinTitleDropShadow = { color: 0x000000, alpha: 0.8, blur: 4, distance: 2, quality: 3 };
+    const pinTitleMaxWidth = (game.settings.get(MODULE.ID, 'questPinTitleMaxWidth') || 200) * pinScale; // Maximum width before text wraps
+    const pinTitleDropShadow = { color: 0x000000, alpha: 0.8, blur: 4 * pinScale, distance: 2 * pinScale, quality: 3 };
 
 
 
     // Main Pin - Make quest pins round, objectives are now square but same height
-    const pinInnerWidth = 80;
-    const pinInnerHeight = 80; 
-    const pinInnerBorderRadius = 4;
+    const pinInnerWidth = 80 * pinScale;
+    const pinInnerHeight = 80 * pinScale; 
+    const pinInnerBorderRadius = 4 * pinScale;
     const pinInnerColor = 0x000000;
     const pinInnerTransparency = 0.4;
     const pinDropShadowColor = { color: 0x000000, alpha: 0.3 };
     const pinDropShadowOffset = 0;
 
     // Pin Ring
-    const pinRingInnerThickness = 2;
-    const pinRingOutterThickness = 4;
-    const pinRingGap = 0;
+    const pinRingInnerThickness = 2 * pinScale;
+    const pinRingOutterThickness = 4 * pinScale;
+    const pinRingGap = 0; // Gap stays 0, no need to scale
     let pinRingColor = 0xFFFFFF; // usually same as default below
     const pinRingInnerTransparency = 0.8;
     const pinRingOutterTransparency = 0.8;
@@ -286,12 +289,15 @@ export class QuestPin extends PIXI.Container {
     // MAIN QUEST Icon - Scale up for quest pins
     const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
     const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeMainQuestAdjustment;
-    const labelMainQuestVerticleOffset = 24;
+    const labelMainQuestVerticleOffset = 24 * pinScale;
     
     // SIDE QUEST Icon - Scale up for quest pins
     const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
     const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeSideQuestAdjustment
-    const labelSideQuestVerticleOffset = 28;
+    const labelSideQuestVerticleOffset = 28 * pinScale;
+    
+    // Icon positioning offset (gap between center and icon)
+    const pinIconVerticalOffset = 8 * pinScale;
 
           // === State-based ring color override ===
       if (this.pinType === 'quest') {
@@ -476,7 +482,7 @@ export class QuestPin extends PIXI.Container {
       });
       questIcon.alpha = pinIconTransparency; 
       questIcon.anchor.set(0.5);
-      questIcon.position.set(centerX, centerY - 8); // Icon above center, same as objectives
+      questIcon.position.set(centerX, centerY - pinIconVerticalOffset); // Icon above center, same as objectives
       this.addChild(questIcon);
       
       // Quest number below (just the quest number, no objective)
@@ -488,7 +494,7 @@ export class QuestPin extends PIXI.Container {
       const questText = `Q${questIndexValue}`;
       const questLabel = new PIXI.Text(questText, {
         fontFamily: pinFontFamily,
-        fontSize: 16,
+        fontSize: 16 * pinScale,
         fill: questIconColor, 
         fontWeight: 'bold',
         align: 'center'
@@ -560,7 +566,7 @@ export class QuestPin extends PIXI.Container {
       });
       questIcon.alpha = pinIconTransparency; 
       questIcon.anchor.set(0.5);
-      questIcon.position.set(centerX, centerY - 8); // Icon above center
+      questIcon.position.set(centerX, centerY - pinIconVerticalOffset); // Icon above center
       this.addChild(questIcon);
       
       // Quest number and objective number below (as small badges)
@@ -575,7 +581,7 @@ export class QuestPin extends PIXI.Container {
               const combinedText = `Q${questIndexValue}.${objNumValue}`;
               const combinedLabel = new PIXI.Text(combinedText, {
                 fontFamily: pinFontFamily,
-                fontSize: 16,
+                fontSize: 16 * pinScale,
                 fill: questIconColor,
                 fontWeight: 'bold',
                 align: 'center'
@@ -617,8 +623,8 @@ export class QuestPin extends PIXI.Container {
                 objectiveTitle.dropShadow = {
                   color: 0x000000,
                   alpha: 0.8,
-                  blur: 4,
-                  distance: 2,
+                  blur: 4 * pinScale,
+                  distance: 2 * pinScale,
                   quality: 3
                 };
                 

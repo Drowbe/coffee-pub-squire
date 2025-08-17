@@ -1030,6 +1030,31 @@ export const registerSettings = function() {
             }
         }
     });
+    
+    // Quest Pin Scale
+    game.settings.register(MODULE.ID, 'questPinScale', {
+        name: 'Quest Pin Scale',
+        hint: 'Scale multiplier for quest pins size. 0.5 = 50% size, 1.0 = normal size, 2.0 = double size. Default: 1.0',
+        scope: 'world',
+        config: true,
+        type: Number,
+        range: {
+            min: 0.5,
+            max: 2.0,
+            step: 0.1
+        },
+        default: 1.0,
+        onChange: () => {
+            // Update all quest pins on the canvas when this setting changes
+            if (canvas.squirePins) {
+                canvas.squirePins.children.forEach(child => {
+                    if (child._updatePinAppearance) {
+                        child._updatePinAppearance();
+                    }
+                });
+            }
+        }
+    });
 
 
 
