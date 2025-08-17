@@ -1204,17 +1204,22 @@ export class QuestPanel {
             new Dialog({
                 title: 'Import Quests and Scene Pins from JSON',
                 width: 600,
+                resizable: true,
+                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'quests',
-                    jsonInputId: 'import-quests-json-input',
-                    importMethods: true,
-                    formatInfo: true,
-                    smartFeatures: true
+                    isImport: true,
+                    isExport: false,
+                    jsonInputId: 'import-quests-json-input'
                 }),
                 buttons: {
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: 'Cancel Import'
+                    },
                     import: {
                         icon: '<i class="fas fa-file-import"></i>',
-                        label: 'Import',
+                        label: 'Import JSON',
                         callback: async (dlgHtml) => {
                             const input = dlgHtml.find('#import-quests-json-input').val();
                             let importData;
@@ -1449,9 +1454,6 @@ export class QuestPanel {
                                 ui.notifications.error(`Quest import failed: ${error.message}`);
                             }
                         }
-                    },
-                    cancel: {
-                        label: 'Cancel'
                     }
                 },
                 default: 'import',
@@ -1617,8 +1619,12 @@ export class QuestPanel {
             new Dialog({
                 title: 'Export Quests and Scene Pins to JSON',
                 width: 600,
+                resizable: true,
+                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'quests',
+                    isImport: false,
+                    isExport: true,
                     jsonOutputId: 'export-quests-json-output',
                     exportData: exportData,
                     exportSummary: {
@@ -1628,11 +1634,14 @@ export class QuestPanel {
                         exportVersion: enhancedExportData.exportVersion,
                         timestamp: enhancedExportData.timestamp
                     },
-                    formatInfo: true,
                     hasScenePins: Object.keys(scenePins).length > 0,
                     scenePins: Object.keys(scenePins).length > 0 ? Object.values(scenePins).map(scene => ({ sceneName: scene.sceneName })) : []
                 }),
                 buttons: {
+                    close: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: 'Cancel Export'
+                    },
                     download: {
                         icon: '<i class="fas fa-download"></i>',
                         label: 'Download JSON',
@@ -1683,9 +1692,6 @@ export class QuestPanel {
                                 getBlacksmith()?.utils.postConsoleAndNotification('Export download failed', { error }, false, true, true, MODULE.TITLE);
                             }
                         }
-                    },
-                    close: {
-                        label: 'Close'
                     }
                 },
                 default: 'download'

@@ -3,14 +3,11 @@
   Usage:
   {{> "modules/coffee-pub-squire/templates/window-import-export" 
     type="quests|codex" 
-    title="Import Title"
-    content="Custom content here"
+    isImport=true|false
+    isExport=true|false
     jsonInputId="unique-input-id"
     jsonOutputId="unique-output-id"
     exportData="JSON string to display"
-    importMethods=true
-    formatInfo=true
-    smartFeatures=true
     exportSummary="Export summary object"
     scenePins="Scene pins data"
     hasScenePins=true
@@ -18,7 +15,9 @@
 --}}
 
 {{#if isImport}}
-  {{!-- IMPORT --}}
+  {{!-- ************* IMPORT ************* --}}
+
+  {{!-- Template Copy Button --}}
   <div style="margin-bottom: 16px;">
     <strong>Base Prompt Template</strong><br>
         <button type="button" class="copy-template-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #522c34; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -27,20 +26,34 @@
     <hr>
   </div>
 
-  
-  {{#if type === "codex"}}
+  {{!-- JSON Import or Paste --}}
   <div style="margin-bottom: 8px;">
+    <strong>Select or Paste JSON</strong>
+    <button type="button" class="browse-file-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #28542b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      <i class="fas fa-folder-open"></i> Select JSON File
+    </button>
+  </div>
+  <textarea id="{{jsonInputId}}" style="width:100%;height:400px;resize:vertical;"></textarea>  
+  <input type="file" id="import-file-input" accept=".json" style="display: none;">
+
+  {{!-- Codex Details --}}
+  {{#if (eq type "codex")}}
+  <div style="margin-bottom: 12px;">
+    <hr>
     <strong>Codex Smart Import</strong><br>
     <ul>
       <li>Existing Codex entries are updated, not duplicated</li>
       <li>Visibility states are preserved</li>
       <li>After import, run auto-discovery to enable the items the party has already discovered</li>
     </ul>
+    <hr>
   </div>
   {{/if}}
-  
-  {{#if type === "quest"}}
-  <div style="margin-bottom: 8px;">
+
+  {{!-- Quest Details --}}
+  {{#if (eq type "quests")}}
+  <div style="margin-bottom: 12px;">
+    <hr>
     <strong>Quest Smart Import</strong><br>
     <ul>
       <li>Existing Quest entries are updated, not duplicated</li>
@@ -48,60 +61,64 @@
       <li>Scene pins are merged intelligently</li>
       <li>Pin positions and associations maintained</li>
     </ul>
+    <hr>
   </div>
   {{/if}}
 
 
-  <div style="margin-bottom: 8px;">
-    <strong>Select or Paste JSON:</strong>
-    <button type="button" class="browse-file-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #28542b; color: white; border: none; border-radius: 4px; cursor: pointer;">
-      <i class="fas fa-folder-open"></i> Select JSON File
-    </button>
-    
-  </div>
-  <textarea id="{{jsonInputId}}" style="width:100%;height:400px;resize:vertical;"></textarea>  
-  <input type="file" id="import-file-input" accept=".json" style="display: none;">
+{{else if isExport}}
+  {{!-- ************* EXPORT ************* --}}
 
-{{else}}
-  {{!-- EXPORT --}}
+  {{!-- Title --}}
+  <div style="margin-bottom: 8px;">
+     {{#if (eq type "quests")}}
+      <strong>Quests and Scene Pins JSON</strong>
+     {{else if (eq type "codex")}}
+      <strong>Codex JSON</strong>
+     {{/if}}
+  </div>
+  
+  {{!-- JSON Text --}}
+  <textarea id="{{jsonOutputId}}" style="width:100%;height:500px;resize:vertical;">{{exportData}}</textarea>
+
+  {{!-- Export Summary --}}
   {{#if exportSummary}}
   <div style="margin-bottom: 8px;">
-    <strong>Export Summary:</strong><br>
+    <hr>
+    <strong>Export Summary</strong><br>
     <ul>
       {{#if exportSummary.totalItems}}
-      <li>{{exportSummary.totalItems}} {{type}}</li>
+        <li><strong>Total Exported:</strong> {{exportSummary.totalItems}} {{type}}</li>
       {{/if}}
       {{#if exportSummary.totalScenes}}
-      <li>{{exportSummary.totalScenes}} scenes with {{type}} pins</li>
+        <li><strong>Scenes:</strong> {{exportSummary.totalScenes}} scenes with {{type}} pins</li>
       {{/if}}
       {{#if exportSummary.totalPins}}
-      <li>{{exportSummary.totalPins}} total {{type}} pins</li>
+      <li><strong>Pins:</strong> {{exportSummary.totalPins}} total {{type}} pins</strong></li>
       {{/if}}
       {{#if exportSummary.exportVersion}}
-      <li>Export Meta: v{{exportSummary.exportVersion}} at {{exportSummary.timestamp}}</li>
+        <li><strong>Timestamp:</strong> v{{exportSummary.exportVersion}} at {{exportSummary.timestamp}}</li>
       {{/if}}
     </ul>
-  </div>
-  {{/if}}
-  
-  {{#if formatInfo}}
-  <div style="margin-bottom: 8px;">
-    <strong>Export Format:</strong> This export includes both {{type}} content and scene pin placements.<br>
-    <strong>Scene Pins:</strong> Pin positions, associations, and states are preserved.
+    <hr>
   </div>
   {{/if}}
   
   {{#if scenePins}}
-  {{#if hasScenePins}}
-  <div style="margin-bottom: 8px; color:rgb(13, 97, 16);">
-    <strong>Scene Pins Included:</strong> {{#each scenePins}}{{this.sceneName}}{{#unless @last}}, {{/unless}}{{/each}}
-  </div>
-  {{else}}
-  <div style="margin-bottom: 8px; color:rgb(167, 106, 14);">
-    <strong>ℹ No Scene Pins:</strong> No scenes currently have {{type}} pins placed.
-  </div>
+    {{#if hasScenePins}}
+      <div style="margin-bottom: 8px;">
+        <strong>Scene Pins:</strong> {{#each scenePins}}<label style="color:rgb(13, 97, 16);">{{this.sceneName}}</label>{{#unless @last}}, {{/unless}}{{/each}}
+        <hr>
+      </div>
+    {{else}}
+      <div style="margin-bottom: 8px;">
+        <strong>Scene Pins:</strong> <label style="color:rgb(167, 106, 14);">No scenes currently have {{type}} pins placed.</label>
+        <hr>
+      </div>
+    {{/if}}
   {{/if}}
-  {{/if}}
-  
-  <textarea id="{{jsonOutputId}}" style="width:100%;height:500px;resize:vertical;">{{exportData}}</textarea>
+
+
+
+
 {{/if}}

@@ -1098,20 +1098,21 @@ SPECIFIC INSTRUCTIONS HERE`;
             new Dialog({
                 title: 'Import Codex from JSON',
                 width: 600,
+                resizable: true,
+                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'codex',
-                    jsonInputId: 'codex-import-json',
-                    importMethods: true,
-                    formatInfo: true,
-                    smartFeatures: true
+                    isImport: true,
+                    isExport: false,
+                    jsonInputId: 'codex-import-json'
                 }),
                 buttons: {
                     cancel: {
                         icon: '<i class="fas fa-times"></i>',
-                        label: 'Cancel'
+                        label: 'Cancel Import'
                     },
                     import: {
-                        icon: '<i class="fas fa-theater-masks"></i>',
+                        icon: '<i class="fas fa-file-import"></i>',
                         label: 'Import JSON',
                         callback: async (html) => {
                             ui.notifications.info('Importing Codex entries. This may take some time as entries are added, updated, indexed, and sorted. You will be notified when the process is complete.');
@@ -1361,18 +1362,25 @@ SPECIFIC INSTRUCTIONS HERE`;
             new Dialog({
                 title: 'Export Codex as JSON',
                 width: 600,
+                resizable: true,
+                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'codex',
+                    isImport: false,
+                    isExport: true,
                     jsonOutputId: 'codex-export-json',
                     exportData: jsonString,
                     exportSummary: {
                         totalItems: exportData.length,
                         exportVersion: "1.0",
                         timestamp: new Date().toLocaleString()
-                    },
-                    formatInfo: true
+                    }
                 }),
                 buttons: {
+                    close: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: 'Cancel Export'
+                    },
                     download: {
                         icon: '<i class="fas fa-download"></i>',
                         label: 'Download JSON',
@@ -1423,9 +1431,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 getBlacksmith()?.utils.postConsoleAndNotification('Export download failed', { error }, false, true, true, MODULE.TITLE);
                             }
                         }
-                    },
-                    close: {
-                        label: 'Close'
                     }
                 },
                 default: 'download'
