@@ -1645,19 +1645,17 @@ export class QuestPanel {
                         • ${exportQuests.length} quests<br>
                         • ${Object.keys(scenePins).length} scenes with quest pins<br>
                         • ${Object.values(scenePins).reduce((sum, scene) => sum + scene.questPins.length, 0)} total quest pins<br>
-                        • Export version: ${enhancedExportData.exportVersion}<br>
-                        • Timestamp: ${new Date(enhancedExportData.timestamp).toLocaleString()}
+                        • Export Meta: v${enhancedExportData.exportVersion} at ${new Date(enhancedExportData.timestamp).toLocaleString()}
                     </div>
                     <div style="margin-bottom: 8px;">
-                        <strong>Enhanced Export Format:</strong> This export includes both quest content and scene pin placements.<br>
-                        <strong>Compatibility:</strong> Can be imported into both legacy and enhanced systems.<br>
+                        <strong>Export Format:</strong> This export includes both quest content and scene pin placements.<br>
                         <strong>Scene Pins:</strong> Pin positions, quest associations, and objective states are preserved.
                     </div>
                     ${Object.keys(scenePins).length > 0 ? 
-                        `<div style="margin-bottom: 8px; color: #4CAF50;">
-                            <strong>✓ Scene Pins Included:</strong> ${Object.keys(scenePins).map(id => scenePins[id].sceneName).join(', ')}
+                        `<div style="margin-bottom: 8px; color:rgb(13, 97, 16);">
+                            <strong>Scene Pins Included:</strong> ${Object.keys(scenePins).map(id => scenePins[id].sceneName).join(', ')}
                         </div>` : 
-                        `<div style="margin-bottom: 8px; color: #FF9800;">
+                        `<div style="margin-bottom: 8px; color:rgb(167, 106, 14);">
                             <strong>ℹ No Scene Pins:</strong> No scenes currently have quest pins placed.
                         </div>`
                     }

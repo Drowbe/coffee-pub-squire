@@ -1097,6 +1097,7 @@ Here are the specific instructions I want you to use to build the above JSON arr
 SPECIFIC INSTRUCTIONS HERE`;
             new Dialog({
                 title: 'Paste JSON',
+                width: 600,
                 content: `
                     <button type="button" class="copy-template-button" style="margin-bottom:8px;">Copy a Blank Pasteable JSON Template to the Clipboard</button>
                     <textarea id="codex-import-json" style="width:100%;height:500px;resize:vertical;"></textarea>
