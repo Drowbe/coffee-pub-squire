@@ -1203,37 +1203,14 @@ export class QuestPanel {
             }
             new Dialog({
                 title: 'Import Quests and Scene Pins from JSON',
-                content: `
-                    <div style="margin-bottom: 16px;">
-                        <strong>Import Methods:</strong><br>
-                        <button type="button" class="browse-file-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            <i class="fas fa-folder-open"></i> Browse & Upload File
-                        </button>
-                        <button type="button" class="copy-template-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            <i class="fas fa-copy"></i> Copy Template to Clipboard
-                        </button>
-                    </div>
-                    
-                    <div style="margin-bottom: 8px;">
-                        <strong>Import Formats Supported:</strong><br>
-                        • <strong>Legacy:</strong> Array of quest objects (quests only)<br>
-                        • <strong>Enhanced:</strong> Object with quests and scenePins (quests + pin placements)
-                    </div>
-                    <div style="margin-bottom: 8px;">
-                        <strong>Smart Import Features:</strong><br>
-                        • Existing quests are updated, not duplicated<br>
-                        • Quest progress and states are preserved<br>
-                        • Scene pins are merged intelligently<br>
-                        • Pin positions and quest associations maintained
-                    </div>
-                    
-                    <div style="margin-bottom: 8px;">
-                        <strong>Or paste JSON manually:</strong>
-                    </div>
-                    <textarea id="import-quests-json-input" style="width:100%;height:400px;resize:vertical;"></textarea>
-                    
-                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
-                `,
+                width: 600,
+                content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                    type: 'quests',
+                    jsonInputId: 'import-quests-json-input',
+                    importMethods: true,
+                    formatInfo: true,
+                    smartFeatures: true
+                }),
                 buttons: {
                     import: {
                         icon: '<i class="fas fa-file-import"></i>',
@@ -1639,28 +1616,22 @@ export class QuestPanel {
             const exportData = JSON.stringify(enhancedExportData, null, 2);
             new Dialog({
                 title: 'Export Quests and Scene Pins to JSON',
-                content: `
-                    <div style="margin-bottom: 8px;">
-                        <strong>Export Summary:</strong><br>
-                        • ${exportQuests.length} quests<br>
-                        • ${Object.keys(scenePins).length} scenes with quest pins<br>
-                        • ${Object.values(scenePins).reduce((sum, scene) => sum + scene.questPins.length, 0)} total quest pins<br>
-                        • Export Meta: v${enhancedExportData.exportVersion} at ${new Date(enhancedExportData.timestamp).toLocaleString()}
-                    </div>
-                    <div style="margin-bottom: 8px;">
-                        <strong>Export Format:</strong> This export includes both quest content and scene pin placements.<br>
-                        <strong>Scene Pins:</strong> Pin positions, quest associations, and objective states are preserved.
-                    </div>
-                    ${Object.keys(scenePins).length > 0 ? 
-                        `<div style="margin-bottom: 8px; color:rgb(13, 97, 16);">
-                            <strong>Scene Pins Included:</strong> ${Object.keys(scenePins).map(id => scenePins[id].sceneName).join(', ')}
-                        </div>` : 
-                        `<div style="margin-bottom: 8px; color:rgb(167, 106, 14);">
-                            <strong>ℹ No Scene Pins:</strong> No scenes currently have quest pins placed.
-                        </div>`
-                    }
-                    <textarea id="export-quests-json-output" style="width:100%;height:500px;resize:vertical;">${exportData}</textarea>
-                `,
+                width: 600,
+                content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                    type: 'quests',
+                    jsonOutputId: 'export-quests-json-output',
+                    exportData: exportData,
+                    exportSummary: {
+                        totalItems: exportQuests.length,
+                        totalScenes: Object.keys(scenePins).length,
+                        totalPins: Object.values(scenePins).reduce((sum, scene) => sum + (scene.questPins ? scene.questPins.length : 0), 0),
+                        exportVersion: enhancedExportData.exportVersion,
+                        timestamp: enhancedExportData.timestamp
+                    },
+                    formatInfo: true,
+                    hasScenePins: Object.keys(scenePins).length > 0,
+                    scenePins: Object.keys(scenePins).length > 0 ? Object.values(scenePins).map(scene => ({ sceneName: scene.sceneName })) : []
+                }),
                 buttons: {
                     download: {
                         icon: '<i class="fas fa-download"></i>',

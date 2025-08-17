@@ -1066,7 +1066,7 @@ export class CodexPanel {
         });
 
         // Import JSON button
-        html.find('.import-json-button').click((event) => {
+        html.find('.import-json-button').click(async (event) => {
             event.preventDefault();
             const template = `I want you to build a JSON template based on the criteria I will share below. Here are the rules for how you will add data to the JSON.
 
@@ -1096,12 +1096,15 @@ Here are the specific instructions I want you to use to build the above JSON arr
 
 SPECIFIC INSTRUCTIONS HERE`;
             new Dialog({
-                title: 'Paste JSON',
+                title: 'Import Codex from JSON',
                 width: 600,
-                content: `
-                    <button type="button" class="copy-template-button" style="margin-bottom:8px;">Copy a Blank Pasteable JSON Template to the Clipboard</button>
-                    <textarea id="codex-import-json" style="width:100%;height:500px;resize:vertical;"></textarea>
-                `,
+                content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                    type: 'codex',
+                    jsonInputId: 'codex-import-json',
+                    importMethods: true,
+                    formatInfo: true,
+                    smartFeatures: true
+                }),
                 buttons: {
                     cancel: {
                         icon: '<i class="fas fa-times"></i>',
@@ -1281,12 +1284,62 @@ SPECIFIC INSTRUCTIONS HERE`;
                     html.find('.copy-template-button').click(() => {
                         copyToClipboard(template);
                     });
+                    
+                    // Browse file button
+                    html.find('.browse-file-button').click(() => {
+                        const fileInput = html.find('#import-file-input');
+                        fileInput.click();
+                    });
+                    
+                    // File input change handler
+                    html.find('#import-file-input').change(async (event) => {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        
+                        try {
+                            // Check file type
+                            if (!file.name.toLowerCase().endsWith('.json')) {
+                                ui.notifications.error('Please select a JSON file.');
+                                return;
+                            }
+                            
+                            // Read file content
+                            const text = await file.text();
+                            let importData;
+                            
+                            try {
+                                importData = JSON.parse(text);
+                            } catch (e) {
+                                ui.notifications.error('Invalid JSON in file: ' + e.message);
+                                return;
+                            }
+                            
+                            // Validate format
+                            if (!Array.isArray(importData)) {
+                                ui.notifications.error('Invalid file format: Must be an array of codex entries.');
+                                return;
+                            }
+                            
+                            // Auto-populate the textarea with the file content
+                            html.find('#codex-import-json').val(text);
+                            
+                            // Show success message
+                            ui.notifications.info(`File "${file.name}" loaded successfully! Review the content below and click Import when ready.`);
+                            
+                            // Reset file input
+                            event.target.value = '';
+                            
+                        } catch (error) {
+                            getBlacksmith()?.utils.postConsoleAndNotification('Error reading file', { error, fileName: file.name }, false, true, true, MODULE.TITLE);
+                            ui.notifications.error(`Error reading file: ${error.message}`);
+                        }
+                    });
                 }
             }).render(true);
         });
 
         // Export JSON button
-        html.find('.export-json-button').click((event) => {
+        html.find('.export-json-button').click(async (event) => {
             event.preventDefault();
             // Collect all entries as a flat array (single journal format)
             const exportData = [];
@@ -1307,22 +1360,68 @@ SPECIFIC INSTRUCTIONS HERE`;
             const jsonString = JSON.stringify(exportData, null, 2);
             new Dialog({
                 title: 'Export Codex as JSON',
-                content: `
-                    <div style="margin-bottom: 8px;">Here are your codex entries in JSON format. Copy this text to save it, or use the download button.</div>
-                    <textarea id="codex-export-json" style="width:100%;height:500px;resize:vertical;">${jsonString}</textarea>
-                `,
+                width: 600,
+                content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                    type: 'codex',
+                    jsonOutputId: 'codex-export-json',
+                    exportData: jsonString,
+                    exportSummary: {
+                        totalItems: exportData.length,
+                        exportVersion: "1.0",
+                        timestamp: new Date().toLocaleString()
+                    },
+                    formatInfo: true
+                }),
                 buttons: {
                     download: {
                         icon: '<i class="fas fa-download"></i>',
                         label: 'Download JSON',
                         callback: () => {
-                            const blob = new Blob([jsonString], { type: 'application/json' });
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob);
-                            a.download = `codex-export-${new Date().toISOString().split('T')[0]}.json`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
+                            try {
+                                // Windows-safe filename sanitization
+                                const sanitizeWindowsFilename = (name) => {
+                                    return name
+                                        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
+                                        .replace(/\s+$/g, "")
+                                        .replace(/\.+$/g, "")
+                                        .slice(0, 150); // keep it reasonable
+                                };
+                                
+                                // Build a Windows-safe filename
+                                const stamp = new Date().toISOString().replace(/[:]/g, "-");
+                                const filename = sanitizeWindowsFilename(`COFFEEPUB-SQUIRE-codex-export-${stamp}.json`);
+                                
+                                // Use Foundry's built-in helper (v10+) - this handles Blob creation + anchor download correctly
+                                if (typeof saveDataToFile === 'function') {
+                                    saveDataToFile(jsonString, "application/json;charset=utf-8", filename);
+                                    ui.notifications.info(`Codex export saved as ${filename}`);
+                                } else {
+                                    // Fallback: use the classic anchor approach with sanitized filename
+                                    const blob = new Blob([jsonString], { 
+                                        type: 'application/json;charset=utf-8' 
+                                    });
+                                    const url = URL.createObjectURL(blob);
+                                    
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = filename;
+                                    a.rel = "noopener"; // safety
+                                    a.style.display = 'none';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    a.remove();
+                                    
+                                    // Always revoke after a tick so the download starts
+                                    setTimeout(() => URL.revokeObjectURL(url), 0);
+                                    
+                                    ui.notifications.info(`Codex export downloaded as ${filename}`);
+                                }
+                            } catch (error) {
+                                // Last resort: copy to clipboard
+                                copyToClipboard(jsonString);
+                                ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
+                                getBlacksmith()?.utils.postConsoleAndNotification('Export download failed', { error }, false, true, true, MODULE.TITLE);
+                            }
                         }
                     },
                     close: {
@@ -1375,6 +1474,7 @@ SPECIFIC INSTRUCTIONS HERE`;
 
         new Dialog({
             title: 'Select Codex Journal',
+            width: 600,
             content: `
                 <form>
                     <div class="form-group">

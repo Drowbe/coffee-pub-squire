@@ -1,0 +1,107 @@
+{{!-- Shared Import/Export Dialog Template --}}
+{{!-- 
+  Usage:
+  {{> "modules/coffee-pub-squire/templates/window-import-export" 
+    type="quests|codex" 
+    title="Import Title"
+    content="Custom content here"
+    jsonInputId="unique-input-id"
+    jsonOutputId="unique-output-id"
+    exportData="JSON string to display"
+    importMethods=true
+    formatInfo=true
+    smartFeatures=true
+    exportSummary="Export summary object"
+    scenePins="Scene pins data"
+    hasScenePins=true
+  }}
+--}}
+
+{{#if isImport}}
+  {{!-- IMPORT --}}
+  <div style="margin-bottom: 16px;">
+    <strong>Base Prompt Template</strong><br>
+        <button type="button" class="copy-template-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #522c34; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      <i class="fas fa-copy"></i> Copy to Clipboard
+    </button>
+    <hr>
+  </div>
+
+  
+  {{#if type === "codex"}}
+  <div style="margin-bottom: 8px;">
+    <strong>Codex Smart Import</strong><br>
+    <ul>
+      <li>Existing Codex entries are updated, not duplicated</li>
+      <li>Visibility states are preserved</li>
+      <li>After import, run auto-discovery to enable the items the party has already discovered</li>
+    </ul>
+  </div>
+  {{/if}}
+  
+  {{#if type === "quest"}}
+  <div style="margin-bottom: 8px;">
+    <strong>Quest Smart Import</strong><br>
+    <ul>
+      <li>Existing Quest entries are updated, not duplicated</li>
+      <li>Progress and states are preserved</li>
+      <li>Scene pins are merged intelligently</li>
+      <li>Pin positions and associations maintained</li>
+    </ul>
+  </div>
+  {{/if}}
+
+
+  <div style="margin-bottom: 8px;">
+    <strong>Select or Paste JSON:</strong>
+    <button type="button" class="browse-file-button" style="margin: 8px 8px 8px 0; padding: 8px 16px; background: #28542b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      <i class="fas fa-folder-open"></i> Select JSON File
+    </button>
+    
+  </div>
+  <textarea id="{{jsonInputId}}" style="width:100%;height:400px;resize:vertical;"></textarea>  
+  <input type="file" id="import-file-input" accept=".json" style="display: none;">
+
+{{else}}
+  {{!-- EXPORT --}}
+  {{#if exportSummary}}
+  <div style="margin-bottom: 8px;">
+    <strong>Export Summary:</strong><br>
+    <ul>
+      {{#if exportSummary.totalItems}}
+      <li>{{exportSummary.totalItems}} {{type}}</li>
+      {{/if}}
+      {{#if exportSummary.totalScenes}}
+      <li>{{exportSummary.totalScenes}} scenes with {{type}} pins</li>
+      {{/if}}
+      {{#if exportSummary.totalPins}}
+      <li>{{exportSummary.totalPins}} total {{type}} pins</li>
+      {{/if}}
+      {{#if exportSummary.exportVersion}}
+      <li>Export Meta: v{{exportSummary.exportVersion}} at {{exportSummary.timestamp}}</li>
+      {{/if}}
+    </ul>
+  </div>
+  {{/if}}
+  
+  {{#if formatInfo}}
+  <div style="margin-bottom: 8px;">
+    <strong>Export Format:</strong> This export includes both {{type}} content and scene pin placements.<br>
+    <strong>Scene Pins:</strong> Pin positions, associations, and states are preserved.
+  </div>
+  {{/if}}
+  
+  {{#if scenePins}}
+  {{#if hasScenePins}}
+  <div style="margin-bottom: 8px; color:rgb(13, 97, 16);">
+    <strong>Scene Pins Included:</strong> {{#each scenePins}}{{this.sceneName}}{{#unless @last}}, {{/unless}}{{/each}}
+  </div>
+  {{else}}
+  <div style="margin-bottom: 8px; color:rgb(167, 106, 14);">
+    <strong>ℹ No Scene Pins:</strong> No scenes currently have {{type}} pins placed.
+  </div>
+  {{/if}}
+  {{/if}}
+  
+  <textarea id="{{jsonOutputId}}" style="width:100%;height:500px;resize:vertical;">{{exportData}}</textarea>
+{{/if}}
