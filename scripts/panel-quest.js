@@ -33,6 +33,7 @@ export class QuestPanel {
             category: "all"
         };
         this.allTags = new Set();
+        this.isImporting = false; // Flag to prevent panel refreshes during import
         this._verifyAndUpdateCategories();
         this._setupHooks();
     }
@@ -1247,169 +1248,229 @@ export class QuestPanel {
                                 return;
                             }
                             
-                            // Handle both legacy and enhanced formats
-                            let quests, scenePins;
-                            if (Array.isArray(importData)) {
-                                // Legacy format: direct array of quests
-                                quests = importData;
-                                scenePins = {};
-                            } else if (importData.quests && Array.isArray(importData.quests)) {
-                                // Enhanced format: object with quests and scenePins
-                                quests = importData.quests;
-                                scenePins = importData.scenePins || {};
-                                
-                                // Show enhanced import info
-                                if (importData.exportVersion) {
-                                    ui.notifications.info(`Importing enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
-                                }
-                            } else {
-                                ui.notifications.error('Invalid format: JSON must be either an array of quests or an object with quests and scenePins properties.');
-                                return;
-                            }
+                            // Set import flag to prevent panel refreshes during import
+                            this.isImporting = true;
                             
-                            // Ensure categories include all required categories
-                            let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
-                            let changed = false;
-                            for (const cat of ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]) {
-                                if (!categories.includes(cat)) { categories.push(cat); changed = true; }
-                            }
-                            if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
-                            const journalId = game.settings.get(MODULE.ID, 'questJournal');
-                            if (!journalId || journalId === 'none') {
-                                ui.notifications.error('No quest journal selected.');
-                                return;
-                            }
-                            const journal = game.journal.get(journalId);
-                            if (!journal) {
-                                ui.notifications.error('Selected quest journal not found.');
-                                return;
-                            }
-                            // Check for duplicate names in the import data itself
-                            const importNameCounts = {};
-                            const duplicateNames = [];
-                            quests.forEach(q => {
-                                if (q.name) {
-                                    importNameCounts[q.name] = (importNameCounts[q.name] || 0) + 1;
-                                    if (importNameCounts[q.name] > 1 && !duplicateNames.includes(q.name)) {
-                                        duplicateNames.push(q.name);
-                                    }
-                                }
-                            });
+                            // Show progress bar
+                            this._showProgressBar();
                             
-                            if (duplicateNames.length > 0) {
-                                ui.notifications.warn(`Warning: Import data contains duplicate quest names: ${duplicateNames.join(', ')}. These will be merged with existing quests.`);
-                            }
-                            
-                            let imported = 0;
-                            let updated = 0;
-                            let duplicatesMerged = 0;
-                            for (const quest of quests) {
-                                if (!quest.name) continue;
-                                
-                                // Check if a quest with this UUID already exists (UUID takes priority)
-                                let existingPage = null;
-                                let matchType = 'none';
-                                
-                                if (quest.uuid) {
-                                    existingPage = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === quest.uuid);
-                                    if (existingPage) matchType = 'uuid';
-                                }
-                                
-                                // If no UUID match, check by name as fallback
-                                if (!existingPage) {
-                                    existingPage = journal.pages.find(p => p.name === quest.name);
-                                    if (existingPage) matchType = 'name';
-                                }
-                                
-                                // Debug logging for duplicate detection
-                                
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    `Quest import: "${quest.name}" (${quest.uuid}) - Match: ${matchType}`,
-                                    { quest: quest.name, uuid: quest.uuid, matchType, existingPage: existingPage?.name },
-                                    false, true, false, MODULE.TITLE
-                                );
-                                
-                                
-                                if (existingPage) {
-                                    // Update existing quest - PRESERVE EXISTING STATE
-                                    const existingContent = existingPage.text.content;
-                                    const updatedContent = this._mergeJournalContent(existingContent, quest);
+                            try {
+                                // Handle both legacy and enhanced formats
+                                let quests, scenePins;
+                                if (Array.isArray(importData)) {
+                                    // Legacy format: direct array of quests
+                                    quests = importData;
+                                    scenePins = {};
+                                } else if (importData.quests && Array.isArray(importData.quests)) {
+                                    // Enhanced format: object with quests and scenePins
+                                    quests = importData.quests;
+                                    scenePins = importData.scenePins || {};
                                     
-                                    await existingPage.update({
-                                        text: {
-                                            content: updatedContent
-                                        }
-                                    });
-                                    // Update flags if necessary
-                                    if (quest.visible !== undefined) {
-                                        await existingPage.setFlag(MODULE.ID, 'visible', quest.visible !== false);
-                                    }
-                                    // Make sure the questUuid flag is set
-                                    const uuid = quest.uuid || existingPage.getFlag(MODULE.ID, 'questUuid') || foundry.utils.randomID();
-                                    if (uuid !== existingPage.getFlag(MODULE.ID, 'questUuid')) {
-                                        await existingPage.setFlag(MODULE.ID, 'questUuid', uuid);
-                                    }
-                                    
-                                    // Update the page name if it's different (in case of name changes)
-                                    if (quest.name && quest.name !== existingPage.name) {
-                                        await existingPage.update({ name: quest.name });
-                                    }
-                                    // Set original category flag if status is Complete or Failed
-                                    if (quest.status === 'Complete' || quest.status === 'Failed') {
-                                        // Only set if not already set and the quest has a category
-                                        if (!await existingPage.getFlag(MODULE.ID, 'originalCategory') && quest.category) {
-                                            await existingPage.setFlag(MODULE.ID, 'originalCategory', quest.category);
-                                        }
-                                    }
-                                    updated++;
-                                    if (matchType === 'name') {
-                                        duplicatesMerged++;
+                                    // Show enhanced import info
+                                    if (importData.exportVersion) {
+                                        ui.notifications.info(`Importing enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
                                     }
                                 } else {
-                                    // Create new quest
-                                    const uuid = quest.uuid || foundry.utils.randomID();
-                                    const pageData = {
-                                        name: quest.name,
-                                        type: 'text',
-                                        text: {
-                                            content: this._generateJournalContentFromImport(quest)
-                                        },
-                                        flags: {
-                                            [MODULE.ID]: {
-                                                questUuid: uuid
+                                    ui.notifications.error('Invalid format: JSON must be either an array of quests or an object with quests and scenePins properties.');
+                                    return;
+                                }
+                                
+                                // Ensure categories include all required categories
+                                let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
+                                let changed = false;
+                                for (const cat of ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]) {
+                                    if (!categories.includes(cat)) { categories.push(cat); changed = true; }
+                                }
+                                if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
+                                const journalId = game.settings.get(MODULE.ID, 'questJournal');
+                                if (!journalId || journalId === 'none') {
+                                    ui.notifications.error('No quest journal selected.');
+                                    return;
+                                }
+                                const journal = game.journal.get(journalId);
+                                if (!journal) {
+                                    ui.notifications.error('Selected quest journal not found.');
+                                    return;
+                                }
+                                
+                                // Update progress for validation phase
+                                this._updateProgressBar(10, 'Validating import data...');
+                                
+                                // Check for duplicate names in the import data itself
+                                const importNameCounts = {};
+                                const duplicateNames = [];
+                                quests.forEach(q => {
+                                    if (q.name) {
+                                        importNameCounts[q.name] = (importNameCounts[q.name] || 0) + 1;
+                                        if (importNameCounts[q.name] > 1 && !duplicateNames.includes(q.name)) {
+                                            duplicateNames.push(q.name);
+                                        }
+                                    }
+                                });
+                                
+                                if (duplicateNames.length > 0) {
+                                    ui.notifications.warn(`Warning: Import data contains duplicate quest names: ${duplicateNames.join(', ')}. These will be merged with existing quests.`);
+                                }
+                                
+                                // Update progress for quest processing phase
+                                this._updateProgressBar(20, `Processing ${quests.length} quests...`);
+                                
+                                let imported = 0;
+                                let updated = 0;
+                                let duplicatesMerged = 0;
+                                const totalQuests = quests.length;
+                                
+                                for (let i = 0; i < quests.length; i++) {
+                                    const quest = quests[i];
+                                    if (!quest.name) continue;
+                                    
+                                    // Update progress for each quest
+                                    const questProgress = 20 + ((i / totalQuests) * 60); // 20-80% range for quest processing
+                                    this._updateProgressBar(questProgress, `Processing quest: ${quest.name}`);
+                                    
+                                    // Check if a quest with this UUID already exists (UUID takes priority)
+                                    let existingPage = null;
+                                    let matchType = 'none';
+                                    
+                                    if (quest.uuid) {
+                                        existingPage = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === quest.uuid);
+                                        if (existingPage) matchType = 'uuid';
+                                    }
+                                    
+                                    // If no UUID match, check by name as fallback
+                                    if (!existingPage) {
+                                        existingPage = journal.pages.find(p => p.name === quest.name);
+                                        if (existingPage) matchType = 'name';
+                                    }
+                                    
+                                    // Debug logging for duplicate detection
+                                    getBlacksmith()?.utils.postConsoleAndNotification(
+                                        `Quest import: "${quest.name}" (${quest.uuid}) - Match: ${matchType}`,
+                                        { quest: quest.name, uuid: quest.uuid, matchType, existingPage: existingPage?.name },
+                                        false, true, false, MODULE.TITLE
+                                    );
+                                    
+                                    if (existingPage) {
+                                        // Update existing quest - PRESERVE EXISTING STATE
+                                        const existingContent = existingPage.text.content;
+                                        const updatedContent = this._mergeJournalContent(existingContent, quest);
+                                        
+                                        await existingPage.update({
+                                            text: {
+                                                content: updatedContent
+                                            }
+                                        });
+                                        // Update flags if necessary
+                                        if (quest.visible !== undefined) {
+                                            await existingPage.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+                                        }
+                                        // Make sure the questUuid flag is set
+                                        const uuid = quest.uuid || existingPage.getFlag(MODULE.ID, 'questUuid') || foundry.utils.randomID();
+                                        if (uuid !== existingPage.getFlag(MODULE.ID, 'questUuid')) {
+                                            await existingPage.setFlag(MODULE.ID, 'questUuid', uuid);
+                                        }
+                                        
+                                        // Update the page name if it's different (in case of name changes)
+                                        if (quest.name && quest.name !== existingPage.name) {
+                                            await existingPage.update({ name: quest.name });
+                                        }
+                                        // Set original category flag if status is Complete or Failed
+                                        if (quest.status === 'Complete' || quest.status === 'Failed') {
+                                            // Only set if not already set and the quest has a category
+                                            if (!await existingPage.getFlag(MODULE.ID, 'originalCategory') && quest.category) {
+                                                await existingPage.setFlag(MODULE.ID, 'originalCategory', quest.category);
                                             }
                                         }
-                                    };
-                                    const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-                                    const page = created[0];
-                                    if (page) {
-                                        await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
-                                        // Set original category flag if status is Complete or Failed
-                                        if ((quest.status === 'Complete' || quest.status === 'Failed') && quest.category) {
-                                            await page.setFlag(MODULE.ID, 'originalCategory', quest.category);
+                                        updated++;
+                                        if (matchType === 'name') {
+                                            duplicatesMerged++;
                                         }
-                                        imported++;
+                                    } else {
+                                        // Create new quest
+                                        const uuid = quest.uuid || foundry.utils.randomID();
+                                        const pageData = {
+                                            name: quest.name,
+                                            type: 'text',
+                                            text: {
+                                                content: this._generateJournalContentFromImport(quest)
+                                            },
+                                            flags: {
+                                                [MODULE.ID]: {
+                                                    questUuid: uuid
+                                                }
+                                            }
+                                        };
+                                        const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                                        const page = created[0];
+                                        if (page) {
+                                            await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+                                            // Set original category flag if status is Complete or Failed
+                                            if ((quest.status === 'Complete' || quest.status === 'Failed') && quest.category) {
+                                                await page.setFlag(MODULE.ID, 'originalCategory', quest.category);
+                                            }
+                                            imported++;
+                                        }
+                                    }
+                                    
+                                    // Small delay to make progress visible
+                                    if (i % 5 === 0) {
+                                        await new Promise(resolve => setTimeout(resolve, 100));
                                     }
                                 }
-                            }
-                            
-                            // Import scene pins if available
-                            if (Object.keys(scenePins).length > 0) {
-                                try {
-                                    await this._importScenePins(scenePins);
-                                } catch (error) {
-                                    getBlacksmith()?.utils.postConsoleAndNotification('Error during scene pin import', { error }, false, true, true, MODULE.TITLE);
-                                    ui.notifications.warn('Scene pins import failed, but quests were imported successfully. Check console for details.');
+                                
+                                // Update progress for scene pins import
+                                this._updateProgressBar(80, 'Importing scene pins...');
+                                
+                                // Import scene pins if available
+                                if (Object.keys(scenePins).length > 0) {
+                                    try {
+                                        await this._importScenePins(scenePins);
+                                    } catch (error) {
+                                        getBlacksmith()?.utils.postConsoleAndNotification('Error during scene pin import', { error }, false, true, true, MODULE.TITLE);
+                                        ui.notifications.warn('Scene pins import failed, but quests were imported successfully. Check console for details.');
+                                    }
                                 }
+                                
+                                // Update progress for completion
+                                this._updateProgressBar(90, 'Finalizing import...');
+                                
+                                let message = `Quest import complete: ${imported} added, ${updated} updated.`;
+                                if (duplicatesMerged > 0) {
+                                    message += ` ${duplicatesMerged} duplicates were merged.`;
+                                }
+                                ui.notifications.info(message);
+                                
+                                // Show completion message in progress bar
+                                this._updateProgressBar(100, 'Import complete!');
+                                
+                                // Keep completion message visible for a moment
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                
+                                // Hide progress bar
+                                this._hideProgressBar();
+                                
+                                // Clear import flag and refresh panel once at the end
+                                this.isImporting = false;
+                                await this._refreshData();
+                                this.render(this.element);
+                                
+                            } catch (error) {
+                                // Hide progress bar on error
+                                this._hideProgressBar();
+                                
+                                // Clear import flag on error
+                                this.isImporting = false;
+                                
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    'Error during quest import',
+                                    { error },
+                                    false,
+                                    false,
+                                    true,
+                                    MODULE.TITLE
+                                );
+                                ui.notifications.error(`Quest import failed: ${error.message}`);
                             }
-                            
-                            let message = `Quest import complete: ${imported} added, ${updated} updated.`;
-                            if (duplicatesMerged > 0) {
-                                message += ` ${duplicatesMerged} duplicates were merged.`;
-                            }
-                            ui.notifications.info(message);
-                            this._refreshData();
-                            this.render(this.element);
                         }
                     },
                     cancel: {
@@ -2886,5 +2947,46 @@ export class QuestPanel {
         }
         
         return merged;
+    }
+
+    /**
+     * Show the global progress bar for quest imports
+     * @private
+     */
+    _showProgressBar() {
+        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
+        const progressFill = this.element?.find('.tray-progress-bar-inner');
+        const progressText = this.element?.find('.tray-progress-bar-text');
+        
+        if (progressArea && progressFill && progressText) {
+            progressArea.show();
+            progressFill.css('width', '0%');
+            progressText.text('Starting quest import...');
+        }
+    }
+
+    /**
+     * Update the global progress bar
+     * @private
+     */
+    _updateProgressBar(percent, text) {
+        const progressFill = this.element?.find('.tray-progress-bar-inner');
+        const progressText = this.element?.find('.tray-progress-bar-text');
+        
+        if (progressFill && progressText) {
+            progressFill.css('width', `${percent}%`);
+            progressText.text(text);
+        }
+    }
+
+    /**
+     * Hide the global progress bar
+     * @private
+     */
+    _hideProgressBar() {
+        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
+        if (progressArea) {
+            progressArea.hide();
+        }
     }
 } 

@@ -136,6 +136,19 @@ export class HookManager {
                 HookManager.codexPanel._isCodexEntry && 
                 HookManager.codexPanel._isCodexEntry(page)) {
                 
+                // Skip panel refresh if currently importing
+                if (HookManager.codexPanel.isImporting) {
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'HookManager: Skipping codex panel refresh during import',
+                        { pageName: page.name },
+                        false,
+                        true,
+                        false,
+                        MODULE.TITLE
+                    );
+                    return;
+                }
+                
                 const blacksmith = getBlacksmith();
                 blacksmith?.utils.postConsoleAndNotification(
                     'HookManager: Routing to CODEX panel',
@@ -180,6 +193,19 @@ export class HookManager {
             if (HookManager.questPanel._isPageInSelectedJournal && 
                 HookManager.questPanel._isPageInSelectedJournal(page)) {
                 
+                // Skip panel refresh if currently importing
+                if (HookManager.questPanel.isImporting) {
+                    getBlacksmith()?.utils.postConsoleAndNotification(
+                        'HookManager: Skipping quest panel refresh during import',
+                        { pageName: page.name },
+                        false,
+                        true,
+                        false,
+                        MODULE.TITLE
+                    );
+                    return;
+                }
+                
                 const blacksmith = getBlacksmith();
                 blacksmith?.utils.postConsoleAndNotification(
                     'HookManager: Routing to Quest panel',
@@ -190,7 +216,7 @@ export class HookManager {
                     MODULE.TITLE
                 );
                 
-                                // Always refresh the data first
+                // Always refresh the data first
                 getBlacksmith()?.utils.postConsoleAndNotification(
                     'HookManager: Refreshing quest panel data',
                     { pageName: page.name },

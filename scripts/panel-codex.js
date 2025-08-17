@@ -555,6 +555,7 @@ export class CodexPanel {
             category: "all"
         };
         this.allTags = new Set();
+        this.isImporting = false; // Flag to prevent panel refreshes during import
         this._setupHooks();
     }
 
@@ -573,6 +574,47 @@ export class CodexPanel {
             false,
             MODULE.TITLE
         );
+    }
+
+    /**
+     * Show the global progress bar for codex imports
+     * @private
+     */
+    _showProgressBar() {
+        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
+        const progressFill = this.element?.find('.tray-progress-bar-inner');
+        const progressText = this.element?.find('.tray-progress-bar-text');
+        
+        if (progressArea && progressFill && progressText) {
+            progressArea.show();
+            progressFill.css('width', '0%');
+            progressText.text('Starting codex import...');
+        }
+    }
+
+    /**
+     * Update the global progress bar
+     * @private
+     */
+    _updateProgressBar(percent, text) {
+        const progressFill = this.element?.find('.tray-progress-bar-inner');
+        const progressText = this.element?.find('.tray-progress-bar-text');
+        
+        if (progressFill && progressText) {
+            progressFill.css('width', `${percent}%`);
+            progressText.text(text);
+        }
+    }
+
+    /**
+     * Hide the global progress bar
+     * @private
+     */
+    _hideProgressBar() {
+        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
+        if (progressArea) {
+            progressArea.hide();
+        }
     }
 
     /**
@@ -1069,8 +1111,15 @@ SPECIFIC INSTRUCTIONS HERE`;
                         label: 'Import JSON',
                         callback: async (html) => {
                             ui.notifications.info('Importing Codex entries. This may take some time as entries are added, updated, indexed, and sorted. You will be notified when the process is complete.');
-                            const value = html.find('#codex-import-json').val();
+                            
+                            // Set import flag to prevent panel refreshes during import
+                            this.isImporting = true;
+                            
+                            // Show progress bar
+                            this._showProgressBar();
+                            
                             try {
+                                const value = html.find('#codex-import-json').val();
                                 const data = JSON.parse(value);
                                 if (!Array.isArray(data)) {
                                     ui.notifications.error('Imported JSON must be an array of entries.');
@@ -1080,6 +1129,10 @@ SPECIFIC INSTRUCTIONS HERE`;
                                     ui.notifications.error('No Codex journal selected.');
                                     return;
                                 }
+                                
+                                // Update progress for validation phase
+                                this._updateProgressBar(10, 'Validating import data...');
+                                
                                 let added = 0;
                                 let updated = 0;
                                 let duplicatesMerged = 0;
@@ -1099,7 +1152,17 @@ SPECIFIC INSTRUCTIONS HERE`;
                                     ui.notifications.warn(`Warning: Import data contains duplicate entry names: ${duplicateNames.join(', ')}. These will be merged with existing entries.`);
                                 }
                                 
-                                for (const entry of data) {
+                                // Update progress for processing phase
+                                this._updateProgressBar(20, `Processing ${data.length} entries...`);
+                                
+                                const totalEntries = data.length;
+                                for (let i = 0; i < data.length; i++) {
+                                    const entry = data[i];
+                                    
+                                    // Update progress for each entry
+                                    const entryProgress = 20 + ((i / totalEntries) * 60); // 20-80% range for entry processing
+                                    this._updateProgressBar(entryProgress, `Processing entry: ${entry.name}`);
+                                    
                                     // Find existing page by UUID first (if available), then by name
                                     let page = null;
                                     if (entry.uuid) {
@@ -1161,20 +1224,52 @@ SPECIFIC INSTRUCTIONS HERE`;
                                         
                                         added++;
                                     }
+                                    
+                                    // Small delay to make progress visible
+                                    if (i % 5 === 0) {
+                                        await new Promise(resolve => setTimeout(resolve, 100));
+                                    }
                                 }
+                                
+                                // Update progress for sorting phase
+                                this._updateProgressBar(80, 'Sorting entries...');
+                                
                                 // Sort pages alphabetically by name
                                 const sorted = this.selectedJournal.pages.contents.slice().sort((a, b) => a.name.localeCompare(b.name));
                                 for (let i = 0; i < sorted.length; i++) {
                                     await sorted[i].update({ sort: (i + 1) * 10 });
                                 }
+                                
+                                // Update progress for completion
+                                this._updateProgressBar(90, 'Finalizing import...');
+                                
                                 let message = `Codex import complete: ${added} added, ${updated} updated.`;
                                 if (duplicatesMerged > 0) {
                                     message += ` ${duplicatesMerged} duplicates were merged.`;
                                 }
                                 ui.notifications.info(message);
+                                
+                                // Show completion message in progress bar
+                                this._updateProgressBar(100, 'Import complete!');
+                                
+                                // Keep completion message visible for a moment
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                
+                                // Hide progress bar
+                                this._hideProgressBar();
+                                
+                                // Clear import flag and refresh panel once at the end
+                                this.isImporting = false;
                                 await this._refreshData();
                                 this.render(this.element);
+                                
                             } catch (e) {
+                                // Hide progress bar on error
+                                this._hideProgressBar();
+                                
+                                // Clear import flag on error
+                                this.isImporting = false;
+                                
                                 ui.notifications.error('Invalid JSON.');
                             }
                         }
@@ -1320,6 +1415,9 @@ SPECIFIC INSTRUCTIONS HERE`;
             ui.notifications.warn("No codex journal selected. Please select a journal first.");
             return;
         }
+
+        // Set import flag to prevent panel refreshes during auto-discovery
+        this.isImporting = true;
 
         // Get the button element and show it's working
         const button = this.element?.find('.auto-discover-button');
@@ -1691,10 +1789,15 @@ SPECIFIC INSTRUCTIONS HERE`;
                 progressArea.hide();
             }
             
-            // NOW refresh the panel to show updated visibility (after progress bar is hidden)
+            // Clear import flag and refresh panel once at the end
+            this.isImporting = false;
             await this._refreshData();
             this.render(this.element);
+            
         } catch (error) {
+            // Clear import flag on error
+            this.isImporting = false;
+            
             getBlacksmith()?.utils.postConsoleAndNotification(
                 'Error during auto-discovery',
                 { error },
