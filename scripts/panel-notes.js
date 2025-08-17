@@ -8,6 +8,7 @@ function getBlacksmith() {
 export class NotesPanel {
     constructor() {
         this.element = null;
+        this._currentPageHookId = null; // Track the current page hook
         // Initialize Hooks when the class is constructed
         this._setupGlobalHooks();
     }
@@ -27,6 +28,42 @@ export class NotesPanel {
             false,
             MODULE.TITLE
         );
+    }
+
+    /**
+     * Clean up any active hooks when switching pages or destroying the panel
+     * @private
+     */
+    _cleanupPageHook() {
+        if (this._currentPageHookId) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Notes Panel: Cleaning up page hook',
+                { hookId: this._currentPageHookId },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            Hooks.off("updateJournalEntryPage", this._currentPageHookId);
+            this._currentPageHookId = null;
+        }
+    }
+
+    /**
+     * Clean up all hooks when the panel is destroyed
+     * @public
+     */
+    destroy() {
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'Notes Panel: Destroying panel and cleaning up hooks',
+            {},
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
+        this._cleanupPageHook();
+        this.element = null;
     }
 
     async render(element) {
@@ -340,21 +377,24 @@ export class NotesPanel {
                     return;
                 }
                 
-                // Close the editor
-                this.journalSheet.close();
-                this.journalSheet = null;
-            }
-            
-            if (game.user.isGM) {
-                // Save the selected page globally for all users if GM
-                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
-            } else {
-                // For players, just update locally
-                game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
-            }
-            
-            // Re-render the notes panel
-            this.render(this.element);
+                            // Close the editor
+            this.journalSheet.close();
+            this.journalSheet = null;
+        }
+        
+        // Clean up any existing page hook before switching
+        this._cleanupPageHook();
+        
+        if (game.user.isGM) {
+            // Save the selected page globally for all users if GM
+            await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
+        } else {
+            // For players, just update locally
+            game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
+        }
+        
+        // Re-render the notes panel
+        this.render(this.element);
         });
 
         // If we have a journal and a page, render the page content
@@ -998,6 +1038,9 @@ export class NotesPanel {
                 html.find('.journal-item').click(async event => {
                     const journalId = event.currentTarget.dataset.id;
                     
+                    // Clean up any existing page hook before switching journals
+                    this._cleanupPageHook();
+                    
                     // For GMs, update their personal view first
                     if (game.user.isGM) {
                         await game.settings.set(MODULE.ID, 'notesGMJournal', journalId);
@@ -1577,48 +1620,38 @@ export class NotesPanel {
             }
             
             // Setup a hook to refresh the content when the journal page is updated
-            // Safely remove any existing hooks with the same name to avoid duplicates
-            try {
-                // In some versions of Foundry, Hooks might not have an 'off' method
-                if (Hooks.events && Hooks.events.updateJournalEntryPage) {
-                    // Find and remove the specific handler
-                    const existingHooks = Hooks.events.updateJournalEntryPage || [];
-                    for (let i = existingHooks.length - 1; i >= 0; i--) {
-                        const hook = existingHooks[i];
-                        // Check if this is our hook by looking at toString() content
-                        if (hook.toString().includes('SQUIRE | Journal page updated')) {
-                            existingHooks.splice(i, 1);
-                        }
-                    }
-                } else if (typeof Hooks.off === 'function') {
-                    // If Hooks.off exists, use it
-                    Hooks.off("updateJournalEntryPage.squire-notes-panel");
-                }
-                // If neither method works, we'll just add a new hook
-            } catch (hookError) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Non-critical error removing hook',
-                    { hookError },
-                    false,
-                    false,
-                    false,
-                    MODULE.TITLE
-                );
-                // Continue execution, this error is not critical
-            }
-            
             // Store the current page ID for hook reference
             const currentPageId = page.id;
             const self = this;
             
-            // Add hook for journal updates - using a named function variable instead of trying to name it after creation
-            const hookId = Hooks.on("updateJournalEntryPage", function(updatedPage, changes, options, userId) {
+            // Clean up any existing hooks for this specific page
+            if (this._currentPageHookId) {
+                Hooks.off("updateJournalEntryPage", this._currentPageHookId);
+                this._currentPageHookId = null;
+            }
+            
+            // Add hook for journal updates - store the hook ID for proper cleanup
+            this._currentPageHookId = Hooks.on("updateJournalEntryPage", function(updatedPage, changes, options, userId) {
                 // Check if this is the page we're currently viewing
                 if (updatedPage.id === currentPageId) {
                     // Re-render the content after a slight delay to ensure changes are processed
-                    setTimeout(() => self.render(self.element), 100);
+                    setTimeout(() => {
+                        if (self.element) {
+                            self.render(self.element);
+                        }
+                    }, 100);
                 }
             });
+
+            // Debug logging
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'Notes Panel: Page hook registered',
+                { pageId: currentPageId, hookId: this._currentPageHookId },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
             
             return true;
         } catch (error) {

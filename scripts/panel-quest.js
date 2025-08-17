@@ -88,6 +88,14 @@ export class QuestPanel {
     }
 
     /**
+     * Clean up when the panel is destroyed
+     * @public
+     */
+    destroy() {
+        this.element = null;
+    }
+
+    /**
      * Clear all quest pins from specified scenes
      * @param {string} scope - 'thisScene' or 'allScenes'
      * @private

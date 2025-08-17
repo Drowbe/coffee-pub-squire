@@ -100,6 +100,20 @@ export class HookManager {
         );
         
         // Route to appropriate panels based on content type and journal
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            'HookManager: Routing journal update to panels',
+            { 
+                pageName: page.name, 
+                journalName: page.parent?.name || 'Unknown',
+                changes: Object.keys(changes),
+                userId
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
+        
         await Promise.all([
             this._routeToCodexPanel(page, changes, options, userId),
             this._routeToQuestPanel(page, changes, options, userId),
@@ -176,7 +190,16 @@ export class HookManager {
                     MODULE.TITLE
                 );
                 
-                // Always refresh the data first
+                                // Always refresh the data first
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'HookManager: Refreshing quest panel data',
+                    { pageName: page.name },
+                    false,
+                    true,
+                    false,
+                    MODULE.TITLE
+                );
+                
                 await HookManager.questPanel._refreshData();
                 
                 // Trigger a refresh through the PanelManager if it's available

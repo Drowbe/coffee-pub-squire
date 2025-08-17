@@ -576,6 +576,14 @@ export class CodexPanel {
     }
 
     /**
+     * Clean up when the panel is destroyed
+     * @public
+     */
+    destroy() {
+        this.element = null;
+    }
+
+    /**
      * Check if a page belongs to the selected journal
      * @private
      */

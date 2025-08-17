@@ -2709,6 +2709,19 @@ export class PanelManager {
         // Clear the newly added items map
         PanelManager.newlyAddedItems.clear();
 
+        // Destroy individual panels to clean up their hooks
+        if (PanelManager.instance) {
+            if (PanelManager.instance.notesPanel && typeof PanelManager.instance.notesPanel.destroy === 'function') {
+                PanelManager.instance.notesPanel.destroy();
+            }
+            if (PanelManager.instance.codexPanel && typeof PanelManager.instance.codexPanel.destroy === 'function') {
+                PanelManager.instance.codexPanel.destroy();
+            }
+            if (PanelManager.instance.questPanel && typeof PanelManager.instance.questPanel.destroy === 'function') {
+                PanelManager.instance.questPanel.destroy();
+            }
+        }
+
         // Remove the tray element
         if (PanelManager.element) {
             PanelManager.element.remove();
