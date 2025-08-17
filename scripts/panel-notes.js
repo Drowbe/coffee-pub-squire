@@ -8,61 +8,26 @@ function getBlacksmith() {
 export class NotesPanel {
     constructor() {
         this.element = null;
-        this._currentPageHookId = null; // Track the current page hook
-        // Initialize Hooks when the class is constructed
-        this._setupGlobalHooks();
+        // Hooks are now managed centrally by HookManager
     }
 
-    /**
-     * Sets up global hooks for journal updates
-     * @private
-     */
-    _setupGlobalHooks() {
-        // Journal hooks are now handled by the centralized HookManager
-        // This method is kept for compatibility but no longer registers hooks
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Notes Panel: Hooks now managed by centralized HookManager',
-            {},
-            false,
-            true,
-            false,
-            MODULE.TITLE
-        );
-    }
+
+
+
 
     /**
-     * Clean up any active hooks when switching pages or destroying the panel
-     * @private
-     */
-    _cleanupPageHook() {
-        if (this._currentPageHookId) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Notes Panel: Cleaning up page hook',
-                { hookId: this._currentPageHookId },
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
-            Hooks.off("updateJournalEntryPage", this._currentPageHookId);
-            this._currentPageHookId = null;
-        }
-    }
-
-    /**
-     * Clean up all hooks when the panel is destroyed
+     * Clean up when the panel is destroyed
      * @public
      */
     destroy() {
         getBlacksmith()?.utils.postConsoleAndNotification(
-            'Notes Panel: Destroying panel and cleaning up hooks',
+            'Notes Panel: Destroying panel',
             {},
             false,
             true,
             false,
             MODULE.TITLE
         );
-        this._cleanupPageHook();
         this.element = null;
     }
 
@@ -382,8 +347,7 @@ export class NotesPanel {
             this.journalSheet = null;
         }
         
-        // Clean up any existing page hook before switching
-        this._cleanupPageHook();
+
         
         if (game.user.isGM) {
             // Save the selected page globally for all users if GM
@@ -1038,8 +1002,7 @@ export class NotesPanel {
                 html.find('.journal-item').click(async event => {
                     const journalId = event.currentTarget.dataset.id;
                     
-                    // Clean up any existing page hook before switching journals
-                    this._cleanupPageHook();
+                    
                     
                     // For GMs, update their personal view first
                     if (game.user.isGM) {
@@ -1619,39 +1582,8 @@ export class NotesPanel {
                 journal.sheet.render(true, {pageId: page.id});
             }
             
-            // Setup a hook to refresh the content when the journal page is updated
-            // Store the current page ID for hook reference
-            const currentPageId = page.id;
-            const self = this;
-            
-            // Clean up any existing hooks for this specific page
-            if (this._currentPageHookId) {
-                Hooks.off("updateJournalEntryPage", this._currentPageHookId);
-                this._currentPageHookId = null;
-            }
-            
-            // Add hook for journal updates - store the hook ID for proper cleanup
-            this._currentPageHookId = Hooks.on("updateJournalEntryPage", function(updatedPage, changes, options, userId) {
-                // Check if this is the page we're currently viewing
-                if (updatedPage.id === currentPageId) {
-                    // Re-render the content after a slight delay to ensure changes are processed
-                    setTimeout(() => {
-                        if (self.element) {
-                            self.render(self.element);
-                        }
-                    }, 100);
-                }
-            });
-
-            // Debug logging
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Notes Panel: Page hook registered',
-                { pageId: currentPageId, hookId: this._currentPageHookId },
-                false,
-                true,
-                false,
-                MODULE.TITLE
-            );
+            // Note: Journal updates are now handled centrally by HookManager
+            // No need to register local hooks here
             
             return true;
         } catch (error) {
