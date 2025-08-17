@@ -135,6 +135,7 @@
     transition: all 0.2s ease;
 }
 
+
 /* No Matches Message */
 .tray-title-small.no-matches {
     display: none !important; /* Hide by default */

@@ -1,0 +1,213 @@
+
+
+/* Import/Export Dialog Styling */
+.dialog.import-export-dialog {
+    width: 600px !important;
+    min-width: 600px !important;
+    max-width: 90vw !important;
+    height: auto !important;
+    min-height: 400px !important;
+    resize: both !important;
+    overflow: auto !important;
+}
+
+.dialog.import-export-dialog .dialog-content {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 400px !important;
+    resize: vertical !important;
+    overflow: auto !important;
+}
+
+.dialog.import-export-dialog textarea {
+    resize: vertical !important;
+    min-height: 200px !important;
+}
+
+/* Squire Import/Export Template Styles */
+.squire-window-import-export {
+    /* Base container styles */
+    display: block
+}
+
+.squire-window-import-export .squire-template-section {
+    margin-bottom: 16px;
+}
+
+.squire-window-import-export .squire-template-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.squire-window-import-export .squire-template-button {
+    margin: 8px 8px 8px 0;
+    padding: 8px 16px;
+    background: #522c34;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.squire-window-import-export .squire-browse-button {
+    margin: 8px 8px 8px 0;
+    padding: 8px 16px;
+    background: #28542b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+
+
+.squire-window-import-export .squire-json-textarea {
+    width: 100%;
+    height: 400px;
+    resize: vertical;
+}
+
+.squire-window-import-export .squire-export-textarea {
+    width: 100%;
+    height: 500px;
+    resize: vertical;
+}
+
+.squire-window-import-export .squire-file-input {
+    display: none;
+}
+
+.squire-window-import-export .squire-details-section {
+    margin-bottom: 12px;
+}
+
+.squire-window-import-export .squire-details-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.squire-window-import-export .squire-details-list {
+    margin: 8px 0;
+}
+
+.squire-window-import-export .squire-details-list li {
+    margin: 4px 0;
+}
+
+.squire-window-import-export .squire-export-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.squire-window-import-export .squire-export-summary {
+    margin-bottom: 8px;
+}
+
+.squire-window-import-export .squire-export-summary-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.squire-window-import-export .squire-export-summary-list {
+    margin: 8px 0;
+}
+
+.squire-window-import-export .squire-export-summary-list li {
+    margin: 4px 0;
+}
+
+.squire-window-import-export .squire-export-summary-list strong {
+    font-weight: bold;
+}
+
+.squire-window-import-export .squire-scene-pins-section {
+    margin-bottom: 8px;
+}
+
+.squire-window-import-export .squire-scene-pins-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.squire-window-import-export .squire-scene-pins-label {
+    margin-right: 4px;
+}
+
+.squire-window-import-export .squire-scene-pins-success {
+    color: rgb(13, 97, 16);
+}
+
+.squire-window-import-export .squire-scene-pins-warning {
+    color: rgb(167, 106, 14);
+}
+
+.squire-window-import-export .squire-divider {
+    border: none;
+    border-top: 1px solid #666;
+    margin: 16px 0;
+}
+
+
+
+
+
+
+
+.import-export-dialog .dialog-buttons .dialog-button[data-button="import"],
+.import-export-dialog .dialog-buttons .dialog-button[data-button="download"] {
+    background: #28542b !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+}
+
+.import-export-dialog .dialog-buttons .dialog-button[data-button="import"]:hover,
+.import-export-dialog .dialog-buttons .dialog-button[data-button="download"]:hover {
+    background: #1e3d20;
+}
+
+.import-export-dialog .dialog-buttons .dialog-button[data-button="close"],
+.import-export-dialog .dialog-buttons .dialog-button[data-button="cancel"] {
+    background: #666 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+}
+
+/* Custom button classes for squire styling */
+.squire-window-import-export .squire-submit-button {
+    background: #28542b !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+}
+
+.squire-window-import-export .squire-submit-button:hover {
+    background: #1e3d20 !important;
+}
+
+.squire-window-import-export .squire-cancel-button {
+    background: #666 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+}
+
+.squire-window-import-export .squire-cancel-button:hover {
+    background: #555 !important;
+}
+
+.import-export-dialog .dialog-buttons .dialog-button[data-button="close"]:hover,
+.import-export-dialog .dialog-buttons .dialog-button[data-button="cancel"]:hover {
+    background: #555;
+} 

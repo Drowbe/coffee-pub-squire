@@ -1620,7 +1620,6 @@ export class QuestPanel {
                 title: 'Export Quests and Scene Pins to JSON',
                 width: 600,
                 resizable: true,
-                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'quests',
                     isImport: false,
@@ -1695,7 +1694,12 @@ export class QuestPanel {
                     }
                 },
                 default: 'download'
-            }).render(true);
+                },
+                {
+                    classes: ['import-export-dialog'],
+                    id: ['import-export-dialog']
+                }
+            ).render(true);
         });
 
         // Status menu (GM only)

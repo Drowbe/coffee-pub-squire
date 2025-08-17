@@ -1099,7 +1099,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                 title: 'Import Codex from JSON',
                 width: 600,
                 resizable: true,
-                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'codex',
                     isImport: true,
@@ -1282,6 +1281,10 @@ SPECIFIC INSTRUCTIONS HERE`;
                 },
                 default: 'import',
                 render: (html) => {
+                    // Apply custom button classes
+                    html.find('[data-button="cancel"]').addClass('squire-cancel-button');
+                    html.find('[data-button="import"]').addClass('squire-submit-button');
+                    
                     html.find('.copy-template-button').click(() => {
                         copyToClipboard(template);
                     });
@@ -1336,6 +1339,9 @@ SPECIFIC INSTRUCTIONS HERE`;
                         }
                     });
                 }
+            },
+            {
+                classes: ['import-export-dialog']
             }).render(true);
         });
 
@@ -1363,7 +1369,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                 title: 'Export Codex as JSON',
                 width: 600,
                 resizable: true,
-                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'codex',
                     isImport: false,
@@ -1379,7 +1384,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 buttons: {
                     close: {
                         icon: '<i class="fas fa-times"></i>',
-                        label: 'Cancel Export'
+                        label: 'Cancel Export',
                     },
                     download: {
                         icon: '<i class="fas fa-download"></i>',
@@ -1413,8 +1418,8 @@ SPECIFIC INSTRUCTIONS HERE`;
                                     const a = document.createElement("a");
                                     a.href = url;
                                     a.download = filename;
-                                    a.rel = "noopener"; // safety
                                     a.style.display = 'none';
+                                    a.rel = "noopener"; // safety
                                     document.body.appendChild(a);
                                     a.click();
                                     a.remove();
@@ -1434,6 +1439,15 @@ SPECIFIC INSTRUCTIONS HERE`;
                     }
                 },
                 default: 'download'
+            },
+            {
+                classes: ['import-export-dialog'],
+                id: 'import-export-dialog',
+                render: (html) => {
+                    // Apply custom button classes
+                    html.find('[data-button="close"]').addClass('squire-cancel-button');
+                    html.find('[data-button="download"]').addClass('squire-submit-button');
+                }
             }).render(true);
         });
 
