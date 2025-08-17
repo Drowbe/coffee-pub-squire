@@ -98,15 +98,19 @@ export class QuestPanel {
                 // Clear pins from current scene only
                 if (canvas.scene && canvas.squirePins) {
                     const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
-                    let clearedCount = 0;
+                    let clearedCount = pins.length;
                     
-                    for (const pin of pins) {
-                        pin._removeFromPersistence();
-                        canvas.squirePins.removeChild(pin);
-                        clearedCount++;
+                    if (clearedCount > 0) {
+                        // Remove all pins from canvas first
+                        pins.forEach(pin => {
+                            canvas.squirePins.removeChild(pin);
+                        });
+                        
+                        // Clear all pins from persistence in one operation (prevents multiple refreshes)
+                        await canvas.scene.setFlag(MODULE.ID, 'questPins', []);
+                        
+                        ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
                     }
-                    
-                    ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
                 }
             } else if (scope === 'allScenes') {
                 // Clear pins from all scenes
