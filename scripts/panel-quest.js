@@ -1276,12 +1276,52 @@ export class QuestPanel {
                                 ui.notifications.error('Selected quest journal not found.');
                                 return;
                             }
+                            // Check for duplicate names in the import data itself
+                            const importNameCounts = {};
+                            const duplicateNames = [];
+                            quests.forEach(q => {
+                                if (q.name) {
+                                    importNameCounts[q.name] = (importNameCounts[q.name] || 0) + 1;
+                                    if (importNameCounts[q.name] > 1 && !duplicateNames.includes(q.name)) {
+                                        duplicateNames.push(q.name);
+                                    }
+                                }
+                            });
+                            
+                            if (duplicateNames.length > 0) {
+                                ui.notifications.warn(`Warning: Import data contains duplicate quest names: ${duplicateNames.join(', ')}. These will be merged with existing quests.`);
+                            }
+                            
                             let imported = 0;
                             let updated = 0;
+                            let duplicatesMerged = 0;
                             for (const quest of quests) {
                                 if (!quest.name) continue;
-                                // Check if a quest with this name already exists
-                                const existingPage = journal.pages.find(p => p.name === quest.name);
+                                
+                                // Check if a quest with this UUID already exists (UUID takes priority)
+                                let existingPage = null;
+                                let matchType = 'none';
+                                
+                                if (quest.uuid) {
+                                    existingPage = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === quest.uuid);
+                                    if (existingPage) matchType = 'uuid';
+                                }
+                                
+                                // If no UUID match, check by name as fallback
+                                if (!existingPage) {
+                                    existingPage = journal.pages.find(p => p.name === quest.name);
+                                    if (existingPage) matchType = 'name';
+                                }
+                                
+                                // Debug logging for duplicate detection
+                                
+                                getBlacksmith()?.utils.postConsoleAndNotification(
+                                    `Quest import: "${quest.name}" (${quest.uuid}) - Match: ${matchType}`,
+                                    { quest: quest.name, uuid: quest.uuid, matchType, existingPage: existingPage?.name },
+                                    false, true, false, MODULE.TITLE
+                                );
+                                
+                                
                                 if (existingPage) {
                                     // Update existing quest - PRESERVE EXISTING STATE
                                     const existingContent = existingPage.text.content;
@@ -1301,6 +1341,11 @@ export class QuestPanel {
                                     if (uuid !== existingPage.getFlag(MODULE.ID, 'questUuid')) {
                                         await existingPage.setFlag(MODULE.ID, 'questUuid', uuid);
                                     }
+                                    
+                                    // Update the page name if it's different (in case of name changes)
+                                    if (quest.name && quest.name !== existingPage.name) {
+                                        await existingPage.update({ name: quest.name });
+                                    }
                                     // Set original category flag if status is Complete or Failed
                                     if (quest.status === 'Complete' || quest.status === 'Failed') {
                                         // Only set if not already set and the quest has a category
@@ -1309,6 +1354,9 @@ export class QuestPanel {
                                         }
                                     }
                                     updated++;
+                                    if (matchType === 'name') {
+                                        duplicatesMerged++;
+                                    }
                                 } else {
                                     // Create new quest
                                     const uuid = quest.uuid || foundry.utils.randomID();
@@ -1347,7 +1395,11 @@ export class QuestPanel {
                                 }
                             }
                             
-                            ui.notifications.info(`Quest import complete: ${imported} added, ${updated} updated.`);
+                            let message = `Quest import complete: ${imported} added, ${updated} updated.`;
+                            if (duplicatesMerged > 0) {
+                                message += ` ${duplicatesMerged} duplicates were merged.`;
+                            }
+                            ui.notifications.info(message);
                             this._refreshData();
                             this.render(this.element);
                         }

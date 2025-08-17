@@ -1074,9 +1074,32 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 }
                                 let added = 0;
                                 let updated = 0;
+                                let duplicatesMerged = 0;
+                                // Check for duplicate names in the import data itself
+                                const importNameCounts = {};
+                                const duplicateNames = [];
+                                data.forEach(entry => {
+                                    if (entry.name) {
+                                        importNameCounts[entry.name] = (importNameCounts[entry.name] || 0) + 1;
+                                        if (importNameCounts[entry.name] > 1 && !duplicateNames.includes(entry.name)) {
+                                            duplicateNames.push(entry.name);
+                                        }
+                                    }
+                                });
+                                
+                                if (duplicateNames.length > 0) {
+                                    ui.notifications.warn(`Warning: Import data contains duplicate entry names: ${duplicateNames.join(', ')}. These will be merged with existing entries.`);
+                                }
+                                
                                 for (const entry of data) {
-                                    // Find existing page by name
-                                    const page = this.selectedJournal.pages.find(p => p.name === entry.name);
+                                    // Find existing page by UUID first (if available), then by name
+                                    let page = null;
+                                    if (entry.uuid) {
+                                        page = this.selectedJournal.pages.find(p => p.getFlag(MODULE.ID, 'codexUuid') === entry.uuid);
+                                    }
+                                    if (!page) {
+                                        page = this.selectedJournal.pages.find(p => p.name === entry.name);
+                                    }
                                     if (page) {
                                         // Update only description, tags, location, category, plotHook
                                         let parser = new DOMParser();
@@ -1101,6 +1124,11 @@ SPECIFIC INSTRUCTIONS HERE`;
                                         doc.body.innerHTML = newFields.join('\n') + doc.body.innerHTML;
                                         await page.update({ 'text.content': doc.body.innerHTML });
                                         updated++;
+                                        
+                                        // Track if this was a duplicate merge
+                                        if (entry.uuid && page.getFlag(MODULE.ID, 'codexUuid') !== entry.uuid) {
+                                            duplicatesMerged++;
+                                        }
                                     } else {
                                         // Create new page with all fields, formatted as expected
                                         let html = '';
@@ -1111,12 +1139,18 @@ SPECIFIC INSTRUCTIONS HERE`;
                                         if (entry.location) html += `<p><strong>Location:</strong> ${entry.location}</p>`;
                                         if (entry.link && entry.link.uuid && entry.link.label) html += `<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`;
                                         if (entry.tags && entry.tags.length) html += `<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`;
-                                        await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
+                                        const newPage = await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
                                             name: entry.name,
                                             type: 'text',
                                             text: { content: html },
                                             ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
                                         }]);
+                                        
+                                        // Set the codexUuid flag for future deduplication
+                                        if (entry.uuid) {
+                                            await newPage[0].setFlag(MODULE.ID, 'codexUuid', entry.uuid);
+                                        }
+                                        
                                         added++;
                                     }
                                 }
@@ -1125,7 +1159,11 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 for (let i = 0; i < sorted.length; i++) {
                                     await sorted[i].update({ sort: (i + 1) * 10 });
                                 }
-                                ui.notifications.info(`Codex import complete: ${added} added, ${updated} updated.`);
+                                let message = `Codex import complete: ${added} added, ${updated} updated.`;
+                                if (duplicatesMerged > 0) {
+                                    message += ` ${duplicatesMerged} duplicates were merged.`;
+                                }
+                                ui.notifications.info(message);
                                 await this._refreshData();
                                 this.render(this.element);
                             } catch (e) {
