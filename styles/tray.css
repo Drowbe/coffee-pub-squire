@@ -1052,3 +1052,24 @@
     background: none;
     transform: none;
 }
+
+/* Content Update Fade Transitions */
+.squire-tray .tray-content.content-updating {
+    animation: fadeOut 0.2s ease-out forwards;
+}
+
+.squire-tray .tray-content.content-updated {
+    animation: fadeIn 0.2s ease-in forwards;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0.3; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0.3; }
+    to { opacity: 1; }
+}
+
+/* Ensure content stays on top of background */

@@ -26,6 +26,9 @@
 
 ## UI/UX Improvements
 
+### Quests
+- [ ] **GM Notes** We should wind a way to show the gm notes for objextis since they may mention pin locations.
+
 ### Windows
 - [ ] **Planned** Popped out windows should ignore "esc" keypresses.
 
@@ -33,8 +36,8 @@
 - [x] **COMPLETED** ~~Make tray handle clickable only on chevron or character panel container - too easy to mis-click other elements~~
 
 ### Content Transitions
-- [ ] **PLANNED** Implement fade transitions for content changes while keeping tray stable
-- [ ] **PLANNED** Quick fade out → fade in for token data changes
+- [x] **COMPLETED** Implement fade transitions for content changes while keeping tray stable
+- [x] **COMPLETED** Quick fade out → fade in for token data changes
 - [ ] **PLANNED** No animation for panel visibility toggles (filters, categories)
 
 ## Architecture & Code Quality
@@ -56,6 +59,13 @@
 - [x] **COMPLETED** Added `renderPanels` and `activateListeners` calls after actor changes
 - [x] **COMPLETED** Fixed refresh button to prevent full tray recreation
 - [x] **COMPLETED** Added explicit `this` context binding for event listeners
+- [x] **COMPLETED** Fixed favorites overlap issue (layout/spacing)
+- [x] **COMPLETED** Fixed Handlebars template syntax error
+- [x] **COMPLETED** Moved Macro button click handler to `#macros-button`
+- [x] **COMPLETED** Moved Conditions button click handler to `#conditions-button`
+- [x] **COMPLETED** Moved Dice Tray button click handler to `#dice-tray-button`
+- [x] **COMPLETED** Moved Health Tray button click handler to `#health-tray-button`
+- [x] **COMPLETED** Implemented fade animations for tray content when changing tokens
 
 ## Next Steps Priority
 

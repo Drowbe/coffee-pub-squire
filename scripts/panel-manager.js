@@ -856,9 +856,26 @@ export class PanelManager {
                         false,
                         MODULE.TITLE
                     );
+                    // Add fade-out animation to tray content
+                    if (PanelManager.element) {
+                        const trayContent = PanelManager.element.find('.tray-content');
+                        trayContent.addClass('content-updating');
+                    }
+                    
                     // Force a re-render of all panels without recreating the tray
                     if (PanelManager.instance) {
                         await PanelManager.instance.renderPanels(PanelManager.element);
+                    }
+                    
+                    // Add fade-in animation to tray content after update
+                    if (PanelManager.element) {
+                        const trayContent = PanelManager.element.find('.tray-content');
+                        trayContent.removeClass('content-updating').addClass('content-updated');
+                        
+                        // Remove the content-updated class after animation completes
+                        setTimeout(() => {
+                            trayContent.removeClass('content-updated');
+                        }, 200);
                     }
                     blacksmith?.utils.postConsoleAndNotification(
                         "Tray Refresh",
@@ -3102,6 +3119,12 @@ async function _updateHealthPanelFromSelection() {
             MODULE.TITLE
         );
         
+        // Add fade-out animation to tray content
+        if (PanelManager.element) {
+            const trayContent = PanelManager.element.find('.tray-content');
+            trayContent.addClass('content-updating');
+        }
+        
         PanelManager.currentActor = actorToUse;
         if (PanelManager.instance) {
             PanelManager.instance.actor = actorToUse;
@@ -3153,6 +3176,17 @@ async function _updateHealthPanelFromSelection() {
         await PanelManager.instance.renderPanels(PanelManager.element);
     }
     
+    // Add fade-in animation to tray content after update
+    if (PanelManager.element) {
+        const trayContent = PanelManager.element.find('.tray-content');
+        trayContent.removeClass('content-updating').addClass('content-updated');
+        
+        // Remove the content-updated class after animation completes
+        setTimeout(() => {
+            trayContent.removeClass('content-updated');
+        }, 200);
+    }
+    
     // Re-attach event listeners to ensure tray functionality works
     if (PanelManager.instance && PanelManager.element) {
         // Bind the instance to ensure proper 'this' context
@@ -3186,6 +3220,12 @@ Hooks.on('deleteToken', async (token) => {
         // Try to find another token to display
         const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
         if (nextToken) {
+            // Add fade-out animation to tray content
+            if (PanelManager.element) {
+                const trayContent = PanelManager.element.find('.tray-content');
+                trayContent.addClass('content-updating');
+            }
+            
             // Update the actor without recreating the tray
             PanelManager.currentActor = nextToken.actor;
             if (PanelManager.instance) {
@@ -3210,8 +3250,18 @@ Hooks.on('deleteToken', async (token) => {
                 // Re-render all panels with the new actor data
                 await PanelManager.instance.renderPanels(PanelManager.element);
                 
+                // Add fade-in animation to tray content after update
+                if (PanelManager.element) {
+                    const trayContent = PanelManager.element.find('.tray-content');
+                    trayContent.removeClass('content-updating').addClass('content-updated');
+                    
+                    // Remove the content-updated class after animation completes
+                    setTimeout(() => {
+                        trayContent.removeClass('content-updated');
+                    }, 200);
+                }
+                
                 // Re-attach event listeners to ensure tray functionality works
-                PanelManager.instance.activateListeners.call(PanelManager.instance, PanelManager.element);
             }
         } else {
             // No more tokens, clear the instance

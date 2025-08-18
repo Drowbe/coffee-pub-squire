@@ -1,4 +1,7 @@
 <div class="squire-tray" data-position="left">
+    
+    <!-- TRAY HANDLE -->
+
     <div class="tray-handle">
         <div class="tray-handle-content-container">
 
@@ -34,33 +37,37 @@
         <div class="tray-handle-fade-bottom"></div>
     </div>
 
+    <!-- TRAY TABS -->
+
+    <div class="tray-view-tabs">
+        <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player" title="Player View">
+            <i class="fas fa-user"></i> Token
+        </button>
+        {{#if showTabParty}}
+        <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party" title="Party View">
+            <i class="fas fa-users"></i> Party
+        </button>
+        {{/if}}
+        {{#if showTabNotes}}
+        <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes" title="Notes">
+            <i class="fas fa-sticky-note"></i> Notes
+        </button>
+        {{/if}}
+        {{#if showTabCodex}}
+        <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex" title="Codex">
+            <i class="fas fa-book"></i> Codex
+        </button>
+        {{/if}}
+        {{#if showTabQuests}}
+        <button class="tray-tab-button {{#if (eq viewMode 'quest')}}active{{/if}}" data-view="quest" title="Quests">
+            <i class="fas fa-scroll"></i> Quests
+        </button>
+        {{/if}}
+    </div>
+
+    <!-- TRAY CONTENT -->
+
     <div class="tray-content">
-        <div class="tray-view-tabs">
-            <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player" title="Player View">
-                <i class="fas fa-user"></i> Token
-            </button>
-            {{#if showTabParty}}
-            <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party" title="Party View">
-                <i class="fas fa-users"></i> Party
-            </button>
-            {{/if}}
-            {{#if showTabNotes}}
-            <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes" title="Notes">
-                <i class="fas fa-sticky-note"></i> Notes
-            </button>
-            {{/if}}
-            {{#if showTabCodex}}
-            <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex" title="Codex">
-                <i class="fas fa-book"></i> Codex
-            </button>
-            {{/if}}
-            {{#if showTabQuests}}
-            <button class="tray-tab-button {{#if (eq viewMode 'quest')}}active{{/if}}" data-view="quest" title="Quests">
-                <i class="fas fa-scroll"></i> Quests
-            </button>
-            {{/if}}
-        </div>
-        
 
         <!-- Global Progress Bar -->
         <div class="tray-progress-bar-wrapper" style="display: none;">
