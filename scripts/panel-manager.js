@@ -140,6 +140,19 @@ export class PanelManager {
                 PanelManager.viewMode = game.settings.get(MODULE.ID, 'viewMode');
             }
             
+            // Validate that the initial viewMode is enabled
+            const enabledTabs = ['player']; // Player is always enabled
+            if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
+            if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
+            if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
+            if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
+            
+            if (!enabledTabs.includes(PanelManager.viewMode)) {
+                // Fallback to first enabled tab
+                PanelManager.viewMode = enabledTabs[0];
+                await game.settings.set(MODULE.ID, 'viewMode', enabledTabs[0]);
+            }
+            
             // If we have an instance with the same actor, do nothing
             if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) {
                 PanelManager._initializationInProgress = false;
@@ -1281,28 +1294,25 @@ export class PanelManager {
         tray.find('.view-toggle-button').click(async (event) => {
             event.preventDefault();
             const currentMode = PanelManager.viewMode;
-            let newMode;
             
-            // Cycle through modes: player -> party -> notes -> codex -> quest -> player
-            switch (currentMode) {
-                case 'player':
-                    newMode = 'party';
-                    break;
-                case 'party':
-                    newMode = 'notes';
-                    break;
-                case 'notes':
-                    newMode = 'codex';
-                    break;
-                case 'codex':
-                    newMode = 'quest';
-                    break;
-                case 'quest':
-                    newMode = 'player';
-                    break;
-                default:
-                    newMode = 'player';
+            // Get enabled tabs from settings
+            const enabledTabs = ['player']; // Player is always enabled
+            if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
+            if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
+            if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
+            if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
+            
+            // Find current position in enabled tabs
+            const currentIndex = enabledTabs.indexOf(currentMode);
+            if (currentIndex === -1) {
+                // Current mode not in enabled tabs, default to first enabled tab
+                await this.setViewMode(enabledTabs[0]);
+                return;
             }
+            
+            // Cycle to next enabled tab
+            const nextIndex = (currentIndex + 1) % enabledTabs.length;
+            const newMode = enabledTabs[nextIndex];
             
             await this.setViewMode(newMode);
         });
@@ -1893,6 +1903,25 @@ export class PanelManager {
         // Only proceed if the view mode is actually changing
         if (PanelManager.viewMode === mode) {
             return; // No change needed
+        }
+        
+        // Validate that the requested mode is enabled
+        const enabledTabs = ['player']; // Player is always enabled
+        if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
+        if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
+        if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
+        if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
+        
+        if (!enabledTabs.includes(mode)) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                'PanelManager.setViewMode: Requested mode is not enabled',
+                { mode, enabledTabs },
+                false,
+                true,
+                false,
+                MODULE.TITLE
+            );
+            return;
         }
         
         // Update viewMode
