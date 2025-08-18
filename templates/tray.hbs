@@ -37,138 +37,139 @@
         <div class="tray-handle-fade-bottom"></div>
     </div>
 
-    <!-- TRAY TABS -->
-
-    <div class="tray-view-tabs">
-        <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player" title="Player View">
-            <i class="fas fa-user"></i> Token
-        </button>
-        {{#if showTabParty}}
-        <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party" title="Party View">
-            <i class="fas fa-users"></i> Party
-        </button>
-        {{/if}}
-        {{#if showTabNotes}}
-        <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes" title="Notes">
-            <i class="fas fa-sticky-note"></i> Notes
-        </button>
-        {{/if}}
-        {{#if showTabCodex}}
-        <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex" title="Codex">
-            <i class="fas fa-book"></i> Codex
-        </button>
-        {{/if}}
-        {{#if showTabQuests}}
-        <button class="tray-tab-button {{#if (eq viewMode 'quest')}}active{{/if}}" data-view="quest" title="Quests">
-            <i class="fas fa-scroll"></i> Quests
-        </button>
-        {{/if}}
-    </div>
+    
 
     <!-- TRAY CONTENT -->
 
     <div class="tray-content">
 
-        <!-- Global Progress Bar -->
-        <div class="tray-progress-bar-wrapper" style="display: none;">
-            <div class="tray-progress-bar-outter">
-                <div class="tray-progress-bar-inner"><span class="tray-progress-bar-text">Ready...</span></div>
-            </div>
-        </div>
 
+        <!-- TRAY TABS -->
 
-        <div class="tray-tools-toolbar {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
-            {{#if isGM}}
-            <button class="tray-gm-button" data-action="award">
-                <i class="fas fa-medal"></i> Award
+        <div class="tray-view-tabs">
+            <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player" title="Player View">
+                <i class="fas fa-user"></i> Token
+            </button>
+            {{#if showTabParty}}
+            <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party" title="Party View">
+                <i class="fas fa-users"></i> Party
             </button>
             {{/if}}
-            <button class="tray-tools-button" data-action="select-party">
-                <i class="fas fa-users-viewfinder"></i> Select Party
+            {{#if showTabNotes}}
+            <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes" title="Notes">
+                <i class="fas fa-sticky-note"></i> Notes
             </button>
+            {{/if}}
+            {{#if showTabCodex}}
+            <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex" title="Codex">
+                <i class="fas fa-book"></i> Codex
+            </button>
+            {{/if}}
+            {{#if showTabQuests}}
+            <button class="tray-tab-button {{#if (eq viewMode 'quest')}}active{{/if}}" data-view="quest" title="Quests">
+                <i class="fas fa-scroll"></i> Quests
+            </button>
+            {{/if}}
         </div>
+
+        <!-- PANELS -->
+
         
-        <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
-            {{#if actor}}
-            <!-- CHARACTER - ALWAYS SHOW -->  
-            <div class="panel-container" data-panel="character" data-clickable="true"></div>
 
-            <!-- HEALTH -->
-            {{#if @root.settings.showHealthPanel}}
-                {{#unless isHealthPopped}}
-                <div id="health-panel-placeholder" class="panel-placeholder">
-                    <div class="panel-container" data-panel="health"></div>
-                </div>
-                {{/unless}}
-            {{/if}}
-            <!-- EXPERIENCE -->  
-            {{#if @root.settings.showExperiencePanel}}
-            <div class="panel-container" data-panel="experience"></div>
-            {{/if}}
 
-            <!-- ABILITIES -->  
-            {{#if @root.settings.showAbilitiesPanel}}
-                <div class="panel-container" data-panel="abilities"></div>
-            {{/if}}
-
-            <!-- STATS -->  
-            {{#if @root.settings.showStatsPanel}}
-                <div class="panel-container" data-panel="stats"></div>
-            {{/if}}
-
-            <!-- DICE TRAY -->
-            {{#if @root.settings.showDiceTrayPanel}}
-                {{#unless isDiceTrayPopped}}
-                <div id="dicetray-panel-placeholder" class="panel-placeholder">
-                    <div class="panel-container" data-panel="dicetray"></div>
-                </div>
-                {{/unless}}
-            {{/if}}
-
-            <!-- MACROS -->
-            {{#if @root.settings.showMacrosPanel}}
-                {{#unless isMacrosPopped}}
-                <div id="macros-panel-placeholder" class="panel-placeholder">
-                    <div class="panel-container" data-panel="macros"></div>
-                </div>
-                {{/unless}}
-            {{/if}}
-            <!-- CONTROL PANEL - FOR FAVORITES - ALWAYS SHOWN -->  
-            <div class="panel-container" data-panel="control"></div>
-
-            <!-- FAVORITES -->  
-            <div class="panel-containers stacked">
-                <div class="panel-container" data-panel="favorites"></div>
-                <div class="panel-container" data-panel="weapons"></div>
-                <div class="panel-container" data-panel="spells"></div>
-                <div class="panel-container" data-panel="features"></div>
-                <div class="panel-container" data-panel="inventory"></div>
+            <div class="tray-tools-toolbar {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
+                {{#if isGM}}
+                <button class="tray-gm-button" data-action="award">
+                    <i class="fas fa-medal"></i> Award
+                </button>
+                {{/if}}
+                <button class="tray-tools-button" data-action="select-party">
+                    <i class="fas fa-users-viewfinder"></i> Select Party
+                </button>
             </div>
-            {{else}}
-            <div class="no-character-message">
-                <p>NO TOKEN SELECTED OR OWNED</p>
-                <p>Select an owned token to get started.</p>
+            
+            <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
+                {{#if actor}}
+                <!-- CHARACTER - ALWAYS SHOW -->  
+                <div class="panel-container" data-panel="character" data-clickable="true"></div>
+
+                <!-- HEALTH -->
+                {{#if @root.settings.showHealthPanel}}
+                    {{#unless isHealthPopped}}
+                    <div id="health-panel-placeholder" class="panel-placeholder">
+                        <div class="panel-container" data-panel="health"></div>
+                    </div>
+                    {{/unless}}
+                {{/if}}
+                <!-- EXPERIENCE -->  
+                {{#if @root.settings.showExperiencePanel}}
+                <div class="panel-container" data-panel="experience"></div>
+                {{/if}}
+
+                <!-- ABILITIES -->  
+                {{#if @root.settings.showAbilitiesPanel}}
+                    <div class="panel-container" data-panel="abilities"></div>
+                {{/if}}
+
+                <!-- STATS -->  
+                {{#if @root.settings.showStatsPanel}}
+                    <div class="panel-container" data-panel="stats"></div>
+                {{/if}}
+
+                <!-- DICE TRAY -->
+                {{#if @root.settings.showDiceTrayPanel}}
+                    {{#unless isDiceTrayPopped}}
+                    <div id="dicetray-panel-placeholder" class="panel-placeholder">
+                        <div class="panel-container" data-panel="dicetray"></div>
+                    </div>
+                    {{/unless}}
+                {{/if}}
+
+                <!-- MACROS -->
+                {{#if @root.settings.showMacrosPanel}}
+                    {{#unless isMacrosPopped}}
+                    <div id="macros-panel-placeholder" class="panel-placeholder">
+                        <div class="panel-container" data-panel="macros"></div>
+                    </div>
+                    {{/unless}}
+                {{/if}}
+                <!-- CONTROL PANEL - FOR FAVORITES - ALWAYS SHOWN -->  
+                <div class="panel-container" data-panel="control"></div>
+
+                <!-- FAVORITES -->  
+                <div class="panel-containers stacked">
+                    <div class="panel-container" data-panel="favorites"></div>
+                    <div class="panel-container" data-panel="weapons"></div>
+                    <div class="panel-container" data-panel="spells"></div>
+                    <div class="panel-container" data-panel="features"></div>
+                    <div class="panel-container" data-panel="inventory"></div>
+                </div>
+                {{else}}
+                <div class="no-character-message">
+                    <p>NO TOKEN SELECTED OR OWNED</p>
+                    <p>Select an owned token to get started.</p>
+                </div>
+                {{/if}}
             </div>
-            {{/if}}
-        </div>
 
-        <div class="tray-view-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
-            <div class="panel-container" data-panel="party"></div>
-            {{#if @root.settings.showPartyStatsPanel}}
-            <div class="panel-container" data-panel="party-stats"></div>
-            {{/if}}
-        </div>
+            <div class="tray-view-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
+                <div class="panel-container" data-panel="party"></div>
+                {{#if @root.settings.showPartyStatsPanel}}
+                <div class="panel-container" data-panel="party-stats"></div>
+                {{/if}}
+            </div>
 
-        <div class="tray-view-content notes-view {{#unless (eq viewMode 'notes')}}hidden{{/unless}}">
-            <div class="panel-container" data-panel="panel-notes"></div>
-        </div>
+            <div class="tray-view-content notes-view {{#unless (eq viewMode 'notes')}}hidden{{/unless}}">
+                <div class="panel-container" data-panel="panel-notes"></div>
+            </div>
 
-        <div class="tray-view-content codex-view {{#unless (eq viewMode 'codex')}}hidden{{/unless}}">
-            <div class="panel-container" data-panel="panel-codex"></div>
-        </div>
+            <div class="tray-view-content codex-view {{#unless (eq viewMode 'codex')}}hidden{{/unless}}">
+                <div class="panel-container" data-panel="panel-codex"></div>
+            </div>
 
-        <div class="tray-view-content quest-view {{#unless (eq viewMode 'quest')}}hidden{{/unless}}">
-            <div class="panel-container" data-panel="panel-quest"></div>
-        </div>
+            <div class="tray-view-content quest-view {{#unless (eq viewMode 'quest')}}hidden{{/unless}}">
+                <div class="panel-container" data-panel="panel-quest"></div>
+            </div>
+        
     </div>
 </div> 
