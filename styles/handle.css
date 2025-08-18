@@ -382,7 +382,7 @@
     gap: 4px;
     align-items: center;
     margin-bottom: 2px;
-  }
+}
 
 
 
@@ -429,11 +429,24 @@
     writing-mode: vertical-lr;
     transform: rotate(180deg);
     flex-direction: row;
-    width: 21px;
-    height: 21px;
+    width: 100%;
+    min-height: 21px;
 }
 
 
+
+.squire-tray[data-position="left"] .handle-macro-favorite {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    position: relative;
+    width: 21px;
+    height: 21px;
+    margin-bottom: 2px;
+}
 
 .squire-tray[data-position="left"] .handle-favorite-icon {
     display: flex;
@@ -443,6 +456,9 @@
     background: rgba(0, 0, 0, 0.5);
     cursor: pointer;
     position: relative;
+    width: 21px;
+    height: 21px;
+    margin-bottom: 2px;
 }
 .squire-tray[data-position="left"] .handle-macro-favorite:focus,
 .squire-tray[data-position="left"] .handle-macro-favorite:hover,
@@ -453,12 +469,14 @@
     box-shadow: 0 0 0 1px rgba(229, 71, 51, 0.9);
     border-radius: 4px;
 }
+
 .squire-tray[data-position="left"] .handle-favorite-icon:hover {
-    transform: rotate(0deg) scale(1.1, 1.1);
+    transform: scale(1.1, 1.1);
 }
+
 .squire-tray[data-position="left"] .handle-macro-favorite:focus,
 .squire-tray[data-position="left"] .handle-macro-favorite:hover {
-    transform: rotate(180deg) scale(1.1, 1.1);
+    transform: scale(1.1, 1.1);
 }
 
 
