@@ -46,7 +46,6 @@
 }
 
 
-
 /* PIN / VIEW / REFRESH BUTTONS */
 .squire-tray[data-position="left"] .pin-button,
 .squire-tray[data-position="left"] .view-toggle-button,
@@ -54,13 +53,13 @@
 .squire-tray[data-position="left"] .tray-toggle-button {
     order: 1;
     background: none;
-    border: none;
+    border: 0px solid #ffffff;
     color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
     padding: 0px 0px;
     transition: all 0.2s ease;
     outline: none;
-    margin-bottom: 0px;
+    margin: 0px;
     text-align: center;
     font-size: 0.85em;
     border-radius: 3px;
@@ -72,7 +71,11 @@
 .squire-tray[data-position="left"] .tray-toggle-button:hover {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
+    border: none !important;      /* ensures no border is drawn */
+    outline: none !important;     /* removes focus ring/outline */
+    box-shadow: none !important;  /* kills subtle UA shadows */
 }
+
 
 .squire-tray[data-position="left"] .pin-button i,
 .squire-tray[data-position="left"] .view-toggle-button i,
@@ -107,7 +110,7 @@
 
 
 /* TRAY Handle Title */
-.squire-tray[data-position="left"] .handle-left {
+.squire-tray[data-position="left"] .handle-view {
     flex: 1;
     writing-mode: vertical-lr;
     transform: rotate(180deg);
@@ -142,34 +145,7 @@
     filter: brightness(1.2);
 }
 
-/* Handle Conditions */
 
-.squire-tray[data-position="left"] .handle-conditions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-}
-
-.squire-tray[data-position="left"] .condition-icon {
-    width: 24px;
-    height: 24px;
-    filter: brightness(0.7);
-    cursor: help;
-    transition: filter 0.2s ease;
-    background-color: rgba(0, 0, 0, 0.9);
-    padding: 2px;
-    border-radius: 3px;
-}
-
-.squire-tray[data-position="left"] .condition-icon:hover {
-    filter: brightness(1);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 10px var(--color-shadow-highlight);
-    transform: scale(1.1,1.1);
-
-}
 
 /* STATS */
 .squire-tray[data-position="left"] .handle-stats-primary,
@@ -408,7 +384,43 @@
     margin-bottom: 2px;
   }
 
+
+
+
+
 /* Handle Favorites */
+
+
+/* MERGE THESE with the other favorites. Handle Conditions */
+
+.squire-tray[data-position="left"] .handle-conditions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+}
+
+.squire-tray[data-position="left"] .condition-icon {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0.7);
+    cursor: help;
+    transition: filter 0.2s ease;
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 2px;
+    border-radius: 3px;
+}
+
+.squire-tray[data-position="left"] .condition-icon:hover {
+    filter: brightness(1);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 10px var(--color-shadow-highlight);
+    transform: scale(1.1,1.1);
+
+}
+
+
 .squire-tray[data-position="left"] .handle-macro-favorite,
 .squire-tray[data-position="left"] .handle-favorites {
     display: flex;
@@ -417,6 +429,8 @@
     writing-mode: vertical-lr;
     transform: rotate(180deg);
     flex-direction: row;
+    width: 21px;
+    height: 21px;
 }
 
 
@@ -426,7 +440,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.5);
     cursor: pointer;
     position: relative;
 }
@@ -436,8 +450,8 @@
     background: rgba(0, 0, 0, 0.4);
     filter: brightness(1);
     border-color: var(--color-border-highlight);
-    box-shadow: 0 0 0 2px rgba(229, 71, 51, 0.9);
-    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(229, 71, 51, 0.9);
+    border-radius: 4px;
 }
 .squire-tray[data-position="left"] .handle-favorite-icon:hover {
     transform: rotate(0deg) scale(1.1, 1.1);
@@ -450,15 +464,25 @@
 
 .squire-tray[data-position="left"] .handle-macro-favorite img,
 .squire-tray[data-position="left"] .handle-favorite-icon img {
-    width: 24px;
-    height: 24px;
+    width: 21px;
+    height: 21px;
     object-fit: contain;
     transform: rotate(0deg);
+    border-radius: 4px;
 }
 
 .squire-tray[data-position="left"] .handle-favorite-icon:hover img {
 	transform: scale(1.02,1.02);
 }
+
+
+
+
+
+
+
+
+
 
 .squire-tray[data-position="left"] .handle-favorite-roll-overlay {
     position: absolute;
