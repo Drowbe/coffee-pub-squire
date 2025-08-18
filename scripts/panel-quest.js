@@ -1205,7 +1205,6 @@ export class QuestPanel {
                 title: 'Import Quests and Scene Pins from JSON',
                 width: 600,
                 resizable: true,
-                classes: ['import-export-dialog'],
                 content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
                     type: 'quests',
                     isImport: true,
@@ -1456,8 +1455,15 @@ export class QuestPanel {
                         }
                     }
                 },
-                default: 'import',
+                default: 'import'
+            }, {
+                classes: ['import-export-dialog'],
+                id: 'import-export-dialog-quest-import',
                 render: (html) => {
+                    // Apply custom button classes
+                    html.find('[data-button="cancel"]').addClass('squire-cancel-button');
+                    html.find('[data-button="import"]').addClass('squire-submit-button');
+                    
                     // Copy template button
                     html.find('.copy-template-button').click(() => {
                         let output = template;
@@ -1694,12 +1700,15 @@ export class QuestPanel {
                     }
                 },
                 default: 'download'
-                },
-                {
-                    classes: ['import-export-dialog'],
-                    id: ['import-export-dialog']
+            }, {
+                classes: ['import-export-dialog'],
+                id: 'import-export-dialog-quest-export',
+                render: (html) => {
+                    // Apply custom button classes
+                    html.find('[data-button="close"]').addClass('squire-cancel-button');
+                    html.find('[data-button="download"]').addClass('squire-submit-button');
                 }
-            ).render(true);
+            }).render(true);
         });
 
         // Status menu (GM only)

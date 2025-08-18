@@ -1341,7 +1341,8 @@ SPECIFIC INSTRUCTIONS HERE`;
                 }
             },
             {
-                classes: ['import-export-dialog']
+                classes: ['import-export-dialog'],
+                id: 'import-export-dialog-codex-import',
             }).render(true);
         });
 
@@ -1442,7 +1443,7 @@ SPECIFIC INSTRUCTIONS HERE`;
             },
             {
                 classes: ['import-export-dialog'],
-                id: 'import-export-dialog',
+                id: 'import-export-dialog-codex-export',
                 render: (html) => {
                     // Apply custom button classes
                     html.find('[data-button="close"]').addClass('squire-cancel-button');
