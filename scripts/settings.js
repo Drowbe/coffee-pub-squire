@@ -34,6 +34,24 @@ export const registerSettings = function() {
 	});
 
 
+    // Default View Mode Setting
+    game.settings.register(MODULE.ID, 'viewDefaultMode', {
+        name: 'Default Tab',
+        hint: 'Set the default tab for when foundry loads.',
+        scope: 'client',
+        config: true,
+        type: String,
+        choices: {
+            'player': 'Player Tab',
+            'party': 'Party Tab',
+            'notes': 'Notes Tab',
+            'codex': 'Codex Tab',
+            'quest': 'Quest Tab',
+            'last': 'Last Tab Viewed',
+        },
+        default: 'player'
+    });
+
     // Tabs
 
     game.settings.register(MODULE.ID, 'showTabParty', {
@@ -711,24 +729,6 @@ export const registerSettings = function() {
             'notes': 'Notes View',
             'codex': 'Codex View',
             'quest': 'Quest View'
-        },
-        default: 'player'
-    });
-
-    // View Mode Setting
-    game.settings.register(MODULE.ID, 'viewDefaultMode', {
-        name: 'Default Tab',
-        hint: 'Set the default tab for when foundry loads.',
-        scope: 'client',
-        config: true,
-        type: String,
-        choices: {
-            'player': 'Player Tab',
-            'party': 'Party Tab',
-            'notes': 'Notes Tab',
-            'codex': 'Codex Tab',
-            'quest': 'Quest Tab',
-            'last': 'Last Tab Viewed',
         },
         default: 'player'
     });

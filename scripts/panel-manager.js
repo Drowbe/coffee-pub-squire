@@ -124,12 +124,19 @@ export class PanelManager {
             // Check if this is the first time loading
             const isFirstLoad = !PanelManager.instance;
             
-            // Set default viewMode to 'player' only on first load
+            // Set default viewMode based on user preference
             if (isFirstLoad) {
-                PanelManager.viewMode = 'player';
-                await game.settings.set(MODULE.ID, 'viewMode', 'player');
+                const defaultMode = game.settings.get(MODULE.ID, 'viewDefaultMode');
+                if (defaultMode === 'last') {
+                    // Load whatever was last viewed (or fallback to 'player' if none)
+                    PanelManager.viewMode = game.settings.get(MODULE.ID, 'viewMode') || 'player';
+                } else {
+                    // Use their specified default tab
+                    PanelManager.viewMode = defaultMode;
+                    await game.settings.set(MODULE.ID, 'viewMode', defaultMode);
+                }
             } else {
-                // Otherwise, load the saved viewMode
+                // Load the saved viewMode
                 PanelManager.viewMode = game.settings.get(MODULE.ID, 'viewMode');
             }
             
