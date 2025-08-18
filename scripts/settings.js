@@ -707,7 +707,28 @@ export const registerSettings = function() {
         type: String,
         choices: {
             'player': 'Player View',
-            'party': 'Party View'
+            'party': 'Party View',
+            'notes': 'Notes View',
+            'codex': 'Codex View',
+            'quest': 'Quest View'
+        },
+        default: 'player'
+    });
+
+    // View Mode Setting
+    game.settings.register(MODULE.ID, 'viewDefaultMode', {
+        name: 'Default Tab',
+        hint: 'Set the default tab for when foundry loads.',
+        scope: 'client',
+        config: true,
+        type: String,
+        choices: {
+            'player': 'Player Tab',
+            'party': 'Party Tab',
+            'notes': 'Notes Tab',
+            'codex': 'Codex Tab',
+            'quest': 'Quest Tab',
+            'last': 'Last Tab Viewed',
         },
         default: 'player'
     });
@@ -740,14 +761,14 @@ export const registerSettings = function() {
         scope: 'client',
         config: false,
         type: String,
-        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3'
     });
 
     game.settings.register(MODULE.ID, 'unpinSound', {
         scope: 'client',
         config: false,
         type: String,
-        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-02.mp3'
+        default: 'modules/coffee-pub-blacksmith/sounds/interface-pop-01.mp3'
     });
 
 

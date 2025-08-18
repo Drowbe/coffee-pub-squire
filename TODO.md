@@ -88,6 +88,7 @@
 - [ ] Investigate codex refresh button implementation
 - [ ] Investigate party view feather icon event handling
 - [ ] Investigate toggle view mode logic in handle to understand why it defaults to quests
+- [x] **FIXED** Tab change sound gets very loud when clicking an already selected tab - added check to prevent unnecessary sound playback when mode doesn't change
 
 ## Notes
 

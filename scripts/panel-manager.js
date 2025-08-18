@@ -1890,9 +1890,21 @@ export class PanelManager {
     }
 
     async setViewMode(mode) {
+        // Only proceed if the view mode is actually changing
+        if (PanelManager.viewMode === mode) {
+            return; // No change needed
+        }
+        
         // Update viewMode
         PanelManager.viewMode = mode;
         await game.settings.set(MODULE.ID, 'viewMode', mode);
+        
+        // Play tab change sound only when view mode actually changes
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        if (blacksmith) {
+            const sound = game.settings.get(MODULE.ID, 'tabChangeSound');
+            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+        }
         
         // Safety check: ensure tray element exists before manipulating it
         const tray = PanelManager.element;
@@ -2391,14 +2403,6 @@ export class PanelManager {
             const macro = game.macros.get(macroId);
             if (macro) macro.execute();
         });
-        
-
-        // Play tab change sound
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (blacksmith) {
-            const sound = game.settings.get(MODULE.ID, 'tabChangeSound');
-            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-        }
 
         // Add click handler for party member portraits in the handle
         handle.find('.handle-party-member-portrait.clickable').on('click', async function(event) {
