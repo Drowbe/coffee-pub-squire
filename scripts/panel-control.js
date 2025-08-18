@@ -161,10 +161,8 @@ export class ControlPanel {
         await game.settings.set(MODULE.ID, settingKey, !currentValue);
         this._updateVisibility();
         
-        // Update all panels through the panel manager
-        if (PanelManager.instance) {
-            await PanelManager.instance.updateTray();
-        }
+        // Update panel visibility without recreating the entire tray
+        this._updateVisibility();
     }
 
     _activateListeners(html) {

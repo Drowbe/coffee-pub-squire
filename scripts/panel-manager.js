@@ -860,8 +860,7 @@ export class PanelManager {
                         false,
                         MODULE.TITLE
                     );
-                    await PanelManager.initialize(this.actor);
-                    // Force a re-render of all panels
+                    // Force a re-render of all panels without recreating the tray
                     if (PanelManager.instance) {
                         await PanelManager.instance.renderPanels(PanelManager.element);
                     }
@@ -3086,49 +3085,51 @@ async function _updateHealthPanelFromSelection() {
     // Save the current view mode before initializing
     const currentViewMode = PanelManager.viewMode;
 
-    // If not pinned, handle the animation sequence
-    if (!PanelManager.isPinned && PanelManager.element) {
-        PanelManager.element.removeClass('expanded');
-        await PanelManager.initialize(actorToUse);
-        
-        // Force refresh of items collection to ensure up-to-date handle favorites
-        if (PanelManager.instance && PanelManager.instance.actor?.items && typeof PanelManager.instance.actor.items._flush === 'function') {
-            await PanelManager.instance.actor.items._flush();
-        }
-        
-        // Update health panel with all controlled actors for bulk operations
-        if (PanelManager.instance && PanelManager.instance.healthPanel) {
-            // Only update if the actors have actually changed
-            const currentActors = PanelManager.instance.healthPanel.actors || [];
-            const currentActorIds = currentActors.map(a => a.id).sort();
-            const newActorIds = controlledActors.map(a => a.id).sort();
-            
-            if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
-                PanelManager.instance.healthPanel.updateActors(controlledActors);
-                // Only render if not popped out and health panel is enabled
-                if (!PanelManager.instance.healthPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showHealthPanel')) {
-                    await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
-                }
-            }
-        }
-        
-        // Play tray open sound
+    // Store the current tray state before initializing
+    const wasExpanded = PanelManager.element?.hasClass('expanded') || false;
+    
+    // Check if we need to change actors
+    if (PanelManager.currentActor?.id !== actorToUse.id) {
+        // Actor changed - update the instance without recreating the tray
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (blacksmith) {
-            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-        }
+        blacksmith?.utils.postConsoleAndNotification(
+            'Actor Changed',
+            { 
+                from: PanelManager.currentActor?.name || 'none',
+                to: actorToUse.name,
+                wasExpanded: wasExpanded,
+                isPinned: PanelManager.isPinned
+            },
+            false,
+            true,
+            false,
+            MODULE.TITLE
+        );
         
-        PanelManager.element.addClass('expanded');
-        // Restore the previous view mode after initializing
-        if (PanelManager.instance && PanelManager.element) {
-            await PanelManager.instance.setViewMode(currentViewMode);
+        PanelManager.currentActor = actorToUse;
+        if (PanelManager.instance) {
+            PanelManager.instance.actor = actorToUse;
+            
+            // Update the actor reference in all panel instances
+            if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = actorToUse;
+            if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = actorToUse;
+            if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = actorToUse;
+            if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = actorToUse;
+            if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = actorToUse;
+            if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = actorToUse;
+            if (PanelManager.instance.featuresPanel) PanelManager.instance.featuresPanel.actor = actorToUse;
+            if (PanelManager.instance.experiencePanel) PanelManager.instance.experiencePanel.actor = actorToUse;
+            if (PanelManager.instance.statsPanel) PanelManager.instance.statsPanel.actor = actorToUse;
+            if (PanelManager.instance.abilitiesPanel) PanelManager.instance.abilitiesPanel.actor = actorToUse;
+            if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.actor = actorToUse;
+            if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.actor = actorToUse;
         }
-        return;
     }
-
-    // If pinned, just update the data immediately
-    await PanelManager.initialize(actorToUse);
+    
+    // Force refresh of items collection to ensure up-to-date handle favorites
+    if (PanelManager.instance && PanelManager.instance.actor?.items && typeof PanelManager.instance.actor.items._flush === 'function') {
+        await PanelManager.instance.actor.items._flush();
+    }
     
     // Update health panel with all controlled actors for bulk operations
     if (PanelManager.instance && PanelManager.instance.healthPanel) {
@@ -3151,24 +3152,75 @@ async function _updateHealthPanelFromSelection() {
         await PanelManager.instance.updateHandle();
     }
     
+    // Re-render all panels with the new actor data
+    if (PanelManager.instance && PanelManager.element) {
+        await PanelManager.instance.renderPanels(PanelManager.element);
+    }
+    
+    // Re-attach event listeners to ensure tray functionality works
+    if (PanelManager.instance && PanelManager.element) {
+        // Bind the instance to ensure proper 'this' context
+        PanelManager.instance.activateListeners.call(PanelManager.instance, PanelManager.element);
+    }
+    
     // Restore the previous view mode after initializing
     if (PanelManager.instance && PanelManager.element) {
         await PanelManager.instance.setViewMode(currentViewMode);
     }
+    
+    // Only play sound and expand tray if it was previously expanded AND not pinned
+    if (wasExpanded && !PanelManager.isPinned && PanelManager.element) {
+        // Play tray open sound
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        if (blacksmith) {
+            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
+            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+        }
+        
+        // Restore expanded state
+        PanelManager.element.addClass('expanded');
+    }
+
+
 }
 
 // Also handle when tokens are deleted or actors are updated
 Hooks.on('deleteToken', async (token) => {
     if (PanelManager.currentActor?.id === token.actor?.id) {
-        PanelManager.instance = null;
-        PanelManager.currentActor = null;
         // Try to find another token to display
         const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
         if (nextToken) {
-            await PanelManager.initialize(nextToken.actor);
+            // Update the actor without recreating the tray
+            PanelManager.currentActor = nextToken.actor;
             if (PanelManager.instance) {
+                PanelManager.instance.actor = nextToken.actor;
+                
+                // Update the actor reference in all panel instances
+                if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = nextToken.actor;
+                if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = nextToken.actor;
+                if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = nextToken.actor;
+                if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = nextToken.actor;
+                if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = nextToken.actor;
+                if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = nextToken.actor;
+                if (PanelManager.instance.featuresPanel) PanelManager.instance.featuresPanel.actor = nextToken.actor;
+                if (PanelManager.instance.experiencePanel) PanelManager.instance.experiencePanel.actor = nextToken.actor;
+                if (PanelManager.instance.statsPanel) PanelManager.instance.statsPanel.actor = nextToken.actor;
+                if (PanelManager.instance.abilitiesPanel) PanelManager.instance.abilitiesPanel.actor = nextToken.actor;
+                if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.actor = nextToken.actor;
+                if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.actor = nextToken.actor;
+                
                 await PanelManager.instance.updateHandle();
+                
+                // Re-render all panels with the new actor data
+                await PanelManager.instance.renderPanels(PanelManager.element);
+                
+                // Re-attach event listeners to ensure tray functionality works
+                PanelManager.instance.activateListeners.call(PanelManager.instance, PanelManager.element);
             }
+        } else {
+            // No more tokens, clear the instance
+            PanelManager.instance = null;
+            PanelManager.currentActor = null;
         }
     }
 });
@@ -3436,7 +3488,7 @@ Hooks.on('createItem', async (item) => {
         MODULE.TITLE
     );
     
-    await PanelManager.instance.updateTray();
+    // No need to recreate the entire tray - just update relevant panels and handle
     await PanelManager.instance.renderPanels(PanelManager.element);
     await PanelManager.instance.updateHandle();
 });
@@ -3545,8 +3597,9 @@ Hooks.on('updateItem', async (item, changes) => {
                            changes.system?.preparation?.prepared; // Spell preparation
     
     if (needsFullUpdate) {
-        await PanelManager.instance.updateTray();
+        // For major changes, just re-render panels and update handle - no need to recreate entire tray
         await PanelManager.instance.renderPanels(PanelManager.element);
+        await PanelManager.instance.updateHandle();
     } else {
         // For other changes, just update the handle
         await PanelManager.instance.updateHandle();
@@ -3609,7 +3662,7 @@ Hooks.on('deleteItem', async (item) => {
         MODULE.TITLE
     );
     
-    await PanelManager.instance.updateTray();
+    // No need to recreate the entire tray - just update relevant panels and handle
     await PanelManager.instance.renderPanels(PanelManager.element);
     await PanelManager.instance.updateHandle();
 });
@@ -3618,10 +3671,7 @@ Hooks.on('deleteItem', async (item) => {
 const globalCleanupInterval = setInterval(() => {
     if (PanelManager.instance) {
         PanelManager.cleanupNewlyAddedItems();
-        // Update the tray if there are any changes
-        if (PanelManager.instance.element) {
-            PanelManager.instance.updateTray();
-        }
+        // No need to recreate the entire tray for cleanup - just clean up data
     }
 }, 60000); // Check every minute
 PanelManager.trackInterval(globalCleanupInterval);

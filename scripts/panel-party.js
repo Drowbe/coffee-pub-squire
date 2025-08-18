@@ -752,7 +752,10 @@ export class PartyPanel {
                     const currentActorId = panelManager.currentActor?.id;
                     if (currentActorId === targetActorId || 
                         (data.type === 'Actor' && data.id === currentActorId)) {
-                        panelManager.instance.updateTray();
+                        // Just update the inventory panel content, don't recreate the entire tray
+                        if (panelManager.instance.inventoryPanel) {
+                            await panelManager.instance.inventoryPanel.render(panelManager.instance.element);
+                        }
                     }
                 }
                 
