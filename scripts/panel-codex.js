@@ -1165,7 +1165,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                                     
                                     // Update progress for each entry
                                     const entryProgress = 20 + ((i / totalEntries) * 60); // 20-80% range for entry processing
-                                    this._updateProgressBar(entryProgress, `Processing entry: ${entry.name}`);
+                                    this._updateProgressBar(entryProgress, `Processing: ${entry.name}`);
                                     
                                     // Find existing page by UUID first (if available), then by name
                                     let page = null;

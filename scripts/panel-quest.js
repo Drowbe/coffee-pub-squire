@@ -1307,7 +1307,7 @@ export class QuestPanel {
                                     
                                     // Update progress for each quest
                                     const questProgress = 20 + ((i / totalQuests) * 60); // 20-80% range for quest processing
-                                    this._updateProgressBar(questProgress, `Processing quest: ${quest.name}`);
+                                    this._updateProgressBar(questProgress, `Processing: ${quest.name}`);
                                     
                                     // Check if a quest with this UUID already exists (UUID takes priority)
                                     let existingPage = null;
