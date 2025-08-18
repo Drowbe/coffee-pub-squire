@@ -150,64 +150,50 @@
 
 
 
+/* BUTTONS */
 
+.import-export-dialog .dialog-buttons {
+    display: flex !important;
+    flex-direction: row !important;  /* horizontal instead of vertical */
+    justify-content: space-between;  /* spread them out */
+    gap: 4px;                        /* space between buttons */
+  }
+  
+  .import-export-dialog .dialog-buttons .dialog-button {
+    flex: 1;               /* make them equal width */
+    text-align: center;    /* center text inside */
+  }
+  
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="import"],
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="download"],
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="close"],
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="cancel"] {
+      border: none !important;
+      border-radius: 4px !important;
+      padding: 12px 4px !important;
+      cursor: pointer !important;
+      font-weight: 500 !important;
+      font-size: 1.1em;
+  }
+  
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="import"],
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="download"] {
+      background: #28542b !important;
+      color: white !important;
+  }
+  
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="import"]:hover,
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="download"]:hover {
+      background: #1e3d20;
+  }
+  
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="close"],
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="cancel"] {
+      background: #666 !important;
+      color: white !important;
+  }
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="close"]:hover,
+  .import-export-dialog .dialog-buttons .dialog-button[data-button="cancel"]:hover {
+      background: #555;
+  } 
 
-
-.import-export-dialog .dialog-buttons .dialog-button[data-button="import"],
-.import-export-dialog .dialog-buttons .dialog-button[data-button="download"] {
-    background: #28542b !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 4px !important;
-    padding: 8px 16px !important;
-    cursor: pointer !important;
-    font-weight: bold !important;
-}
-
-.import-export-dialog .dialog-buttons .dialog-button[data-button="import"]:hover,
-.import-export-dialog .dialog-buttons .dialog-button[data-button="download"]:hover {
-    background: #1e3d20;
-}
-
-.import-export-dialog .dialog-buttons .dialog-button[data-button="close"],
-.import-export-dialog .dialog-buttons .dialog-button[data-button="cancel"] {
-    background: #666 !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 4px !important;
-    padding: 8px 16px !important;
-    cursor: pointer !important;
-}
-
-/* Custom button classes for squire styling */
-.squire-window-import-export .squire-submit-button {
-    background: #28542b !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 4px !important;
-    padding: 8px 16px !important;
-    cursor: pointer !important;
-    font-weight: bold !important;
-}
-
-.squire-window-import-export .squire-submit-button:hover {
-    background: #1e3d20 !important;
-}
-
-.squire-window-import-export .squire-cancel-button {
-    background: #666 !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 4px !important;
-    padding: 8px 16px !important;
-    cursor: pointer !important;
-}
-
-.squire-window-import-export .squire-cancel-button:hover {
-    background: #555 !important;
-}
-
-.import-export-dialog .dialog-buttons .dialog-button[data-button="close"]:hover,
-.import-export-dialog .dialog-buttons .dialog-button[data-button="cancel"]:hover {
-    background: #555;
-} 
