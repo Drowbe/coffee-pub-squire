@@ -274,7 +274,7 @@ export class MacrosPanel {
         });
 
         // Handle favorite macro click in handle
-        const handle = html.find('.handle-left');
+        const handle = html.find('.handle-view');
         handle.find('.handle-macro-favorite').off('click').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();

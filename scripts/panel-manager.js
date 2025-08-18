@@ -668,12 +668,12 @@ export class PanelManager {
             };
             const handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
             
-            // Extract just the handle-left content from the rendered template
+            // Extract just the handle-view content from the rendered template
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = handleTemplate;
-            const handleContent = tempDiv.querySelector('.handle-left').innerHTML;
+            const handleContent = tempDiv.querySelector('.handle-view').innerHTML;
             
-            const handle = PanelManager.element.find('.handle-left');
+            const handle = PanelManager.element.find('.handle-view');
             handle.empty();
             handle.html(handleContent);
             
@@ -1923,7 +1923,7 @@ export class PanelManager {
         }
         
         // Update handle content
-        const handleLeft = tray.find('.handle-left');
+        const handleLeft = tray.find('.handle-view');
         let handleTemplate;
         
         // Build favorite macros array
@@ -1999,10 +1999,10 @@ export class PanelManager {
         };
         handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
         
-        // Extract just the handle-left content from the rendered template
+        // Extract just the handle-view content from the rendered template
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = handleTemplate;
-        const handleContent = tempDiv.querySelector('.handle-left').innerHTML;
+        const handleContent = tempDiv.querySelector('.handle-view').innerHTML;
         
         handleLeft.html(handleContent);
         
