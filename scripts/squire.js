@@ -384,6 +384,9 @@ Hooks.once('init', async function() {
     const handleSecondaryStatsPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-secondary-stats.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-secondary-stats', handleSecondaryStatsPartial);
     
+    const handleCharacterPortraitPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-character-portrait.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-character-portrait', handleCharacterPortraitPartial);
+    
     // Set up API to expose PanelManager to other modules
     game.modules.get(MODULE.ID).api = {
         PanelManager
