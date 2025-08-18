@@ -5,7 +5,9 @@
             <button class="pin-button" title="Pin Tray">
                 <i class="fas fa-thumbtack"></i>
             </button>
-            <i class="fas fa-chevron-right"></i>
+            <button class="tray-toggle-button" title="Toggle Tray">
+                <i class="fas fa-chevron-right"></i>
+            </button>
             <button class="tray-refresh" title="Refresh Tray">
                 <i class="fas fa-arrows-rotate"></i>
             </button>
@@ -82,7 +84,7 @@
         <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
             {{#if actor}}
             <!-- CHARACTER - ALWAYS SHOW -->  
-            <div class="panel-container" data-panel="character"></div>
+            <div class="panel-container" data-panel="character" data-clickable="true"></div>
 
             <!-- HEALTH -->
             {{#if @root.settings.showHealthPanel}}

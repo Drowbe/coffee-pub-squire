@@ -26,8 +26,11 @@
 
 ## UI/UX Improvements
 
+### Windows
+- [ ] **Planned** Popped out windows should ignore "esc" keypresses.
+
 ### Tray Handle
-- [ ] **IMPROVEMENT** Make tray handle clickable only on chevron or character panel container - too easy to mis-click other elements
+- [x] **COMPLETED** ~~Make tray handle clickable only on chevron or character panel container - too easy to mis-click other elements~~
 
 ### Content Transitions
 - [ ] **PLANNED** Implement fade transitions for content changes while keeping tray stable
@@ -61,9 +64,8 @@
 3. **Fix codex refresh** - Panel functionality issue
 4. **Fix party view feather icon** - Unexpected behavior
 5. **Fix toggle view mode in handle** - Handle functionality issue
-6. **Improve tray handle click target** - UX improvement
-7. **Implement content fade transitions** - Polish
-8. **Code cleanup and modularization** - Technical debt
+6. **Implement content fade transitions** - Polish
+7. **Code cleanup and modularization** - Technical debt
 
 ## Investigation Needed
 

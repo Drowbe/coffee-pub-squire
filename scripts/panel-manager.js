@@ -809,16 +809,15 @@ export class PanelManager {
         
         // Handle click on handle (collapse chevron)
         handle.on('click', (event) => {
-            if ($(event.target).closest('.pin-button').length || 
-                $(event.target).closest('.view-toggle-button').length ||
-                $(event.target).closest('.tray-refresh').length ||
-                $(event.target).closest('.handle-favorite-icon').length ||
-                $(event.target).closest('.handle-health-bar').length ||
-                $(event.target).closest('.handle-dice-tray').length ||
-                $(event.target).closest('.handle-party-member-portrait').length ||
-                $(event.target).closest('.handle-party-member-health-bar').length ||
-                $(event.target).closest('.handle-character-portrait').length ||
-                $(event.target).closest('.handle-quest-progress-fill').length) return;
+            // Only allow tray toggle on specific elements
+            const $target = $(event.target);
+            const isToggleButton = $target.closest('.tray-toggle-button').length > 0;
+            const isCharacterPanel = $target.closest('[data-clickable="true"]').length > 0;
+            
+            // If not clicking on toggle button or character panel, don't toggle
+            if (!isToggleButton && !isCharacterPanel) {
+                return;
+            }
             
             event.preventDefault();
             event.stopPropagation();

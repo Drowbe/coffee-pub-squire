@@ -10,7 +10,6 @@
     border: 1px dotted #444;
     border-radius: 0 6px 6px 0;
     margin-left: 8px;
-    cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -48,28 +47,39 @@
 
 
 
-
-
 /* PIN / VIEW / REFRESH BUTTONS */
 .squire-tray[data-position="left"] .pin-button,
 .squire-tray[data-position="left"] .view-toggle-button,
-.squire-tray[data-position="left"] .tray-refresh {
+.squire-tray[data-position="left"] .tray-refresh,
+.squire-tray[data-position="left"] .tray-toggle-button {
     order: 1;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
-    padding: 0px 8px;
-    transition: color 0.3s ease;
+    padding: 0px 0px;
+    transition: all 0.2s ease;
     outline: none;
     margin-bottom: 0px;
+    text-align: center;
+    font-size: 0.85em;
+    border-radius: 3px;
 }
 
+.squire-tray[data-position="left"] .pin-button:hover,
+.squire-tray[data-position="left"] .view-toggle-button:hover,
+.squire-tray[data-position="left"] .tray-refresh:hover,
+.squire-tray[data-position="left"] .tray-toggle-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
 
 .squire-tray[data-position="left"] .pin-button i,
 .squire-tray[data-position="left"] .view-toggle-button i,
-.squire-tray[data-position="left"] .tray-refresh i {
+.squire-tray[data-position="left"] .tray-refresh i,
+.squire-tray[data-position="left"] .tray-toggle-button i {
     transition: transform 0.2s ease, color 0.2s ease;
+    margin-right: 0;
 }
 
 
@@ -85,16 +95,6 @@
 
 .squire-tray[data-position="left"] .pin-button:hover i {
     transform: rotate(45deg);
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] .view-toggle-button:hover i {
-    color: #fff;
-}
-
-.pin-button:hover,
-.view-toggle-button:hover {
-    color: rgba(255, 255, 255, 0.8);
 }
 
 .squire-tray.pinned .pin-button {
