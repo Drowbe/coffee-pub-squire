@@ -383,10 +383,10 @@ export class PanelManager {
         
         // Preserve expanded/pinned state without animation
         if (wasExpanded) {
-            newTrayElement.addClass('expanded').css('animation', 'none');
+            newTrayElement.addClass('expanded');
         }
         if (wasPinned) {
-            newTrayElement.addClass('pinned expanded').css('animation', 'none');
+            newTrayElement.addClass('pinned expanded');
         }
         
         // Replace the old tray with the new one
@@ -464,10 +464,7 @@ export class PanelManager {
         // Render all panels
         await this.renderPanels(PanelManager.element);
 
-        // Remove the animation override after a brief delay
-        setTimeout(() => {
-            PanelManager.element.css('animation', '');
-        }, 100);
+
     }
 
     /**
