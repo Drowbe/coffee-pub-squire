@@ -75,8 +75,6 @@
 }
 
 
-
-
 /* Drop Zone Styles */
 /* TRAY Left Position */
 .squire-tray[data-position="left"] {
@@ -105,8 +103,6 @@
 .squire-tray[data-position="left"]:not(.expanded) {
     transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
 }
-
-
 
 
 /* TRAY Content */
@@ -320,31 +316,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .squire-tray[data-position="left"] .section-header .favorites-clear-all {
     cursor: pointer;
     opacity: 1;
@@ -373,20 +344,6 @@
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Spell Slots */
 
 .squire-tray[data-position="left"] .level-header .slot-pips {
@@ -406,20 +363,6 @@
     background: #9f9275;
     border-color: #9f9275;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* Spell/Weapon Items in Left Position */
