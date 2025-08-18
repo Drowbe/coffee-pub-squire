@@ -340,35 +340,93 @@
 }
 
 
+/* GROUP ICONS  */
 
+.squire-tray[data-position="left"] .handle-group-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    position: relative;
+    width: 22px;
+    height: 22px;
+    filter: brightness(0.9);
+    transition: filter 0.2s ease;
+    margin-bottom: 6px;
+    transform: rotate(180deg);
+    min-height: 22px;
+}
+.squire-tray[data-position="left"] .handle-group-button:hover {
+    background: rgba(0, 0, 0, 0.4);
+    filter: brightness(1);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 10px var(--color-shadow-highlight);
+}
+.squire-tray[data-position="left"] .handle-group-button i {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1em;
+    padding-right: 1px;
+}
+.squire-tray[data-position="left"] .handle-group-button i:hover {
+    transform: scale(1.05, 1.05);
+}
 
+/* HANDLE FAVORITES */
 
+.squire-tray[data-position="left"] .handle-macros,
+.squire-tray[data-position="left"] .handle-conditions,
+.squire-tray[data-position="left"] .handle-favorites {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    flex-direction: row;
+    width: 100%;
+    min-height: 21px;
+}
 
+.squire-tray[data-position="left"] .handle-macro-icon,
+.squire-tray[data-position="left"] .handle-condition-icon,
+.squire-tray[data-position="left"] .handle-favorite-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    position: relative;
+    width: 22px;
+    height: 22px;
+    filter: brightness(0.9);
+    transition: filter 0.2s ease;
+}
+.squire-tray[data-position="left"] .handle-condition-icon {
+    padding: 2px;
+}
 
+.squire-tray[data-position="left"] .handle-condition-icon:hover,
+.squire-tray[data-position="left"] .handle-macro-icon:hover,
+.squire-tray[data-position="left"] .handle-favorite-icon:hover {
+    background: rgba(0, 0, 0, 0.4);
+    filter: brightness(1);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 0 1px rgba(229, 71, 51, 0.9);
+    border-radius: 4px;
+    transform: scale(1.1, 1.1);
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.squire-tray[data-position="left"] .handle-condition-icon img,
+.squire-tray[data-position="left"] .handle-macro-icon img,
+.squire-tray[data-position="left"] .handle-favorite-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform: rotate(0deg);
+    border-radius: inherit;
+}
 
 
 
