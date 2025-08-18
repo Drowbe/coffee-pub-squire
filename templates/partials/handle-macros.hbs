@@ -1,0 +1,14 @@
+{{!-- MACROS --}} 
+{{#if showHandleMacros}}
+    <span class="tray-handle-separator line"></span>
+    <div class="handle-group-button" id="macros-button" data-tooltip="Open the Macros Window">
+        <i class="fas fa-sun"></i>
+    </div>
+    <div class="handle-macros">
+        {{#each favoriteMacros as |fav|}}
+            <div class="handle-macro-icon" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
+                <img src="{{fav.img}}" alt="{{fav.name}}" />
+            </div>
+        {{/each}}
+    </div>
+{{/if}}

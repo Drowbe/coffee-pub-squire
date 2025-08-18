@@ -359,6 +359,31 @@ Hooks.once('init', async function() {
     const questEntryPartial = await fetch(`modules/${MODULE.ID}/templates/partials/quest-entry.hbs`).then(response => response.text());
     Handlebars.registerPartial('quest-entry', questEntryPartial);
     
+    // Register handle section partials
+    const handleHealthPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-health.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-health', handleHealthPartial);
+    
+    const handleHealthTrayPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-health-tray.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-health-tray', handleHealthTrayPartial);
+    
+    const handleDiceTrayPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-dice-tray.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-dice-tray', handleDiceTrayPartial);
+    
+    const handleMacrosPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-macros.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-macros', handleMacrosPartial);
+    
+    const handleFavoritesPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-favorites.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-favorites', handleFavoritesPartial);
+    
+    const handleConditionsPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-conditions.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-conditions', handleConditionsPartial);
+    
+    const handlePrimaryStatsPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-primary-stats.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-primary-stats', handlePrimaryStatsPartial);
+    
+    const handleSecondaryStatsPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-secondary-stats.hbs`).then(response => response.text());
+    Handlebars.registerPartial('handle-secondary-stats', handleSecondaryStatsPartial);
+    
     // Set up API to expose PanelManager to other modules
     game.modules.get(MODULE.ID).api = {
         PanelManager

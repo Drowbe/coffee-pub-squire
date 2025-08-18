@@ -1,0 +1,22 @@
+{{!-- FAVORITES --}} 
+{{#if showHandleFavorites}}
+    <span class="tray-handle-separator line"></span>
+    <div class="handle-favorites">
+        {{#each (getFavorites actor)}}
+            {{#if (or 
+                (and (eq this.type 'spell') (or (eq this.system.level 0) this.system.preparation.prepared))
+                (and (eq this.type 'weapon') this.system.equipped)
+                (and (eq this.type 'equipment') this.system.equipped)
+                (and (eq this.type 'consumable') this.system.equipped)
+                (and (eq this.type 'tool') this.system.equipped)
+                (eq this.type 'feat'))}}
+                    <div class="handle-favorite-icon {{#if (or (and (eq this.type 'weapon') this.system.equipped) (and (eq this.type 'equipment') this.system.equipped) (and (eq this.type 'spell') this.system.preparation.prepared) (and (eq this.type 'consumable') this.system.equipped) (and (eq this.type 'tool') this.system.equipped) (eq this.type 'feat'))}}prepared{{/if}}" 
+                        data-item-id="{{this.id}}"
+                        data-tooltip="<strong>{{this.name}}</strong>{{#if (eq this.type 'spell')}}<br><em>{{#if this.system.level}}Level {{this.system.level}}{{else}}Cantrip{{/if}} {{this.system.school}}</em>{{#if this.system.materials.value}}<br>Materials: {{this.system.materials.value}}{{/if}}{{#if damageInfo}}<br>Damage: {{damageInfo.formula}} {{damageInfo.type}}{{#if damageInfo.scaling}}<br>Scales with: {{damageInfo.scaling}}{{/if}}{{/if}}{{#if this.system.preparation.prepared}}<br><em class='prepared-text'>Prepared</em>{{/if}}{{/if}}{{#if (eq this.type 'weapon')}}<br><em>{{#if (eq weaponType 'melee')}}Melee Weapon{{else if (eq weaponType 'ranged')}}Ranged Weapon{{/if}}</em>{{#if damageInfo}}<br>Damage: {{damageInfo.formula}} {{damageInfo.type}}{{/if}}{{#if this.system.range.value}}<br>Range: {{this.system.range.value}}{{#if this.system.range.long}}/{{this.system.range.long}}{{/if}} ft{{/if}}{{#if this.system.equipped}}<br><em class='equipped-text'>Equipped</em>{{/if}}{{/if}}{{#if (eq this.type 'equipment')}}<br><em>Equipment</em>{{#if this.system.requirements}}<br>Requires: {{this.system.requirements}}{{/if}}{{#if this.system.description.value}}<br>{{this.system.description.value}}{{/if}}{{#if this.system.equipped}}<br><em class='equipped-text'>Equipped</em>{{/if}}{{/if}}{{#if (eq this.type 'feat')}}<br><em>Feature</em>{{#if this.system.requirements}}<br>Requires: {{this.system.requirements}}{{/if}}{{#if this.system.description.value}}<br>{{this.system.description.value}}{{/if}}<br><em class='prepared-text'>Always Available</em>{{/if}}">
+                        <img src="{{this.img}}" alt="{{this.name}}"/>
+                        <i class="fas fa-dice-d20 handle-favorite-roll-overlay"></i>
+                    </div>
+            {{/if}}
+        {{/each}}
+    </div>
+{{/if}}

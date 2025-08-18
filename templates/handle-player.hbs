@@ -6,82 +6,24 @@
     </div>
 
     {{!-- CHARACTER PORTRAIT --}} 
-    
     <div class="handle-character-portrait-container">
         <img class="handle-character-portrait" src="{{actor.img}}" alt="{{actor.name}}" data-tooltip="Open character sheet for {{actor.name}}"/>
     </div>
     
-    {{!-- HEALTH --}} 
-    {{#if showHandleHealthBar}}
-        <span class="tray-handle-separator spacer"></span>
-        <div class="handle-health-bar">
-            <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%" data-tooltip="{{actor.system.attributes.hp.value}} HP"></div>
-        </div>
-    {{/if}}
+    {{!-- HEALTH TRAY --}} 
+    {{> handle-health}}
 
-
-
-    {{!-- OLD FAVORITES --}} 
-    {{#if showHandleFavorites}}
-        <span class="tray-handle-separator line"></span>
-        <div class="handle-favorites">
-            {{#each (getFavorites actor)}}
-                {{#if (or 
-                    (and (eq this.type 'spell') (or (eq this.system.level 0) this.system.preparation.prepared))
-                    (and (eq this.type 'weapon') this.system.equipped)
-                    (and (eq this.type 'equipment') this.system.equipped)
-                    (and (eq this.type 'consumable') this.system.equipped)
-                    (and (eq this.type 'tool') this.system.equipped)
-                    (eq this.type 'feat'))}}
-                        <div class="handle-favorite-icon {{#if (or (and (eq this.type 'weapon') this.system.equipped) (and (eq this.type 'equipment') this.system.equipped) (and (eq this.type 'spell') this.system.preparation.prepared) (and (eq this.type 'consumable') this.system.equipped) (and (eq this.type 'tool') this.system.equipped) (eq this.type 'feat'))}}prepared{{/if}}" 
-                            data-item-id="{{this.id}}"
-                            data-tooltip="<strong>{{this.name}}</strong>{{#if (eq this.type 'spell')}}<br><em>{{#if this.system.level}}Level {{this.system.level}}{{else}}Cantrip{{/if}} {{this.system.school}}</em>{{#if this.system.materials.value}}<br>Materials: {{this.system.materials.value}}{{/if}}{{#if damageInfo}}<br>Damage: {{damageInfo.formula}} {{damageInfo.type}}{{#if damageInfo.scaling}}<br>Scales with: {{damageInfo.scaling}}{{/if}}{{/if}}{{#if this.system.preparation.prepared}}<br><em class='prepared-text'>Prepared</em>{{/if}}{{/if}}{{#if (eq this.type 'weapon')}}<br><em>{{#if (eq weaponType 'melee')}}Melee Weapon{{else if (eq weaponType 'ranged')}}Ranged Weapon{{/if}}</em>{{#if damageInfo}}<br>Damage: {{damageInfo.formula}} {{damageInfo.type}}{{/if}}{{#if this.system.range.value}}<br>Range: {{this.system.range.value}}{{#if this.system.range.long}}/{{this.system.range.long}}{{/if}} ft{{/if}}{{#if this.system.equipped}}<br><em class='equipped-text'>Equipped</em>{{/if}}{{/if}}{{#if (eq this.type 'equipment')}}<br><em>Equipment</em>{{#if this.system.requirements}}<br>Requires: {{this.system.requirements}}{{/if}}{{#if this.system.description.value}}<br>{{this.system.description.value}}{{/if}}{{#if this.system.equipped}}<br><em class='equipped-text'>Equipped</em>{{/if}}{{/if}}{{#if (eq this.type 'feat')}}<br><em>Feature</em>{{#if this.system.requirements}}<br>Requires: {{this.system.requirements}}{{/if}}{{#if this.system.description.value}}<br>{{this.system.description.value}}{{/if}}<br><em class='prepared-text'>Always Available</em>{{/if}}">
-                            <img src="{{this.img}}" alt="{{this.name}}"/>
-                            <i class="fas fa-dice-d20 handle-favorite-roll-overlay"></i>
-                        </div>
-                {{/if}}
-            {{/each}}
-        </div>
-    {{/if}}
-
-
-
-
+    {{!-- FAVORITES --}} 
+    {{> handle-favorites}}
+    
     {{!-- CONDITIONS --}} 
-    {{#if showHandleConditions}}
-        <span class="tray-handle-separator line"></span>
-        {{#if isGM}}
-            <div class="handle-group-button" id="conditions-button" data-tooltip="Add or Remove Condtitions">
-                <i class="fas fa-sparkles"></i>
-            </div>
-        {{/if}}
-        <div class="handle-conditions">
-            {{!-- Core D&D 5e Conditions --}}
-            {{#each effects as |effect|}}
-                <img class="handle-condition-icon" src="{{effect.icon}}" data-tooltip="{{effect.name}}"/>
-            {{/each}}
-        </div>
-    {{/if}}
+    {{> handle-conditions}}
 
     {{!-- PRIMARY STATS --}} 
-    {{#if showHandleStatsPrimary}}
-        <span class="tray-handle-separator line"></span>
-        <span class="handle-stats-primary">
-            <span class="tray-handle-content">{{actor.system.attributes.ac.value}}</span> <span class="tray-handle-label">AC</span>
-            <span class="tray-handle-separator dot">•</span>
-            <span class="tray-handle-content">{{actor.system.attributes.movement.walk}}</span> <span class="tray-handle-label">MOVE</span>
-        </span>
-    {{/if}}
+    {{> handle-primary-stats}}
 
     {{!-- SECONDARY STATS --}} 
-    {{#if showHandleStatsSecondary}}
-        <span class="tray-handle-separator line"></span>
-        <span class="handle-stats-secondary">
-            <span class="tray-handle-content">{{numberFormat actor.system.attributes.init.total sign=true}}</span> <span class="tray-handle-label">INIT</span>
-            <span class="tray-handle-separator dot">•</span>
-            <span class="tray-handle-content">+{{actor.system.attributes.prof}}</span> <span class="tray-handle-label">PROF</span>
-        </span>
-    {{/if}}
+    {{> handle-secondary-stats}}
 
 {{else}}
     {{!-- NO CHARACTER SELECTED --}} 
@@ -93,37 +35,13 @@
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
 {{!-- MACROS --}} 
-{{#if showHandleMacros}}
-    <span class="tray-handle-separator line"></span>
-    <div class="handle-group-button" id="macros-button" data-tooltip="Open the Macros Window">
-        <i class="fas fa-sun"></i>
-    </div>
-    <div class="handle-macros">
-        {{#each favoriteMacros as |fav|}}
-            <div class="handle-macro-icon" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
-                <img src="{{fav.img}}" alt="{{fav.name}}" />
-            </div>
-        {{/each}}
-    </div>
-{{/if}}
+{{> handle-macros}}
 
-{{!-- HEALTH TRAY --}} 
-{{#if showHandleHealthBar}}
-    {{#if isGM}}
-        <span class="tray-handle-separator line"></span>
-        <div class="handle-group-button" id="health-tray-button" data-tooltip="Open Health Tray">
-            <i class="fas fa-heart"></i>
-        </div>
-    {{/if}}
-{{/if}}
+{{!-- HEALTH --}} 
+{{> handle-health-tray}}
 
 {{!-- DICE TRAY --}} 
-{{#if showHandleDiceTray}}
-    <span class="tray-handle-separator line"></span>
-    <div class="handle-group-button" id="dice-tray-button" data-tooltip="Open Dice Tray">
-        <i class="fas fa-dice-d20"></i>
-    </div>
-{{/if}}
+{{> handle-dice-tray}}
 
 {{!-- FINALSEPARATOR --}} 
 <span class="tray-handle-separator line"></span>
