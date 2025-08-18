@@ -718,7 +718,7 @@ export class PanelManager {
             this.activateListeners(PanelManager.element);
 
             // Add click handler for favorite macros in handle
-            handle.find('.handle-macro-favorite').on('click', function(e) {
+            handle.find('.handle-macro-icon').on('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 const macroId = $(this).data('macro-id');
@@ -875,7 +875,7 @@ export class PanelManager {
         });
 
         // Handle dice tray icon clicks
-        handle.find('.handle-dice-tray').on('click', async (event) => {
+        handle.find('#dice-tray-button').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
@@ -922,7 +922,7 @@ export class PanelManager {
         });
 
         // Handle health tray icon clicks (GM only)
-        handle.find('.handle-health-tray').on('click', async (event) => {
+        handle.find('#health-tray-button').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (game.user.isGM && this.healthPanel && !this.healthPanel.isPoppedOut) {
@@ -980,7 +980,7 @@ export class PanelManager {
         });
 
         // Handle condition icon clicks
-        tray.find('.condition-icon').click(async (event) => {
+        tray.find('.handle-condition-icon').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -1096,7 +1096,7 @@ export class PanelManager {
         });
 
         // Handle add effect icon clicks
-        tray.find('.add-effect-icon').off('click').click(async (event) => {
+        tray.find('#conditions-button').off('click').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -1399,7 +1399,7 @@ export class PanelManager {
         });
 
         // Handle macros icon clicks
-        handle.find('.handle-macros').on('click', async (event) => {
+        handle.find('#macros-button').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
@@ -2010,7 +2010,7 @@ export class PanelManager {
         const handle = tray.find('.tray-handle');
         
         // Handle dice tray icon clicks
-        handle.find('.handle-dice-tray').on('click', async (event) => {
+        handle.find('#dice-tray-button').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
@@ -2057,7 +2057,7 @@ export class PanelManager {
         });
 
         // Handle health tray icon clicks (GM only)
-        handle.find('.handle-health-tray').on('click', async (event) => {
+        handle.find('#health-tray-button').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (game.user.isGM && this.healthPanel && !this.healthPanel.isPoppedOut) {
@@ -2077,7 +2077,7 @@ export class PanelManager {
         });
 
         // Handle condition icon clicks
-        handle.find('.condition-icon').click(async (event) => {
+        handle.find('.handle-condition-icon').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -2193,7 +2193,7 @@ export class PanelManager {
         });
 
         // Handle add effect icon clicks
-        tray.find('.add-effect-icon').off('click').click(async (event) => {
+        tray.find('#conditions-button').off('click').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -2358,7 +2358,7 @@ export class PanelManager {
         });
 
         // Handle macros icon clicks
-        handle.find('.handle-macros').on('click', async (event) => {
+        handle.find('#macros-button').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
@@ -2367,7 +2367,7 @@ export class PanelManager {
         });
 
         // Add click handler for favorite macros in handle
-        handle.find('.handle-macro-favorite').on('click', function(e) {
+        handle.find('.handle-macro-icon').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             const macroId = $(this).data('macro-id');

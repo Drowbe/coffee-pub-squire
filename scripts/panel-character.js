@@ -81,7 +81,7 @@ export class CharacterPanel {
         });
 
         // Add effect icon click handler
-        html.find('.add-effect-icon').click(async (event) => {
+        html.find('#conditions-button').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             

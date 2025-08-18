@@ -275,7 +275,7 @@ export class MacrosPanel {
 
         // Handle favorite macro click in handle
         const handle = html.find('.handle-view');
-        handle.find('.handle-macro-favorite').off('click').on('click', function(e) {
+        handle.find('.handle-macro-icon').off('click').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             const macroId = $(this).data('macro-id');

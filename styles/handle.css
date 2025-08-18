@@ -339,159 +339,33 @@
     margin-top: 10px;
 }
 
-/* Dice Tray / Macros / Contitions Icon  */
-
-
-.squire-tray[data-position="left"] .health-tray-icon,
-.squire-tray[data-position="left"] .add-effect-icon,
-.squire-tray[data-position="left"] .macros-icon,
-.squire-tray[data-position="left"] .dice-tray-icon {
-    width: 24px;
-    height: 24px;
-    padding: 4px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
-}
-
-.squire-tray[data-position="left"] .health-tray-icon:hover,
-.squire-tray[data-position="left"] .add-effect-icon:hover,
-.squire-tray[data-position="left"] .macros-icon:hover,
-.squire-tray[data-position="left"] .dice-tray-icon:hover {
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 10px var(--color-shadow-highlight);
-    transform: scale(1.1,1.1);
-}
-
-.squire-tray[data-position="left"] .health-tray-icon {
-    transform: rotate(180deg);
-}
-
-.squire-tray[data-position="left"] .dice-tray-icon img:hover {
-    transform: rotate(180deg);
-}
-
-
-
-/* MACRO AND ATTACK FAVORITES */
-
-.handle-macros {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    margin-bottom: 2px;
-}
 
 
 
 
 
-/* Handle Favorites */
-
-
-/* MERGE THESE with the other favorites. Handle Conditions */
-
-.squire-tray[data-position="left"] .handle-conditions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-}
-
-.squire-tray[data-position="left"] .condition-icon {
-    width: 24px;
-    height: 24px;
-    filter: brightness(0.7);
-    cursor: help;
-    transition: filter 0.2s ease;
-    background-color: rgba(0, 0, 0, 0.9);
-    padding: 2px;
-    border-radius: 3px;
-}
-
-.squire-tray[data-position="left"] .condition-icon:hover {
-    filter: brightness(1);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 10px var(--color-shadow-highlight);
-    transform: scale(1.1,1.1);
-
-}
-
-
-.squire-tray[data-position="left"] .handle-macro-favorite,
-.squire-tray[data-position="left"] .handle-favorites {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    flex-direction: row;
-    width: 100%;
-    min-height: 21px;
-}
 
 
 
-.squire-tray[data-position="left"] .handle-macro-favorite {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    position: relative;
-    width: 21px;
-    height: 21px;
-    margin-bottom: 2px;
-}
-
-.squire-tray[data-position="left"] .handle-favorite-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    position: relative;
-    width: 21px;
-    height: 21px;
-    margin-bottom: 2px;
-}
-.squire-tray[data-position="left"] .handle-macro-favorite:focus,
-.squire-tray[data-position="left"] .handle-macro-favorite:hover,
-.squire-tray[data-position="left"] .handle-favorite-icon:hover {
-    background: rgba(0, 0, 0, 0.4);
-    filter: brightness(1);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 0 1px rgba(229, 71, 51, 0.9);
-    border-radius: 4px;
-}
-
-.squire-tray[data-position="left"] .handle-favorite-icon:hover {
-    transform: scale(1.1, 1.1);
-}
-
-.squire-tray[data-position="left"] .handle-macro-favorite:focus,
-.squire-tray[data-position="left"] .handle-macro-favorite:hover {
-    transform: scale(1.1, 1.1);
-}
 
 
-.squire-tray[data-position="left"] .handle-macro-favorite img,
-.squire-tray[data-position="left"] .handle-favorite-icon img {
-    width: 21px;
-    height: 21px;
-    object-fit: contain;
-    transform: rotate(0deg);
-    border-radius: 4px;
-}
 
-.squire-tray[data-position="left"] .handle-favorite-icon:hover img {
-	transform: scale(1.02,1.02);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
