@@ -856,10 +856,10 @@ export class PanelManager {
                         false,
                         MODULE.TITLE
                     );
-                    // Add fade-out animation to tray content
+                    // Add fade-out animation to tray panel wrapper
                     if (PanelManager.element) {
-                        const trayContent = PanelManager.element.find('.tray-content');
-                        trayContent.addClass('content-updating');
+                        const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+                        trayPanelWrapper.addClass('content-updating');
                     }
                     
                     // Force a re-render of all panels without recreating the tray
@@ -867,14 +867,14 @@ export class PanelManager {
                         await PanelManager.instance.renderPanels(PanelManager.element);
                     }
                     
-                    // Add fade-in animation to tray content after update
+                    // Add fade-in animation to tray panel wrapper after update
                     if (PanelManager.element) {
-                        const trayContent = PanelManager.element.find('.tray-content');
-                        trayContent.removeClass('content-updating').addClass('content-updated');
+                        const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+                        trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
                         
                         // Remove the content-updated class after animation completes
                         setTimeout(() => {
-                            trayContent.removeClass('content-updated');
+                            trayPanelWrapper.removeClass('content-updated');
                         }, 200);
                     }
                     blacksmith?.utils.postConsoleAndNotification(
@@ -2392,8 +2392,13 @@ export class PanelManager {
             if (macro) macro.execute();
         });
         
-        // Play sound effect
-        AudioHelper.play({src: game.settings.get(MODULE.ID, 'tabChangeSound'), volume: 0.8, autoplay: true, loop: false}, false);
+
+        // Play tab change sound
+        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+        if (blacksmith) {
+            const sound = game.settings.get(MODULE.ID, 'tabChangeSound');
+            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+        }
 
         // Add click handler for party member portraits in the handle
         handle.find('.handle-party-member-portrait.clickable').on('click', async function(event) {
@@ -3119,10 +3124,10 @@ async function _updateHealthPanelFromSelection() {
             MODULE.TITLE
         );
         
-        // Add fade-out animation to tray content
+        // Add fade-out animation to tray panel wrapper
         if (PanelManager.element) {
-            const trayContent = PanelManager.element.find('.tray-content');
-            trayContent.addClass('content-updating');
+            const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+            trayPanelWrapper.addClass('content-updating');
         }
         
         PanelManager.currentActor = actorToUse;
@@ -3176,14 +3181,14 @@ async function _updateHealthPanelFromSelection() {
         await PanelManager.instance.renderPanels(PanelManager.element);
     }
     
-    // Add fade-in animation to tray content after update
+    // Add fade-in animation to tray panel wrapper after update
     if (PanelManager.element) {
-        const trayContent = PanelManager.element.find('.tray-content');
-        trayContent.removeClass('content-updating').addClass('content-updated');
+        const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+        trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
         
         // Remove the content-updated class after animation completes
         setTimeout(() => {
-            trayContent.removeClass('content-updated');
+            trayPanelWrapper.removeClass('content-updated');
         }, 200);
     }
     
@@ -3220,10 +3225,10 @@ Hooks.on('deleteToken', async (token) => {
         // Try to find another token to display
         const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
         if (nextToken) {
-            // Add fade-out animation to tray content
+            // Add fade-out animation to tray panel wrapper
             if (PanelManager.element) {
-                const trayContent = PanelManager.element.find('.tray-content');
-                trayContent.addClass('content-updating');
+                const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+                trayPanelWrapper.addClass('content-updating');
             }
             
             // Update the actor without recreating the tray
@@ -3250,14 +3255,14 @@ Hooks.on('deleteToken', async (token) => {
                 // Re-render all panels with the new actor data
                 await PanelManager.instance.renderPanels(PanelManager.element);
                 
-                // Add fade-in animation to tray content after update
+                // Add fade-in animation to tray panel wrapper after update
                 if (PanelManager.element) {
-                    const trayContent = PanelManager.element.find('.tray-content');
-                    trayContent.removeClass('content-updating').addClass('content-updated');
+                    const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+                    trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
                     
                     // Remove the content-updated class after animation completes
                     setTimeout(() => {
-                        trayContent.removeClass('content-updated');
+                        trayPanelWrapper.removeClass('content-updated');
                     }, 200);
                 }
                 

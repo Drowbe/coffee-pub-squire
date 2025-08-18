@@ -66,6 +66,9 @@
 - [x] **COMPLETED** Moved Dice Tray button click handler to `#dice-tray-button`
 - [x] **COMPLETED** Moved Health Tray button click handler to `#health-tray-button`
 - [x] **COMPLETED** Implemented fade animations for tray content when changing tokens
+- [x] **COMPLETED** Adjusted fade animation target from `.tray-content` to `.tray-panel-wrapper`
+- [x] **COMPLETED** Added CSS styling for new `.tray-panel-wrapper` structure
+- [x] **COMPLETED** Updated all JavaScript fade animation targeting to use new wrapper
 
 ## Next Steps Priority
 
