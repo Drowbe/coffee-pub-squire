@@ -14,22 +14,21 @@
     {{!-- OTHER PARTY MEMBERS --}}
     {{#if otherPartyMembers}}
         <span class="tray-handle-separator line"></span>
-        <div class="handle-other-party-members">
+
+
+        <div class="handle-partymembers">
             {{#each otherPartyMembers as |member|}}
-                <div class="handle-party-member" data-actor-id="{{member.id}}">
-                    {{#if ../showHandleHealthBar}}
-                        <div class="handle-party-member-health-bar">
-                            <div class="handle-health-fill {{#if member.isOwner}}clickable{{/if}}" 
-                                style="height: {{multiply (divide member.system.attributes.hp.value member.system.attributes.hp.max) 100}}%" 
-                                data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
-                        </div>
-                    {{/if}}
-                    <img class="handle-party-member-portrait {{#if member.isOwner}}clickable{{/if}}" 
-                         src="{{member.img}}" 
-                         alt="{{member.name}}"
-                         {{#if member.isOwner}}data-tooltip="Switch to {{member.name}}"{{/if}}/>
-                    
+                <div class="handle-partymember-icon {{#if member.isOwner}}clickable{{/if}}" {{#if member.isOwner}}data-tooltip="Switch to {{member.name}}"{{/if}} data-actor-id="{{member.id}}">
+                    <img src="{{member.img}}" alt="{{member.name}}"/>
                 </div>
+                {{#if ../showHandleHealthBar}}
+                    <div class="handle-healthbar party {{#if member.isOwner}}clickable{{/if}}" data-actor-id="{{member.id}}">
+                        <div class="handle-healthbar-fill" 
+                            style="height: {{multiply (divide member.system.attributes.hp.value member.system.attributes.hp.max) 100}}%" 
+                            data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
+                    </div>
+
+                {{/if}}
             {{/each}}
         </div>
     {{/if}}

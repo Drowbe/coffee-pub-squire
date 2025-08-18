@@ -980,7 +980,7 @@ export class FavoritesPanel {
                 handle.off('click').on('click', (event) => {
                     if ($(event.target).closest('.pin-button').length || 
                         $(event.target).closest('.handle-favorite-icon').length ||
-                        $(event.target).closest('.handle-health-bar').length ||
+                        $(event.target).closest('.handle-healthbar').length ||
                         $(event.target).closest('.handle-dice-tray').length) return;
                     
                     event.preventDefault();

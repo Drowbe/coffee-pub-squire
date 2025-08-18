@@ -785,20 +785,20 @@ export class PartyPanel {
         });
 
         // Add listeners for other party member portraits and health bars
-        html.find('.handle-party-member-portrait.clickable').click(async (event) => {
+        html.find('.handle-partymember-icon.clickable').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(event.currentTarget).closest('.handle-party-member').data('actor-id');
+            const actorId = $(event.currentTarget).closest('.handle-partymember-icon').data('actor-id');
             const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
             if (token) {
                 token.control({releaseOthers: true});
             }
         });
 
-        html.find('.handle-party-member-health-bar .handle-health-fill.clickable').click(async (event) => {
+        html.find('.handle-partymember-healthbar .handle-healthbar-fill.clickable').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(event.currentTarget).closest('.handle-party-member').data('actor-id');
+            const actorId = $(event.currentTarget).closest('.handle-partymember-icon').data('actor-id');
             const actor = game.actors.get(actorId);
             if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
                 const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);

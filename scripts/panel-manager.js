@@ -943,7 +943,7 @@ export class PanelManager {
         });
 
         // Handle health bar clicks
-        handle.find('.handle-health-bar').on('click', async (event) => {
+        handle.find('.handle-healthbar').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (this.healthPanel && !this.healthPanel.isPoppedOut) {
@@ -2106,7 +2106,7 @@ export class PanelManager {
         });
 
         // Handle health bar clicks
-        handle.find('.handle-health-bar').on('click', async (event) => {
+        handle.find('.handle-healthbar').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (this.healthPanel && !this.healthPanel.isPoppedOut) {
@@ -2434,10 +2434,10 @@ export class PanelManager {
         });
 
         // Add click handler for party member portraits in the handle
-        handle.find('.handle-party-member-portrait.clickable').on('click', async function(event) {
+        handle.find('.handle-partymember-icon.clickable').on('click', async function(event) {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(this).closest('.handle-party-member').data('actor-id');
+            const actorId = $(this).closest('.handle-partymember-icon').data('actor-id');
             const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
             if (token) {
                 token.control({releaseOthers: true});
@@ -2445,10 +2445,10 @@ export class PanelManager {
         });
 
         // Add click handler for party member health bars in the handle
-        handle.find('.handle-party-member-health-bar .handle-health-fill.clickable').on('click', async function(event) {
+        handle.find('.handle-partymember-healthbar .handle-healthbar-fill.clickable').on('click', async function(event) {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(this).closest('.handle-party-member').data('actor-id');
+            const actorId = $(this).closest('.handle-partymember-icon').data('actor-id');
             const actor = game.actors.get(actorId);
             if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
                 const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
@@ -2461,7 +2461,7 @@ export class PanelManager {
         });
 
         // Handle character portrait click in the handle
-        handle.find('.handle-character-portrait').on('click', async (event) => {
+        handle.find('.handle-character-icon').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             // Use the actor from the handle context

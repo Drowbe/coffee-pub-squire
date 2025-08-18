@@ -22,7 +22,7 @@
 ### Panel Functionality
 - [ ] **BROKEN** Manual refresh button on codex panel doesn't seem to do anything
 - [ ] **BROKEN** Feather icon in party view opens character sheet AND changes tray to that actor (should only open sheet)
-- [ ] **BROKEN** Toggle View Mode in handle doesn't update handle data properly - seems to always change to quests
+- [x] **FIXED** ~~Toggle View Mode in handle doesn't update handle data properly - seems to always change to quests~~
 
 ## UI/UX Improvements
 
@@ -38,7 +38,7 @@
 ### Content Transitions
 - [x] **COMPLETED** Implement fade transitions for content changes while keeping tray stable
 - [x] **COMPLETED** Quick fade out → fade in for token data changes
-- [ ] **PLANNED** No animation for panel visibility toggles (filters, categories)
+- [x] **COMPLETED** ~~No animation for panel visibility toggles (filters, categories)~~
 
 ## Architecture & Code Quality
 
@@ -50,6 +50,9 @@
 - [ ] **PLANNED** Remove legacy code from our fixes
 - [ ] **PLANNED** Modularize panel-manager.js (too large, not modular enough)
 - [ ] **PLANNED** Review and clean up any remaining unnecessary `updateTray()` calls
+
+### Performance Optimization
+- [ ] **INVESTIGATE** Disabled tabs still load/render all data even when hidden - consider skipping panel construction for disabled tabs
 
 ## Completed Tasks
 
@@ -69,6 +72,12 @@
 - [x] **COMPLETED** Adjusted fade animation target from `.tray-content` to `.tray-panel-wrapper`
 - [x] **COMPLETED** Added CSS styling for new `.tray-panel-wrapper` structure
 - [x] **COMPLETED** Updated all JavaScript fade animation targeting to use new wrapper
+- [x] **COMPLETED** Fixed toggle view mode in handle to respect tab visibility settings
+- [x] **COMPLETED** Added validation to prevent switching to disabled tabs
+- [x] **COMPLETED** Fixed tab change sound volume issue when clicking already selected tab
+- [x] **COMPLETED** Implemented conditional fade animations (only for player/party views)
+- [x] **COMPLETED** Created and registered 9 handle partials for modularity
+- [x] **COMPLETED** Refactored handle templates to use new partials
 
 ## Next Steps Priority
 
@@ -76,8 +85,8 @@
 2. **Fix handle favorite logic** - Functionality issue
 3. **Fix codex refresh** - Panel functionality issue
 4. **Fix party view feather icon** - Unexpected behavior
-5. **Fix toggle view mode in handle** - Handle functionality issue
-6. **Implement content fade transitions** - Polish
+5. ~~**Fix toggle view mode in handle**~~ - Handle functionality issue ✅ **COMPLETED**
+6. ~~**Implement content fade transitions**~~ - Polish ✅ **COMPLETED**
 7. **Code cleanup and modularization** - Technical debt
 
 ## Investigation Needed
@@ -87,7 +96,7 @@
 - [ ] Investigate handle favorite logic to understand inclusion criteria
 - [ ] Investigate codex refresh button implementation
 - [ ] Investigate party view feather icon event handling
-- [ ] Investigate toggle view mode logic in handle to understand why it defaults to quests
+- [x] **FIXED** ~~Investigate toggle view mode logic in handle to understand why it defaults to quests~~
 - [x] **FIXED** Tab change sound gets very loud when clicking an already selected tab - added check to prevent unnecessary sound playback when mode doesn't change
 
 ## Notes

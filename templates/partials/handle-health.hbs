@@ -1,7 +1,7 @@
 {{!-- HEALTH --}} 
 {{#if showHandleHealthBar}}
     <span class="tray-handle-separator spacer"></span>
-    <div class="handle-health-bar">
-        <div class="handle-health-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%" data-tooltip="{{actor.system.attributes.hp.value}} HP"></div>
+    <div class="handle-healthbar">
+        <div class="handle-healthbar-fill" style="height: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%" data-tooltip="{{actor.system.attributes.hp.value}} HP"></div>
     </div>
 {{/if}}

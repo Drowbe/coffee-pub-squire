@@ -171,10 +171,12 @@
     font-weight: 900;
 }
 
-/* HEALTH BAR */
+/* HEALTH BARS */
 
-.squire-tray[data-position="left"] .handle-health-bar {
-    height: 50px;
+/* Health Bar Container */
+
+.squire-tray[data-position="left"] .handle-healthbar {
+    height: 60px;
     width: 21px;
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(0, 0, 0, 0.01);
@@ -187,20 +189,23 @@
     writing-mode: vertical-lr;
     position: relative;
 }
-.squire-tray[data-position="left"] .handle-health-bar:hover {
+.squire-tray[data-position="left"] .handle-healthbar:hover {
     cursor: pointer;
     background: rgba(0, 0, 0, 0.8);
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 2px var(--color-shadow-highlight);
 }
-.squire-tray[data-position="left"] .handle-health-fill {
+
+/* Health Bar Fill */
+
+.squire-tray[data-position="left"] .handle-healthbar-fill {
     width: 100%;
-    background: rgba(58, 161, 68, 0.8);
+    background: inherit;
     transition: height 0.3s ease;
     position: absolute;
     top: 0;
     border: 0px solid rgba(0, 0, 0, 0.2);
-    border-radius: 2px 2px 1px 1px;
+    border-radius: 3px 3px 3px 3px;
     font-size: 0.65em;
     font-weight: 400;
     color: #ffffff;
@@ -208,8 +213,71 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding-top: 4px;
 }
+/* Health Warnings */
+
+.squire-tray[data-position="left"] .handle-healthbar-fill.healthy {
+    background: rgba(58, 161, 68, 0.8);
+    border-radius: 3px 3px 3px 3px;
+}
+
+.squire-tray[data-position="left"] .handle-healthbar-fill.injured {
+    background: inherit;
+    border-radius: 3px 3px 1px 1px;
+}
+
+.squire-tray[data-position="left"] .handle-healthbar-fill.bloodied {
+    background: rgba(88, 3, 5, 0.8);
+    border-radius: 3px 3px 1px 1px;
+    animation: handle-healthbar-animation-bloodied 1s infinite alternate;
+}
+.squire-tray[data-position="left"] .handle-healthbar-fill.critical{
+    background: rgba(164, 5, 9, 0.8);
+    border-radius: 3px 3px 1px 1px;
+    animation: handle-healthbar-animation-critical 0.5s infinite alternate;
+}
+.squire-tray[data-position="left"] .handle-healthbar-fill.dead{
+    background: rgba(48, 1, 3, 0.8);
+    border-radius: 3px 3px 1px 1px;
+    animation: handle-healthbar-animation-dead 0.5s infinite alternate;
+}
+
+@keyframes handle-healthbar-animation-bloodied {
+    from { 
+        background: rgba(88, 3, 5, 0.3);
+    }
+    to { 
+        background: rgba(88, 3, 5, 0.9);
+    }
+}
+@keyframes handle-healthbar-animation-critical {
+    from { 
+        background: rgba(164, 5, 9, 0.8, 0.3);
+    }
+    to { 
+        background: rgba(164, 5, 9, 0.8, 0.9);
+    }
+}
+@keyframes handle-healthbar-animation-dead {
+    from { 
+        background: rgba(164, 5, 9, 0.8, 0.3);
+    }
+    to { 
+        background: rgba(164, 5, 9, 0.8, 0.9);
+    }
+}
+
+
+/* Party Healthbar Overrides */
+
+.squire-tray[data-position="left"] .handle-healthbar.party {
+    height: 30px; /* WIDTH since it is rotated */
+    width: 21px; /* HEIGHT since it is rotated */
+}
+
+
+
+
 
 /* GLOBAL */
 
@@ -240,30 +308,7 @@
 }
 
 
-.squire-tray[data-position="left"] .handle-character-portrait-container {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    position: relative;
-    width: 26px;
-    height: 26px;
-    overflow: hidden;
-    cursor: pointer;
-    margin-top: 4px;
-}
-.squire-tray[data-position="left"] .handle-character-portrait{
-    border-radius: 4px;
-    object-fit: cover;
-    vertical-align: middle;
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    width: 100%;
-    height: 100%;
-}
-
-
-
+/* NO CHARACTER */
 
 .squire-tray[data-position="left"] .handle-no-character {
     font-size: 1.2em;
@@ -358,7 +403,7 @@
     background: rgba(0, 0, 0, 0.4);
     filter: brightness(1);
     border-color: var(--color-border-highlight);
-    box-shadow: 0 0 10px var(--color-shadow-highlight);
+    box-shadow: 0 0 2px var(--color-shadow-highlight);
 }
 .squire-tray[data-position="left"] .handle-group-button i {
     color: rgba(255, 255, 255, 0.9);
@@ -369,10 +414,28 @@
     transform: scale(1.05, 1.05);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+/* HANDLE FAVORITES */
+
+
+
+
 /* HANDLE FAVORITES */
 
 /* Icon Set Containters */
 
+.squire-tray[data-position="left"] .handle-partymembers,
+.squire-tray[data-position="left"] .handle-characters,
 .squire-tray[data-position="left"] .handle-macros,
 .squire-tray[data-position="left"] .handle-conditions,
 .squire-tray[data-position="left"] .handle-favorites {
@@ -380,33 +443,46 @@
     align-items: center;
     gap: 6px;
     writing-mode: vertical-lr;
-    transform: rotate(180deg);
     flex-direction: row;
     width: 100%;
     min-height: 21px;
+    border: 0;
 }
 
 /* Icon Container */
 
+.squire-tray[data-position="left"] .handle-partymember-icon,
+.squire-tray[data-position="left"] .handle-character-icon,
 .squire-tray[data-position="left"] .handle-macro-icon,
 .squire-tray[data-position="left"] .handle-condition-icon,
 .squire-tray[data-position="left"] .handle-favorite-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 4px;
     background: rgba(0, 0, 0, 0.5);
-    cursor: pointer;
     position: relative;
     width: 22px;
     height: 22px;
     filter: brightness(0.9);
     transition: filter 0.2s ease;
+    transform: rotate(180deg);
 }
+
+/* Icon Overrides */
+
 .squire-tray[data-position="left"] .handle-condition-icon {
     padding: 2px;
 }
+.squire-tray[data-position="left"] .handle-partymember-icon.clickable {
+    border-color: rgba(49, 132, 57, 0.9);
+}
+
+/* Icon Hovers */
+
+.squire-tray[data-position="left"] .handle-partymember-icon.clickable:hover,
+.squire-tray[data-position="left"] .handle-character-icon:hover,
 .squire-tray[data-position="left"] .handle-condition-icon:hover,
 .squire-tray[data-position="left"] .handle-macro-icon:hover,
 .squire-tray[data-position="left"] .handle-favorite-icon:hover {
@@ -415,22 +491,35 @@
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 0 1px rgba(229, 71, 51, 0.9);
     border-radius: 4px;
-    transform: scale(1.1, 1.1);
+    transform: scale(1.1, 1.1) rotate(inherit);
+    cursor: pointer;
 }
 
 /* Icon Image */
 
+.squire-tray[data-position="left"] .handle-partymember-icon img,
+.squire-tray[data-position="left"] .handle-character-icon img,
 .squire-tray[data-position="left"] .handle-condition-icon img,
 .squire-tray[data-position="left"] .handle-macro-icon img,
 .squire-tray[data-position="left"] .handle-favorite-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transform: rotate(0deg);
+    width: auto;
+    height: auto;
+    object-fit: cover;
+    transform: rotate(inherit);
     border-radius: inherit;
-    margin: 0px;
-    border: 0px;
+    border: 0;
 }
+
+
+
+
+
+
+
+
+
+
+
 
 /* Roll Mouseover */
 
@@ -497,83 +586,18 @@
 
 
 
-
-/* OTHER PARTY MEMBERS */
-.squire-tray[data-position="left"] .handle-other-party-members {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-}
-
-.squire-tray[data-position="left"] .handle-party-member {
-    display: flex;
-    align-items: center;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-}
-
-.squire-tray[data-position="left"] .handle-party-member-portrait {
-    width: 26px;
-    height: 26px;
-    border-radius: 4px;
-    object-fit: cover;
-    vertical-align: middle;
-    transform: rotate(180deg);
-    margin-bottom: 0px;
-    border: 1px solid rgba(0, 0, 0, 0.3);
-}
-
-.squire-tray[data-position="left"] .handle-party-member-portrait.clickable {
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.squire-tray[data-position="left"] .handle-party-member-portrait.clickable:hover {
-    filter: brightness(1);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 10px var(--color-shadow-highlight);
-    transform: scale(1.1,1.1);
-    transform: rotate(180deg);
-}
-
-
-
 /* PARTY HEALTH BARS */
 
-.squire-tray[data-position="left"] .handle-party-member-health-bar {
-    height: 26px;
-    width: 8px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(0, 0, 0, 0.01);
-    border-radius: 2px;
-    overflow: hidden;
-    position: relative;
-    transform: rotate(90deg);
-    margin-top: 0px;
-    margin-bottom: -5px;
-}
 
-.squire-tray[data-position="left"] .handle-party-member-health-bar .handle-health-fill {
-    width: 100%;
-    background: rgba(58, 161, 68, 0.8);
-    transition: height 0.3s ease;
-    position: absolute;
-    top: 0;
-    border: 0px solid rgba(0, 0, 0, 0.2);
-    border-radius: 2px 2px 1px 1px;
-}
 
-.squire-tray[data-position="left"] .handle-party-member-health-bar .handle-health-fill.clickable {
-    cursor: pointer;
-}
 
-.squire-tray[data-position="left"] .handle-party-member-health-bar .handle-health-fill.clickable:hover {
-    filter: brightness(1.2);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 10px var(--color-shadow-highlight);
-}
+
+
+
+
+
+
+
 
 
 /* QUEST PROGRESS HANDLE */
@@ -680,8 +704,10 @@
 
 /* Hover effects */
 .squire-tray[data-position="left"] .handle-quest-progress-square:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 2px var(--color-shadow-highlight);
+    cursor: pointer;
 }
 
 .handle-quest-progress-square.disabled {
