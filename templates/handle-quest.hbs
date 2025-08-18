@@ -38,26 +38,14 @@
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
 {{!-- MACROS --}} 
-{{#if showHandleMacros}}
-    <span class="tray-handle-separator line"></span>
-    <div class="handle-macros" title="Macros" data-tooltip="Open Macros">
-        <i class="fas fa-sun macros-icon"></i>
+{{> handle-macros}}
 
-        {{#each favoriteMacros as |fav|}}
-            <div class="handle-macro-icon" data-macro-id="{{fav.id}}" data-tooltip="Macro: {{fav.name}}">
-                <img src="{{fav.img}}" alt="{{fav.name}}" />
-            </div>
-        {{/each}}
-    </div>
-{{/if}}
+{{!-- HEALTH --}} 
+{{> handle-health-tray}}
 
-{{!-- DICETRAY --}} 
-{{#if showHandleDiceTray}}
-    <span class="tray-handle-separator line"></span>
-    <div class="handle-dice-tray" title="Dice Tray" data-tooltip="Open Dice Tray">
-        <i class="fas fa-dice-d20 dice-tray-icon"></i>
-    </div>
-{{/if}}
+{{!-- DICE TRAY --}} 
+{{> handle-dice-tray}}
+
 
 {{!-- FINALSEPARATOR --}} 
 <span class="tray-handle-separator line"></span>

@@ -11,6 +11,7 @@
         <img class="handle-character-portrait" src="{{actor.img}}" alt="{{actor.name}}" data-tooltip="Open character sheet for {{actor.name}}"/>
     </div>
     
+    {{!-- HEALTH TRAY --}} 
     {{> handle-health}}
 
     {{!-- OTHER PARTY MEMBERS --}}
@@ -45,8 +46,13 @@
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
+{{!-- MACROS --}} 
 {{> handle-macros}}
 
+{{!-- HEALTH --}} 
+{{> handle-health-tray}}
+
+{{!-- DICE TRAY --}} 
 {{> handle-dice-tray}}
 
 {{!-- FINALSEPARATOR --}} 
