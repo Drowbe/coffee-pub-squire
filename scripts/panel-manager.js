@@ -863,10 +863,9 @@ export class PanelManager {
                         false,
                         MODULE.TITLE
                     );
-                    // Add fade-out animation to tray panel wrapper
-                    if (PanelManager.element) {
-                        const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-                        trayPanelWrapper.addClass('content-updating');
+                    // Add fade-out animation to tray panel wrapper if appropriate
+                    if (PanelManager.instance) {
+                        PanelManager.instance._applyFadeOutAnimation();
                     }
                     
                     // Force a re-render of all panels without recreating the tray
@@ -874,15 +873,9 @@ export class PanelManager {
                         await PanelManager.instance.renderPanels(PanelManager.element);
                     }
                     
-                    // Add fade-in animation to tray panel wrapper after update
-                    if (PanelManager.element) {
-                        const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-                        trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
-                        
-                        // Remove the content-updated class after animation completes
-                        setTimeout(() => {
-                            trayPanelWrapper.removeClass('content-updated');
-                        }, 200);
+                    // Add fade-in animation to tray panel wrapper after update if appropriate
+                    if (PanelManager.instance) {
+                        PanelManager.instance._applyFadeInAnimation();
                     }
                     blacksmith?.utils.postConsoleAndNotification(
                         "Tray Refresh",
@@ -2950,6 +2943,43 @@ export class PanelManager {
             );
         }
     }
+
+    /**
+     * Check if the current view mode should have fade animations
+     * Only player and party views need fade animations when changing tokens
+     * @private
+     * @returns {boolean} True if fade animation should be applied
+     */
+    _shouldApplyFadeAnimation() {
+        return PanelManager.viewMode === 'player' || PanelManager.viewMode === 'party';
+    }
+
+    /**
+     * Apply fade-out animation to tray panel wrapper if appropriate
+     * @private
+     */
+    _applyFadeOutAnimation() {
+        if (this._shouldApplyFadeAnimation() && PanelManager.element) {
+            const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+            trayPanelWrapper.addClass('content-updating');
+        }
+    }
+
+    /**
+     * Apply fade-in animation to tray panel wrapper if appropriate
+     * @private
+     */
+    _applyFadeInAnimation() {
+        if (this._shouldApplyFadeAnimation() && PanelManager.element) {
+            const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
+            trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
+            
+            // Remove the content-updated class after animation completes
+            setTimeout(() => {
+                trayPanelWrapper.removeClass('content-updated');
+            }, 200);
+        }
+    }
 }
 
 // =====================================================
@@ -3135,10 +3165,9 @@ async function _updateHealthPanelFromSelection() {
             MODULE.TITLE
         );
         
-        // Add fade-out animation to tray panel wrapper
-        if (PanelManager.element) {
-            const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-            trayPanelWrapper.addClass('content-updating');
+        // Add fade-out animation to tray panel wrapper if appropriate
+        if (PanelManager.instance) {
+            PanelManager.instance._applyFadeOutAnimation();
         }
         
         PanelManager.currentActor = actorToUse;
@@ -3192,15 +3221,9 @@ async function _updateHealthPanelFromSelection() {
         await PanelManager.instance.renderPanels(PanelManager.element);
     }
     
-    // Add fade-in animation to tray panel wrapper after update
-    if (PanelManager.element) {
-        const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-        trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
-        
-        // Remove the content-updated class after animation completes
-        setTimeout(() => {
-            trayPanelWrapper.removeClass('content-updated');
-        }, 200);
+    // Add fade-in animation to tray panel wrapper after update if appropriate
+    if (PanelManager.instance) {
+        PanelManager.instance._applyFadeInAnimation();
     }
     
     // Re-attach event listeners to ensure tray functionality works
@@ -3236,10 +3259,9 @@ Hooks.on('deleteToken', async (token) => {
         // Try to find another token to display
         const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
         if (nextToken) {
-            // Add fade-out animation to tray panel wrapper
-            if (PanelManager.element) {
-                const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-                trayPanelWrapper.addClass('content-updating');
+            // Add fade-out animation to tray panel wrapper if appropriate
+            if (PanelManager.instance) {
+                PanelManager.instance._applyFadeOutAnimation();
             }
             
             // Update the actor without recreating the tray
@@ -3266,15 +3288,9 @@ Hooks.on('deleteToken', async (token) => {
                 // Re-render all panels with the new actor data
                 await PanelManager.instance.renderPanels(PanelManager.element);
                 
-                // Add fade-in animation to tray panel wrapper after update
-                if (PanelManager.element) {
-                    const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-                    trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
-                    
-                    // Remove the content-updated class after animation completes
-                    setTimeout(() => {
-                        trayPanelWrapper.removeClass('content-updated');
-                    }, 200);
+                // Add fade-in animation to tray panel wrapper after update if appropriate
+                if (PanelManager.instance) {
+                    PanelManager.instance._applyFadeInAnimation();
                 }
                 
                 // Re-attach event listeners to ensure tray functionality works
