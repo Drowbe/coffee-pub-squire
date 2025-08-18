@@ -1455,10 +1455,7 @@ export class QuestPanel {
                         }
                     }
                 },
-                default: 'import'
-            }, {
-                classes: ['import-export-dialog'],
-                id: 'import-export-dialog-quest-import',
+                default: 'import',
                 render: (html) => {
                     // Apply custom button classes
                     html.find('[data-button="cancel"]').addClass('squire-cancel-button');
@@ -1536,6 +1533,9 @@ export class QuestPanel {
                         }
                     });
                 }
+            }, {
+                classes: ['import-export-dialog'],
+                id: 'import-export-dialog-quest-import',
             }).render(true);
         });
 
