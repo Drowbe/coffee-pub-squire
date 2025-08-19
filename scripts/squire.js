@@ -936,6 +936,10 @@ Handlebars.registerHelper('getFlag', function(flags, itemId, flagName) {
     return flags[itemId]?.[flagName] || false;
 });
 
+Handlebars.registerHelper('add', function(a, b) {
+    return a + b;
+});
+
 function getQuestNumber(questUuid) {
     let hash = 0;
     for (let i = 0; i < questUuid.length; i++) {

@@ -74,8 +74,26 @@ export class HandleManager {
 
         // Fetch pinned quest data for quest handle
         let pinnedQuest = null;
+        console.log('HandleManager: Current view mode:', PanelManager.viewMode);
+        
+        // Always try to fetch quest data if we're in quest view, or if we have a pinned quest
+        console.log('HandleManager: Current view mode when deciding quest fetch:', PanelManager.viewMode);
+        
         if (PanelManager.viewMode === 'quest') {
+            console.log('HandleManager: Fetching pinned quest data for quest view');
             pinnedQuest = await this._getPinnedQuestData();
+        } else {
+            // Check if there's a pinned quest even if not in quest view
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            const hasPinnedQuest = Object.values(pinnedQuests).some(uuid => uuid !== null);
+            console.log('HandleManager: Pinned quests found:', pinnedQuests, 'Has pinned quest:', hasPinnedQuest);
+            
+            if (hasPinnedQuest) {
+                console.log('HandleManager: Found pinned quest, fetching data even though not in quest view');
+                pinnedQuest = await this._getPinnedQuestData();
+            } else {
+                console.log('HandleManager: No pinned quest found, skipping quest data fetch');
+            }
         }
 
         // Always gather party context
@@ -176,6 +194,9 @@ export class HandleManager {
             viewMode: PanelManager.viewMode,
             ...handleData
         };
+
+        console.log('HandleManager: Tray data being sent to template:', trayData);
+        console.log('HandleManager: Pinned quest data:', trayData.pinnedQuest);
 
         const handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
         
@@ -847,22 +868,70 @@ export class HandleManager {
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
             const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
             
-            if (!pinnedQuestUuid) return null;
+            if (!pinnedQuestUuid) {
+                console.warn('HandleManager: No pinned quest UUID found');
+                return null;
+            }
+            
+            console.log('HandleManager: Found pinned quest UUID:', pinnedQuestUuid);
             
             const doc = await fromUuid(pinnedQuestUuid);
-            if (!doc) return null;
+            if (!doc) {
+                console.warn('HandleManager: Could not resolve document from UUID:', pinnedQuestUuid);
+                return null;
+            }
+            
+            console.log('HandleManager: Resolved document:', doc);
+            console.log('HandleManager: Document text content:', doc.text?.content);
+            console.log('HandleManager: Document name:', doc.name);
             
             // Get the quest data from the journal entry
             const enrichedHtml = await TextEditor.enrichHTML(doc.text.content, { async: true });
+            console.log('HandleManager: Enriched HTML content:', enrichedHtml);
+            
             const entry = await QuestParser.parseSinglePage(doc, enrichedHtml);
             
-            if (!entry) return null;
+            console.log('HandleManager: Parsed quest entry:', entry);
             
-            return {
-                name: entry.title,
+            if (!entry) {
+                console.warn('HandleManager: QuestParser returned null/undefined entry');
+                return null;
+            }
+            
+            if (!entry.title) {
+                console.warn('HandleManager: Entry missing title:', entry);
+            }
+            
+            if (!entry.tasks || !Array.isArray(entry.tasks)) {
+                console.warn('HandleManager: Entry missing or invalid tasks:', entry.tasks);
+            } else {
+                console.log('HandleManager: Entry tasks:', entry.tasks);
+                entry.tasks.forEach((task, index) => {
+                    console.log(`HandleManager: Task ${index}:`, task);
+                });
+            }
+            
+            // If QuestParser failed to parse tasks, create a basic fallback
+            let fallbackTasks = [];
+            if (!entry.tasks || entry.tasks.length === 0) {
+                console.warn('HandleManager: QuestParser returned no tasks, creating fallback');
+                // Create a basic fallback with just the quest name
+                fallbackTasks = [{
+                    text: 'Quest details available in journal',
+                    state: 'active',
+                    completed: false
+                }];
+            }
+            
+            const result = {
+                name: entry.title || doc.name || 'Unknown Quest',
+                title: entry.title || doc.name || 'Unknown Quest', // Keep both for compatibility
                 uuid: pinnedQuestUuid,
-                tasks: entry.tasks || []
+                tasks: entry.tasks && entry.tasks.length > 0 ? entry.tasks : fallbackTasks
             };
+            
+            console.log('HandleManager: Returning quest data:', result);
+            return result;
         } catch (error) {
             console.error('Error getting pinned quest data:', error);
             return null;
