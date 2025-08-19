@@ -873,11 +873,7 @@ export class PanelManager {
             return false;
         });
 
-        // Handle condition icon clicks - MOVED TO HandleManager
-        // (Removed duplicate handler to prevent conflicts)
-
-        // Handle conditions button clicks - MOVED TO HandleManager
-        // (All handle-related event logic is now centralized in HandleManager)
+        
 
         // View mode toggle button
         tray.find('.view-toggle-button').click(async (event) => {

@@ -10,7 +10,7 @@ import { PanelManager } from './panel-manager.js';
 import { getBlacksmith } from './helpers.js';
 
 // FoundryVTT function imports
-const { renderTemplate, fromUuid, TextEditor, Dialog } = globalThis;
+const { renderTemplate, fromUuid, TextEditor } = globalThis;
 
 export class HandleManager {
     constructor(panelManager) {
