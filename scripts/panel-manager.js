@@ -995,14 +995,8 @@ export class PanelManager {
             }
         });
 
-        // Handle macros icon clicks
-        handle.find('#macros-button').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
-                await this.macrosPanel._onPopOut();
-            }
-        });
+        // Handle macros icon clicks - MOVED TO HandleManager
+        // (All handle-related event logic is now centralized in HandleManager)
 
         // Add drag and drop handlers for stacked panels
         const stackedContainer = tray.find('.panel-containers.stacked');
