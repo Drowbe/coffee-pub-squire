@@ -201,7 +201,7 @@ export class HandleManager {
         const handle = PanelManager.element.find('.tray-handle');
         
         // Handle click on handle (collapse chevron)
-        handle.on('click', (event) => {
+        handle.off('click').on('click', (event) => {
             // Only allow tray toggle on specific elements
             const $target = $(event.target);
             const isToggleButton = $target.closest('.tray-toggle-button').length > 0;
@@ -236,7 +236,7 @@ export class HandleManager {
         });
 
         // Pin button handling
-        handle.find('.pin-button').on('click', async (event) => {
+        handle.find('.pin-button').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -275,7 +275,7 @@ export class HandleManager {
         });
 
         // View mode toggle button
-        handle.find('.view-toggle-button').click(async (event) => {
+        handle.find('.view-toggle-button').off('click').on('click', async (event) => {
             event.preventDefault();
             const currentMode = PanelManager.viewMode;
             
@@ -302,7 +302,7 @@ export class HandleManager {
         });
 
         // Handle dice tray icon clicks
-        handle.find('#dice-tray-button').on('click', async (event) => {
+        handle.find('#dice-tray-button').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isPoppedOut) {
@@ -311,7 +311,7 @@ export class HandleManager {
         });
 
         // Handle pinned quest clicks
-        handle.find('.handle-pinned-quest-name').on('click', async (event) => {
+        handle.find('.handle-pinned-quest-name').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -333,7 +333,7 @@ export class HandleManager {
         });
 
         // Handle health bar clicks
-        handle.find('.handle-healthbar').on('click', async (event) => {
+        handle.find('.handle-healthbar').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
@@ -362,7 +362,7 @@ export class HandleManager {
         });
 
         // Handle condition icon clicks
-        handle.find('.handle-condition-icon').click(async (event) => {
+        handle.find('.handle-condition-icon').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -450,7 +450,7 @@ export class HandleManager {
                 );
                 ui.notifications.warn("Could not load condition description.");
             }
-        }).on('contextmenu', async (event) => {
+        }).off('contextmenu').on('contextmenu', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -475,7 +475,7 @@ export class HandleManager {
 
         // Handle conditions button clicks - PRIMARY IMPLEMENTATION
         // (This opens the Add Condition dialog with grid of available conditions)
-        handle.find('#conditions-button').off('click').click(async (event) => {
+        handle.find('#conditions-button').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -640,7 +640,7 @@ export class HandleManager {
         });
 
         // Handle macros icon clicks
-        handle.find('#macros-button').on('click', async (event) => {
+        handle.find('#macros-button').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isPoppedOut) {
