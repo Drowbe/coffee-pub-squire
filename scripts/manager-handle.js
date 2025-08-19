@@ -240,8 +240,13 @@ export class HandleManager {
             event.preventDefault();
             event.stopPropagation();
             
-            const conditionName = $(event.currentTarget).data('condition');
+            const conditionName = $(event.currentTarget).data('tooltip');
             const isActive = $(event.currentTarget).hasClass('active');
+            
+            if (!conditionName) {
+                console.warn('HandleManager: No condition name found for condition icon');
+                return;
+            }
             
             if (isActive) {
                 // Remove condition

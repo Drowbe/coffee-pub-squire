@@ -329,6 +329,9 @@ export class PanelManager {
         this.activateListeners(trayElement);
         await this.renderPanels(trayElement);
         
+        // Populate handle with rich data immediately after creation
+        await this.handleManager.updateHandle();
+        
         // Set view mode
         if (viewMode === 'player') {
             await this.setViewMode('player');
