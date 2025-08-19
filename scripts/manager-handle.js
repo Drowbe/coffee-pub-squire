@@ -1,4 +1,4 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getObjectiveTooltipData } from './helpers.js';
 import { QuestParser } from './quest-parser.js';
 import { QuestPin } from './quest-pin.js';
