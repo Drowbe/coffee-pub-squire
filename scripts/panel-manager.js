@@ -582,33 +582,6 @@ export class PanelManager {
         
        
 
-        // View mode toggle button
-        tray.find('.view-toggle-button').click(async (event) => {
-            event.preventDefault();
-            const currentMode = PanelManager.viewMode;
-            
-            // Get enabled tabs from settings
-            const enabledTabs = ['player']; // Player is always enabled
-            if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
-            if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
-            if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
-            if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
-            
-            // Find current position in enabled tabs
-            const currentIndex = enabledTabs.indexOf(currentMode);
-            if (currentIndex === -1) {
-                // Current mode not in enabled tabs, default to first enabled tab
-                await this.setViewMode(enabledTabs[0]);
-                return;
-            }
-            
-            // Cycle to next enabled tab
-            const nextIndex = (currentIndex + 1) % enabledTabs.length;
-            const newMode = enabledTabs[nextIndex];
-            
-            await this.setViewMode(newMode);
-        });
-
         // View tab buttons
         tray.find('.tray-tab-button').click(async (event) => {
             event.preventDefault();
@@ -717,8 +690,7 @@ export class PanelManager {
             }
         });
 
-        // Handle macros icon clicks - MOVED TO HandleManager
-        // (All handle-related event logic is now centralized in HandleManager)
+    
 
         // Add drag and drop handlers for stacked panels
         const stackedContainer = tray.find('.panel-containers.stacked');
@@ -2540,9 +2512,7 @@ Hooks.on('canvasReady', () => {
     };
 });
 
-// On Foundry ready, update the handle if possible
-// REMOVED: This hook was causing issues by trying to update the handle before initialization
-// The handle will be updated properly during the normal initialization flow
+
 // On token creation, update the handle if the token is owned by the user
 Hooks.on('createToken', async (token) => {
     // Debug logging for hook execution

@@ -253,6 +253,33 @@ export class HandleManager {
             return false;
         });
 
+        // View mode toggle button
+        handle.find('.view-toggle-button').click(async (event) => {
+            event.preventDefault();
+            const currentMode = PanelManager.viewMode;
+            
+            // Get enabled tabs from settings
+            const enabledTabs = ['player']; // Player is always enabled
+            if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
+            if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
+            if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
+            if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
+            
+            // Find current position in enabled tabs
+            const currentIndex = enabledTabs.indexOf(currentMode);
+            if (currentIndex === -1) {
+                // Current mode not in enabled tabs, default to first enabled tab
+                await PanelManager.instance.setViewMode(enabledTabs[0]);
+                return;
+            }
+            
+            // Cycle to next enabled tab
+            const nextIndex = (currentIndex + 1) % enabledTabs.length;
+            const newMode = enabledTabs[nextIndex];
+            
+            await PanelManager.instance.setViewMode(newMode);
+        });
+
         // Handle dice tray icon clicks
         handle.find('#dice-tray-button').on('click', async (event) => {
             event.preventDefault();
