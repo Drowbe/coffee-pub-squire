@@ -100,11 +100,7 @@
     }
 }
 
-.squire-tray[data-position="left"] .character-panel .tray-refresh.spinning {
-    animation: spin 1s linear infinite;
-    color: #fff;
-    pointer-events: none;
-}
+
 
 /* Name */
 
