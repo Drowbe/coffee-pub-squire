@@ -3,7 +3,7 @@ import { QuestParser } from './quest-parser.js';
 import { QuestPin } from './quest-pin.js';
 
 // Helper function to safely get Blacksmith API
-function getBlacksmith() {
+export function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 

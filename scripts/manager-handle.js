@@ -7,6 +7,10 @@ import { MacrosPanel } from './panel-macros.js';
 import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './panel-manager.js';
+import { getBlacksmith } from './helpers.js';
+
+// FoundryVTT function imports
+const { renderTemplate, fromUuid, TextEditor, Dialog } = globalThis;
 
 export class HandleManager {
     constructor(panelManager) {
@@ -241,33 +245,276 @@ export class HandleManager {
             event.stopPropagation();
             
             const conditionName = $(event.currentTarget).data('tooltip');
-            const isActive = $(event.currentTarget).hasClass('active');
             
             if (!conditionName) {
                 console.warn('HandleManager: No condition name found for condition icon');
                 return;
             }
             
-            if (isActive) {
-                // Remove condition
-                const effect = this.actor.effects.find(e => e.name === conditionName);
-                if (effect) {
-                    await effect.delete();
+            // Show condition description dialog
+            try {
+                // Try to get the condition data from CONFIG.DND5E.conditionTypes
+                let description = "No description available.";
+                const conditionData = Object.values(CONFIG.DND5E.conditionTypes).find(
+                    condition => condition.label === conditionName
+                );
+
+                // Get the icon path from the clicked element
+                const iconPath = event.currentTarget.src;
+
+                if (conditionData?.reference) {
+                    // Parse the reference string: "Compendium.dnd5e.rules.JournalEntry.w7eitkpD7QQTB6j0.JournalEntryPage.0b8N4FymGGfbZGpJ"
+                    const [, system, packName, type, journalId, , pageId] = conditionData.reference.split(".");
+                    const pack = game.packs.get(`${system}.${packName}`);
+                    
+                    if (pack) {
+                        const journal = await pack.getDocument(journalId);
+                        if (journal) {
+                            const page = journal.pages.get(pageId);
+                            if (page) {
+                                description = page.text.content;
+                            }
+                        }
+                    }
                 }
-            } else {
-                // Add condition
-                const conditionData = CONFIG.DND5E.conditionTypes[conditionName.toLowerCase()];
-                if (conditionData) {
-                    const effectData = {
-                        label: conditionName,
-                        icon: conditionData.icon,
-                        duration: { rounds: 1 },
-                        changes: [],
-                        flags: { dae: { specialDuration: ['1Round'] } }
-                    };
-                    await this.actor.createEmbeddedDocuments('ActiveEffect', [effectData]);
-                }
+
+                // Create a dialog showing the condition details
+                const content = `
+                    <div class="squire-description-window">
+                        <div class="squire-description-header">
+                            <img src="${iconPath}"/>
+                            <h1>${conditionData?.label || conditionName}</h1>
+                        </div>
+                        
+                        <div class="squire-description-content">
+                            ${description.split('\n').filter(line => line.trim()).map(line => 
+                                `<p>${line.trim()}</p>`
+                            ).join('')}
+                            ${game.user.isGM ? '<p class="gm-note"><i>Right-click to remove this condition.</i></p>' : ''}
+                        </div>
+                    </div>
+                    <style>
+                        .gm-note {
+                            margin-top: 1em;
+                            font-size: 0.9em;
+                            color: var(--color-text-dark-secondary);
+                            font-style: italic;
+                        }
+                    </style>`;
+                
+                new Dialog({
+                    title: conditionData?.label || conditionName,
+                    content: content,
+                    buttons: {
+                        close: {
+                            icon: '<i class="fas fa-times"></i>',
+                            label: "Close"
+                        }
+                    },
+                    default: "close"
+                }, {
+                    classes: ["dnd5e", "dialog", "window-app", "squire-description-dialog"],
+                    width: 400,
+                    height: "auto"
+                }).render(true);
+            } catch (error) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error getting condition description',
+                    { error },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
+                ui.notifications.warn("Could not load condition description.");
             }
+        }).on('contextmenu', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Only GMs can remove effects
+            if (!game.user.isGM) {
+                ui.notifications.warn("Only GMs can remove effects.");
+                return;
+            }
+            
+            const conditionName = $(event.currentTarget).data('tooltip');
+            if (!conditionName) {
+                console.warn('HandleManager: No condition name found for condition icon');
+                return;
+            }
+            
+            // Remove condition
+            const effect = this.actor.effects.find(e => e.name === conditionName);
+            if (effect) {
+                await effect.delete();
+            }
+        });
+
+        // Handle conditions button clicks - PRIMARY IMPLEMENTATION
+        // (This opens the Add Condition dialog with grid of available conditions)
+        handle.find('#conditions-button').off('click').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Only GMs can add effects
+            if (!game.user.isGM) {
+                ui.notifications.warn("Only GMs can add effects.");
+                return;
+            }
+
+            // Close any existing Add Effect dialog
+            const existing = Object.values(ui.windows).find(w => w.title && w.title.includes('Add Effect'));
+            if (existing) existing.close();
+
+            // Get all available conditions from CONFIG.DND5E.conditionTypes
+            const conditions = Object.entries(CONFIG.DND5E.conditionTypes).map(([id, condition]) => ({
+                id,
+                name: condition.label,
+                icon: condition.icon,
+                isActive: this.actor.effects.some(e => e.name === condition.label)
+            }));
+
+            // Create a dialog with condition options
+            const content = `
+                <div class="squire-description-window">
+                    <div class="squire-description-header">
+                        <i class="fas fa-sparkles"></i>
+                        <h1>Add Condition</h1>
+                    </div>
+                    
+                    <div class="squire-description-content">
+                        <div class="effect-grid">
+                            ${conditions.map(condition => `
+                                <div class="effect-option ${condition.isActive ? 'active' : ''}" data-condition-id="${condition.id}">
+                                    <img src="${condition.icon}" title="${condition.name}"/>
+                                    <div class="effect-name">${condition.name}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+                <style>
+                    .squire-description-window .effect-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                        gap: 10px;
+                        padding: 10px;
+                        margin-top: 10px;
+                    }
+                    .squire-description-window .effect-option {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        cursor: pointer;
+                        padding: 8px;
+                        border-radius: 5px;
+                        background: rgba(255, 255, 255, 0.1);
+                        transition: all 0.2s ease;
+                        border: 1px solid transparent;
+                        position: relative;
+                    }
+                    .squire-description-window .effect-option:hover {
+                        background: rgba(255, 255, 255, 0.2);
+                        border-color: var(--color-border-highlight);
+                        box-shadow: 0 0 10px var(--color-shadow-highlight);
+                    }
+                    .squire-description-window .effect-option.active {
+                        background: rgba(var(--color-shadow-primary), 0.5);
+                        border-color: var(--color-border-highlight);
+                        box-shadow: 0 0 10px var(--color-shadow-highlight) inset;
+                    }
+                    .squire-description-window .effect-option.active:hover {
+                        background: rgba(var(--color-shadow-primary), 0.7);
+                    }
+                    .squire-description-window .effect-option.active::after {
+                        content: '✓';
+                        position: absolute;
+                        top: -5px;
+                        right: -5px;
+                        background: var(--color-shadow-primary);
+                        color: var(--color-text-light-highlight);
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 12px;
+                        border: 1px solid var(--color-border-highlight);
+                        box-shadow: 0 0 5px var(--color-shadow-highlight);
+                    }
+                    .squire-description-window .effect-option img {
+                        width: 40px;
+                        height: 40px;
+                        object-fit: contain;
+                        border: none;
+                        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+                    }
+                    .squire-description-window .effect-option .effect-name {
+                        text-align: center;
+                        font-size: 12px;
+                        margin-top: 5px;
+                        color: var(--color-text-light-highlight);
+                        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+                    }
+                </style>
+            `;
+
+            const dialog = new Dialog({
+                title: "Add Effect",
+                content: content,
+                buttons: {
+                    close: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: "Close"
+                    }
+                },
+                render: (html) => {
+                    html.find('.effect-option').click(async (e) => {
+                        const conditionId = e.currentTarget.dataset.conditionId;
+                        const condition = CONFIG.DND5E.conditionTypes[conditionId];
+                        const isActive = $(e.currentTarget).hasClass('active');
+                        
+                        try {
+                            if (isActive) {
+                                // Remove the effect
+                                const effect = this.actor.effects.find(e => e.name === condition.label);
+                                if (effect) {
+                                    await effect.delete();
+                                    $(e.currentTarget).removeClass('active');
+                                    ui.notifications.info(`Removed ${condition.label} from ${this.actor.name}`);
+                                }
+                            } else {
+                                // Add the effect
+                                await this.actor.createEmbeddedDocuments('ActiveEffect', [{
+                                    name: condition.label,
+                                    icon: condition.icon,
+                                    origin: this.actor.uuid,
+                                    disabled: false
+                                }]);
+                                $(e.currentTarget).addClass('active');
+                                ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
+                            }
+                        } catch (error) {
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                'Error managing condition',
+                                { error },
+                                false,
+                                false,
+                                true,
+                                MODULE.TITLE
+                            );
+                            ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
+                        }
+                    });
+                }
+            }, {
+                classes: ["dnd5e", "dialog", "window-app", "squire-description-dialog"],
+                width: 400,
+                height: "auto"
+            });
+            dialog.render(true);
         });
 
         // Handle macros icon clicks
