@@ -817,16 +817,8 @@ export class PanelManager {
             }
         });
 
-        // Handle favorite item clicks
-        handle.find('.handle-favorite-icon').on('click', async (event) => {
-            if ($(event.target).hasClass('handle-favorite-roll-overlay')) {
-                const itemId = $(event.currentTarget).data('item-id');
-                const item = this.actor.items.get(itemId);
-                if (item) {
-                    await item.use({}, { event });
-                }
-            }
-        });
+        // Handle favorite item clicks - MOVED TO HandleManager
+        // (All handle-related event logic is now centralized in HandleManager)
 
         // Pin button handling
         const pinButton = handle.find('.pin-button');
