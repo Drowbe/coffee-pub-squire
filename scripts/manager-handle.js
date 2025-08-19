@@ -179,6 +179,80 @@ export class HandleManager {
     _attachHandleEventListeners() {
         const handle = PanelManager.element.find('.tray-handle');
         
+        // Handle click on handle (collapse chevron)
+        handle.on('click', (event) => {
+            // Only allow tray toggle on specific elements
+            const $target = $(event.target);
+            const isToggleButton = $target.closest('.tray-toggle-button').length > 0;
+            const isCharacterPanel = $target.closest('[data-clickable="true"]').length > 0;
+            
+            // If not clicking on toggle button or character panel, don't toggle
+            if (!isToggleButton && !isCharacterPanel) {
+                return;
+            }
+            
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // If pinned, don't allow closing
+            if (PanelManager.isPinned) {
+                ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
+                return false;
+            }
+            
+            // Play tray open sound when expanding
+            const tray = handle.closest('.squire-tray');
+            if (!tray.hasClass('expanded')) {
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+            }
+            
+            tray.toggleClass('expanded');
+            return false;
+        });
+
+        // Pin button handling
+        handle.find('.pin-button').on('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            PanelManager.isPinned = !PanelManager.isPinned;
+            await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
+            
+            // Play pin/unpin sound
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
+                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
+            
+            if (PanelManager.isPinned) {
+                // When pinning, ensure tray is expanded
+                const tray = handle.closest('.squire-tray');
+                tray.addClass('pinned expanded');
+                // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
+                const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+                const uiLeft = document.querySelector('#ui-left');
+                if (uiLeft) {
+                    uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                }
+            } else {
+                // When unpinning, maintain expanded state but remove pinned class
+                const tray = handle.closest('.squire-tray');
+                tray.removeClass('pinned');
+                // Reset UI margin when unpinned - need both handle width and offset
+                const uiLeft = document.querySelector('#ui-left');
+                if (uiLeft) {
+                    uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                }
+            }
+            
+            return false;
+        });
+
         // Handle dice tray icon clicks
         handle.find('#dice-tray-button').on('click', async (event) => {
             event.preventDefault();
