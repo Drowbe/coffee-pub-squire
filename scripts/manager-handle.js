@@ -16,6 +16,24 @@ export class HandleManager {
     constructor(panelManager) {
         this.panelManager = panelManager;
         this.actor = panelManager.actor;
+        
+        // Set up window resize listener for handle fade effect
+        this._setupResizeListener();
+    }
+
+    /**
+     * Set up window resize listener for handle fade effect
+     * @private
+     */
+    _setupResizeListener() {
+        // Remove any existing listener to prevent duplicates
+        window.removeEventListener('resize', this._resizeHandler);
+        
+        // Bind the handler to this instance
+        this._resizeHandler = this._updateHandleFade.bind(this);
+        
+        // Add the resize listener
+        window.addEventListener('resize', this._resizeHandler);
     }
 
     /**
@@ -167,6 +185,9 @@ export class HandleManager {
         // Update the handle content
         const handleLeft = PanelManager.element.find('.handle-view');
         handleLeft.html(handleContent);
+
+        // Check for handle overflow and toggle fade effect
+        this._updateHandleFade();
 
         // Reattach event listeners for handle elements
         this._attachHandleEventListeners();
@@ -676,6 +697,34 @@ export class HandleManager {
 
         // Attach objective click handlers
         this._attachObjectiveClickHandlers(handle);
+    }
+
+    /**
+     * Clean up event listeners and resources
+     */
+    destroy() {
+        // Remove resize event listener
+        if (this._resizeHandler) {
+            window.removeEventListener('resize', this._resizeHandler);
+            this._resizeHandler = null;
+        }
+    }
+
+    /**
+     * Check for handle overflow and toggle fade effect
+     * @private
+     */
+    _updateHandleFade() {
+        const handle = PanelManager.element?.find('.tray-handle');
+        if (!handle.length) return;
+        
+        const container = handle.find('.tray-handle-content-container');
+        const fade = handle.find('.tray-handle-fade-bottom');
+        if (!container.length || !fade.length) return;
+        
+        // Check if content is overflowing vertically
+        const isOverflowing = container[0].scrollHeight > container[0].clientHeight;
+        fade.toggle(isOverflowing);
     }
 
     /**
