@@ -806,14 +806,7 @@ export class PanelManager {
             }
         });
 
-        // Handle health bar clicks
-        handle.find('.handle-healthbar').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (this.healthPanel && !this.healthPanel.isPoppedOut) {
-                await this.healthPanel._onPopOut();
-            }
-        });
+
 
         // Handle health tray icon clicks (GM only)
         handle.find('#health-tray-button').on('click', async (event) => {
