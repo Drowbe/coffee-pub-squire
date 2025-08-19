@@ -17,8 +17,8 @@ export class HandleManager {
         this.panelManager = panelManager;
         this.actor = panelManager.actor;
         
-        // Set up window resize listener for handle fade effect
-        this._setupResizeListener();
+        // Resize listener will be set up after first successful updateHandle call
+        this._resizeHandler = null;
     }
 
     /**
@@ -27,7 +27,9 @@ export class HandleManager {
      */
     _setupResizeListener() {
         // Remove any existing listener to prevent duplicates
-        window.removeEventListener('resize', this._resizeHandler);
+        if (this._resizeHandler) {
+            window.removeEventListener('resize', this._resizeHandler);
+        }
         
         // Bind the handler to this instance
         this._resizeHandler = this._updateHandleFade.bind(this);
@@ -186,6 +188,11 @@ export class HandleManager {
         const handleLeft = PanelManager.element.find('.handle-view');
         handleLeft.html(handleContent);
 
+        // Set up resize listener if not already set up
+        if (!this._resizeHandler) {
+            this._setupResizeListener();
+        }
+
         // Check for handle overflow and toggle fade effect
         this._updateHandleFade();
 
@@ -198,6 +205,9 @@ export class HandleManager {
      * @private
      */
     _attachHandleEventListeners() {
+        // Check if PanelManager.element exists before proceeding
+        if (!PanelManager.element) return;
+        
         const handle = PanelManager.element.find('.tray-handle');
         
         // Handle click on handle (collapse chevron)
@@ -715,12 +725,15 @@ export class HandleManager {
      * @private
      */
     _updateHandleFade() {
-        const handle = PanelManager.element?.find('.tray-handle');
-        if (!handle.length) return;
+        // Check if PanelManager.element exists before proceeding
+        if (!PanelManager.element) return;
+        
+        const handle = PanelManager.element.find('.tray-handle');
+        if (!handle || !handle.length) return;
         
         const container = handle.find('.tray-handle-content-container');
         const fade = handle.find('.tray-handle-fade-bottom');
-        if (!container.length || !fade.length) return;
+        if (!container || !container.length || !fade || !fade.length) return;
         
         // Check if content is overflowing vertically
         const isOverflowing = container[0].scrollHeight > container[0].clientHeight;
