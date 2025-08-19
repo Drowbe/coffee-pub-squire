@@ -23,11 +23,8 @@
                 </div>
                 {{#if ../showHandleHealthBar}}
                     <div class="handle-healthbar party {{#if member.isOwner}}clickable{{/if}}" data-actor-id="{{member.id}}">
-                        <div class="handle-healthbar-fill" 
-                            style="height: {{multiply (divide member.system.attributes.hp.value member.system.attributes.hp.max) 100}}%" 
-                            data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
+                        <div class="handle-healthbar-fill {{member.healthStatus}}" style="height: {{member.healthPercentage}}%" data-tooltip="{{member.system.attributes.hp.value}} HP"><i class="fas fa-skull" data-fa-transform="flip-h"></i></div>
                     </div>
-
                 {{/if}}
             {{/each}}
         </div>

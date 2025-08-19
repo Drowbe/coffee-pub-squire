@@ -1997,8 +1997,31 @@ export class PanelManager {
             pinnedQuest = await this._getPinnedQuestData();
         }
 
+        // Helper function to calculate health status and percentage
+        const calculateHealthStatus = (actor) => {
+            if (!actor || !actor.system?.attributes?.hp) return { status: 'dead', percentage: 0 };
+            
+            const currentHP = actor.system.attributes.hp.value;
+            const maxHP = actor.system.attributes.hp.max;
+            const percentage = maxHP > 0 ? (currentHP / maxHP) * 100 : 0;
+            
+            let status = 'dead';
+            if (percentage > 90) status = 'healthy';
+            else if (percentage > 40) status = 'injured';
+            else if (percentage > 25) status = 'bloodied';
+            else if (percentage > 0) status = 'critical';
+            
+            return { status, percentage };
+        };
+
         let handleData = {
-            actor: this.actor,
+            actor: this.actor ? (() => {
+                const healthData = calculateHealthStatus(this.actor);
+                // Add health properties to the original actor object without spreading
+                this.actor.healthStatus = healthData.status;
+                this.actor.healthPercentage = healthData.percentage;
+                return this.actor;
+            })() : null,
             isGM: game.user.isGM,
             effects: this.actor?.effects?.map(e => ({
                 name: e.name,
@@ -2041,11 +2064,19 @@ export class PanelManager {
                     name: token.actor.name,
                     img: token.actor.img,
                     system: token.actor.system,
-                    isOwner: token.actor.isOwner
+                    isOwner: token.actor.isOwner,
+                    healthStatus: calculateHealthStatus(token.actor).status,
+                    healthPercentage: calculateHealthStatus(token.actor).percentage
                 }));
             handleData = {
                 ...handleData,
-                actor: currentActor,
+                actor: currentActor ? (() => {
+                    const healthData = calculateHealthStatus(currentActor);
+                    // Add health properties to the original actor object without spreading
+                    currentActor.healthStatus = healthData.status;
+                    currentActor.healthPercentage = healthData.percentage;
+                    return currentActor;
+                })() : null,
                 otherPartyMembers
             };
         }

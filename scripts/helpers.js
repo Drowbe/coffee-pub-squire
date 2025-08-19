@@ -141,6 +141,12 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('getFavorites', function(actor) {
         if (!actor) return [];
         
+        // Debug: Check if actor has getFlag method
+        if (typeof actor.getFlag !== 'function') {
+            console.warn('getFavorites helper: actor.getFlag is not a function', actor);
+            return [];
+        }
+        
         // Get our module's favorites from flags and filter out null values
         const favorites = (actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
         
