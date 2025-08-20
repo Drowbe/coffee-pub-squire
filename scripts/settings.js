@@ -47,9 +47,9 @@ export const registerSettings = function() {
             'notes': 'Notes Tab',
             'codex': 'Codex Tab',
             'quest': 'Quest Tab',
-            'last': 'Last Tab Viewed',
+            'last': 'Last Tab Viewed (Defualt)',
         },
-        default: 'player'
+        default: 'last'
     });
 
     // Tabs
