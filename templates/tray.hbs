@@ -77,84 +77,16 @@
             <!-- ********** GLOBAL PANELS ********** -->
 
             <!-- Global Progress Bar -->
+
             <div class="tray-progress-bar-wrapper" style="display: none;">
                 <div class="tray-progress-bar-outter">
                     <div class="tray-progress-bar-inner"><span class="tray-progress-bar-text">Ready...</span></div>
                 </div>
             </div>
 
-
-            <!-- ********** PLAYER TAB ********** -->
-            
-            <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
-                {{#if actor}}
-                <!-- CHARACTER - ALWAYS SHOW -->  
-                <div class="panel-container" data-panel="character" data-clickable="true"></div>
-
-                <!-- HEALTH -->
-                {{#if @root.settings.showHealthPanel}}
-                    {{#unless isHealthPopped}}
-                    <div id="health-panel-placeholder" class="panel-placeholder">
-                        <div class="panel-container" data-panel="health"></div>
-                    </div>
-                    {{/unless}}
-                {{/if}}
-                <!-- EXPERIENCE -->  
-                {{#if @root.settings.showExperiencePanel}}
-                    <div class="panel-container" data-panel="experience"></div>
-                {{/if}}
-
-                <!-- ABILITIES -->  
-                {{#if @root.settings.showAbilitiesPanel}}
-                    <div class="panel-container" data-panel="abilities"></div>
-                {{/if}}
-
-                <!-- STATS -->  
-                {{#if @root.settings.showStatsPanel}}
-                    <div class="panel-container" data-panel="stats"></div>
-                {{/if}}
-
-                <!-- DICE TRAY -->
-                {{#if @root.settings.showDiceTrayPanel}}
-                    {{#unless isDiceTrayPopped}}
-                    <div id="dicetray-panel-placeholder" class="panel-placeholder">
-                        <div class="panel-container" data-panel="dicetray"></div>
-                    </div>
-                    {{/unless}}
-                {{/if}}
-
-                <!-- MACROS -->
-                {{#if @root.settings.showMacrosPanel}}
-                    {{#unless isMacrosPopped}}
-                    <div id="macros-panel-placeholder" class="panel-placeholder">
-                        <div class="panel-container" data-panel="macros"></div>
-                    </div>
-                    {{/unless}}
-                {{/if}}
-                <!-- CONTROL PANEL - FOR FAVORITES - ALWAYS SHOWN -->  
-                <div class="panel-container" data-panel="control"></div>
-
-                <!-- FAVORITES -->  
-                <div class="panel-containers stacked">
-                    <div class="panel-container" data-panel="favorites"></div>
-                    <div class="panel-container" data-panel="weapons"></div>
-                    <div class="panel-container" data-panel="spells"></div>
-                    <div class="panel-container" data-panel="features"></div>
-                    <div class="panel-container" data-panel="inventory"></div>
-                </div>
-                {{else}}
-                <div class="no-character-message">
-                    <p>NO TOKEN SELECTED OR OWNED</p>
-                    <p>Select an owned token to get started.</p>
-                </div>
-                {{/if}}
-            </div>
-
-            <!-- ********** PARTY TAB ********** -->
-
             <!-- Party Toolbar -->
 
-            <div class="tray-view-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
+            <div class="tray-tools-toolbar">
                 {{#if isGM}}
                     <button class="tray-gm-button" data-action="award">
                         <i class="fas fa-medal"></i> Award
@@ -168,6 +100,76 @@
                     </button>
                 {{/if}}
             </div>
+            
+
+            <!-- ********** PLAYER TAB ********** -->
+            
+            <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
+                {{#if actor}}
+                    <!-- CHARACTER - ALWAYS SHOW -->  
+                    <div class="panel-container" data-panel="character" data-clickable="true"></div>
+
+                    <!-- HEALTH -->
+                    {{#if @root.settings.showHealthPanel}}
+                        {{#unless isHealthPopped}}
+                        <div id="health-panel-placeholder" class="panel-placeholder">
+                            <div class="panel-container" data-panel="health"></div>
+                        </div>
+                        {{/unless}}
+                    {{/if}}
+                    <!-- EXPERIENCE -->  
+                    {{#if @root.settings.showExperiencePanel}}
+                        <div class="panel-container" data-panel="experience"></div>
+                    {{/if}}
+
+                    <!-- ABILITIES -->  
+                    {{#if @root.settings.showAbilitiesPanel}}
+                        <div class="panel-container" data-panel="abilities"></div>
+                    {{/if}}
+
+                    <!-- STATS -->  
+                    {{#if @root.settings.showStatsPanel}}
+                        <div class="panel-container" data-panel="stats"></div>
+                    {{/if}}
+
+                    <!-- DICE TRAY -->
+                    {{#if @root.settings.showDiceTrayPanel}}
+                        {{#unless isDiceTrayPopped}}
+                        <div id="dicetray-panel-placeholder" class="panel-placeholder">
+                            <div class="panel-container" data-panel="dicetray"></div>
+                        </div>
+                        {{/unless}}
+                    {{/if}}
+
+                    <!-- MACROS -->
+                    {{#if @root.settings.showMacrosPanel}}
+                        {{#unless isMacrosPopped}}
+                        <div id="macros-panel-placeholder" class="panel-placeholder">
+                            <div class="panel-container" data-panel="macros"></div>
+                        </div>
+                        {{/unless}}
+                    {{/if}}
+
+                    <!-- CONTROL PANEL - FOR FAVORITES - ALWAYS SHOWN -->  
+                    <div class="panel-container" data-panel="control"></div>
+
+                    <!-- FAVORITES -->  
+                    <div class="panel-containers stacked">
+                        <div class="panel-container" data-panel="favorites"></div>
+                        <div class="panel-container" data-panel="weapons"></div>
+                        <div class="panel-container" data-panel="spells"></div>
+                        <div class="panel-container" data-panel="features"></div>
+                        <div class="panel-container" data-panel="inventory"></div>
+                    </div>              
+                {{else}}
+                    <div class="no-character-message">
+                        <p>NO TOKEN SELECTED OR OWNED</p>
+                        <p>Select an owned token to get started.</p>
+                    </div>
+                {{/if}}
+            </div>
+
+            <!-- ********** PARTY TAB ********** -->
 
             <!-- Party Panels -->
 
