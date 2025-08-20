@@ -323,3 +323,71 @@
     margin: 10px 0;
 }
 
+/* Selection info display */
+.party-view .selection-info {
+    background: rgba(72, 160, 0, 0.1);
+    border: 1px solid rgba(72, 160, 0.3);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8em;
+}
+
+.party-view .selection-count {
+    color: #48a000;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.party-view .selection-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.party-view .multi-select-hint {
+    color: #9f9275;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.party-view .clear-selection-btn {
+    background: rgba(146, 38, 16, 0.8);
+    color: white;
+    border: 1px solid rgba(146, 38, 16, 1);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 0.7em;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.party-view .clear-selection-btn:hover {
+    background: rgba(146, 38, 16, 1);
+    box-shadow: 0 0 5px rgba(146, 38, 16, 0.5);
+}
+
+.party-view .add-to-combat-btn {
+    background: rgba(72, 160, 0, 0.8);
+    color: white;
+    border: 1px solid rgba(72, 160, 0, 1);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 0.7em;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.party-view .add-to-combat-btn:hover {
+    background: rgba(72, 160, 0, 1);
+    box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
+}
+

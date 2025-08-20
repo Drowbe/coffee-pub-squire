@@ -1,3 +1,16 @@
+{{#if controlledTokenIds.length}}
+    <div class="selection-info">
+        <span class="selection-count">{{controlledTokenIds.length}} token{{#if (gt controlledTokenIds.length 1)}}s{{/if}} selected</span>
+        <div class="selection-actions">
+            {{#if (gt controlledTokenIds.length 1)}}
+                <span class="multi-select-hint">Use Shift+Click to modify selection</span>
+                <button class="clear-selection-btn" title="Clear all selections">Clear All</button>
+                <button class="add-to-combat-btn" title="Add selected tokens to combat">Add to Combat</button>
+            {{/if}}
+        </div>
+    </div>
+{{/if}}
+
 {{#each tokens as |token|}}
     <div class="character-card {{#if token.actor.isOwner}}clickable{{/if}} {{#if (includes ../controlledTokenIds token.actor.id)}}selected{{/if}}" data-actor-id="{{token.actor.id}}">
         <div class="character-image clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">

@@ -42,6 +42,8 @@ export class PartyPanel {
             .filter(token => token.actor)
             .map(token => token.actor.id);
 
+        console.log('PartyPanel: render called with controlledTokenIds:', controlledTokenIds);
+
         // Prepare other party members data for the handle
         const currentActor = game.actors.get(controlledTokenIds[0]);
         const otherPartyMembers = tokens
@@ -106,7 +108,29 @@ export class PartyPanel {
             const actorId = $(event.currentTarget).data('actor-id');
             const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
             if (token) {
-                token.control({releaseOthers: true});
+                // Check ownership - only allow selection of tokens the user owns
+                if (!token.actor.isOwner) return;
+                
+                // Debug logging
+                console.log('PartyPanel: Character card clicked', {
+                    actorName: token.actor.name,
+                    shiftKey: event.shiftKey,
+                    currentlyControlled: token.controlled,
+                    allControlledTokens: canvas.tokens.controlled.map(t => t.actor?.name)
+                });
+                
+                // Multi-select with shift+click, single select without shift
+                const releaseOthers = !event.shiftKey;
+                console.log('PartyPanel: Calling token.control with releaseOthers:', releaseOthers);
+                token.control({releaseOthers});
+                
+                // Debug logging after control
+                setTimeout(() => {
+                    console.log('PartyPanel: After token.control', {
+                        allControlledTokens: canvas.tokens.controlled.map(t => t.actor?.name),
+                        tokenControlled: token.controlled
+                    });
+                }, 100);
             }
         });
         
@@ -852,8 +876,16 @@ export class PartyPanel {
     }
 
     _onControlToken(token, isControlled) {
+        console.log('PartyPanel: _onControlToken called', {
+            tokenName: token.actor?.name,
+            isControlled,
+            allControlledTokens: canvas.tokens.controlled.map(t => t.actor?.name),
+            elementExists: !!this.element
+        });
+        
         // Only re-render if the element exists
         if (this.element) {
+            console.log('PartyPanel: Re-rendering party panel');
             // Re-render to highlight the currently selected token
             this.render(this.element);
         }
