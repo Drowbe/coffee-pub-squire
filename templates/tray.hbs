@@ -83,13 +83,17 @@
 
             <div class="tray-tools-toolbar {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
                 {{#if isGM}}
-                <button class="tray-gm-button" data-action="award">
-                    <i class="fas fa-medal"></i> Award
-                </button>
+                    <button class="tray-gm-button" data-action="award">
+                        <i class="fas fa-medal"></i> Award
+                    </button>
+                    <button class="tray-tools-button" data-action="select-party">
+                        <i class="fas fa-users-viewfinder"></i> Select Party
+                    </button>
+                {{else}}
+                    <button class="tray-tools-button" data-action="select-party">
+                        <i class="fas fa-users-viewfinder"></i> Select Owned
+                    </button>
                 {{/if}}
-                <button class="tray-tools-button" data-action="select-party">
-                    <i class="fas fa-users-viewfinder"></i> Select Party
-                </button>
             </div>
             
             <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
