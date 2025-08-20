@@ -1,9 +1,8 @@
 {{!-- HEALTH TRAY --}} 
-{{#if showHandleHealthBar}}
-    {{#if isGM}}
-        <span class="tray-handle-separator line"></span>
-        <div class="handle-group-button" id="health-tray-button" data-tooltip="Open Health Tray">
-            <i class="fas fa-heart"></i>
-        </div>
-    {{/if}}
+
+{{#if isGM}}
+    <div class="handle-group-button" id="health-tray-button" data-tooltip="Open Health Tray">
+        <i class="fas fa-heart"></i>
+    </div>
 {{/if}}
+

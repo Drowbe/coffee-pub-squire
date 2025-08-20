@@ -700,18 +700,59 @@ export class HandleManager {
         });
 
         // Add click handler for party member health bars in the handle
-        handle.find('.handle-partymember-healthbar .handle-healthbar-fill.clickable').on('click', async function(event) {
+        const partyHealthBars = handle.find('.handle-healthbar.party.clickable');
+        console.log('HandleManager: Found party health bars:', partyHealthBars.length);
+        
+        partyHealthBars.on('click', async function(event) {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(this).closest('.handle-partymember-icon').data('actor-id');
+            
+            console.log('HandleManager: Clicked element:', this);
+            console.log('HandleManager: Clicked element classes:', this.className);
+            console.log('HandleManager: Clicked element data attributes:', $(this).data());
+            
+            // Get the actor ID directly from the clicked health bar element
+            const actorId = $(this).data('actor-id');
+            console.log('HandleManager: Party member health bar clicked, actor ID:', actorId);
+            
+            if (!actorId) {
+                console.warn('HandleManager: No actor ID found on party member health bar');
+                return;
+            }
+            
             const actor = game.actors.get(actorId);
-            if (actor && PanelManager.instance?.healthPanel) {
+            if (!actor) {
+                console.warn('HandleManager: Could not find actor with ID:', actorId);
+                return;
+            }
+            
+            console.log('HandleManager: Found party member actor:', actor.name);
+            
+            if (PanelManager.instance?.healthPanel) {
+                // Control the token if it exists on canvas
                 const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
                 if (token) {
                     token.control({releaseOthers: true});
                 }
+                
+                // Update PanelManager's current actor reference so the health panel shows the correct data
+                PanelManager.currentActor = actor;
+                console.log('HandleManager: Updated PanelManager.currentActor to:', actor.name);
+                
+                // Update the health panel with the party member's actor
                 PanelManager.instance.healthPanel.updateActor(actor);
-                await PanelManager.instance.healthPanel._onPopOut();
+                console.log('HandleManager: Updated health panel actor to:', actor.name);
+                
+                // If health panel is already popped out, update the window directly
+                if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
+                    console.log('HandleManager: Health panel already popped out, updating window directly');
+                    PanelManager.instance.healthPanel.window.updateActor(actor);
+                } else {
+                    // Pop out the health panel
+                    await PanelManager.instance.healthPanel._onPopOut();
+                }
+            } else {
+                console.warn('HandleManager: Health panel not available');
             }
         });
 
@@ -770,9 +811,9 @@ export class HandleManager {
         // Handle objective clicks in quest progress (handle)
         
         // Remove existing handlers first to prevent duplicates
-        handle.find('.handle-quest-progress-fill').off('click mouseenter mouseleave');
+        handle.find('.handle-pinnedquest-icon-fill').off('click mouseenter mouseleave');
         
-        handle.find('.handle-quest-progress-fill').on('click', async (event) => {
+        handle.find('.handle-pinnedquest-icon-fill').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -836,7 +877,7 @@ export class HandleManager {
         });
 
         // Add enhanced tooltip functionality
-        handle.find('.handle-quest-progress-fill').on('mouseenter', async (event) => {
+        handle.find('.handle-pinnedquest-icon-fill').on('mouseenter', async (event) => {
             const objectiveElement = $(event.currentTarget);
             const taskIndex = parseInt(objectiveElement.data('task-index'));
             // Get the pinned quest UUID from the current data
@@ -854,7 +895,7 @@ export class HandleManager {
             }
         });
 
-        handle.find('.handle-quest-progress-fill').on('mouseleave', (event) => {
+        handle.find('.handle-pinnedquest-icon-fill').on('mouseleave', (event) => {
             hideQuestTooltip('squire-handle-objective-tooltip');
         });
     }

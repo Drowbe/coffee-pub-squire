@@ -5,41 +5,70 @@
         <span class="handle-info-title">{{actor.name}}</span>
     </div>
 
-    {{!-- CHARACTER PORTRAIT --}} 
-    {{> handle-character-portrait}}
-    
-    {{!-- HEALTH --}} 
-    {{> handle-health}}
+    <span class="tray-handle-separator spacer"></span>
+
+    {{!-- PLAYER --}} 
+    <div class="handle-partymembers">
+        {{!-- CHARACTER PORTRAIT --}} 
+        {{> handle-character-portrait}}
+        {{!-- PLAYER HEALTH --}} 
+         {{#if showHandleHealthBar}}
+            {{> handle-health id="player"}}
+        {{/if}}
+    </div>
+    <span class="tray-handle-separator line-ridge-thin"></span>
 
     {{!-- FAVORITES --}} 
-    {{> handle-favorites}}
-    
-    {{!-- CONDITIONS --}} 
-    {{> handle-conditions}}
+    {{#if showHandleFavorites}}
+        {{> handle-favorites}}
+        <span class="tray-handle-separator line-ridge-thin"></span>
+    {{/if}}
 
+    {{!-- CONDITIONS --}} 
+    {{#if showHandleConditions}}
+        {{> handle-conditions}}
+        <span class="tray-handle-separator line-ridge-thin"></span>
+    {{/if}}
+    
     {{!-- PRIMARY STATS --}} 
-    {{> handle-primary-stats}}
+    {{#if showHandleStatsPrimary}}
+        {{> handle-primary-stats}}
+        <span class="tray-handle-separator line-ridge-thin"></span>
+    {{/if}}
 
     {{!-- SECONDARY STATS --}} 
-    {{> handle-secondary-stats}}
+    {{#if showHandleStatsSecondary}}
+        {{> handle-secondary-stats}}
+        <span class="tray-handle-separator line-ridge-thin"></span>
+    {{/if}}
+
 
 {{else}}
     {{!-- NO CHARACTER SELECTED --}} 
     <div class="handle-info-container">
-        <span class="handle-info-title">Select a Character</span>
+        <span class="handle-info-title">Select or Create a Character</span>
     </div>
+    <span class="tray-handle-separator spacer"></span>
 {{/if}}
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
 {{!-- MACROS --}} 
-{{> handle-macros}}
+{{#if showHandleMacros}}
+    {{> handle-macros}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- HEALTH --}} 
-{{> handle-health-tray}}
+{{!-- HEALTH TRAYBUTTON --}} 
+{{#if showHandleHealthBar}}
+    {{> handle-health-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- DICE TRAY --}} 
-{{> handle-dice-tray}}
 
-{{!-- FINALSEPARATOR --}} 
-<span class="tray-handle-separator line"></span>
+{{!-- DICE TRAY BUTTON --}} 
+{{#if showHandleDiceTrayr}}
+    {{> handle-dice-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
+

@@ -1,4 +1,7 @@
-/* TRAY Handle */
+
+
+/* TRAY HANDLE */
+
 .squire-tray[data-position="left"] .tray-handle {
     height: 100%;
     width: var(--squire-tray-handle-width); 
@@ -22,6 +25,107 @@
     font-weight: 900;
     position: relative;
 }
+
+
+
+
+/* TRAY HANDLE DIVIDERS*/
+
+.squire-tray[data-position="left"] .tray-handle-separator {
+    font-weight: 900;
+    font-size: 0.8em;
+}
+.squire-tray[data-position="left"] .tray-handle-separator.spacer {
+    width: 0px;
+    display: inline-block;
+    margin-top: 6px;
+    vertical-align: middle;
+}
+.squire-tray[data-position="left"] .tray-handle-separator.dot::before {
+    content: "•";
+    color: #aaaaaa4d;
+    font-size: 0.8em;
+    display: block; /* or inline-block depending on your needs */
+    line-height: 1;
+    width: 100%;
+    text-align: center;
+    height: 1em;
+    overflow: hidden;
+    padding: 0;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thick,
+.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thick,
+.squire-tray[data-position="left"] .tray-handle-separator.line-double-thick,
+.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thick {
+    width: 22px;
+    height: 1px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thin,
+.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thin,
+.squire-tray[data-position="left"] .tray-handle-separator.line-double-thin,
+.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thin {
+    width: 22px;
+    height: 1px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thick {
+    border-top: 2px solid rgba(121, 121, 121, 0.4);
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thin {
+    border-top: 1px solid rgba(121, 121, 121, 0.4);
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thick {
+    border-top: 2px dotted rgba(121, 121, 121, 0.4);
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thin {
+    border-top: 1px dotted rgba(121, 121, 121, 0.4);
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-double-thick {
+    border-top: 5px double rgba(121, 121, 121, 0.4);
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-double-thin {
+    border-top: 3px double rgba(121, 121, 121, 0.4);
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thick {
+    border-top: 3px ridge rgba(121, 121, 121, 0.4);
+}
+.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thin {
+    border-top: 2px ridge rgba(121, 121, 121, 0.4);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* PINNED QUEST HANDLE */
@@ -133,6 +237,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* STATS */
 .squire-tray[data-position="left"] .handle-stats-primary,
 .squire-tray[data-position="left"] .handle-stats-secondary {
@@ -161,116 +296,15 @@
 
 /* HEALTH BARS */
 
-/* Health Bar Container */
 
-.squire-tray[data-position="left"] .handle-healthbar {
-    height: 60px;
-    width: 21px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(0, 0, 0, 0.01);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
-    writing-mode: vertical-lr;
-    position: relative;
-}
-.squire-tray[data-position="left"] .handle-healthbar:hover {
-    cursor: pointer;
-    background: rgba(0, 0, 0, 0.8);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 2px var(--color-shadow-highlight);
-}
 
-/* Health Bar Fill */
 
-.squire-tray[data-position="left"] .handle-healthbar-fill {
-    width: 100%;
-    background: inherit;
-    transition: height 0.3s ease;
-    position: absolute;
-    top: 0;
-    border: 0px solid rgba(0, 0, 0, 0.2);
-    border-radius: 3px 3px 3px 3px;
-    font-size: 0.65em;
-    font-weight: 400;
-    color: #ffffff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
 
-/* Health Warnings */
 
-.squire-tray[data-position="left"] .handle-healthbar-fill.healthy {
-    background: rgba(58, 161, 68, 0.8);
-    border-radius: 3px 3px 3px 3px;
-}
 
-.squire-tray[data-position="left"] .handle-healthbar-fill.injured{
-    background: rgba(153, 204, 153, 0.8);
-    border-radius: 3px 3px 1px 1px;
-}
 
-.squire-tray[data-position="left"] .handle-healthbar-fill.bloodied {
-    background: rgba(229, 170, 51, 0.9);
-    border-radius: 3px 3px 1px 1px;
-}
-.squire-tray[data-position="left"] .handle-healthbar-fill.critical{
-    background: rgba(240, 7, 13, 0.8);
-    border-radius: 3px 3px 1px 1px;
-    animation: handle-healthbar-animation-critical 0.3s infinite alternate;
-}
-.squire-tray[data-position="left"] .handle-healthbar-fill.dead{
-    background: rgba(240, 7, 13, 0.8);
-    border-radius: 3px 3px 3px 3px;
-    border: 1px solid rgba(138, 4, 8, 0.9);
-    min-height: 100%;
-    animation: handle-healthbar-animation-dead 1.6s infinite alternate;
-}
 
-/* Dead Icon */
 
-.squire-tray[data-position="left"] .handle-healthbar-fill i {
-    font-size: 1.0em;
-    color: rgba(255, 255, 255, 0.8);
-    transform: rotate(180deg) translateX(-0.15em);
-    display: none;
-}
-.squire-tray[data-position="left"] .handle-healthbar-fill.dead i {
-    display: block;
-}
-
-/* Health Status Animations */
-
-@keyframes handle-healthbar-animation-critical {
-    from { 
-        background: rgba(240, 7, 13, 0.3);
-    }
-    to { 
-        background: rgba(240, 7, 13, 0.9);
-    }
-}
-@keyframes handle-healthbar-animation-dead {
-    from { 
-        background: rgba(240, 7, 13, 0.1);
-        border: 1px solid rgba(138, 4, 8, 0.9);
-    }
-    to { 
-        background: rgba(240, 7, 13, 0.9);
-        border: 1px solid rgba(138, 4, 8, 0.1);
-    }
-}
-
-/* Party Healthbar Overrides */
-
-.squire-tray[data-position="left"] .handle-healthbar.party {
-    height: 30px; /* WIDTH since it is rotated */
-    width: 21px; /* HEIGHT since it is rotated */
-}
 
 
 
@@ -317,42 +351,29 @@
 
 /* SEPARATORS AND SPACERS */
 
-.squire-tray[data-position="left"] .tray-handle-separator {
-    font-weight: 900;
-}
 
-.squire-tray[data-position="left"] .tray-handle-separator.dot::before {
-    content: "•";
-    color: #aaaaaa4d;
-    font-size: 0.8em;
-    display: block; /* or inline-block depending on your needs */
-    line-height: 1;
-    width: 100%;
-    text-align: center;
-    height: 1em;
-    overflow: hidden;
-    padding: 0;
-    margin-top: 6px;
-    margin-bottom: 6px;
-}
 
-.squire-tray[data-position="left"] .tray-handle-separator.line {
-    font-size: 0.8em;
-    border-top: 2px dotted #aaaaaa4d;
-    width: 22px;
-    height: 1px;
-    display: inline-block;
-    margin-top: 8px;
-    margin-bottom: 8px;
-    vertical-align: middle;
-}
 
-.squire-tray[data-position="left"] .tray-handle-separator.spacer {
-    width: 0px;
-    display: inline-block;
-    margin-top: 6px;
-    vertical-align: middle;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -393,7 +414,6 @@
     height: 22px;
     filter: brightness(0.9);
     transition: filter 0.2s ease;
-    margin-bottom: 6px;
     transform: rotate(180deg);
     min-height: 22px;
 }
@@ -421,17 +441,11 @@
 
 
 
-
-
-/* HANDLE FAVORITES */
-
-
-
-
 /* HANDLE FAVORITES */
 
 /* Icon Set Containters */
 
+.squire-tray[data-position="left"] .handle-pinnedquests,
 .squire-tray[data-position="left"] .handle-partymembers,
 .squire-tray[data-position="left"] .handle-characters,
 .squire-tray[data-position="left"] .handle-macros,
@@ -449,6 +463,7 @@
 
 /* Icon Container */
 
+.squire-tray[data-position="left"] .handle-pinnedquest-icon,
 .squire-tray[data-position="left"] .handle-partymember-icon,
 .squire-tray[data-position="left"] .handle-character-icon,
 .squire-tray[data-position="left"] .handle-macro-icon,
@@ -582,39 +597,15 @@
 }
 
 
+/* HEALTH BARS */
 
+/* Health Bar Container */
 
-/* PARTY HEALTH BARS */
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* QUEST PROGRESS HANDLE */
-.squire-tray[data-position="left"] .handle-quest-progress-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 2px;
-    margin-top: 6px;
-    margin-bottom: 6px;
-    width: 100%;
-    max-width: none;
-}
-
-.squire-tray[data-position="left"] .handle-quest-progress-square {
-    height: 24px;
-    width: 24px;
+.squire-tray[data-position="left"] .handle-healthbar {
+    height: 60px;
+    width: 20px;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(0, 0, 0, 0.01);
+    border: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     overflow: hidden;
     margin-top: 0px;
@@ -623,18 +614,131 @@
     margin-right: 0px;
     writing-mode: vertical-lr;
     position: relative;
-    padding: 0px;
+    cursor: pointer;
 }
+.squire-tray[data-position="left"] .handle-healthbar.party {
+    height: 30px; /* PARTY WIDTH */
+    width: 20px; /* PARTY HEIGHT */
+}
+.squire-tray[data-position="left"] .handle-healthbar:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: var(--color-border-highlight);
+    box-shadow: 0 0 2px var(--color-shadow-highlight);
+}
+
+/* Health Bar Fill */
+
+.squire-tray[data-position="left"] .handle-healthbar-fill {
+    width: 100%;
+    background: inherit;
+    transition: height 0.3s ease;
+    position: absolute;
+    top: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-radius: 2px 2px 2px 2px;
+}
+
+/* Overlays*/
+
+.squire-tray[data-position="left"] .handle-healthbar-icon,
+.squire-tray[data-position="left"] .handle-healthbar-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+    text-align: center;
+    pointer-events: none; 
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.3);
+}
+.squire-tray[data-position="left"] .handle-healthbar-value {
+    transform: translate(-50%, -50%) rotate(0deg);
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.70em;
+    z-index: 2;
+}
+.squire-tray[data-position="left"] .handle-healthbar-icon {
+    transform: translate(-50%, -50%) translateX(0.1em) rotate(180deg);
+    color: rgba(255, 255, 255, 0.60);
+    font-size: 0.85em;
+    z-index: 3;
+}
+.squire-tray[data-position="left"] .handle-healthbar-icon i {
+    display: none;
+}
+
+/* Health Statuses*/
+
+/* Healthy */
+.squire-tray[data-position="left"] .handle-healthbar-fill.healthy {
+    background: rgba(67, 181, 76, 0.8);
+}
+
+/* Injured*/
+.squire-tray[data-position="left"] .handle-healthbar-fill.injured{
+    background: rgba(30, 81, 34, 0.8);
+}
+
+/* Bloodied*/
+.squire-tray[data-position="left"] .handle-healthbar-fill.bloodied {
+    background: rgba(229, 170, 51, 0.9);
+}
+
+/* Critical*/
+.squire-tray[data-position="left"] .handle-healthbar-fill.critical{
+    background: rgba(240, 7, 13, 0.8);
+    animation: handle-healthbar-animation-pulse 1.0s infinite alternate;
+}
+
+/* Dead*/
+.squire-tray[data-position="left"] .handle-healthbar-fill.dead {
+    min-height: 100%;
+    background: rgba(240, 7, 13, 0.8);
+    animation: handle-healthbar-animation-pulse 5.0s infinite alternate;
+}
+.squire-tray[data-position="left"] .handle-healthbar-value.dead {
+    display: none;
+}
+.squire-tray[data-position="left"] .handle-healthbar-icon.dead i {
+    display: block;
+}
+
+/* Health Status Animations */
+
+@keyframes handle-healthbar-animation-pulse {
+    from { opacity: 0.5; } to { opacity: 1.0; }
+}
+
+
+
+/* QUEST PROGRESS HANDLE */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* ACTIVE OBJECTIVE */
-.squire-tray[data-position="left"] .handle-quest-progress-square.objective-pins-oncanvas {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon.objective-pins-oncanvas {
     border: 1px solid rgba(42, 100, 165, 0.7);
 }
-.squire-tray[data-position="left"] .handle-quest-progress-square.objective-pins-nearby {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon.objective-pins-nearby {
     border: 1px solid rgba(165, 81, 42, 0.7);
 }
 
 
-.squire-tray[data-position="left"] .handle-quest-progress-fill {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon-fill {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
@@ -654,7 +758,7 @@
 
 }
 .squire-tray[data-position="left"] .handle-quest-progress-index,
-.squire-tray[data-position="left"] .handle-quest-progress-fill i {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon-fill i {
     transform: rotate(180deg);
     font-size: 0.8em;
     line-height: 1;
@@ -666,7 +770,7 @@
     justify-content: center;
     background: rgba(206, 205, 180, 0.0);
 }
-.squire-tray[data-position="left"] .handle-quest-progress-fill i {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon-fill i {
     transform: rotate(180deg);
     padding-right: 1px;
     
@@ -677,38 +781,38 @@
 }
 
 /* Active tasks  */
-.squire-tray[data-position="left"] .handle-quest-progress-fill.objective-active {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon-fill.objective-active {
     background: rgba(0, 0, 0, 0.9);
     color: rgba(255, 255, 255, 0.8);
 }
 
 /* Completed tasks */
-.squire-tray[data-position="left"] .handle-quest-progress-fill.objective-completed {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon-fill.objective-completed {
     background: rgba(0, 0, 0, 0.9);
     color: rgba(67, 163, 77, 0.9);
 }
 
 /* Failed tasks */
-.squire-tray[data-position="left"] .handle-quest-progress-fill.objective-failed {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon-fill.objective-failed {
     background: rgba(0, 0, 0, 0.9);
     color: rgba(255, 74, 47, 0.9);
 }
 
 /* Hidden tasks */
-.squire-tray[data-position="left"] .handle-quest-progress-fill.objective-hidden {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon-fill.objective-hidden {
     background: rgba(0, 0, 0, 0.9);
     color: rgba(205, 204, 179, 0.9);
 }
 
 /* Hover effects */
-.squire-tray[data-position="left"] .handle-quest-progress-square:hover {
+.squire-tray[data-position="left"] .handle-pinnedquest-icon:hover {
     transform: scale(1.05);
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 2px var(--color-shadow-highlight);
     cursor: pointer;
 }
 
-.handle-quest-progress-square.disabled {
+.handle-pinnedquest-icon.disabled {
     pointer-events: none;
     opacity: 0.5;
 }

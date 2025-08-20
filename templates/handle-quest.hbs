@@ -1,7 +1,7 @@
 {{!-- QUEST TOOLS --}} 
 <div class="handle-info-container">
     <span class="handle-info-title">Quests</span>
-    <span class="tray-handle-separator dot"></span>
+    <span class="tray-handle-separator line-solid-thin"></span>
     {{#if pinnedQuest}}
         <span class="handle-pinned-quest-name">{{pinnedQuest.name}}</span>
     {{else}}
@@ -9,12 +9,32 @@
     {{/if}}
 </div>
 
+<span class="tray-handle-separator spacer"></span>
+
+{{!-- PLAYER --}} 
+<div class="handle-partymembers">
+    {{!-- CHARACTER PORTRAIT --}} 
+    {{> handle-character-portrait}}
+    {{!-- PLAYER HEALTH --}} 
+    {{#if showHandleHealthBar}}
+        {{> handle-health id="player"}}
+    {{/if}}
+</div>
+<span class="tray-handle-separator line-ridge-thin"></span>
+
 {{!-- QUEST PROGRESS --}} 
 {{#if pinnedQuest}}
-    <div class="handle-quest-progress-container">
+    <div class="handle-pinnedquests">
         {{#each pinnedQuest.tasks as |task index|}}
-            <div class="handle-quest-progress-square{{#if task.hasPinOnCanvas}} objective-pins-oncanvas{{/if}}{{#if task.hasPinNearby}} objective-pins-nearby{{/if}}">
-                <div class="handle-quest-progress-fill objective-{{task.state}}" 
+            <div class="handle-pinnedquest-icon{{#if task.hasPinOnCanvas}} objective-pins-oncanvas{{/if}}{{#if task.hasPinNearby}} objective-pins-nearby{{/if}}">
+                
+                
+                
+                
+                
+                
+                
+                <div class="handle-pinnedquest-icon-fill objective-{{task.state}}" 
                     data-task-index="{{@index}}">
                     {{#if (eq task.state "completed")}}
                         <i class="fas fa-check"></i>
@@ -32,23 +52,29 @@
             </div>
         {{/each}}
     </div>
+    <span class="tray-handle-separator line-ridge-thin"></span>
 {{/if}}
 {{!-- NOTE: To display objectives in top-to-bottom order, reverse pinnedQuest.tasks in JS before passing to the template. --}}
 
-{{!-- CHARACTER PORTRAIT --}} 
-{{> handle-character-portrait}}
+
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
 {{!-- MACROS --}} 
-{{> handle-macros}}
+{{#if showHandleMacros}}
+    {{> handle-macros}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- HEALTH --}} 
-{{> handle-health-tray}}
+{{!-- HEALTH TRAYBUTTON --}} 
+{{#if showHandleHealthBar}}
+    {{> handle-health-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- DICE TRAY --}} 
-{{> handle-dice-tray}}
 
-
-{{!-- FINALSEPARATOR --}} 
-<span class="tray-handle-separator line"></span>
+{{!-- DICE TRAY BUTTON --}} 
+{{#if showHandleDiceTrayr}}
+    {{> handle-dice-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}

@@ -5,48 +5,59 @@
       <span class="handle-info-title">{{#if defaultPartyName}}{{defaultPartyName}}{{else}}Party{{/if}}</span>
     </div>
 
-    {{!-- CHARACTER PORTRAIT --}} 
-    {{> handle-character-portrait}}
+    <span class="tray-handle-separator spacer"></span>
+
+    {{!-- PLAYER --}} 
+    <div class="handle-partymembers">
+        {{!-- CHARACTER PORTRAIT --}} 
+        {{> handle-character-portrait}}
+        {{!-- PLAYER HEALTH --}} 
+         {{#if showHandleHealthBar}}
+            {{> handle-health id="player"}}
+        {{/if}}
+    </div>
+    <span class="tray-handle-separator line-ridge-thin"></span>
     
-    {{!-- HEALTH --}} 
-    {{> handle-health}}
-
-    {{!-- OTHER PARTY MEMBERS --}}
+    {{!-- PARTY --}}     
     {{#if otherPartyMembers}}
-        <span class="tray-handle-separator line"></span>
-
-
-        <div class="handle-partymembers">
-            {{#each otherPartyMembers as |member|}}
+        {{#each otherPartyMembers as |member|}}
+            {{#unless @first}}<span class="tray-handle-separator line-dotted-thin"></span>{{/unless}}
+            <div class="handle-partymembers">
                 <div class="handle-partymember-icon {{#if member.isOwner}}clickable{{/if}}" {{#if member.isOwner}}data-tooltip="Switch to {{member.name}}"{{/if}} data-actor-id="{{member.id}}">
                     <img src="{{member.img}}" alt="{{member.name}}"/>
                 </div>
-                {{#if ../showHandleHealthBar}}
-                    <div class="handle-healthbar party {{#if member.isOwner}}clickable{{/if}}" data-actor-id="{{member.id}}">
-                        <div class="handle-healthbar-fill {{member.healthStatus}}" style="height: {{member.healthPercentage}}%" data-tooltip="{{member.system.attributes.hp.value}} HP"><i class="fas fa-skull" data-fa-transform="flip-h"></i></div>
-                    </div>
+               {{#if ../showHandleHealthBar}}
+                    {{> handle-health id="party" member=member}}
                 {{/if}}
-            {{/each}}
-        </div>
+            </div>
+        {{/each}}
+        <span class="tray-handle-separator line-ridge-thin"></span>
     {{/if}}
-
 {{else}}
     {{!-- NO PARTY SELECTED --}} 
     <div class="handle-info-container">
-        <span class="handle-info-title">Create a Party</span>
+        <span class="handle-info-title">Select or Create a Character</span>
     </div>
+    <span class="tray-handle-separator spacer"></span>
 {{/if}}
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
 {{!-- MACROS --}} 
-{{> handle-macros}}
+{{#if showHandleMacros}}
+    {{> handle-macros}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- HEALTH --}} 
-{{> handle-health-tray}}
+{{!-- HEALTH TRAYBUTTON --}} 
+{{#if showHandleHealthBar}}
+    {{> handle-health-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- DICE TRAY --}} 
-{{> handle-dice-tray}}
 
-{{!-- FINALSEPARATOR --}} 
-<span class="tray-handle-separator line"></span>
+{{!-- DICE TRAY BUTTON --}} 
+{{#if showHandleDiceTrayr}}
+    {{> handle-dice-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}

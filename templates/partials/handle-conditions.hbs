@@ -1,15 +1,14 @@
 {{!-- CONDITIONS --}} 
-{{#if showHandleConditions}}
-    <span class="tray-handle-separator line"></span>
+
+<div class="handle-conditions">
     {{#if isGM}}
         <div class="handle-group-button" id="conditions-button" data-tooltip="Add or Remove Conditions">
             <i class="fas fa-sparkles"></i>
         </div>
     {{/if}}
-    <div class="handle-conditions">
-        {{!-- Core D&D 5e Conditions --}}
-        {{#each effects as |effect|}}
-            <img class="handle-condition-icon" src="{{effect.icon}}" data-tooltip="{{effect.name}}"/>
-        {{/each}}
-    </div>
-{{/if}}
+    {{!-- Core D&D 5e Conditions --}}
+    {{#each effects as |effect|}}
+        <img class="handle-condition-icon" src="{{effect.icon}}" data-tooltip="{{effect.name}}"/>
+    {{/each}}
+</div>
+

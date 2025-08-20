@@ -4,19 +4,36 @@
     <span class="handle-info-title">Codex</span>
 </div>
 
-{{!-- CHARACTER PORTRAIT --}} 
-{{> handle-character-portrait}}
+<span class="tray-handle-separator spacer"></span>
+
+{{!-- PLAYER --}} 
+<div class="handle-partymembers">
+    {{!-- CHARACTER PORTRAIT --}} 
+    {{> handle-character-portrait}}
+    {{!-- PLAYER HEALTH --}} 
+    {{#if showHandleHealthBar}}
+        {{> handle-health id="player"}}
+    {{/if}}
+</div>
+<span class="tray-handle-separator line-ridge-thin"></span>
 
 {{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
 
 {{!-- MACROS --}} 
-{{> handle-macros}}
+{{#if showHandleMacros}}
+    {{> handle-macros}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- HEALTH --}} 
-{{> handle-health-tray}}
+{{!-- HEALTH TRAYBUTTON --}} 
+{{#if showHandleHealthBar}}
+    {{> handle-health-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
 
-{{!-- DICE TRAY --}} 
-{{> handle-dice-tray}}
 
-{{!-- FINALSEPARATOR --}} 
-<span class="tray-handle-separator line"></span>
+{{!-- DICE TRAY BUTTON --}} 
+{{#if showHandleDiceTrayr}}
+    {{> handle-dice-tray}}
+    <span class="tray-handle-separator line-ridge-thin"></span>
+{{/if}}
