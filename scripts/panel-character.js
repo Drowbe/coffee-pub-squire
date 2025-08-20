@@ -336,7 +336,7 @@ export class CharacterPanel {
         html.find('.print-character').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const { PrintCharacterSheet } = await import('./print-character.js');
+            const { PrintCharacterSheet } = await import('./utility-print-character.js');
             await PrintCharacterSheet.print(this.actor);
         });
     }

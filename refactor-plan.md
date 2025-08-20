@@ -115,7 +115,7 @@ ManagerTray (coordinator - squire.js)
 - `scripts/squire.js` → **BECOMES**: ManagerTray (coordinator)
 - `scripts/manager-panel.js` → **BECOMES**: ManagerPanel (panel management only)
 - `scripts/manager-handle.js` → **STAYS**: ManagerHandle (handle management)
-- `scripts/hooks.js` → **STAYS**: Hooks management
+- `scripts/manager-hooks.js` → **STAYS**: Hooks management
 
 ### New Files to Create
 - `scripts/manager-view.js` → View/tab management

@@ -1,5 +1,5 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
-import { CodexParser } from './codex-parser.js';
+import { CodexParser } from './utility-codex-parser.js';
 import { copyToClipboard } from './helpers.js';
 
 // Helper function to safely get Blacksmith API

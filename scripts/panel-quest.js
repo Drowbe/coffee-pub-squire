@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { QuestParser } from './quest-parser.js';
+import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPins } from './quest-pin.js';
 import { copyToClipboard } from './helpers.js';
 

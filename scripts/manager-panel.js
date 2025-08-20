@@ -18,7 +18,7 @@ import { NotesPanel } from "./panel-notes.js";
 import { CodexPanel } from "./panel-codex.js";
 import { QuestPanel } from './panel-quest.js';
 import { MacrosPanel } from "./panel-macros.js";
-import { PrintCharacterSheet } from './print-character.js';
+import { PrintCharacterSheet } from './utility-print-character.js';
 import { QuestPin } from './quest-pin.js';
 import { HandleManager } from './manager-handle.js';
 

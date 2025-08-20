@@ -1,6 +1,6 @@
 import { MODULE, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData } from './helpers.js';
-import { QuestParser } from './quest-parser.js';
+import { QuestParser } from './utility-quest-parser.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getObjectiveTooltipData } from './helpers.js';
-import { QuestParser } from './quest-parser.js';
+import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin } from './quest-pin.js';
 import { DiceTrayPanel } from './panel-dicetray.js';
 import { MacrosPanel } from './panel-macros.js';

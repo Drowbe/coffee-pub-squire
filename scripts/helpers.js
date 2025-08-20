@@ -1,5 +1,5 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
-import { QuestParser } from './quest-parser.js';
+import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin } from './quest-pin.js';
 
 // Helper function to safely get Blacksmith API

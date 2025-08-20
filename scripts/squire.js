@@ -4,10 +4,10 @@ import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
-import { QuestForm } from './quest-form.js';
-import { QuestParser } from './quest-parser.js';
+import { QuestForm } from './window-quest.js';
+import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
-import { HookManager } from './hooks.js';
+import { HookManager } from './manager-hooks.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
