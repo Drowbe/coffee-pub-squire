@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { PanelManager } from './panel-manager.js';
+import { PanelManager } from './manager-panel.js';
 
 export class SpellsPanel {
     constructor(actor) {

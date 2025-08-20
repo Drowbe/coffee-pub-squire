@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { MacrosWindow } from './window-macros.js';
-import { PanelManager } from './panel-manager.js';
+import { PanelManager } from './manager-panel.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

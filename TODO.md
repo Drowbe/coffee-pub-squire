@@ -48,7 +48,7 @@
 
 ### Code Cleanup
 - [ ] **PLANNED** Remove legacy code from our fixes
-- [ ] **PLANNED** Modularize panel-manager.js (too large, not modular enough)
+- [ ] **PLANNED** Modularize manager-panel.js (too large, not modular enough)
 - [ ] **PLANNED** Review and clean up any remaining unnecessary `updateTray()` calls
 
 ### Performance Optimization

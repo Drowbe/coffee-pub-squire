@@ -6,7 +6,7 @@ import { DiceTrayPanel } from './panel-dicetray.js';
 import { MacrosPanel } from './panel-macros.js';
 import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { PanelManager } from './panel-manager.js';
+import { PanelManager } from './manager-panel.js';
 import { getBlacksmith } from './helpers.js';
 
 // FoundryVTT function imports

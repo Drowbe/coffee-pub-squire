@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Files Modified
 - `scripts/panel-quest.js` - Updated both `_mergeJournalContent()` and `_generateJournalContentFromImport()` methods
-- `scripts/panel-manager.js` - Removed handle-related code, added HandleManager integration
+- `scripts/manager-panel.js` - Removed handle-related code, added HandleManager integration
 - `scripts/manager-handle.js` - New file with all handle functionality
 - `scripts/helpers.js` - Exported `getBlacksmith()` function
 - `scripts/squire.js` - Added Handlebars `add` helper
@@ -158,7 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed syntax error in quest pin state update (panel-quest.js).
-- Removed duplicate event handler setup in panel-manager.js.
+- Removed duplicate event handler setup in manager-panel.js.
 - Fixed duplicate class attribute in partials/quest-entry.hbs.
 - Fixed tray window click issue that caused the tray to disappear.
 - Fixed squire tray disappearing on scene change.
@@ -343,7 +343,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Unified all item transfer chat cards to use a single utility for consistent data and appearance.
 - Updated transfer card types to: `transfer-gm` (GM/compendium/world drops), `transfer-complete` (actor-to-actor transfers), and `transfer-request` (transfer requests with accept/reject).
-- Refactored `panel-party.js` and `panel-manager.js` to use the new card system for all transfer scenarios.
+- Refactored `panel-party.js` and `manager-panel.js` to use the new card system for all transfer scenarios.
 - Reverted transfer request chat message logic to its original, pre-card-system form for stability and compatibility.
 
 ### Fixed

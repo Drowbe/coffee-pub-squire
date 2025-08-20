@@ -113,7 +113,7 @@ ManagerTray (coordinator - squire.js)
 
 ### Current Files
 - `scripts/squire.js` → **BECOMES**: ManagerTray (coordinator)
-- `scripts/panel-manager.js` → **BECOMES**: ManagerPanel (panel management only)
+- `scripts/manager-panel.js` → **BECOMES**: ManagerPanel (panel management only)
 - `scripts/manager-handle.js` → **STAYS**: ManagerHandle (handle management)
 - `scripts/hooks.js` → **STAYS**: Hooks management
 

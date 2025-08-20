@@ -34,7 +34,7 @@
         "scripts/const.js",
         "scripts/helpers.js",
         "scripts/squire.js",
-        "scripts/panel-manager.js",
+        "scripts/manager-panel.js",
         "scripts/panel-character.js",
         "scripts/panel-spells.js",
         "scripts/panel-weapons.js",

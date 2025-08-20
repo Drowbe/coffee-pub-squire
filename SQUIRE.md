@@ -10,7 +10,7 @@ coffee-pub-squire/
 ├── scripts/
 │   ├── squire.js (main module file)
 │   ├── const.js (constants and configuration)
-│   ├── panel-manager.js (handles tray and panel states)
+│   ├── manager-panel.js (handles tray and panel states)
 │   ├── panel-spells.js
 │   ├── panel-weapons.js
 │   └── panel-info.js
@@ -36,7 +36,7 @@ coffee-pub-squire/
 - Sets up event listeners
 - Manages module lifecycle
 
-### Panel Manager (panel-manager.js)
+### Panel Manager (manager-panel.js)
 - Controls tray visibility
 - Handles panel switching
 - Manages state persistence

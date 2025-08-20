@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { HealthWindow } from './window-health.js';
-import { PanelManager } from './panel-manager.js';
+import { PanelManager } from './manager-panel.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

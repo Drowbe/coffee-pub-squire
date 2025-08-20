@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { PanelManager } from './panel-manager.js';
+import { PanelManager } from './manager-panel.js';
 
 export class ControlPanel {
     constructor(actor) {
