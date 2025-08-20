@@ -4,7 +4,7 @@
 
 .squire-tray[data-position="left"] .tray-handle {
     height: 100%;
-    width: var(--squire-tray-handle-width); 
+    width: var(--tray-handle-width); 
     flex: none;
     order: 2;
     /* Option 1: Subtle Dots */
@@ -27,9 +27,7 @@
 }
 
 
-
-
-/* TRAY HANDLE DIVIDERS*/
+/* SEPARATORS AND SPACERS */
 
 .squire-tray[data-position="left"] .tray-handle-separator {
     font-weight: 900;
@@ -104,56 +102,11 @@
 
 
 
+/* TRAY HANDLE BUTTONS */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* PINNED QUEST HANDLE */
-
-.squire-tray[data-position="left"] .handle-pinned-quest-name {
-    font-size: 0.7em;
-    font-weight: 200;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-}
-
-.squire-tray[data-position="left"] .handle-pinned-quest-name i {
-    font-size: 0.9em;
-    margin-bottom: 3px;
-    margin-top: 0px;
-}
-
-.squire-tray[data-position="left"] .handle-pinned-quest-name:hover {
-    color: #ffffff;
-}
-
-
-/* PIN / VIEW / REFRESH BUTTONS */
-.squire-tray[data-position="left"] .pin-button,
-.squire-tray[data-position="left"] .view-toggle-button,
-.squire-tray[data-position="left"] .tray-toggle-button {
+.squire-tray[data-position="left"] .tray-handle-button-pin,
+.squire-tray[data-position="left"] .tray-handle-button-viewcycle,
+.squire-tray[data-position="left"] .tray-handle-button-toggle {
     order: 1;
     background: none;
     border: 0px solid #ffffff;
@@ -168,9 +121,9 @@
     border-radius: 3px;
 }
 
-.squire-tray[data-position="left"] .pin-button:hover,
-.squire-tray[data-position="left"] .view-toggle-button:hover,
-.squire-tray[data-position="left"] .tray-toggle-button:hover {
+.squire-tray[data-position="left"] .tray-handle-button-pin:hover,
+.squire-tray[data-position="left"] .tray-handle-button-viewcycle:hover,
+.squire-tray[data-position="left"] .tray-handle-button-toggle:hover {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
     border: none !important;      /* ensures no border is drawn */
@@ -179,36 +132,30 @@
 }
 
 
-.squire-tray[data-position="left"] .pin-button i,
-.squire-tray[data-position="left"] .view-toggle-button i,
-.squire-tray[data-position="left"] .tray-toggle-button i {
+.squire-tray[data-position="left"] .tray-handle-button-pin i,
+.squire-tray[data-position="left"] .tray-handle-button-viewcycle i,
+.squire-tray[data-position="left"] .tray-handle-button-toggle i {
     transition: transform 0.2s ease, color 0.2s ease;
     margin-right: 0;
 }
 
-.squire-tray[data-position="left"] .pin-button:hover i {
+.squire-tray[data-position="left"] .tray-handle-button-pin:hover i {
     transform: rotate(45deg);
 }
 
-.squire-tray.pinned .pin-button {
+.squire-tray.pinned .tray-handle-button-pin {
     color: #fff;
 }
 
-.squire-tray:not(.pinned) .pin-button {
+.squire-tray:not(.pinned) .tray-handle-button-pin {
     color: rgba(255, 255, 255, 0.3);
 }
 
 
-/* TRAY Handle Title */
-.squire-tray[data-position="left"] .handle-view {
-    flex: 1;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    order: 2;
-}
+
+
+
+
 
 /* CHEVRON BUTTON  */
 .squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
@@ -238,75 +185,17 @@
 
 
 
+/* TRAY HANDLE CONTENT WRAPPER */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* STATS */
-.squire-tray[data-position="left"] .handle-stats-primary,
-.squire-tray[data-position="left"] .handle-stats-secondary {
+.squire-tray[data-position="left"] .tray-handle-content-wrapper {
+    flex: 1;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
     display: flex;
     align-items: center;
-    font-size: 1.1em;
-    color: #aaa;
-    font-weight: 900;
+    white-space: nowrap;
+    order: 2;
 }
-
-.squire-tray[data-position="left"] .handle-stats-secondary {
-    font-size: 1em;  /* Slightly smaller for secondary stats */
-}
-
-.squire-tray[data-position="left"] .tray-handle-content {
-    font-size: 1.1em;
-    color: #ffffff;
-    font-weight: 900;
-}
-
-.squire-tray[data-position="left"] .handle-stats {
-    font-weight: 900;
-}
-
-
-
-/* HEALTH BARS */
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -349,13 +238,73 @@
     padding-top: 10px;
 }
 
-/* SEPARATORS AND SPACERS */
 
 
 
 
 
 
+
+
+
+
+
+
+/* PINNED QUEST HANDLE */
+
+.squire-tray[data-position="left"] .handle-pinned-quest-name {
+    font-size: 0.7em;
+    font-weight: 200;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.squire-tray[data-position="left"] .handle-pinned-quest-name i {
+    font-size: 0.9em;
+    margin-bottom: 3px;
+    margin-top: 0px;
+}
+
+.squire-tray[data-position="left"] .handle-pinned-quest-name:hover {
+    color: #ffffff;
+}
+
+
+
+
+
+
+
+
+/* STATS */
+.squire-tray[data-position="left"] .handle-stats-primary,
+.squire-tray[data-position="left"] .handle-stats-secondary {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+    color: #aaa;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .handle-stats-secondary {
+    font-size: 1em;  /* Slightly smaller for secondary stats */
+}
+
+.squire-tray[data-position="left"] .tray-handle-content {
+    font-size: 1.1em;
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .handle-stats {
+    font-weight: 900;
+}
+
+
+
+/* HEALTH BARS */
 
 
 
@@ -431,12 +380,6 @@
 .squire-tray[data-position="left"] .handle-group-button i:hover {
     transform: scale(1.05, 1.05);
 }
-
-
-
-
-
-
 
 
 
@@ -522,17 +465,6 @@
     border-radius: inherit;
     border: 0;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /* Roll Mouseover */
 
@@ -715,17 +647,6 @@
 
 
 /* QUEST PROGRESS HANDLE */
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -978,7 +978,7 @@ export class FavoritesPanel {
                 // Re-bind the handle click event
                 const handle = tray.find('.tray-handle');
                 handle.off('click').on('click', (event) => {
-                    if ($(event.target).closest('.pin-button').length || 
+                    if ($(event.target).closest('.tray-handle-button-pin').length || 
                         $(event.target).closest('.handle-favorite-icon').length ||
                         $(event.target).closest('.handle-healthbar').length ||
                         $(event.target).closest('.handle-dice-tray').length) return;
@@ -1005,7 +1005,7 @@ export class FavoritesPanel {
                 });
 
                 // Re-bind pin button event
-                const pinButton = handle.find('.pin-button');
+                const pinButton = handle.find('.tray-handle-button-pin');
                 pinButton.off('click').on('click', async (event) => {
                     event.preventDefault();
                     event.stopPropagation();

@@ -1188,7 +1188,7 @@ export class PanelManager {
         tray.find('.tray-tools-toolbar').toggleClass('hidden', mode !== 'party');
         
         // Update toggle button icon
-        const icon = tray.find('.view-toggle-button i');
+        const icon = tray.find('.tray-handle-button-viewcycle i');
         icon.removeClass('fa-user fa-users fa-sticky-note fa-book fa-scroll');
         switch (mode) {
             case 'party':

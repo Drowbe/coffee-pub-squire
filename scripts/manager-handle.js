@@ -200,13 +200,13 @@ export class HandleManager {
 
         const handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
         
-        // Extract just the handle-view content from the rendered template
+        // Extract just the tray-handle-content-wrapper content from the rendered template
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = handleTemplate;
-        const handleContent = tempDiv.querySelector('.handle-view').innerHTML;
+        const handleContent = tempDiv.querySelector('.tray-handle-content-wrapper').innerHTML;
         
         // Update the handle content
-        const handleLeft = PanelManager.element.find('.handle-view');
+        const handleLeft = PanelManager.element.find('.tray-handle-content-wrapper');
         handleLeft.html(handleContent);
 
         // Set up resize listener if not already set up
@@ -235,7 +235,7 @@ export class HandleManager {
         handle.off('click').on('click', (event) => {
             // Only allow tray toggle on specific elements
             const $target = $(event.target);
-            const isToggleButton = $target.closest('.tray-toggle-button').length > 0;
+            const isToggleButton = $target.closest('.tray-handle-button-toggle').length > 0;
             const isCharacterPanel = $target.closest('[data-clickable="true"]').length > 0;
             
             // If not clicking on toggle button or character panel, don't toggle
@@ -267,7 +267,7 @@ export class HandleManager {
         });
 
         // Pin button handling
-        handle.find('.pin-button').off('click').on('click', async (event) => {
+        handle.find('.tray-handle-button-pin').off('click').on('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -306,7 +306,7 @@ export class HandleManager {
         });
 
         // View mode toggle button
-        handle.find('.view-toggle-button').off('click').on('click', async (event) => {
+        handle.find('.tray-handle-button-viewcycle').off('click').on('click', async (event) => {
             event.preventDefault();
             const currentMode = PanelManager.viewMode;
             

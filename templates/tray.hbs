@@ -5,17 +5,17 @@
     <div class="tray-handle">
         <div class="tray-handle-content-container">
 
-            <button class="pin-button" title="Pin Tray">
+            <button class="tray-handle-button-pin" title="Pin Tray">
                 <i class="fas fa-thumbtack"></i>
             </button>
-            <button class="tray-toggle-button" title="Toggle Tray">
+            <button class="tray-handle-button-toggle" title="Toggle Tray">
                 <i class="fas fa-chevron-right"></i>
             </button>
-            <button class="view-toggle-button" title="Toggle View Mode">
+            <button class="tray-handle-button-viewcycle" title="Toggle View Mode">
                 <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quest')}}fa-scroll{{else}}fa-user{{/if}}"></i>
             </button>
 
-            <div class="handle-view">
+            <div class="tray-handle-content-wrapper">
                 {{#if (eq viewMode 'player')}}
                     {{> handle-player}}
                 {{else if (eq viewMode 'party')}}
