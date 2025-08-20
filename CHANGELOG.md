@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [12.0.22] - Quest Import/Export Fix
+## [12.0.22] - Quest Import/Export Fix & Major Code Refactoring
 
 ### Fixed
 - **Quest Import/Export Field Mapping**: Fixed critical mismatch between export and import field names that prevented rich quest data from being properly restored
@@ -20,6 +20,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rich Data Restoration**: GM notes and task treasure are now properly restored during import operations
 - **State Preservation**: Enhanced import system maintains all existing quest progress and player states
 - **Format Consistency**: Treasure format is automatically converted to match QuestParser expectations
+
+### Added
+- **New HandleManager Class**: Created dedicated `scripts/manager-handle.js` to centralize all handle-related functionality
+- **Separation of Concerns**: Cleanly separated handle UI logic from overall tray management
+- **Enhanced Event Handling**: Implemented `.off().on()` pattern to prevent duplicate event listeners on re-renders
+- **Handle Fade Logic**: Added automatic handle overflow detection with fade effect and resize listener management
+
+### Changed
+- **Panel Manager Refactoring**: Moved all handle-related methods and event handlers from `PanelManager` to `HandleManager`
+- **Event Handler Consolidation**: Centralized all handle click events, condition management, health interactions, and quest handling
+- **Template Improvements**: Fixed typo in `handle-conditions.hbs` ("Condtitions" → "Conditions")
+- **Party View Enhancement**: Updated `handle-party.hbs` to properly pass member context to health partials
+- **Quest Data Loading**: Enhanced quest parsing with fallback data and improved error handling
+
+### Additional Fixes
+- **Initial Handle Data Loading**: Fixed issue where handle data was missing on initial client load by ensuring `HandleManager.updateHandle()` is called after tray creation
+- **Duplicate Event Handlers**: Eliminated duplicate click handlers that were causing conflicts between `PanelManager` and `HandleManager`
+- **Condition Click Events**: Fixed condition icon clicks (left-click for description, right-click for remove) and conditions button functionality
+- **Quest Data Parsing**: Resolved NaN values and missing quest names by improving quest data fallbacks and template handling
+- **Party Member Health Bar Clicks**: Fixed party member health bars loading current player's health instead of clicked member's data
+- **Import/Export Issues**: Resolved module import errors for `SQUIRE`, `Dialog`, `getBlacksmith`, and other dependencies
+- **Handle Fade Errors**: Fixed `TypeError` in `_updateHandleFade` by adding robust null checks and proper initialization timing
+
+### Additional Technical Improvements
+- **Code Organization**: Eliminated code duplication between `PanelManager` and `HandleManager`
+- **Event Management**: Improved event listener lifecycle management with proper cleanup and reattachment
+- **Error Handling**: Enhanced error handling throughout handle operations with comprehensive logging
+- **Template System**: Added Handlebars `add` helper for quest objective numbering
+- **Memory Management**: Added proper cleanup methods to prevent memory leaks from event listeners
+
+### Files Modified
+- `scripts/panel-quest.js` - Updated both `_mergeJournalContent()` and `_generateJournalContentFromImport()` methods
+- `scripts/panel-manager.js` - Removed handle-related code, added HandleManager integration
+- `scripts/manager-handle.js` - New file with all handle functionality
+- `scripts/helpers.js` - Exported `getBlacksmith()` function
+- `scripts/squire.js` - Added Handlebars `add` helper
+- `templates/partials/handle-conditions.hbs` - Fixed typo
+- `templates/handle-party.hbs` - Enhanced member context passing
+- `templates/partials/handle-quest.hbs` - Improved quest data handling
 
 
 ## [12.0.21] - Enhanced Codex
