@@ -73,6 +73,9 @@
 
         <div class="tray-panel-wrapper">
 
+
+            <!-- ********** GLOBAL PANELS ********** -->
+
             <!-- Global Progress Bar -->
             <div class="tray-progress-bar-wrapper" style="display: none;">
                 <div class="tray-progress-bar-outter">
@@ -81,20 +84,7 @@
             </div>
 
 
-            <div class="tray-tools-toolbar {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
-                {{#if isGM}}
-                    <button class="tray-gm-button" data-action="award">
-                        <i class="fas fa-medal"></i> Award
-                    </button>
-                    <button class="tray-tools-button" data-action="select-party">
-                        <i class="fas fa-users-viewfinder"></i> Select Party
-                    </button>
-                {{else}}
-                    <button class="tray-tools-button" data-action="select-party">
-                        <i class="fas fa-users-viewfinder"></i> Select Owned
-                    </button>
-                {{/if}}
-            </div>
+            <!-- ********** PLAYER TAB ********** -->
             
             <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
                 {{#if actor}}
@@ -111,7 +101,7 @@
                 {{/if}}
                 <!-- EXPERIENCE -->  
                 {{#if @root.settings.showExperiencePanel}}
-                <div class="panel-container" data-panel="experience"></div>
+                    <div class="panel-container" data-panel="experience"></div>
                 {{/if}}
 
                 <!-- ABILITIES -->  
@@ -160,6 +150,27 @@
                 {{/if}}
             </div>
 
+            <!-- ********** PARTY TAB ********** -->
+
+            <!-- Party Toolbar -->
+
+            <div class="tray-view-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
+                {{#if isGM}}
+                    <button class="tray-gm-button" data-action="award">
+                        <i class="fas fa-medal"></i> Award
+                    </button>
+                    <button class="tray-tools-button" data-action="select-party">
+                        <i class="fas fa-users-viewfinder"></i> Select Party
+                    </button>
+                {{else}}
+                    <button class="tray-tools-button" data-action="select-party">
+                        <i class="fas fa-users-viewfinder"></i> Select Owned
+                    </button>
+                {{/if}}
+            </div>
+
+            <!-- Party Panels -->
+
             <div class="tray-view-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
                 <div class="panel-container" data-panel="party"></div>
                 {{#if @root.settings.showPartyStatsPanel}}
@@ -167,13 +178,19 @@
                 {{/if}}
             </div>
 
+            <!-- ********** NOTES TAB ********** -->
+
             <div class="tray-view-content notes-view {{#unless (eq viewMode 'notes')}}hidden{{/unless}}">
                 <div class="panel-container" data-panel="panel-notes"></div>
             </div>
 
+            <!-- ********** CODEX TAB ********** -->
+
             <div class="tray-view-content codex-view {{#unless (eq viewMode 'codex')}}hidden{{/unless}}">
                 <div class="panel-container" data-panel="panel-codex"></div>
             </div>
+
+            <!-- ********** QUEST TAB ********** -->
 
             <div class="tray-view-content quest-view {{#unless (eq viewMode 'quest')}}hidden{{/unless}}">
                 <div class="panel-container" data-panel="panel-quest"></div>
