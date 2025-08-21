@@ -189,26 +189,9 @@ export class PartyPanel {
                 // Check ownership - only allow selection of tokens the user owns
                 if (!token.actor.isOwner) return;
                 
-                // Debug logging
-                console.log('PartyPanel: Character card clicked', {
-                    actorName: token.actor.name,
-                    shiftKey: event.shiftKey,
-                    currentlyControlled: token.actor?.name,
-                    allControlledTokens: canvas.tokens.controlled.map(t => t.actor?.name)
-                });
-                
                 // Multi-select with shift+click, single select without shift
                 const releaseOthers = !event.shiftKey;
-                console.log('PartyPanel: Calling token.control with releaseOthers:', releaseOthers);
                 token.control({releaseOthers});
-                
-                // Debug logging after control
-                setTimeout(() => {
-                    console.log('PartyPanel: After token.control', {
-                        allControlledTokens: canvas.tokens.controlled.map(t => t.actor?.name),
-                        tokenControlled: token.controlled
-                    });
-                }, 100);
             }
         });
 
