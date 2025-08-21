@@ -534,7 +534,7 @@
 /* Health Bar Container */
 
 .squire-tray[data-position="left"] .handle-healthbar {
-    height: 60px;
+    height: 80px;
     width: 20px;
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(0, 0, 0, 0.2);
@@ -549,7 +549,7 @@
     cursor: pointer;
 }
 .squire-tray[data-position="left"] .handle-healthbar.party {
-    height: 30px; /* PARTY WIDTH */
+    height: 40px; /* PARTY WIDTH */
     width: 20px; /* PARTY HEIGHT */
 }
 .squire-tray[data-position="left"] .handle-healthbar:hover {
@@ -606,29 +606,29 @@
 
 /* Healthy */
 .squire-tray[data-position="left"] .handle-healthbar-fill.healthy {
-    background: rgba(67, 181, 76, 0.8);
+    background: rgba(29, 69, 33, 0.9);
 }
 
 /* Injured*/
 .squire-tray[data-position="left"] .handle-healthbar-fill.injured{
-    background: rgba(30, 81, 34, 0.8);
+    background: rgba(115, 153, 0, 0.9);
 }
 
 /* Bloodied*/
 .squire-tray[data-position="left"] .handle-healthbar-fill.bloodied {
-    background: rgba(229, 170, 51, 0.9);
+    background: rgba(157, 116, 35, 0.9);
 }
 
 /* Critical*/
 .squire-tray[data-position="left"] .handle-healthbar-fill.critical{
-    background: rgba(240, 7, 13, 0.8);
+    background: rgba(117, 5, 7, 0.9);
     animation: handle-healthbar-animation-pulse 1.0s infinite alternate;
 }
 
 /* Dead*/
 .squire-tray[data-position="left"] .handle-healthbar-fill.dead {
     min-height: 100%;
-    background: rgba(240, 7, 13, 0.8);
+    background: rgba(117, 5, 7, 0.9);
     animation: handle-healthbar-animation-pulse 5.0s infinite alternate;
 }
 .squire-tray[data-position="left"] .handle-healthbar-value.dead {

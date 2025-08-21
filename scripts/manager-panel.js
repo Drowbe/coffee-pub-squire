@@ -277,6 +277,11 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
+        // Calculate selection data for the template
+        const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+        const selectionCount = controlledTokens.length;
+        const showSelectionBox = selectionCount > 1;
+
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
@@ -303,7 +308,9 @@ export class PanelManager {
             isHealthPopped: HealthPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
-            favoriteMacros
+            favoriteMacros,
+            selectionCount,
+            showSelectionBox
         });
         const trayElement = $(trayHtml);
         $('body').append(trayElement);
@@ -350,6 +357,11 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
+        // Calculate selection data for the template
+        const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+        const selectionCount = controlledTokens.length;
+        const showSelectionBox = selectionCount > 1;
+
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
@@ -374,6 +386,8 @@ export class PanelManager {
             isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
+            selectionCount,
+            showSelectionBox
         });
         const newTrayElement = $(trayHtml);
         
@@ -648,8 +662,19 @@ export class PanelManager {
             // Select all appropriate party tokens
             tokensToSelect.forEach(token => token.control({releaseOthers: false}));
             
-            // Display notification
-            ui.notifications.info(`Selected ${tokensToSelect.length} party member${tokensToSelect.length !== 1 ? 's' : ''}.`);
+            // Play sound
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
+                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
+        });
+
+        // Selection wrapper button handlers
+        // Clear selection button
+        tray.find('#button-clear').click(async (event) => {
+            // Deselect all currently selected tokens
+            canvas.tokens.releaseAll();
             
             // Play sound
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
@@ -659,7 +684,47 @@ export class PanelManager {
             }
         });
 
-    
+        // Add to combat button (GM only)
+        tray.find('#button-combat').click(async (event) => {
+            if (!game.user.isGM) {
+                ui.notifications.warn("Only GMs can add tokens to combat.");
+                return;
+            }
+
+            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+            if (controlledTokens.length === 0) {
+                ui.notifications.warn("No tokens selected to add to combat.");
+                return;
+            }
+
+            try {
+                // Add each controlled token to combat
+                for (const token of controlledTokens) {
+                    if (token.actor && !token.actor.hasCombatTracker) {
+                        await token.actor.addToCombat();
+                    }
+                }
+                
+                ui.notifications.info(`Added ${controlledTokens.length} token${controlledTokens.length !== 1 ? 's' : ''} to combat.`);
+                
+                // Play sound
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+            } catch (error) {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    'Error adding tokens to combat',
+                    { error, controlledTokens: controlledTokens.length },
+                    false,
+                    false,
+                    true,
+                    MODULE.TITLE
+                );
+                ui.notifications.error("Error adding tokens to combat. See console for details.");
+            }
+        });
 
         // Add drag and drop handlers for stacked panels
         const stackedContainer = tray.find('.panel-containers.stacked');
@@ -1748,13 +1813,16 @@ async function initializeSquireAfterSettings() {
     }
 }
 
-// Also handle when tokens are selected
+// Also handle when tokens are selected or released
 Hooks.on('controlToken', async (token, controlled) => {
-    // Only care about token selection, not deselection
-    if (!controlled) return;
-    
     // Only proceed if it's a GM or the token owner
     if (!game.user.isGM && !token.actor?.isOwner) return;
+    
+    // Update selection display for both selection and release
+    await _updateSelectionDisplay();
+    
+    // Only care about token selection for health panel updates
+    if (!controlled) return;
 
     // Track selection timing and count
     const now = Date.now();
@@ -1788,6 +1856,52 @@ Hooks.on('controlToken', async (token, controlled) => {
         _selectionCount = 0;
     }
 });
+
+// Helper function to update selection display
+async function _updateSelectionDisplay() {
+    if (!PanelManager.instance || !PanelManager.element) return;
+    
+    // Calculate selection data
+    const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+    const selectionCount = controlledTokens.length;
+    const showSelectionBox = selectionCount > 1;
+    
+    // Update the selection display
+    const selectionWrapper = PanelManager.element.find('.tray-selection-wrapper');
+    const selectionCountSpan = PanelManager.element.find('.tray-selection-count');
+    
+    if (showSelectionBox) {
+        // Show selection box if it doesn't exist
+        if (selectionWrapper.length === 0) {
+            const selectionHtml = `
+                <div class="tray-selection-wrapper">
+                    <span class="tray-selection-count">${selectionCount} tokens selected</span>
+                    <div class="tray-selection-actions" data-tooltip="Use Shift+Click to select multiple or modify selection">
+                        <button id="button-clear" class="tray-selection-button button-clear" data-tooltip="Clear all selections">Clear All</button>
+                        ${game.user.isGM ? '<button id="button-combat" class="tray-selection-button button-combat" data-tooltip="Add selected tokens to combat">Add to Combat</button>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Insert after the party toolbar
+            const partyToolbar = PanelManager.element.find('.tray-tools-toolbar');
+            if (partyToolbar.length > 0) {
+                partyToolbar.after(selectionHtml);
+            }
+            
+            // Re-attach event listeners for the new buttons
+            PanelManager.instance.activateListeners(PanelManager.element);
+        } else {
+            // Update existing selection count
+            selectionCountSpan.text(`${selectionCount} tokens selected`);
+        }
+    } else {
+        // Hide selection box if it exists
+        if (selectionWrapper.length > 0) {
+            selectionWrapper.remove();
+        }
+    }
+}
 
 // Helper function to update health panel from current selection
 async function _updateHealthPanelFromSelection() {

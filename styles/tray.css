@@ -990,3 +990,65 @@
     from { opacity: 0.2; }
     to { opacity: 1; }
 }
+
+/* Selection Wrapper Styles */
+.tray-selection-wrapper {
+    background: rgba(72, 160, 0, 0.1);
+    border: 1px solid rgba(72, 160, 0, 0.3);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8em;
+}
+
+.tray-selection-count {
+    color: #48a000;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tray-selection-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Base button styles */
+.tray-selection-button {
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 0.7em;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    border: 1px solid;
+}
+
+/* Clear button styles */
+.tray-selection-button.button-clear {
+    background: rgba(146, 38, 16, 0.8);
+    color: white;
+    border-color: rgba(146, 38, 16, 1);
+}
+
+.tray-selection-button.button-clear:hover {
+    background: rgba(146, 38, 16, 1);
+    box-shadow: 0 0 5px rgba(146, 38, 16, 0.5);
+}
+
+/* Combat button styles */
+.tray-selection-button.button-combat {
+    background: rgba(72, 160, 0, 0.8);
+    color: white;
+    border-color: rgba(72, 160, 0, 1);
+}
+
+.tray-selection-button.button-combat:hover {
+    background: rgba(72, 160, 0, 1);
+    box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
+}

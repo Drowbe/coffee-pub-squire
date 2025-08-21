@@ -177,7 +177,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 14px;
+    height: 16px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid #444;
     border-radius: 4px;
@@ -190,24 +190,41 @@
 .party-view .party-hp-bar .hp-max {
     z-index: 2;
     font-size: 0.5em;
-    font-weight: 700;
+    font-weight: 400;
     padding: 0 5px;
 }
 
 .party-view .party-hp-bar .hp-value {
-    color: #9d9476;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .party-view .party-hp-bar .hp-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: linear-gradient(to right, #531513, #67312c);
-    z-index: 1;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100% !important;
+    background: rgba(29, 69, 33, 0.9) !important;
+    z-index: 1 !important;
+    border-radius: 4px !important;
+    border: 2px solid rgba(0, 0, 0, 0.9) !important;
     transition: width 0.3s ease;
 }
-
+.party-view .party-hp-bar .hp-fill.healthy  {
+    background-color: rgba(29, 69, 33, 0.9) !important; /* healthy  */
+}
+.party-view .party-hp-bar .hp-fill.injured {
+    background-color: rgba(115, 153, 0, 0.9) !important; /* injured*/
+}
+.party-view .party-hp-bar .hp-fill.bloodied  {
+    background-color: rgba(157, 116, 35, 0.9) !important; /* bloodied  */
+}
+.party-view .party-hp-bar .hp-fill.critical {
+    background-color: rgba(117, 5, 7, 0.9) !important; /* critical*/
+}
+.party-view .party-hp-bar .hp-fill.dead {
+    background-color: rgba(117, 5, 7, 0.1) !important; /* dead*/
+    width: 100%;
+}
 /* Section Divider */
 
 .party-view .section-divider {
@@ -323,71 +340,5 @@
     margin: 10px 0;
 }
 
-/* Selection info display */
-.party-view .selection-info {
-    background: rgba(72, 160, 0, 0.1);
-    border: 1px solid rgba(72, 160, 0.3);
-    border-radius: 4px;
-    padding: 8px 12px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8em;
-}
 
-.party-view .selection-count {
-    color: #48a000;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.party-view .selection-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.party-view .multi-select-hint {
-    color: #9f9275;
-    font-style: italic;
-    font-size: 0.9em;
-}
-
-.party-view .clear-selection-btn {
-    background: rgba(146, 38, 16, 0.8);
-    color: white;
-    border: 1px solid rgba(146, 38, 16, 1);
-    border-radius: 3px;
-    padding: 2px 8px;
-    font-size: 0.7em;
-    cursor: pointer;
-    text-transform: uppercase;
-    font-weight: bold;
-    transition: all 0.2s ease;
-}
-
-.party-view .clear-selection-btn:hover {
-    background: rgba(146, 38, 16, 1);
-    box-shadow: 0 0 5px rgba(146, 38, 16, 0.5);
-}
-
-.party-view .add-to-combat-btn {
-    background: rgba(72, 160, 0, 0.8);
-    color: white;
-    border: 1px solid rgba(72, 160, 0, 1);
-    border-radius: 3px;
-    padding: 2px 8px;
-    font-size: 0.7em;
-    cursor: pointer;
-    text-transform: uppercase;
-    font-weight: bold;
-    transition: all 0.2s ease;
-}
-
-.party-view .add-to-combat-btn:hover {
-    background: rgba(72, 160, 0, 1);
-    box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
-}
 
