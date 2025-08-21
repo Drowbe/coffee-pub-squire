@@ -27,13 +27,7 @@
     <div class="handle-pinnedquests">
         {{#each pinnedQuest.tasks as |task index|}}
             <div class="handle-pinnedquest-icon{{#if task.hasPinOnCanvas}} objective-pins-oncanvas{{/if}}{{#if task.hasPinNearby}} objective-pins-nearby{{/if}}">
-                
-                
-                
-                
-                
-                
-                
+
                 <div class="handle-pinnedquest-icon-fill objective-{{task.state}}" 
                     data-task-index="{{@index}}">
                     {{#if (eq task.state "completed")}}
@@ -68,10 +62,11 @@
 
 {{!-- HEALTH TRAYBUTTON --}} 
 {{#if showHandleHealthBar}}
-    {{> handle-health-tray}}
-    <span class="tray-handle-separator line-ridge-thin"></span>
+    {{#if isGM}}
+        {{> handle-health-tray}}
+        <span class="tray-handle-separator line-ridge-thin"></span>
+    {{/if}}
 {{/if}}
-
 
 {{!-- DICE TRAY BUTTON --}} 
 {{#if showHandleDiceTrayr}}

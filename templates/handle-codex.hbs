@@ -27,8 +27,10 @@
 
 {{!-- HEALTH TRAYBUTTON --}} 
 {{#if showHandleHealthBar}}
-    {{> handle-health-tray}}
-    <span class="tray-handle-separator line-ridge-thin"></span>
+    {{#if isGM}}
+        {{> handle-health-tray}}
+        <span class="tray-handle-separator line-ridge-thin"></span>
+    {{/if}}
 {{/if}}
 
 
