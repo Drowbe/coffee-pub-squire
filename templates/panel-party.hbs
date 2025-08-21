@@ -1,15 +1,15 @@
 
 <!-- PARTY HEALTH -->
 
-<div class="character-card clickable party-health-card">
-    <div class="character-info">
-        <div class="character-name">Party Health</div>
-        <div class="character-details">
-            <div class="party-hp-bar party-overview-hp-bar">
+<div class="party-health-card clickable ">
+    <div class="party-health-card-info">
+        <div class="party-health-card-title">Party Health</div>
+        <div class="party-health-card-details">
+            <div class="party-hp-bar party-health-card-hp-bar">
                 <div class="hp-current">
                     <span class="hp-value">{{partyRemainingHP}}</span>
                 </div>
-                <div class="hp-fill" style="width: {{multiply (divide partyRemainingHP partyTotalHP) 100}}%"></div>
+                <div class="hp-fill {{partyHealthbarStatus}}" style="width: {{multiply (divide partyRemainingHP partyTotalHP) 100}}%"></div>
                 <div class="hp-max">
                     <span class="hp-value">{{partyTotalHP}}</span>
                 </div>
@@ -56,7 +56,7 @@
                         <div class="hp-current">
                             <span class="hp-value">{{token.actor.system.attributes.hp.value}}</span>
                         </div>
-                        <div class="hp-fill" style="width: {{multiply (divide token.actor.system.attributes.hp.value token.actor.system.attributes.hp.max) 100}}%"></div>
+                        <div class="hp-fill {{token.healthbarStatus}}" style="width: {{multiply (divide token.actor.system.attributes.hp.value token.actor.system.attributes.hp.max) 100}}%"></div>
                         <div class="hp-max">
                             <span class="hp-value">{{token.actor.system.attributes.hp.max}}</span>
                         </div>
@@ -111,7 +111,7 @@
                             <div class="hp-current">
                                 <span class="hp-value">{{token.actor.system.attributes.hp.value}}</span>
                             </div>
-                            <div class="hp-fill" style="width: {{multiply (divide token.actor.system.attributes.hp.value token.actor.system.attributes.hp.max) 100}}%"></div>
+                            <div class="hp-fill {{token.healthbarStatus}}" style="width: {{multiply (divide token.actor.system.attributes.hp.value token.actor.system.attributes.hp.max) 100}}%"></div>
                             <div class="hp-max">
                                 <span class="hp-value">{{token.actor.system.attributes.hp.max}}</span>
                             </div>

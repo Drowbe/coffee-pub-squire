@@ -104,11 +104,11 @@
             <!-- Selection Info - Only shown when multiple tokens are selected -->
             {{#if showSelectionBox}}
                 <div class="tray-selection-wrapper">
-                    <span class="tray-selection-count">{{selectionCount}} tokens selected</span>
+                    <div class="tray-selection-count">{{selectionCount}} tokens selected</div>
                     <div class="tray-selection-actions" data-tooltip="Use Shift+Click to select multiple or modify selection">
-                        <button id="button-clear" class="tray-selection-button button-clear" data-tooltip="Clear all selections">Clear All</button>
+                        <button id="button-clear" class="tray-selection-button button-clear" data-tooltip="Clear all selections">Clear</button>
                         {{#if isGM}}
-                            <button id="button-combat" class="tray-selection-button button-combat" data-tooltip="Add selected tokens to combat">Add to Combat</button>
+                            <button id="button-combat" class="tray-selection-button button-combat" data-tooltip="Add selected tokens to combat">Combat</button>
                         {{/if}}
                     </div>
                 </div>

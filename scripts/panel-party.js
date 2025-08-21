@@ -36,13 +36,61 @@ export class PartyPanel {
         const nonPlayerTokens = game.user.isGM ? 
             canvas.tokens.placeables.filter(token => token.actor && !token.actor.hasPlayerOwner) : 
             [];
+
+        // Add health status to tokens without breaking the structure
+        tokens.forEach(token => {
+            if (token.actor?.system?.attributes?.hp) {
+                const hp = token.actor.system.attributes.hp;
+                let healthbarStatus = 'squire-tray-healthbar-healthy';
+                
+                if (hp.max > 0) {
+                    const hpPercentage = (hp.value / hp.max) * 100;
+                    
+                    if (hp.value <= 0) {
+                        healthbarStatus = 'squire-tray-healthbar-dead';
+                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
+                        healthbarStatus = 'squire-tray-healthbar-critical';
+                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
+                        healthbarStatus = 'squire-tray-healthbar-bloodied';
+                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
+                        healthbarStatus = 'squire-tray-healthbar-injured';
+                    }
+                }
+                
+                // Add healthbarStatus directly to the token object
+                token.healthbarStatus = healthbarStatus;
+            }
+        });
+
+        // Add health status to non-player tokens as well
+        nonPlayerTokens.forEach(token => {
+            if (token.actor?.system?.attributes?.hp) {
+                const hp = token.actor.system.attributes.hp;
+                let healthbarStatus = 'squire-tray-healthbar-healthy';
+                
+                if (hp.max > 0) {
+                    const hpPercentage = (hp.value / hp.max) * 100;
+                    
+                    if (hp.value <= 0) {
+                        healthbarStatus = 'squire-tray-healthbar-dead';
+                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
+                        healthbarStatus = 'squire-tray-healthbar-critical';
+                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
+                        healthbarStatus = 'squire-tray-healthbar-bloodied';
+                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
+                        healthbarStatus = 'squire-tray-healthbar-injured';
+                    }
+                }
+                
+                // Add healthbarStatus directly to the token object
+                token.healthbarStatus = healthbarStatus;
+            }
+        });
         
         // Get currently controlled tokens' actor IDs
         const controlledTokenIds = canvas.tokens.controlled
             .filter(token => token.actor)
             .map(token => token.actor.id);
-
-        console.log('PartyPanel: render called with controlledTokenIds:', controlledTokenIds);
 
         // Calculate party health totals
         const partyRemainingHP = tokens.reduce((total, token) => {
@@ -54,6 +102,22 @@ export class PartyPanel {
             const hp = token.actor?.system?.attributes?.hp;
             return total + (hp?.max || 0);
         }, 0);
+
+        // Calculate party health status for unified colors
+        let partyHealthbarStatus = 'squire-tray-healthbar-healthy';
+        if (partyTotalHP > 0) {
+            const partyHPPercentage = (partyRemainingHP / partyTotalHP) * 100;
+            
+            if (partyRemainingHP <= 0) {
+                partyHealthbarStatus = 'squire-tray-healthbar-dead';
+            } else if (partyHPPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
+                partyHealthbarStatus = 'squire-tray-healthbar-critical';
+            } else if (partyHPPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
+                partyHealthbarStatus = 'squire-tray-healthbar-bloodied';
+            } else if (partyHPPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
+                partyHealthbarStatus = 'squire-tray-healthbar-injured';
+            }
+        }
 
         // Prepare other party members data for the handle
         const currentActor = game.actors.get(controlledTokenIds[0]);
@@ -76,6 +140,7 @@ export class PartyPanel {
             otherPartyMembers,
             partyRemainingHP,
             partyTotalHP,
+            partyHealthbarStatus,
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros')
@@ -913,16 +978,8 @@ export class PartyPanel {
     }
 
     _onControlToken(token, isControlled) {
-        console.log('PartyPanel: _onControlToken called', {
-            tokenName: token.actor?.name,
-            isControlled,
-            allControlledTokens: canvas.tokens.controlled.map(t => t.actor?.name),
-            elementExists: !!this.element
-        });
-        
         // Only re-render if the element exists
         if (this.element) {
-            console.log('PartyPanel: Re-rendering party panel');
             // Re-render to highlight the currently selected token
             this.render(this.element);
         }

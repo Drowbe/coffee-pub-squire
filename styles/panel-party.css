@@ -1,5 +1,4 @@
 /* Party Panel */
-/* Party Panel */
 .party-view .character-card {
     background: rgba(0, 0, 0, 0.4);
     color: #9f9275;
@@ -204,7 +203,6 @@
     left: 0 !important;
     top: 0 !important;
     height: 100% !important;
-    background: rgba(29, 69, 33, 0.9) !important;
     z-index: 1 !important;
     border-radius: 4px !important;
     border: 2px solid rgba(0, 0, 0, 0.9) !important;
@@ -213,36 +211,56 @@
 
 
 /* Party Health Card - Special styling for the overview card */
+
 .party-view .party-health-card {
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid rgba(255, 150, 0, 0.8);
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(255, 150, 0, 0.1) 100%);
+    background: rgba(0, 0, 0, 0.4);
+    color: #9f9275;
+    padding: 3px;
+    font-size: 1.4em;
+    border: 2px solid rgba(68, 68, 68, 0.9);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .party-view .party-health-card:hover {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.9);
     border: 2px solid rgba(255, 150, 0, 1);
     box-shadow: 0 0 8px rgba(255, 150, 0, 0.3);
+    cursor: pointer;
 }
 
-.party-view .party-health-card .character-name {
-    color: #ff9600;
-    font-weight: bold;
-    text-shadow: 0 0 3px rgba(255, 150, 0, 0.5);
+.party-view .party-health-card-info {
+    flex: 1;
+    padding: 0 8px;
 }
 
-/* Party Overview HP Bar - Special styling for the overview bar */
-.party-view .party-overview-hp-bar {
+.party-view .party-health-card-title {
+    display: block;
+    font-size: 0.85em;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.party-view .party-health-card-details {
+    display: block;
+    border-top: 1px dotted #444;
+    margin-top: 2px;
+    padding-top: 4px;
+    padding-bottom: 6px;
+}
+
+
+/* Party Overview HP Bar Overrides for default bar */
+.party-view .party-health-card-hp-bar {
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 150, 0, 0.4);
+    border: 1px solid rgba(68, 68, 68, 0.9);
     border-radius: 3px;
     padding: 2px;
-}
-
-.party-view .party-overview-hp-bar .hp-fill {
-    background: linear-gradient(90deg, #ff9600 0%, #ffaa33 100%);
-    border-radius: 2px;
-    box-shadow: 0 0 4px rgba(255, 150, 0, 0.4);
+    height: 22px;
 }
 
 
