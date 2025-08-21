@@ -74,25 +74,17 @@ export class HandleManager {
 
         // Fetch pinned quest data for quest handle
         let pinnedQuest = null;
-        console.log('HandleManager: Current view mode:', PanelManager.viewMode);
         
         // Always try to fetch quest data if we're in quest view, or if we have a pinned quest
-        console.log('HandleManager: Current view mode when deciding quest fetch:', PanelManager.viewMode);
-        
         if (PanelManager.viewMode === 'quest') {
-            console.log('HandleManager: Fetching pinned quest data for quest view');
             pinnedQuest = await this._getPinnedQuestData();
         } else {
             // Check if there's a pinned quest even if not in quest view
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
             const hasPinnedQuest = Object.values(pinnedQuests).some(uuid => uuid !== null);
-            console.log('HandleManager: Pinned quests found:', pinnedQuests, 'Has pinned quest:', hasPinnedQuest);
             
             if (hasPinnedQuest) {
-                console.log('HandleManager: Found pinned quest, fetching data even though not in quest view');
                 pinnedQuest = await this._getPinnedQuestData();
-            } else {
-                console.log('HandleManager: No pinned quest found, skipping quest data fetch');
             }
         }
 
@@ -195,8 +187,7 @@ export class HandleManager {
             ...handleData
         };
 
-        console.log('HandleManager: Tray data being sent to template:', trayData);
-        console.log('HandleManager: Pinned quest data:', trayData.pinnedQuest);
+
 
         const handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
         
@@ -701,19 +692,13 @@ export class HandleManager {
 
         // Add click handler for party member health bars in the handle
         const partyHealthBars = handle.find('.handle-healthbar.party.clickable');
-        console.log('HandleManager: Found party health bars:', partyHealthBars.length);
         
         partyHealthBars.on('click', async function(event) {
             event.preventDefault();
             event.stopPropagation();
             
-            console.log('HandleManager: Clicked element:', this);
-            console.log('HandleManager: Clicked element classes:', this.className);
-            console.log('HandleManager: Clicked element data attributes:', $(this).data());
-            
             // Get the actor ID directly from the clicked health bar element
             const actorId = $(this).data('actor-id');
-            console.log('HandleManager: Party member health bar clicked, actor ID:', actorId);
             
             if (!actorId) {
                 console.warn('HandleManager: No actor ID found on party member health bar');
@@ -726,8 +711,6 @@ export class HandleManager {
                 return;
             }
             
-            console.log('HandleManager: Found party member actor:', actor.name);
-            
             if (PanelManager.instance?.healthPanel) {
                 // Control the token if it exists on canvas
                 const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
@@ -737,15 +720,12 @@ export class HandleManager {
                 
                 // Update PanelManager's current actor reference so the health panel shows the correct data
                 PanelManager.currentActor = actor;
-                console.log('HandleManager: Updated PanelManager.currentActor to:', actor.name);
                 
                 // Update the health panel with the party member's actor
                 PanelManager.instance.healthPanel.updateActor(actor);
-                console.log('HandleManager: Updated health panel actor to:', actor.name);
                 
                 // If health panel is already popped out, update the window directly
                 if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
-                    console.log('HandleManager: Health panel already popped out, updating window directly');
                     PanelManager.instance.healthPanel.window.updateActor(actor);
                 } else {
                     // Pop out the health panel
@@ -914,25 +894,16 @@ export class HandleManager {
                 return null;
             }
             
-            console.log('HandleManager: Found pinned quest UUID:', pinnedQuestUuid);
-            
             const doc = await fromUuid(pinnedQuestUuid);
             if (!doc) {
                 console.warn('HandleManager: Could not resolve document from UUID:', pinnedQuestUuid);
                 return null;
             }
             
-            console.log('HandleManager: Resolved document:', doc);
-            console.log('HandleManager: Document text content:', doc.text?.content);
-            console.log('HandleManager: Document name:', doc.name);
-            
             // Get the quest data from the journal entry
             const enrichedHtml = await TextEditor.enrichHTML(doc.text.content, { async: true });
-            console.log('HandleManager: Enriched HTML content:', enrichedHtml);
             
             const entry = await QuestParser.parseSinglePage(doc, enrichedHtml);
-            
-            console.log('HandleManager: Parsed quest entry:', entry);
             
             if (!entry) {
                 console.warn('HandleManager: QuestParser returned null/undefined entry');
@@ -945,11 +916,6 @@ export class HandleManager {
             
             if (!entry.tasks || !Array.isArray(entry.tasks)) {
                 console.warn('HandleManager: Entry missing or invalid tasks:', entry.tasks);
-            } else {
-                console.log('HandleManager: Entry tasks:', entry.tasks);
-                entry.tasks.forEach((task, index) => {
-                    console.log(`HandleManager: Task ${index}:`, task);
-                });
             }
             
             // If QuestParser failed to parse tasks, create a basic fallback
@@ -970,8 +936,6 @@ export class HandleManager {
                 uuid: pinnedQuestUuid,
                 tasks: entry.tasks && entry.tasks.length > 0 ? entry.tasks : fallbackTasks
             };
-            
-            console.log('HandleManager: Returning quest data:', result);
             return result;
         } catch (error) {
             console.error('Error getting pinned quest data:', error);
