@@ -86,7 +86,7 @@
 
             <!-- Party Toolbar -->
 
-            <div class="tray-tools-toolbar">
+            <div class="tray-tools-toolbar {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
                 {{#if isGM}}
                     <button class="tray-gm-button" data-action="award">
                         <i class="fas fa-medal"></i> Award
@@ -100,7 +100,8 @@
                     </button>
                 {{/if}}
             </div>
-            
+
+
             <!-- Selection Info - Only shown when multiple tokens are selected -->
             {{#if showSelectionBox}}
                 <div class="tray-selection-wrapper">
