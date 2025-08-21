@@ -462,14 +462,7 @@ export class HandleManager {
                     height: "auto"
                 }).render(true);
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error getting condition description',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error getting condition description:', error);
                 ui.notifications.warn("Could not load condition description.");
             }
         }).off('contextmenu').on('contextmenu', async (event) => {
@@ -641,14 +634,7 @@ export class HandleManager {
                                 ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
                             }
                         } catch (error) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Error managing condition',
-                                { error },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Error managing condition:', error);
                             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                         }
                     });

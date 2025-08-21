@@ -869,14 +869,7 @@ export class PartyPanel {
                 }
                 
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error handling drop on character card',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error handling drop on character card:', error);
                 ui.notifications.error("Failed to add item to character.");
             }
         });
@@ -1142,14 +1135,7 @@ export class PartyPanel {
 
             ui.notifications.info(`Transfer request sent to ${targetActor.name}`);
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error sending transfer request',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error sending transfer request:', error);
             ui.notifications.error("Failed to send transfer request. Please try again or contact your GM.");
         }
     }
@@ -1227,14 +1213,7 @@ export class PartyPanel {
                         }
                     }
                 } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Error handling transfer request message',
-                        { error },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Error handling transfer request message:', error);
                 }
 
                 if (isAccept) {

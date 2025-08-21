@@ -22,21 +22,7 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Cannot set handle favorites for actor from compendium",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    pack: actor.pack,
-                    collectionName: actor.collection?.metadata?.name || 'Unknown',
-                    collectionId: actor.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Cannot set handle favorites for actor from compendium
             return;
         }
         await actor.setFlag(MODULE.ID, 'handleFavorites', ids);
@@ -46,22 +32,7 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Cannot add handle favorite for actor from compendium",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    itemId: itemId,
-                    pack: actor.pack,
-                    collectionName: actor.collection?.metadata?.name || 'Unknown',
-                    collectionId: actor.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Cannot add handle favorite for actor from compendium
             return;
         }
         const ids = new Set(this.getHandleFavorites(actor));
@@ -73,22 +44,7 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Cannot remove handle favorite for actor from compendium",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    itemId: itemId,
-                    pack: actor.pack,
-                    collectionName: actor.collection?.metadata?.name || 'Unknown',
-                    collectionId: actor.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Cannot remove handle favorite for actor from compendium
             return;
         }
         const ids = new Set(this.getHandleFavorites(actor));
@@ -111,21 +67,7 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Cannot migrate handle favorites for actor from compendium",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    pack: actor.pack,
-                    collectionName: actor.collection?.metadata?.name || 'Unknown',
-                    collectionId: actor.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Cannot migrate handle favorites for actor from compendium
             return false;
         }
         
@@ -158,21 +100,7 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Cannot clear handle favorites for actor from compendium",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    pack: actor.pack,
-                    collectionName: actor.collection?.metadata?.name || 'Unknown',
-                    collectionId: actor.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Cannot clear handle favorites for actor from compendium
             return [];
         }
         await actor.unsetFlag(MODULE.ID, 'handleFavorites');
@@ -187,21 +115,7 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Cannot clear favorites for actor from compendium",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    pack: actor.pack,
-                    collectionName: actor.collection?.metadata?.name || 'Unknown',
-                    collectionId: actor.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Cannot clear favorites for actor from compendium
             return [];
         }
         await actor.unsetFlag(MODULE.ID, 'favorites');
@@ -233,35 +147,14 @@ export class FavoritesPanel {
         try {
             // Ensure we have a valid itemId and actor
             if (!itemId || !actor) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Invalid item ID or actor in manageFavorite",
-                    { itemId, actor, stack: new Error().stack },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
+                console.error("Invalid item ID or actor in manageFavorite:", { itemId, actor });
                 return false;
             }
 
             // Check if actor is from a compendium (more robust check)
             const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
             if (isFromCompendium) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Cannot modify favorites for actor from compendium",
-                    { 
-                        actorName: actor.name, 
-                        actorType: actor.type,
-                        itemId: itemId,
-                        pack: actor.pack,
-                        collectionName: actor.collection?.metadata?.name || 'Unknown',
-                        collectionId: actor.collection?.id || 'Unknown'
-                    },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: Cannot modify favorites for actor from compendium
                 return false;
             }
 
@@ -303,14 +196,7 @@ export class FavoritesPanel {
 
             return newFavorites.includes(itemId);
         } catch (error) {
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Error in manageFavorite",
-                error,
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error("Error in manageFavorite:", error);
             return false;
         }
     }
@@ -331,20 +217,7 @@ export class FavoritesPanel {
             // Check if actor is from a compendium (more robust check)
             const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
             if (isFromCompendium) {
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Skipping auto-favorites for actor from compendium",
-                    { 
-                        actorName: actor.name, 
-                        actorType: actor.type,
-                        pack: actor.pack,
-                        collectionName: actor.collection?.metadata?.name || 'Unknown',
-                        collectionId: actor.collection?.id || 'Unknown'
-                    },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: Skipping auto-favorites for actor from compendium
                 return false;
             }
             
@@ -391,22 +264,7 @@ export class FavoritesPanel {
                 await actor.items._flush();
             }
             // DEBUG: Log the values after setting
-            // Log the action
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Auto-favorited items for NPC/Monster",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    weaponsCount: weapons.length, 
-                    spellsCount: spells.length,
-                    monsterFeaturesCount: monsterFeatures.length,
-                    totalFavorites: itemsToFavorite.length 
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Auto-favorited items for NPC/Monster
             // Refresh the panels if they exist
             if (PanelManager.instance && PanelManager.currentActor?.id === actor.id) {
                 // First update the favorites panel
@@ -428,14 +286,7 @@ export class FavoritesPanel {
             }
             return true;
         } catch (error) {
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Error in initializeNpcFavorites",
-                error,
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error("Error in initializeNpcFavorites:", error);
             return false;
         }
     }
@@ -515,22 +366,7 @@ export class FavoritesPanel {
             // Check if actor is from a compendium before trying to modify it
             const isFromCompendium = this.actor.pack || (this.actor.collection && this.actor.collection.locked);
             if (isFromCompendium) {
-                // Skip auto-favoriting for actors from compendiums
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                blacksmith?.utils.postConsoleAndNotification(
-                    "SQUIRE | Skipping auto-favorites initialization for actor from compendium",
-                    { 
-                        actorName: this.actor.name, 
-                        actorType: this.actor.type,
-                        pack: this.actor.pack,
-                        collectionName: this.actor.collection?.metadata?.name || 'Unknown',
-                        collectionId: this.actor.collection?.id || 'Unknown'
-                    },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: Skipping auto-favorites initialization for actor from compendium
             } else {
                 FavoritesPanel.initializeNpcFavorites(this.actor);
             }
@@ -779,14 +615,7 @@ export class FavoritesPanel {
             const $item = $(event.currentTarget).closest('.favorite-item');
             const itemId = $item.data('item-id');
             if (!itemId) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'No item ID found for favorite toggle',
-                    { $item },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('No item ID found for favorite toggle:', { $item });
                 return;
             }
             await FavoritesPanel.manageFavorite(this.actor, itemId);
@@ -884,35 +713,14 @@ export class FavoritesPanel {
     async _reorderFavorite(itemId, newIndex) {
         const actor = this.actor;
         if (!actor) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'No actor found in _reorderFavorite',
-                { itemId, newIndex },
-                false,
-                false,
-                false,
-                MODULE.NAME
-            );
+            // Debug: No actor found in _reorderFavorite
             return;
         }
 
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Cannot reorder favorites for actor from compendium",
-                { 
-                    actorName: actor.name, 
-                    actorType: actor.type,
-                    pack: actor.pack,
-                    collectionName: actor.collection?.metadata?.name || 'Unknown',
-                    collectionId: actor.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Cannot reorder favorites for actor from compendium
             return;
         }
 
@@ -923,14 +731,7 @@ export class FavoritesPanel {
         // Find the current index of the item ID
         const currentIndex = favoriteIds.indexOf(itemId);
         if (currentIndex === -1) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Item not found in favorites',
-                { itemId, favoriteIds },
-                false,
-                false,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Item not found in favorites
             return;
         }
 
@@ -1046,14 +847,7 @@ export class FavoritesPanel {
             }
 
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error reordering favorites',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error reordering favorites:', error);
         }
     }
 } 

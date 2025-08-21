@@ -54,12 +54,11 @@ export class PartyStatsPanel {
 
             if (!blacksmith?.stats?.player) {
                 getBlacksmith()?.utils.postConsoleAndNotification(
+                    MODULE.NAME,
                     'Blacksmith Stats API (player) not available',
                     { blacksmith },
                     false,
-                    false,
-                    false,
-                    MODULE.NAME
+                    false
                 );
                 return data;
             }
@@ -102,14 +101,7 @@ export class PartyStatsPanel {
                     if (turnTime > 0) turnTimeByPlayer.set(actor.name, turnTime);
 
                 } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        `Error processing stats for ${actor.name}`,
-                        { actor: actor.name, error },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error(`Error processing stats for ${actor.name}:`, { actor: actor.name, error });
                 }
             }
 
@@ -148,25 +140,11 @@ export class PartyStatsPanel {
                     }
                 }
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error getting session duration',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error getting session duration:', error);
             }
 
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error gathering party stats',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error gathering party stats:', error);
         }
 
         return data;

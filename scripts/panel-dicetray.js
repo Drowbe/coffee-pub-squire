@@ -453,14 +453,7 @@ export class DiceTrayPanel {
             this.currentFormula = '';
 
         } catch (err) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Dice roll error',
-                { err },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Dice roll error:', err);
             ui.notifications.error("Invalid dice formula");
         }
     }
@@ -540,14 +533,7 @@ export class DiceTrayPanel {
             // Automatically roll
             this._onRollClick(panel);
         } catch (err) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error processing advantage/disadvantage',
-                { err },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error processing advantage/disadvantage:', err);
             ui.notifications.error("Invalid formula for advantage/disadvantage");
         }
     }
@@ -640,14 +626,7 @@ export class DiceTrayPanel {
             windowStates.diceTray = isOpen;
             await game.user.setFlag(MODULE.ID, 'windowStates', windowStates);
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error saving dice tray window state',
-                { error, isOpen },
-                false,
-                true,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error saving dice tray window state:', error);
         }
     }
 } 

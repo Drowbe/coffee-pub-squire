@@ -114,10 +114,10 @@ export class QuestPin extends PIXI.Container {
       return `${this.questUuid}-quest-${Date.now()}`;
     } else {
       return `${this.questUuid}-${this.objectiveIndex}-${Date.now()}`;
+        }
     }
-  }
 
-  /**
+    /**
    * Fetch quest and objective names from journal entry
    */
   async fetchNames() {
@@ -147,10 +147,10 @@ export class QuestPin extends PIXI.Container {
           }
           
 
-        }
-      }
-    } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error fetching names', { error, questUuid: this.questUuid }, false, true, false, MODULE.NAME);
+                }
+            }
+        } catch (error) {
+      console.error('QuestPin | Error fetching names:', { error, questUuid: this.questUuid });
       // Set fallback names
       this.questName = 'Unknown Quest';
       if (this.pinType === 'objective') {
@@ -308,7 +308,7 @@ export class QuestPin extends PIXI.Container {
         else if (this.questStatus === 'Not Started') pinRingColor = pinRingColorQuestNotStarted;
         else if (this.questState === 'hidden') pinRingColor = pinRingColorQuestHidden;
         else pinRingColor = pinRingColorQuestInProgress; // Default to In Progress
-    } else {
+            } else {
       // For objective pins, use objective state for ring color
       if (this.objectiveState === 'failed') pinRingColor = pinRingColorObjectiveFailed;
       else if (this.objectiveState === 'hidden') pinRingColor = pinRingColorOjectiveHidden;
@@ -325,7 +325,7 @@ export class QuestPin extends PIXI.Container {
       // Quest pin contact shadow - overall size + offset
       const shadowRadius = pinInnerHeight/2 + pinRingGap + pinRingInnerThickness/2 + pinDropShadowOffset;
       shadow.drawCircle(0, 0, shadowRadius);
-    } else {
+            } else {
       // Objective pin contact shadow - overall size + offset
       const shadowW = pinInnerWidth + 2 * (pinRingGap + pinRingInnerThickness/2 + pinDropShadowOffset);
       const shadowH = pinInnerHeight + 2 * (pinRingGap + pinRingInnerThickness/2 + pinDropShadowOffset);
@@ -693,9 +693,9 @@ export class QuestPin extends PIXI.Container {
   // Update pin appearance based on new quest status (for quest-level pins)
   updateQuestStatus(newStatus) {
     if (this.pinType !== 'quest') {
-      return;
-    }
-    
+                return;
+            }
+            
     const oldStatus = this.questStatus;
     this.questStatus = newStatus;
     
@@ -739,14 +739,14 @@ export class QuestPin extends PIXI.Container {
 
       if (existingIndex >= 0) {
         pinsData[existingIndex] = pinData;
-      } else {
+                } else {
         pinsData.push(pinData);
       }
 
       // Save to scene flags
       scene.setFlag(MODULE.ID, 'questPins', pinsData);
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error saving quest pin', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error saving quest pin:', error);
     }
   }
 
@@ -767,8 +767,8 @@ export class QuestPin extends PIXI.Container {
       
       // Save updated data to scene flags
       scene.setFlag(MODULE.ID, 'questPins', updatedPinsData);
-    } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error removing quest pin', { error }, false, true, true, MODULE.NAME);
+                } catch (error) {
+      console.error('QuestPin | Error removing quest pin:', error);
     }
   }
 
@@ -907,9 +907,9 @@ export class QuestPin extends PIXI.Container {
     if (!this.isDragging) return;
     
     // Prevent default behavior
-    event.preventDefault();
-    event.stopPropagation();
-    
+            event.preventDefault();
+            event.stopPropagation();
+            
     // Convert DOM event to PIXI coordinates
     const rect = canvas.app.view.getBoundingClientRect();
     const globalX = event.clientX - rect.left;
@@ -948,7 +948,7 @@ export class QuestPin extends PIXI.Container {
         // Check for Shift+Left-click to toggle hidden state (GM only)
         if (game.user.isGM && event.data.originalEvent.shiftKey) {
           this._toggleHiddenState();
-        } else {
+            } else {
           // Delay the click action to allow for drag detection
           this._clickTimeout = setTimeout(() => {
             // Only execute if we're not dragging and haven't started dragging
@@ -983,7 +983,7 @@ export class QuestPin extends PIXI.Container {
         this._rightClickTimeout = null;
       }
       this._removePin();
-    } else {
+                                } else {
       const clickTime = Date.now();
       this._lastRightClickTime = clickTime;
       
@@ -1131,7 +1131,7 @@ export class QuestPin extends PIXI.Container {
         
         
         
-      } else {
+                            } else {
         // For objective pins, toggle objective hidden state
         // Get the journal page for this quest
         const journalId = game.settings.get(MODULE.ID, 'questJournal');
@@ -1188,7 +1188,7 @@ export class QuestPin extends PIXI.Container {
       }
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling hidden state', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error toggling hidden state:', error);
     }
   }
 
@@ -1222,7 +1222,7 @@ export class QuestPin extends PIXI.Container {
       if (sTag) {
         // Already completed, uncomplete it
         li.innerHTML = sTag.innerHTML;
-      } else {
+            } else {
         // Not completed, complete it - wrap in <s> and remove other states
         // First, unwrap any existing state tags to ensure clean state
         const codeTag = li.querySelector('code');
@@ -1256,18 +1256,18 @@ export class QuestPin extends PIXI.Container {
       if (allCompleted) {
         // Change status to Complete
         if (currentStatus !== 'Complete') {
-          if (statusMatch) {
+            if (statusMatch) {
             newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Complete');
-          } else {
+            } else {
             newContent += `<p><strong>Status:</strong> Complete</p>`;
           }
           
           // Get or store original category
-          let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+            let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
           if (!originalCategory && currentCategory && currentCategory !== 'Completed') {
-            originalCategory = currentCategory;
-            await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
-          }
+                originalCategory = currentCategory;
+                await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
+            }
         }
       } else {
         // If status is Complete and not all tasks are completed, set to In Progress
@@ -1290,7 +1290,7 @@ export class QuestPin extends PIXI.Container {
       // The pin will be automatically updated by the updateJournalEntryPage hook
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error completing objective', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error completing objective:', error);
     }
   }
 
@@ -1351,7 +1351,7 @@ export class QuestPin extends PIXI.Container {
       // The pin will be automatically updated by the updateJournalEntryPage hook
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error failing objective', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error failing objective:', error);
     }
   }
 
@@ -1398,7 +1398,7 @@ export class QuestPin extends PIXI.Container {
 
       return null;
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest data', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error getting quest data:', error);
       return null;
     }
   }
@@ -1444,29 +1444,14 @@ export class QuestPin extends PIXI.Container {
           tooltipData.participants = this.participants;
         }
         
-        // Debug logging for participants
-        if (tooltipData) {
-          getBlacksmith()?.utils.postConsoleAndNotification(
-            'SQUIRE | QUEST PIN: Tooltip participants data',
-            { 
-              pinParticipants: this.participants, 
-              tooltipParticipants: tooltipData.participants,
-              hasPinParticipants: this.participants && this.participants.length > 0,
-              hasTooltipParticipants: tooltipData.participants && tooltipData.participants.length > 0
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-          );
-        }
+        // Debug: Tooltip participants data
         
         if (tooltipData) {
           tooltipData.controls = game.user.isGM ?
             'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :
             'Left-click: Select & jump to quest';
         }
-      } else {
+                            } else {
         // For objective pins, use objective tooltip data with pin's actual state
         tooltipData = await getObjectiveTooltipData(this.questUuid, this.objectiveIndex, this.questState, this.objectiveState);
         tooltipId = 'squire-questpin-objective-tooltip';
@@ -1481,15 +1466,8 @@ export class QuestPin extends PIXI.Container {
       
       // Show tooltip with appropriate ID
       showQuestTooltip(tooltipId, tooltipData, event);
-    } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification(
-        'Error showing quest pin tooltip',
-        { questUuid: this.questUuid, objectiveIndex: this.objectiveIndex, error: error.message },
-        false,
-        true,
-        false,
-        MODULE.NAME
-      );
+                } catch (error) {
+      console.error('Error showing quest pin tooltip:', { questUuid: this.questUuid, objectiveIndex: this.objectiveIndex, error: error.message });
     }
   }
 
@@ -1525,16 +1503,9 @@ export class QuestPin extends PIXI.Container {
       }
       
       return false; // Mouse is not over any window
-    } catch (error) {
+            } catch (error) {
       // If there's an error checking, default to allowing tooltips
-      getBlacksmith()?.utils.postConsoleAndNotification(
-        'Error checking mouse position vs windows',
-        { error: error.message },
-        false,
-        true,
-        false,
-        MODULE.NAME
-      );
+      console.error('Error checking mouse position vs windows:', { error: error.message });
       return false;
     }
   }
@@ -1563,7 +1534,7 @@ export class QuestPin extends PIXI.Container {
      // Always hide the tooltip when leaving the pin area
      if (this.pinType === 'quest') {
        hideQuestTooltip('squire-questpin-quest-tooltip');
-     } else {
+        } else {
        hideQuestTooltip('squire-questpin-objective-tooltip');
      }
      
@@ -1649,7 +1620,7 @@ Hooks.on('dropCanvasData', async (canvas, data) => {
                                 name: actor.name,
                                 img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
                             });
-                        } else {
+        } else {
                             // Fallback: use UUID as name
                             processedParticipants.push({
                                 uuid: participantUuid,
@@ -1755,23 +1726,15 @@ function registerQuestPinsWithHookManager() {
             HookManager.registerPanel('questPins', questPinsProxy);
             
             getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
                 'Quest Pins registered with HookManager',
                 {},
-                false,
                 true,
-                false,
-                MODULE.NAME
+                false
             );
         }
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Error registering quest pins with HookManager',
-            { error },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Error registering quest pins with HookManager:', error);
     }
 }
 
@@ -1849,32 +1812,32 @@ export function loadPersistedPins() {
                             }
                             
                             if (content) {
-                                const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
-                                if (tasksMatch) {
-                                    const tasksHtml = tasksMatch[1];
-                                    const parser = new DOMParser();
-                                    const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                                    const ul = ulDoc.querySelector('ul');
-                                    if (ul) {
-                                        const liList = Array.from(ul.children);
+            const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+            if (tasksMatch) {
+                const tasksHtml = tasksMatch[1];
+                const parser = new DOMParser();
+                const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                const ul = ulDoc.querySelector('ul');
+                if (ul) {
+                    const liList = Array.from(ul.children);
                                         const li = liList[pin.objectiveIndex];
                                         if (li) {
                                             let currentState = 'active';
-                                            if (li.querySelector('s')) {
+                        if (li.querySelector('s')) {
                                                 currentState = 'completed';
-                                            } else if (li.querySelector('code')) {
+                        } else if (li.querySelector('code')) {
                                                 currentState = 'failed';
-                                            } else if (li.querySelector('em')) {
+                        } else if (li.querySelector('em')) {
                                                 currentState = 'hidden';
                                             }
                                             pin.updateObjectiveState(currentState);
                                         }
                                         }
                                     }
-                                }
-                            }
-                        }
-                                        } catch (error) {
+                    }
+                }
+            }
+        } catch (error) {
                         // Error updating pin state on load
                     }
                 
@@ -1927,7 +1890,7 @@ async function cleanupOrphanedPins() {
         if (orphanedCount > 0) {
             await scene.setFlag(MODULE.ID, 'questPins', validPins);
         }
-    } catch (error) {
+        } catch (error) {
         // Error cleaning up orphaned pins
     }
 }

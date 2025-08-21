@@ -237,14 +237,7 @@ export async function copyToClipboard(text) {
             ui.notifications.info('Template copied to clipboard!');
             return true;
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Modern clipboard API failed',
-                { error },
-                false,
-                false,
-                false,
-                MODULE.NAME
-            );
+            console.error('Modern clipboard API failed:', error);
         }
     }
     
@@ -267,14 +260,7 @@ export async function copyToClipboard(text) {
             return true;
         }
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Legacy clipboard method failed',
-            { error },
-            false,
-            false,
-            false,
-            MODULE.NAME
-        );
+        console.error('Legacy clipboard method failed:', error);
     }
     
     // Method 3: Show dialog with text for manual copying
@@ -330,38 +316,17 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
     try {
         // Validate input parameters
         if (!tooltipId || typeof tooltipId !== 'string') {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'showQuestTooltip: Invalid tooltipId parameter',
-                { tooltipId, data },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('showQuestTooltip: Invalid tooltipId parameter', { tooltipId, data });
             return;
         }
 
         if (!data || typeof data !== 'object') {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'showQuestTooltip: Invalid data parameter',
-                { tooltipId, data },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('showQuestTooltip: Invalid data parameter', { tooltipId, data });
             return;
         }
 
         if (!event) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'showQuestTooltip: Missing event parameter',
-                { tooltipId, data },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('showQuestTooltip: Missing event parameter', { tooltipId, data });
             return;
         }
 
@@ -397,27 +362,13 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 // Clear the timeout reference
                 tooltipTimeouts.delete(tooltipId);
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'showQuestTooltip: Error in timeout callback',
-                    { tooltipId, error: error.message },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('showQuestTooltip: Error in timeout callback', { tooltipId, error: error.message });
             }
         }, delay);
         // Store the timeout reference
         tooltipTimeouts.set(tooltipId, timeoutId);
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'showQuestTooltip: Unexpected error',
-            { tooltipId, error: error.message },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('showQuestTooltip: Unexpected error', { tooltipId, error: error.message });
     }
 }
 
@@ -519,14 +470,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
             if (page) break;
         }
         if (!page) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'SQUIRE | QUESTS getObjectiveTooltipData: Journal page not found',
-                { questPageUuid, objectiveIndex },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('SQUIRE | QUESTS getObjectiveTooltipData: Journal page not found', { questPageUuid, objectiveIndex });
             return null;
         }
 
@@ -535,28 +479,14 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
         // Parse the quest entry using the source of truth
         const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
         if (!entry) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'SQUIRE | QUESTS getObjectiveTooltipData: Failed to parse quest entry',
-                { questPageUuid, objectiveIndex },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('SQUIRE | QUESTS getObjectiveTooltipData: Failed to parse quest entry', { questPageUuid, objectiveIndex });
             return null;
         }
 
         // Get the relevant objective/task
         const task = entry.tasks[objectiveIndex];
         if (!task) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'SQUIRE | QUESTS getObjectiveTooltipData: Objective not found',
-                { questPageUuid, objectiveIndex },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('SQUIRE | QUESTS getObjectiveTooltipData: Objective not found', { questPageUuid, objectiveIndex });
             return null;
         }
 
@@ -609,14 +539,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
             objectiveNearby
         };
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'SQUIRE | QUESTS getObjectiveTooltipData: Unexpected error',
-            { questPageUuid, objectiveIndex, error: error.message },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
+        console.error('SQUIRE | QUESTS getObjectiveTooltipData: Unexpected error', { questPageUuid, objectiveIndex, error: error.message });
         return null;
     }
 }
@@ -635,14 +558,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
             if (page) break;
         }
         if (!page) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'SQUIRE | QUESTS getQuestTooltipData: Journal page not found',
-                { questPageUuid },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('SQUIRE | QUESTS getQuestTooltipData: Journal page not found', { questPageUuid });
             return null;
         }
 
@@ -651,14 +567,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
         // Parse the quest entry using the source of truth
         const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
         if (!entry) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'SQUIRE | QUESTS getQuestTooltipData: Failed to parse quest entry',
-                { questPageUuid },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
+            console.error('SQUIRE | QUESTS getQuestTooltipData: Failed to parse quest entry', { questPageUuid });
             return null;
         }
 
@@ -672,19 +581,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
         
         // Get participants info for portraits - use the already parsed data
         const participants = entry.participants || [];
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'SQUIRE | QUESTS getQuestTooltipData: Using participants data',
-            { 
-                entryParticipants: entry.participants,
-                isArray: Array.isArray(entry.participants),
-                length: participants.length,
-                participants: participants
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
+        // Debug: participants data loaded
 
         // Get location info if available
         let location = '';
@@ -747,29 +644,11 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
             isGM: game.user.isGM
         };
         
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'SQUIRE | QUESTS getQuestTooltipData: Returning data',
-            { 
-                participantsCount: participants.length,
-                participants: participants,
-                resultKeys: Object.keys(result)
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
+        // Debug: returning quest tooltip data
         
         return result;
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'SQUIRE | QUESTS getQuestTooltipData: Unexpected error',
-            { questPageUuid, error: error.message },
-            false,
-            true,
-            false,
-                MODULE.NAME
-        );
+        console.error('SQUIRE | QUESTS getQuestTooltipData: Unexpected error', { questPageUuid, error: error.message });
         return null;
     }
 }

@@ -27,12 +27,11 @@ export class HookManager {
         HookManager.instance._setupHooks();
         
         getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
             'HookManager initialized',
             {},
             false,
-            true,
-            false,
-            MODULE.NAME
+            false
         );
         
         return HookManager.instance;
@@ -47,12 +46,11 @@ export class HookManager {
         HookManager[`${panelType}Panel`] = panel;
         
         getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
             `Panel registered with HookManager`,
             { panelType, hasPanel: !!panel },
             false,
-            true,
-            false,
-            MODULE.NAME
+            false
         );
     }
     
@@ -69,12 +67,11 @@ export class HookManager {
         HookManager.hookIds.set('updateJournalEntryPage', journalHookId);
         
         getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
             'Journal hooks consolidated in HookManager',
             { hookId: journalHookId },
             false,
-            true,
-            false,
-            MODULE.NAME
+            false
         );
     }
     
@@ -85,34 +82,9 @@ export class HookManager {
     async _handleJournalEntryPageUpdate(page, changes, options, userId) {
         const blacksmith = getBlacksmith();
         
-        blacksmith?.utils.postConsoleAndNotification(
-            'HookManager: Journal entry page update',
-            { 
-                pageName: page.name, 
-                journalName: page.parent?.name || 'Unknown',
-                changes: Object.keys(changes),
-                userId
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
+        // Debug: journal entry page update processed
         
         // Route to appropriate panels based on content type and journal
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'HookManager: Routing journal update to panels',
-            { 
-                pageName: page.name, 
-                journalName: page.parent?.name || 'Unknown',
-                changes: Object.keys(changes),
-                userId
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         
         await Promise.all([
             this._routeToCodexPanel(page, changes, options, userId),
@@ -138,26 +110,10 @@ export class HookManager {
                 
                 // Skip panel refresh if currently importing
                 if (HookManager.codexPanel.isImporting) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'HookManager: Skipping codex panel refresh during import',
-                        { pageName: page.name },
-                        false,
-                        true,
-                        false,
-                        MODULE.NAME
-                    );
                     return;
                 }
                 
                 const blacksmith = getBlacksmith();
-                blacksmith?.utils.postConsoleAndNotification(
-                    'HookManager: Routing to CODEX panel',
-                    { pageName: page.name },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
                 
                 // Always refresh the data first
                 await HookManager.codexPanel._refreshData();
@@ -169,15 +125,7 @@ export class HookManager {
                 }
             }
         } catch (error) {
-            const blacksmith = getBlacksmith();
-            blacksmith?.utils.postConsoleAndNotification(
-                'HookManager: Error routing to CODEX panel',
-                { error, pageName: page.name },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('HookManager: Error routing to CODEX panel', { error, pageName: page.name });
         }
     }
     
@@ -195,36 +143,12 @@ export class HookManager {
                 
                 // Skip panel refresh if currently importing
                 if (HookManager.questPanel.isImporting) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'HookManager: Skipping quest panel refresh during import',
-                        { pageName: page.name },
-                        false,
-                        true,
-                        false,
-                        MODULE.NAME
-                    );
                     return;
                 }
                 
                 const blacksmith = getBlacksmith();
-                blacksmith?.utils.postConsoleAndNotification(
-                    'HookManager: Routing to Quest panel',
-                    { pageName: page.name },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
                 
                 // Always refresh the data first
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'HookManager: Refreshing quest panel data',
-                    { pageName: page.name },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
                 
                 await HookManager.questPanel._refreshData();
                 
@@ -238,15 +162,7 @@ export class HookManager {
                 await this._handleQuestSpecificUpdates(page, changes);
             }
         } catch (error) {
-            const blacksmith = getBlacksmith();
-            blacksmith?.utils.postConsoleAndNotification(
-                'HookManager: Error routing to Quest panel',
-                { error, pageName: page.name },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('HookManager: Error routing to Quest panel', { error, pageName: page.name });
         }
     }
     
@@ -264,14 +180,6 @@ export class HookManager {
                 if (currentPageId === page.id) {
                     
                     const blacksmith = getBlacksmith();
-                    blacksmith?.utils.postConsoleAndNotification(
-                        'HookManager: Routing to Notes panel',
-                        { pageName: page.name },
-                        false,
-                        true,
-                        false,
-                        MODULE.NAME
-                    );
                     
                     // Trigger a refresh through the PanelManager if it's available
                     if (PanelManager.instance && PanelManager.element) {
@@ -281,15 +189,7 @@ export class HookManager {
                 }
             }
         } catch (error) {
-            const blacksmith = getBlacksmith();
-            blacksmith?.utils.postConsoleAndNotification(
-                'HookManager: Error routing to Notes panel',
-                { error, pageName: page.name },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('HookManager: Error routing to Notes panel', { error, pageName: page.name });
         }
     }
     
@@ -308,18 +208,6 @@ export class HookManager {
             if (hasFlagChanges || hasContentChanges) {
                 
                 const blacksmith = getBlacksmith();
-                blacksmith?.utils.postConsoleAndNotification(
-                    'HookManager: Routing to Quest Pins',
-                    { 
-                        pageName: page.name, 
-                        flagChanges: hasFlagChanges ? changes.flags[MODULE.ID] : null,
-                        hasContentChanges: !!hasContentChanges
-                    },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
                 
                 // Update pin visibility and states
                 if (typeof HookManager.questPins.updateAllPinVisibility === 'function') {
@@ -327,15 +215,7 @@ export class HookManager {
                 }
             }
         } catch (error) {
-            const blacksmith = getBlacksmith();
-            blacksmith?.utils.postConsoleAndNotification(
-                'HookManager: Error routing to Quest Pins',
-                { error, pageName: page.name },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('HookManager: Error routing to Quest Pins', { error, pageName: page.name });
         }
     }
     
@@ -380,14 +260,7 @@ export class HookManager {
                             // Update objective states if applicable
                             this._updateQuestPinObjectiveStates(pin, page);
                         } catch (error) {
-                            blacksmith?.utils.postConsoleAndNotification(
-                                'HookManager: Error updating quest pin state',
-                                { error, pin, page },
-                                false,
-                                true,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('HookManager: Error updating quest pin state', { error, pin, page });
                         }
                     });
                 }
@@ -396,15 +269,7 @@ export class HookManager {
                 this._updateQuestPinStatuses(page);
             }
         } catch (error) {
-            const blacksmith = getBlacksmith();
-            blacksmith?.utils.postConsoleAndNotification(
-                'HookManager: Error handling quest-specific updates',
-                { error, page },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('HookManager: Error handling quest-specific updates', { error, page });
         }
     }
     
@@ -444,15 +309,7 @@ export class HookManager {
                 }
             }
         } catch (error) {
-            const blacksmith = getBlacksmith();
-            blacksmith?.utils.postConsoleAndNotification(
-                'HookManager: Error updating quest pin objective states',
-                { error, pin, page },
-                false,
-                true,
-                true,
-                MODULE.NAME
-            );
+            console.error('HookManager: Error updating quest pin objective states', { error, pin, page });
         }
     }
     
@@ -483,28 +340,12 @@ export class HookManager {
                             this._updateQuestPinObjectiveStates(pin, page);
                         }
                     } catch (error) {
-                        const blacksmith = getBlacksmith();
-                        blacksmith?.utils.postConsoleAndNotification(
-                            'HookManager: Error updating quest pin status',
-                            { error, pin, page },
-                            false,
-                            true,
-                            true,
-                            MODULE.NAME
-                        );
+                        console.error('HookManager: Error updating quest pin status', { error, pin, page });
                     }
                 });
             }
         } catch (error) {
-            const blacksmith = getBlacksmith();
-            blacksmith?.utils.postConsoleAndNotification(
-                'HookManager: Error updating quest pin statuses',
-                { error, page },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('HookManager: Error updating quest pin statuses', { error, page });
         }
     }
     
@@ -520,12 +361,11 @@ export class HookManager {
         HookManager.instance = null;
         
         getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
             'HookManager cleaned up',
             {},
             false,
-            true,
-            false,
-            MODULE.NAME
+            false
         );
     }
 }

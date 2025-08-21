@@ -20,14 +20,7 @@ export class NotesPanel {
      * @public
      */
     destroy() {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Notes Panel: Destroying panel',
-            {},
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
+        // Debug: Notes Panel destroying
         this.element = null;
     }
 
@@ -428,26 +421,12 @@ export class NotesPanel {
         try {
             const contentContainer = html.find('.journal-content');
             if (!contentContainer.length) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Journal content container not found',
-                    { html },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Journal content container not found');
                 return;
             }
             
             if (!page) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'No page provided to render',
-                    { page },
-                    false,
-                    false,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: No page provided to render
                 return;
             }
             
@@ -456,14 +435,7 @@ export class NotesPanel {
             
             // Verify the page is a valid object
             if (typeof page !== 'object' || page === null) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Invalid page object',
-                    { page },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Invalid page object:', page);
                 contentContainer.html(`
                     <div class="render-error">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -495,14 +467,7 @@ export class NotesPanel {
                 if (typeof page.renderContent === 'function') {
                     // Validate page type first - renderContent works best with text/markdown
                     if (!['text', 'markdown'].includes(page.type)) {
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            `Unsupported page type for renderContent: ${page.type}`,
-                            { pageType: page.type },
-                            false,
-                            false,
-                            false,
-                            MODULE.NAME
-                        );
+                        // Debug: Unsupported page type for renderContent
                         // Don't return - let it try but prepare for failure
                     }
                     
@@ -512,14 +477,7 @@ export class NotesPanel {
                         
                         // Check if content is valid
                         if (!renderedContent || (typeof renderedContent === 'string' && renderedContent.trim() === '')) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'renderContent returned empty content, trying fallback with manual enrichment',
-                                { renderedContent },
-                                false,
-                                false,
-                                false,
-                                MODULE.NAME
-                            );
+                            // Debug: renderContent returned empty content, trying fallback
                             
                             // Fallback with Manual Enrichment as suggested
                             let content = page.text?.content ?? page.text ?? '';
@@ -555,14 +513,7 @@ export class NotesPanel {
                         
                         // If no content was rendered, add placeholder text
                         if (!hasContent) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'renderContent didn\'t produce visible content',
-                                { hasContent },
-                                false,
-                                false,
-                                false,
-                                MODULE.NAME
-                            );
+                            // Debug: renderContent didn't produce visible content
                             contentContainer.html(`
                                 <div class="empty-page-content">
                                     <p>${canEditPage ? 
@@ -578,26 +529,12 @@ export class NotesPanel {
                         contentContainer.find('a').attr('target', '_blank');
                         return;
                     } catch (innerError) {
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'Error rendering content',
-                            { innerError },
-                            false,
-                            false,
-                            true,
-                            MODULE.NAME
-                        );
+                        console.error('Error rendering content:', innerError);
                         throw innerError; // Rethrow to outer catch block
                     }
                 }
             } catch (renderContentError) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error using renderContent method',
-                    { renderContentError },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error using renderContent method:', renderContentError);
                 // Continue to fallback methods
             }
             
@@ -623,25 +560,11 @@ export class NotesPanel {
                         contentContainer.find('a').attr('target', '_blank');
                         return;
                     } else {
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'Failed to extract content from journal UI',
-                            { uiContent },
-                            false,
-                            false,
-                            false,
-                            MODULE.NAME
-                        );
+                        // Debug: Failed to extract content from journal UI
                     }
                 }
             } catch (uiError) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error using UI extraction method',
-                    { uiError },
-                    false,
-                    false,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: Error using UI extraction method
                 // Continue to fallback methods
             }
             
@@ -695,14 +618,7 @@ export class NotesPanel {
                     
                     // If no content was rendered, add placeholder text
                     if (!hasContent) {
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'Native render didn\'t produce visible content',
-                            { hasContent },
-                            false,
-                            false,
-                            false,
-                            MODULE.NAME
-                        );
+                        // Debug: Native render didn't produce visible content
                         contentContainer.html(`
                             <div class="empty-page-content">
                                 <p>${canEditPage ? 
@@ -719,14 +635,7 @@ export class NotesPanel {
                     return;
                 }
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Native render method failed',
-                    { error },
-                    false,
-                    false,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: Native render method failed
                 // Continue to fallback methods
             }
             
@@ -824,14 +733,7 @@ export class NotesPanel {
                                 rolls: true
                             });
                         } catch (enrichError) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Error enriching content',
-                                { enrichError },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Error enriching content:', enrichError);
                         }
                     }
                     
@@ -877,25 +779,11 @@ export class NotesPanel {
                     // Make all links open in a new tab
                     contentContainer.find('a:not(.open-journal-button)').attr('target', '_blank');
                 } catch (textError) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Text fallback rendering failed',
-                        { textError },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Text fallback rendering failed:', textError);
                 }
             }
         } catch (globalError) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Catastrophic error in _renderJournalContent',
-                { globalError },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Catastrophic error in _renderJournalContent:', globalError);
             try {
                 html.find('.journal-content').html(`
                     <div class="render-error">
@@ -918,14 +806,7 @@ export class NotesPanel {
                     }
                 });
             } catch (e) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Failed to display error message',
-                    { e },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Failed to display error message:', e);
             }
         }
     }
@@ -1167,14 +1048,7 @@ export class NotesPanel {
                 try {
                     page = await page;
                 } catch (pagePromiseError) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Failed to resolve page promise',
-                        { pagePromiseError },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Failed to resolve page promise:', pagePromiseError);
                     return '';
                 }
             }
@@ -1192,14 +1066,7 @@ export class NotesPanel {
                             try {
                                 content = await page.text.content;
                             } catch (contentPromiseError) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'Failed to resolve content promise',
-                                    { contentPromiseError },
-                                    false,
-                                    false,
-                                    true,
-                                    MODULE.NAME
-                                );
+                                console.error('Failed to resolve content promise:', contentPromiseError);
                             }
                         } else {
                             content = page.text.content;
@@ -1221,14 +1088,7 @@ export class NotesPanel {
                         try {
                             content = await page.text;
                         } catch (textPromiseError) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Failed to resolve text promise',
-                                { textPromiseError },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Failed to resolve text promise:', textPromiseError);
                         }
                     }
                 }
@@ -1243,14 +1103,7 @@ export class NotesPanel {
                         try {
                             content = await page.content;
                         } catch (contentPromiseError) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Failed to resolve content promise',
-                                { contentPromiseError },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Failed to resolve content promise:', contentPromiseError);
                         }
                     }
                 }
@@ -1265,14 +1118,7 @@ export class NotesPanel {
                             try {
                                 content = await page.document.text.content;
                             } catch (docContentPromiseError) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'Failed to resolve document content promise',
-                                    { docContentPromiseError },
-                                    false,
-                                    false,
-                                    true,
-                                    MODULE.NAME
-                                );
+                                console.error('Failed to resolve document content promise:', docContentPromiseError);
                             }
                         } else {
                             content = page.document.text.content;
@@ -1297,14 +1143,7 @@ export class NotesPanel {
                         try {
                             content = await content;
                         } catch (finalPromiseError) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Failed to resolve final content promise',
-                                { finalPromiseError },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Failed to resolve final content promise:', finalPromiseError);
                             content = '';
                         }
                     }
@@ -1316,14 +1155,7 @@ export class NotesPanel {
                         try {
                             content = String(content);
                         } catch (stringError) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Failed to convert content to string',
-                                { stringError },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Failed to convert content to string:', stringError);
                             content = '';
                         }
                     }
@@ -1338,14 +1170,7 @@ export class NotesPanel {
             // For non-text types
             return '';
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error getting page content',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error getting page content:', error);
             return '';
         }
     }
@@ -1430,14 +1255,7 @@ export class NotesPanel {
                             // Return the content
                             resolve(content || null);
                         } catch (extractError) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Error extracting content from temporary journal',
-                                { extractError },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Error extracting content from temporary journal:', extractError);
                             
                             // Make sure to close the sheet even if there's an error
                             try { tempSheet.close(); } catch (e) {}
@@ -1469,14 +1287,7 @@ export class NotesPanel {
                 return content || null;
             }
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error getting content from journal UI',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error getting content from journal UI:', error);
             return null;
         }
     }
@@ -1539,14 +1350,7 @@ export class NotesPanel {
             // Return the formatted HTML
             return tempDiv.innerHTML;
         } catch (e) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error applying Foundry styling',
-                { e },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error applying Foundry styling:', e);
             return html;
         }
     }
@@ -1587,14 +1391,7 @@ export class NotesPanel {
             
             return true;
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error opening journal page',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error opening journal page:', error);
             ui.notifications.error("Error opening journal page: " + error.message);
             return null;
         }

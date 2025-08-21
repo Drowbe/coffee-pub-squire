@@ -45,14 +45,7 @@ Hooks.once('socketlib.ready', () => {
                 const sourceItem = sourceActor.items.get(data.sourceItemId);
                 
                 if (!sourceActor || !targetActor || !sourceItem) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Missing actor or item data for transfer',
-                        { data },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Missing actor or item data for transfer:', { data });
                     return;
                 }
                 
@@ -85,14 +78,7 @@ Hooks.once('socketlib.ready', () => {
                 }
                 
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error executing item transfer',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error executing item transfer:', error);
             }
         });
         
@@ -105,14 +91,7 @@ Hooks.once('socketlib.ready', () => {
                 const targetActor = game.actors.get(data.targetActorId);
                 
                 if (!sourceActor || !targetActor) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Missing required actors for transfer request message',
-                        { data },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Missing required actors for transfer request message:', { data });
                     return;
                 }
 
@@ -147,14 +126,7 @@ Hooks.once('socketlib.ready', () => {
                     }
                 });
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error creating transfer request message',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error creating transfer request message:', error);
             }
         });
         
@@ -170,14 +142,7 @@ Hooks.once('socketlib.ready', () => {
                 const targetActor = game.actors.get(data.targetActorId);
                 
                 if (!sourceActor || !targetActor) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Missing required actors for transfer complete message',
-                        { data },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Missing required actors for transfer complete message:', { data });
                     return;
                 }
                 
@@ -201,14 +166,7 @@ Hooks.once('socketlib.ready', () => {
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error creating transfer complete message',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error creating transfer complete message:', error);
             }
         });
 
@@ -221,14 +179,7 @@ Hooks.once('socketlib.ready', () => {
                 const targetActor = game.actors.get(data.targetActorId);
                 
                 if (!sourceActor || !targetActor) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Missing required actors for transfer rejected message',
-                        { data },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Missing required actors for transfer rejected message:', { data });
                     return;
                 }
                 
@@ -252,14 +203,7 @@ Hooks.once('socketlib.ready', () => {
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error creating transfer rejected message',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error creating transfer rejected message:', error);
             }
         });
         
@@ -272,36 +216,15 @@ Hooks.once('socketlib.ready', () => {
                 if (message) {
                     await message.delete();
                 } else {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        `Could not find message with ID ${messageId} to delete`,
-                        { messageId },
-                        false,
-                        false,
-                        false,
-                        MODULE.NAME
-                    );
+                    console.error(`Could not find message with ID ${messageId} to delete:`, { messageId });
                 }
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error deleting transfer request message',
-                    { messageId, error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error deleting transfer request message:', { messageId, error });
             }
         });
         
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Error during socketlib initialization',
-            { error },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Error during socketlib initialization:', error);
     }
 });
 
@@ -309,12 +232,11 @@ Hooks.once('socketlib.ready', () => {
 
 Hooks.once('init', async function() {
     game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification(
+        MODULE.NAME,
         `${MODULE.NAME} | Initializing ${MODULE.TITLE}`,
         null,
-        false,
         true,
-        false,
-        MODULE.NAME
+        false
     );
     
     // Register module settings -- moved to READY
@@ -416,14 +338,7 @@ Hooks.once('init', async function() {
 Hooks.once('ready', async function() {
     const blacksmith = getBlacksmith();
     if (!blacksmith) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Required dependency coffee-pub-blacksmith not found',
-            { blacksmith },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Required dependency coffee-pub-blacksmith not found:', { blacksmith });
         return;
     }
 
@@ -441,12 +356,11 @@ Hooks.once('ready', async function() {
     } catch (error) {
         // Setting not registered yet, treat as not excluded
         blacksmith.utils.postConsoleAndNotification(
+            MODULE.NAME,
             'Settings not yet registered, treating user as not excluded',
             { error },
-            false,
             true,
-            false,
-            MODULE.NAME
+            false
         );
     }
     
@@ -460,6 +374,7 @@ Hooks.once('ready', async function() {
 
     // Debug log the exclusion status
     blacksmith.utils.postConsoleAndNotification(
+        MODULE.NAME,
         `${MODULE.NAME} | User Exclusion Check`,
         {
             currentUserId,
@@ -468,10 +383,8 @@ Hooks.once('ready', async function() {
             excludedUsers,
             allUsers: game.users.map(u => ({ id: u.id, name: u.name }))
         },
-        false,
         true,
-        false,
-        MODULE.NAME
+        false
     );
 
     if (isExcluded) {
@@ -511,16 +424,15 @@ Hooks.once('ready', async function() {
     
     // Debug log for Blacksmith sound choices
     blacksmith.utils.postConsoleAndNotification(
+        MODULE.NAME,
         `${MODULE.NAME} | Blacksmith API`,
         {
             api: blacksmith,
             BLACKSMITH: blacksmith.BLACKSMITH,
             soundChoices: blacksmith.BLACKSMITH?.arrSoundChoices
         },
-        false,
         true,
-        false,
-        MODULE.NAME
+        false
     );
 
     // Initialize Squire after settings are registered (with delay to ensure everything is ready)
@@ -716,14 +628,7 @@ async function handleTransferRequest(transferData) {
                     status: response ? 'accepted' : 'rejected'
                 });
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error updating transfer request flag',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error updating transfer request flag:', error);
             }
         } else if (game.modules.get('socketlib')?.active) {
             // Ask a GM to update the flag
@@ -742,14 +647,7 @@ async function handleTransferRequest(transferData) {
         }
         
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Error handling transfer request',
-            { error },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Error handling transfer request:', error);
         ui.notifications.error("Error processing transfer request");
     }
 }
@@ -797,14 +695,7 @@ async function setTransferRequestFlag(targetActorId, flagKey, flagData) {
     
     const targetActor = game.actors.get(targetActorId);
     if (!targetActor) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            `Could not find actor with ID ${targetActorId}`,
-            { targetActorId },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error(`Could not find actor with ID ${targetActorId}:`, { targetActorId });
         return;
     }
     
@@ -825,14 +716,7 @@ async function executeItemTransfer(transferData, accepted) {
     const sourceItem = sourceActor.items.get(transferData.sourceItemId);
     
     if (!sourceActor || !targetActor || !sourceItem) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Missing actor or item data for transfer',
-            { transferData },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Missing actor or item data for transfer:', { transferData });
         return;
     }
     
@@ -921,14 +805,7 @@ async function executeItemTransfer(transferData, accepted) {
         }
         
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Error executing item transfer',
-            { error },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Error executing item transfer:', error);
     }
 }
 
@@ -988,22 +865,14 @@ function cleanupModule() {
         }
 
         getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
             'Squire module cleanup completed',
             {},
             false,
-            false,
-            false,
-            MODULE.NAME
+            false
         );
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Error during module cleanup',
-            { error },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Error during module cleanup:', error);
     }
 }
 

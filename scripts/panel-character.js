@@ -221,14 +221,7 @@ export class CharacterPanel {
                                 ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
                             }
                         } catch (error) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'Error managing condition',
-                                { error, conditionId, isActive },
-                                false,
-                                false,
-                                true,
-                                MODULE.NAME
-                            );
+                            console.error('Error managing condition:', error);
                             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                         }
                     });
@@ -244,36 +237,15 @@ export class CharacterPanel {
                 try {
                     $refreshIcon.addClass('spinning');
                     const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                    blacksmith?.utils.postConsoleAndNotification(
-                        "Starting tray refresh",
-                        { actor: this.actor },
-                        false,
-                        true,
-                        false,
-                        MODULE.NAME
-                    );
+                    // Debug: Starting tray refresh
                     await PanelManager.initialize(this.actor);
                     // Force a re-render of all panels
                     if (PanelManager.instance) {
                         await PanelManager.instance.renderPanels(PanelManager.element);
                     }
-                    blacksmith?.utils.postConsoleAndNotification(
-                        "Tray Refresh",
-                        "The tray has been refreshed.",
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    // Debug: Tray refresh completed
                 } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Error refreshing tray',
-                        { error },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Error refreshing tray:', error);
                     ui.notifications.error("Failed to refresh tray");
                 } finally {
                     $refreshIcon.removeClass('spinning');

@@ -7,17 +7,17 @@ import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { ControlPanel } from './panel-control.js';
 import { FeaturesPanel } from './panel-features.js';
-import { DiceTrayPanel } from "./panel-dicetray.js";
-import { ExperiencePanel } from "./panel-experience.js";
-import { HealthPanel } from "./panel-health.js";
-import { StatsPanel } from "./panel-stats.js";
-import { AbilitiesPanel } from "./panel-abilities.js";
-import { PartyPanel } from "./panel-party.js";
-import { PartyStatsPanel } from "./panel-party-stats.js";
-import { NotesPanel } from "./panel-notes.js";
-import { CodexPanel } from "./panel-codex.js";
+import { DiceTrayPanel } from './panel-dicetray.js';
+import { ExperiencePanel } from './panel-experience.js';
+import { HealthPanel } from './panel-health.js';
+import { StatsPanel } from './panel-stats.js';
+import { AbilitiesPanel } from './panel-abilities.js';
+import { PartyPanel } from './panel-party.js';
+import { PartyStatsPanel } from './panel-party-stats.js';
+import { NotesPanel } from './panel-notes.js';
+import { CodexPanel } from './panel-codex.js';
 import { QuestPanel } from './panel-quest.js';
-import { MacrosPanel } from "./panel-macros.js";
+import { MacrosPanel } from './panel-macros.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
 import { QuestPin } from './quest-pin.js';
 import { HandleManager } from './manager-handle.js';
@@ -92,12 +92,11 @@ export class PanelManager {
         } catch (error) {
             // Setting not registered yet, treat as not excluded
             getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
                 'Settings not yet registered, treating user as not excluded',
                 { error },
                 false,
-                true,
-                false,
-                MODULE.NAME
+                false
             );
         }
         
@@ -196,6 +195,7 @@ export class PanelManager {
                     // Skip auto-favoriting for actors from compendiums
                     const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
                     blacksmith?.utils.postConsoleAndNotification(
+                        MODULE.NAME,
                         "SQUIRE | Skipping auto-favorites initialization for actor from compendium",
                         { 
                             actorName: actor.name, 
@@ -205,9 +205,7 @@ export class PanelManager {
                             collectionId: actor.collection?.id || 'Unknown'
                         },
                         false,
-                        true,
-                        false,
-                        MODULE.NAME
+                        false
                     );
                 } else {
                     await FavoritesPanel.initializeNpcFavorites(actor);
@@ -614,14 +612,7 @@ export class PanelManager {
                         new AwardClass(actors).render(true);
                     }
                 } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Error launching Award dialog',
-                        { error },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Error launching Award dialog:', error);
                     ui.notifications.error("Error launching Award dialog. See console for details.");
                 }
                 
@@ -714,14 +705,7 @@ export class PanelManager {
                     blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error adding tokens to combat',
-                    { error, controlledTokens: controlledTokens.length },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error adding tokens to combat:', error);
                 ui.notifications.error("Error adding tokens to combat. See console for details.");
             }
         });
@@ -782,51 +766,20 @@ export class PanelManager {
                 // Get the current actor
                 const actor = PanelManager.currentActor;
                 if (!actor) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'DROPZONE | No actor found',
-                        { actor },
-                        false,
-                        false,
-                        false,
-                        MODULE.NAME
-                    );
                     ui.notifications.warn("No character selected.");
                     return;
                 }
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'DROPZONE | Current actor',
-                    { actorName: actor.name },
-                    false,
-                    false,
-                    false,
-                    MODULE.NAME
-                );
                 
                 // Handle different drop types
                 let item;
                 switch (data.type) {
                     case 'Item':
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'DROPZONE | Processing Item drop',
-                            { dataType: data.type },
-                            false,
-                            false,
-                            false,
-                            MODULE.NAME
-                        );
                         // This could be either a world item OR a drag from character sheet
                         if ((data.actorId && (data.data?.itemId || data.embedId)) || 
                             data.fromInventory || 
                             (data.uuid && data.uuid.startsWith("Actor."))) {
                             
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'DROPZONE | Item is from character sheet',
-                                { data },
-                                false,
-                                false,
-                                false,
-                                MODULE.NAME
-                            );
+
                             // This is a drag from character sheet
                             let sourceActorId;
                             let itemId;
@@ -845,14 +798,6 @@ export class PanelManager {
                             
                             const sourceActor = game.actors.get(sourceActorId);
                             if (!sourceActor || !itemId) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'DROPZONE | No source actor or item ID',
-                                    { sourceActorId, itemId },
-                                    false,
-                                    false,
-                                    false,
-                                    MODULE.NAME
-                                );
                                 ui.notifications.warn("Could not determine the source actor or item.");
                                 return;
                             }
@@ -860,14 +805,6 @@ export class PanelManager {
                             // Get the item from the source actor
                             const sourceItem = sourceActor.items.get(itemId);
                             if (!sourceItem) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'DROPZONE | No source item found',
-                                    { sourceActorId, itemId },
-                                    false,
-                                    false,
-                                    false,
-                                    MODULE.NAME
-                                );
                                 ui.notifications.warn("Could not find the item on the source character.");
                                 return;
                             }
@@ -1089,26 +1026,10 @@ export class PanelManager {
                                 return;
                             }
                         } else {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                'DROPZONE | Item is from world',
-                                { data },
-                                false,
-                                false,
-                                false,
-                                MODULE.NAME
-                            );
                             try {
                                 // Get the item from the UUID
                                 const item = await fromUuid(data.uuid);
                                 if (!item) {
-                                    getBlacksmith()?.utils.postConsoleAndNotification(
-                                        'DROPZONE | Failed to get item from UUID',
-                                        { uuid: data.uuid },
-                                        false,
-                                        false,
-                                        false,
-                                        MODULE.NAME
-                                    );
                                     return;
                                 }
                                 // Create the item on the actor
@@ -1160,14 +1081,7 @@ export class PanelManager {
                                         break;
                                 }
                             } catch (error) {
-                                getBlacksmith()?.utils.postConsoleAndNotification(
-                                    'DROPZONE | Error processing world item',
-                                    { error },
-                                    false,
-                                    false,
-                                    true,
-                                    MODULE.NAME
-                                );
+                                console.error('DROPZONE | Error processing world item:', error);
                                 ui.notifications.error("Error processing dropped item. See console for details.");
                             }
                         }
@@ -1176,14 +1090,7 @@ export class PanelManager {
                 }
                 
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'DROPZONE | Error handling drop',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('DROPZONE | Error handling drop:', error);
                 ui.notifications.error("Error handling drop. See console for details.");
             }
         });
@@ -1205,14 +1112,6 @@ export class PanelManager {
         if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
         
         if (!enabledTabs.includes(mode)) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'PanelManager.setViewMode: Requested mode is not enabled',
-                { mode, enabledTabs },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
             return;
         }
         
@@ -1230,14 +1129,6 @@ export class PanelManager {
         // Safety check: ensure tray element exists before manipulating it
         const tray = PanelManager.element;
         if (!tray) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'PanelManager.setViewMode: Tray element is null, skipping view mode update',
-                { mode },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
             return;
         }
         
@@ -1592,12 +1483,11 @@ export class PanelManager {
         PanelManager._lastInitTime = 0;
 
         getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
             'PanelManager cleanup completed',
             {},
             false,
-            false,
-            false,
-            MODULE.NAME
+            false
         );
     }
 
@@ -1647,37 +1537,10 @@ export class PanelManager {
                 HookManager.registerPanel('quest', this.questPanel);
                 HookManager.registerPanel('notes', this.notesPanel);
                 
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Panels registered with HookManager',
-                    { 
-                        hasCodex: !!this.codexPanel,
-                        hasQuest: !!this.questPanel,
-                        hasNotes: !!this.notesPanel
-                    },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
-            } else {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'HookManager not available for panel registration',
-                    {},
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
+
             }
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error registering panels with HookManager',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error registering panels with HookManager:', error);
         }
     }
 
@@ -1801,15 +1664,6 @@ async function initializeSquireAfterSettings() {
         if (PanelManager.element) {
             PanelManager.element.addClass('expanded');
         }
-    } else {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'No Initial Actor Found',
-            { reason: "Could not find any suitable token or character" },
-            false,
-            false,
-            false,
-            MODULE.NAME
-        );
     }
 }
 
@@ -1936,20 +1790,6 @@ async function _updateHealthPanelFromSelection() {
     // Check if we need to change actors
     if (PanelManager.currentActor?.id !== actorToUse.id) {
         // Actor changed - update the instance without recreating the tray
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        blacksmith?.utils.postConsoleAndNotification(
-            'Actor Changed',
-            { 
-                from: PanelManager.currentActor?.name || 'none',
-                to: actorToUse.name,
-                wasExpanded: wasExpanded,
-                isPinned: PanelManager.isPinned
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         
         // Add fade-out animation to tray panel wrapper if appropriate
         if (PanelManager.instance) {
@@ -2101,57 +1941,19 @@ Hooks.on('deleteToken', async (token) => {
 
 // Handle actor updates that require full re-initialization
 Hooks.on('updateActor', async (actor, changes) => {
-    // Debug logging for hook execution
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Actor Hook triggered',
-        { 
-            actorName: actor.name, 
-            actorId: actor.id,
-            isCurrentActor: PanelManager.currentActor?.id === actor.id,
-            hasInstance: !!PanelManager.instance,
-            changes: Object.keys(changes)
-        },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only process if this is the actor currently being managed by Squire
     if (PanelManager.currentActor?.id !== actor.id) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Actor Hook filtered out - not current actor',
-            { actorName: actor.name, actorId: actor.id },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    // Only process if PanelManager instance exists
+        // Only process if PanelManager instance exists
     if (!PanelManager.instance) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Actor Hook filtered out - no instance',
-            { actorName: actor.name, actorId: actor.id },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Actor Hook processing entry',
-        { actorName: actor.name, actorId: actor.id, changes: Object.keys(changes) },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only handle major changes that require full re-initialization
     const needsFullUpdate = changes.name || // Name change
@@ -2192,175 +1994,57 @@ Hooks.on('pauseGame', async (paused) => {
 
 // Handle active effect creation
 Hooks.on('createActiveEffect', async (effect) => {
-    // Debug logging for hook execution
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Effect Hook triggered',
-        { 
-            effectName: effect.name,
-            effectId: effect.id,
-            parentName: effect.parent?.name || 'Unknown',
-            parentId: effect.parent?.id || 'Unknown',
-            isCurrentActor: PanelManager.currentActor?.id === effect.parent?.id,
-            hasInstance: !!PanelManager.instance
-        },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only process if this effect belongs to the actor currently being managed by Squire
     if (PanelManager.currentActor?.id !== effect.parent?.id) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Effect Hook filtered out - not current actor',
-            { effectName: effect.name, parentName: effect.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
     // Only process if PanelManager instance exists
     if (!PanelManager.instance) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Effect Hook filtered out - no instance',
-            { effectName: effect.name, parentName: effect.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Effect Hook processing entry',
-        { effectName: effect.name, parentName: effect.parent?.name },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     await PanelManager.instance.updateHandle();
 });
 
 // Handle active effect deletion
 Hooks.on('deleteActiveEffect', async (effect) => {
-    // Debug logging for hook execution
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Effect Hook triggered',
-        { 
-            effectName: effect.name,
-            effectId: effect.id,
-            parentName: effect.parent?.name || 'Unknown',
-            parentId: effect.parent?.id || 'Unknown',
-            isCurrentActor: PanelManager.currentActor?.id === effect.parent?.id,
-            hasInstance: !!PanelManager.instance
-        },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only process if this effect belongs to the actor currently being managed by Squire
     if (PanelManager.currentActor?.id !== effect.parent?.id) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Effect Hook filtered out - not current actor',
-            { effectName: effect.name, parentName: effect.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
     // Only process if PanelManager instance exists
     if (!PanelManager.instance) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Effect Hook filtered out - no instance',
-            { effectName: effect.name, parentName: effect.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Effect Hook processing entry',
-        { effectName: effect.name, parentName: effect.parent?.name },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     await PanelManager.instance.updateHandle();
 });
 
 // Handle item creation
 Hooks.on('createItem', async (item) => {
-    // Debug logging for hook execution
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Item Creation Hook triggered',
-        { 
-            itemName: item.name,
-            itemId: item.id,
-            itemType: item.type,
-            parentName: item.parent?.name || 'Unknown',
-            parentId: item.parent?.id || 'Unknown',
-            isCurrentActor: PanelManager.currentActor?.id === item.parent?.id,
-            hasInstance: !!PanelManager.instance
-        },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only process if this item belongs to the actor currently being managed by Squire
     if (PanelManager.currentActor?.id !== item.parent?.id) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Item Creation Hook filtered out - not current actor',
-            { itemName: item.name, parentName: item.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
     // Only process if PanelManager instance exists
     if (!PanelManager.instance) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Item Creation Hook filtered out - no instance',
-            { itemName: item.name, parentName: item.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Item Creation Hook processing entry',
-        { itemName: item.name, parentName: item.parent?.name },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // No need to recreate the entire tray - just update relevant panels and handle
     await PanelManager.instance.renderPanels(PanelManager.element);
@@ -2371,60 +2055,19 @@ Hooks.on('createItem', async (item) => {
 Hooks.on('updateItem', async (item, changes) => {
     if (!item.parent) return;
     
-    // Debug logging for hook execution
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Item Update Hook triggered',
-        { 
-            itemName: item.name,
-            itemId: item.id,
-            itemType: item.type,
-            parentName: item.parent?.name || 'Unknown',
-            parentId: item.parent?.id || 'Unknown',
-            isCurrentActor: PanelManager.currentActor?.id === item.parent?.id,
-            hasInstance: !!PanelManager.instance,
-            changes: Object.keys(changes)
-        },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only process if this item belongs to the actor currently being managed by Squire
     if (PanelManager.currentActor?.id !== item.parent?.id) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Item Update Hook filtered out - not current actor',
-            { itemName: item.name, parentName: item.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
     // Only process if PanelManager instance exists
     if (!PanelManager.instance) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Item Update Hook filtered out - no instance',
-            { itemName: item.name, parentName: item.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Item Update Hook processing entry',
-        { itemName: item.name, parentName: item.parent?.name, changes: Object.keys(changes) },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Check if this is an NPC/monster and the item is a weapon being equipped
     // or a spell being prepared
@@ -2433,22 +2076,6 @@ Hooks.on('updateItem', async (item, changes) => {
         const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
         if (isFromCompendium) {
             // Skip auto-favoriting for actors from compendiums
-            blacksmith?.utils.postConsoleAndNotification(
-                "SQUIRE | Skipping auto-favorite for item update on actor from compendium",
-                { 
-                    actorName: item.parent.name, 
-                    actorType: item.parent.type,
-                    itemName: item.name,
-                    itemType: item.type,
-                    pack: item.parent.pack,
-                    collectionName: item.parent.collection?.metadata?.name || 'Unknown',
-                    collectionId: item.parent.collection?.id || 'Unknown'
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
         } else {
             // For weapons, check if equipped status changed to true
             if (item.type === "weapon" && item.system.equipped === true) {
@@ -2482,59 +2109,19 @@ Hooks.on('updateItem', async (item, changes) => {
 
 // Handle item deletion
 Hooks.on('deleteItem', async (item) => {
-    // Debug logging for hook execution
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Item Deletion Hook triggered',
-        { 
-            itemName: item.name,
-            itemId: item.id,
-            itemType: item.type,
-            parentName: item.parent?.name || 'Unknown',
-            parentId: item.parent?.id || 'Unknown',
-            isCurrentActor: PanelManager.currentActor?.id === item.parent?.id,
-            hasInstance: !!PanelManager.instance
-        },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only process if this item belongs to the actor currently being managed by Squire
     if (PanelManager.currentActor?.id !== item.parent?.id) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Item Deletion Hook filtered out - not current actor',
-            { itemName: item.name, parentName: item.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
     // Only process if PanelManager instance exists
     if (!PanelManager.instance) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Item Deletion Hook filtered out - no instance',
-            { itemName: item.name, parentName: item.parent?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Item Deletion Hook processing entry',
-        { itemName: item.name, parentName: item.parent?.name },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // No need to recreate the entire tray - just update relevant panels and handle
     await PanelManager.instance.renderPanels(PanelManager.element);
@@ -2602,58 +2189,19 @@ Hooks.on('canvasReady', () => {
 
 // On token creation, update the handle if the token is owned by the user
 Hooks.on('createToken', async (token) => {
-    // Debug logging for hook execution
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Token Creation Hook triggered',
-        { 
-            tokenName: token.name,
-            tokenId: token.id,
-            actorName: token.actor?.name || 'Unknown',
-            actorId: token.actor?.id || 'Unknown',
-            isOwner: token.actor?.isOwner || false,
-            hasInstance: !!PanelManager.instance
-        },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     // Only process if this token is owned by the user
     if (!token.actor?.isOwner) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Token Creation Hook filtered out - not owner',
-            { tokenName: token.name, actorName: token.actor?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
     // Only process if PanelManager instance exists
     if (!PanelManager.instance) {
-        blacksmith?.utils.postConsoleAndNotification(
-            'SQUIRE Token Creation Hook filtered out - no instance',
-            { tokenName: token.name, actorName: token.actor?.name },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         return;
     }
     
-    blacksmith?.utils.postConsoleAndNotification(
-        'SQUIRE Token Creation Hook processing entry',
-        { tokenName: token.name, actorName: token.actor?.name },
-        false,
-        true,
-        false,
-        MODULE.NAME
-    );
+
     
     await PanelManager.instance.updateHandle();
 });

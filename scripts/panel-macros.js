@@ -50,19 +50,6 @@ export class MacrosPanel {
     }
 
     async render(html, { showAddSlot = false } = {}) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'MACROS | MacrosPanel.render called',
-            {
-                isPoppedOut: this.isPoppedOut,
-                hasHtmlParam: Boolean(html),
-                showAddSlot,
-                hasElement: Boolean(this.element)
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
             const placeholder = $('#macros-panel-placeholder');
@@ -77,17 +64,6 @@ export class MacrosPanel {
             this.element = html;
         }
         if (!this.element || this.isPoppedOut) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'MACROS | MacrosPanel.render early-exit (popped-out or missing element)',
-                {
-                    isPoppedOut: this.isPoppedOut,
-                    hasElement: Boolean(this.element)
-                },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
             return;
         }
         // Load macros and favorites from settings
@@ -123,17 +99,6 @@ export class MacrosPanel {
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
         this.element.html(content);
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'MACROS | MacrosPanel.render populated HTML',
-            {
-                showAddSlot,
-                macrosLength: (templateData.macros || []).length
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
@@ -151,17 +116,6 @@ export class MacrosPanel {
         if (!html) return;
 
         const panel = html;
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'MACROS | _activateListeners for panel',
-            {
-                isPoppedOut: this.isPoppedOut,
-                gridCount: panel.find('.macros-grid').length
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         let showAddSlot = false;
         let dragActive = false;
 
@@ -197,18 +151,7 @@ export class MacrosPanel {
                 // Only show add slot if there are no empty slots
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                 macros = macros.filter(m => m && m.id);
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'MACROS | dragenter on .macros-grid (will request add-slot)',
-                    {
-                        isPoppedOut: this.isPoppedOut,
-                        hasMacrosGrid: Boolean(macrosGrid.length),
-                        nonEmptyCount: macros.length
-                    },
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: dragenter on .macros-grid (will request add-slot)
                 if (this.isPoppedOut && this.window) {
                     // Popped-out window path: ask the window to show add slot and re-render
                     this.window.showAddSlot = true;
@@ -232,14 +175,7 @@ export class MacrosPanel {
             e.stopPropagation();
             if (dragActive) {
                 dragActive = false;
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'MACROS | dragleave on .macros-grid (remove add-slot)',
-                    {},
-                    false,
-                    true,
-                    false,
-                    MODULE.NAME
-                );
+                // Debug: dragleave on .macros-grid (remove add-slot)
                 if (this.isPoppedOut && this.window) {
                     this.window.showAddSlot = false;
                     this.window.render(false);
@@ -256,14 +192,6 @@ export class MacrosPanel {
         });
         macrosGrid.on('drop.macroDnd', (e) => {
             dragActive = false;
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'MACROS | drop on .macros-grid (tray/window agnostic)',
-                { isPoppedOut: this.isPoppedOut },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
             if (this.isPoppedOut && this.window) {
                 this.window.showAddSlot = false;
                 this.window.render(false);
@@ -338,14 +266,7 @@ export class MacrosPanel {
                     macros = macros.filter(m => m && typeof m === 'object');
                     const [moved] = macros.splice(data.fromIndex, 1);
                     macros.splice(idx, 0, moved);
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'MACROS | internal reorder',
-                        { fromIndex: data.fromIndex, toIndex: idx },
-                        false,
-                        true,
-                        false,
-                        MODULE.NAME
-                    );
+                    // Debug: internal reorder
                     await game.settings.set(MODULE.ID, 'userMacros', macros);
                     if (self.isPoppedOut && self.window) {
                         self.window.showAddSlot = false;
@@ -374,14 +295,7 @@ export class MacrosPanel {
                         } else {
                             macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
                         }
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'MACROS | external drop from directory',
-                            { macroId, droppedOnAddSlot: slot.hasClass('add-slot'), targetIndex: idx },
-                            false,
-                            true,
-                            false,
-                            MODULE.NAME
-                        );
+                        // Debug: external drop from directory
                         await game.settings.set(MODULE.ID, 'userMacros', macros);
                         if (self.isPoppedOut && self.window) {
                             self.window.showAddSlot = false;
@@ -465,14 +379,7 @@ export class MacrosPanel {
                         macros[idx] = { id: null, name: null, img: null };
                     } else {
                         // Else (slot is empty), remove it (unless it's the last slot)
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'MACROS | Slot is empty, removing slot',
-                            { macros, idx },
-                            false,
-                            false,
-                            false,
-                            MODULE.NAME
-                        );
+                        // Debug: Slot is empty, removing slot
                         if (macros.length > 1) {
                             removedMacroId = macros[idx]?.id || null;
                             macros.splice(idx, 1);
@@ -480,14 +387,7 @@ export class MacrosPanel {
                     }
                     // Always leave at least one slot
                     if (macros.length === 0) {
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'MACROS | Last slot detected, leaving it empty',
-                            { macros },
-                            false,
-                            false,
-                            false,
-                            MODULE.NAME
-                        );
+                        // Debug: Last slot detected, leaving it empty
                         macros = [{ id: null, name: null, img: null }];
                     }
                     await game.settings.set(MODULE.ID, 'userMacros', macros);
@@ -605,14 +505,7 @@ export class MacrosPanel {
             windowStates.macros = isOpen;
             await game.user.setFlag(MODULE.ID, 'windowStates', windowStates);
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error saving macros window state',
-                { error, isOpen },
-                false,
-                true,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error saving macros window state:', error);
         }
     }
 }

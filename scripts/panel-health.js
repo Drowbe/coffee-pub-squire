@@ -353,14 +353,7 @@ export class HealthPanel {
             windowStates.health = isOpen;
             await game.user.setFlag(MODULE.ID, 'windowStates', windowStates);
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error saving health window state',
-                { error, isOpen },
-                false,
-                true,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error saving health window state:', error);
         }
     }
 } 

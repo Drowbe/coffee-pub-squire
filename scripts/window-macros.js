@@ -52,16 +52,7 @@ export class MacrosWindow extends Application {
             const macro = game.macros.get(id);
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
-        try {
-            game.modules.get('coffee-pub-blacksmith')?.api?.utils.postConsoleAndNotification(
-                'MACROS | MacrosWindow.getData',
-                { macrosLength: macros.length, favoriteCount: favoriteMacroIds.length },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
-        } catch (_) { /* no-op */ }
+
         
         return {
             actor: this.panel?.actor,
@@ -87,16 +78,7 @@ export class MacrosWindow extends Application {
                 </div>
             </div>
         `;
-        try {
-            game.modules.get('coffee-pub-blacksmith')?.api?.utils.postConsoleAndNotification(
-                'MACROS | MacrosWindow._renderInner',
-                {},
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
-        } catch (_) { /* no-op */ }
+
         return $(html);
     }
 
@@ -108,16 +90,7 @@ export class MacrosWindow extends Application {
             // Update the panel's element reference with the panel container
             this.panel.updateElement(panelContainer);
         }
-        try {
-            game.modules.get('coffee-pub-blacksmith')?.api?.utils.postConsoleAndNotification(
-                'MACROS | MacrosWindow.activateListeners',
-                { gridCount: html.find('.macros-grid').length },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
-        } catch (_) { /* no-op */ }
+
         // Add close button handler
         html.closest('.app').find('.close').click(ev => {
             ev.preventDefault();

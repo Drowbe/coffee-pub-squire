@@ -163,14 +163,7 @@ export class QuestForm extends FormApplication {
             
             return true;
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error saving quest',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error saving quest:', error);
             ui.notifications.error(`Failed to save quest: ${error.message}`);
             return false;
         }

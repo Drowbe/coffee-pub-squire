@@ -102,14 +102,6 @@ class CodexForm extends FormApplication {
         const entry = expandObject(formData);
         
         // Debug: Log the form data
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Processing codex form submission',
-            { formData, entry },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         
         // Convert tags to array
         if (typeof entry.tags === 'string') {
@@ -142,27 +134,11 @@ class CodexForm extends FormApplication {
             };
 
             // Debug: Log the page data being created
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Creating journal page',
-                { pageData, journalId: journal.id, journalName: journal.name },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
 
             // Create new page
             const newPage = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
 
             // Debug: Log successful creation
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Journal page created successfully',
-                { newPage: newPage[0]?.id, pageName: newPage[0]?.name },
-                false,
-                true,
-                false,
-                MODULE.NAME
-            );
 
             // Show success notification
             ui.notifications.info(`Codex entry "${entry.name}" saved successfully.`);
@@ -178,14 +154,7 @@ class CodexForm extends FormApplication {
             
             return true;
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error saving codex entry',
-                { error, entry, journalId, journalName: journal?.name },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error saving codex entry:', error);
             ui.notifications.error(`Failed to save codex entry: ${error.message}`);
             return false;
         }
@@ -264,32 +233,6 @@ class CodexForm extends FormApplication {
         }
         
         // Debug: Log the form submission
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Form submitted manually',
-            { entry, formData: Object.fromEntries(formData) },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
-        
-        // Debug: Check specific fields
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Form field values',
-            { 
-                name: entry.name,
-                category: entry.category,
-                description: entry.description,
-                plotHook: entry.plotHook,
-                location: entry.location,
-                tags: entry.tags,
-                img: entry.img
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
         
         // Call the original _updateObject method
         await this._updateObject(event, entry);
@@ -401,14 +344,7 @@ class CodexForm extends FormApplication {
                     await this._handleJournalDrop(data);
                 }
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error processing dropped entity',
-                    { error, dataTransfer: e.originalEvent.dataTransfer.getData('text/plain') },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error processing dropped entity:', error);
             }
         });
     }
@@ -566,14 +502,6 @@ export class CodexPanel {
     _setupHooks() {
         // Journal hooks are now handled by the centralized HookManager
         // This method is kept for compatibility but no longer registers hooks
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'CODEX Panel: Hooks now managed by centralized HookManager',
-            {},
-            false,
-            true,
-            false,
-            MODULE.NAME
-        );
     }
 
     /**
@@ -782,14 +710,7 @@ export class CodexPanel {
                         }
                     }
                 } catch (error) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Error parsing codex entry',
-                        { error },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Error parsing codex entry:', error);
                 }
             }
         }
@@ -1334,7 +1255,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                             event.target.value = '';
                             
                         } catch (error) {
-                            getBlacksmith()?.utils.postConsoleAndNotification('Error reading file', { error, fileName: file.name }, false, true, true, MODULE.NAME);
+                            console.error('Error reading file:', error);
                             ui.notifications.error(`Error reading file: ${error.message}`);
                         }
                     });
@@ -1434,7 +1355,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 // Last resort: copy to clipboard
                                 copyToClipboard(jsonString);
                                 ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
-                                getBlacksmith()?.utils.postConsoleAndNotification('Export download failed', { error }, false, true, true, MODULE.NAME);
+                                console.error('Export download failed:', error);
                             }
                         }
                     }
@@ -1624,18 +1545,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                         ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
                     );
                     
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        `Scanning ${actor.name}: found ${items.length} inventory items`,
-                        { 
-                            actorName: actor.name,
-                            itemTypes: items.map(i => ({ name: i.name, type: i.type })),
-                            totalActorItems: actor.items.contents.length
-                        },
-                        false,
-                        false,
-                        false,
-                        MODULE.NAME
-                    );
+                    // Debug: Scanning inventory items
                     
                     for (const item of items) {
                         // Normalize spaces: collapse multiple spaces into single spaces, then lowercase and trim
@@ -1643,22 +1553,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                         inventoryItems.add(itemNameLower);
                         
                         // Debug: Log items that match "Test 2" specifically
-                        if (item.name.toLowerCase().includes('test 2') || item.name.toLowerCase().includes('test  2')) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                `Found potential "Test 2" item: "${item.name}"`,
-                                { 
-                                    actorName: actor.name,
-                                    itemName: item.name,
-                                    normalizedName: itemNameLower,
-                                    originalLength: item.name.length,
-                                    normalizedLength: itemNameLower.length
-                                },
-                                false,
-                                false,
-                                false,
-                                MODULE.NAME
-                            );
-                        }
                         
                         // If it's a backpack/container, check its contents
                         if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
@@ -1668,37 +1562,11 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 inventoryItems.add(containedItemNameLower);
                                 
                                 // Debug: Log contained items that match "Test 2" specifically
-                                if (containedItem.name.toLowerCase().includes('test 2') || containedItem.name.toLowerCase().includes('test  2')) {
-                                    getBlacksmith()?.utils.postConsoleAndNotification(
-                                        `Found potential "Test 2" contained item: "${containedItem.name}"`,
-                                        { 
-                                            actorName: actor.name,
-                                            containerItem: item.name,
-                                            containedItemName: containedItem.name,
-                                            normalizedName: containedItemNameLower
-                                        },
-                                        false,
-                                        false,
-                                        false,
-                                        MODULE.NAME
-                                    );
-                                }
                             }
                         }
                     }
                 } else {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        `No items found for ${actor.name}`,
-                        { 
-                            actorName: actor.name,
-                            hasItems: !!actor.items,
-                            itemsLength: actor.items?.contents?.length || 0
-                        },
-                        false,
-                        false,
-                        false,
-                        MODULE.NAME
-                    );
+                    // Debug: No items found for actor
                 }
             }
 
@@ -1763,18 +1631,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                             const discoverers = [];
                             
                             // Debug: Log what we're looking for
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                `Checking for item: "${entry.name}" (normalized: "${entryNameLower}")`,
-                                { 
-                                    entryName: entry.name,
-                                    entryNameLower: entryNameLower,
-                                    inventoryItems: Array.from(inventoryItems)
-                                },
-                                false,
-                                false,
-                                false,
-                                MODULE.NAME
-                            );
                             
                             for (const token of tokens) {
                                 const actor = token.actor;
@@ -1813,18 +1669,6 @@ SPECIFIC INSTRUCTIONS HERE`;
                             }
                             
                             // Debug: Log what we found
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                `Found "${entry.name}" with discoverers: ${discoverers.join(', ')}`,
-                                { 
-                                    entryName: entry.name,
-                                    discoverers: discoverers,
-                                    totalDiscoverers: discoverers.length
-                                },
-                                false,
-                                false,
-                                false,
-                                MODULE.NAME
-                            );
                             
                             // Make it visible
                             await page.update({ 'ownership.default': CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER });
@@ -1863,35 +1707,8 @@ SPECIFIC INSTRUCTIONS HERE`;
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             // Debug: Log that we're about to refresh
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Auto-discovery scan complete, refreshing panel...',
-                { 
-                    discoveredEntries: discoveredEntries.length,
-                    totalEntries: totalEntries
-                },
-                false,
-                false,
-                false,
-                MODULE.NAME
-            );
             
             // Log detailed results with discoverer information
-            if (discoveredEntries.length > 0) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    `Auto-discovered ${discoveredEntries.length} codex entries from party inventories`,
-                    { 
-                        characters: characterNames,
-                        discoveredEntries,
-                        totalItemsScanned: inventoryItems.size,
-                        updatedPages: updatedPages.length,
-                        message: `Entries discovered by: ${characterNames.join(', ')}`
-                    },
-                    false,
-                    false,
-                    false,
-                    MODULE.NAME
-                );
-            }
             
             // Show completion message and hide progress area after delay
             if (progressArea && progressFill && progressText) {
@@ -1919,14 +1736,7 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Clear import flag on error
             this.isImporting = false;
             
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error during auto-discovery',
-                { error },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error during auto-discovery:', error);
             ui.notifications.error(`Auto-discovery failed: ${error.message}`);
             
             // Show error in progress area
@@ -2002,28 +1812,10 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Update the page content
             await page.update({ 'text.content': doc.body.innerHTML });
             
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                `Updated "Discovered By" for ${page.name}`,
-                { 
-                    existingDiscoverers,
-                    newDiscoverers: discoverers,
-                    allDiscoverers
-                },
-                false,
-                false,
-                false,
-                MODULE.NAME
-            );
+            // Debug: Updated "Discovered By" information
             
         } catch (error) {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                'Error updating "Discovered By" information',
-                { error, pageName: page.name },
-                false,
-                false,
-                true,
-                MODULE.NAME
-            );
+            console.error('Error updating "Discovered By" information:', error);
         }
     }
 

@@ -168,27 +168,13 @@ export class FeaturesPanel {
                 const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
                 const feature = this.actor.items.get(featureId);
                 if (!feature) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        'Feature not found',
-                        { featureId },
-                        false,
-                        false,
-                        true,
-                        MODULE.NAME
-                    );
+                    console.error('Feature not found:', featureId);
                     return;
                 }
 
                 feature.sheet.render(true);
             } catch (error) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    'Error rendering feature sheet',
-                    { error },
-                    false,
-                    false,
-                    true,
-                    MODULE.NAME
-                );
+                console.error('Error rendering feature sheet:', error);
                 ui.notifications.error("Error displaying feature sheet.");
             }
         });

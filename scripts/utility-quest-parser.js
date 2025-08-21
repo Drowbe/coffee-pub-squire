@@ -298,14 +298,7 @@ export class QuestParser {
                           return game.modules.get('coffee-pub-blacksmith')?.api;
                         }
                         
-                        getBlacksmith()?.utils.postConsoleAndNotification(
-                            'Error parsing task hints and treasures',
-                            { error, text },
-                            false,
-                            false,
-                            true,
-                            MODULE.NAME
-                        );
+                        console.error('Error parsing task hints and treasures:', { error, text });
                         displayText = text;
                     }
 

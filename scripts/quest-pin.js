@@ -150,7 +150,7 @@ export class QuestPin extends PIXI.Container {
         }
       }
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error fetching names', { error, questUuid: this.questUuid }, false, true, false, MODULE.NAME);
+      console.error('QuestPin | Error fetching names:', { error, questUuid: this.questUuid });
       // Set fallback names
       this.questName = 'Unknown Quest';
       if (this.pinType === 'objective') {
@@ -746,7 +746,7 @@ export class QuestPin extends PIXI.Container {
       // Save to scene flags
       scene.setFlag(MODULE.ID, 'questPins', pinsData);
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error saving quest pin', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error saving quest pin:', error);
     }
   }
 
@@ -768,7 +768,7 @@ export class QuestPin extends PIXI.Container {
       // Save updated data to scene flags
       scene.setFlag(MODULE.ID, 'questPins', updatedPinsData);
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error removing quest pin', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error removing quest pin:', error);
     }
   }
 
@@ -1188,7 +1188,7 @@ export class QuestPin extends PIXI.Container {
       }
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling hidden state', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error toggling hidden state:', error);
     }
   }
 
@@ -1290,7 +1290,7 @@ export class QuestPin extends PIXI.Container {
       // The pin will be automatically updated by the updateJournalEntryPage hook
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error completing objective', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error completing objective:', error);
     }
   }
 
@@ -1351,7 +1351,7 @@ export class QuestPin extends PIXI.Container {
       // The pin will be automatically updated by the updateJournalEntryPage hook
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error failing objective', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error failing objective:', error);
     }
   }
 
@@ -1398,7 +1398,7 @@ export class QuestPin extends PIXI.Container {
 
       return null;
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest data', { error }, false, true, true, MODULE.NAME);
+      console.error('QuestPin | Error getting quest data:', error);
       return null;
     }
   }
@@ -1444,22 +1444,7 @@ export class QuestPin extends PIXI.Container {
           tooltipData.participants = this.participants;
         }
         
-        // Debug logging for participants
-        if (tooltipData) {
-          getBlacksmith()?.utils.postConsoleAndNotification(
-            'SQUIRE | QUEST PIN: Tooltip participants data',
-            { 
-              pinParticipants: this.participants, 
-              tooltipParticipants: tooltipData.participants,
-              hasPinParticipants: this.participants && this.participants.length > 0,
-              hasTooltipParticipants: tooltipData.participants && tooltipData.participants.length > 0
-            },
-            false,
-            true,
-            false,
-            MODULE.NAME
-          );
-        }
+        // Debug: Tooltip participants data
         
         if (tooltipData) {
           tooltipData.controls = game.user.isGM ?
@@ -1482,14 +1467,7 @@ export class QuestPin extends PIXI.Container {
       // Show tooltip with appropriate ID
       showQuestTooltip(tooltipId, tooltipData, event);
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification(
-        'Error showing quest pin tooltip',
-        { questUuid: this.questUuid, objectiveIndex: this.objectiveIndex, error: error.message },
-        false,
-        true,
-        false,
-        MODULE.NAME
-      );
+      console.error('Error showing quest pin tooltip:', { questUuid: this.questUuid, objectiveIndex: this.objectiveIndex, error: error.message });
     }
   }
 
@@ -1527,14 +1505,7 @@ export class QuestPin extends PIXI.Container {
       return false; // Mouse is not over any window
     } catch (error) {
       // If there's an error checking, default to allowing tooltips
-      getBlacksmith()?.utils.postConsoleAndNotification(
-        'Error checking mouse position vs windows',
-        { error: error.message },
-        false,
-        true,
-        false,
-        MODULE.NAME
-      );
+      console.error('Error checking mouse position vs windows:', { error: error.message });
       return false;
     }
   }
@@ -1755,23 +1726,15 @@ function registerQuestPinsWithHookManager() {
             HookManager.registerPanel('questPins', questPinsProxy);
             
             getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
                 'Quest Pins registered with HookManager',
                 {},
-                false,
                 true,
-                false,
-                MODULE.NAME
+                false
             );
         }
     } catch (error) {
-        getBlacksmith()?.utils.postConsoleAndNotification(
-            'Error registering quest pins with HookManager',
-            { error },
-            false,
-            false,
-            true,
-            MODULE.NAME
-        );
+        console.error('Error registering quest pins with HookManager:', error);
     }
 }
 
