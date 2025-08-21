@@ -651,13 +651,13 @@
 
 
 /* ACTIVE OBJECTIVE */
+/* ACTIVE OBJECTIVE */
 .squire-tray[data-position="left"] .handle-pinnedquest-icon.objective-pins-oncanvas {
     border: 1px solid rgba(42, 100, 165, 0.7);
 }
 .squire-tray[data-position="left"] .handle-pinnedquest-icon.objective-pins-nearby {
     border: 1px solid rgba(165, 81, 42, 0.7);
 }
-
 
 .squire-tray[data-position="left"] .handle-pinnedquest-icon-fill {
     width: 100%;
@@ -692,12 +692,12 @@
     background: rgba(206, 205, 180, 0.0);
 }
 .squire-tray[data-position="left"] .handle-pinnedquest-icon-fill i {
-    transform: rotate(180deg);
+    transform: rotate(0deg);
     padding-right: 1px;
     
 }
 .squire-tray[data-position="left"] .handle-quest-progress-index {
-    transform: rotate(90deg);
+    transform: rotate(270deg);
     padding-bottom: 0px;
 }
 
@@ -727,7 +727,7 @@
 
 /* Hover effects */
 .squire-tray[data-position="left"] .handle-pinnedquest-icon:hover {
-    transform: scale(1.05);
+    transform: scale(1.15) rotate(180deg);
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 2px var(--color-shadow-highlight);
     cursor: pointer;
