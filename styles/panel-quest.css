@@ -270,6 +270,9 @@
     font-size: 1.2em;
     cursor: grab;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .squire-tray[data-position="left"] .quest-entry-name i {
     font-size: 0.85em;

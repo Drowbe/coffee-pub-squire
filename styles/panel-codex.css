@@ -312,6 +312,9 @@
     font-weight: 500;
     color: rgba(159, 146, 117, 0.9);
     font-size: 1.2em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .squire-tray[data-position="left"] .codex-entry-name i {
     font-size: 0.85em;

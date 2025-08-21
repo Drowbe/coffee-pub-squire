@@ -4,6 +4,9 @@ export const MODULE = {
     TITLE: 'SQUIRE'
 };
 
+
+
+
 export const TEMPLATES = {
     TRAY: `modules/${MODULE.ID}/templates/tray.hbs`,
     PANEL_CHARACTER: `modules/${MODULE.ID}/templates/panel-character.hbs`,
