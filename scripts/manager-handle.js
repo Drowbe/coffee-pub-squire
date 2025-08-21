@@ -468,7 +468,7 @@ export class HandleManager {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 ui.notifications.warn("Could not load condition description.");
             }
@@ -647,7 +647,7 @@ export class HandleManager {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                         }

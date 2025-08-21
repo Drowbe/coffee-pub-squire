@@ -459,7 +459,7 @@ export class DiceTrayPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error("Invalid dice formula");
         }
@@ -546,7 +546,7 @@ export class DiceTrayPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error("Invalid formula for advantage/disadvantage");
         }
@@ -646,7 +646,7 @@ export class DiceTrayPanel {
                 false,
                 true,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }

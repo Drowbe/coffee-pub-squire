@@ -59,7 +59,7 @@ export class PartyStatsPanel {
                     false,
                     false,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 return data;
             }
@@ -108,7 +108,7 @@ export class PartyStatsPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 }
             }
@@ -154,7 +154,7 @@ export class PartyStatsPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
 
@@ -165,7 +165,7 @@ export class PartyStatsPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
 

@@ -169,7 +169,7 @@ export class QuestForm extends FormApplication {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error(`Failed to save quest: ${error.message}`);
             return false;

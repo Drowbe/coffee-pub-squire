@@ -97,7 +97,7 @@ export class PanelManager {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
         
@@ -207,7 +207,7 @@ export class PanelManager {
                         false,
                         true,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 } else {
                     await FavoritesPanel.initializeNpcFavorites(actor);
@@ -620,7 +620,7 @@ export class PanelManager {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     ui.notifications.error("Error launching Award dialog. See console for details.");
                 }
@@ -720,7 +720,7 @@ export class PanelManager {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 ui.notifications.error("Error adding tokens to combat. See console for details.");
             }
@@ -788,7 +788,7 @@ export class PanelManager {
                         false,
                         false,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     ui.notifications.warn("No character selected.");
                     return;
@@ -799,7 +799,7 @@ export class PanelManager {
                     false,
                     false,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 
                 // Handle different drop types
@@ -812,7 +812,7 @@ export class PanelManager {
                             false,
                             false,
                             false,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         // This could be either a world item OR a drag from character sheet
                         if ((data.actorId && (data.data?.itemId || data.embedId)) || 
@@ -825,7 +825,7 @@ export class PanelManager {
                                 false,
                                 false,
                                 false,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             // This is a drag from character sheet
                             let sourceActorId;
@@ -851,7 +851,7 @@ export class PanelManager {
                                     false,
                                     false,
                                     false,
-                                    MODULE.TITLE
+                                    MODULE.NAME
                                 );
                                 ui.notifications.warn("Could not determine the source actor or item.");
                                 return;
@@ -866,7 +866,7 @@ export class PanelManager {
                                     false,
                                     false,
                                     false,
-                                    MODULE.TITLE
+                                    MODULE.NAME
                                 );
                                 ui.notifications.warn("Could not find the item on the source character.");
                                 return;
@@ -1095,7 +1095,7 @@ export class PanelManager {
                                 false,
                                 false,
                                 false,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             try {
                                 // Get the item from the UUID
@@ -1107,7 +1107,7 @@ export class PanelManager {
                                         false,
                                         false,
                                         false,
-                                        MODULE.TITLE
+                                        MODULE.NAME
                                     );
                                     return;
                                 }
@@ -1166,7 +1166,7 @@ export class PanelManager {
                                     false,
                                     false,
                                     true,
-                                    MODULE.TITLE
+                                    MODULE.NAME
                                 );
                                 ui.notifications.error("Error processing dropped item. See console for details.");
                             }
@@ -1182,7 +1182,7 @@ export class PanelManager {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 ui.notifications.error("Error handling drop. See console for details.");
             }
@@ -1211,7 +1211,7 @@ export class PanelManager {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -1236,7 +1236,7 @@ export class PanelManager {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -1597,7 +1597,7 @@ export class PanelManager {
             false,
             false,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 
@@ -1657,7 +1657,7 @@ export class PanelManager {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             } else {
                 getBlacksmith()?.utils.postConsoleAndNotification(
@@ -1666,7 +1666,7 @@ export class PanelManager {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         } catch (error) {
@@ -1676,7 +1676,7 @@ export class PanelManager {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -1808,7 +1808,7 @@ async function initializeSquireAfterSettings() {
             false,
             false,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 }
@@ -1948,7 +1948,7 @@ async function _updateHealthPanelFromSelection() {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         // Add fade-out animation to tray panel wrapper if appropriate
@@ -2115,7 +2115,7 @@ Hooks.on('updateActor', async (actor, changes) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only process if this is the actor currently being managed by Squire
@@ -2126,7 +2126,7 @@ Hooks.on('updateActor', async (actor, changes) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2139,7 +2139,7 @@ Hooks.on('updateActor', async (actor, changes) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2150,7 +2150,7 @@ Hooks.on('updateActor', async (actor, changes) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only handle major changes that require full re-initialization
@@ -2207,7 +2207,7 @@ Hooks.on('createActiveEffect', async (effect) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only process if this effect belongs to the actor currently being managed by Squire
@@ -2218,7 +2218,7 @@ Hooks.on('createActiveEffect', async (effect) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2231,7 +2231,7 @@ Hooks.on('createActiveEffect', async (effect) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2242,7 +2242,7 @@ Hooks.on('createActiveEffect', async (effect) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     await PanelManager.instance.updateHandle();
@@ -2265,7 +2265,7 @@ Hooks.on('deleteActiveEffect', async (effect) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only process if this effect belongs to the actor currently being managed by Squire
@@ -2276,7 +2276,7 @@ Hooks.on('deleteActiveEffect', async (effect) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2289,7 +2289,7 @@ Hooks.on('deleteActiveEffect', async (effect) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2300,7 +2300,7 @@ Hooks.on('deleteActiveEffect', async (effect) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     await PanelManager.instance.updateHandle();
@@ -2324,7 +2324,7 @@ Hooks.on('createItem', async (item) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only process if this item belongs to the actor currently being managed by Squire
@@ -2335,7 +2335,7 @@ Hooks.on('createItem', async (item) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2348,7 +2348,7 @@ Hooks.on('createItem', async (item) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2359,7 +2359,7 @@ Hooks.on('createItem', async (item) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // No need to recreate the entire tray - just update relevant panels and handle
@@ -2388,7 +2388,7 @@ Hooks.on('updateItem', async (item, changes) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only process if this item belongs to the actor currently being managed by Squire
@@ -2399,7 +2399,7 @@ Hooks.on('updateItem', async (item, changes) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2412,7 +2412,7 @@ Hooks.on('updateItem', async (item, changes) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2423,7 +2423,7 @@ Hooks.on('updateItem', async (item, changes) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Check if this is an NPC/monster and the item is a weapon being equipped
@@ -2447,7 +2447,7 @@ Hooks.on('updateItem', async (item, changes) => {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
         } else {
             // For weapons, check if equipped status changed to true
@@ -2498,7 +2498,7 @@ Hooks.on('deleteItem', async (item) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only process if this item belongs to the actor currently being managed by Squire
@@ -2509,7 +2509,7 @@ Hooks.on('deleteItem', async (item) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2522,7 +2522,7 @@ Hooks.on('deleteItem', async (item) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2533,7 +2533,7 @@ Hooks.on('deleteItem', async (item) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // No need to recreate the entire tray - just update relevant panels and handle
@@ -2617,7 +2617,7 @@ Hooks.on('createToken', async (token) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Only process if this token is owned by the user
@@ -2628,7 +2628,7 @@ Hooks.on('createToken', async (token) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2641,7 +2641,7 @@ Hooks.on('createToken', async (token) => {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -2652,7 +2652,7 @@ Hooks.on('createToken', async (token) => {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     await PanelManager.instance.updateHandle();

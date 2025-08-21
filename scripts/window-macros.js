@@ -59,7 +59,7 @@ export class MacrosWindow extends Application {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
         } catch (_) { /* no-op */ }
         
@@ -94,7 +94,7 @@ export class MacrosWindow extends Application {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
         } catch (_) { /* no-op */ }
         return $(html);
@@ -115,7 +115,7 @@ export class MacrosWindow extends Application {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
         } catch (_) { /* no-op */ }
         // Add close button handler

@@ -359,7 +359,7 @@ export class HealthPanel {
                 false,
                 true,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }

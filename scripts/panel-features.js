@@ -174,7 +174,7 @@ export class FeaturesPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return;
                 }
@@ -187,7 +187,7 @@ export class FeaturesPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 ui.notifications.error("Error displaying feature sheet.");
             }

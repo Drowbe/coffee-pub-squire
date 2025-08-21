@@ -61,7 +61,7 @@ export class MacrosPanel {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
@@ -86,7 +86,7 @@ export class MacrosPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -132,7 +132,7 @@ export class MacrosPanel {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         this._activateListeners(this.element);
 
@@ -160,7 +160,7 @@ export class MacrosPanel {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         let showAddSlot = false;
         let dragActive = false;
@@ -207,7 +207,7 @@ export class MacrosPanel {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 if (this.isPoppedOut && this.window) {
                     // Popped-out window path: ask the window to show add slot and re-render
@@ -238,7 +238,7 @@ export class MacrosPanel {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 if (this.isPoppedOut && this.window) {
                     this.window.showAddSlot = false;
@@ -262,7 +262,7 @@ export class MacrosPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             if (this.isPoppedOut && this.window) {
                 this.window.showAddSlot = false;
@@ -344,7 +344,7 @@ export class MacrosPanel {
                         false,
                         true,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     await game.settings.set(MODULE.ID, 'userMacros', macros);
                     if (self.isPoppedOut && self.window) {
@@ -380,7 +380,7 @@ export class MacrosPanel {
                             false,
                             true,
                             false,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         await game.settings.set(MODULE.ID, 'userMacros', macros);
                         if (self.isPoppedOut && self.window) {
@@ -471,7 +471,7 @@ export class MacrosPanel {
                             false,
                             false,
                             false,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         if (macros.length > 1) {
                             removedMacroId = macros[idx]?.id || null;
@@ -486,7 +486,7 @@ export class MacrosPanel {
                             false,
                             false,
                             false,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         macros = [{ id: null, name: null, img: null }];
                     }
@@ -611,7 +611,7 @@ export class MacrosPanel {
                 false,
                 true,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }

@@ -875,7 +875,7 @@ export class PartyPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 ui.notifications.error("Failed to add item to character.");
             }
@@ -1148,7 +1148,7 @@ export class PartyPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error("Failed to send transfer request. Please try again or contact your GM.");
         }
@@ -1233,7 +1233,7 @@ export class PartyPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 }
 

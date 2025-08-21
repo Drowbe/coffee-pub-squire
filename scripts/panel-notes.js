@@ -26,7 +26,7 @@ export class NotesPanel {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         this.element = null;
     }
@@ -434,7 +434,7 @@ export class NotesPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 return;
             }
@@ -446,7 +446,7 @@ export class NotesPanel {
                     false,
                     false,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 return;
             }
@@ -462,7 +462,7 @@ export class NotesPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 contentContainer.html(`
                     <div class="render-error">
@@ -501,7 +501,7 @@ export class NotesPanel {
                             false,
                             false,
                             false,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         // Don't return - let it try but prepare for failure
                     }
@@ -518,7 +518,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 false,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             
                             // Fallback with Manual Enrichment as suggested
@@ -561,7 +561,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 false,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             contentContainer.html(`
                                 <div class="empty-page-content">
@@ -584,7 +584,7 @@ export class NotesPanel {
                             false,
                             false,
                             true,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         throw innerError; // Rethrow to outer catch block
                     }
@@ -596,7 +596,7 @@ export class NotesPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 // Continue to fallback methods
             }
@@ -629,7 +629,7 @@ export class NotesPanel {
                             false,
                             false,
                             false,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                     }
                 }
@@ -640,7 +640,7 @@ export class NotesPanel {
                     false,
                     false,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 // Continue to fallback methods
             }
@@ -701,7 +701,7 @@ export class NotesPanel {
                             false,
                             false,
                             false,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         contentContainer.html(`
                             <div class="empty-page-content">
@@ -725,7 +725,7 @@ export class NotesPanel {
                     false,
                     false,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 // Continue to fallback methods
             }
@@ -830,7 +830,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                         }
                     }
@@ -883,7 +883,7 @@ export class NotesPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 }
             }
@@ -894,7 +894,7 @@ export class NotesPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             try {
                 html.find('.journal-content').html(`
@@ -924,7 +924,7 @@ export class NotesPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         }
@@ -1173,7 +1173,7 @@ export class NotesPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return '';
                 }
@@ -1198,7 +1198,7 @@ export class NotesPanel {
                                     false,
                                     false,
                                     true,
-                                    MODULE.TITLE
+                                    MODULE.NAME
                                 );
                             }
                         } else {
@@ -1227,7 +1227,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                         }
                     }
@@ -1249,7 +1249,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                         }
                     }
@@ -1271,7 +1271,7 @@ export class NotesPanel {
                                     false,
                                     false,
                                     true,
-                                    MODULE.TITLE
+                                    MODULE.NAME
                                 );
                             }
                         } else {
@@ -1303,7 +1303,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             content = '';
                         }
@@ -1322,7 +1322,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             content = '';
                         }
@@ -1344,7 +1344,7 @@ export class NotesPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return '';
         }
@@ -1436,7 +1436,7 @@ export class NotesPanel {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             
                             // Make sure to close the sheet even if there's an error
@@ -1475,7 +1475,7 @@ export class NotesPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return null;
         }
@@ -1545,7 +1545,7 @@ export class NotesPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return html;
         }
@@ -1593,7 +1593,7 @@ export class NotesPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error("Error opening journal page: " + error.message);
             return null;

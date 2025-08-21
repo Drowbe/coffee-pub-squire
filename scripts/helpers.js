@@ -243,7 +243,7 @@ export async function copyToClipboard(text) {
                 false,
                 false,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -273,7 +273,7 @@ export async function copyToClipboard(text) {
             false,
             false,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
     
@@ -336,7 +336,7 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -348,7 +348,7 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -360,7 +360,7 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -403,7 +403,7 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         }, delay);
@@ -416,7 +416,7 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 }
@@ -525,7 +525,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return null;
         }
@@ -541,7 +541,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return null;
         }
@@ -555,7 +555,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return null;
         }
@@ -615,7 +615,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return null;
     }
@@ -641,7 +641,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return null;
         }
@@ -657,7 +657,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return null;
         }
@@ -683,7 +683,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
 
         // Get location info if available
@@ -757,7 +757,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         return result;
@@ -768,7 +768,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
             false,
             true,
             false,
-                MODULE.TITLE
+                MODULE.NAME
         );
         return null;
     }

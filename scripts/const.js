@@ -1,7 +1,8 @@
 export const MODULE = {
     ID: 'coffee-pub-squire',
-    NAME: 'Coffee Pub Squire',
-    TITLE: 'SQUIRE'
+    NAME: 'SQUIRE',
+    TITLE: 'Coffee Pub Squire',
+    AUTHOR: "Coffee Pub"
 };
 
 

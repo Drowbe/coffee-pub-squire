@@ -35,7 +35,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -60,7 +60,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -87,7 +87,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -124,7 +124,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return false;
         }
@@ -171,7 +171,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return [];
         }
@@ -200,7 +200,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return [];
         }
@@ -239,7 +239,7 @@ export class FavoritesPanel {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 return false;
             }
@@ -260,7 +260,7 @@ export class FavoritesPanel {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 return false;
             }
@@ -309,7 +309,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return false;
         }
@@ -343,7 +343,7 @@ export class FavoritesPanel {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 return false;
             }
@@ -405,7 +405,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             // Refresh the panels if they exist
             if (PanelManager.instance && PanelManager.currentActor?.id === actor.id) {
@@ -434,7 +434,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return false;
         }
@@ -529,7 +529,7 @@ export class FavoritesPanel {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             } else {
                 FavoritesPanel.initializeNpcFavorites(this.actor);
@@ -785,7 +785,7 @@ export class FavoritesPanel {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 return;
             }
@@ -890,7 +890,7 @@ export class FavoritesPanel {
                 false,
                 false,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -911,7 +911,7 @@ export class FavoritesPanel {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -929,7 +929,7 @@ export class FavoritesPanel {
                 false,
                 false,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             return;
         }
@@ -1052,7 +1052,7 @@ export class FavoritesPanel {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }

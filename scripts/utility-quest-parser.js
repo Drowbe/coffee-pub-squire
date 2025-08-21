@@ -304,7 +304,7 @@ export class QuestParser {
                             false,
                             false,
                             true,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                         displayText = text;
                     }

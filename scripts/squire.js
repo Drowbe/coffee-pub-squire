@@ -51,7 +51,7 @@ Hooks.once('socketlib.ready', () => {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return;
                 }
@@ -91,7 +91,7 @@ Hooks.once('socketlib.ready', () => {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         });
@@ -111,7 +111,7 @@ Hooks.once('socketlib.ready', () => {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return;
                 }
@@ -153,7 +153,7 @@ Hooks.once('socketlib.ready', () => {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         });
@@ -176,7 +176,7 @@ Hooks.once('socketlib.ready', () => {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return;
                 }
@@ -207,7 +207,7 @@ Hooks.once('socketlib.ready', () => {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         });
@@ -227,7 +227,7 @@ Hooks.once('socketlib.ready', () => {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return;
                 }
@@ -258,7 +258,7 @@ Hooks.once('socketlib.ready', () => {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         });
@@ -278,7 +278,7 @@ Hooks.once('socketlib.ready', () => {
                         false,
                         false,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 }
             } catch (error) {
@@ -288,7 +288,7 @@ Hooks.once('socketlib.ready', () => {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         });
@@ -300,7 +300,7 @@ Hooks.once('socketlib.ready', () => {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 });
@@ -309,12 +309,12 @@ Hooks.once('socketlib.ready', () => {
 
 Hooks.once('init', async function() {
     game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification(
-        `${MODULE.TITLE} | Initializing ${MODULE.NAME}`,
+        `${MODULE.NAME} | Initializing ${MODULE.TITLE}`,
         null,
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
     
     // Register module settings -- moved to READY
@@ -422,7 +422,7 @@ Hooks.once('ready', async function() {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -446,7 +446,7 @@ Hooks.once('ready', async function() {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
     
@@ -460,7 +460,7 @@ Hooks.once('ready', async function() {
 
     // Debug log the exclusion status
     blacksmith.utils.postConsoleAndNotification(
-        `${MODULE.TITLE} | User Exclusion Check`,
+        `${MODULE.NAME} | User Exclusion Check`,
         {
             currentUserId,
             currentUserName,
@@ -471,7 +471,7 @@ Hooks.once('ready', async function() {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
 
     if (isExcluded) {
@@ -511,7 +511,7 @@ Hooks.once('ready', async function() {
     
     // Debug log for Blacksmith sound choices
     blacksmith.utils.postConsoleAndNotification(
-        `${MODULE.TITLE} | Blacksmith API`,
+        `${MODULE.NAME} | Blacksmith API`,
         {
             api: blacksmith,
             BLACKSMITH: blacksmith.BLACKSMITH,
@@ -520,7 +520,7 @@ Hooks.once('ready', async function() {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
     );
 
     // Initialize Squire after settings are registered (with delay to ensure everything is ready)
@@ -722,7 +722,7 @@ async function handleTransferRequest(transferData) {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         } else if (game.modules.get('socketlib')?.active) {
@@ -748,7 +748,7 @@ async function handleTransferRequest(transferData) {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
         ui.notifications.error("Error processing transfer request");
     }
@@ -803,7 +803,7 @@ async function setTransferRequestFlag(targetActorId, flagKey, flagData) {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -831,7 +831,7 @@ async function executeItemTransfer(transferData, accepted) {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
         return;
     }
@@ -927,7 +927,7 @@ async function executeItemTransfer(transferData, accepted) {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 }
@@ -993,7 +993,7 @@ function cleanupModule() {
             false,
             false,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     } catch (error) {
         getBlacksmith()?.utils.postConsoleAndNotification(
@@ -1002,7 +1002,7 @@ function cleanupModule() {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 }

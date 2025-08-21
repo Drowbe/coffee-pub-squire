@@ -227,7 +227,7 @@ export class CharacterPanel {
                                 false,
                                 false,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                         }
@@ -250,7 +250,7 @@ export class CharacterPanel {
                         false,
                         true,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     await PanelManager.initialize(this.actor);
                     // Force a re-render of all panels
@@ -263,7 +263,7 @@ export class CharacterPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 } catch (error) {
                     getBlacksmith()?.utils.postConsoleAndNotification(
@@ -272,7 +272,7 @@ export class CharacterPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     ui.notifications.error("Failed to refresh tray");
                 } finally {

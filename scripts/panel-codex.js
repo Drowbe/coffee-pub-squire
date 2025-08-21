@@ -108,7 +108,7 @@ class CodexForm extends FormApplication {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         // Convert tags to array
@@ -148,7 +148,7 @@ class CodexForm extends FormApplication {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
 
             // Create new page
@@ -161,7 +161,7 @@ class CodexForm extends FormApplication {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
 
             // Show success notification
@@ -184,7 +184,7 @@ class CodexForm extends FormApplication {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error(`Failed to save codex entry: ${error.message}`);
             return false;
@@ -270,7 +270,7 @@ class CodexForm extends FormApplication {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         // Debug: Check specific fields
@@ -288,7 +288,7 @@ class CodexForm extends FormApplication {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         // Call the original _updateObject method
@@ -407,7 +407,7 @@ class CodexForm extends FormApplication {
                     false,
                     false,
                     true,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
         });
@@ -572,7 +572,7 @@ export class CodexPanel {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 
@@ -788,7 +788,7 @@ export class CodexPanel {
                         false,
                         false,
                         true,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 }
             }
@@ -1334,7 +1334,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                             event.target.value = '';
                             
                         } catch (error) {
-                            getBlacksmith()?.utils.postConsoleAndNotification('Error reading file', { error, fileName: file.name }, false, true, true, MODULE.TITLE);
+                            getBlacksmith()?.utils.postConsoleAndNotification('Error reading file', { error, fileName: file.name }, false, true, true, MODULE.NAME);
                             ui.notifications.error(`Error reading file: ${error.message}`);
                         }
                     });
@@ -1434,7 +1434,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 // Last resort: copy to clipboard
                                 copyToClipboard(jsonString);
                                 ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
-                                getBlacksmith()?.utils.postConsoleAndNotification('Export download failed', { error }, false, true, true, MODULE.TITLE);
+                                getBlacksmith()?.utils.postConsoleAndNotification('Export download failed', { error }, false, true, true, MODULE.NAME);
                             }
                         }
                     }
@@ -1634,7 +1634,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                         false,
                         false,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     
                     for (const item of items) {
@@ -1656,7 +1656,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 false,
                                 false,
                                 false,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                         }
                         
@@ -1680,7 +1680,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                                         false,
                                         false,
                                         false,
-                                        MODULE.TITLE
+                                        MODULE.NAME
                                     );
                                 }
                             }
@@ -1697,7 +1697,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                         false,
                         false,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                 }
             }
@@ -1773,7 +1773,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 false,
                                 false,
                                 false,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             
                             for (const token of tokens) {
@@ -1823,7 +1823,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 false,
                                 false,
                                 false,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                             
                             // Make it visible
@@ -1872,7 +1872,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 false,
                 false,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             
             // Log detailed results with discoverer information
@@ -1889,7 +1889,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                     false,
                     false,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
             }
             
@@ -1925,7 +1925,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error(`Auto-discovery failed: ${error.message}`);
             
@@ -2012,7 +2012,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 false,
                 false,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
             
         } catch (error) {
@@ -2022,7 +2022,7 @@ SPECIFIC INSTRUCTIONS HERE`;
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }

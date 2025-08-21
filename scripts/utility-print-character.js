@@ -244,7 +244,7 @@ export class PrintCharacterSheet {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
             ui.notifications.error('Failed to print character sheet. See console for details.');
         }

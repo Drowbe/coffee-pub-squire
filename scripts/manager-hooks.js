@@ -32,7 +32,7 @@ export class HookManager {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         return HookManager.instance;
@@ -52,7 +52,7 @@ export class HookManager {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
     
@@ -74,7 +74,7 @@ export class HookManager {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
     
@@ -96,7 +96,7 @@ export class HookManager {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         // Route to appropriate panels based on content type and journal
@@ -111,7 +111,7 @@ export class HookManager {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
         
         await Promise.all([
@@ -144,7 +144,7 @@ export class HookManager {
                         false,
                         true,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return;
                 }
@@ -156,7 +156,7 @@ export class HookManager {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 
                 // Always refresh the data first
@@ -176,7 +176,7 @@ export class HookManager {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -201,7 +201,7 @@ export class HookManager {
                         false,
                         true,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     return;
                 }
@@ -213,7 +213,7 @@ export class HookManager {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 
                 // Always refresh the data first
@@ -223,7 +223,7 @@ export class HookManager {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 
                 await HookManager.questPanel._refreshData();
@@ -245,7 +245,7 @@ export class HookManager {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -270,7 +270,7 @@ export class HookManager {
                         false,
                         true,
                         false,
-                        MODULE.TITLE
+                        MODULE.NAME
                     );
                     
                     // Trigger a refresh through the PanelManager if it's available
@@ -288,7 +288,7 @@ export class HookManager {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -318,7 +318,7 @@ export class HookManager {
                     false,
                     true,
                     false,
-                    MODULE.TITLE
+                    MODULE.NAME
                 );
                 
                 // Update pin visibility and states
@@ -334,7 +334,7 @@ export class HookManager {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -386,7 +386,7 @@ export class HookManager {
                                 false,
                                 true,
                                 true,
-                                MODULE.TITLE
+                                MODULE.NAME
                             );
                         }
                     });
@@ -403,7 +403,7 @@ export class HookManager {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -451,7 +451,7 @@ export class HookManager {
                 false,
                 true,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -490,7 +490,7 @@ export class HookManager {
                             false,
                             true,
                             true,
-                            MODULE.TITLE
+                            MODULE.NAME
                         );
                     }
                 });
@@ -503,7 +503,7 @@ export class HookManager {
                 false,
                 false,
                 true,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     }
@@ -525,7 +525,7 @@ export class HookManager {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 }

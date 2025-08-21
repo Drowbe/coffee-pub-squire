@@ -150,7 +150,7 @@ export class QuestPin extends PIXI.Container {
         }
       }
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error fetching names', { error, questUuid: this.questUuid }, false, true, false, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error fetching names', { error, questUuid: this.questUuid }, false, true, false, MODULE.NAME);
       // Set fallback names
       this.questName = 'Unknown Quest';
       if (this.pinType === 'objective') {
@@ -746,7 +746,7 @@ export class QuestPin extends PIXI.Container {
       // Save to scene flags
       scene.setFlag(MODULE.ID, 'questPins', pinsData);
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error saving quest pin', { error }, false, true, true, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error saving quest pin', { error }, false, true, true, MODULE.NAME);
     }
   }
 
@@ -768,7 +768,7 @@ export class QuestPin extends PIXI.Container {
       // Save updated data to scene flags
       scene.setFlag(MODULE.ID, 'questPins', updatedPinsData);
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error removing quest pin', { error }, false, true, true, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error removing quest pin', { error }, false, true, true, MODULE.NAME);
     }
   }
 
@@ -1188,7 +1188,7 @@ export class QuestPin extends PIXI.Container {
       }
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling hidden state', { error }, false, true, true, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error toggling hidden state', { error }, false, true, true, MODULE.NAME);
     }
   }
 
@@ -1290,7 +1290,7 @@ export class QuestPin extends PIXI.Container {
       // The pin will be automatically updated by the updateJournalEntryPage hook
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error completing objective', { error }, false, true, true, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error completing objective', { error }, false, true, true, MODULE.NAME);
     }
   }
 
@@ -1351,7 +1351,7 @@ export class QuestPin extends PIXI.Container {
       // The pin will be automatically updated by the updateJournalEntryPage hook
       
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error failing objective', { error }, false, true, true, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error failing objective', { error }, false, true, true, MODULE.NAME);
     }
   }
 
@@ -1398,7 +1398,7 @@ export class QuestPin extends PIXI.Container {
 
       return null;
     } catch (error) {
-      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest data', { error }, false, true, true, MODULE.TITLE);
+      getBlacksmith()?.utils.postConsoleAndNotification('QuestPin | Error getting quest data', { error }, false, true, true, MODULE.NAME);
       return null;
     }
   }
@@ -1457,7 +1457,7 @@ export class QuestPin extends PIXI.Container {
             false,
             true,
             false,
-            MODULE.TITLE
+            MODULE.NAME
           );
         }
         
@@ -1488,7 +1488,7 @@ export class QuestPin extends PIXI.Container {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
       );
     }
   }
@@ -1533,7 +1533,7 @@ export class QuestPin extends PIXI.Container {
         false,
         true,
         false,
-        MODULE.TITLE
+        MODULE.NAME
       );
       return false;
     }
@@ -1760,7 +1760,7 @@ function registerQuestPinsWithHookManager() {
                 false,
                 true,
                 false,
-                MODULE.TITLE
+                MODULE.NAME
             );
         }
     } catch (error) {
@@ -1770,7 +1770,7 @@ function registerQuestPinsWithHookManager() {
             false,
             false,
             true,
-            MODULE.TITLE
+            MODULE.NAME
         );
     }
 }
