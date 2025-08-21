@@ -537,6 +537,17 @@ Hooks.once('ready', async function() {
         // Load quest pins first
         loadPersistedPinsOnCanvasReady();
         
+        // Register the controlToken hook AFTER settings are registered
+        Hooks.on('controlToken', async (token, controlled) => {
+            // Only care about token selection, not deselection
+            if (!controlled) return;
+            
+            // Only proceed if it's a GM or the token owner
+            if (!game.user.isGM && !token.actor?.isOwner) return;
+            
+            await PanelManager.initialize(token.actor);
+        });
+        
         // Then initialize the main interface
         const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
         await PanelManager.initialize(firstOwnedToken?.actor || null);
@@ -549,16 +560,7 @@ Hooks.on('renderActorSheet5e', async (app, html, data) => {
     await PanelManager.initialize(app.actor);
 });
 
-// Also handle when tokens are selected
-Hooks.on('controlToken', async (token, controlled) => {
-    // Only care about token selection, not deselection
-    if (!controlled) return;
-    
-    // Only proceed if it's a GM or the token owner
-    if (!game.user.isGM && !token.actor?.isOwner) return;
-    
-    await PanelManager.initialize(token.actor);
-});
+// controlToken hook will be registered in the ready hook after settings are registered
 
 // Restore the squirePins container creation in the canvasInit hook
 Hooks.on('canvasInit', () => {
