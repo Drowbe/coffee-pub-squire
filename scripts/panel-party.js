@@ -44,6 +44,17 @@ export class PartyPanel {
 
         console.log('PartyPanel: render called with controlledTokenIds:', controlledTokenIds);
 
+        // Calculate party health totals
+        const partyRemainingHP = tokens.reduce((total, token) => {
+            const hp = token.actor?.system?.attributes?.hp;
+            return total + (hp?.value || 0);
+        }, 0);
+        
+        const partyTotalHP = tokens.reduce((total, token) => {
+            const hp = token.actor?.system?.attributes?.hp;
+            return total + (hp?.max || 0);
+        }, 0);
+
         // Prepare other party members data for the handle
         const currentActor = game.actors.get(controlledTokenIds[0]);
         const otherPartyMembers = tokens
@@ -63,6 +74,8 @@ export class PartyPanel {
             isGM: game.user.isGM,
             actor: currentActor,
             otherPartyMembers,
+            partyRemainingHP,
+            partyTotalHP,
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros')
@@ -115,7 +128,7 @@ export class PartyPanel {
                 console.log('PartyPanel: Character card clicked', {
                     actorName: token.actor.name,
                     shiftKey: event.shiftKey,
-                    currentlyControlled: token.controlled,
+                    currentlyControlled: token.actor?.name,
                     allControlledTokens: canvas.tokens.controlled.map(t => t.actor?.name)
                 });
                 
@@ -131,6 +144,30 @@ export class PartyPanel {
                         tokenControlled: token.controlled
                     });
                 }, 100);
+            }
+        });
+
+        // Handle party overview health bar clicks
+        html.find('.party-overview-hp-bar').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Get all player-owned tokens on the canvas
+            const partyTokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
+            
+            if (partyTokens.length === 0) return;
+            
+            // Select all party tokens
+            partyTokens.forEach(token => {
+                token.control({releaseOthers: false});
+            });
+            
+            // Open health window if it's not already open
+            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.healthPanel) {
+                const healthPanel = game.modules.get('coffee-pub-squire').api.PanelManager.instance.healthPanel;
+                if (!healthPanel.isPoppedOut) {
+                    await healthPanel._onPopOut();
+                }
             }
         });
         
@@ -796,8 +833,8 @@ export class PartyPanel {
             }
         });
 
-        // Handle health bar clicks in the party tab
-        html.find('.party-hp-bar').click(async (event) => {
+        // Handle individual character health bar clicks in the party tab
+        html.find('.character-card .party-hp-bar').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             const actorId = $(event.currentTarget).closest('.character-card').data('actor-id');

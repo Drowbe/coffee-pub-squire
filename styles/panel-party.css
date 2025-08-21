@@ -98,6 +98,7 @@
     padding: 0 8px;
 }
 
+
 .party-view .character-name {
     display: block;
     font-size: 0.85em;
@@ -209,22 +210,42 @@
     border: 2px solid rgba(0, 0, 0, 0.9) !important;
     transition: width 0.3s ease;
 }
-.party-view .party-hp-bar .hp-fill.healthy  {
-    background-color: rgba(29, 69, 33, 0.9) !important; /* healthy  */
+
+
+/* Party Health Card - Special styling for the overview card */
+.party-view .party-health-card {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 150, 0, 0.8);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(255, 150, 0, 0.1) 100%);
 }
-.party-view .party-hp-bar .hp-fill.injured {
-    background-color: rgba(115, 153, 0, 0.9) !important; /* injured*/
+
+.party-view .party-health-card:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(255, 150, 0, 1);
+    box-shadow: 0 0 8px rgba(255, 150, 0, 0.3);
 }
-.party-view .party-hp-bar .hp-fill.bloodied  {
-    background-color: rgba(157, 116, 35, 0.9) !important; /* bloodied  */
+
+.party-view .party-health-card .character-name {
+    color: #ff9600;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(255, 150, 0, 0.5);
 }
-.party-view .party-hp-bar .hp-fill.critical {
-    background-color: rgba(117, 5, 7, 0.9) !important; /* critical*/
+
+/* Party Overview HP Bar - Special styling for the overview bar */
+.party-view .party-overview-hp-bar {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 150, 0, 0.4);
+    border-radius: 3px;
+    padding: 2px;
 }
-.party-view .party-hp-bar .hp-fill.dead {
-    background-color: rgba(117, 5, 7, 0.1) !important; /* dead*/
-    width: 100%;
+
+.party-view .party-overview-hp-bar .hp-fill {
+    background: linear-gradient(90deg, #ff9600 0%, #ffaa33 100%);
+    border-radius: 2px;
+    box-shadow: 0 0 4px rgba(255, 150, 0, 0.4);
 }
+
+
 /* Section Divider */
 
 .party-view .section-divider {

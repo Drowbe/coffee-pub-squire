@@ -1,4 +1,24 @@
 
+<!-- PARTY HEALTH -->
+
+<div class="character-card clickable party-health-card">
+    <div class="character-info">
+        <div class="character-name">Party Health</div>
+        <div class="character-details">
+            <div class="party-hp-bar party-overview-hp-bar">
+                <div class="hp-current">
+                    <span class="hp-value">{{partyRemainingHP}}</span>
+                </div>
+                <div class="hp-fill" style="width: {{multiply (divide partyRemainingHP partyTotalHP) 100}}%"></div>
+                <div class="hp-max">
+                    <span class="hp-value">{{partyTotalHP}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PARTY CHARACTERS -->
 
 {{#each tokens as |token|}}
     <div class="character-card {{#if token.actor.isOwner}}clickable{{/if}} {{#if (includes ../controlledTokenIds token.actor.id)}}selected{{/if}}" data-actor-id="{{token.actor.id}}">
@@ -56,6 +76,8 @@
         <p>Add tokens to the scene to get started</p>
     </div>
 {{/each}}
+
+<!-- MONSTER AND NPC CHARACTERS -->
 
 {{#if isGM}}
     {{#if nonPlayerTokens.length}}

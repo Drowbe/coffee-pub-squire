@@ -128,19 +128,27 @@
 }
 
 
-/* Action Type Indicators - ARE THESE USED? */
-/* 
-.action-type {
-    display: inline-block;
-    margin-left: 4px;
-}
+/* GLOBAL HEALTH PROGRESS BARS */
 
-.action-type i {
-    font-size: 0.9em;
-    color: #666;
+.squire-tray-healthbar-healthy  {
+    background-color: rgba(29, 69, 33, 0.9) !important; /* healthy  */
 }
-
-.action-type i:hover {
-    color: #000;
-} 
-*/
+.squire-tray-healthbar-injured {
+    background-color: rgba(115, 153, 0, 0.9) !important; /* injured*/
+}
+.squire-tray-healthbar-bloodied  {
+    background-color: rgba(157, 116, 35, 0.9) !important; /* bloodied  */
+}
+.squire-tray-healthbar-critical {
+    background-color: rgba(117, 5, 7, 0.9) !important; /* critical*/
+    animation: squire-tray-healthbar-animation-pulse 1.0s infinite alternate;
+}
+.squire-tray-healthbar-dead {
+    background-color: rgba(117, 5, 7, 0.1) !important; /* dead*/
+    width: 100%;
+    animation: squire-tray-healthbar-animation-pulse 5.0s infinite alternate;
+}
+/* Health Status Animations */
+@keyframes squire-tray-healthbar-animation-pulse {
+    from { opacity: 0.5; } to { opacity: 1.0; }
+}

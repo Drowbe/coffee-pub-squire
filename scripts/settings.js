@@ -481,6 +481,73 @@ export const registerSettings = function() {
         default: true
     });
 
+
+    // --------------------------------
+    // ---      HEALTH Settings      ---
+    // --------------------------------
+
+	// ---------- Health Heading ----------
+	game.settings.register(MODULE.ID, "headingH3HealthConfiguration", {
+		name: 'Health Configuration',
+		hint: 'Settings for the health bars in the tray.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
+
+    // -- Injured Threshold --
+    game.settings.register(MODULE.ID, 'healthThresholdInjured', {
+        name:'Injured Threshold',
+        hint: 'The percentage of health at which the health bar will turn a dark green.',
+        scope: "world",
+        config: true,
+        requiresReload: false,
+        type: Number,
+        default: 75,
+        range: {
+            min: 0,
+            max: 100,
+            step: 1,
+        },
+    });
+
+// -- Bloodied Threshold --
+    game.settings.register(MODULE.ID, 'healthThresholdBloodied', {
+        name:'Bloodied Threshold',
+        hint: 'The percentage of health at which the health bar will turn a dark orange.',
+        scope: "world",
+        config: true,
+        requiresReload: false,
+        type: Number,
+        default: 50,
+        range: {
+            min: 0,
+            max: 100,
+            step: 1,
+        },
+    });
+
+// -- Critical Threshold --
+    game.settings.register(MODULE.ID, 'healthThresholdCritical', {
+        name:'Critical Threshold',
+        hint: 'The percentage of health at which the health bar will turn a dark red.',
+        scope: "world",
+        config: true,
+        requiresReload: false,
+        type: Number,
+        default: 25,
+        range: {
+            min: 0,
+            max: 100,
+            step: 1,
+        },
+    });
+
+
+
+
     // --------------------------------
     // ---      NOTES Settings      ---
     // --------------------------------
