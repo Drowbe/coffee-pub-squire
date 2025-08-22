@@ -122,24 +122,30 @@ export class FavoritesPanel {
         // Also clear handle favorites when clearing all favorites
         await actor.unsetFlag(MODULE.ID, 'handleFavorites');
         if (PanelManager.instance) {
-            // First update the favorites panel
-            if (PanelManager.instance.favoritesPanel?.element) {
-                await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
-            }
-
-            // Then update all other panels
-            if (PanelManager.instance.inventoryPanel?.element) {
-                await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
-            }
-            if (PanelManager.instance.weaponsPanel?.element) {
-                await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
-            }
-            if (PanelManager.instance.spellsPanel?.element) {
-                await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
-            }
-
-            // Update the handle to reflect the cleared favorites
+            // Update just the handle to reflect the cleared favorites
             await PanelManager.instance.updateHandle();
+            
+            // Update panel data without full re-renders
+            if (PanelManager.instance.favoritesPanel) {
+                PanelManager.instance.favoritesPanel.favorites = [];
+                // Clear the favorites list from DOM
+                if (PanelManager.instance.favoritesPanel.element) {
+                    const $favoritesList = $(PanelManager.instance.favoritesPanel.element).find('.favorites-list');
+                    $favoritesList.find('.favorite-item').remove();
+                    $favoritesList.append('<div class="tray-title-small" style="text-align: center; padding: 10px;">No favorites available</div>');
+                }
+            }
+            
+            // Update other panels' data
+            if (PanelManager.instance.inventoryPanel) {
+                PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
+            }
+            if (PanelManager.instance.weaponsPanel) {
+                PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+            }
+            if (PanelManager.instance.spellsPanel) {
+                PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+            }
         }
         return [];
     }
@@ -181,24 +187,71 @@ export class FavoritesPanel {
             // Get the PanelManager instance directly
             const panelManager = PanelManager.instance;
             if (panelManager) {
-                // First update the favorites panel
-                if (panelManager.favoritesPanel?.element) {
-                    await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
-                }
-
-                // Then update all other panels
-                if (panelManager.inventoryPanel?.element) {
-                    await panelManager.inventoryPanel.render(panelManager.inventoryPanel.element);
-                }
-                if (panelManager.weaponsPanel?.element) {
-                    await panelManager.weaponsPanel.render(panelManager.weaponsPanel.element);
-                }
-                if (panelManager.spellsPanel?.element) {
-                    await panelManager.spellsPanel.render(panelManager.spellsPanel.element);
-                }
-
                 // Update just the handle to refresh favorites
                 await panelManager.updateHandle();
+                
+                // Update the favorites panel data without full re-render
+                if (panelManager.favoritesPanel) {
+                    panelManager.favoritesPanel.favorites = FavoritesPanel.getFavorites(actor);
+                    
+                    // Targeted DOM update for the favorites panel
+                    if (panelManager.favoritesPanel.element) {
+                        const $favoritesPanel = $(panelManager.favoritesPanel.element);
+                        const $favoriteItem = $favoritesPanel.find(`[data-item-id="${itemId}"]`);
+                        
+                        if ($favoriteItem.length) {
+                            if (newFavorites.includes(itemId)) {
+                                // Item was added to favorites - add it to the list
+                                // This would require more complex logic, so we'll do a minimal re-render
+                                await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
+                            } else {
+                                // Item was removed from favorites - remove it from the list
+                                $favoriteItem.remove();
+                            }
+                        } else if (newFavorites.includes(itemId)) {
+                            // Item was added but not in DOM yet - do minimal re-render
+                            await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
+                        }
+                    }
+                }
+                
+                // Update other panels' data without full re-render
+                if (panelManager.inventoryPanel) {
+                    panelManager.inventoryPanel.items = panelManager.inventoryPanel._getItems();
+                    
+                    // Targeted DOM update for heart icons
+                    if (panelManager.inventoryPanel.element) {
+                        const $inventoryPanel = $(panelManager.inventoryPanel.element);
+                        const $heartIcon = $inventoryPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
+                        if ($heartIcon.length) {
+                            $heartIcon.toggleClass('active', newFavorites.includes(itemId));
+                        }
+                    }
+                }
+                if (panelManager.weaponsPanel) {
+                    panelManager.weaponsPanel.weapons = panelManager.weaponsPanel._getWeapons();
+                    
+                    // Targeted DOM update for heart icons
+                    if (panelManager.weaponsPanel.element) {
+                        const $weaponsPanel = $(panelManager.weaponsPanel.element);
+                        const $heartIcon = $weaponsPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
+                        if ($heartIcon.length) {
+                            $heartIcon.toggleClass('active', newFavorites.includes(itemId));
+                        }
+                    }
+                }
+                if (panelManager.spellsPanel) {
+                    panelManager.spellsPanel.spells = panelManager.spellsPanel._getSpells();
+                    
+                    // Targeted DOM update for heart icons
+                    if (panelManager.spellsPanel.element) {
+                        const $spellsPanel = $(panelManager.spellsPanel.element);
+                        const $heartIcon = $spellsPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
+                        if ($heartIcon.length) {
+                            $heartIcon.toggleClass('active', newFavorites.includes(itemId));
+                        }
+                    }
+                }
             }
 
             return newFavorites.includes(itemId);
@@ -762,22 +815,24 @@ export class FavoritesPanel {
                 const wasExpanded = tray.hasClass('expanded');
                 const wasPinned = tray.hasClass('pinned');
                 
-                // First update all panels that need to be refreshed
-                if (PanelManager.instance.favoritesPanel?.element) {
-                    await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
-                }
-                if (PanelManager.instance.inventoryPanel?.element) {
-                    await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
-                }
-                if (PanelManager.instance.weaponsPanel?.element) {
-                    await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
-                }
-                if (PanelManager.instance.spellsPanel?.element) {
-                    await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
-                }
-
-                // Update the handle
+                // Update just the handle - no need to re-render all panels
                 await PanelManager.instance.updateHandle();
+                
+                // Update the favorites panel data
+                if (PanelManager.instance.favoritesPanel) {
+                    PanelManager.instance.favoritesPanel.favorites = PanelManager.instance.favoritesPanel._getFavorites();
+                }
+                
+                // Update other panels' data
+                if (PanelManager.instance.inventoryPanel) {
+                    PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
+                }
+                if (PanelManager.instance.weaponsPanel) {
+                    PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+                }
+                if (PanelManager.instance.spellsPanel) {
+                    PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                }
 
                 // Re-bind the handle click event
                 const handle = tray.find('.tray-handle');
