@@ -391,7 +391,7 @@ export class HandleManager {
             const conditionName = $(event.currentTarget).data('tooltip');
             
             if (!conditionName) {
-                console.warn('HandleManager: No condition name found for condition icon');
+
                 return;
             }
             
@@ -477,7 +477,6 @@ export class HandleManager {
             
             const conditionName = $(event.currentTarget).data('tooltip');
             if (!conditionName) {
-                console.warn('HandleManager: No condition name found for condition icon');
                 return;
             }
             
@@ -687,13 +686,13 @@ export class HandleManager {
             const actorId = $(this).data('actor-id');
             
             if (!actorId) {
-                console.warn('HandleManager: No actor ID found on party member health bar');
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.TITLE, 'HandleManager: No actor ID found on party member health bar', '', true, false);
                 return;
             }
             
             const actor = game.actors.get(actorId);
             if (!actor) {
-                console.warn('HandleManager: Could not find actor with ID:', actorId);
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.TITLE, 'HandleManager: Could not find actor with ID:', actorId, true, false);
                 return;
             }
             
@@ -718,7 +717,7 @@ export class HandleManager {
                     await PanelManager.instance.healthPanel._onPopOut();
                 }
             } else {
-                console.warn('HandleManager: Health panel not available');
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.TITLE, 'HandleManager: Health panel not available', '', true, false);
             }
         });
 
@@ -876,13 +875,13 @@ export class HandleManager {
             const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
             
             if (!pinnedQuestUuid) {
-                console.warn('HandleManager: No pinned quest UUID found');
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.TITLE, 'HandleManager: No pinned quest UUID found', '', true, false);
                 return null;
             }
             
             const doc = await fromUuid(pinnedQuestUuid);
             if (!doc) {
-                console.warn('HandleManager: Could not resolve document from UUID:', pinnedQuestUuid);
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.TITLE, 'HandleManager: Could not resolve document from UUID:', pinnedQuestUuid, true, false);
                 return null;
             }
             
@@ -891,23 +890,11 @@ export class HandleManager {
             
             const entry = await QuestParser.parseSinglePage(doc, enrichedHtml);
             
-            if (!entry) {
-                console.warn('HandleManager: QuestParser returned null/undefined entry');
-                return null;
-            }
-            
-            if (!entry.title) {
-                console.warn('HandleManager: Entry missing title:', entry);
-            }
-            
-            if (!entry.tasks || !Array.isArray(entry.tasks)) {
-                console.warn('HandleManager: Entry missing or invalid tasks:', entry.tasks);
-            }
-            
+  
             // If QuestParser failed to parse tasks, create a basic fallback
             let fallbackTasks = [];
             if (!entry.tasks || entry.tasks.length === 0) {
-                console.warn('HandleManager: QuestParser returned no tasks, creating fallback');
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.TITLE, 'HandleManager: QuestParser returned no tasks, creating fallback', '', true, false);
                 // Create a basic fallback with just the quest name
                 fallbackTasks = [{
                     text: 'Quest details available in journal',
