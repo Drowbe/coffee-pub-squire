@@ -29,7 +29,7 @@ export class WeaponsPanel {
                 system: weapon.system,
                 weaponType: weaponType,
                 actionType: this._getActionType(weapon),
-                isFavorite: favorites.some(fav => fav.id === weapon.id),
+                isFavorite: favorites.includes(weapon.id),
                 categoryId: `category-weapon-${weaponType}`
             };
         });
