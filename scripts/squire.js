@@ -233,7 +233,7 @@ Hooks.once('socketlib.ready', () => {
 Hooks.once('init', async function() {
     game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification(
         MODULE.NAME,
-        `${MODULE.NAME} | Initializing ${MODULE.TITLE}`,
+        `${MODULE.TITLE} | Initializing ${MODULE.TITLE}`,
         null,
         true,
         false
@@ -375,7 +375,7 @@ Hooks.once('ready', async function() {
     // Debug log the exclusion status
     blacksmith.utils.postConsoleAndNotification(
         MODULE.NAME,
-        `${MODULE.NAME} | User Exclusion Check`,
+        `${MODULE.TITLE} | User Exclusion Check`,
         {
             currentUserId,
             currentUserName,
@@ -425,7 +425,7 @@ Hooks.once('ready', async function() {
     // Debug log for Blacksmith sound choices
     blacksmith.utils.postConsoleAndNotification(
         MODULE.NAME,
-        `${MODULE.NAME} | Blacksmith API`,
+        `${MODULE.TITLE} | Blacksmith API`,
         {
             api: blacksmith,
             BLACKSMITH: blacksmith.BLACKSMITH,
