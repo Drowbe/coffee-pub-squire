@@ -168,6 +168,37 @@ export const registerHelpers = function() {
             }));
     });
 
+    // Helper to get handle favorites from actor
+    Handlebars.registerHelper('getHandleFavorites', function(actor) {
+        if (!actor) return [];
+        
+        // Debug: Check if actor has getFlag method
+        if (typeof actor.getFlag !== 'function') {
+            console.warn('getHandleFavorites helper: actor.getFlag is not a function', actor);
+            return [];
+        }
+        
+        // Get our module's handle favorites from flags and filter out null values
+        const handleFavorites = (actor.getFlag(MODULE.ID, 'handleFavorites') || []).filter(id => id !== null && id !== undefined);
+        
+        // Create a map of items by ID for quick lookup
+        const itemsById = new Map(actor.items.map(item => [item.id, item]));
+        
+        // Map handle favorites in their original order
+        return handleFavorites
+            .map(id => itemsById.get(id))
+            .filter(item => item) // Remove any undefined items
+            .map(item => ({
+                id: item.id,
+                name: item.name,
+                img: item.img || 'icons/svg/item-bag.svg',
+                type: item.type,
+                system: item.system,
+                weaponType: item.type === 'weapon' ? getWeaponType(item) : null,
+                damageInfo: getDamageInfo(item)
+            }));
+    });
+
     // Helper to format numbers (e.g., 1000 -> 1K, 1000000 -> 1M)
     Handlebars.registerHelper('formatNumber', function(number) {
         if (number === undefined || number === null) return '0';

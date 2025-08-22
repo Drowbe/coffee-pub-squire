@@ -1,7 +1,7 @@
 {{!-- FAVORITES --}} 
 
 <div class="handle-favorites">
-    {{#each (getFavorites actor)}}
+    {{#each (getHandleFavorites actor)}}
         {{#if (or 
             (and (eq this.type 'spell') (or (eq this.system.level 0) this.system.preparation.prepared))
             (and (eq this.type 'weapon') this.system.equipped)

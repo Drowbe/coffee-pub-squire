@@ -119,6 +119,8 @@ export class FavoritesPanel {
             return [];
         }
         await actor.unsetFlag(MODULE.ID, 'favorites');
+        // Also clear handle favorites when clearing all favorites
+        await actor.unsetFlag(MODULE.ID, 'handleFavorites');
         if (PanelManager.instance) {
             // First update the favorites panel
             if (PanelManager.instance.favoritesPanel?.element) {
@@ -171,6 +173,11 @@ export class FavoritesPanel {
             await actor.unsetFlag(MODULE.ID, 'favorites');
             await actor.setFlag(MODULE.ID, 'favorites', newFavorites);
 
+            // If we're removing a favorite, also remove it from handleFavorites
+            if (!newFavorites.includes(itemId)) {
+                await FavoritesPanel.removeHandleFavorite(actor, itemId);
+            }
+
             // Get the PanelManager instance directly
             const panelManager = PanelManager.instance;
             if (panelManager) {
@@ -215,9 +222,9 @@ export class FavoritesPanel {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         try {
             // Check if actor is from a compendium (more robust check)
-            const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+            const isFromCompendium = actor.pack || (this.actor.collection && this.actor.collection.locked);
             if (isFromCompendium) {
-                // Debug: Skipping auto-favorites for actor from compendium
+                // Debug: Skipping auto-favorites initialization for actor from compendium
                 return false;
             }
             
@@ -229,7 +236,6 @@ export class FavoritesPanel {
             
             // Get all items from the actor
             const newFavorites = [];
-            const newHandleFavorites = [];
             
             // Add equipped weapons to favorites
             const weapons = actor.items.filter(item => 
@@ -249,22 +255,19 @@ export class FavoritesPanel {
             );
             // Get the IDs of all items to favorite
             const itemsToFavorite = [...weapons, ...spells, ...monsterFeatures].map(item => item.id);
-            // Add all to handle favorites as well
-            newHandleFavorites.push(...itemsToFavorite);
+            
             // If no items to favorite, don't do anything
             if (itemsToFavorite.length === 0) return false;
-            // Save the new favorites
+            
+            // Save the new favorites - ONLY to favorites, NOT to handleFavorites
             await actor.unsetFlag(MODULE.ID, 'favorites');
             await actor.setFlag(MODULE.ID, 'favorites', itemsToFavorite);
-            // Save the new handle favorites
-            await actor.unsetFlag(MODULE.ID, 'handleFavorites');
-            await actor.setFlag(MODULE.ID, 'handleFavorites', newHandleFavorites);
+            
             // Force refresh of items collection to ensure up-to-date data
             if (actor.items && typeof actor.items._flush === 'function') {
                 await actor.items._flush();
             }
-            // DEBUG: Log the values after setting
-            // Debug: Auto-favorited items for NPC/Monster
+            
             // Refresh the panels if they exist
             if (PanelManager.instance && PanelManager.currentActor?.id === actor.id) {
                 // First update the favorites panel
@@ -281,7 +284,7 @@ export class FavoritesPanel {
                 if (PanelManager.instance.spellsPanel?.element) {
                     await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
                 }
-                // Update just the handle to refresh favorites
+                // Update the handle to reflect the new favorites
                 await PanelManager.instance.updateHandle();
             }
             return true;
