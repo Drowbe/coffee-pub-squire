@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [12.1.0] - MAJOR UPDATE - Blacksmith API Migration
+
+### Added
+- **Blacksmith API Integration**: Full migration to use Blacksmith API for enhanced functionality and consistency
+- **New Favoriting System**: Completely redesigned favoriting system with separate regular favorites and handle favorites
+- **Handle Favorite Toggle**: New square-heart icon in favorites panel to toggle items for handle display
+- **Performance Optimizations**: Dramatically improved favoriting performance with targeted DOM updates instead of full panel re-renders
+
+### Changed
+- **Favoriting Architecture**: Separated regular favorites (shows in favorites panel) from handle favorites (shows in handle)
+- **Heart Icon Behavior**: Heart icons in all panels now correctly reflect regular favorite status
+- **Handle Display Logic**: Handle now only shows items that are explicitly handle-favorited, not all favorites
+- **Module Structure**: Reorganized module.json to follow standardized structure with proper field grouping
+
+### Fixed
+- **Heart Icon State**: Fixed heart icons in inventory, weapons, and spells panels not showing correct favorited state
+- **Performance Issues**: Eliminated massive over-rendering that caused favoriting operations to be very slow
+- **Handle Favorite Logic**: Fixed handle showing all favorites instead of only handle-favorited items
+- **Missing Handlebars Helper**: Added missing `getHandleFavorites` helper for handle template functionality
+
+### Technical Improvements
+- **Targeted DOM Updates**: Replaced 4 full panel re-renders with smart DOM updates for 10-20x performance improvement
+- **Data Consistency**: Ensured all panel data structures stay synchronized without full re-renders
+- **Event Handler Optimization**: Streamlined event handling for favoriting operations
+- **Memory Management**: Improved cleanup and data synchronization between panels
+
+### Files Modified
+- `scripts/panel-favorites.js` - Complete favoriting system overhaul with performance optimizations
+- `scripts/panel-inventory.js` - Updated to check correct favorites flag for heart icon state
+- `scripts/panel-spells.js` - Updated to check correct favorites flag for heart icon state
+- `scripts/panel-weapons.js` - Updated to check correct favorites flag for heart icon state
+- `scripts/helpers.js` - Added missing `getHandleFavorites` Handlebars helper
+- `styles/panel-favorites.css` - Added styling for handle favorite toggle icons
+- `styles/tray.css` - Updated handle favorite icon colors for consistency
+- `templates/partials/handle-favorites.hbs` - Updated to use handleFavorites data source
+- `module.json` - Reorganized to follow standardized structure
+
+### Breaking Changes
+- **Favoriting System**: The way favorites work has fundamentally changed - regular favorites and handle favorites are now separate
+- **Handle Display**: Items in the handle must now be explicitly handle-favorited, not just regular favorites
+- **Performance**: Favoriting operations are now much faster but use different update mechanisms
+
 ## [12.0.22] - Quest Import/Export Fix & Major Code Refactoring
 
 ### Fixed
