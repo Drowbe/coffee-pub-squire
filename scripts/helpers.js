@@ -184,14 +184,34 @@ export const registerHelpers = function() {
             return [];
         }
         
-        // Get our module's handle favorites from flags and filter out null values
+        // Get our module's handle favorites and panel favorites from flags
         const handleFavorites = (actor.getFlag(MODULE.ID, 'favoriteHandle') || []).filter(id => id !== null && id !== undefined);
+        const panelFavorites = (actor.getFlag(MODULE.ID, 'favoritePanel') || []).filter(id => id !== null && id !== undefined);
         
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(actor.items.map(item => [item.id, item]));
         
-        // Map handle favorites in their original order
-        return handleFavorites
+        // Sort handle favorites based on their position in panel favorites
+        // Since the handle is rotated 180 degrees, we need to reverse the order
+        const sortedHandleFavorites = handleFavorites.sort((a, b) => {
+            const aIndex = panelFavorites.indexOf(a);
+            const bIndex = panelFavorites.indexOf(b);
+            
+            // If both are in panel favorites, sort by their position (reversed for rotation)
+            if (aIndex !== -1 && bIndex !== -1) {
+                return bIndex - aIndex; // Reversed: bIndex - aIndex instead of aIndex - bIndex
+            }
+            
+            // If only one is in panel favorites, prioritize it
+            if (aIndex !== -1) return -1;
+            if (bIndex !== -1) return 1;
+            
+            // If neither is in panel favorites, maintain original order
+            return 0;
+        });
+        
+        // Map handle favorites in the sorted order
+        return sortedHandleFavorites
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items
             .map(item => ({

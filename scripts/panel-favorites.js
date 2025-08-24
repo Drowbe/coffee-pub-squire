@@ -859,19 +859,19 @@ export class FavoritesPanel {
                 // Update other panels' data
                 if (PanelManager.instance.inventoryPanel) {
                     PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
-                    panelManager.inventoryPanel._updateHeartIcons();
+                    PanelManager.instance.inventoryPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.weaponsPanel) {
                     PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
-                    panelManager.weaponsPanel._updateHeartIcons();
+                    PanelManager.instance.weaponsPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.spellsPanel) {
                     PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
-                    panelManager.spellsPanel._updateHeartIcons();
+                    PanelManager.instance.spellsPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.featuresPanel) {
                     PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
-                    panelManager.featuresPanel._updateHeartIcons();
+                    PanelManager.instance.featuresPanel._updateHeartIcons();
                 }
 
             }
