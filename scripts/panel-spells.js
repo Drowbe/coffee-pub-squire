@@ -306,7 +306,6 @@ export class SpellsPanel {
             panel.on('click.squireSpells', '.slot-pip', async (event) => {
                 const $pip = $(event.currentTarget);
                 const level = parseInt($pip.data('level'));
-                const slotIndex = $pip.index(); // Position within the slot group
                 
                 if (isNaN(level)) return;
                 
@@ -314,23 +313,23 @@ export class SpellsPanel {
                 if (!spellLevel) return;
                 
                 const maxSlots = spellLevel.override ?? spellLevel.max;
-                const currentUsed = maxSlots - spellLevel.value; // Current used count
+                const currentAvailable = spellLevel.value || 0; // Current available slots
                 
-                let newUsed;
-                if (slotIndex < currentUsed) {
-                    // Clicked on a USED slot (X) - RESTORE it
-                    newUsed = currentUsed - 1;
+                // Simple logic: if pip is filled (available), use it (-1). If unfilled (expended), restore it (+1)
+                const isCurrentlyAvailable = $pip.hasClass('filled');
+                let newAvailable;
+                
+                if (isCurrentlyAvailable) {
+                    // Clicked on available slot (filled) - USE it (-1 available)
+                    newAvailable = Math.max(0, currentAvailable - 1);
                 } else {
-                    // Clicked on an UNUSED slot (O) - USE it
-                    newUsed = currentUsed + 1;
+                    // Clicked on expended slot (unfilled) - RESTORE it (+1 available)
+                    newAvailable = Math.min(maxSlots, currentAvailable + 1);
                 }
-                
-                // Clamp to valid range (0 to max)
-                newUsed = Math.max(0, Math.min(newUsed, maxSlots));
                 
                 // Update the actor's spell slots
                 await this.actor.update({
-                    [`system.spells.spell${level}.value`]: maxSlots - newUsed
+                    [`system.spells.spell${level}.value`]: newAvailable
                 });
                 
                 // Refresh the spell slots display
