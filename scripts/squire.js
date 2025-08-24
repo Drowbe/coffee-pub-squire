@@ -463,6 +463,30 @@ Hooks.once('ready', async function() {
         // Then initialize the main interface
         const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
         await PanelManager.initialize(firstOwnedToken?.actor || null);
+        
+        // Clean up old favorite flags from all actors (one-time migration)
+        if (game.user.isGM) {
+            const { FavoritesPanel } = await import('./panel-favorites.js');
+            await FavoritesPanel.cleanupOldFavoriteFlags();
+        }
+        
+        // Add console command for testing favorites system
+        if (game.user.isGM) {
+            window.testFavorites = async () => {
+                const { FavoritesPanel } = await import('./panel-favorites.js');
+                const currentActor = PanelManager.instance?.actor;
+                if (!currentActor) {
+                    console.log('No actor selected');
+                    return;
+                }
+                
+                console.log('Current actor:', currentActor.name);
+                console.log('Panel favorites:', FavoritesPanel.getPanelFavorites(currentActor));
+                console.log('Handle favorites:', FavoritesPanel.getHandleFavorites(currentActor));
+            };
+            
+            console.log('Favorites system ready. Use window.testFavorites() to test.');
+        }
     }, 1000); // 1 second delay to ensure settings and canvas are fully ready
 });
 

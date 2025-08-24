@@ -137,24 +137,24 @@ export const registerHelpers = function() {
         return str.toUpperCase();
     });
 
-    // Helper to get favorites from actor
-    Handlebars.registerHelper('getFavorites', function(actor) {
+    // Helper to get panel favorites from actor
+    Handlebars.registerHelper('getPanelFavorites', function(actor) {
         if (!actor) return [];
         
         // Debug: Check if actor has getFlag method
         if (typeof actor.getFlag !== 'function') {
-            console.warn('getFavorites helper: actor.getFlag is not a function', actor);
+            console.warn('getPanelFavorites helper: actor.getFlag is not a function', actor);
             return [];
         }
         
-        // Get our module's favorites from flags and filter out null values
-        const favorites = (actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
+        // Get our module's panel favorites from flags and filter out null values
+        const panelFavorites = (actor.getFlag(MODULE.ID, 'favoritePanel') || []).filter(id => id !== null && id !== undefined);
         
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(actor.items.map(item => [item.id, item]));
         
-        // Map favorites in their original order
-        return favorites
+        // Map panel favorites in their original order
+        return panelFavorites
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items
             .map(item => ({
@@ -179,7 +179,7 @@ export const registerHelpers = function() {
         }
         
         // Get our module's handle favorites from flags and filter out null values
-        const handleFavorites = (actor.getFlag(MODULE.ID, 'handleFavorites') || []).filter(id => id !== null && id !== undefined);
+        const handleFavorites = (actor.getFlag(MODULE.ID, 'favoriteHandle') || []).filter(id => id !== null && id !== undefined);
         
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(actor.items.map(item => [item.id, item]));

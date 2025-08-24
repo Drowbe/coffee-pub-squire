@@ -18,7 +18,7 @@ export class FeaturesPanel {
         if (!this.actor) return [];
         
         // Get current favorites
-        const favorites = FavoritesPanel.getFavorites(this.actor);
+        const favorites = FavoritesPanel.getPanelFavorites(this.actor);
         
         // Get features
         const features = this.actor.items.filter(item => item.type === 'feat');

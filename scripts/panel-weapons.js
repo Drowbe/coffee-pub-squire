@@ -14,7 +14,7 @@ export class WeaponsPanel {
         if (!this.actor) return [];
         
         // Get current favorites
-        const favorites = FavoritesPanel.getFavorites(this.actor);
+        const favorites = FavoritesPanel.getPanelFavorites(this.actor);
         
         // Get weapons
         const weapons = this.actor.items.filter(item => item.type === 'weapon');

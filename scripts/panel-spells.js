@@ -14,7 +14,7 @@ export class SpellsPanel {
         if (!this.actor) return [];
         
         // Get current favorites
-        const favorites = FavoritesPanel.getFavorites(this.actor);
+        const favorites = FavoritesPanel.getPanelFavorites(this.actor);
         
         // Get spells
         const spells = this.actor.items.filter(item => item.type === 'spell');

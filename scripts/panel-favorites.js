@@ -7,15 +7,15 @@ function getBlacksmith() {
 }
 
 export class FavoritesPanel {
-    static getFavorites(actor) {
+    static getPanelFavorites(actor) {
         if (!actor) return [];
-        return actor.getFlag(MODULE.ID, 'favorites') || [];
+        return actor.getFlag(MODULE.ID, 'favoritePanel') || [];
     }
 
-    // NEW: Handle favorites methods using array-based approach
+    // Handle favorites methods using array-based approach
     static getHandleFavorites(actor) {
         if (!actor) return [];
-        return actor.getFlag(MODULE.ID, 'handleFavorites') || [];
+        return actor.getFlag(MODULE.ID, 'favoriteHandle') || [];
     }
 
     static async setHandleFavorites(actor, ids) {
@@ -25,7 +25,7 @@ export class FavoritesPanel {
             // Debug: Cannot set handle favorites for actor from compendium
             return;
         }
-        await actor.setFlag(MODULE.ID, 'handleFavorites', ids);
+        await actor.setFlag(MODULE.ID, 'favoriteHandle', ids);
     }
 
     static async addHandleFavorite(actor, itemId) {
@@ -57,44 +57,51 @@ export class FavoritesPanel {
     }
 
     /**
-     * Migrate from old per-item flag system to new array-based system
-     * @param {Actor} actor - The actor to migrate
-     * @returns {Promise<boolean>} - Returns true if migration was performed
+     * Clean up old favorite flags from all actors in the world
+     * This should be called once to migrate to the new system
      */
-    static async migrateHandleFavorites(actor) {
-        if (!actor) return false;
-        
-        // Check if actor is from a compendium (more robust check)
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
-        if (isFromCompendium) {
-            // Debug: Cannot migrate handle favorites for actor from compendium
-            return false;
+    static async cleanupOldFavoriteFlags() {
+        try {
+            const actors = game.actors.filter(actor => 
+                actor.getFlag(MODULE.ID, 'favorites') || 
+                actor.getFlag(MODULE.ID, 'handleFavorites') ||
+                actor.getFlag(MODULE.ID, 'isHandleFavorite')
+            );
+            
+            if (actors.length === 0) {
+                console.log(`${MODULE.ID}: No actors with old favorite flags found`);
+                return;
+            }
+            
+            console.log(`${MODULE.ID}: Cleaning up old favorite flags from ${actors.length} actors`);
+            
+            for (const actor of actors) {
+                // Remove old flags
+                await actor.unsetFlag(MODULE.ID, 'favorites');
+                await actor.unsetFlag(MODULE.ID, 'handleFavorites');
+                
+                // Remove old per-item flags
+                for (const item of actor.items) {
+                    await item.unsetFlag(MODULE.ID, 'isHandleFavorite');
+                }
+            }
+            
+            console.log(`${MODULE.ID}: Successfully cleaned up old favorite flags`);
+            
+            // Refresh the UI if panels are open
+            if (PanelManager.instance) {
+                await PanelManager.instance.updateHandle();
+                if (PanelManager.instance.favoritesPanel?.element) {
+                    await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                }
+            }
+            
+        } catch (error) {
+            console.error(`${MODULE.ID}: Error cleaning up old favorite flags:`, error);
         }
-        
-        // Check if we already have handle favorites array
-        const currentHandleFavorites = this.getHandleFavorites(actor);
-        if (currentHandleFavorites.length > 0) return false; // Already migrated
-        
-        // Find all items with the old flag
-        const itemsWithOldFlag = actor.items.filter(item => 
-            item.getFlag(MODULE.ID, 'isHandleFavorite') === true
-        );
-        
-        if (itemsWithOldFlag.length === 0) return false; // Nothing to migrate
-        
-        // Get the IDs of items with the old flag
-        const itemIds = itemsWithOldFlag.map(item => item.id);
-        
-        // Set the new array-based handle favorites
-        await this.setHandleFavorites(actor, itemIds);
-        
-        // Remove the old flags from all items
-        for (const item of itemsWithOldFlag) {
-            await item.unsetFlag(MODULE.ID, 'isHandleFavorite');
-        }
-        
-        return true;
     }
+
+
 
     static async clearHandleFavorites(actor) {
         // Check if actor is from a compendium (more robust check)
@@ -103,7 +110,7 @@ export class FavoritesPanel {
             // Debug: Cannot clear handle favorites for actor from compendium
             return [];
         }
-        await actor.unsetFlag(MODULE.ID, 'handleFavorites');
+        await actor.unsetFlag(MODULE.ID, 'favoriteHandle');
         if (PanelManager.instance) {
             // Update the handle to reflect the cleared handle favorites
             await PanelManager.instance.updateHandle();
@@ -118,9 +125,9 @@ export class FavoritesPanel {
             // Debug: Cannot clear favorites for actor from compendium
             return [];
         }
-        await actor.unsetFlag(MODULE.ID, 'favorites');
+        await actor.unsetFlag(MODULE.ID, 'favoritePanel');
         // Also clear handle favorites when clearing all favorites
-        await actor.unsetFlag(MODULE.ID, 'handleFavorites');
+        await actor.unsetFlag(MODULE.ID, 'favoriteHandle');
         if (PanelManager.instance) {
             // Update just the handle to reflect the cleared favorites
             await PanelManager.instance.updateHandle();
@@ -166,21 +173,20 @@ export class FavoritesPanel {
                 return false;
             }
 
-            // Get current favorites and ensure it's an array
-            const favorites = Array.isArray(actor.getFlag(MODULE.ID, 'favorites')) ? 
-                actor.getFlag(MODULE.ID, 'favorites') : [];
+            // Get current panel favorites and ensure it's an array
+            const panelFavorites = Array.isArray(actor.getFlag(MODULE.ID, 'favoritePanel')) ? 
+                actor.getFlag(MODULE.ID, 'favoritePanel') : [];
             
             // Filter out any null/undefined values and create new array
-            const newFavorites = favorites.includes(itemId)
-                ? favorites.filter(id => id !== null && id !== undefined && id !== itemId)
-                : [...favorites.filter(id => id !== null && id !== undefined), itemId];
+            const newPanelFavorites = panelFavorites.includes(itemId)
+                ? panelFavorites.filter(id => id !== null && id !== undefined && id !== itemId)
+                : [...panelFavorites.filter(id => id !== null && id !== undefined), itemId];
 
-            // Update the flag and wait for it to complete
-            await actor.unsetFlag(MODULE.ID, 'favorites');
-            await actor.setFlag(MODULE.ID, 'favorites', newFavorites);
+            // Update the panel favorites flag
+            await actor.setFlag(MODULE.ID, 'favoritePanel', newPanelFavorites);
 
-            // If we're removing a favorite, also remove it from handleFavorites
-            if (!newFavorites.includes(itemId)) {
+            // If we're removing a panel favorite, also remove it from handle favorites
+            if (!newPanelFavorites.includes(itemId)) {
                 await FavoritesPanel.removeHandleFavorite(actor, itemId);
             }
 
@@ -192,7 +198,7 @@ export class FavoritesPanel {
                 
                 // Update the favorites panel data without full re-render
                 if (panelManager.favoritesPanel) {
-                    panelManager.favoritesPanel.favorites = FavoritesPanel.getFavorites(actor);
+                    panelManager.favoritesPanel.favorites = FavoritesPanel.getPanelFavorites(actor);
                     
                     // Targeted DOM update for the favorites panel
                     if (panelManager.favoritesPanel.element) {
@@ -200,7 +206,7 @@ export class FavoritesPanel {
                         const $favoriteItem = $favoritesPanel.find(`[data-item-id="${itemId}"]`);
                         
                         if ($favoriteItem.length) {
-                            if (newFavorites.includes(itemId)) {
+                            if (newPanelFavorites.includes(itemId)) {
                                 // Item was added to favorites - add it to the list
                                 // This would require more complex logic, so we'll do a minimal re-render
                                 await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
@@ -208,7 +214,7 @@ export class FavoritesPanel {
                                 // Item was removed from favorites - remove it from the list
                                 $favoriteItem.remove();
                             }
-                        } else if (newFavorites.includes(itemId)) {
+                        } else if (newPanelFavorites.includes(itemId)) {
                             // Item was added but not in DOM yet - do minimal re-render
                             await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
                         }
@@ -224,7 +230,7 @@ export class FavoritesPanel {
                         const $inventoryPanel = $(panelManager.inventoryPanel.element);
                         const $heartIcon = $inventoryPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
                         if ($heartIcon.length) {
-                            $heartIcon.toggleClass('active', newFavorites.includes(itemId));
+                            $heartIcon.toggleClass('active', newPanelFavorites.includes(itemId));
                         }
                     }
                 }
@@ -236,7 +242,7 @@ export class FavoritesPanel {
                         const $weaponsPanel = $(panelManager.weaponsPanel.element);
                         const $heartIcon = $weaponsPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
                         if ($heartIcon.length) {
-                            $heartIcon.toggleClass('active', newFavorites.includes(itemId));
+                            $heartIcon.toggleClass('active', newPanelFavorites.includes(itemId));
                         }
                     }
                 }
@@ -248,13 +254,13 @@ export class FavoritesPanel {
                         const $spellsPanel = $(panelManager.spellsPanel.element);
                         const $heartIcon = $spellsPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
                         if ($heartIcon.length) {
-                            $heartIcon.toggleClass('active', newFavorites.includes(itemId));
+                            $heartIcon.toggleClass('active', newPanelFavorites.includes(itemId));
                         }
                     }
                 }
             }
 
-            return newFavorites.includes(itemId);
+            return newPanelFavorites.includes(itemId);
         } catch (error) {
             console.error("Error in manageFavorite:", error);
             return false;
@@ -281,21 +287,21 @@ export class FavoritesPanel {
                 return false;
             }
             
-            // Get current favorites
-            const currentFavorites = FavoritesPanel.getFavorites(actor);
+            // Get current panel favorites
+            const currentPanelFavorites = FavoritesPanel.getPanelFavorites(actor);
             
-            // If favorites already exist, don't override them
-            if (currentFavorites.length > 0) return false;
+            // If panel favorites already exist, don't override them
+            if (currentPanelFavorites.length > 0) return false;
             
             // Get all items from the actor
-            const newFavorites = [];
+            const newPanelFavorites = [];
             
-            // Add equipped weapons to favorites
+            // Add equipped weapons to panel favorites
             const weapons = actor.items.filter(item => 
                 item.type === "weapon" && 
                 item.system.equipped === true
             );
-            // Add prepared spells to favorites
+            // Add prepared spells to panel favorites
             const spells = actor.items.filter(item => 
                 item.type === "spell" && 
                 item.system.preparation?.prepared === true
@@ -312,9 +318,8 @@ export class FavoritesPanel {
             // If no items to favorite, don't do anything
             if (itemsToFavorite.length === 0) return false;
             
-            // Save the new favorites - ONLY to favorites, NOT to handleFavorites
-            await actor.unsetFlag(MODULE.ID, 'favorites');
-            await actor.setFlag(MODULE.ID, 'favorites', itemsToFavorite);
+            // Save the new panel favorites
+            await actor.setFlag(MODULE.ID, 'favoritePanel', itemsToFavorite);
             
             // Force refresh of items collection to ensure up-to-date data
             if (actor.items && typeof actor.items._flush === 'function') {
@@ -362,7 +367,7 @@ export class FavoritesPanel {
             icon: '<i class="fas fa-angle-double-up"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
-                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex > 0;
             },
@@ -375,13 +380,13 @@ export class FavoritesPanel {
             icon: '<i class="fas fa-angle-up"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
-                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex > 0;
             },
             callback: li => {
                 const itemId = $(li).data('item-id');
-                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 this._reorderFavorite(itemId, currentIndex - 1);
             }
@@ -390,13 +395,13 @@ export class FavoritesPanel {
             icon: '<i class="fas fa-angle-down"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
-                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex < favorites.length - 1;
             },
             callback: li => {
                 const itemId = $(li).data('item-id');
-                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 this._reorderFavorite(itemId, currentIndex + 1);
             }
@@ -405,13 +410,13 @@ export class FavoritesPanel {
             icon: '<i class="fas fa-angle-double-down"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
-                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex < favorites.length - 1;
             },
             callback: li => {
                 const itemId = $(li).data('item-id');
-                const favorites = this.actor.getFlag(MODULE.ID, 'favorites') || [];
+                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 this._reorderFavorite(itemId, favorites.length - 1);
             }
         }];
@@ -428,21 +433,20 @@ export class FavoritesPanel {
             }
         }
         
-        // Migrate from old per-item flag system to new array-based system
-        FavoritesPanel.migrateHandleFavorites(this.actor);
+
     }
 
     _getFavorites() {
         if (!this.actor) return [];
         
-        // Get our module's favorites from flags and filter out null values
-        const favorites = (this.actor.getFlag(MODULE.ID, 'favorites') || []).filter(id => id !== null && id !== undefined);
+        // Get our module's panel favorites from flags and filter out null values
+        const panelFavorites = (this.actor.getFlag(MODULE.ID, 'favoritePanel') || []).filter(id => id !== null && id !== undefined);
         
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(this.actor.items.map(item => [item.id, item]));
         
-        // Map favorites in their original order
-        const favoritedItems = favorites
+        // Map panel favorites in their original order
+        const favoritedItems = panelFavorites
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items (in case an item was deleted)
             .map(item => ({
@@ -780,22 +784,22 @@ export class FavoritesPanel {
             return;
         }
 
-        // Get the raw favorites array (just IDs) from flags
-        const favoriteIds = actor.getFlag(MODULE.ID, 'favorites') || [];
+        // Get the raw panel favorites array (just IDs) from flags
+        const panelFavoriteIds = actor.getFlag(MODULE.ID, 'favoritePanel') || [];
         
         
         // Find the current index of the item ID
-        const currentIndex = favoriteIds.indexOf(itemId);
+        const currentIndex = panelFavoriteIds.indexOf(itemId);
         if (currentIndex === -1) {
-            // Debug: Item not found in favorites
+            // Debug: Item not found in panel favorites
             return;
         }
 
         
 
         // Remove item from current position and insert at new position
-        const [movedId] = favoriteIds.splice(currentIndex, 1);
-        favoriteIds.splice(newIndex, 0, movedId);
+        const [movedId] = panelFavoriteIds.splice(currentIndex, 1);
+        panelFavoriteIds.splice(newIndex, 0, movedId);
 
         try {
             // Clean up context menu before updates
@@ -804,9 +808,8 @@ export class FavoritesPanel {
                 delete this._contextMenu;
             }
 
-            // Update the actor's flags and wait for it to complete
-            await actor.unsetFlag(MODULE.ID, 'favorites');
-            await actor.setFlag(MODULE.ID, 'favorites', favoriteIds);
+            // Update the actor's panel favorites flag
+            await actor.setFlag(MODULE.ID, 'favoritePanel', panelFavoriteIds);
             
             // Update panels and handle
             if (PanelManager.instance) {

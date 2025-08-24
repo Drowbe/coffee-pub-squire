@@ -35,7 +35,7 @@ export class InventoryPanel {
         if (!this.actor) return [];
         
         // Get current favorites
-        const favorites = FavoritesPanel.getFavorites(this.actor);
+        const favorites = FavoritesPanel.getPanelFavorites(this.actor);
         
         // Get inventory items
         const items = this.actor.items.filter(item => 
