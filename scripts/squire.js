@@ -476,16 +476,12 @@ Hooks.once('ready', async function() {
                 const { FavoritesPanel } = await import('./panel-favorites.js');
                 const currentActor = PanelManager.instance?.actor;
                 if (!currentActor) {
-                    console.log('No actor selected');
+                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No actor selected.', '', false, false);
                     return;
                 }
-                
-                console.log('Current actor:', currentActor.name);
-                console.log('Panel favorites:', FavoritesPanel.getPanelFavorites(currentActor));
-                console.log('Handle favorites:', FavoritesPanel.getHandleFavorites(currentActor));
+
             };
-            
-            console.log('Favorites system ready. Use window.testFavorites() to test.');
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Favorites system ready.', '', false, false);
         }
     }, 1000); // 1 second delay to ensure settings and canvas are fully ready
 });

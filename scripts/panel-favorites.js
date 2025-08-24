@@ -69,11 +69,11 @@ export class FavoritesPanel {
             );
             
             if (actors.length === 0) {
-                console.log(`${MODULE.ID}: No actors with old favorite flags found`);
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No actors with old favorite flags found.', '', true, false);
                 return;
             }
             
-            console.log(`${MODULE.ID}: Cleaning up old favorite flags from ${actors.length} actors`);
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Cleaning up old favorite', actors.length + ' actors', true, false);
             
             for (const actor of actors) {
                 // Remove old flags
@@ -86,7 +86,7 @@ export class FavoritesPanel {
                 }
             }
             
-            console.log(`${MODULE.ID}: Successfully cleaned up old favorite flags`);
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Successfully cleaned up old favorite flags.', 'success', true, false);
             
             // Refresh the UI if panels are open
             if (PanelManager.instance) {
@@ -196,67 +196,28 @@ export class FavoritesPanel {
                 // Update just the handle to refresh favorites
                 await panelManager.updateHandle();
                 
-                // Update the favorites panel data without full re-render
+                // Update the favorites panel data and refresh display
                 if (panelManager.favoritesPanel) {
                     panelManager.favoritesPanel.favorites = FavoritesPanel.getPanelFavorites(actor);
                     
-                    // Targeted DOM update for the favorites panel
+                    // Refresh the favorites panel display to show changes
                     if (panelManager.favoritesPanel.element) {
-                        const $favoritesPanel = $(panelManager.favoritesPanel.element);
-                        const $favoriteItem = $favoritesPanel.find(`[data-item-id="${itemId}"]`);
-                        
-                        if ($favoriteItem.length) {
-                            if (newPanelFavorites.includes(itemId)) {
-                                // Item was added to favorites - add it to the list
-                                // This would require more complex logic, so we'll do a minimal re-render
-                                await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
-                            } else {
-                                // Item was removed from favorites - remove it from the list
-                                $favoriteItem.remove();
-                            }
-                        } else if (newPanelFavorites.includes(itemId)) {
-                            // Item was added but not in DOM yet - do minimal re-render
-                            await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
-                        }
+                        await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
                     }
                 }
                 
                 // Update other panels' data without full re-render
                 if (panelManager.inventoryPanel) {
                     panelManager.inventoryPanel.items = panelManager.inventoryPanel._getItems();
-                    
-                    // Targeted DOM update for heart icons
-                    if (panelManager.inventoryPanel.element) {
-                        const $inventoryPanel = $(panelManager.inventoryPanel.element);
-                        const $heartIcon = $inventoryPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
-                        if ($heartIcon.length) {
-                            $heartIcon.toggleClass('active', newPanelFavorites.includes(itemId));
-                        }
-                    }
                 }
                 if (panelManager.weaponsPanel) {
                     panelManager.weaponsPanel.weapons = panelManager.weaponsPanel._getWeapons();
-                    
-                    // Targeted DOM update for heart icons
-                    if (panelManager.weaponsPanel.element) {
-                        const $weaponsPanel = $(panelManager.weaponsPanel.element);
-                        const $heartIcon = $weaponsPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
-                        if ($heartIcon.length) {
-                            $heartIcon.toggleClass('active', newPanelFavorites.includes(itemId));
-                        }
-                    }
                 }
                 if (panelManager.spellsPanel) {
                     panelManager.spellsPanel.spells = panelManager.spellsPanel._getSpells();
-                    
-                    // Targeted DOM update for heart icons
-                    if (panelManager.spellsPanel.element) {
-                        const $spellsPanel = $(panelManager.spellsPanel.element);
-                        const $heartIcon = $spellsPanel.find(`[data-item-id="${itemId}"] .fa-heart`);
-                        if ($heartIcon.length) {
-                            $heartIcon.toggleClass('active', newPanelFavorites.includes(itemId));
-                        }
-                    }
+                }
+                if (panelManager.featuresPanel) {
+                    panelManager.featuresPanel.features = panelManager.featuresPanel._getFeatures();
                 }
             }
 
@@ -718,20 +679,18 @@ export class FavoritesPanel {
 
                 // Update the handle to reflect the new equipped state
                 if (PanelManager.instance) {
-                    // First update the favorites panel
-                    if (PanelManager.instance.favoritesPanel?.element) {
-                        await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                    // Update panel data without full re-renders
+                    if (PanelManager.instance.inventoryPanel) {
+                        PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
                     }
-
-                    // Then update all other panels
-                    if (PanelManager.instance.inventoryPanel?.element) {
-                        await PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                    if (PanelManager.instance.weaponsPanel) {
+                        PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
                     }
-                    if (PanelManager.instance.weaponsPanel?.element) {
-                        await PanelManager.instance.weaponsPanel.render(PanelManager.instance.weaponsPanel.element);
+                    if (PanelManager.instance.spellsPanel) {
+                        PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
                     }
-                    if (PanelManager.instance.spellsPanel?.element) {
-                        await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                    if (PanelManager.instance.featuresPanel) {
+                        PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
                     }
 
                     // Update the handle to reflect the new equipped state
@@ -755,11 +714,8 @@ export class FavoritesPanel {
             } else {
                 await FavoritesPanel.addHandleFavorite(this.actor, itemId);
             }
-            // Re-render the panel and update the handle
+            // Update the handle
             if (PanelManager.instance) {
-                if (PanelManager.instance.favoritesPanel?.element) {
-                    await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
-                }
                 await PanelManager.instance.updateHandle();
             }
         });

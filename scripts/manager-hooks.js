@@ -29,7 +29,7 @@ export class HookManager {
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
             'HookManager initialized',
-            {},
+            'success',
             false,
             false
         );
@@ -49,7 +49,7 @@ export class HookManager {
             MODULE.NAME,
             `Panel registered with HookManager`,
             { panelType, hasPanel: !!panel },
-            false,
+            true,
             false
         );
     }
@@ -70,7 +70,7 @@ export class HookManager {
             MODULE.NAME,
             'Journal hooks consolidated in HookManager',
             { hookId: journalHookId },
-            false,
+            true,
             false
         );
     }
