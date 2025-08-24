@@ -111,6 +111,10 @@ export class WeaponsPanel {
 
         const template = await renderTemplate(TEMPLATES.PANEL_WEAPONS, weaponData);
         const weaponsPanel = this.element.find('[data-panel="weapons"]');
+        
+        // Clean up old event listeners before updating HTML
+        this._removeEventListeners(weaponsPanel);
+        
         weaponsPanel.html(template);
         
         // Reset all categories to visible initially
@@ -161,6 +165,7 @@ export class WeaponsPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
+        // Remove all event listeners using proper namespacing
         panel.off('.squireWeapons');
     }
 

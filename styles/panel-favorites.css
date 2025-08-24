@@ -123,11 +123,11 @@
     color: #367ccc;
 }
 
-.tray-buttons .handle-favorite-toggle:not(.faded) {
+.tray-buttons .fa-dagger:not(.faded) {
     color: #ff4444;
 }
 
-.tray-buttons .handle-favorite-toggle:not(.faded):hover {
+.tray-buttons .fa-dagger:not(.faded):hover {
     color: #ff2f2f;
 }
 

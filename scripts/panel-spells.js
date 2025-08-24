@@ -195,6 +195,7 @@ export class SpellsPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
+        // Remove all event listeners using proper namespacing
         panel.off('.squireSpells');
     }
 

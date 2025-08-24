@@ -106,6 +106,10 @@ export class InventoryPanel {
 
         const template = await renderTemplate(TEMPLATES.PANEL_INVENTORY, itemData);
         const inventoryPanel = this.element.find('[data-panel="inventory"]');
+        
+        // Clean up old event listeners before updating HTML
+        this._removeEventListeners(inventoryPanel);
+        
         inventoryPanel.html(template);
         
         // Reset all categories to visible initially
@@ -156,6 +160,7 @@ export class InventoryPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
+        // Remove all event listeners using proper namespacing
         panel.off('.squireInventory');
     }
 

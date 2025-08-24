@@ -108,6 +108,10 @@ export class FeaturesPanel {
 
         const template = await renderTemplate(TEMPLATES.PANEL_FEATURES, featureData);
         const featuresPanel = this.element.find('[data-panel="features"]');
+        
+        // Clean up old event listeners before updating HTML
+        this._removeEventListeners(featuresPanel);
+        
         featuresPanel.html(template);
         
         // Reset all categories to visible initially
@@ -157,6 +161,7 @@ export class FeaturesPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
+        // Remove all event listeners using proper namespacing
         panel.off('.squireFeatures');
     }
 

@@ -146,12 +146,19 @@ export class FavoritesPanel {
             // Update other panels' data
             if (PanelManager.instance.inventoryPanel) {
                 PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
+                PanelManager.instance.inventoryPanel._updateHeartIcons();
             }
             if (PanelManager.instance.weaponsPanel) {
                 PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+                PanelManager.instance.weaponsPanel._updateHeartIcons();
             }
             if (PanelManager.instance.spellsPanel) {
                 PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                PanelManager.instance.spellsPanel._updateHeartIcons();
+            }
+            if (PanelManager.instance.featuresPanel) {
+                PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
+                PanelManager.instance.featuresPanel._updateHeartIcons();
             }
         }
         return [];
@@ -186,37 +193,20 @@ export class FavoritesPanel {
             await actor.setFlag(MODULE.ID, 'favoritePanel', newPanelFavorites);
 
             // If we're removing a panel favorite, also remove it from handle favorites
+            // (handle favorites must also be panel favorites)
             if (!newPanelFavorites.includes(itemId)) {
                 await FavoritesPanel.removeHandleFavorite(actor, itemId);
             }
 
+            // Handle favorites are now completely manual - but must also be panel favorites
+
             // Get the PanelManager instance directly
             const panelManager = PanelManager.instance;
             if (panelManager) {
-                // Sync handle favorites to ensure consistency
-                if (panelManager.favoritesPanel) {
-                    await panelManager.favoritesPanel._syncHandleFavorites(actor);
-                }
+                // Handle favorites are now completely manual - no auto-syncing
                 
                 // Update just the handle to refresh favorites
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Updating handle after favorite change...', '', true, false);
                 await panelManager.updateHandle();
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Handle update complete', '', true, false);
-                
-                // Debug: Check handle favorites after update
-                const currentHandleFavorites = FavoritesPanel.getHandleFavorites(actor);
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites after update: ${JSON.stringify(currentHandleFavorites)}`, '', true, false);
-                
-                // Debug: Check if handle DOM was updated
-                if (PanelManager.element) {
-                    const handleFavoritesInDOM = PanelManager.element.find('.handle-favorite-item').length;
-                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites in DOM after update: ${handleFavoritesInDOM}`, '', true, false);
-                }
-                
-                // Debug: Check actor flags directly
-                const panelFavorites = actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                const handleFavorites = actor.getFlag(MODULE.ID, 'favoriteHandle') || [];
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Actor flags after update - Panel: ${JSON.stringify(panelFavorites)} Handle: ${JSON.stringify(handleFavorites)}`, '', true, false);
                 
                 // Update the favorites panel data and refresh display
                 if (panelManager.favoritesPanel) {
@@ -231,15 +221,19 @@ export class FavoritesPanel {
                 // Update other panels' data without full re-render
                 if (panelManager.inventoryPanel) {
                     panelManager.inventoryPanel.items = panelManager.inventoryPanel._getItems();
+                    panelManager.inventoryPanel._updateHeartIcons();
                 }
                 if (panelManager.weaponsPanel) {
                     panelManager.weaponsPanel.weapons = panelManager.weaponsPanel._getWeapons();
+                    panelManager.weaponsPanel._updateHeartIcons();
                 }
                 if (panelManager.spellsPanel) {
                     panelManager.spellsPanel.spells = panelManager.spellsPanel._getSpells();
+                    panelManager.spellsPanel._updateHeartIcons();
                 }
                 if (panelManager.featuresPanel) {
                     panelManager.featuresPanel.features = panelManager.featuresPanel._getFeatures();
+                    panelManager.featuresPanel._updateHeartIcons();
                 }
             }
 
@@ -432,18 +426,22 @@ export class FavoritesPanel {
         const favoritedItems = panelFavorites
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items (in case an item was deleted)
-            .map(item => ({
-                id: item.id,
-                name: item.name,
-                img: item.img || 'icons/svg/item-bag.svg',
-                type: item.type,
-                system: item.system,
-                equipped: item.system.equipped,
-                hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                showStarIcon: item.type === 'feat',
-                isHandleFavorite: FavoritesPanel.isHandleFavorite(this.actor, item.id)
-            }));
+            .map(item => {
+                const isHandleFavorite = FavoritesPanel.isHandleFavorite(this.actor, item.id);
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Item ${item.name} (${item.id}) isHandleFavorite: ${isHandleFavorite}`, '', true, false);
+                return {
+                    id: item.id,
+                    name: item.name,
+                    img: item.img || 'icons/svg/item-bag.svg',
+                    type: item.type,
+                    system: item.system,
+                    equipped: item.system.equipped,
+                    hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                    showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
+                    showStarIcon: item.type === 'feat',
+                    isHandleFavorite: isHandleFavorite
+                };
+            });
             
         return favoritedItems;
     }
@@ -510,10 +508,16 @@ export class FavoritesPanel {
     }
 
     _removeEventListeners(panel) {
-        // Remove all event listeners from elements that will be replaced
+        if (!panel) return;
+        
+        // Remove all event listeners using proper namespacing
+        panel.off('.squireFavorites');
+        
+        // Remove specific event bindings that might not be namespaced
         panel.find('.favorite-item .fa-heart').off();
         panel.find('.favorite-image-container').off();
         panel.find('.fa-feather').off();
+        panel.find('.fa-dagger').off();
         panel.find('.favorites-spell-toggle').off();
         panel.find('.favorites-weapon-toggle').off();
         panel.find('.favorites-features-toggle').off();
@@ -602,41 +606,41 @@ export class FavoritesPanel {
         // Always create a fresh context menu
         try {
             this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions);
-            console.log('Context menu created successfully');
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Context menu created successfully', '', true, false);
         } catch (error) {
             console.error('Error creating context menu:', error);
             // Fallback: use native context menu
-            favoritesList.on('contextmenu', '.favorite-item', (event) => {
+            favoritesList.on('contextmenu.squireFavorites', '.favorite-item', (event) => {
                 event.preventDefault();
                 const itemId = $(event.currentTarget).data('item-id');
-                console.log('Right-clicked item:', itemId);
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Right-clicked item: ${itemId}`, '', true, false);
                 // For now, just log - we can implement a custom context menu later
             });
         }
         
         // Filter toggles
-        html.find('.favorites-spell-toggle').click(async (event) => {
+        html.find('.favorites-spell-toggle').on('click.squireFavorites', async (event) => {
             await this._toggleFilter('spells');
             $(event.currentTarget)
                 .toggleClass('active', this.showSpells)
                 .toggleClass('faded', !this.showSpells);
         });
 
-        html.find('.favorites-weapon-toggle').click(async (event) => {
+        html.find('.favorites-weapon-toggle').on('click.squireFavorites', async (event) => {
             await this._toggleFilter('weapons');
             $(event.currentTarget)
                 .toggleClass('active', this.showWeapons)
                 .toggleClass('faded', !this.showWeapons);
         });
 
-        html.find('.favorites-features-toggle').click(async (event) => {
+        html.find('.favorites-features-toggle').on('click.squireFavorites', async (event) => {
             await this._toggleFilter('features');
             $(event.currentTarget)
                 .toggleClass('active', this.showFeatures)
                 .toggleClass('faded', !this.showFeatures);
         });
 
-        html.find('.favorites-inventory-toggle').click(async (event) => {
+        html.find('.favorites-inventory-toggle').on('click.squireFavorites', async (event) => {
             await this._toggleFilter('inventory');
             $(event.currentTarget)
                 .toggleClass('active', this.showInventory)
@@ -644,7 +648,7 @@ export class FavoritesPanel {
         });
 
         // Roll/Use item
-        html.find('.favorite-image-container').click(async (event) => {
+        html.find('.favorite-image-container').on('click.squireFavorites', async (event) => {
             if ($(event.target).hasClass('favorite-roll-overlay')) {
                 const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
                 const item = this.actor.items.get(itemId);
@@ -655,7 +659,7 @@ export class FavoritesPanel {
         });
 
         // View item details
-        html.find('.favorite-item .fa-feather').click(async (event) => {
+        html.find('.favorite-item .fa-feather').on('click.squireFavorites', async (event) => {
             const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
             const item = this.actor.items.get(itemId);
             if (item) {
@@ -664,7 +668,7 @@ export class FavoritesPanel {
         });
 
         // Toggle favorite
-        panel.on('click', '.tray-buttons .fa-heart', async (event) => {
+        panel.on('click.squireFavorites', '.tray-buttons .fa-heart', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             const $item = $(event.currentTarget).closest('.favorite-item');
@@ -687,7 +691,7 @@ export class FavoritesPanel {
         });
 
         // Toggle prepared state (sun icon)
-        panel.on('click', '.tray-buttons .fa-sun', async (event) => {
+        panel.on('click.squireFavorites', '.tray-buttons .fa-sun', async (event) => {
             const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
             const item = this.actor.items.get(itemId);
             if (item) {
@@ -702,18 +706,19 @@ export class FavoritesPanel {
 
                 // Sync handle favorites and update the handle to reflect the new prepared state
                 if (PanelManager.instance) {
-                    if (PanelManager.instance.favoritesPanel) {
-                        await PanelManager.instance.favoritesPanel._syncHandleFavorites(this.actor);
+                    // Update panel data without full re-renders
+                    if (PanelManager.instance.spellsPanel) {
+                        PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                        PanelManager.instance.spellsPanel._updateHeartIcons();
                     }
-                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Updating handle after prepared state change...', '', true, false);
+                    // Handle favorites are now completely manual - no auto-syncing
                     await PanelManager.instance.updateHandle();
-                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Handle update complete', '', true, false);
                 }
             }
         });
 
         // Toggle equip state (shield icon)
-        panel.on('click', '.tray-buttons .fa-shield-alt', async (event) => {
+        panel.on('click.squireFavorites', '.tray-buttons .fa-shield-alt', async (event) => {
             const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
             const item = this.actor.items.get(itemId);
             if (item) {
@@ -731,30 +736,28 @@ export class FavoritesPanel {
                     // Update panel data without full re-renders
                     if (PanelManager.instance.inventoryPanel) {
                         PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
+                        PanelManager.instance.inventoryPanel._updateHeartIcons();
                     }
                     if (PanelManager.instance.weaponsPanel) {
                         PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+                        PanelManager.instance.weaponsPanel._updateHeartIcons();
                     }
                     if (PanelManager.instance.spellsPanel) {
                         PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                        PanelManager.instance.spellsPanel._updateHeartIcons();
                     }
                     if (PanelManager.instance.featuresPanel) {
                         PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
+                        PanelManager.instance.featuresPanel._updateHeartIcons();
                     }
-
-                                    // Sync handle favorites and update the handle to reflect the new equipped state
-                if (PanelManager.instance.favoritesPanel) {
-                    await PanelManager.instance.favoritesPanel._syncHandleFavorites(this.actor);
                 }
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Updating handle after equipped state change...', '', true, false);
+                // Handle favorites are now completely manual - no auto-syncing
                 await PanelManager.instance.updateHandle();
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Handle update complete', '', true, false);
-                }
             }
         });
 
         // Toggle handle favorite
-        panel.on('click', '.tray-buttons .handle-favorite-toggle', async (event) => {
+        panel.on('click.squireFavorites', '.tray-buttons .fa-dagger', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             const $item = $(event.currentTarget).closest('.favorite-item');
@@ -768,67 +771,26 @@ export class FavoritesPanel {
             } else {
                 await FavoritesPanel.addHandleFavorite(this.actor, itemId);
             }
-            // Sync handle favorites and update the handle
+            // Update the handle to reflect the change
             if (PanelManager.instance) {
-                if (PanelManager.instance.favoritesPanel) {
-                    await PanelManager.instance.favoritesPanel._syncHandleFavorites(this.actor);
-                }
                 await PanelManager.instance.updateHandle();
             }
+            
+            // Refresh the favorites data to update isHandleFavorite properties
+            this.favorites = this._getFavorites();
+            
+            // Update the visual state of the dagger icon immediately
+            const newState = FavoritesPanel.isHandleFavorite(this.actor, itemId);
+            $(event.currentTarget).toggleClass('faded', !newState);
         });
 
         // Add clear all button listener
-        html.find('.favorites-clear-all').click(async () => {
+        html.find('.favorites-clear-all').on('click.squireFavorites', async () => {
             await FavoritesPanel.clearFavorites(this.actor);
         });
     }
 
-    /**
-     * Syncs handle favorites to ensure they only contain items that are both
-     * in panel favorites AND meet the criteria for being in the handle
-     */
-    async _syncHandleFavorites(actor) {
-        if (!actor) return;
-        
-        // Add stack trace to see where this is being called from
-        const stackTrace = new Error().stack;
-        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `_syncHandleFavorites called from: ${stackTrace.split('\n')[2]?.trim()}`, '', true, false);
-        
-        // Get current panel favorites
-        const panelFavorites = FavoritesPanel.getPanelFavorites(actor);
-        
-        // Get current handle favorites
-        const currentHandleFavorites = FavoritesPanel.getHandleFavorites(actor);
-        
-        // Filter panel favorites to only include items that should be in handle
-        const validHandleFavorites = panelFavorites.filter(itemId => {
-            const item = actor.items.get(itemId);
-            if (!item) return false;
-            
-            // Check if item meets handle criteria
-            if (item.type === 'weapon') {
-                return item.system.equipped === true;
-            } else if (item.type === 'spell') {
-                return item.system.preparation?.prepared === true;
-            } else if (item.type === 'feat' || item.type === 'feature') {
-                // Features are always valid for handle if they're in panel favorites
-                return true;
-            } else if (item.type === 'equipment' || item.type === 'consumable' || item.type === 'tool') {
-                // Inventory items are always valid for handle if they're in panel favorites
-                return true;
-            }
-            
-            return false;
-        });
-        
-        // Update handle favorites if they've changed
-        if (JSON.stringify(currentHandleFavorites.sort()) !== JSON.stringify(validHandleFavorites.sort())) {
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites changed from: ${JSON.stringify(currentHandleFavorites)} to: ${JSON.stringify(validHandleFavorites)}`, '', true, false);
-            await FavoritesPanel.setHandleFavorites(actor, validHandleFavorites);
-        } else {
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites unchanged: ${JSON.stringify(currentHandleFavorites)}`, '', true, false);
-        }
-    }
+    // _syncHandleFavorites method removed - handle favorites are now completely manual
 
     async _reorderFavorite(itemId, newIndex) {
         getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `_reorderFavorite called with: ${JSON.stringify({ itemId, newIndex })}`, '', true, false);
@@ -877,8 +839,7 @@ export class FavoritesPanel {
             // Update the actor's panel favorites flag
             await actor.setFlag(MODULE.ID, 'favoritePanel', panelFavoriteIds);
             
-            // Sync handle favorites to ensure they only contain valid items
-            await this._syncHandleFavorites(actor);
+            // Handle favorites are now completely manual - no auto-syncing needed
             
             // Update panels and handle
             if (PanelManager.instance) {
@@ -898,15 +859,19 @@ export class FavoritesPanel {
                 // Update other panels' data
                 if (PanelManager.instance.inventoryPanel) {
                     PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
+                    panelManager.inventoryPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.weaponsPanel) {
                     PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+                    panelManager.weaponsPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.spellsPanel) {
                     PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                    panelManager.spellsPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.featuresPanel) {
                     PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
+                    panelManager.featuresPanel._updateHeartIcons();
                 }
 
             }
