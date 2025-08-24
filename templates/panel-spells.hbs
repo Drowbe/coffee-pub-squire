@@ -122,7 +122,7 @@
                         <span>Level {{slot.level}}</span>
                         <div class="slot-pips" data-level="{{slot.level}}">
                             {{#times slot.max}}
-                            <div class="slot-pip {{#unless (lt @index slot.used)}}filled{{/unless}}" data-level="{{slot.level}}" title="{{#if (lt @index slot.used)}}Expended{{else}}Available{{/if}}"></div>
+                            <div class="slot-pip {{#if (lt @index slot.reversedUsed)}}filled{{/if}}" data-level="{{slot.level}}" title="{{#if (lt @index slot.reversedUsed)}}Available{{else}}Expended{{/if}}"></div>
                             {{/times}}
                         </div>
                     </div>

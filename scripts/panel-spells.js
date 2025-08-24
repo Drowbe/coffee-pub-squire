@@ -150,6 +150,12 @@ export class SpellsPanel {
             }
         }
         
+        // Reverse the order so available slots come first (left) and expended slots come last (right)
+        // This matches the character sheet display order
+        slots.forEach(slotData => {
+            slotData.reversedUsed = slotData.max - slotData.used;
+        });
+        
         return slots;
     }
 
@@ -210,10 +216,10 @@ export class SpellsPanel {
             const $pips = $slotGroup.find('.slot-pip');
             $pips.each((index, pip) => {
                 const $pip = $(pip);
-                if (index < slotData.used) {
-                    $pip.removeClass('filled'); // Used slots (expended) = unfilled (first)
+                if (index < slotData.reversedUsed) {
+                    $pip.addClass('filled'); // Available slots = filled (first/left)
                 } else {
-                    $pip.addClass('filled'); // Unused slots (available) = filled (last)
+                    $pip.removeClass('filled'); // Expended slots = unfilled (last/right)
                 }
             });
         });
@@ -326,10 +332,6 @@ export class SpellsPanel {
                 await this.actor.update({
                     [`system.spells.spell${level}.value`]: maxSlots - newUsed
                 });
-                
-                // Brief visual feedback
-                $pip.addClass('updating');
-                setTimeout(() => $pip.removeClass('updating'), 300);
                 
                 // Refresh the spell slots display
                 this._updateSpellSlots(html);
