@@ -21,7 +21,7 @@ export class SpellsPanel {
         
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
-            const isFavorite = favorites.some(fav => fav.id === spell.id);
+            const isFavorite = favorites.includes(spell.id);
             const level = spell.system.level;
             const isAtWill = spell.system.preparation?.mode === 'atwill';
             
@@ -177,6 +177,20 @@ export class SpellsPanel {
         // Update headers visibility using PanelManager
         this.panelManager._updateHeadersVisibility(html[0]);
         this.panelManager._updateEmptyMessage(html[0]);
+    }
+
+    /**
+     * Update heart icon states to reflect current favorite status
+     */
+    _updateHeartIcons() {
+        if (!this.element) return;
+        
+        this.spells.forEach(spell => {
+            const $heartIcon = this.element.find(`[data-spell-id="${spell.id}"] .fa-heart`);
+            if ($heartIcon.length) {
+                $heartIcon.toggleClass('faded', !spell.isFavorite);
+            }
+        });
     }
 
     _removeEventListeners(panel) {

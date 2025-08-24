@@ -31,7 +31,7 @@ export class FeaturesPanel {
             system: feature.system,
             actionType: this._getActionType(feature),
             featureType: this._getFeatureType(feature),
-            isFavorite: favorites.some(fav => fav.id === feature.id),
+            isFavorite: favorites.includes(feature.id),
             categoryId: `category-feature-${this._getFeatureType(feature)}`
         }));
 
@@ -141,6 +141,20 @@ export class FeaturesPanel {
         this.panelManager._updateEmptyMessage(html[0]);
     }
 
+    /**
+     * Update heart icon states to reflect current favorite status
+     */
+    _updateHeartIcons() {
+        if (!this.element) return;
+        
+        this.features.all.forEach(feature => {
+            const $heartIcon = this.element.find(`[data-feature-id="${feature.id}"] .fa-heart`);
+            if ($heartIcon.length) {
+                $heartIcon.toggleClass('faded', !feature.isFavorite);
+            }
+        });
+    }
+
     _removeEventListeners(panel) {
         if (!panel) return;
         panel.off('.squireFeatures');
@@ -183,8 +197,9 @@ export class FeaturesPanel {
         panel.on('click.squireFeatures', '.tray-buttons .fa-heart', async (event) => {
             const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
             await FavoritesPanel.manageFavorite(this.actor, featureId);
-            // Re-render to update the UI state
-            await this.render(this.element);
+            // Refresh the panel data to update heart icon states
+            this.features = this._getFeatures();
+            this._updateHeartIcons();
         });
 
         // Feature use click (image overlay)

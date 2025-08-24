@@ -49,7 +49,7 @@ export class InventoryPanel {
             img: item.img || 'icons/svg/item-bag.svg',
             type: item.type,
             system: item.system,
-            isFavorite: favorites.some(fav => fav.id === item.id),
+            isFavorite: favorites.includes(item.id),
             categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
             actionType: this._getActionType(item),
             flags: item.flags || {},
@@ -138,6 +138,20 @@ export class InventoryPanel {
         // Update headers visibility using PanelManager
         this.panelManager._updateHeadersVisibility(html[0]);
         this.panelManager._updateEmptyMessage(html[0]);
+    }
+
+    /**
+     * Update heart icon states to reflect current favorite status
+     */
+    _updateHeartIcons() {
+        if (!this.element) return;
+        
+        this.items.all.forEach(item => {
+            const $heartIcon = this.element.find(`[data-item-id="${item.id}"] .fa-heart`);
+            if ($heartIcon.length) {
+                $heartIcon.toggleClass('faded', !item.isFavorite);
+            }
+        });
     }
 
     _removeEventListeners(panel) {

@@ -29,7 +29,7 @@ export class WeaponsPanel {
                 system: weapon.system,
                 weaponType: weaponType,
                 actionType: this._getActionType(weapon),
-                isFavorite: favorites.some(fav => fav.id === weapon.id),
+                isFavorite: favorites.includes(weapon.id),
                 categoryId: `category-weapon-${weaponType}`
             };
         });
@@ -145,6 +145,20 @@ export class WeaponsPanel {
         this.panelManager._updateEmptyMessage(html[0]);
     }
 
+    /**
+     * Update heart icon states to reflect current favorite status
+     */
+    _updateHeartIcons() {
+        if (!this.element) return;
+        
+        this.weapons.all.forEach(weapon => {
+            const $heartIcon = this.element.find(`[data-weapon-id="${weapon.id}"] .fa-heart`);
+            if ($heartIcon.length) {
+                $heartIcon.toggleClass('faded', !weapon.isFavorite);
+            }
+        });
+    }
+
     _removeEventListeners(panel) {
         if (!panel) return;
         panel.off('.squireWeapons');
@@ -188,6 +202,9 @@ export class WeaponsPanel {
         panel.on('click.squireWeapons', '.tray-buttons .fa-heart', async (event) => {
             const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
+            // Refresh the panel data to update heart icon states
+            this.weapons = this._getWeapons();
+            this._updateHeartIcons();
         });
 
         // Weapon use click (image overlay)
