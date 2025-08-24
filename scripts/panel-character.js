@@ -154,13 +154,7 @@ export class CharacterPanel {
             await this.actor.rollAbilitySave(ability);
         });
 
-        // Print character sheet
-        html.find('.print-character').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const { PrintCharacterSheet } = await import('./utility-print-character.js');
-            await PrintCharacterSheet.print(this.actor);
-        });
+        // Note: Print character button is handled by the panel manager, not the character panel
     }
 
     async _updateHPDisplay() {

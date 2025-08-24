@@ -895,31 +895,9 @@ export class PartyPanel {
             }
         });
 
-        // Add listeners for other party member portraits and health bars
-        html.find('.handle-partymember-icon.clickable').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const actorId = $(event.currentTarget).closest('.handle-partymember-icon').data('actor-id');
-            const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
-            if (token) {
-                token.control({releaseOthers: true});
-            }
-        });
+        // Note: Handle party member icon clicks are handled by the handle manager, not the party panel
 
-        html.find('.handle-partymember-healthbar .handle-healthbar-fill.clickable').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const actorId = $(event.currentTarget).closest('.handle-partymember-icon').data('actor-id');
-            const actor = game.actors.get(actorId);
-            if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
-                const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
-                if (token) {
-                    token.control({releaseOthers: true});
-                }
-                PanelManager.instance.healthPanel.updateActor(actor);
-                await PanelManager.instance.healthPanel._onPopOut();
-            }
-        });
+        // Note: Handle party member health bar clicks are handled by the handle manager, not the party panel
     }
     
     // Helper method to get the appropriate icon based on item type

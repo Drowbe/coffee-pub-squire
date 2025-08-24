@@ -199,15 +199,7 @@ export class MacrosPanel {
             }
         });
 
-        // Handle favorite macro click in handle
-        const handle = html.find('.tray-handle-content-wrapper');
-        handle.find('.handle-macro-icon').off('click').on('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const macroId = $(this).data('macro-id');
-            const macro = game.macros.get(macroId);
-            if (macro) macro.execute();
-        });
+        // Note: Handle macro icon clicks are handled by the handle manager, not the macros panel
 
         // Macro grid interactions
         const self = this;
