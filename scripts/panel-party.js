@@ -196,7 +196,7 @@ export class PartyPanel {
         });
 
         // Handle party overview health bar clicks
-        html.find('.party-overview-hp-bar').click(async (event) => {
+        html.find('.party-health-card').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -210,9 +210,17 @@ export class PartyPanel {
                 token.control({releaseOthers: false});
             });
             
-            // Open health window if it's not already open
-            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.healthPanel) {
-                const healthPanel = game.modules.get('coffee-pub-squire').api.PanelManager.instance.healthPanel;
+            // Open health window and populate with party data
+            if (PanelManager.instance?.healthPanel) {
+                const healthPanel = PanelManager.instance.healthPanel;
+                
+                // Get all party actors
+                const partyActors = partyTokens.map(token => token.actor).filter(actor => actor);
+                
+                // Update the health panel with all party actors
+                healthPanel.updateActors(partyActors);
+                
+                // If health panel is not already open, pop it out
                 if (!healthPanel.isPoppedOut) {
                     await healthPanel._onPopOut();
                 }
