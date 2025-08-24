@@ -364,6 +364,18 @@
     border-color: #9f9275;
 }
 
+.squire-tray[data-position="left"] .slot-pip:hover {
+    transform: scale(1.3);
+    border-color: rgba(255, 100, 0, 0.6) !important;
+    box-shadow: 0 0 4px rgba(74, 144, 226, 0.5);
+    cursor: pointer;
+}
+
+
+
+
+
+
 
 /* Spell/Weapon Items in Left Position */
 .squire-tray[data-position="left"] .spell-item,
