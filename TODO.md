@@ -3,10 +3,10 @@
 ## Critical Issues (Fix First)
 
 ### Tray State Management
-- [ ] **FIXED** ~~Tray opens/closes on token changes when it should stay in current state~~
-- [ ] **FIXED** ~~Content not updating to new token data after token changes~~
-- [ ] **FIXED** ~~Tray collapse/expand functionality broken after token changes~~
-- [ ] **FIXED** ~~Tray automatically expanding/flashing on token selection~~
+- [x] **FIXED** ~~Tray opens/closes on token changes when it should stay in current state~~
+- [x] **FIXED** ~~Content not updating to new token data after token changes~~
+- [x] **FIXED** ~~Tray collapse/expand functionality broken after token changes~~
+- [x] **FIXED** ~~Tray automatically expanding/flashing on token selection~~
 
 ### Animation Issues
 - [x] **FIXED** ~~Expand animation: tray fades out and in with small slide from bottom instead of sliding open~~
@@ -16,18 +16,34 @@
 ## Content Update Issues
 
 ### Favorites System
-- [ ] **BROKEN** Clicking favorites adds items to favorites but doesn't update the "favorite" heart icon in their actual category panels
-- [ ] **BROKEN** Handle favorite logic: currently adds ALL favorited items to handle, but should only add items marked for handle inclusion
+- [x] **FIXED** ~~Clicking favorites adds items to favorites but doesn't update the "favorite" heart icon in their actual category panels~~
+- [x] **FIXED** ~~Handle favorite logic: currently adds ALL favorited items to handle, but should only add items marked for handle inclusion~~
+- [x] **FIXED** ~~Event listener duplication causing exponential performance degradation~~
+- [x] **FIXED** ~~Legacy auto-sync logic conflicting with manual handle favorite control~~
+- [x] **FIXED** ~~Heart icon states not updating correctly across all panels~~
+- [x] **FIXED** ~~Handle favorites not showing unavailable state for unequipped/unprepared items~~
+- [x] **FIXED** ~~Handle favorites order not matching panel favorites order~~
 
 ### Panel Functionality
 - [ ] **BROKEN** Manual refresh button on codex panel doesn't seem to do anything
 - [ ] **BROKEN** Feather icon in party view opens character sheet AND changes tray to that actor (should only open sheet)
 - [x] **FIXED** ~~Toggle View Mode in handle doesn't update handle data properly - seems to always change to quests~~
+- [x] **FIXED** ~~Spell level filtering broken in Spells panel~~
+- [x] **FIXED** ~~Spell slot system not working for GMs~~
+- [x] **FIXED** ~~Token selection in Party tab selecting all tokens of same actor type~~
+- [x] **FIXED** ~~Monster names showing generic actor names instead of specific token names~~
+- [x] **FIXED** ~~Dice tray button not showing in handle~~
 
 ## UI/UX Improvements
 
 ### Quests
-- [ ] **GM Notes** We should wind a way to show the gm notes for objextis since they may mention pin locations.
+- [ ] **GM Notes** We should find a way to show the gm notes for objextis since they may mention pin locations.
+
+### Spells
+- [x] **COMPLETED** ~~Interactive spell slot management for GMs~~
+- [x] **COMPLETED** ~~Visual feedback for available vs expended spell slots~~
+- [x] **COMPLETED** ~~Click to use/restore spell slots with proper limits~~
+- [x] **COMPLETED** ~~Correct visual order matching character sheet (available left, expended right)~~
 
 ### Windows
 - [ ] **Planned** Popped out windows should ignore "esc" keypresses.
@@ -78,32 +94,55 @@
 - [x] **COMPLETED** Implemented conditional fade animations (only for player/party views)
 - [x] **COMPLETED** Created and registered 9 handle partials for modularity
 - [x] **COMPLETED** Refactored handle templates to use new partials
+- [x] **COMPLETED** Fixed event listener duplication in favoriting system
+- [x] **COMPLETED** Removed legacy auto-sync logic for handle favorites
+- [x] **COMPLETED** Fixed heart icon state updates across all panels
+- [x] **COMPLETED** Added unavailable class for unequipped/unprepared handle favorites
+- [x] **COMPLETED** Fixed handle favorites order to match panel favorites
+- [x] **COMPLETED** Fixed spell level filtering in Spells panel
+- [x] **COMPLETED** Implemented interactive spell slot management for GMs
+- [x] **COMPLETED** Fixed token selection to use unique token IDs instead of actor IDs
+- [x] **COMPLETED** Fixed monster name display to show specific token names
+- [x] **COMPLETED** Fixed dice tray button display in all handle templates
 
 ## Next Steps Priority
 
-1. **Fix favorites heart icons** - User experience issue
-2. **Fix handle favorite logic** - Functionality issue
+1. ~~**Fix favorites heart icons**~~ - User experience issue ✅ **COMPLETED**
+2. ~~**Fix handle favorite logic**~~ - Functionality issue ✅ **COMPLETED**
 3. **Fix codex refresh** - Panel functionality issue
 4. **Fix party view feather icon** - Unexpected behavior
 5. ~~**Fix toggle view mode in handle**~~ - Handle functionality issue ✅ **COMPLETED**
 6. ~~**Implement content fade transitions**~~ - Polish ✅ **COMPLETED**
-7. **Code cleanup and modularization** - Technical debt
+7. ~~**Fix spell level filtering**~~ - Panel functionality ✅ **COMPLETED**
+8. ~~**Implement spell slot management**~~ - GM functionality ✅ **COMPLETED**
+9. ~~**Fix token selection logic**~~ - Party panel functionality ✅ **COMPLETED**
+10. ~~**Fix monster name display**~~ - Party panel display ✅ **COMPLETED**
+11. ~~**Fix dice tray button display**~~ - Handle functionality ✅ **COMPLETED**
+12. **Code cleanup and modularization** - Technical debt
 
 ## Investigation Needed
 
 - [ ] Investigate why expand animation changed from sliding to fading
-- [ ] Investigate favorites system to understand heart icon update mechanism
-- [ ] Investigate handle favorite logic to understand inclusion criteria
+- [x] **FIXED** ~~Investigate favorites system to understand heart icon update mechanism~~
+- [x] **FIXED** ~~Investigate handle favorite logic to understand inclusion criteria~~
 - [ ] Investigate codex refresh button implementation
 - [ ] Investigate party view feather icon event handling
 - [x] **FIXED** ~~Investigate toggle view mode logic in handle to understand why it defaults to quests~~
 - [x] **FIXED** Tab change sound gets very loud when clicking an already selected tab - added check to prevent unnecessary sound playback when mode doesn't change
+- [x] **FIXED** ~~Investigate spell level filtering event listener target mismatch~~
+- [x] **FIXED** ~~Investigate spell slot visual states and order logic~~
+- [x] **FIXED** ~~Investigate token selection using actor IDs instead of token IDs~~
+- [x] **FIXED** ~~Investigate monster name display using actor names instead of token names~~
+- [x] **FIXED** ~~Investigate dice tray button display condition typo in templates~~
 
 ## Notes
 
 - **Current Status**: Tray state management is working correctly after recent fixes
 - **Animation Issue**: Expand animation broke during hook optimization changes
-- **Favorites**: Likely related to event handling or state synchronization between panels
-- **Handle Logic**: May need to review how items are marked for handle inclusion
+- **Favorites**: ✅ **FIXED** - Event listener duplication and legacy auto-sync logic resolved
+- **Handle Logic**: ✅ **FIXED** - Manual control implemented with proper unavailable states and order
+- **Spell System**: ✅ **FIXED** - Level filtering and interactive spell slot management working
+- **Party Panel**: ✅ **FIXED** - Token selection and monster name display working correctly
+- **Handle Display**: ✅ **FIXED** - Dice tray button now showing in all handle templates
 - **Codex Refresh**: Could be missing event handler or broken refresh logic
 - **Party View**: Feather icon likely has unintended side effects in event handling

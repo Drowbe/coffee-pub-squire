@@ -25,22 +25,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance Issues**: Eliminated massive over-rendering that caused favoriting operations to be very slow
 - **Handle Favorite Logic**: Fixed handle showing all favorites instead of only handle-favorited items
 - **Missing Handlebars Helper**: Added missing `getHandleFavorites` helper for handle template functionality
+- **Event Listener Duplication**: Fixed critical event listener duplication issue that caused exponential performance degradation
+- **Legacy Auto-Sync Logic**: Removed conflicting auto-sync logic for handle favorites to allow full manual control
+- **Visual State Updates**: Fixed heart icon states not updating correctly across all panels after favoriting changes
+- **Handle Item Availability**: Added "unavailable" class to handle favorites for unequipped/unprepared items
+- **Handle Order Consistency**: Fixed handle favorites order to match panel favorites (with visual reversal for handle rotation)
+- **Spell Level Filtering**: Fixed broken spell level filtering in Spells panel by correcting event listener target
+- **Spell Slot System**: Implemented interactive spell slot management for GMs with correct visual states and click logic
+- **Token Selection Logic**: Fixed token selection in Party tab to use unique token IDs instead of shared actor IDs
+- **Monster Name Display**: Fixed Party tab to show specific token names instead of generic actor names
+- **Dice Tray Button**: Fixed dice tray button not showing in handle due to typo in template condition
 
 ### Technical Improvements
 - **Targeted DOM Updates**: Replaced 4 full panel re-renders with smart DOM updates for 10-20x performance improvement
 - **Data Consistency**: Ensured all panel data structures stay synchronized without full re-renders
 - **Event Handler Optimization**: Streamlined event handling for favoriting operations
 - **Memory Management**: Improved cleanup and data synchronization between panels
+- **Namespaced Events**: Implemented proper event namespacing to prevent duplicate event listeners
+- **Spell Slot Management**: Added comprehensive spell slot system with visual feedback and real-time updates
+- **Token ID System**: Migrated from actor ID-based to token ID-based selection for proper multi-token support
+- **Template Condition Fixes**: Corrected Handlebars template conditions for proper conditional rendering
 
 ### Files Modified
 - `scripts/panel-favorites.js` - Complete favoriting system overhaul with performance optimizations
 - `scripts/panel-inventory.js` - Updated to check correct favorites flag for heart icon state
-- `scripts/panel-spells.js` - Updated to check correct favorites flag for heart icon state
+- `scripts/panel-spells.js` - Updated to check correct favorites flag for heart icon state and added spell slot management
 - `scripts/panel-weapons.js` - Updated to check correct favorites flag for heart icon state
+- `scripts/panel-party.js` - Fixed token selection logic and monster name display
 - `scripts/helpers.js` - Added missing `getHandleFavorites` Handlebars helper
 - `styles/panel-favorites.css` - Added styling for handle favorite toggle icons
+- `styles/panel-spells.css` - Added spell slot styling and hover effects
 - `styles/tray.css` - Updated handle favorite icon colors for consistency
-- `templates/partials/handle-favorites.hbs` - Updated to use handleFavorites data source
+- `templates/partials/handle-favorites.hbs` - Updated to use handleFavorites data source and added unavailable class logic
+- `templates/panel-spells.hbs` - Added spell slot template with proper visual states and order
+- `templates/panel-party.hbs` - Fixed monster name display to use token names
+- `templates/handle-player.hbs` - Fixed dice tray button display condition
+- `templates/handle-codex.hbs` - Fixed dice tray button display condition
+- `templates/handle-notes.hbs` - Fixed dice tray button display condition
+- `templates/handle-party.hbs` - Fixed dice tray button display condition
+- `templates/handle-quest.hbs` - Fixed dice tray button display condition
 - `module.json` - Reorganized to follow standardized structure
 
 ### Breaking Changes
