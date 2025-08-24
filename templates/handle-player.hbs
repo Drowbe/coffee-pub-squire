@@ -20,8 +20,10 @@
 
     {{!-- FAVORITES --}} 
     {{#if showHandleFavorites}}
-        {{> handle-favorites}}
-        <span class="tray-handle-separator line-ridge-thin"></span>
+        {{#if (getHandleFavorites actor)}}
+            {{> handle-favorites}}
+            <span class="tray-handle-separator line-ridge-thin"></span>
+        {{/if}}
     {{/if}}
 
     {{!-- CONDITIONS --}} 

@@ -49,7 +49,7 @@ export class InventoryPanel {
             img: item.img || 'icons/svg/item-bag.svg',
             type: item.type,
             system: item.system,
-            isFavorite: favorites.includes(item.id),
+            isFavorite: favorites.some(fav => fav.id === item.id),
             categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
             actionType: this._getActionType(item),
             flags: item.flags || {},
@@ -183,6 +183,9 @@ export class InventoryPanel {
         panel.on('click.squireInventory', '.tray-buttons .fa-heart', async (event) => {
             const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
             await FavoritesPanel.manageFavorite(this.actor, itemId);
+            // Refresh the panel data to update heart icon states
+            this.items = this._getItems();
+            this._updateHeartIcons();
         });
 
         // Item use click (image overlay)

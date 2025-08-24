@@ -21,7 +21,7 @@ export class SpellsPanel {
         
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
-            const isFavorite = favorites.includes(spell.id);
+            const isFavorite = favorites.some(fav => fav.id === spell.id);
             const level = spell.system.level;
             const isAtWill = spell.system.preparation?.mode === 'atwill';
             
@@ -222,6 +222,9 @@ export class SpellsPanel {
         panel.on('click.squireSpells', '.tray-buttons .fa-heart', async (event) => {
             const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
             await FavoritesPanel.manageFavorite(this.actor, spellId);
+            // Refresh the panel data to update heart icon states
+            this.spells = this._getSpells();
+            this._updateHeartIcons();
         });
 
         // Cast spell (roll overlay)

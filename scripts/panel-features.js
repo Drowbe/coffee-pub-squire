@@ -31,7 +31,7 @@ export class FeaturesPanel {
             system: feature.system,
             actionType: this._getActionType(feature),
             featureType: this._getFeatureType(feature),
-                            isFavorite: FavoritesPanel.isHandleFavorite(this.actor, feature.id),
+            isFavorite: favorites.some(fav => fav.id === feature.id),
             categoryId: `category-feature-${this._getFeatureType(feature)}`
         }));
 
