@@ -1683,49 +1683,7 @@ async function initializeSquireAfterSettings() {
     }
 }
 
-// Also handle when tokens are selected or released
-Hooks.on('controlToken', async (token, controlled) => {
-    // Only proceed if it's a GM or the token owner
-    if (!game.user.isGM && !token.actor?.isOwner) return;
-    
-    // Update selection display for both selection and release
-    await _updateSelectionDisplay();
-    
-    // Only care about token selection for health panel updates
-    if (!controlled) return;
-
-    // Track selection timing and count
-    const now = Date.now();
-    const timeSinceLastSelection = now - _lastSelectionTime;
-    _lastSelectionTime = now;
-    _selectionCount++;
-
-    // Clear any existing timeout
-    if (_multiSelectTimeout) {
-        clearTimeout(_multiSelectTimeout);
-        _multiSelectTimeout = null;
-    }
-
-    // Determine if this is likely multi-selection
-    const isMultiSelect = _selectionCount > 1 && timeSinceLastSelection < SINGLE_SELECT_THRESHOLD;
-
-    // For multi-selection, debounce the update
-    if (isMultiSelect) {
-        _multiSelectTimeout = setTimeout(async () => {
-            await _updateHealthPanelFromSelection();
-            _selectionCount = 0; // Reset counter
-        }, MULTI_SELECT_DELAY);
-        return;
-    }
-
-    // For single selection or first selection, update immediately
-    await _updateHealthPanelFromSelection();
-    
-    // Reset counter if enough time has passed
-    if (timeSinceLastSelection > SINGLE_SELECT_THRESHOLD) {
-        _selectionCount = 0;
-    }
-});
+// Note: controlToken hook is now managed centrally by HookManager
 
 // Helper function to update selection display
 async function _updateSelectionDisplay() {
@@ -1900,249 +1858,21 @@ async function _updateHealthPanelFromSelection() {
 
 }
 
-// Also handle when tokens are deleted or actors are updated
-Hooks.on('deleteToken', async (token) => {
-    if (PanelManager.currentActor?.id === token.actor?.id) {
-        // Try to find another token to display
-        const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
-        if (nextToken) {
-            // Add fade-out animation to tray panel wrapper if appropriate
-            if (PanelManager.instance) {
-                PanelManager.instance._applyFadeOutAnimation();
-            }
-            
-            // Update the actor without recreating the tray
-            PanelManager.currentActor = nextToken.actor;
-            if (PanelManager.instance) {
-                PanelManager.instance.actor = nextToken.actor;
-                
-                // Update the actor reference in all panel instances
-                if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = nextToken.actor;
-                if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = nextToken.actor;
-                if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = nextToken.actor;
-                if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = nextToken.actor;
-                if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = nextToken.actor;
-                if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = nextToken.actor;
-                if (PanelManager.instance.featuresPanel) PanelManager.instance.featuresPanel.actor = nextToken.actor;
-                if (PanelManager.instance.experiencePanel) PanelManager.instance.experiencePanel.actor = nextToken.actor;
-                if (PanelManager.instance.statsPanel) PanelManager.instance.statsPanel.actor = nextToken.actor;
-                if (PanelManager.instance.abilitiesPanel) PanelManager.instance.abilitiesPanel.actor = nextToken.actor;
-                if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.actor = nextToken.actor;
-                if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.actor = nextToken.actor;
-                
-                // Update the handle manager's actor reference
-                if (PanelManager.instance.handleManager) {
-                    PanelManager.instance.handleManager.updateActor(nextToken.actor);
-                }
-                
-                await PanelManager.instance.updateHandle();
-                
-                // Re-render all panels with the new actor data
-                await PanelManager.instance.renderPanels(PanelManager.element);
-                
-                // Add fade-in animation to tray panel wrapper after update if appropriate
-                if (PanelManager.instance) {
-                    PanelManager.instance._applyFadeInAnimation();
-                }
-                
-                // Re-attach event listeners to ensure tray functionality works
-            }
-        } else {
-            // No more tokens, clear the instance
-            PanelManager.instance = null;
-            PanelManager.currentActor = null;
-        }
-    }
-});
+// Note: deleteToken hook is now managed centrally by HookManager
 
-// Handle actor updates that require full re-initialization
-Hooks.on('updateActor', async (actor, changes) => {
+// Note: updateActor hook is now managed centrally by HookManager
 
-    
-    // Only process if this is the actor currently being managed by Squire
-    if (PanelManager.currentActor?.id !== actor.id) {
-        return;
-    }
-    
-        // Only process if PanelManager instance exists
-    if (!PanelManager.instance) {
-        return;
-    }
-    
+// Note: pauseGame hook is now managed centrally by HookManager
 
-    
-    // Only handle major changes that require full re-initialization
-    const needsFullUpdate = changes.name || // Name change
-                           changes.img || // Image change
-                           changes.system?.attributes?.prof || // Proficiency change
-                           changes.system?.details?.level || // Level change
-                           changes.system?.attributes?.ac || // AC change
-                           changes.system?.attributes?.movement; // Movement change
+// Note: createActiveEffect hook is now managed centrally by HookManager
 
-    if (needsFullUpdate) {
-        await PanelManager.initialize(actor);
-        // Force a re-render of all panels
-        await PanelManager.instance.renderPanels(PanelManager.element);
-        await PanelManager.instance.updateHandle();
-    }
-    // For health, effects, and spell slot changes, update appropriately
-    else {
-        // Handle health and effects changes
-        if (changes.system?.attributes?.hp || changes.effects) {
-            await PanelManager.instance.updateHandle();
-        }
-        // Handle spell slot changes
-        if (changes.system?.spells) {
-            // Re-render just the spells panel
-            if (PanelManager.instance.spellsPanel?.element) {
-                await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
-            }
-        }
-    }
-});
+// Note: deleteActiveEffect hook is now managed centrally by HookManager
 
-// Add a hook for when the game is paused/unpaused to ensure panels stay responsive
-Hooks.on('pauseGame', async (paused) => {
-    if (!paused && PanelManager.instance && PanelManager.element) {
-        await PanelManager.instance.renderPanels(PanelManager.element);
-    }
-});
+// Note: createItem hook is now managed centrally by HookManager
 
-// Handle active effect creation
-Hooks.on('createActiveEffect', async (effect) => {
+// Note: updateItem hook is now managed centrally by HookManager
 
-    
-    // Only process if this effect belongs to the actor currently being managed by Squire
-    if (PanelManager.currentActor?.id !== effect.parent?.id) {
-        return;
-    }
-    
-    // Only process if PanelManager instance exists
-    if (!PanelManager.instance) {
-        return;
-    }
-    
-
-    
-    await PanelManager.instance.updateHandle();
-});
-
-// Handle active effect deletion
-Hooks.on('deleteActiveEffect', async (effect) => {
-
-    
-    // Only process if this effect belongs to the actor currently being managed by Squire
-    if (PanelManager.currentActor?.id !== effect.parent?.id) {
-        return;
-    }
-    
-    // Only process if PanelManager instance exists
-    if (!PanelManager.instance) {
-        return;
-    }
-    
-
-    
-    await PanelManager.instance.updateHandle();
-});
-
-// Handle item creation
-Hooks.on('createItem', async (item) => {
-
-    
-    // Only process if this item belongs to the actor currently being managed by Squire
-    if (PanelManager.currentActor?.id !== item.parent?.id) {
-        return;
-    }
-    
-    // Only process if PanelManager instance exists
-    if (!PanelManager.instance) {
-        return;
-    }
-    
-
-    
-    // No need to recreate the entire tray - just update relevant panels and handle
-    await PanelManager.instance.renderPanels(PanelManager.element);
-    await PanelManager.instance.updateHandle();
-});
-
-// Handle item updates
-Hooks.on('updateItem', async (item, changes) => {
-    if (!item.parent) return;
-    
-
-    
-    // Only process if this item belongs to the actor currently being managed by Squire
-    if (PanelManager.currentActor?.id !== item.parent?.id) {
-        return;
-    }
-    
-    // Only process if PanelManager instance exists
-    if (!PanelManager.instance) {
-        return;
-    }
-    
-
-    
-    // Check if this is an NPC/monster and the item is a weapon being equipped
-    // or a spell being prepared
-    if (item.parent.type !== "character") {
-        // Check if actor is from a compendium before trying to modify it
-        const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
-        if (isFromCompendium) {
-            // Skip auto-favoriting for actors from compendiums
-        } else {
-            // For weapons, check if equipped status changed to true
-            if (item.type === "weapon" && item.system.equipped === true) {
-                // Add to favorites if it's now equipped
-                await FavoritesPanel.manageFavorite(item.parent, item.id);
-            }
-            // For spells, check if prepared status changed to true
-            else if (item.type === "spell" && item.system.preparation?.prepared === true) {
-                // Add to favorites if it's now prepared
-                await FavoritesPanel.manageFavorite(item.parent, item.id);
-            }
-        }
-    }
-    
-    // Only update tray for changes that affect the handle or require full re-render
-    const needsFullUpdate = changes.flags || // Flag changes (like handle favorites)
-                           changes.name || // Name changes
-                           changes.img || // Image changes
-                           changes.system?.equipped || // Equipment status
-                           changes.system?.preparation?.prepared; // Spell preparation
-    
-    if (needsFullUpdate) {
-        // For major changes, just re-render panels and update handle - no need to recreate entire tray
-        await PanelManager.instance.renderPanels(PanelManager.element);
-        await PanelManager.instance.updateHandle();
-    } else {
-        // For other changes, just update the handle
-        await PanelManager.instance.updateHandle();
-    }
-});
-
-// Handle item deletion
-Hooks.on('deleteItem', async (item) => {
-
-    
-    // Only process if this item belongs to the actor currently being managed by Squire
-    if (PanelManager.currentActor?.id !== item.parent?.id) {
-        return;
-    }
-    
-    // Only process if PanelManager instance exists
-    if (!PanelManager.instance) {
-        return;
-    }
-    
-
-    
-    // No need to recreate the entire tray - just update relevant panels and handle
-    await PanelManager.instance.renderPanels(PanelManager.element);
-    await PanelManager.instance.updateHandle();
-});
+// Note: deleteItem hook is now managed centrally by HookManager
 
 // Set up periodic cleanup of newly added items
 const globalCleanupInterval = setInterval(() => {
@@ -2153,71 +1883,11 @@ const globalCleanupInterval = setInterval(() => {
 }, 60000); // Check every minute
 PanelManager.trackInterval(globalCleanupInterval);
 
-// Cleanup hooks to prevent memory leaks
-// Only clean up when the game is actually closing, not when module is disabled
-Hooks.on('closeGame', () => {
-    if (PanelManager.instance) {
-        PanelManager.cleanup();
-    }
-});
+// Note: closeGame hook is now managed centrally by HookManager
 
-// Clean up when the module is disabled
-Hooks.on('disableModule', (moduleId) => {
-    if (moduleId === MODULE.ID) {
-        // Clear any pending multi-select timeout
-        if (_multiSelectTimeout) {
-            clearTimeout(_multiSelectTimeout);
-            _multiSelectTimeout = null;
-        }
-        // Reset selection tracking
-        _selectionCount = 0;
-        _lastSelectionTime = 0;
-        
-        PanelManager.cleanup();
-    }
-}); 
+// Note: disableModule hook is now managed centrally by HookManager
 
-// Handle canvas selection changes for bulk selections (lasso, shift-click, etc.)
-Hooks.on('canvasReady', () => {
-    // Monitor canvas selection changes
-    const originalSelectObjects = canvas.selectObjects;
-    canvas.selectObjects = function(...args) {
-        const result = originalSelectObjects.apply(this, args);
-        
-        // Clear any existing multi-select timeout since we're using a different selection method
-        if (_multiSelectTimeout) {
-            clearTimeout(_multiSelectTimeout);
-            _multiSelectTimeout = null;
-        }
-        
-        // Reset selection tracking since this is a different selection method
-        _selectionCount = 0;
-        
-        // After selection, update the health panel if needed
-        setTimeout(async () => {
-            await _updateHealthPanelFromSelection();
-        }, 100); // Slightly longer delay for canvas selection methods
-        
-        return result;
-    };
-});
+// Note: canvasReady hook is now managed centrally by HookManager
 
 
-// On token creation, update the handle if the token is owned by the user
-Hooks.on('createToken', async (token) => {
-
-    
-    // Only process if this token is owned by the user
-    if (!token.actor?.isOwner) {
-        return;
-    }
-    
-    // Only process if PanelManager instance exists
-    if (!PanelManager.instance) {
-        return;
-    }
-    
-
-    
-    await PanelManager.instance.updateHandle();
-});
+// Note: createToken hook is now managed centrally by HookManager

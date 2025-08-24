@@ -1,4 +1,6 @@
 import { MODULE, SQUIRE } from './const.js';
+import { getBlacksmith } from './helpers.js';
+import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 
 /**
@@ -352,6 +354,78 @@ export class HookManager {
      * @private
      */
     _setupHooks() {
+        // Multi-select tracking variables
+        let _multiSelectTimeout = null;
+        let _lastSelectionTime = 0;
+        let _selectionCount = 0;
+        const MULTI_SELECT_DELAY = 150; // ms to wait after last selection event
+        const SINGLE_SELECT_THRESHOLD = 300; // ms threshold to consider as single selection
+
+        // Helper function to update selection display
+        async function _updateSelectionDisplay() {
+            if (!PanelManager.instance || !PanelManager.instance.element) return;
+            
+            // Calculate selection data
+            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+            const selectionCount = controlledTokens.length;
+            const showSelectionBox = selectionCount > 1;
+            
+            // Update the selection display
+            const selectionWrapper = PanelManager.instance.element.find('.tray-selection-wrapper');
+            const selectionCountSpan = PanelManager.instance.element.find('.tray-selection-count');
+            
+            if (showSelectionBox) {
+                // Show selection box if it doesn't exist
+                if (selectionWrapper.length === 0) {
+                    const selectionHtml = `
+                        <div class="tray-selection-wrapper">
+                            <span class="tray-selection-count">${selectionCount} tokens selected</span>
+                            <div class="tray-selection-actions" data-tooltip="Use Shift+Click to select multiple or modify selection">
+                                <button id="button-clear" class="tray-selection-button button-clear" data-tooltip="Clear all selections">Clear All</button>
+                                ${game.user.isGM ? '<button id="button-combat" class="tray-selection-button button-combat" data-tooltip="Add selected tokens to combat">Add to Combat</button>' : ''}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Insert after the party toolbar
+                    const partyToolbar = PanelManager.instance.element.find('.tray-tools-toolbar');
+                    if (partyToolbar.length > 0) {
+                        partyToolbar.after(selectionHtml);
+                    }
+                    
+                    // Re-attach event listeners for the new buttons
+                    PanelManager.instance.activateListeners(PanelManager.instance.element);
+                } else {
+                    // Update existing selection count
+                    selectionCountSpan.text(`${selectionCount} tokens selected`);
+                }
+            } else {
+                // Hide selection box if it exists
+                if (selectionWrapper.length > 0) {
+                    selectionWrapper.remove();
+                }
+            }
+        }
+
+        // Helper function to update health panel from current selection
+        async function _updateHealthPanelFromSelection() {
+            // Get a list of all controlled tokens that the user owns
+            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+            
+            if (controlledTokens.length === 0) {
+                // No tokens selected, hide the health panel
+                if (PanelManager.instance && PanelManager.instance.healthPanel) {
+                    PanelManager.instance.healthPanel.hide();
+                }
+                return;
+            }
+
+            // Update the health panel with the selected tokens
+            if (PanelManager.instance && PanelManager.instance.healthPanel) {
+                await PanelManager.instance.healthPanel.updateFromTokens(controlledTokens);
+            }
+        }
+        
         // Journal Entry Page Update Hook - Consolidated
         const journalHookId = HookManager.registerHook(
             "updateJournalEntryPage", 
@@ -504,6 +578,381 @@ export class HookManager {
                 partyStatsCreateChatMessageHookId,
                 totalHooks: HookManager.getHookStats().totalHooks
             },
+            true,
+            false
+        );
+
+        // Update the logging message to reflect all consolidated hooks
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            `HookManager: All hooks consolidated - ${HookManager.hookRegistry.size} total hooks registered`,
+            '',
+            true,
+            false
+        );
+
+        // Global System Hooks - Consolidated
+        const globalControlTokenHookId = HookManager.registerHook(
+            "controlToken",
+            async (token, controlled) => {
+                // Only proceed if it's a GM or the token owner
+                if (!game.user.isGM && !token.actor?.isOwner) return;
+                
+                // Update selection display for both selection and release
+                await _updateSelectionDisplay();
+                
+                // Only care about token selection for health panel updates
+                if (!controlled) return;
+
+                // Track selection timing and count
+                const now = Date.now();
+                const timeSinceLastSelection = now - _lastSelectionTime;
+                _lastSelectionTime = now;
+                _selectionCount++;
+
+                // Clear any existing timeout
+                if (_multiSelectTimeout) {
+                    clearTimeout(_multiSelectTimeout);
+                    _multiSelectTimeout = null;
+                }
+
+                // Determine if this is likely multi-selection
+                const isMultiSelect = _selectionCount > 1 && timeSinceLastSelection < SINGLE_SELECT_THRESHOLD;
+
+                // For multi-selection, debounce the update
+                if (isMultiSelect) {
+                    _multiSelectTimeout = setTimeout(async () => {
+                        await _updateHealthPanelFromSelection();
+                        _selectionCount = 0; // Reset counter
+                    }, MULTI_SELECT_DELAY);
+                    return;
+                }
+
+                // For single selection or first selection, update immediately
+                await _updateHealthPanelFromSelection();
+                
+                // Reset counter if enough time has passed
+                if (timeSinceLastSelection > SINGLE_SELECT_THRESHOLD) {
+                    _selectionCount = 0;
+                }
+            },
+            ['global']
+        );
+
+        const globalDeleteTokenHookId = HookManager.registerHook(
+            "deleteToken",
+            async (token) => {
+                if (PanelManager.currentActor?.id === token.actor?.id) {
+                    // Try to find another token to display
+                    const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
+                    if (nextToken) {
+                        // Add fade-out animation to tray panel wrapper if appropriate
+                        if (PanelManager.instance) {
+                            PanelManager.instance._applyFadeOutAnimation();
+                        }
+                        
+                        // Update the actor without recreating the tray
+                        PanelManager.currentActor = nextToken.actor;
+                        if (PanelManager.instance) {
+                            PanelManager.instance.actor = nextToken.actor;
+                            
+                            // Update the actor reference in all panel instances
+                            if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.featuresPanel) PanelManager.instance.featuresPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.experiencePanel) PanelManager.instance.experiencePanel.actor = nextToken.actor;
+                            if (PanelManager.instance.statsPanel) PanelManager.instance.statsPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.abilitiesPanel) PanelManager.instance.abilitiesPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.actor = nextToken.actor;
+                            if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.actor = nextToken.actor;
+                            
+                            // Update the handle manager's actor reference
+                            if (PanelManager.instance.handleManager) {
+                                PanelManager.instance.handleManager.updateActor(nextToken.actor);
+                            }
+                            
+                            await PanelManager.instance.updateHandle();
+                            
+                            // Re-render all panels with the new actor data
+                            await PanelManager.instance.renderPanels(PanelManager.instance.element);
+                            
+                            // Add fade-in animation to tray panel wrapper after update if appropriate
+                            if (PanelManager.instance) {
+                                PanelManager.instance._applyFadeInAnimation();
+                            }
+                            
+                            // Re-attach event listeners to ensure tray functionality works
+                        }
+                    } else {
+                        // No more tokens, clear the instance
+                        PanelManager.instance = null;
+                        PanelManager.currentActor = null;
+                    }
+                }
+            },
+            ['global']
+        );
+
+        const globalUpdateActorHookId = HookManager.registerHook(
+            "updateActor",
+            async (actor, changes) => {
+                // Only process if this is the actor currently being managed by Squire
+                if (PanelManager.currentActor?.id !== actor.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!PanelManager.instance) {
+                    return;
+                }
+                
+                // Only handle major changes that require full re-initialization
+                const needsFullUpdate = changes.name || // Name change
+                                       changes.img || // Image change
+                                       changes.system?.attributes?.prof || // Proficiency change
+                                       changes.system?.details?.level || // Level change
+                                       changes.system?.attributes?.ac || // AC change
+                                       changes.system?.attributes?.movement; // Movement change
+
+                if (needsFullUpdate) {
+                    await PanelManager.initialize(actor);
+                    // Force a re-render of all panels
+                    await PanelManager.instance.renderPanels(PanelManager.instance.element);
+                    await PanelManager.instance.updateHandle();
+                }
+                // For health, effects, and spell slot changes, update appropriately
+                else {
+                    // Handle health and effects changes
+                    if (changes.system?.attributes?.hp || changes.effects) {
+                        await PanelManager.instance.updateHandle();
+                    }
+                    // Handle spell slot changes
+                    if (changes.system?.spells) {
+                        // Re-render just the spells panel
+                        if (PanelManager.instance.spellsPanel?.element) {
+                            await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                        }
+                    } else {
+                        // For other changes, just update the handle
+                        await PanelManager.instance.updateHandle();
+                    }
+                }
+            },
+            ['global']
+        );
+
+        const globalPauseGameHookId = HookManager.registerHook(
+            "pauseGame",
+            async (paused) => {
+                if (!paused && PanelManager.instance && PanelManager.instance.element) {
+                    await PanelManager.instance.renderPanels(PanelManager.instance.element);
+                }
+            },
+            ['global']
+        );
+
+        const globalCreateActiveEffectHookId = HookManager.registerHook(
+            "createActiveEffect",
+            async (effect) => {
+                // Only process if this effect belongs to the actor currently being managed by Squire
+                if (PanelManager.currentActor?.id !== effect.parent?.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!PanelManager.instance) {
+                    return;
+                }
+                
+                await PanelManager.instance.updateHandle();
+            },
+            ['global']
+        );
+
+        const globalDeleteActiveEffectHookId = HookManager.registerHook(
+            "deleteActiveEffect",
+            async (effect) => {
+                // Only process if this effect belongs to the actor currently being managed by Squire
+                if (PanelManager.currentActor?.id !== effect.parent?.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!PanelManager.instance) {
+                    return;
+                }
+                
+                await PanelManager.instance.updateHandle();
+            },
+            ['global']
+        );
+
+        const globalCreateItemHookId = HookManager.registerHook(
+            "createItem",
+            async (item) => {
+                // Only process if this item belongs to the actor currently being managed by Squire
+                if (PanelManager.currentActor?.id !== item.parent?.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!PanelManager.instance) {
+                    return;
+                }
+                
+                // No need to recreate the entire tray - just update relevant panels and handle
+                await PanelManager.instance.renderPanels(PanelManager.instance.element);
+                await PanelManager.instance.updateHandle();
+            },
+            ['global']
+        );
+
+        const globalUpdateItemHookId = HookManager.registerHook(
+            "updateItem",
+            async (item, changes) => {
+                if (!item.parent) return;
+                
+                // Only process if this item belongs to the actor currently being managed by Squire
+                if (PanelManager.currentActor?.id !== item.parent?.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!PanelManager.instance) {
+                    return;
+                }
+                
+                // Check if this is an NPC/monster and the item is a weapon being equipped
+                // or a spell being prepared
+                if (item.parent.type !== "character") {
+                    // Check if actor is from a compendium before trying to modify it
+                    const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
+                    if (isFromCompendium) {
+                        // Skip auto-favoriting for actors from compendiums
+                    } else {
+                        // For weapons, check if equipped status changed to true
+                        if (item.type === "weapon" && item.system.equipped === true) {
+                            // Add to favorites if it's now equipped
+                            await FavoritesPanel.manageFavorite(item.parent, item.id);
+                        }
+                        // For spells, check if prepared status changed to true
+                        else if (item.type === "spell" && item.system.preparation?.mode === "prepared" && item.system.preparation?.prepared === true) {
+                            // Add to favorites if it's now prepared
+                            await FavoritesPanel.manageFavorite(item.parent, item.id);
+                        }
+                    }
+                } else {
+                    // For other changes, just update the handle
+                    await PanelManager.instance.updateHandle();
+                }
+            },
+            ['global']
+        );
+
+        const globalDeleteItemHookId = HookManager.registerHook(
+            "deleteItem",
+            async (item) => {
+                // Only process if this item belongs to the actor currently being managed by Squire
+                if (PanelManager.currentActor?.id !== item.parent?.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!PanelManager.instance) {
+                    return;
+                }
+                
+                // No need to recreate the entire tray - just update relevant panels and handle
+                await PanelManager.instance.renderPanels(PanelManager.instance.element);
+                await PanelManager.instance.updateHandle();
+            },
+            ['global']
+        );
+
+        const globalCloseGameHookId = HookManager.registerHook(
+            "closeGame",
+            () => {
+                if (PanelManager.instance) {
+                    PanelManager.cleanup();
+                }
+            },
+            ['global']
+        );
+
+        const globalDisableModuleHookId = HookManager.registerHook(
+            "disableModule",
+            (moduleId) => {
+                if (moduleId === MODULE.ID) {
+                    // Clear any pending multi-select timeout
+                    if (_multiSelectTimeout) {
+                        clearTimeout(_multiSelectTimeout);
+                        _multiSelectTimeout = null;
+                    }
+                    // Reset selection tracking
+                    _selectionCount = 0;
+                    _lastSelectionTime = 0;
+                    
+                    PanelManager.cleanup();
+                }
+            },
+            ['global']
+        );
+
+        const globalCanvasReadyHookId = HookManager.registerHook(
+            "canvasReady",
+            () => {
+                // Monitor canvas selection changes
+                const originalSelectObjects = canvas.selectObjects;
+                canvas.selectObjects = function(...args) {
+                    const result = originalSelectObjects.apply(this, args);
+                    
+                    // Clear any existing multi-select timeout since we're using a different selection method
+                    if (_multiSelectTimeout) {
+                        clearTimeout(_multiSelectTimeout);
+                        _multiSelectTimeout = null;
+                    }
+                    
+                    // Reset selection tracking since this is a different selection method
+                    _selectionCount = 0;
+                    
+                    // After selection, update the health panel if needed
+                    setTimeout(async () => {
+                        await _updateHealthPanelFromSelection();
+                    }, 100); // Slightly longer delay for canvas selection methods
+                    
+                    return result;
+                };
+            },
+            ['global']
+        );
+
+        const globalCreateTokenHookId = HookManager.registerHook(
+            "createToken",
+            async (token) => {
+                // Only process if this token is owned by the user
+                if (!token.actor?.isOwner) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!PanelManager.instance) {
+                    return;
+                }
+                
+                await PanelManager.instance.updateHandle();
+            },
+            ['global']
+        );
+
+        // Update the logging message to reflect all consolidated hooks including global system hooks
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            `HookManager: All hooks consolidated - ${HookManager.hookRegistry.size} total hooks registered (including global system hooks)`,
+            '',
             true,
             false
         );
@@ -810,7 +1259,4 @@ export class HookManager {
     }
 }
 
-// Helper function to safely get Blacksmith API
-function getBlacksmith() {
-    return game.modules.get('coffee-pub-blacksmith')?.api;
-}
+
