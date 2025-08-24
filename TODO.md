@@ -107,6 +107,7 @@
 - [x] **COMPLETED** Fixed token selection to use unique token IDs instead of actor IDs
 - [x] **COMPLETED** Fixed monster name display to show specific token names
 - [x] **COMPLETED** Fixed dice tray button display in all handle templates
+- [x] **COMPLETED** Cleaned up debug code and verbose logging for production readiness
 
 ## Next Steps Priority
 

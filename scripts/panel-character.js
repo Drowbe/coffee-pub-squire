@@ -237,13 +237,11 @@ export class CharacterPanel {
                 try {
                     $refreshIcon.addClass('spinning');
                     const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                    // Debug: Starting tray refresh
                     await PanelManager.initialize(this.actor);
                     // Force a re-render of all panels
                     if (PanelManager.instance) {
                         await PanelManager.instance.renderPanels(PanelManager.element);
                     }
-                    // Debug: Tray refresh completed
                 } catch (error) {
                     console.error('Error refreshing tray:', error);
                     ui.notifications.error("Failed to refresh tray");

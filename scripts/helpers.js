@@ -141,7 +141,6 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('getPanelFavorites', function(actor) {
         if (!actor) return [];
         
-        // Debug: Check if actor has getFlag method
         if (typeof actor.getFlag !== 'function') {
             console.warn('getPanelFavorites helper: actor.getFlag is not a function', actor);
             return [];
@@ -178,7 +177,6 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('getHandleFavorites', function(actor) {
         if (!actor) return [];
         
-        // Debug: Check if actor has getFlag method
         if (typeof actor.getFlag !== 'function') {
             console.warn('getHandleFavorites helper: actor.getFlag is not a function', actor);
             return [];
@@ -638,7 +636,6 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
         
         // Get participants info for portraits - use the already parsed data
         const participants = entry.participants || [];
-        // Debug: participants data loaded
 
         // Get location info if available
         let location = '';
@@ -700,8 +697,6 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
             visibility,
             isGM: game.user.isGM
         };
-        
-        // Debug: returning quest tooltip data
         
         return result;
     } catch (error) {

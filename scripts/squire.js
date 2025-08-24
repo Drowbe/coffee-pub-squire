@@ -372,20 +372,7 @@ Hooks.once('ready', async function() {
         excluded === currentUserId || excluded === currentUserName
     );
 
-    // Debug log the exclusion status
-    blacksmith.utils.postConsoleAndNotification(
-        MODULE.NAME,
-        `${MODULE.TITLE} | User Exclusion Check`,
-        {
-            currentUserId,
-            currentUserName,
-            isExcluded,
-            excludedUsers,
-            allUsers: game.users.map(u => ({ id: u.id, name: u.name }))
-        },
-        true,
-        false
-    );
+
 
     if (isExcluded) {
         // Simply hide the tray with CSS
@@ -422,18 +409,7 @@ Hooks.once('ready', async function() {
     // Register Handlebars helpers
     registerHelpers();
     
-    // Debug log for Blacksmith sound choices
-    blacksmith.utils.postConsoleAndNotification(
-        MODULE.NAME,
-        `${MODULE.TITLE} | Blacksmith API`,
-        {
-            api: blacksmith,
-            BLACKSMITH: blacksmith.BLACKSMITH,
-            soundChoices: blacksmith.BLACKSMITH?.arrSoundChoices
-        },
-        true,
-        false
-    );
+
 
     // Initialize Squire after settings are registered (with delay to ensure everything is ready)
     setTimeout(async () => {

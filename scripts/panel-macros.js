@@ -151,7 +151,6 @@ export class MacrosPanel {
                 // Only show add slot if there are no empty slots
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                 macros = macros.filter(m => m && m.id);
-                // Debug: dragenter on .macros-grid (will request add-slot)
                 if (this.isPoppedOut && this.window) {
                     // Popped-out window path: ask the window to show add slot and re-render
                     this.window.showAddSlot = true;
@@ -175,7 +174,6 @@ export class MacrosPanel {
             e.stopPropagation();
             if (dragActive) {
                 dragActive = false;
-                // Debug: dragleave on .macros-grid (remove add-slot)
                 if (this.isPoppedOut && this.window) {
                     this.window.showAddSlot = false;
                     this.window.render(false);
@@ -266,7 +264,6 @@ export class MacrosPanel {
                     macros = macros.filter(m => m && typeof m === 'object');
                     const [moved] = macros.splice(data.fromIndex, 1);
                     macros.splice(idx, 0, moved);
-                    // Debug: internal reorder
                     await game.settings.set(MODULE.ID, 'userMacros', macros);
                     if (self.isPoppedOut && self.window) {
                         self.window.showAddSlot = false;
@@ -295,7 +292,6 @@ export class MacrosPanel {
                         } else {
                             macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
                         }
-                        // Debug: external drop from directory
                         await game.settings.set(MODULE.ID, 'userMacros', macros);
                         if (self.isPoppedOut && self.window) {
                             self.window.showAddSlot = false;
@@ -379,7 +375,6 @@ export class MacrosPanel {
                         macros[idx] = { id: null, name: null, img: null };
                     } else {
                         // Else (slot is empty), remove it (unless it's the last slot)
-                        // Debug: Slot is empty, removing slot
                         if (macros.length > 1) {
                             removedMacroId = macros[idx]?.id || null;
                             macros.splice(idx, 1);
@@ -387,7 +382,6 @@ export class MacrosPanel {
                     }
                     // Always leave at least one slot
                     if (macros.length === 0) {
-                        // Debug: Last slot detected, leaving it empty
                         macros = [{ id: null, name: null, img: null }];
                     }
                     await game.settings.set(MODULE.ID, 'userMacros', macros);

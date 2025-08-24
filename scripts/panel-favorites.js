@@ -22,7 +22,6 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            // Debug: Cannot set handle favorites for actor from compendium
             return;
         }
         await actor.setFlag(MODULE.ID, 'favoriteHandle', ids);
@@ -32,7 +31,6 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            // Debug: Cannot add handle favorite for actor from compendium
             return;
         }
         const ids = new Set(this.getHandleFavorites(actor));
@@ -44,7 +42,6 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            // Debug: Cannot remove handle favorite for actor from compendium
             return;
         }
         const ids = new Set(this.getHandleFavorites(actor));
@@ -69,11 +66,8 @@ export class FavoritesPanel {
             );
             
             if (actors.length === 0) {
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No actors with old favorite flags found.', '', true, false);
                 return;
             }
-            
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Cleaning up old favorite', actors.length + ' actors', true, false);
             
             for (const actor of actors) {
                 // Remove old flags
@@ -86,7 +80,7 @@ export class FavoritesPanel {
                 }
             }
             
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Successfully cleaned up old favorite flags.', 'success', true, false);
+
             
             // Refresh the UI if panels are open
             if (PanelManager.instance) {
@@ -107,7 +101,6 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            // Debug: Cannot clear handle favorites for actor from compendium
             return [];
         }
         await actor.unsetFlag(MODULE.ID, 'favoriteHandle');
@@ -260,8 +253,7 @@ export class FavoritesPanel {
             // Check if actor is from a compendium (more robust check)
             const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
             if (isFromCompendium) {
-                // Debug: Skipping auto-favorites initialization for actor from compendium
-                return false;
+                            return false;
             }
             
             // Get current panel favorites
@@ -301,16 +293,7 @@ export class FavoritesPanel {
             // Also add these items to handle favorites for quick access
             await actor.setFlag(MODULE.ID, 'favoriteHandle', itemsToFavorite);
             
-            // Log what was auto-favorited
-            if (blacksmith?.utils?.postConsoleAndNotification) {
-                blacksmith.utils.postConsoleAndNotification(
-                    MODULE.NAME, 
-                    `Auto-favorited ${itemsToFavorite.length} items for ${actor.name} (Panel + Handle)`, 
-                    `Items: ${itemsToFavorite.map(id => actor.items.get(id)?.name || id).join(', ')}`, 
-                    true, 
-                    false
-                );
-            }
+
             
             // Force refresh of items collection to ensure up-to-date data
             if (actor.items && typeof actor.items._flush === 'function') {
@@ -442,7 +425,6 @@ export class FavoritesPanel {
             .filter(item => item) // Remove any undefined items (in case an item was deleted)
             .map(item => {
                 const isHandleFavorite = FavoritesPanel.isHandleFavorite(this.actor, item.id);
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Item ${item.name} (${item.id}) isHandleFavorite: ${isHandleFavorite}`, '', true, false);
                 return {
                     id: item.id,
                     name: item.name,
@@ -620,14 +602,12 @@ export class FavoritesPanel {
         // Always create a fresh context menu
         try {
             this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions);
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Context menu created successfully', '', true, false);
         } catch (error) {
             console.error('Error creating context menu:', error);
             // Fallback: use native context menu
             favoritesList.on('contextmenu.squireFavorites', '.favorite-item', (event) => {
                 event.preventDefault();
                 const itemId = $(event.currentTarget).data('item-id');
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Right-clicked item: ${itemId}`, '', true, false);
                 // For now, just log - we can implement a custom context menu later
             });
         }
@@ -688,20 +668,16 @@ export class FavoritesPanel {
             const $item = $(event.currentTarget).closest('.favorite-item');
             const itemId = $item.data('item-id');
             if (!itemId) {
-                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No item ID found for favorite toggle', '', true, false);
                 return;
             }
             
             // Check current state before toggle
             const wasFavorite = FavoritesPanel.getPanelFavorites(this.actor).includes(itemId);
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Heart clicked for item: ${itemId} wasFavorite: ${wasFavorite}`, '', true, false);
             
             const result = await FavoritesPanel.manageFavorite(this.actor, itemId);
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Favorite toggle result: ${result}`, '', true, false);
             
             // Check state after toggle
             const isFavorite = FavoritesPanel.getPanelFavorites(this.actor).includes(itemId);
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Item is now favorite: ${isFavorite}`, '', true, false);
         });
 
         // Toggle prepared state (sun icon)
@@ -807,10 +783,8 @@ export class FavoritesPanel {
     // _syncHandleFavorites method removed - handle favorites are now completely manual
 
     async _reorderFavorite(itemId, newIndex) {
-        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `_reorderFavorite called with: ${JSON.stringify({ itemId, newIndex })}`, '', true, false);
         const actor = this.actor;
         if (!actor) {
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No actor found in _reorderFavorite', '', true, false);
             return;
         }
 
@@ -838,10 +812,8 @@ export class FavoritesPanel {
         }
 
         // Remove item from current position and insert at new position
-        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Before reorder: ${JSON.stringify([...panelFavoriteIds])}`, '', true, false);
         const [movedId] = panelFavoriteIds.splice(currentIndex, 1);
         panelFavoriteIds.splice(newIndex, 0, movedId);
-        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `After reorder: ${JSON.stringify([...panelFavoriteIds])}`, '', true, false);
 
         try {
             // Clean up context menu before updates

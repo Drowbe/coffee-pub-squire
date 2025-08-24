@@ -82,7 +82,7 @@ export class HookManager {
     async _handleJournalEntryPageUpdate(page, changes, options, userId) {
         const blacksmith = getBlacksmith();
         
-        // Debug: journal entry page update processed
+
         
         // Route to appropriate panels based on content type and journal
         

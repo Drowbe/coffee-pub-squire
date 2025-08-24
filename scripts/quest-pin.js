@@ -1444,8 +1444,6 @@ export class QuestPin extends PIXI.Container {
           tooltipData.participants = this.participants;
         }
         
-        // Debug: Tooltip participants data
-        
         if (tooltipData) {
           tooltipData.controls = game.user.isGM ?
             'Left-click: Select & jump to quest | Left double-click: Complete | Middle/Shift+Left: Toggle hidden | Right-click: Fail | Double right-click: Delete | Drag to move' :

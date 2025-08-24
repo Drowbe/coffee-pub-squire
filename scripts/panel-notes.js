@@ -20,7 +20,6 @@ export class NotesPanel {
      * @public
      */
     destroy() {
-        // Debug: Notes Panel destroying
         this.element = null;
     }
 
@@ -426,7 +425,6 @@ export class NotesPanel {
             }
             
             if (!page) {
-                // Debug: No page provided to render
                 return;
             }
             
@@ -467,7 +465,6 @@ export class NotesPanel {
                 if (typeof page.renderContent === 'function') {
                     // Validate page type first - renderContent works best with text/markdown
                     if (!['text', 'markdown'].includes(page.type)) {
-                        // Debug: Unsupported page type for renderContent
                         // Don't return - let it try but prepare for failure
                     }
                     
@@ -477,8 +474,6 @@ export class NotesPanel {
                         
                         // Check if content is valid
                         if (!renderedContent || (typeof renderedContent === 'string' && renderedContent.trim() === '')) {
-                            // Debug: renderContent returned empty content, trying fallback
-                            
                             // Fallback with Manual Enrichment as suggested
                             let content = page.text?.content ?? page.text ?? '';
                             if (content && typeof content === 'string') {
@@ -513,7 +508,6 @@ export class NotesPanel {
                         
                         // If no content was rendered, add placeholder text
                         if (!hasContent) {
-                            // Debug: renderContent didn't produce visible content
                             contentContainer.html(`
                                 <div class="empty-page-content">
                                     <p>${canEditPage ? 
@@ -564,7 +558,6 @@ export class NotesPanel {
                     }
                 }
             } catch (uiError) {
-                // Debug: Error using UI extraction method
                 // Continue to fallback methods
             }
             
@@ -618,7 +611,6 @@ export class NotesPanel {
                     
                     // If no content was rendered, add placeholder text
                     if (!hasContent) {
-                        // Debug: Native render didn't produce visible content
                         contentContainer.html(`
                             <div class="empty-page-content">
                                 <p>${canEditPage ? 
@@ -635,7 +627,6 @@ export class NotesPanel {
                     return;
                 }
             } catch (error) {
-                // Debug: Native render method failed
                 // Continue to fallback methods
             }
             

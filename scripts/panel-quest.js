@@ -213,8 +213,6 @@ export class QuestPanel {
                     pinnedQuests[pinnedCategory] = null;
                     await user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
                     
-                    // Debug: Unpinned hidden quest from player
-                    
                     // Notify the player if they're online
                     if (user.active) {
                         ui.notifications.info(`${user.name}: Your pinned quest "${questName}" has been hidden by the GM and automatically unpinned.`);
@@ -2825,7 +2823,6 @@ export class QuestPanel {
             // Validate imported pin data
             if (!importedPin || !importedPin.questUuid || 
                 typeof importedPin.x !== 'number' || typeof importedPin.y !== 'number') {
-                // Debug: Skipping invalid pin data during merge
                 continue;
             }
             

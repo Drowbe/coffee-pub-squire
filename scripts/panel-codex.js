@@ -101,7 +101,7 @@ class CodexForm extends FormApplication {
     async _updateObject(event, formData) {
         const entry = expandObject(formData);
         
-        // Debug: Log the form data
+
         
         // Convert tags to array
         if (typeof entry.tags === 'string') {
@@ -133,12 +133,8 @@ class CodexForm extends FormApplication {
                 }
             };
 
-            // Debug: Log the page data being created
-
             // Create new page
             const newPage = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-
-            // Debug: Log successful creation
 
             // Show success notification
             ui.notifications.info(`Codex entry "${entry.name}" saved successfully.`);
@@ -1545,14 +1541,10 @@ SPECIFIC INSTRUCTIONS HERE`;
                         ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
                     );
                     
-                    // Debug: Scanning inventory items
-                    
                     for (const item of items) {
                         // Normalize spaces: collapse multiple spaces into single spaces, then lowercase and trim
                         const itemNameLower = item.name.toLowerCase().replace(/\s+/g, ' ').trim();
                         inventoryItems.add(itemNameLower);
-                        
-                        // Debug: Log items that match "Test 2" specifically
                         
                         // If it's a backpack/container, check its contents
                         if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
@@ -1560,13 +1552,9 @@ SPECIFIC INSTRUCTIONS HERE`;
                                 // Apply same space normalization to contained items
                                 const containedItemNameLower = containedItem.name.toLowerCase().replace(/\s+/g, ' ').trim();
                                 inventoryItems.add(containedItemNameLower);
-                                
-                                // Debug: Log contained items that match "Test 2" specifically
                             }
                         }
                     }
-                } else {
-                    // Debug: No items found for actor
                 }
             }
 
@@ -1706,8 +1694,6 @@ SPECIFIC INSTRUCTIONS HERE`;
             // Keep final summary visible for a moment
             await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // Debug: Log that we're about to refresh
-            
             // Log detailed results with discoverer information
             
             // Show completion message and hide progress area after delay
@@ -1811,8 +1797,6 @@ SPECIFIC INSTRUCTIONS HERE`;
 
             // Update the page content
             await page.update({ 'text.content': doc.body.innerHTML });
-            
-            // Debug: Updated "Discovered By" information
             
         } catch (error) {
             console.error('Error updating "Discovered By" information:', error);

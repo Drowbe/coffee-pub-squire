@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Spell Slot Management**: Added comprehensive spell slot system with visual feedback and real-time updates
 - **Token ID System**: Migrated from actor ID-based to token ID-based selection for proper multi-token support
 - **Template Condition Fixes**: Corrected Handlebars template conditions for proper conditional rendering
+- **Debug Code Cleanup**: Removed verbose debug logging and debug comments for cleaner production code
 
 ### Files Modified
 - `scripts/panel-favorites.js` - Complete favoriting system overhaul with performance optimizations
