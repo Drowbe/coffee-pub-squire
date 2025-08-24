@@ -20,9 +20,8 @@ export class CharacterPanel {
         // Bind the update method to this instance
         this._onActorUpdate = this._onActorUpdate.bind(this);
         
-        // Register hooks for HP updates
-        Hooks.on('updateActor', this._onActorUpdate);
-        Hooks.on('updateToken', this._onActorUpdate);
+        // Note: Hooks are now managed centrally by HookManager
+        // No need to register hooks here anymore
     }
 
     _onActorUpdate(document, change) {
@@ -173,14 +172,8 @@ export class CharacterPanel {
     }
 
     destroy() {
-        // Remove hooks when panel is destroyed
-        Hooks.off('updateActor', this._onActorUpdate);
-        Hooks.off('updateToken', this._onActorUpdate);
-    }
-
-    destroy() {
-        // Remove hooks when panel is destroyed
-        Hooks.off('updateToken', this._onActorUpdate);
+        // Note: Hooks are now managed centrally by HookManager
+        // No need to manually remove hooks here anymore
         this.element = null;
     }
 } 

@@ -25,11 +25,8 @@ function updateHotbarVisibility() {
   }
 }
 
-// Only call after settings are registered
-Hooks.once('init', () => {
-  Hooks.on('ready', updateHotbarVisibility);
-  Hooks.on('renderSettingsConfig', updateHotbarVisibility);
-});
+// Note: Hooks are now managed centrally by HookManager
+// No need to register hooks here anymore
 
 export class MacrosPanel {
     static isWindowOpen = false;
@@ -496,9 +493,8 @@ export class MacrosPanel {
     }
 
     destroy() {
-        // Remove hooks when panel is destroyed
-        Hooks.off('ready', updateHotbarVisibility);
-        Hooks.off('renderSettingsConfig', updateHotbarVisibility);
+        // Note: Hooks are now managed centrally by HookManager
+        // No need to manually remove hooks here anymore
         this.element = null;
     }
 }

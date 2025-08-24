@@ -179,10 +179,8 @@ export class PartyStatsPanel {
         // Initial render
         await this._updateDisplay();
 
-        // Register hooks for updates
-        Hooks.on('updateCombat', this._boundUpdateHandler);
-        Hooks.on('updateActor', this._boundUpdateHandler);
-        Hooks.on('createChatMessage', this._boundUpdateHandler);
+        // Note: Hooks are now managed centrally by HookManager
+        // No need to register hooks here anymore
     }
 
     async _updateDisplay() {
@@ -197,18 +195,8 @@ export class PartyStatsPanel {
     }
 
     destroy() {
-        // Clean up hooks when the panel is destroyed
-        Hooks.off('updateCombat', this._boundUpdateHandler);
-        Hooks.off('updateActor', this._boundUpdateHandler);
-        Hooks.off('createChatMessage', this._boundUpdateHandler);
-        this.element = null;
-    }
-
-    destroy() {
-        // Remove hooks when panel is destroyed
-        Hooks.off('updateCombat', this._boundUpdateHandler);
-        Hooks.off('updateActor', this._boundUpdateHandler);
-        Hooks.off('createChatMessage', this._boundUpdateHandler);
+        // Note: Hooks are now managed centrally by HookManager
+        // No need to manually remove hooks here anymore
         this.element = null;
     }
 } 

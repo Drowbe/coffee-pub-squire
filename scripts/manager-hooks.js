@@ -3,7 +3,7 @@ import { PanelManager } from './manager-panel.js';
 
 /**
  * Centralized Hook Manager for Squire
- * Consolidates all journal-related hooks and routes them to appropriate panels
+ * Consolidates all hooks and routes them to appropriate panels
  */
 export class HookManager {
     static instance = null;
@@ -13,9 +13,15 @@ export class HookManager {
     static questPanel = null;
     static notesPanel = null;
     static questPins = null;
+    static characterPanel = null;
+    static partyPanel = null;
+    static macrosPanel = null;
+    static partyStatsPanel = null;
     
-    // Hook IDs for cleanup
-    static hookIds = new Map();
+    // Enhanced hook management system
+    static hookRegistry = new Map(); // hookName -> { handler, panels, hookId, isActive }
+    static panelHooks = new Map();   // panelType -> Set of hookNames
+    static hookIds = new Map();      // hookName -> hookId (for backward compatibility)
     
     /**
      * Initialize the hook manager
@@ -28,13 +34,300 @@ export class HookManager {
         
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
-            'HookManager initialized',
+            'HookManager initialized with enhanced registry system',
             'success',
             false,
             false
         );
         
         return HookManager.instance;
+    }
+    
+    /**
+     * Register a hook with the hook manager
+     * @param {string} hookName - Name of the hook (e.g., 'updateActor', 'updateToken')
+     * @param {Function} handler - The handler function for the hook
+     * @param {Array<string>} panels - Array of panel types that depend on this hook
+     * @param {Object} options - Additional options for hook registration
+     * @returns {string} The hook ID for cleanup
+     */
+    static registerHook(hookName, handler, panels = [], options = {}) {
+        // Check if hook is already registered
+        if (HookManager.hookRegistry.has(hookName)) {
+            const existing = HookManager.hookRegistry.get(hookName);
+            
+            // Add new panels to existing hook
+            panels.forEach(panelType => {
+                if (!existing.panels.includes(panelType)) {
+                    existing.panels.push(panelType);
+                }
+            });
+            
+            // Update panel hook mapping
+            panels.forEach(panelType => {
+                if (!HookManager.panelHooks.has(panelType)) {
+                    HookManager.panelHooks.set(panelType, new Set());
+                }
+                HookManager.panelHooks.get(panelType).add(hookName);
+            });
+            
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
+                `Hook ${hookName} updated with additional panels`,
+                { newPanels: panels, totalPanels: existing.panels },
+                true,
+                false
+            );
+            
+            return existing.hookId;
+        }
+        
+        // Register new hook
+        const hookId = Hooks.on(hookName, handler);
+        
+        const hookInfo = {
+            handler,
+            panels: [...panels],
+            hookId,
+            isActive: true,
+            options,
+            registeredAt: Date.now()
+        };
+        
+        HookManager.hookRegistry.set(hookName, hookInfo);
+        HookManager.hookIds.set(hookName, hookId);
+        
+        // Update panel hook mapping
+        panels.forEach(panelType => {
+            if (!HookManager.panelHooks.has(panelType)) {
+                HookManager.panelHooks.set(panelType, new Set());
+            }
+            HookManager.panelHooks.get(panelType).add(hookName);
+        });
+        
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            `Hook ${hookName} registered successfully`,
+            { hookId, panels, totalHooks: HookManager.hookRegistry.size },
+            true,
+            false
+        );
+        
+        return hookId;
+    }
+    
+    /**
+     * Request access to a hook for a specific panel
+     * @param {string} panelType - Type of panel requesting the hook
+     * @param {string} hookName - Name of the hook being requested
+     * @returns {boolean} True if hook is available, false otherwise
+     */
+    static requestHook(panelType, hookName) {
+        if (!HookManager.hookRegistry.has(hookName)) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
+                `Panel ${panelType} requested unavailable hook: ${hookName}`,
+                'warning',
+                true,
+                false
+            );
+            return false;
+        }
+        
+        const hookInfo = HookManager.hookRegistry.get(hookName);
+        const hasAccess = hookInfo.panels.includes(panelType);
+        
+        if (!hasAccess) {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
+                `Panel ${panelType} requested hook ${hookName} but doesn't have access`,
+                { availablePanels: hookInfo.panels },
+                true,
+                false
+            );
+        }
+        
+        return hasAccess;
+    }
+    
+    /**
+     * Get all hooks for a specific panel
+     * @param {string} panelType - Type of panel
+     * @returns {Array<string>} Array of hook names the panel has access to
+     */
+    static getPanelHooks(panelType) {
+        return Array.from(HookManager.panelHooks.get(panelType) || []);
+    }
+    
+    /**
+     * Get information about a specific hook
+     * @param {string} hookName - Name of the hook
+     * @returns {Object|null} Hook information or null if not found
+     */
+    static getHookInfo(hookName) {
+        return HookManager.hookRegistry.get(hookName) || null;
+    }
+    
+    /**
+     * Get all registered hooks
+     * @returns {Array<string>} Array of all hook names
+     */
+    static getAllHooks() {
+        return Array.from(HookManager.hookRegistry.keys());
+    }
+    
+    /**
+     * Get hook statistics
+     * @returns {Object} Statistics about registered hooks
+     */
+    static getHookStats() {
+        const totalHooks = HookManager.hookRegistry.size;
+        const activeHooks = Array.from(HookManager.hookRegistry.values()).filter(h => h.isActive).length;
+        const totalPanels = HookManager.panelHooks.size;
+        
+        return {
+            totalHooks,
+            activeHooks,
+            totalPanels,
+            hooksByPanel: Object.fromEntries(
+                Array.from(HookManager.panelHooks.entries()).map(([panel, hooks]) => [
+                    panel, 
+                    Array.from(hooks)
+                ])
+            )
+        };
+    }
+    
+    /**
+     * Deactivate a hook (temporarily disable without removing)
+     * @param {string} hookName - Name of the hook to deactivate
+     * @returns {boolean} True if successful, false otherwise
+     */
+    static deactivateHook(hookName) {
+        if (!HookManager.hookRegistry.has(hookName)) {
+            return false;
+        }
+        
+        const hookInfo = HookManager.hookRegistry.get(hookName);
+        if (hookInfo.isActive) {
+            Hooks.off(hookName, hookInfo.handler);
+            hookInfo.isActive = false;
+            
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
+                `Hook ${hookName} deactivated`,
+                { hookId: hookInfo.hookId },
+                true,
+                false
+            );
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Reactivate a previously deactivated hook
+     * @param {string} hookName - Name of the hook to reactivate
+     * @returns {boolean} True if successful, false otherwise
+     */
+    static reactivateHook(hookName) {
+        if (!HookManager.hookRegistry.has(hookName)) {
+            return false;
+        }
+        
+        const hookInfo = HookManager.hookRegistry.get(hookName);
+        if (!hookInfo.isActive) {
+            const newHookId = Hooks.on(hookName, hookInfo.handler);
+            hookInfo.hookId = newHookId;
+            hookInfo.isActive = true;
+            HookManager.hookIds.set(hookName, newHookId);
+            
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
+                `Hook ${hookName} reactivated`,
+                { newHookId },
+                true,
+                false
+            );
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Remove a hook completely
+     * @param {string} hookName - Name of the hook to remove
+     * @returns {boolean} True if successful, false otherwise
+     */
+    static removeHook(hookName) {
+        if (!HookManager.hookRegistry.has(hookName)) {
+            return false;
+        }
+        
+        const hookInfo = HookManager.hookRegistry.get(hookName);
+        
+        // Remove from FoundryVTT
+        if (hookInfo.isActive) {
+            Hooks.off(hookName, hookInfo.handler);
+        }
+        
+        // Remove from panel mappings
+        hookInfo.panels.forEach(panelType => {
+            if (HookManager.panelHooks.has(panelType)) {
+                HookManager.panelHooks.get(panelType).delete(hookName);
+                if (HookManager.panelHooks.get(panelType).size === 0) {
+                    HookManager.panelHooks.delete(panelType);
+                }
+            }
+        });
+        
+        // Remove from registries
+        HookManager.hookRegistry.delete(hookName);
+        HookManager.hookIds.delete(hookName);
+        
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            `Hook ${hookName} completely removed`,
+            { removedPanels: hookInfo.panels },
+            true,
+            false
+        );
+        
+        return true;
+    }
+    
+    /**
+     * Get debug information about hook state
+     * @returns {Object} Debug information for troubleshooting
+     */
+    static getDebugInfo() {
+        const stats = HookManager.getHookStats();
+        const debugInfo = {
+            ...stats,
+            registryDetails: {},
+            panelDetails: {}
+        };
+        
+        // Add detailed registry information
+        HookManager.hookRegistry.forEach((hookInfo, hookName) => {
+            debugInfo.registryDetails[hookName] = {
+                isActive: hookInfo.isActive,
+                panels: hookInfo.panels,
+                hookId: hookInfo.hookId,
+                registeredAt: new Date(hookInfo.registeredAt).toISOString(),
+                options: hookInfo.options
+            };
+        });
+        
+        // Add detailed panel information
+        HookManager.panelHooks.forEach((hooks, panelType) => {
+            debugInfo.panelDetails[panelType] = {
+                totalHooks: hooks.size,
+                hooks: Array.from(hooks)
+            };
+        });
+        
+        return debugInfo;
     }
     
     /**
@@ -60,16 +353,157 @@ export class HookManager {
      */
     _setupHooks() {
         // Journal Entry Page Update Hook - Consolidated
-        const journalHookId = Hooks.on("updateJournalEntryPage", async (page, changes, options, userId) => {
-            await this._handleJournalEntryPageUpdate(page, changes, options, userId);
-        });
+        const journalHookId = HookManager.registerHook(
+            "updateJournalEntryPage", 
+            async (page, changes, options, userId) => {
+                await this._handleJournalEntryPageUpdate(page, changes, options, userId);
+            },
+            ['codex', 'quest', 'notes', 'questPins']
+        );
         
-        HookManager.hookIds.set('updateJournalEntryPage', journalHookId);
+        // Character Panel Hooks - Consolidated
+        const characterActorHookId = HookManager.registerHook(
+            "updateActor",
+            (document, change) => {
+                // Route to character panel if it exists
+                if (HookManager.characterPanel && HookManager.characterPanel._onActorUpdate) {
+                    HookManager.characterPanel._onActorUpdate(document, change);
+                }
+            },
+            ['character']
+        );
+        
+        const characterTokenHookId = HookManager.registerHook(
+            "updateToken",
+            (document, change) => {
+                // Route to character panel if it exists
+                if (HookManager.characterPanel && HookManager.characterPanel._onActorUpdate) {
+                    HookManager.characterPanel._onActorUpdate(document, change);
+                }
+            },
+            ['character']
+        );
+        
+        // Party Panel Hooks - Consolidated
+        const partyTokenHookId = HookManager.registerHook(
+            "updateToken",
+            (document, change) => {
+                // Route to party panel if it exists
+                if (HookManager.partyPanel && HookManager.partyPanel._onTokenUpdate) {
+                    HookManager.partyPanel._onTokenUpdate(document, change);
+                }
+            },
+            ['party']
+        );
+        
+        const partyActorHookId = HookManager.registerHook(
+            "updateActor",
+            (document, change) => {
+                // Route to party panel if it exists
+                if (HookManager.partyPanel && HookManager.partyPanel._onActorUpdate) {
+                    HookManager.partyPanel._onActorUpdate(document, change);
+                }
+            },
+            ['party']
+        );
+        
+        const partyControlTokenHookId = HookManager.registerHook(
+            "controlToken",
+            (token, controlled) => {
+                // Route to party panel if it exists
+                if (HookManager.partyPanel && HookManager.partyPanel._onControlToken) {
+                    HookManager.partyPanel._onControlToken(token, controlled);
+                }
+            },
+            ['party']
+        );
+        
+        const partyRenderChatMessageHookId = HookManager.registerHook(
+            "renderChatMessage",
+            (message, html, data) => {
+                // Route to party panel if it exists
+                if (HookManager.partyPanel && HookManager.partyPanel._handleTransferButtons) {
+                    HookManager.partyPanel._handleTransferButtons(message, html, data);
+                }
+            },
+            ['party']
+        );
+        
+        // Macros Panel Hooks - Consolidated
+        const macrosReadyHookId = HookManager.registerHook(
+            "ready",
+            () => {
+                // Route to macros panel if it exists
+                if (HookManager.macrosPanel && HookManager.macrosPanel.updateHotbarVisibility) {
+                    HookManager.macrosPanel.updateHotbarVisibility();
+                }
+            },
+            ['macros']
+        );
+        
+        const macrosRenderSettingsConfigHookId = HookManager.registerHook(
+            "renderSettingsConfig",
+            () => {
+                // Route to macros panel if it exists
+                if (HookManager.macrosPanel && HookManager.macrosPanel.updateHotbarVisibility) {
+                    HookManager.macrosPanel.updateHotbarVisibility();
+                }
+            },
+            ['macros']
+        );
+        
+        // Party Stats Panel Hooks - Consolidated
+        const partyStatsUpdateCombatHookId = HookManager.registerHook(
+            "updateCombat",
+            (combat, change) => {
+                // Route to party stats panel if it exists
+                if (HookManager.partyStatsPanel && HookManager.partyStatsPanel._boundUpdateHandler) {
+                    HookManager.partyStatsPanel._boundUpdateHandler(combat, change);
+                }
+            },
+            ['partyStats']
+        );
+        
+        const partyStatsUpdateActorHookId = HookManager.registerHook(
+            "updateActor",
+            (actor, change) => {
+                // Route to party stats panel if it exists
+                if (HookManager.partyStatsPanel && HookManager.partyStatsPanel._boundUpdateHandler) {
+                    HookManager.partyStatsPanel._boundUpdateHandler(actor, change);
+                }
+            },
+            ['partyStats']
+        );
+        
+        const partyStatsCreateChatMessageHookId = HookManager.registerHook(
+            "createChatMessage",
+            (message) => {
+                // Route to party stats panel if it exists
+                if (HookManager.partyStatsPanel && HookManager.partyStatsPanel._boundUpdateHandler) {
+                    HookManager.partyStatsPanel._boundUpdateHandler(message);
+                }
+            },
+            ['partyStats']
+        );
         
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
-            'Journal hooks consolidated in HookManager',
-            { hookId: journalHookId },
+            'Journal, Character, Party, Macros, and Party Stats hooks consolidated in HookManager',
+            { 
+                journalHookId, 
+                characterActorHookId, 
+                characterTokenHookId,
+                partyTokenHookId,
+                partyActorHookId,
+                partyControlTokenHookId,
+                partyRenderChatMessageHookId,
+                macrosReadyHookId,
+                macrosRenderSettingsConfigHookId,
+                partyStatsUpdateCombatHookId,
+                partyStatsUpdateActorHookId,
+                partyStatsCreateChatMessageHookId,
+                totalHooks: HookManager.getHookStats().totalHooks
+            },
             true,
             false
         );
@@ -353,17 +787,23 @@ export class HookManager {
      * Clean up all hooks
      */
     static cleanup() {
-        HookManager.hookIds.forEach((hookId, hookName) => {
-            Hooks.off(hookName, hookId);
+        // Clean up all registered hooks
+        HookManager.hookRegistry.forEach((hookInfo, hookName) => {
+            if (hookInfo.isActive) {
+                Hooks.off(hookName, hookInfo.handler);
+            }
         });
         
+        // Clear all registries
+        HookManager.hookRegistry.clear();
+        HookManager.panelHooks.clear();
         HookManager.hookIds.clear();
         HookManager.instance = null;
         
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
-            'HookManager cleaned up',
-            {},
+            'HookManager cleaned up all hooks',
+            { totalHooksCleaned: HookManager.hookRegistry.size },
             false,
             false
         );

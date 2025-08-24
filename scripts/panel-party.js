@@ -14,11 +14,8 @@ export class PartyPanel {
         this._onControlToken = this._onControlToken.bind(this);
         this._handleTransferButtons = this._handleTransferButtons.bind(this);
         
-        // Register hooks for updates
-        Hooks.on('updateToken', this._onTokenUpdate);
-        Hooks.on('updateActor', this._onActorUpdate);
-        Hooks.on('controlToken', this._onControlToken);
-        Hooks.on('renderChatMessage', this._handleTransferButtons);
+        // Note: Hooks are now managed centrally by HookManager
+        // No need to register hooks here anymore
     }
 
     async render(element) {
@@ -949,10 +946,9 @@ export class PartyPanel {
     }
 
     destroy() {
-        // Remove hooks when panel is destroyed
-        Hooks.off('updateToken', this._onTokenUpdate);
-        Hooks.off('updateActor', this._onActorUpdate);
-        Hooks.off('controlToken', this._onControlToken);
+        // Note: Hooks are now managed centrally by HookManager
+        // No need to manually remove hooks here anymore
+        this.element = null;
     }
 
     async _completeItemTransfer(sourceActor, targetActor, sourceItem, quantityToTransfer, hasQuantity) {
