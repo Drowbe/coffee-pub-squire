@@ -258,7 +258,7 @@ export class FavoritesPanel {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         try {
             // Check if actor is from a compendium (more robust check)
-            const isFromCompendium = actor.pack || (this.actor.collection && this.actor.collection.locked);
+            const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
             if (isFromCompendium) {
                 // Debug: Skipping auto-favorites initialization for actor from compendium
                 return false;
