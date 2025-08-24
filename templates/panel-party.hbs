@@ -31,7 +31,7 @@
             {{/if}}
         </div>
         <div class="character-info">
-            <div class="character-name">{{token.actor.name}}</div>
+            <div class="character-name">{{token.name}}</div>
             <div class="character-details">
                 <div class="details-primary">
                     {{#if (eq token.actor.type "character")}}
@@ -96,7 +96,7 @@
                     {{/if}}
                 </div>
                 <div class="character-info">
-                    <div class="character-name">{{token.actor.name}}</div>
+                    <div class="character-name">{{token.name}}</div>
                     <div class="character-details">
                         <div class="details-primary">
                             {{#if token.actor.system.details.cr}}CR {{token.actor.system.details.cr}}{{/if}}
