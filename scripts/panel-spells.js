@@ -209,7 +209,7 @@ export class SpellsPanel {
         this._removeEventListeners(panel);
 
         // Category filter toggles
-        panel.on('click.squireSpells', '.spells-category-filter', (event) => {
+        panel.on('click.squireSpells', '.spell-level-filter', (event) => {
             const $filter = $(event.currentTarget);
             const categoryId = $filter.data('filter-id');
             this.panelManager.toggleCategory(categoryId, panel[0]);
