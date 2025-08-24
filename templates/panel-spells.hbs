@@ -120,9 +120,9 @@
                     {{#if (or (gt slot.max 0) (lookup ../spellsByLevel slot.level))}}
                     <div class="category-header" data-category-id="category-spell-level-{{slot.level}}">
                         <span>Level {{slot.level}}</span>
-                        <div class="slot-pips">
+                        <div class="slot-pips" data-level="{{slot.level}}">
                             {{#times slot.max}}
-                            <div class="slot-pip {{#if (lt @index slot.used)}}filled{{/if}}" data-level="{{slot.level}}" title="Slot {{add @index 1}} {{#if (lt @index slot.used)}}Used{{else}}Unused{{/if}}"></div>
+                            <div class="slot-pip {{#unless (lt @index slot.used)}}filled{{/unless}}" data-level="{{slot.level}}" title="{{#if (lt @index slot.used)}}Expended{{else}}Available{{/if}}"></div>
                             {{/times}}
                         </div>
                     </div>

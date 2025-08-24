@@ -193,6 +193,32 @@ export class SpellsPanel {
         });
     }
 
+    /**
+     * Update spell slot display after changes
+     */
+    _updateSpellSlots(html) {
+        if (!html || !this.actor) return;
+        
+        const spellSlots = this._getSpellSlots();
+        
+        // Update each spell level's slot display
+        spellSlots.forEach(slotData => {
+            const level = slotData.level;
+            const $slotGroup = html.find(`[data-level="${level}"]`);
+            if (!$slotGroup.length) return;
+            
+            const $pips = $slotGroup.find('.slot-pip');
+            $pips.each((index, pip) => {
+                const $pip = $(pip);
+                if (index < slotData.used) {
+                    $pip.removeClass('filled'); // Used slots (expended) = unfilled (first)
+                } else {
+                    $pip.addClass('filled'); // Unused slots (available) = filled (last)
+                }
+            });
+        });
+    }
+
     _removeEventListeners(panel) {
         if (!panel) return;
         // Remove all event listeners using proper namespacing
@@ -268,5 +294,46 @@ export class SpellsPanel {
                 this._updateVisibility(html);
             }
         });
+
+        // Spell slot pip clicks (GM only)
+        if (game.user.isGM) {
+            panel.on('click.squireSpells', '.slot-pip', async (event) => {
+                const $pip = $(event.currentTarget);
+                const level = parseInt($pip.data('level'));
+                const slotIndex = $pip.index(); // Position within the slot group
+                
+                if (isNaN(level)) return;
+                
+                const spellLevel = this.actor.system.spells[`spell${level}`];
+                if (!spellLevel) return;
+                
+                const maxSlots = spellLevel.override ?? spellLevel.max;
+                const currentUsed = maxSlots - spellLevel.value; // Current used count
+                
+                let newUsed;
+                if (slotIndex < currentUsed) {
+                    // Clicked on a USED slot (X) - RESTORE it
+                    newUsed = currentUsed - 1;
+                } else {
+                    // Clicked on an UNUSED slot (O) - USE it
+                    newUsed = currentUsed + 1;
+                }
+                
+                // Clamp to valid range (0 to max)
+                newUsed = Math.max(0, Math.min(newUsed, maxSlots));
+                
+                // Update the actor's spell slots
+                await this.actor.update({
+                    [`system.spells.spell${level}.value`]: maxSlots - newUsed
+                });
+                
+                // Brief visual feedback
+                $pip.addClass('updating');
+                setTimeout(() => $pip.removeClass('updating'), 300);
+                
+                // Refresh the spell slots display
+                this._updateSpellSlots(html);
+            });
+        }
     }
 } 

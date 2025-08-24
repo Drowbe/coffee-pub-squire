@@ -94,6 +94,21 @@
     border: 1px solid #4a90e2;
     background: transparent;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* GM-only: Make pips look more interactive */
+.slot-pip:hover {
+    transform: scale(1.2);
+    border-color: #6ba6e8;
+    box-shadow: 0 0 4px rgba(74, 144, 226, 0.5);
+}
+
+/* Visual feedback when updating */
+.slot-pip.updating {
+    background: #ffd700 !important;
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
 }
 
 .slot-pip.filled {
