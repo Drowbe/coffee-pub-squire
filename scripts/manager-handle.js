@@ -374,12 +374,27 @@ export class HandleManager {
 
         // Handle favorite item clicks
         handle.find('.handle-favorite-icon').on('click', async (event) => {
+            // If clicking on roll overlay, use the item
             if ($(event.target).hasClass('handle-favorite-roll-overlay')) {
                 const itemId = $(event.currentTarget).data('item-id');
                 const item = this.actor.items.get(itemId);
                 if (item) {
                     await item.use({}, { event });
                 }
+                return;
+            }
+            
+            // If clicking on the heart icon itself, toggle the favorite state
+            if ($(event.target).hasClass('fa-heart')) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                const itemId = $(event.currentTarget).closest('.handle-favorite-icon').data('item-id');
+                if (!itemId) return;
+                
+                // Toggle the favorite state using the FavoritesPanel
+                const { FavoritesPanel } = await import('./panel-favorites.js');
+                await FavoritesPanel.manageFavorite(this.actor, itemId);
             }
         });
 

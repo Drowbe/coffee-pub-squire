@@ -168,6 +168,12 @@ export const registerHelpers = function() {
             }));
     });
 
+    // Helper to check if an array includes a value
+    Handlebars.registerHelper('includes', function(array, value) {
+        if (!Array.isArray(array)) return false;
+        return array.includes(value);
+    });
+
     // Helper to get handle favorites from actor
     Handlebars.registerHelper('getHandleFavorites', function(actor) {
         if (!actor) return [];

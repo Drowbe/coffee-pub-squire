@@ -193,8 +193,30 @@ export class FavoritesPanel {
             // Get the PanelManager instance directly
             const panelManager = PanelManager.instance;
             if (panelManager) {
+                // Sync handle favorites to ensure consistency
+                if (panelManager.favoritesPanel) {
+                    await panelManager.favoritesPanel._syncHandleFavorites(actor);
+                }
+                
                 // Update just the handle to refresh favorites
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Updating handle after favorite change...', '', true, false);
                 await panelManager.updateHandle();
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Handle update complete', '', true, false);
+                
+                // Debug: Check handle favorites after update
+                const currentHandleFavorites = FavoritesPanel.getHandleFavorites(actor);
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites after update: ${JSON.stringify(currentHandleFavorites)}`, '', true, false);
+                
+                // Debug: Check if handle DOM was updated
+                if (PanelManager.element) {
+                    const handleFavoritesInDOM = PanelManager.element.find('.handle-favorite-item').length;
+                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites in DOM after update: ${handleFavoritesInDOM}`, '', true, false);
+                }
+                
+                // Debug: Check actor flags directly
+                const panelFavorites = actor.getFlag(MODULE.ID, 'favoritePanel') || [];
+                const handleFavorites = actor.getFlag(MODULE.ID, 'favoriteHandle') || [];
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Actor flags after update - Panel: ${JSON.stringify(panelFavorites)} Handle: ${JSON.stringify(handleFavorites)}`, '', true, false);
                 
                 // Update the favorites panel data and refresh display
                 if (panelManager.favoritesPanel) {
@@ -578,7 +600,19 @@ export class FavoritesPanel {
         const favoritesList = panel.find('.favorites-list');
         
         // Always create a fresh context menu
-        this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions);
+        try {
+            this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions);
+            console.log('Context menu created successfully');
+        } catch (error) {
+            console.error('Error creating context menu:', error);
+            // Fallback: use native context menu
+            favoritesList.on('contextmenu', '.favorite-item', (event) => {
+                event.preventDefault();
+                const itemId = $(event.currentTarget).data('item-id');
+                console.log('Right-clicked item:', itemId);
+                // For now, just log - we can implement a custom context menu later
+            });
+        }
         
         // Filter toggles
         html.find('.favorites-spell-toggle').click(async (event) => {
@@ -636,10 +670,20 @@ export class FavoritesPanel {
             const $item = $(event.currentTarget).closest('.favorite-item');
             const itemId = $item.data('item-id');
             if (!itemId) {
-                console.error('No item ID found for favorite toggle:', { $item });
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No item ID found for favorite toggle', '', true, false);
                 return;
             }
-            await FavoritesPanel.manageFavorite(this.actor, itemId);
+            
+            // Check current state before toggle
+            const wasFavorite = FavoritesPanel.getPanelFavorites(this.actor).includes(itemId);
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Heart clicked for item: ${itemId} wasFavorite: ${wasFavorite}`, '', true, false);
+            
+            const result = await FavoritesPanel.manageFavorite(this.actor, itemId);
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Favorite toggle result: ${result}`, '', true, false);
+            
+            // Check state after toggle
+            const isFavorite = FavoritesPanel.getPanelFavorites(this.actor).includes(itemId);
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Item is now favorite: ${isFavorite}`, '', true, false);
         });
 
         // Toggle prepared state (sun icon)
@@ -656,9 +700,14 @@ export class FavoritesPanel {
                 $item.toggleClass('prepared', newPrepared);
                 $(event.currentTarget).toggleClass('faded', !newPrepared);
 
-                // Update the handle to reflect the new prepared state
+                // Sync handle favorites and update the handle to reflect the new prepared state
                 if (PanelManager.instance) {
+                    if (PanelManager.instance.favoritesPanel) {
+                        await PanelManager.instance.favoritesPanel._syncHandleFavorites(this.actor);
+                    }
+                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Updating handle after prepared state change...', '', true, false);
                     await PanelManager.instance.updateHandle();
+                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Handle update complete', '', true, false);
                 }
             }
         });
@@ -693,8 +742,13 @@ export class FavoritesPanel {
                         PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
                     }
 
-                    // Update the handle to reflect the new equipped state
-                    await PanelManager.instance.updateHandle();
+                                    // Sync handle favorites and update the handle to reflect the new equipped state
+                if (PanelManager.instance.favoritesPanel) {
+                    await PanelManager.instance.favoritesPanel._syncHandleFavorites(this.actor);
+                }
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Updating handle after equipped state change...', '', true, false);
+                await PanelManager.instance.updateHandle();
+                getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Handle update complete', '', true, false);
                 }
             }
         });
@@ -714,8 +768,11 @@ export class FavoritesPanel {
             } else {
                 await FavoritesPanel.addHandleFavorite(this.actor, itemId);
             }
-            // Update the handle
+            // Sync handle favorites and update the handle
             if (PanelManager.instance) {
+                if (PanelManager.instance.favoritesPanel) {
+                    await PanelManager.instance.favoritesPanel._syncHandleFavorites(this.actor);
+                }
                 await PanelManager.instance.updateHandle();
             }
         });
@@ -726,36 +783,89 @@ export class FavoritesPanel {
         });
     }
 
+    /**
+     * Syncs handle favorites to ensure they only contain items that are both
+     * in panel favorites AND meet the criteria for being in the handle
+     */
+    async _syncHandleFavorites(actor) {
+        if (!actor) return;
+        
+        // Add stack trace to see where this is being called from
+        const stackTrace = new Error().stack;
+        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `_syncHandleFavorites called from: ${stackTrace.split('\n')[2]?.trim()}`, '', true, false);
+        
+        // Get current panel favorites
+        const panelFavorites = FavoritesPanel.getPanelFavorites(actor);
+        
+        // Get current handle favorites
+        const currentHandleFavorites = FavoritesPanel.getHandleFavorites(actor);
+        
+        // Filter panel favorites to only include items that should be in handle
+        const validHandleFavorites = panelFavorites.filter(itemId => {
+            const item = actor.items.get(itemId);
+            if (!item) return false;
+            
+            // Check if item meets handle criteria
+            if (item.type === 'weapon') {
+                return item.system.equipped === true;
+            } else if (item.type === 'spell') {
+                return item.system.preparation?.prepared === true;
+            } else if (item.type === 'feat' || item.type === 'feature') {
+                // Features are always valid for handle if they're in panel favorites
+                return true;
+            } else if (item.type === 'equipment' || item.type === 'consumable' || item.type === 'tool') {
+                // Inventory items are always valid for handle if they're in panel favorites
+                return true;
+            }
+            
+            return false;
+        });
+        
+        // Update handle favorites if they've changed
+        if (JSON.stringify(currentHandleFavorites.sort()) !== JSON.stringify(validHandleFavorites.sort())) {
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites changed from: ${JSON.stringify(currentHandleFavorites)} to: ${JSON.stringify(validHandleFavorites)}`, '', true, false);
+            await FavoritesPanel.setHandleFavorites(actor, validHandleFavorites);
+        } else {
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Handle favorites unchanged: ${JSON.stringify(currentHandleFavorites)}`, '', true, false);
+        }
+    }
+
     async _reorderFavorite(itemId, newIndex) {
+        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `_reorderFavorite called with: ${JSON.stringify({ itemId, newIndex })}`, '', true, false);
         const actor = this.actor;
         if (!actor) {
-            // Debug: No actor found in _reorderFavorite
+            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No actor found in _reorderFavorite', '', true, false);
             return;
         }
 
-        // Check if actor is from a compendium (more robust check)
+        // Check if actor is from a compendium
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            // Debug: Cannot reorder favorites for actor from compendium
             return;
         }
 
-        // Get the raw panel favorites array (just IDs) from flags
+        // Get the current panel favorites array
         const panelFavoriteIds = actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-        
         
         // Find the current index of the item ID
         const currentIndex = panelFavoriteIds.indexOf(itemId);
         if (currentIndex === -1) {
-            // Debug: Item not found in panel favorites
             return;
         }
 
+        // Clamp the new index to valid range
+        newIndex = Math.max(0, Math.min(newIndex, panelFavoriteIds.length - 1));
         
+        // If no change, do nothing
+        if (currentIndex === newIndex) {
+            return;
+        }
 
         // Remove item from current position and insert at new position
+        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `Before reorder: ${JSON.stringify([...panelFavoriteIds])}`, '', true, false);
         const [movedId] = panelFavoriteIds.splice(currentIndex, 1);
         panelFavoriteIds.splice(newIndex, 0, movedId);
+        getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, `After reorder: ${JSON.stringify([...panelFavoriteIds])}`, '', true, false);
 
         try {
             // Clean up context menu before updates
@@ -767,19 +877,22 @@ export class FavoritesPanel {
             // Update the actor's panel favorites flag
             await actor.setFlag(MODULE.ID, 'favoritePanel', panelFavoriteIds);
             
+            // Sync handle favorites to ensure they only contain valid items
+            await this._syncHandleFavorites(actor);
+            
             // Update panels and handle
             if (PanelManager.instance) {
-                // Get the current tray element and state
-                const tray = PanelManager.element;
-                const wasExpanded = tray.hasClass('expanded');
-                const wasPinned = tray.hasClass('pinned');
-                
-                // Update just the handle - no need to re-render all panels
+                // Update the handle
                 await PanelManager.instance.updateHandle();
                 
-                // Update the favorites panel data
+                // Update the favorites panel data and refresh display
                 if (PanelManager.instance.favoritesPanel) {
-                    PanelManager.instance.favoritesPanel.favorites = PanelManager.instance.favoritesPanel._getFavorites();
+                    PanelManager.instance.favoritesPanel.favorites = FavoritesPanel.getPanelFavorites(actor);
+                    
+                    // Refresh the favorites panel display to show the new order
+                    if (PanelManager.instance.favoritesPanel.element) {
+                        await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
+                    }
                 }
                 
                 // Update other panels' data
@@ -792,75 +905,10 @@ export class FavoritesPanel {
                 if (PanelManager.instance.spellsPanel) {
                     PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
                 }
+                if (PanelManager.instance.featuresPanel) {
+                    PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
+                }
 
-                // Re-bind the handle click event
-                const handle = tray.find('.tray-handle');
-                handle.off('click').on('click', (event) => {
-                    if ($(event.target).closest('.tray-handle-button-pin').length || 
-                        $(event.target).closest('.handle-favorite-icon').length ||
-                        $(event.target).closest('.handle-healthbar').length ||
-                        $(event.target).closest('.handle-dice-tray').length) return;
-                    
-                    event.preventDefault();
-                    event.stopPropagation();
-                    
-                    if (PanelManager.isPinned) {
-                        ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
-                        return false;
-                    }
-                    
-                    // Play tray open sound when expanding
-                    if (!tray.hasClass('expanded')) {
-                        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                        if (blacksmith) {
-                            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-                            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                        }
-                    }
-                    
-                    tray.toggleClass('expanded');
-                    return false;
-                });
-
-                // Re-bind pin button event
-                const pinButton = handle.find('.tray-handle-button-pin');
-                pinButton.off('click').on('click', async (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    
-                    PanelManager.isPinned = !PanelManager.isPinned;
-                    await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
-                    
-                    // Play pin/unpin sound
-                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                    if (blacksmith) {
-                        const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
-                        blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                    }
-                    
-                    if (PanelManager.isPinned) {
-                        tray.addClass('pinned expanded');
-                        // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
-                        const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
-                        const uiLeft = document.querySelector('#ui-left');
-                        if (uiLeft) {
-                            uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                        }
-                    } else {
-                        tray.removeClass('pinned expanded');
-                        // Reset UI margin when unpinned - need both handle width and offset
-                        const uiLeft = document.querySelector('#ui-left');
-                        if (uiLeft) {
-                            uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                        }
-                    }
-                    
-                    return false;
-                });
-
-                // Restore previous state if needed
-                if (wasExpanded) tray.addClass('expanded');
-                if (wasPinned) tray.addClass('pinned');
             }
 
         } catch (error) {
