@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Blacksmith API Integration**: Full migration to use Blacksmith API for enhanced functionality and consistency
 - **New Favoriting System**: Completely redesigned favoriting system with separate regular favorites and handle favorites
 - **Handle Favorite Toggle**: New square-heart icon in favorites panel to toggle items for handle display
+- **Auto-Handle Favorites for NPCs**: NPCs and monsters now automatically add their key abilities to both panel and handle favorites
 - **Performance Optimizations**: Dramatically improved favoriting performance with targeted DOM updates instead of full panel re-renders
 
 ### Changed

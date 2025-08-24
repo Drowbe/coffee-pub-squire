@@ -298,6 +298,20 @@ export class FavoritesPanel {
             // Save the new panel favorites
             await actor.setFlag(MODULE.ID, 'favoritePanel', itemsToFavorite);
             
+            // Also add these items to handle favorites for quick access
+            await actor.setFlag(MODULE.ID, 'favoriteHandle', itemsToFavorite);
+            
+            // Log what was auto-favorited
+            if (blacksmith?.utils?.postConsoleAndNotification) {
+                blacksmith.utils.postConsoleAndNotification(
+                    MODULE.NAME, 
+                    `Auto-favorited ${itemsToFavorite.length} items for ${actor.name} (Panel + Handle)`, 
+                    `Items: ${itemsToFavorite.map(id => actor.items.get(id)?.name || id).join(', ')}`, 
+                    true, 
+                    false
+                );
+            }
+            
             // Force refresh of items collection to ensure up-to-date data
             if (actor.items && typeof actor.items._flush === 'function') {
                 await actor.items._flush();

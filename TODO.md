@@ -39,6 +39,9 @@
 ### Quests
 - [ ] **GM Notes** We should find a way to show the gm notes for objextis since they may mention pin locations.
 
+### Auto-Favorites Enhancement
+- [x] **COMPLETED** ~~Auto-add NPC/monster favorites to handle favorites for immediate access~~
+
 ### Spells
 - [x] **COMPLETED** ~~Interactive spell slot management for GMs~~
 - [x] **COMPLETED** ~~Visual feedback for available vs expended spell slots~~
