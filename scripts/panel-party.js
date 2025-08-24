@@ -87,10 +87,10 @@ export class PartyPanel {
             }
         });
         
-        // Get currently controlled tokens' actor IDs
+        // Get currently controlled tokens' token IDs (UUIDs)
         const controlledTokenIds = canvas.tokens.controlled
             .filter(token => token.actor)
-            .map(token => token.actor.id);
+            .map(token => token.id);
 
         // Calculate party health totals
         const partyRemainingHP = tokens.reduce((total, token) => {
@@ -155,10 +155,10 @@ export class PartyPanel {
         html.find('.open-sheet').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(event.target).closest('.character-card').data('actor-id');
-            const actor = game.actors.get(actorId);
-            if (actor) {
-                actor.sheet.render(true);
+            const tokenId = $(event.target).closest('.character-card').data('token-id');
+            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+            if (token?.actor) {
+                token.actor.sheet.render(true);
             }
         });
 
@@ -166,13 +166,13 @@ export class PartyPanel {
         html.find('.character-image.clickable').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(event.currentTarget).closest('.character-card').data('actor-id');
-            const actor = game.actors.get(actorId);
-            if (actor) {
-                const imagePopout = new ImagePopout(actor.img, {
-                    title: actor.name,
+            const tokenId = $(event.currentTarget).closest('.character-card').data('token-id');
+            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+            if (token?.actor) {
+                const imagePopout = new ImagePopout(token.actor.img, {
+                    title: token.actor.name,
                     shareable: true,
-                    uuid: actor.uuid
+                    uuid: token.actor.uuid
                 });
                 imagePopout.render(true);
             }
@@ -183,8 +183,8 @@ export class PartyPanel {
             // Don't handle clicks if they originated from the open-sheet button or portrait
             if ($(event.target).closest('.open-sheet, .character-image.clickable').length) return;
 
-            const actorId = $(event.currentTarget).data('actor-id');
-            const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+            const tokenId = $(event.currentTarget).data('token-id');
+            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
             if (token) {
                 // Check ownership - only allow selection of tokens the user owns
                 if (!token.actor.isOwner) return;
@@ -287,8 +287,9 @@ export class PartyPanel {
                 }
                 
                 // Get the actor for this card
-                const targetActorId = $card.data('actor-id');
-                const targetActor = game.actors.get(targetActorId);
+                const targetTokenId = $card.data('token-id');
+                const targetToken = canvas.tokens.placeables.find(t => t.id === targetTokenId);
+                const targetActor = targetToken?.actor;
                 
                 if (!targetActor) {
                     ui.notifications.warn("Could not find the character to add the item to.");
@@ -878,10 +879,10 @@ export class PartyPanel {
         html.find('.character-card .party-hp-bar').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(event.currentTarget).closest('.character-card').data('actor-id');
-            const actor = game.actors.get(actorId);
-            if (actor && PanelManager.instance && PanelManager.instance.healthPanel) {
-                PanelManager.instance.healthPanel.updateActor(actor);
+            const tokenId = $(event.currentTarget).closest('.character-card').data('token-id');
+            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+            if (token?.actor && PanelManager.instance && PanelManager.instance.healthPanel) {
+                PanelManager.instance.healthPanel.updateActor(token.actor);
                 await PanelManager.instance.healthPanel._onPopOut();
             }
         });
