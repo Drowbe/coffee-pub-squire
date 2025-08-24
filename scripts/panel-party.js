@@ -1434,4 +1434,13 @@ export class PartyPanel {
             strCardContent: (cardType === "compendium-drop" || cardType === "world-drop") && targetActor && item ? `<p><strong>${targetActor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>` : undefined
         };
     }
+
+    destroy() {
+        // Remove hooks when panel is destroyed
+        Hooks.off('updateToken', this._onTokenUpdate);
+        Hooks.off('updateActor', this._onActorUpdate);
+        Hooks.off('controlToken', this._onControlToken);
+        Hooks.off('renderChatMessage', this._handleTransferButtons);
+        this.element = null;
+    }
 } 
