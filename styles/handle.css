@@ -436,6 +436,12 @@
     border-color: rgba(49, 132, 57, 0.9);
 }
 
+/* Unavailable Favorites */
+.squire-tray[data-position="left"] .handle-favorite-icon.unavailable {
+    border-color: rgba(255, 255, 255, 0.6);
+    filter: grayscale(100%) saturate(100%) brightness(45%);
+}
+
 /* Icon Hovers */
 
 .squire-tray[data-position="left"] .handle-partymember-icon.clickable:hover,
