@@ -273,6 +273,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.2em;
 }
 .squire-tray[data-position="left"] .quest-entry-name i {
     font-size: 0.85em;
