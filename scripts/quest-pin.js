@@ -1942,6 +1942,18 @@ Hooks.on('closeGame', () => {
     cleanupQuestPins();
 });
 
+// Module cleanup - remove hooks when module is disabled
+Hooks.on('disableModule', (moduleId) => {
+    if (moduleId === MODULE.ID) {
+        Hooks.off('updateToken');
+        Hooks.off('createToken');
+        Hooks.off('deleteToken');
+        Hooks.off('renderQuestPanel');
+        Hooks.off('sightRefresh');
+        cleanupQuestPins();
+    }
+});
+
 // Update pin visibility when tokens move or vision changes
 Hooks.on('updateToken', (token, changes) => {
     if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {

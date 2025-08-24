@@ -203,4 +203,12 @@ export class PartyStatsPanel {
         Hooks.off('createChatMessage', this._boundUpdateHandler);
         this.element = null;
     }
+
+    destroy() {
+        // Remove hooks when panel is destroyed
+        Hooks.off('updateCombat', this._boundUpdateHandler);
+        Hooks.off('updateActor', this._boundUpdateHandler);
+        Hooks.off('createChatMessage', this._boundUpdateHandler);
+        this.element = null;
+    }
 } 

@@ -177,4 +177,10 @@ export class CharacterPanel {
         Hooks.off('updateActor', this._onActorUpdate);
         Hooks.off('updateToken', this._onActorUpdate);
     }
+
+    destroy() {
+        // Remove hooks when panel is destroyed
+        Hooks.off('updateToken', this._onActorUpdate);
+        this.element = null;
+    }
 } 

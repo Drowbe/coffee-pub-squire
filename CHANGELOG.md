@@ -14,12 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Handle Favorite Toggle**: New square-heart icon in favorites panel to toggle items for handle display
 - **Auto-Handle Favorites for NPCs**: NPCs and monsters now automatically add their key abilities to both panel and handle favorites
 - **Performance Optimizations**: Dramatically improved favoriting performance with targeted DOM updates instead of full panel re-renders
+- **Interactive Spell Slot Management**: GM-only click system for managing spell slot usage with visual feedback
+- **Party Health Integration**: Clicking party health bar now opens/populates health panel with entire party data
 
 ### Changed
 - **Favoriting Architecture**: Separated regular favorites (shows in favorites panel) from handle favorites (shows in handle)
 - **Heart Icon Behavior**: Heart icons in all panels now correctly reflect regular favorite status
 - **Handle Display Logic**: Handle now only shows items that are explicitly handle-favorited, not all favorites
 - **Module Structure**: Reorganized module.json to follow standardized structure with proper field grouping
+- **Spell Slot Visual States**: Implemented correct visual representation matching character sheet (filled=available, unfilled=expended)
+- **Token Selection System**: Migrated from actor ID-based to token ID-based selection for proper multi-token support
 
 ### Fixed
 - **Heart Icon State**: Fixed heart icons in inventory, weapons, and spells panels not showing correct favorited state
@@ -36,6 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Token Selection Logic**: Fixed token selection in Party tab to use unique token IDs instead of shared actor IDs
 - **Monster Name Display**: Fixed Party tab to show specific token names instead of generic actor names
 - **Dice Tray Button**: Fixed dice tray button not showing in handle due to typo in template condition
+- **Memory Leaks**: Fixed severe hook accumulation causing game slowdown by implementing proper cleanup in all panel destroy methods
+- **Duplicate Event Handlers**: Removed duplicate event handlers for conditions button, macro icons, party member icons, and print character button
+- **NPC Favorites Initialization**: Fixed TypeError in NPC auto-favorite system when accessing actor collection
+- **Party Health Bar Click**: Fixed party overview health bar to properly select all player-owned tokens and populate health panel
+- **Handle Favorites Order**: Fixed handle favorites to display in correct order matching panel favorites (reversed for handle rotation)
 
 ### Technical Improvements
 - **Targeted DOM Updates**: Replaced 4 full panel re-renders with smart DOM updates for 10-20x performance improvement
@@ -47,20 +56,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Token ID System**: Migrated from actor ID-based to token ID-based selection for proper multi-token support
 - **Template Condition Fixes**: Corrected Handlebars template conditions for proper conditional rendering
 - **Debug Code Cleanup**: Removed verbose debug logging and debug comments for cleaner production code
+- **Hook Cleanup System**: Implemented comprehensive destroy methods for all panels to prevent FoundryVTT hook accumulation
+- **Module-Level Cleanup**: Added module disable hooks to clean up global hooks and prevent memory leaks
+- **Panel Lifecycle Management**: Enhanced PanelManager cleanup to properly destroy all instantiated panels
 
 ### Files Modified
-- `scripts/panel-favorites.js` - Complete favoriting system overhaul with performance optimizations
+- `scripts/panel-favorites.js` - Complete favoriting system overhaul with performance optimizations and NPC auto-favorites
 - `scripts/panel-inventory.js` - Updated to check correct favorites flag for heart icon state
 - `scripts/panel-spells.js` - Updated to check correct favorites flag for heart icon state and added spell slot management
 - `scripts/panel-weapons.js` - Updated to check correct favorites flag for heart icon state
-- `scripts/panel-party.js` - Fixed token selection logic and monster name display
+- `scripts/panel-party.js` - Fixed token selection logic, monster name display, and party health bar integration
+- `scripts/panel-character.js` - Removed duplicate event handlers and added destroy method for hook cleanup
+- `scripts/panel-macros.js` - Removed duplicate event handlers and added destroy method for hook cleanup
+- `scripts/panel-party-stats.js` - Added destroy method for hook cleanup
+- `scripts/manager-panel.js` - Enhanced cleanup method to destroy all instantiated panels
+- `scripts/manager-handle.js` - Removed debug code and optimized event handling
 - `scripts/helpers.js` - Added missing `getHandleFavorites` Handlebars helper
+- `scripts/squire.js` - Removed verbose debug logging
+- `scripts/manager-hooks.js` - Removed debug comments
+- `scripts/quest-pin.js` - Added module-level cleanup hooks for global hook management
 - `styles/panel-favorites.css` - Added styling for handle favorite toggle icons
 - `styles/panel-spells.css` - Added spell slot styling and hover effects
 - `styles/tray.css` - Updated handle favorite icon colors for consistency
 - `templates/partials/handle-favorites.hbs` - Updated to use handleFavorites data source and added unavailable class logic
 - `templates/panel-spells.hbs` - Added spell slot template with proper visual states and order
-- `templates/panel-party.hbs` - Fixed monster name display to use token names
+- `templates/panel-party.hbs` - Fixed monster name display to use token names and token ID selection
 - `templates/handle-player.hbs` - Fixed dice tray button display condition
 - `templates/handle-codex.hbs` - Fixed dice tray button display condition
 - `templates/handle-notes.hbs` - Fixed dice tray button display condition

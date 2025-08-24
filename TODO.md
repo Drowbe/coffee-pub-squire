@@ -23,6 +23,8 @@
 - [x] **FIXED** ~~Heart icon states not updating correctly across all panels~~
 - [x] **FIXED** ~~Handle favorites not showing unavailable state for unequipped/unprepared items~~
 - [x] **FIXED** ~~Handle favorites order not matching panel favorites order~~
+- [x] **FIXED** ~~NPC auto-favorite system error when accessing actor collection~~
+- [x] **FIXED** ~~Auto-add NPC/monster favorites to handle favorites for immediate access~~
 
 ### Panel Functionality
 - [ ] **BROKEN** Manual refresh button on codex panel doesn't seem to do anything
@@ -33,6 +35,9 @@
 - [x] **FIXED** ~~Token selection in Party tab selecting all tokens of same actor type~~
 - [x] **FIXED** ~~Monster names showing generic actor names instead of specific token names~~
 - [x] **FIXED** ~~Dice tray button not showing in handle~~
+- [x] **FIXED** ~~Party health bar click not opening/populating health panel with party data~~
+- [x] **FIXED** ~~Duplicate event handlers causing multiple window opens and performance issues~~
+- [x] **FIXED** ~~Memory leaks from accumulated FoundryVTT hooks causing game slowdown~~
 
 ## UI/UX Improvements
 
@@ -41,6 +46,7 @@
 
 ### Auto-Favorites Enhancement
 - [x] **COMPLETED** ~~Auto-add NPC/monster favorites to handle favorites for immediate access~~
+- [x] **COMPLETED** ~~Cleaned up debug code and verbose logging for production readiness~~
 
 ### Spells
 - [x] **COMPLETED** ~~Interactive spell slot management for GMs~~
@@ -66,9 +72,17 @@
 - [ ] **DEFERRED** Implement targeted content updates without full tray recreation
 
 ### Code Cleanup
+- [x] **COMPLETED** ~~Removed verbose debug logging and debug comments across all files~~
 - [ ] **PLANNED** Remove legacy code from our fixes
 - [ ] **PLANNED** Modularize manager-panel.js (too large, not modular enough)
 - [ ] **PLANNED** Review and clean up any remaining unnecessary `updateTray()` calls
+
+### Memory Management & Performance
+- [x] **COMPLETED** ~~Fixed duplicate event handlers for UI elements (conditions, macros, party members, print character)~~
+- [x] **COMPLETED** ~~Implemented destroy methods for all panels to clean up FoundryVTT hooks~~
+- [x] **COMPLETED** ~~Added module-level cleanup hooks to prevent global hook accumulation~~
+- [x] **COMPLETED** ~~Enhanced PanelManager cleanup to properly destroy all instantiated panels~~
+- [x] **COMPLETED** ~~Fixed severe memory leak causing game slowdown over time~~
 
 ### Performance Optimization
 - [ ] **INVESTIGATE** Disabled tabs still load/render all data even when hidden - consider skipping panel construction for disabled tabs
@@ -122,7 +136,9 @@
 9. ~~**Fix token selection logic**~~ - Party panel functionality ✅ **COMPLETED**
 10. ~~**Fix monster name display**~~ - Party panel display ✅ **COMPLETED**
 11. ~~**Fix dice tray button display**~~ - Handle functionality ✅ **COMPLETED**
-12. **Code cleanup and modularization** - Technical debt
+12. ~~**Fix memory leaks and duplicate event handlers**~~ - Performance issue ✅ **COMPLETED**
+13. ~~**Clean up debug code**~~ - Code quality ✅ **COMPLETED**
+14. **Code cleanup and modularization** - Technical debt
 
 ## Investigation Needed
 
@@ -138,6 +154,9 @@
 - [x] **FIXED** ~~Investigate token selection using actor IDs instead of token IDs~~
 - [x] **FIXED** ~~Investigate monster name display using actor names instead of token names~~
 - [x] **FIXED** ~~Investigate dice tray button display condition typo in templates~~
+- [x] **FIXED** ~~Investigate duplicate event handlers causing multiple window opens~~
+- [x] **FIXED** ~~Investigate memory leaks from accumulated FoundryVTT hooks~~
+- [x] **FIXED** ~~Investigate NPC auto-favorite system error when accessing actor collection~~
 
 ## Notes
 
@@ -148,5 +167,8 @@
 - **Spell System**: ✅ **FIXED** - Level filtering and interactive spell slot management working
 - **Party Panel**: ✅ **FIXED** - Token selection and monster name display working correctly
 - **Handle Display**: ✅ **FIXED** - Dice tray button now showing in all handle templates
+- **Memory Management**: ✅ **FIXED** - Severe memory leaks resolved, duplicate event handlers removed
+- **Debug Code**: ✅ **FIXED** - Verbose logging and debug comments cleaned up for production
+- **NPC Auto-Favorites**: ✅ **FIXED** - System now works correctly and auto-adds to handle favorites
 - **Codex Refresh**: Could be missing event handler or broken refresh logic
 - **Party View**: Feather icon likely has unintended side effects in event handling

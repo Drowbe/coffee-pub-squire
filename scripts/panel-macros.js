@@ -494,6 +494,13 @@ export class MacrosPanel {
             console.error('Error saving macros window state:', error);
         }
     }
+
+    destroy() {
+        // Remove hooks when panel is destroyed
+        Hooks.off('ready', updateHotbarVisibility);
+        Hooks.off('renderSettingsConfig', updateHotbarVisibility);
+        this.element = null;
+    }
 }
 
 // Register a Handlebars helper to always provide 5 slots

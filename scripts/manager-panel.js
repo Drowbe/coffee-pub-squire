@@ -1462,6 +1462,14 @@ export class PanelManager {
             if (PanelManager.instance.questPanel && typeof PanelManager.instance.questPanel.destroy === 'function') {
                 PanelManager.instance.questPanel.destroy();
             }
+            // Clean up CharacterPanel
+            if (PanelManager.instance.characterPanel && typeof PanelManager.instance.characterPanel.destroy === 'function') {
+                PanelManager.instance.characterPanel.destroy();
+            }
+            // Clean up MacrosPanel
+            if (PanelManager.instance.macrosPanel && typeof PanelManager.instance.macrosPanel.destroy === 'function') {
+                PanelManager.instance.macrosPanel.destroy();
+            }
             // Clean up PartyPanel
             if (PanelManager.instance.partyPanel && typeof PanelManager.instance.partyPanel.destroy === 'function') {
                 PanelManager.instance.partyPanel.destroy();
