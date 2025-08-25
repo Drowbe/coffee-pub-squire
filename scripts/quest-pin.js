@@ -1,6 +1,7 @@
 import { MODULE, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData } from './helpers.js';
 import { QuestParser } from './utility-quest-parser.js';
+import { HookManager } from './manager-hooks.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1553,180 +1554,83 @@ function getQuestNumber(questUuid) {
     return Math.abs(hash) % 100 + 1;
 }
 
-// Re-enable only the dropCanvasData hook in quest-pin.js
-Hooks.on('dropCanvasData', async (canvas, data) => {
-    if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return; // Let Foundry handle all other drops!
-    
-    // Only GMs can create quest pins
-    if (!game.user.isGM) return false;
-    
-    if (data.type === 'quest-objective') {
-        // Handle objective-level pins
-        const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory, questState } = data;
-        
-        // Use the objective state from the drag data (default to 'active' if not provided)
-        const finalObjectiveState = objectiveState || 'active';
-        
-        const pin = new QuestPin({ 
-            x: data.x, 
-            y: data.y, 
-            questUuid, 
-            objectiveIndex, 
-            objectiveState: finalObjectiveState, 
-            questIndex, 
-            questCategory,
-            questState: questState || 'visible'
-        });
-        
-        if (canvas.squirePins) {
-            canvas.squirePins.addChild(pin);
-            // Save to persistence
-            pin._saveToPersistence();
-            
-            // Auto-show quest pins if they're currently hidden and this is a GM
-            if (game.user.isGM && game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
-                await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
-                ui.notifications.info('Quest pins automatically shown after placing new objective pin.');
-                
-                // Update the toggle button in the quest panel to reflect the new state
-                const toggleButton = document.querySelector('.toggle-pin-visibility');
-                if (toggleButton) {
-                    toggleButton.classList.remove('fa-location-dot');
-                    toggleButton.classList.add('fa-location-dot-slash');
-                    toggleButton.title = 'Hide Quest Pins';
-                }
-            }
-        } else {
-            // canvas.squirePins is not available
-        }
-        return true;
-    } else if (data.type === 'quest-quest') {
-        // Handle quest-level pins
-        const { questUuid, questIndex, questCategory, questState, questStatus, participants } = data;
-        
-        // Convert participant UUIDs to participant objects with names
-        const processedParticipants = [];
-        if (participants && Array.isArray(participants)) {
-            for (const participantUuid of participants) {
-                try {
-                    if (participantUuid && participantUuid.trim()) {
-                        // Try to get actor name from UUID
-                        const actor = await fromUuid(participantUuid);
-                        if (actor && actor.name) {
-                            processedParticipants.push({
-                                uuid: participantUuid,
-                                name: actor.name,
-                                img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
-                            });
-                        } else {
-                            // Fallback: use UUID as name
-                            processedParticipants.push({
-                                uuid: participantUuid,
-                                name: participantUuid,
-                                img: 'icons/svg/mystery-man.svg'
-                            });
-                        }
-                    }
-                } catch (error) {
-                    // If UUID lookup fails, use UUID as name
-                    processedParticipants.push({
-                        uuid: participantUuid,
-                        name: participantUuid,
-                        img: 'icons/svg/mystery-man.svg'
-                    });
-                }
-            }
-        }
-        
-        const pin = new QuestPin({ 
-            x: data.x, 
-            y: data.y, 
-            questUuid, 
-            objectiveIndex: null, // Indicates quest-level pin
-            objectiveState: null, // Not applicable for quest pins
-            questIndex, 
-            questCategory,
-            questState: questState || 'visible',
-            questStatus: questStatus || 'Not Started',
-            participants: processedParticipants
-        });
-        
-        if (canvas.squirePins) {
-            canvas.squirePins.addChild(pin);
-            // Save to persistence
-            pin._saveToPersistence();
-            
-            // Auto-show quest pins if they're currently hidden and this is a GM
-            if (game.user.isGM && game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
-                await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
-                ui.notifications.info('Quest pins automatically shown after placing new quest pin.');
-                
-                // Update the toggle button in the quest panel to reflect the new state
-                const toggleButton = document.querySelector('.toggle-pin-visibility');
-                if (toggleButton) {
-                    toggleButton.classList.remove('fa-location-dot');
-                    toggleButton.classList.add('fa-location-dot-slash');
-                    toggleButton.title = 'Hide Quest Pins';
-                }
-            }
-        } else {
-            // canvas.squirePins is not available
-        }
-        return true;
-    }
-    
-    return false; // Only block further handling for quest pins
-});
+// Quest pin hooks are now managed centrally by HookManager
 
 // Track timeouts for cleanup
-const questPinTimeouts = new Set();
+
 
 // Load persisted pins when canvas is ready (now called from ready hook)
 export function loadPersistedPinsOnCanvasReady() {
     const timeoutId = setTimeout(() => {
-        // Register with HookManager first
-        registerQuestPinsWithHookManager();
-        loadPersistedPins();
-        questPinTimeouts.delete(timeoutId);
+        // Wait for HookManager to be fully ready before registering
+        if (HookManager && HookManager.isReady()) {
+            // Register with HookManager first
+            registerQuestPinsWithHookManager();
+            loadPersistedPins();
+        } else {
+            // HookManager not ready yet, try again in a moment (with a longer delay to prevent infinite recursion)
+            if (registrationRetryCount < MAX_REGISTRATION_RETRIES) {
+                registrationRetryCount++;
+                setTimeout(() => {
+                    loadPersistedPinsOnCanvasReady();
+                }, 500);
+            } else {
+                getBlacksmith()?.utils.postConsoleAndNotification(
+                    MODULE.NAME,
+                    'Failed to register quest pins with HookManager after maximum retries',
+                    { retryCount: registrationRetryCount },
+                    true,
+                    false
+                );
+            }
+        }
+        if (HookManager && HookManager.questPinTimeouts) {
+            HookManager.questPinTimeouts.delete(timeoutId);
+        }
     }, 1500);
-    questPinTimeouts.add(timeoutId);
+    if (HookManager && HookManager.questPinTimeouts) {
+        HookManager.questPinTimeouts.add(timeoutId);
+    }
 }
 
-// Load persisted pins when scene changes
-Hooks.on('canvasSceneChange', (scene) => {
-    // Delay loading to ensure scene is fully loaded
-    const timeoutId = setTimeout(() => {
-        loadPersistedPins();
-        questPinTimeouts.delete(timeoutId);
-    }, 1000); // Increased delay for scene changes
-    questPinTimeouts.add(timeoutId);
-});
+// Quest pin hooks are now managed centrally by HookManager
 
-// Listen for scene flag changes to reload pins when GM creates/moves pins
-Hooks.on('updateScene', (scene, changes, options, userId) => {
-    if (scene.id === canvas.scene?.id && changes.flags && changes.flags[MODULE.ID]) {
-        // Delay loading to ensure the scene update is fully processed
-        setTimeout(() => {
-            loadPersistedPins();
-        }, 500);
-    }
-});
+// Quest pin hooks are now managed centrally by HookManager
+
+// Track registration status
+let questPinsRegistered = false;
+let registrationRetryCount = 0;
+const MAX_REGISTRATION_RETRIES = 10;
 
 // Function to register quest pins with the HookManager
 function registerQuestPinsWithHookManager() {
     try {
-        const HookManager = game.modules.get('coffee-pub-squire')?.api?.HookManager;
-        if (HookManager) {
+        // Prevent multiple registrations
+        if (questPinsRegistered) {
+            return;
+        }
+        
+        if (HookManager && HookManager.updateAllPinVisibility) {
             // Create a proxy object that provides the updateAllPinVisibility function
             const questPinsProxy = {
-                updateAllPinVisibility: debouncedUpdateAllPinVisibility
+                updateAllPinVisibility: HookManager.updateAllPinVisibility
             };
             HookManager.registerPanel('questPins', questPinsProxy);
+            questPinsRegistered = true;
+            registrationRetryCount = 0; // Reset retry count on success
             
             getBlacksmith()?.utils.postConsoleAndNotification(
                 MODULE.NAME,
                 'Quest Pins registered with HookManager',
                 {},
+                true,
+                false
+            );
+        } else {
+            getBlacksmith()?.utils.postConsoleAndNotification(
+                MODULE.NAME,
+                'HookManager not available for quest pins registration',
+                { hasHookManager: !!HookManager, hasUpdateMethod: !!(HookManager && HookManager.updateAllPinVisibility) },
                 true,
                 false
             );
@@ -1739,8 +1643,7 @@ function registerQuestPinsWithHookManager() {
 // Function to load persisted pins for current scene
 export function loadPersistedPins() {
     try {
-        // Register with HookManager if not already done
-        registerQuestPinsWithHookManager();
+        // Don't register again - this should only be called after registration
         
         const scene = canvas.scene;
         if (!scene) {
@@ -1751,9 +1654,13 @@ export function loadPersistedPins() {
             // Try again in a moment
             const timeoutId = setTimeout(() => {
                 loadPersistedPins();
-                questPinTimeouts.delete(timeoutId);
+                if (HookManager && HookManager.questPinTimeouts) {
+                    HookManager.questPinTimeouts.delete(timeoutId);
+                }
             }, 1000);
-            questPinTimeouts.add(timeoutId);
+            if (HookManager && HookManager.questPinTimeouts) {
+                HookManager.questPinTimeouts.add(timeoutId);
+            }
             return;
         }
 
@@ -1851,9 +1758,13 @@ export function loadPersistedPins() {
         if (game.user.isGM) {
             const timeoutId = setTimeout(async () => {
                 await cleanupOrphanedPins();
-                questPinTimeouts.delete(timeoutId);
+                if (HookManager && HookManager.questPinTimeouts) {
+                    HookManager.questPinTimeouts.delete(timeoutId);
+                }
             }, 1000);
-            questPinTimeouts.add(timeoutId);
+            if (HookManager && HookManager.questPinTimeouts) {
+                HookManager.questPinTimeouts.add(timeoutId);
+            }
         }
     } catch (error) {
         // Error loading persisted pins
@@ -1896,10 +1807,12 @@ async function cleanupOrphanedPins() {
 // Cleanup function for quest pins
 function cleanupQuestPins() {
     // Clear all tracked timeouts
-    questPinTimeouts.forEach(timeoutId => {
-        clearTimeout(timeoutId);
-    });
-    questPinTimeouts.clear();
+    if (HookManager && HookManager.questPinTimeouts) {
+        HookManager.questPinTimeouts.forEach(timeoutId => {
+            clearTimeout(timeoutId);
+        });
+        HookManager.questPinTimeouts.clear();
+    }
 
     // Clear existing pins and their timeouts
     if (canvas.squirePins) {
@@ -1936,98 +1849,4 @@ function cleanupQuestPins() {
     document.body.style.cursor = 'default';
 }
 
-// Cleanup hooks for quest pins
-// Only clean up when the game is actually closing, not when module is disabled
-Hooks.on('closeGame', () => {
-    cleanupQuestPins();
-});
-
-// Module cleanup - remove hooks when module is disabled
-Hooks.on('disableModule', (moduleId) => {
-    if (moduleId === MODULE.ID) {
-        Hooks.off('updateToken');
-        Hooks.off('createToken');
-        Hooks.off('deleteToken');
-        Hooks.off('renderQuestPanel');
-        Hooks.off('sightRefresh');
-        cleanupQuestPins();
-    }
-});
-
-// Update pin visibility when tokens move or vision changes
-Hooks.on('updateToken', (token, changes) => {
-    if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {
-        debouncedUpdateAllPinVisibility();
-    }
-});
-
-Hooks.on('createToken', (token) => {
-    debouncedUpdateAllPinVisibility();
-});
-
-Hooks.on('deleteToken', (token) => {
-    debouncedUpdateAllPinVisibility();
-});
-
-// Update pin visibility when quest state changes
-// This hook is now handled by the centralized HookManager
-// Hooks.on('updateJournalEntryPage', (page, changes) => {
-//     if (changes.flags && changes.flags[MODULE.ID]) {
-//         debouncedUpdateAllPinVisibility();
-//     }
-// });
-
-// Update pin visibility when quest panel is refreshed
-Hooks.on('renderQuestPanel', () => {
-    debouncedUpdateAllPinVisibility();
-});
-
-// Debounce for updateAllPinVisibility
-let questPinVisibilityDebounce = null;
-
-function debouncedUpdateAllPinVisibility() {
-  if (questPinVisibilityDebounce) clearTimeout(questPinVisibilityDebounce);
-  questPinVisibilityDebounce = setTimeout(() => {
-    // Only run if the global vision polygon exists
-    if (canvas.visibility?.los) {
-      updateAllPinVisibility();
-    }
-    questPinVisibilityDebounce = null;
-  }, 50);
-}
-
-/**
- * Update visibility for all quest pins
- */
-async function updateAllPinVisibility() {
-    if (!canvas.squirePins) return;
-    
-    const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
-    
-    for (const pin of pins) {
-        try {
-            // Update quest state from journal if available
-            const questData = pin._getQuestData();
-            if (questData) {
-                const isVisible = await questData.getFlag(MODULE.ID, 'visible');
-                const newQuestState = (isVisible === false) ? 'hidden' : 'visible';
-                
-                // Only update if the state actually changed
-                if (pin.questState !== newQuestState) {
-                    pin.questState = newQuestState;
-                    // Update pin appearance to show/hide second ring for GMs
-                    pin._updatePinAppearance();
-                }
-            }
-            
-            pin.updateVisibility();
-            } catch (error) {
-        // Error updating pin visibility
-    }
-    }
-}
-
-// Update pin visibility when vision polygons are refreshed
-Hooks.on('sightRefresh', () => {
-  debouncedUpdateAllPinVisibility();
-}); 
+// Quest pin hooks are now managed centrally by HookManager 

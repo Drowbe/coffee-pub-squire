@@ -1,7 +1,12 @@
 import { MODULE, SQUIRE } from './const.js';
 import { getBlacksmith } from './helpers.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { PanelManager } from './manager-panel.js';
+import { QuestPin, loadPersistedPins } from './quest-pin.js';
+
+// Helper function to get PanelManager dynamically to avoid circular dependencies
+function getPanelManager() {
+    return game.modules.get('coffee-pub-squire')?.api?.PanelManager;
+}
 
 /**
  * Centralized Hook Manager for Squire
@@ -350,6 +355,65 @@ export class HookManager {
     }
     
     /**
+     * Check if the HookManager is fully initialized and ready
+     * @returns {boolean} True if ready, false otherwise
+     */
+    static isReady() {
+        return HookManager.instance !== null && HookManager.hookRegistry.size > 0;
+    }
+    
+    /**
+     * Quest pin helper functions and variables - Static for global access
+     */
+    static questPinTimeouts = new Set();
+    static questPinVisibilityDebounce = null;
+
+    static debouncedUpdateAllPinVisibility() {
+        if (HookManager.questPinVisibilityDebounce) clearTimeout(HookManager.questPinVisibilityDebounce);
+        HookManager.questPinVisibilityDebounce = setTimeout(() => {
+            // Only run if the global vision polygon exists
+            if (canvas.visibility?.los) {
+                HookManager.updateAllPinVisibility();
+            }
+            HookManager.questPinVisibilityDebounce = null;
+        }, 50);
+    }
+
+    static async updateAllPinVisibility() {
+        if (!canvas.squirePins) return;
+        
+        const pins = canvas.squirePins.children.filter(child => child.constructor.name === 'QuestPin');
+        
+        for (const pin of pins) {
+            try {
+                // Update quest state from journal if available
+                if (pin._getQuestData) {
+                    const questData = pin._getQuestData();
+                    if (questData) {
+                        const isVisible = await questData.getFlag(MODULE.ID, 'visible');
+                        const newQuestState = (isVisible === false) ? 'hidden' : 'visible';
+                        
+                        // Only update if the state actually changed
+                        if (pin.questState !== newQuestState) {
+                            pin.questState = newQuestState;
+                            // Update pin appearance to show/hide second ring for GMs
+                            if (pin._updatePinAppearance) {
+                                pin._updatePinAppearance();
+                            }
+                        }
+                    }
+                }
+                
+                if (pin.updateVisibility) {
+                    pin.updateVisibility();
+                }
+            } catch (error) {
+                // Error updating pin visibility
+            }
+        }
+    }
+
+    /**
      * Set up all journal-related hooks
      * @private
      */
@@ -363,7 +427,8 @@ export class HookManager {
 
         // Helper function to update selection display
         async function _updateSelectionDisplay() {
-            if (!PanelManager.instance || !PanelManager.instance.element) return;
+            const panelManager = getPanelManager();
+            if (!panelManager?.instance || !panelManager.instance.element) return;
             
             // Calculate selection data
             const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
@@ -371,8 +436,8 @@ export class HookManager {
             const showSelectionBox = selectionCount > 1;
             
             // Update the selection display
-            const selectionWrapper = PanelManager.instance.element.find('.tray-selection-wrapper');
-            const selectionCountSpan = PanelManager.instance.element.find('.tray-selection-count');
+            const selectionWrapper = panelManager.instance.element.find('.tray-selection-wrapper');
+            const selectionCountSpan = panelManager.instance.element.find('.tray-selection-count');
             
             if (showSelectionBox) {
                 // Show selection box if it doesn't exist
@@ -388,13 +453,13 @@ export class HookManager {
                     `;
                     
                     // Insert after the party toolbar
-                    const partyToolbar = PanelManager.instance.element.find('.tray-tools-toolbar');
+                    const partyToolbar = panelManager.instance.element.find('.tray-tools-toolbar');
                     if (partyToolbar.length > 0) {
                         partyToolbar.after(selectionHtml);
                     }
                     
                     // Re-attach event listeners for the new buttons
-                    PanelManager.instance.activateListeners(PanelManager.instance.element);
+                    panelManager.instance.activateListeners(panelManager.instance.element);
                 } else {
                     // Update existing selection count
                     selectionCountSpan.text(`${selectionCount} tokens selected`);
@@ -414,15 +479,17 @@ export class HookManager {
             
             if (controlledTokens.length === 0) {
                 // No tokens selected, hide the health panel
-                if (PanelManager.instance && PanelManager.instance.healthPanel) {
-                    PanelManager.instance.healthPanel.hide();
+                const panelManager = getPanelManager();
+                if (panelManager?.instance && panelManager.instance.healthPanel) {
+                    panelManager.instance.healthPanel.hide();
                 }
                 return;
             }
 
             // Update the health panel with the selected tokens
-            if (PanelManager.instance && PanelManager.instance.healthPanel) {
-                await PanelManager.instance.healthPanel.updateFromTokens(controlledTokens);
+            const panelManager = getPanelManager();
+            if (panelManager?.instance && panelManager.instance.healthPanel) {
+                await panelManager.instance.healthPanel.updateFromTokens(controlledTokens);
             }
         }
         
@@ -642,55 +709,56 @@ export class HookManager {
         const globalDeleteTokenHookId = HookManager.registerHook(
             "deleteToken",
             async (token) => {
-                if (PanelManager.currentActor?.id === token.actor?.id) {
+                const panelManager = getPanelManager();
+                if (panelManager?.currentActor?.id === token.actor?.id) {
                     // Try to find another token to display
                     const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
                     if (nextToken) {
                         // Add fade-out animation to tray panel wrapper if appropriate
-                        if (PanelManager.instance) {
-                            PanelManager.instance._applyFadeOutAnimation();
+                        if (panelManager.instance) {
+                            panelManager.instance._applyFadeOutAnimation();
                         }
                         
                         // Update the actor without recreating the tray
-                        PanelManager.currentActor = nextToken.actor;
-                        if (PanelManager.instance) {
-                            PanelManager.instance.actor = nextToken.actor;
+                        panelManager.currentActor = nextToken.actor;
+                        if (panelManager.instance) {
+                            panelManager.instance.actor = nextToken.actor;
                             
                             // Update the actor reference in all panel instances
-                            if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.featuresPanel) PanelManager.instance.featuresPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.experiencePanel) PanelManager.instance.experiencePanel.actor = nextToken.actor;
-                            if (PanelManager.instance.statsPanel) PanelManager.instance.statsPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.abilitiesPanel) PanelManager.instance.abilitiesPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.actor = nextToken.actor;
-                            if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.actor = nextToken.actor;
+                            if (panelManager.instance.characterPanel) panelManager.instance.characterPanel.actor = nextToken.actor;
+                            if (panelManager.instance.controlPanel) panelManager.instance.controlPanel.actor = nextToken.actor;
+                            if (panelManager.instance.favoritesPanel) panelManager.instance.favoritesPanel.actor = nextToken.actor;
+                            if (panelManager.instance.spellsPanel) panelManager.instance.spellsPanel.actor = nextToken.actor;
+                            if (panelManager.instance.weaponsPanel) panelManager.instance.weaponsPanel.actor = nextToken.actor;
+                            if (panelManager.instance.inventoryPanel) panelManager.instance.inventoryPanel.actor = nextToken.actor;
+                            if (panelManager.instance.featuresPanel) panelManager.instance.featuresPanel.actor = nextToken.actor;
+                            if (panelManager.instance.experiencePanel) panelManager.instance.experiencePanel.actor = nextToken.actor;
+                            if (panelManager.instance.statsPanel) panelManager.instance.statsPanel.actor = nextToken.actor;
+                            if (panelManager.instance.abilitiesPanel) panelManager.instance.abilitiesPanel.actor = nextToken.actor;
+                            if (panelManager.instance.dicetrayPanel) panelManager.instance.dicetrayPanel.actor = nextToken.actor;
+                            if (panelManager.instance.macrosPanel) panelManager.instance.macrosPanel.actor = nextToken.actor;
                             
                             // Update the handle manager's actor reference
-                            if (PanelManager.instance.handleManager) {
-                                PanelManager.instance.handleManager.updateActor(nextToken.actor);
+                            if (panelManager.instance.handleManager) {
+                                panelManager.instance.handleManager.updateActor(nextToken.actor);
                             }
                             
-                            await PanelManager.instance.updateHandle();
+                            await panelManager.instance.updateHandle();
                             
                             // Re-render all panels with the new actor data
-                            await PanelManager.instance.renderPanels(PanelManager.instance.element);
+                            await panelManager.instance.renderPanels(panelManager.instance.element);
                             
                             // Add fade-in animation to tray panel wrapper after update if appropriate
-                            if (PanelManager.instance) {
-                                PanelManager.instance._applyFadeInAnimation();
+                            if (panelManager.instance) {
+                                panelManager.instance._applyFadeInAnimation();
                             }
                             
                             // Re-attach event listeners to ensure tray functionality works
                         }
                     } else {
                         // No more tokens, clear the instance
-                        PanelManager.instance = null;
-                        PanelManager.currentActor = null;
+                        panelManager.instance = null;
+                        panelManager.currentActor = null;
                     }
                 }
             },
@@ -700,13 +768,14 @@ export class HookManager {
         const globalUpdateActorHookId = HookManager.registerHook(
             "updateActor",
             async (actor, changes) => {
+                const panelManager = getPanelManager();
                 // Only process if this is the actor currently being managed by Squire
-                if (PanelManager.currentActor?.id !== actor.id) {
+                if (panelManager?.currentActor?.id !== actor.id) {
                     return;
                 }
                 
                 // Only process if PanelManager instance exists
-                if (!PanelManager.instance) {
+                if (!panelManager?.instance) {
                     return;
                 }
                 
@@ -719,26 +788,26 @@ export class HookManager {
                                        changes.system?.attributes?.movement; // Movement change
 
                 if (needsFullUpdate) {
-                    await PanelManager.initialize(actor);
+                    await panelManager.initialize(actor);
                     // Force a re-render of all panels
-                    await PanelManager.instance.renderPanels(PanelManager.instance.element);
-                    await PanelManager.instance.updateHandle();
+                    await panelManager.instance.renderPanels(panelManager.instance.element);
+                    await panelManager.instance.updateHandle();
                 }
                 // For health, effects, and spell slot changes, update appropriately
                 else {
                     // Handle health and effects changes
                     if (changes.system?.attributes?.hp || changes.effects) {
-                        await PanelManager.instance.updateHandle();
+                        await panelManager.instance.updateHandle();
                     }
                     // Handle spell slot changes
                     if (changes.system?.spells) {
                         // Re-render just the spells panel
-                        if (PanelManager.instance.spellsPanel?.element) {
-                            await PanelManager.instance.spellsPanel.render(PanelManager.instance.spellsPanel.element);
+                        if (panelManager.instance.spellsPanel?.element) {
+                            await panelManager.instance.spellsPanel.render(panelManager.instance.spellsPanel.element);
                         }
                     } else {
                         // For other changes, just update the handle
-                        await PanelManager.instance.updateHandle();
+                        await panelManager.instance.updateHandle();
                     }
                 }
             },
@@ -748,8 +817,9 @@ export class HookManager {
         const globalPauseGameHookId = HookManager.registerHook(
             "pauseGame",
             async (paused) => {
-                if (!paused && PanelManager.instance && PanelManager.instance.element) {
-                    await PanelManager.instance.renderPanels(PanelManager.instance.element);
+                const panelManager = getPanelManager();
+                if (!paused && panelManager?.instance && panelManager.instance.element) {
+                    await panelManager.instance.renderPanels(panelManager.instance.element);
                 }
             },
             ['global']
@@ -758,17 +828,18 @@ export class HookManager {
         const globalCreateActiveEffectHookId = HookManager.registerHook(
             "createActiveEffect",
             async (effect) => {
+                const panelManager = getPanelManager();
                 // Only process if this effect belongs to the actor currently being managed by Squire
-                if (PanelManager.currentActor?.id !== effect.parent?.id) {
+                if (panelManager?.currentActor?.id !== effect.parent?.id) {
                     return;
                 }
                 
                 // Only process if PanelManager instance exists
-                if (!PanelManager.instance) {
+                if (!panelManager?.instance) {
                     return;
                 }
                 
-                await PanelManager.instance.updateHandle();
+                await panelManager.instance.updateHandle();
             },
             ['global']
         );
@@ -776,17 +847,18 @@ export class HookManager {
         const globalDeleteActiveEffectHookId = HookManager.registerHook(
             "deleteActiveEffect",
             async (effect) => {
+                const panelManager = getPanelManager();
                 // Only process if this effect belongs to the actor currently being managed by Squire
-                if (PanelManager.currentActor?.id !== effect.parent?.id) {
+                if (panelManager?.currentActor?.id !== effect.parent?.id) {
                     return;
                 }
                 
                 // Only process if PanelManager instance exists
-                if (!PanelManager.instance) {
+                if (!panelManager?.instance) {
                     return;
                 }
                 
-                await PanelManager.instance.updateHandle();
+                await panelManager.instance.updateHandle();
             },
             ['global']
         );
@@ -794,19 +866,20 @@ export class HookManager {
         const globalCreateItemHookId = HookManager.registerHook(
             "createItem",
             async (item) => {
+                const panelManager = getPanelManager();
                 // Only process if this item belongs to the actor currently being managed by Squire
-                if (PanelManager.currentActor?.id !== item.parent?.id) {
+                if (panelManager?.currentActor?.id !== item.parent?.id) {
                     return;
                 }
                 
                 // Only process if PanelManager instance exists
-                if (!PanelManager.instance) {
+                if (!panelManager?.instance) {
                     return;
                 }
                 
                 // No need to recreate the entire tray - just update relevant panels and handle
-                await PanelManager.instance.renderPanels(PanelManager.instance.element);
-                await PanelManager.instance.updateHandle();
+                await panelManager.instance.renderPanels(panelManager.instance.element);
+                await panelManager.instance.updateHandle();
             },
             ['global']
         );
@@ -816,13 +889,14 @@ export class HookManager {
             async (item, changes) => {
                 if (!item.parent) return;
                 
+                const panelManager = getPanelManager();
                 // Only process if this item belongs to the actor currently being managed by Squire
-                if (PanelManager.currentActor?.id !== item.parent?.id) {
+                if (panelManager?.currentActor?.id !== item.parent?.id) {
                     return;
                 }
                 
                 // Only process if PanelManager instance exists
-                if (!PanelManager.instance) {
+                if (!panelManager?.instance) {
                     return;
                 }
                 
@@ -847,7 +921,7 @@ export class HookManager {
                     }
                 } else {
                     // For other changes, just update the handle
-                    await PanelManager.instance.updateHandle();
+                    await panelManager.instance.updateHandle();
                 }
             },
             ['global']
@@ -856,19 +930,20 @@ export class HookManager {
         const globalDeleteItemHookId = HookManager.registerHook(
             "deleteItem",
             async (item) => {
+                const panelManager = getPanelManager();
                 // Only process if this item belongs to the actor currently being managed by Squire
-                if (PanelManager.currentActor?.id !== item.parent?.id) {
+                if (panelManager?.currentActor?.id !== item.parent?.id) {
                     return;
                 }
                 
                 // Only process if PanelManager instance exists
-                if (!PanelManager.instance) {
+                if (!panelManager?.instance) {
                     return;
                 }
                 
                 // No need to recreate the entire tray - just update relevant panels and handle
-                await PanelManager.instance.renderPanels(PanelManager.instance.element);
-                await PanelManager.instance.updateHandle();
+                await panelManager.instance.renderPanels(panelManager.instance.element);
+                await panelManager.instance.updateHandle();
             },
             ['global']
         );
@@ -876,8 +951,9 @@ export class HookManager {
         const globalCloseGameHookId = HookManager.registerHook(
             "closeGame",
             () => {
-                if (PanelManager.instance) {
-                    PanelManager.cleanup();
+                const panelManager = getPanelManager();
+                if (panelManager?.instance) {
+                    panelManager.cleanup();
                 }
             },
             ['global']
@@ -896,7 +972,18 @@ export class HookManager {
                     _selectionCount = 0;
                     _lastSelectionTime = 0;
                     
-                    PanelManager.cleanup();
+                    // Clear quest pin timeouts
+                    HookManager.questPinTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+                    HookManager.questPinTimeouts.clear();
+                    if (HookManager.questPinVisibilityDebounce) {
+                        clearTimeout(HookManager.questPinVisibilityDebounce);
+                        HookManager.questPinVisibilityDebounce = null;
+                    }
+                    
+                    const panelManager = getPanelManager();
+                    if (panelManager) {
+                        panelManager.cleanup();
+                    }
                 }
             },
             ['global']
@@ -939,11 +1026,12 @@ export class HookManager {
                 }
                 
                 // Only process if PanelManager instance exists
-                if (!PanelManager.instance) {
+                const panelManager = getPanelManager();
+                if (!panelManager?.instance) {
                     return;
                 }
                 
-                await PanelManager.instance.updateHandle();
+                await panelManager.instance.updateHandle();
             },
             ['global']
         );
@@ -956,7 +1044,222 @@ export class HookManager {
             true,
             false
         );
-    }
+
+        // Quest Pin Hooks - Consolidated
+        const questPinDropCanvasDataHookId = HookManager.registerHook(
+            "dropCanvasData",
+            async (canvas, data) => {
+                if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return; // Let Foundry handle all other drops!
+                
+                // Only GMs can create quest pins
+                if (!game.user.isGM) return false;
+                
+                if (data.type === 'quest-objective') {
+                    // Handle objective-level pins
+                    const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory, questState } = data;
+                    
+                    // Use the objective state from the drag data (default to 'active' if not provided)
+                    const finalObjectiveState = objectiveState || 'active';
+                    
+                    const pin = new QuestPin({ 
+                        x: data.x, 
+                        y: data.y, 
+                        questUuid, 
+                        objectiveIndex, 
+                        objectiveState: finalObjectiveState, 
+                        questIndex, 
+                        questCategory,
+                        questState: questState || 'visible'
+                    });
+                    
+                    if (canvas.squirePins) {
+                        canvas.squirePins.addChild(pin);
+                        // Save to persistence
+                        pin._saveToPersistence();
+                        
+                        // Auto-show quest pins if they're currently hidden and this is a GM
+                        if (game.user.isGM && game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
+                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
+                            ui.notifications.info('Quest pins automatically shown after placing new objective pin.');
+                            
+                            // Update the toggle button in the quest panel to reflect the new state
+                            const toggleButton = document.querySelector('.toggle-pin-visibility');
+                            if (toggleButton) {
+                                toggleButton.classList.remove('fa-location-dot');
+                                toggleButton.classList.add('fa-location-dot-slash');
+                                toggleButton.title = 'Hide Quest Pins';
+                            }
+                        }
+                    } else {
+                        // canvas.squirePins is not available
+                    }
+                    return true;
+                } else if (data.type === 'quest-quest') {
+                    // Handle quest-level pins
+                    const { questUuid, questIndex, questCategory, questState, questStatus, participants } = data;
+                    
+                    // Convert participant UUIDs to participant objects with names
+                    const processedParticipants = [];
+                    if (participants && Array.isArray(participants)) {
+                        for (const participantUuid of participants) {
+                            try {
+                                if (participantUuid && participantUuid.trim()) {
+                                    // Try to get actor name from UUID
+                                    const actor = await fromUuid(participantUuid);
+                                    if (actor && actor.name) {
+                                        processedParticipants.push({
+                                            uuid: participantUuid,
+                                            name: actor.name,
+                                            img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
+                                        });
+                                    } else {
+                                        // Fallback: use UUID as name
+                                        processedParticipants.push({
+                                            uuid: participantUuid,
+                                            name: participantUuid,
+                                            img: 'icons/svg/mystery-man.svg'
+                                        });
+                                    }
+                                }
+                            } catch (error) {
+                                // If UUID lookup fails, use UUID as name
+                                processedParticipants.push({
+                                    uuid: participantUuid,
+                                    name: participantUuid,
+                                    img: 'icons/svg/mystery-man.svg'
+                                });
+                            }
+                        }
+                    }
+                    
+                    const pin = new QuestPin({ 
+                        x: data.x, 
+                        y: data.y, 
+                        questUuid, 
+                        objectiveIndex: null, // Indicates quest-level pin
+                        objectiveState: null, // Not applicable for quest pins
+                        questIndex, 
+                        questCategory,
+                        questState: questState || 'visible',
+                        questStatus: questStatus || 'Not Started',
+                        participants: processedParticipants
+                    });
+                    
+                    if (canvas.squirePins) {
+                        canvas.squirePins.addChild(pin);
+                        // Save to persistence
+                        pin._saveToPersistence();
+                        
+                        // Auto-show quest pins if they're currently hidden and this is a GM
+                        if (game.user.isGM && game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
+                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
+                            ui.notifications.info('Quest pins automatically shown after placing new quest pin.');
+                            
+                            // Update the toggle button in the quest panel to reflect the new state
+                            const toggleButton = document.querySelector('.toggle-pin-visibility');
+                            if (toggleButton) {
+                                toggleButton.classList.remove('fa-location-dot');
+                                toggleButton.classList.add('fa-location-dot-slash');
+                                toggleButton.title = 'Hide Quest Pins';
+                            }
+                        }
+                    } else {
+                        // canvas.squirePins is not available
+                    }
+                    return true;
+                }
+            },
+            ['questPins']
+        );
+
+        const questPinCanvasSceneChangeHookId = HookManager.registerHook(
+            "canvasSceneChange",
+            (scene) => {
+                // Delay loading to ensure scene is fully loaded
+                const timeoutId = setTimeout(() => {
+                    loadPersistedPins();
+                    HookManager.questPinTimeouts.delete(timeoutId);
+                }, 1000); // Increased delay for scene changes
+                HookManager.questPinTimeouts.add(timeoutId);
+            },
+            ['questPins']
+        );
+
+        const questPinUpdateSceneHookId = HookManager.registerHook(
+            "updateScene",
+            (scene, changes, options, userId) => {
+                if (scene.id === canvas.scene?.id && changes.flags && changes.flags[MODULE.ID]) {
+                    // Delay loading to ensure the scene update is fully processed
+                    setTimeout(() => {
+                        loadPersistedPins();
+                    }, 500);
+                }
+            },
+            ['questPins']
+        );
+
+        const questPinUpdateTokenHookId = HookManager.registerHook(
+            "updateToken",
+            (token, changes) => {
+                if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {
+                    HookManager.debouncedUpdateAllPinVisibility();
+                }
+            },
+            ['questPins']
+        );
+
+        const questPinCreateTokenHookId = HookManager.registerHook(
+            "createToken",
+            (token) => {
+                HookManager.debouncedUpdateAllPinVisibility();
+            },
+            ['questPins']
+        );
+
+        const questPinDeleteTokenHookId = HookManager.registerHook(
+            "deleteToken",
+            (token) => {
+                HookManager.debouncedUpdateAllPinVisibility();
+            },
+            ['questPins']
+        );
+
+        const questPinRenderQuestPanelHookId = HookManager.registerHook(
+            "renderQuestPanel",
+            () => {
+                HookManager.debouncedUpdateAllPinVisibility();
+            },
+            ['questPins']
+        );
+
+        const questPinSightRefreshHookId = HookManager.registerHook(
+            "sightRefresh",
+            () => {
+                HookManager.debouncedUpdateAllPinVisibility();
+            },
+            ['questPins']
+        );
+
+
+
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            'Quest Pin hooks consolidated in HookManager',
+            { 
+                questPinDropCanvasDataHookId,
+                questPinCanvasSceneChangeHookId,
+                questPinUpdateSceneHookId,
+                questPinUpdateTokenHookId,
+                questPinCreateTokenHookId,
+                questPinDeleteTokenHookId,
+                questPinRenderQuestPanelHookId,
+                questPinSightRefreshHookId,
+                totalHooks: HookManager.getHookStats().totalHooks
+            },
+            true,
+            false
+        );
+    } // End of _setupHooks method
     
     /**
      * Handle journal entry page updates and route to appropriate panels
@@ -1002,9 +1305,10 @@ export class HookManager {
                 await HookManager.codexPanel._refreshData();
                 
                 // Trigger a refresh through the PanelManager if it's available
-                if (PanelManager.instance && PanelManager.element) {
+                const panelManager = getPanelManager();
+                if (panelManager?.instance && panelManager.element) {
                     // Re-render the codex panel specifically
-                    HookManager.codexPanel.render(PanelManager.element);
+                    HookManager.codexPanel.render(panelManager.element);
                 }
             }
         } catch (error) {
@@ -1036,9 +1340,10 @@ export class HookManager {
                 await HookManager.questPanel._refreshData();
                 
                 // Trigger a refresh through the PanelManager if it's available
-                if (PanelManager.instance && PanelManager.element) {
+                const panelManager = getPanelManager();
+                if (panelManager?.instance && panelManager.element) {
                     // Re-render the quest panel specifically
-                    HookManager.questPanel.render(PanelManager.element);
+                    HookManager.questPanel.render(panelManager.element);
                 }
                 
                 // Handle quest-specific logic (visibility changes, pin updates, etc.)
@@ -1064,11 +1369,12 @@ export class HookManager {
                     
                     const blacksmith = getBlacksmith();
                     
-                    // Trigger a refresh through the PanelManager if it's available
-                    if (PanelManager.instance && PanelManager.element) {
-                        // Re-render the notes panel specifically
-                        HookManager.notesPanel.render(PanelManager.element);
-                    }
+                                    // Trigger a refresh through the PanelManager if it's available
+                const panelManager = getPanelManager();
+                if (panelManager?.instance && panelManager.element) {
+                    // Re-render the notes panel specifically
+                    HookManager.notesPanel.render(panelManager.element);
+                }
                 }
             }
         } catch (error) {
@@ -1093,9 +1399,7 @@ export class HookManager {
                 const blacksmith = getBlacksmith();
                 
                 // Update pin visibility and states
-                if (typeof HookManager.questPins.updateAllPinVisibility === 'function') {
-                    HookManager.questPins.updateAllPinVisibility();
-                }
+                HookManager.updateAllPinVisibility();
             }
         } catch (error) {
             console.error('HookManager: Error routing to Quest Pins', { error, pageName: page.name });
@@ -1248,6 +1552,14 @@ export class HookManager {
         HookManager.panelHooks.clear();
         HookManager.hookIds.clear();
         HookManager.instance = null;
+        
+        // Clear quest pin timeouts
+        HookManager.questPinTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        HookManager.questPinTimeouts.clear();
+        if (HookManager.questPinVisibilityDebounce) {
+            clearTimeout(HookManager.questPinVisibilityDebounce);
+            HookManager.questPinVisibilityDebounce = null;
+        }
         
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
