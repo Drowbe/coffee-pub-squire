@@ -1,3 +1,21 @@
+/**
+ * Hook Manager for Coffee Pub Squire Module
+ * 
+ * TODO: Future Architectural Improvement
+ * =====================================
+ * Consider refactoring to centralized hook management where other modules
+ * register their hook needs with our API instead of directly using Hooks.on/off.
+ * This would prevent cross-module interference and provide better control over
+ * hook lifecycle, timing, and cleanup. Other modules would call:
+ * game.modules.get('coffee-pub-squire').api.registerHook('hookName', callback)
+ * instead of directly calling Hooks.on('hookName', callback).
+ * 
+ * Benefits:
+ * - No more cross-module hook conflicts
+ * - Better control over hook registration timing
+ * - Centralized debugging and optimization
+ * - Improved module compatibility
+ */
 import { MODULE, SQUIRE } from './const.js';
 import { getBlacksmith } from './helpers.js';
 import { FavoritesPanel } from './panel-favorites.js';
