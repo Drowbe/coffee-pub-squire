@@ -52,24 +52,129 @@ HookManager.registerHook('updateActor', (actor, changes) => {
 ## **Example Implementation**
 
 ```javascript
+/**
+ * HookManager - Simple Orchestration Layer
+ * Registers hooks and provides cleanup - no business logic
+ */
 export class HookManager {
-    static hooks = new Map();
+    static hooks = new Map(); // hookName -> { callback, hookId, description }
     
-    // Simple registration - exactly what you described
-    static registerHook(hookName, callback) {
+    /**
+     * Register a hook with a callback
+     * @param {string} hookName - FoundryVTT hook name
+     * @param {Function} callback - Your callback function
+     * @param {string} description - Optional description for debugging
+     * @returns {string} Hook ID for cleanup
+     */
+    static registerHook(hookName, callback, description = '') {
+        // Register with FoundryVTT
         const hookId = Hooks.on(hookName, callback);
-        this.hooks.set(hookName, { callback, hookId });
+        
+        // Store for management
+        this.hooks.set(hookName, { 
+            callback, 
+            hookId, 
+            description,
+            registeredAt: Date.now()
+        });
+        
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            `Hook registered: ${hookName}`,
+            { description, totalHooks: this.hooks.size },
+            true,
+            false
+        );
+        
         return hookId;
     }
     
-    // Simple cleanup
+    /**
+     * Remove a specific hook
+     * @param {string} hookName - Hook to remove
+     * @returns {boolean} Success status
+     */
+    static removeHook(hookName) {
+        const hook = this.hooks.get(hookName);
+        if (!hook) return false;
+        
+        Hooks.off(hookName, hook.callback);
+        this.hooks.delete(hookName);
+        
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            `Hook removed: ${hookName}`,
+            { totalHooks: this.hooks.size },
+            true,
+            false
+        );
+        
+        return true;
+    }
+    
+    /**
+     * Clean up all hooks
+     */
     static cleanup() {
         this.hooks.forEach((hook, name) => {
             Hooks.off(name, hook.callback);
         });
+        
+        const totalCleaned = this.hooks.size;
         this.hooks.clear();
+        
+        getBlacksmith()?.utils.postConsoleAndNotification(
+            MODULE.NAME,
+            'All hooks cleaned up',
+            { totalCleaned },
+            false,
+            false
+        );
+    }
+    
+    /**
+     * Get hook statistics
+     * @returns {Object} Hook statistics
+     */
+    static getStats() {
+        return {
+            totalHooks: this.hooks.size,
+            hooks: Array.from(this.hooks.entries()).map(([name, hook]) => ({
+                name,
+                description: hook.description,
+                registeredAt: new Date(hook.registeredAt).toISOString()
+            }))
+        };
+    }
+    
+    /**
+     * Check if a hook is registered
+     * @param {string} hookName - Hook to check
+     * @returns {boolean} Is registered
+     */
+    static hasHook(hookName) {
+        return this.hooks.has(hookName);
     }
 }
+```
+
+## **How to Use It (Simple)**
+
+```javascript
+// In your main code, register hooks with your logic
+HookManager.registerHook('updateActor', (actor, changes) => {
+    // Your logic here - update health panel, etc.
+    if (changes.system?.attributes?.hp) {
+        PanelManager.instance?.healthPanel?.update();
+    }
+}, 'Updates health panel when actor HP changes');
+
+HookManager.registerHook('updateToken', (token, changes) => {
+    // Your logic here
+    if (changes.x || changes.y) {
+        // Handle position changes
+    }
+}, 'Handles token position updates');
 ```
 
 ## **Why This Approach is Right**
@@ -90,7 +195,7 @@ Complex HookManagers with routing layers:
 
 ## **Bottom Line**
 
-Your instinct was **100% correct**. The HookManager should be a **simple orchestration layer** that:
+The HookManager should be a **simple orchestration layer** that:
 - Registers your callbacks
 - Lets FoundryVTT handle the data passing
 - Keeps your logic in your code
