@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [12.1.3] - Quest Improvements
+
+### Added
+- GM notes now display inline with objectives instead of requiring hover tooltips
+- GM notes use certificate icon (fa-file-certificate) and golden styling for easy identification
+- GM notes are only visible to GMs, maintaining privacy
+
+### Changed
+- Objective pins on canvas now display objective text instead of quest title
+- Improved objective highlighting with yellow border and background when selected from canvas pins
+- Enhanced visual styling for GM notes and treasure indicators
+
+### Fixed
+- Objective pins now correctly show the actual objective description rather than generic "Objective X" text
+- Improved CSS specificity for treasure and GM note icons
+
+
 ## [12.1.2] - Bug Fixes
 
 ### Fixed
