@@ -141,8 +141,8 @@ export class QuestPin extends PIXI.Container {
           this.questName = entry.name || 'Unknown Quest';
           
           if (this.pinType === 'objective' && entry.tasks && entry.tasks[this.objectiveIndex]) {
-            // For objectives, also get the objective name
-            this.objectiveName = entry.tasks[this.objectiveIndex].name || `Objective ${this.objectiveIndex + 1}`;
+            // For objectives, get the objective text (not name)
+            this.objectiveName = entry.tasks[this.objectiveIndex].text || `Objective ${this.objectiveIndex + 1}`;
           } else if (this.pinType === 'objective') {
             this.objectiveName = `Objective ${this.objectiveIndex + 1}`;
           }
@@ -594,9 +594,9 @@ export class QuestPin extends PIXI.Container {
               // Always add the combined label (Q85.03)
               this.addChild(combinedLabel);
               
-              // Quest title text below the combined label (only if setting allows it)
+              // Objective title text below the combined label (only if setting allows it)
               if (game.settings.get(MODULE.ID, 'showQuestPinText')) {
-                const objectiveTitle = new PIXI.Text(this.questName || 'Unknown Quest', {
+                const objectiveTitle = new PIXI.Text(this.objectiveName || `Objective ${this.objectiveIndex + 1}`, {
                   fontFamily: pinFontFamily,
                   fontSize: pinTitleFontSize,
                   fill: pinTitleFontColor,
