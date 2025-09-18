@@ -80,6 +80,13 @@
                       </span>
                     {{/unless}}
                   {{/if}}
+                  <!-- GM Note -->
+                  {{#if (and ../isGM this.gmHint)}}
+                    <span class="objective-gm-note">
+                      <i class="fas fa-file-certificate"></i>
+                      {{this.gmHint}}
+                    </span>
+                  {{/if}}
                 </div>
               </li>
             {{/each}}

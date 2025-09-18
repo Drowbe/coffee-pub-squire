@@ -708,7 +708,32 @@
     margin-left: 0px;
     font-size: 0.80em;
 }
-.squire-tray[data-position="left"] .quest-entry-tasks .locked-objective-treasure i.fas.fa-lock {
+
+/* OBJECTIVE GM NOTE INDICATOR */
+
+
+
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-gm-note {
+    display: block;
+    color: rgba(198, 151, 6, 0.9);
+    margin-left: 0px;
+    font-size: 0.80em;
+    margin-top: 2px;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-gm-note i {
+    margin-right: 4px;
+    margin-left: 0px;
+    opacity: 0.8;
+    font-size: 0.8em;
+    vertical-align: baseline;
+}
+
+
+/* OBJECTIVE TREASURE INDICATOR */
+
+.squire-tray[data-position="left"] .quest-entry-tasks .locked-objective-treasure i {
     margin-right: 4px;
     margin-left: 0px;
     opacity: 0.7;
@@ -734,8 +759,10 @@
 
 /* Quest objective highlight when pin is clicked */
 .squire-tray[data-position="left"] .quest-entry-tasks li.objective-highlighted {
-    background-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 237, 78, 0.1);
+    border: 1px solid rgba(255, 237, 78, 0.9);
     transition: background-color 0.3s ease;
+    border-radius: 4px;
 }
 
 /* Quest entry highlight when quest-level pin is clicked */
