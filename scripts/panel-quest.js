@@ -1212,12 +1212,10 @@ export class QuestPanel {
         });
 
         
-        // Active objective click handler (GM only, pinned quests only)
+        // Active objective click handler (pinned quests only)
         html.find('.clickable-objective').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            
-            if (!game.user.isGM) return;
             
             const objectiveNumber = $(event.currentTarget);
             const taskIndex = parseInt(objectiveNumber.data('task-index'));
