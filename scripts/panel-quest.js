@@ -18,24 +18,7 @@ function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
-// Quest notification functions
-export function notifyQuestPinned(questName, questCategory) {
-    try {
-        const blacksmith = getBlacksmith();
-        if (!blacksmith?.addNotification) return;
-        
-        const icon = questCategory === "Main Quest" ? "fas fa-flag" : "fas fa-map-signs";
-        
-        blacksmith.addNotification(
-            questName,
-            icon,
-            0, // 0 = persistent until manually removed
-            MODULE.ID
-        );
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error sending quest pinned notification:', error);
-    }
-}
+// Quest notification functions - moved to QuestPanel class methods
 
 export function notifyObjectiveCompleted(objectiveText) {
     try {
@@ -69,16 +52,7 @@ export function notifyQuestCompleted(questName) {
     }
 }
 
-export function clearQuestNotifications() {
-    try {
-        const blacksmith = getBlacksmith();
-        if (!blacksmith?.clearNotificationsByModule) return;
-        
-        blacksmith.clearNotificationsByModule(MODULE.ID);
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error clearing quest notifications:', error);
-    }
-}
+// Quest notification functions - moved to QuestPanel class methods
 
 export class QuestPanel {
     constructor() {
@@ -96,8 +70,57 @@ export class QuestPanel {
         };
         this.allTags = new Set();
         this.isImporting = false; // Flag to prevent panel refreshes during import
+        this.questNotificationId = null; // Store quest notification ID for updates
         this._verifyAndUpdateCategories();
         this._setupHooks();
+    }
+
+    /**
+     * Notify that a quest has been pinned (update existing or create new)
+     * @param {string} questName - The quest name
+     * @param {string} questCategory - The quest category
+     */
+    notifyQuestPinned(questName, questCategory) {
+        try {
+            const blacksmith = getBlacksmith();
+            if (!blacksmith?.addNotification) return;
+            
+            const icon = questCategory === "Main Quest" ? "fas fa-flag" : "fas fa-map-signs";
+            
+            if (this.questNotificationId) {
+                // Update existing notification
+                blacksmith.updateNotification(this.questNotificationId, {
+                    text: questName,
+                    icon: icon,
+                    duration: 0 // Keep persistent
+                });
+            } else {
+                // Create new notification and store ID
+                this.questNotificationId = blacksmith.addNotification(
+                    questName,
+                    icon,
+                    0, // 0 = persistent until manually removed
+                    MODULE.ID
+                );
+            }
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error sending quest pinned notification:', error);
+        }
+    }
+
+    /**
+     * Clear quest notifications (remove the persistent quest notification)
+     */
+    clearQuestNotifications() {
+        try {
+            const blacksmith = getBlacksmith();
+            if (!blacksmith?.removeNotification || !this.questNotificationId) return;
+            
+            blacksmith.removeNotification(this.questNotificationId);
+            this.questNotificationId = null;
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error clearing quest notifications:', error);
+        }
     }
 
     /**
@@ -126,7 +149,7 @@ export class QuestPanel {
                     }
                     
                     // Send quest pinned notification
-                    notifyQuestPinned(questName, questCategory);
+                    this.notifyQuestPinned(questName, questCategory);
                 }
             }
         } catch (error) {
@@ -1182,7 +1205,7 @@ export class QuestPanel {
                 await this._clearActiveObjective(uuid);
                 
                 // Clear quest notifications when unpinning
-                clearQuestNotifications();
+                this.clearQuestNotifications();
             } else {
                 // Clear any existing pins
                 for (const cat in pinnedQuests) {
@@ -1199,7 +1222,7 @@ export class QuestPanel {
                 const questName = questPage?.name || 'Unknown Quest';
                 
                 // Send quest pinned notification
-                notifyQuestPinned(questName, category);
+                this.notifyQuestPinned(questName, category);
             }
             
             await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);

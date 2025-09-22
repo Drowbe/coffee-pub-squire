@@ -945,8 +945,10 @@ Hooks.on('disableModule', async (moduleId) => {
     if (moduleId === MODULE.ID) {
         // Clear quest notifications when module is disabled
         try {
-            const { clearQuestNotifications } = await import('./panel-quest.js');
-            clearQuestNotifications();
+            // Clear quest notifications through the panel manager
+            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.questPanel) {
+                game.modules.get('coffee-pub-squire').api.PanelManager.instance.questPanel.clearQuestNotifications();
+            }
         } catch (error) {
             console.error('Coffee Pub Squire | Error clearing quest notifications on disable:', error);
         }
