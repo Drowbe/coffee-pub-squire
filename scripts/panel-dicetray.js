@@ -1,9 +1,38 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { DiceTrayWindow } from './window-dicetray.js';
+import { PanelManager } from './manager-panel.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
+// Function to open dice tray from menubar
+export async function openDiceTray() {
+  try {
+    // Get the current actor from PanelManager
+    const actor = PanelManager.instance?.actor;
+    
+    // Create or get the dice tray panel
+    let dicetrayPanel = PanelManager.instance?.dicetrayPanel;
+    if (!dicetrayPanel) {
+      dicetrayPanel = new DiceTrayPanel({ actor });
+      PanelManager.instance.dicetrayPanel = dicetrayPanel;
+    }
+    
+    // If already popped out, just focus the window
+    if (dicetrayPanel.isPoppedOut && dicetrayPanel.window) {
+      dicetrayPanel.window.bringToTop();
+      return;
+    }
+    
+    // Pop out the dice tray
+    await dicetrayPanel._onPopOut();
+    
+  } catch (error) {
+    console.error('Coffee Pub Squire | Error opening dice tray:', error);
+    ui.notifications.error('Failed to open dice tray');
+  }
 }
 
 export class DiceTrayPanel {

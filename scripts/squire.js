@@ -361,6 +361,32 @@ Hooks.once('ready', async function() {
     // Register module settings
     registerSettings();
 
+    // Register dice tray with Blacksmith menubar
+    try {
+        const { openDiceTray } = await import('./panel-dicetray.js');
+        
+        const success = blacksmith.registerMenubarTool('squire-dice-tray', {
+            icon: "fa-solid fa-dice-d20",
+            name: "squire-dice-tray",
+            title: "Open Dice Tray",
+            zone: "middle",
+            order: 5,
+            moduleId: MODULE.ID,
+            gmOnly: false,
+            leaderOnly: false,
+            visible: true,
+            onClick: openDiceTray
+        });
+
+        if (success) {
+            console.log('Coffee Pub Squire | Successfully registered dice tray with Blacksmith menubar');
+        } else {
+            console.error('Coffee Pub Squire | Failed to register dice tray with Blacksmith menubar');
+        }
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering dice tray with Blacksmith menubar:', error);
+    }
+
 
     // Check if current user is excluded - with safety check for setting registration
     let excludedUsers = [];
