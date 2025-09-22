@@ -143,57 +143,16 @@ export class QuestPanel {
     async _getActiveObjectiveIndex(questUuid) {
         try {
             const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                `Getting active objectives from settings:`,
-                activeObjectives,
-                false,
-                false
-            );
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                `Looking for quest UUID: ${questUuid}`,
-                '',
-                false,
-                false
-            );
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                `Available keys in activeObjectives:`,
-                Object.keys(activeObjectives),
-                false,
-                false
-            );
-            // Handle nested structure where quest UUID might be under JournalEntry
-            let result = activeObjectives[questUuid] || null;
+            const activeData = activeObjectives.active;
             
-            // If not found directly, check if it's nested under JournalEntry
-            if (result === null && activeObjectives.JournalEntry) {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    MODULE.NAME,
-                    `Checking nested JournalEntry structure:`,
-                    activeObjectives.JournalEntry,
-                    false,
-                    false
-                );
-                const journalEntryId = questUuid.replace('JournalEntry.', '');
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    MODULE.NAME,
-                    `Looking for journalEntryId: ${journalEntryId}`,
-                    '',
-                    false,
-                    false
-                );
-                result = activeObjectives.JournalEntry[journalEntryId] || null;
+            if (activeData && typeof activeData === 'string') {
+                const [storedUuid, indexStr] = activeData.split('|');
+                if (storedUuid === questUuid) {
+                    return parseInt(indexStr);
+                }
             }
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                `Active objective for quest ${questUuid}: ${result}`,
-                '',
-                false,
-                false
-            );
-            return result;
+            
+            return null;
         } catch (error) {
             console.error('Coffee Pub Squire | Error getting active objective index:', error);
             return null;
@@ -209,32 +168,21 @@ export class QuestPanel {
     async _setActiveObjective(questUuid, objectiveIndex) {
         try {
             const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                `Before setting - activeObjectives:`,
-                activeObjectives,
-                false,
-                false
-            );
+            console.log('ACTIVE OBJECTIVE | Before setting - activeObjectives:', activeObjectives);
             
-            // Store as direct key, not nested
-            activeObjectives[questUuid] = objectiveIndex;
+            // Clear any existing active objective first
+            for (const key in activeObjectives) {
+                if (activeObjectives[key] !== null) {
+                    activeObjectives[key] = null;
+                }
+            }
             
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                `After setting - activeObjectives:`,
-                activeObjectives,
-                false,
-                false
-            );
+            // Set the new active objective using a simple key
+            activeObjectives.active = `${questUuid}|${objectiveIndex}`;
+            console.log('ACTIVE OBJECTIVE | After setting - activeObjectives:', activeObjectives);
+            console.log('ACTIVE OBJECTIVE | Saving questUuid:', questUuid, 'objectiveIndex:', objectiveIndex);
             await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                `Saved active objective ${objectiveIndex} for quest ${questUuid}`,
-                '',
-                false,
-                false
-            );
+            console.log('ACTIVE OBJECTIVE | Saved successfully');
         } catch (error) {
             console.error('Coffee Pub Squire | Error setting active objective:', error);
         }
@@ -248,8 +196,15 @@ export class QuestPanel {
     async _clearActiveObjective(questUuid) {
         try {
             const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
-            delete activeObjectives[questUuid];
-            await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
+            const activeData = activeObjectives.active;
+            
+            if (activeData && typeof activeData === 'string') {
+                const [storedUuid] = activeData.split('|');
+                if (storedUuid === questUuid) {
+                    activeObjectives.active = null;
+                    await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
+                }
+            }
         } catch (error) {
             console.error('Coffee Pub Squire | Error clearing active objective:', error);
         }
@@ -261,7 +216,9 @@ export class QuestPanel {
      */
     async _clearAllActiveObjectives() {
         try {
-            await game.user.setFlag(MODULE.ID, 'activeObjectives', {});
+            const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
+            activeObjectives.active = null;
+            await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
         } catch (error) {
             console.error('Coffee Pub Squire | Error clearing all active objectives:', error);
         }
@@ -1271,36 +1228,20 @@ export class QuestPanel {
             // Get current active objective for this quest
             const currentActiveIndex = await this._getActiveObjectiveIndex(questUuid);
             
+            console.log('ACTIVE OBJECTIVE | Clicking objective:', { questUuid, taskIndex, currentActiveIndex });
+            
             if (currentActiveIndex === taskIndex) {
                 // If clicking the same objective, clear it
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    MODULE.NAME,
-                    `Clearing active objective for quest ${questUuid}`,
-                    '',
-                    false,
-                    false
-                );
+                console.log('ACTIVE OBJECTIVE | Clearing active objective');
                 await this._clearActiveObjective(questUuid);
                 ui.notifications.info('Active objective cleared.');
             } else {
                 // Clear ALL active objectives first (only one can be active at a time)
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    MODULE.NAME,
-                    `Clearing all active objectives before setting new one`,
-                    '',
-                    false,
-                    false
-                );
+                console.log('ACTIVE OBJECTIVE | Clearing all active objectives');
                 await this._clearAllActiveObjectives();
                 
                 // Set new active objective
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    MODULE.NAME,
-                    `Setting active objective ${taskIndex} for quest ${questUuid}`,
-                    '',
-                    false,
-                    false
-                );
+                console.log('ACTIVE OBJECTIVE | Setting active objective:', { questUuid, taskIndex });
                 await this._setActiveObjective(questUuid, taskIndex);
                 ui.notifications.info(`Objective ${taskIndex + 1} set as active.`);
             }
@@ -2520,6 +2461,23 @@ export class QuestPanel {
         const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
         // Get the current pinned quest (only one allowed)
         const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+        
+        // Get active objectives (only one can be active at a time)
+        const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
+        const activeData = activeObjectives.active;
+        
+        let activeQuestUuid = null;
+        let activeObjectiveIndex = null;
+        
+        if (activeData && typeof activeData === 'string') {
+            const [storedUuid, indexStr] = activeData.split('|');
+            activeQuestUuid = storedUuid;
+            activeObjectiveIndex = parseInt(indexStr);
+        }
+        
+        console.log('ACTIVE OBJECTIVE | Active objectives data:', activeObjectives);
+        console.log('ACTIVE OBJECTIVE | Active quest UUID:', activeQuestUuid);
+        console.log('ACTIVE OBJECTIVE | Active objective index:', activeObjectiveIndex);
 
         // Prepare template data
         let allTags;
@@ -2591,27 +2549,10 @@ export class QuestPanel {
                 entry.progress = entry.progress || 0;
                 entry.status = entry.status || 'Not Started';
 
-                // Add active objective data to tasks (only for pinned quests)
-                if (entry.isPinned && entry.tasks.length > 0) {
-                    const activeObjectiveIndex = await this._getActiveObjectiveIndex(entry.uuid);
-                    getBlacksmith()?.utils.postConsoleAndNotification(
-                        MODULE.NAME,
-                        `Loading active objective for quest ${entry.name} (${entry.uuid}): index=${activeObjectiveIndex}`,
-                        '',
-                        false,
-                        false
-                    );
+                // Add active objective data to tasks
+                if (entry.tasks.length > 0) {
                     for (let index = 0; index < entry.tasks.length; index++) {
-                        entry.tasks[index].isActive = index === activeObjectiveIndex;
-                        if (index === activeObjectiveIndex) {
-                            getBlacksmith()?.utils.postConsoleAndNotification(
-                                MODULE.NAME,
-                                `Set task ${index} as active for quest ${entry.name}`,
-                                '',
-                                false,
-                                false
-                            );
-                        }
+                        entry.tasks[index].isActive = (entry.uuid === activeQuestUuid && index === activeObjectiveIndex);
                     }
                 }
 
