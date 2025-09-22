@@ -387,6 +387,32 @@ Hooks.once('ready', async function() {
         console.error('Coffee Pub Squire | Error registering dice tray with Blacksmith menubar:', error);
     }
 
+    // Register macros with Blacksmith menubar
+    try {
+        const { openMacros } = await import('./panel-macros.js');
+        
+        const success = blacksmith.registerMenubarTool('squire-macros', {
+            icon: "fas fa-sun",
+            name: "squire-macros",
+            title: "Open Macros",
+            zone: "middle",
+            order: 6,
+            moduleId: MODULE.ID,
+            gmOnly: false,
+            leaderOnly: false,
+            visible: true,
+            onClick: openMacros
+        });
+
+        if (success) {
+            console.log('Coffee Pub Squire | Successfully registered macros with Blacksmith menubar');
+        } else {
+            console.error('Coffee Pub Squire | Failed to register macros with Blacksmith menubar');
+        }
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering macros with Blacksmith menubar:', error);
+    }
+
 
     // Check if current user is excluded - with safety check for setting registration
     let excludedUsers = [];

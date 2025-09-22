@@ -25,6 +25,34 @@ export function updateHotbarVisibility() {
   }
 }
 
+// Function to open macros window from menubar
+export async function openMacros() {
+  try {
+    // Get the current actor from PanelManager
+    const actor = PanelManager.instance?.actor;
+    
+    // Create or get the macros panel
+    let macrosPanel = PanelManager.instance?.macrosPanel;
+    if (!macrosPanel) {
+      macrosPanel = new MacrosPanel({ actor });
+      PanelManager.instance.macrosPanel = macrosPanel;
+    }
+    
+    // If already popped out, just focus the window
+    if (macrosPanel.isPoppedOut && macrosPanel.window) {
+      macrosPanel.window.bringToTop();
+      return;
+    }
+    
+    // Pop out the macros window
+    await macrosPanel._onPopOut();
+    
+  } catch (error) {
+    console.error('Coffee Pub Squire | Error opening macros:', error);
+    ui.notifications.error('Failed to open macros');
+  }
+}
+
 // Note: Hooks are now managed centrally by HookManager
 // No need to register hooks here anymore
 
