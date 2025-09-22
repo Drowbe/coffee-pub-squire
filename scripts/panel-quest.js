@@ -27,7 +27,7 @@ export function notifyQuestPinned(questName, questCategory) {
         const icon = questCategory === "Main Quest" ? "fas fa-flag" : "fas fa-map-signs";
         
         blacksmith.addNotification(
-            `Quest '${questName}' pinned to canvas`,
+            questName,
             icon,
             0, // 0 = persistent until manually removed
             MODULE.ID
@@ -43,7 +43,7 @@ export function notifyObjectiveCompleted(objectiveText) {
         if (!blacksmith?.addNotification) return;
         
         blacksmith.addNotification(
-            `Objective completed: ${objectiveText}`,
+            `${objectiveText} completed!`,
             "fas fa-check-circle",
             5, // 5 seconds
             MODULE.ID
