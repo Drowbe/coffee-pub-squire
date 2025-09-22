@@ -1553,7 +1553,19 @@ export class PanelManager {
                 HookManager.registerPanel('quest', this.questPanel);
                 HookManager.registerPanel('notes', this.notesPanel);
                 
-
+                // Register macros panel with updateHotbarVisibility function
+                if (this.macrosPanel) {
+                    HookManager.registerPanel('macros', {
+                        updateHotbarVisibility: () => {
+                            // Import the function from panel-macros.js
+                            import('./panel-macros.js').then(module => {
+                                if (module.updateHotbarVisibility) {
+                                    module.updateHotbarVisibility();
+                                }
+                            });
+                        }
+                    });
+                }
             }
         } catch (error) {
             console.error('Error registering panels with HookManager:', error);

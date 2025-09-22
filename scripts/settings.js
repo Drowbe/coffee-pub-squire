@@ -478,7 +478,15 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Boolean,
-        default: true
+        default: true,
+        onChange: () => {
+            // Update hotbar visibility when setting changes
+            import('./panel-macros.js').then(module => {
+                if (module.updateHotbarVisibility) {
+                    module.updateHotbarVisibility();
+                }
+            });
+        }
     });
 
 

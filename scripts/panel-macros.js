@@ -8,7 +8,7 @@ function getBlacksmith() {
 }
 
 // Hide Foundry hotbar if setting is enabled
-function updateHotbarVisibility() {
+export function updateHotbarVisibility() {
   // Only run if the setting is registered
   if (!game.settings.settings.has(`${MODULE.ID}.hideFoundryHotbar`)) return;
   const shouldHide = game.settings.get(MODULE.ID, 'hideFoundryHotbar');
@@ -44,6 +44,9 @@ export class MacrosPanel {
         if (this.actor) {
             this.actor.apps[this.id] = this;
         }
+        
+        // Update hotbar visibility when panel is created
+        updateHotbarVisibility();
     }
 
     async render(html, { showAddSlot = false } = {}) {
