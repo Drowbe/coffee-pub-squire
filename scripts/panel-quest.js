@@ -71,6 +71,7 @@ export class QuestPanel {
         this.allTags = new Set();
         this.isImporting = false; // Flag to prevent panel refreshes during import
         this.questNotificationId = null; // Store quest notification ID for updates
+        this.activeObjectiveNotificationId = null; // Store active objective notification ID for updates
         this._verifyAndUpdateCategories();
         this._setupHooks();
     }
@@ -120,6 +121,71 @@ export class QuestPanel {
             this.questNotificationId = null;
         } catch (error) {
             console.error('Coffee Pub Squire | Error clearing quest notifications:', error);
+        }
+    }
+
+    /**
+     * Notify that an objective is active (update existing or create new)
+     * @param {string} questName - The quest name
+     * @param {string} objectiveText - The objective text
+     * @param {number} objectiveNumber - The objective number
+     */
+    notifyActiveObjective(questName, objectiveText, objectiveNumber) {
+        try {
+            const blacksmith = getBlacksmith();
+            if (!blacksmith?.addNotification) {
+                console.log('ACTIVE OBJECTIVE | Blacksmith API not available');
+                return;
+            }
+            
+            const notificationText = objectiveText;
+            const icon = "fas fa-bullseye";
+            
+            console.log('ACTIVE OBJECTIVE | Notifying active objective:', {
+                questName,
+                objectiveText,
+                objectiveNumber,
+                notificationText,
+                existingId: this.activeObjectiveNotificationId
+            });
+            
+            if (this.activeObjectiveNotificationId) {
+                // Update existing notification
+                console.log('ACTIVE OBJECTIVE | Updating existing notification');
+                const result = blacksmith.updateNotification(this.activeObjectiveNotificationId, {
+                    text: notificationText,
+                    icon: icon,
+                    duration: 0 // Keep persistent
+                });
+                console.log('ACTIVE OBJECTIVE | Update result:', result);
+            } else {
+                // Create new notification and store ID
+                console.log('ACTIVE OBJECTIVE | Creating new notification');
+                this.activeObjectiveNotificationId = blacksmith.addNotification(
+                    notificationText,
+                    icon,
+                    0, // 0 = persistent until manually removed
+                    MODULE.ID
+                );
+                console.log('ACTIVE OBJECTIVE | Created notification with ID:', this.activeObjectiveNotificationId);
+            }
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error sending active objective notification:', error);
+        }
+    }
+
+    /**
+     * Clear active objective notification (remove the persistent active objective notification)
+     */
+    clearActiveObjectiveNotification() {
+        try {
+            const blacksmith = getBlacksmith();
+            if (!blacksmith?.removeNotification || !this.activeObjectiveNotificationId) return;
+            
+            blacksmith.removeNotification(this.activeObjectiveNotificationId);
+            this.activeObjectiveNotificationId = null;
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error clearing active objective notification:', error);
         }
     }
 
@@ -206,6 +272,33 @@ export class QuestPanel {
             console.log('ACTIVE OBJECTIVE | Saving questUuid:', questUuid, 'objectiveIndex:', objectiveIndex);
             await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
             console.log('ACTIVE OBJECTIVE | Saved successfully');
+            
+            // Get quest and objective details for notification from panel data
+            const questPage = await fromUuid(questUuid);
+            console.log('ACTIVE OBJECTIVE | Quest page loaded:', questPage);
+            if (questPage) {
+                const questName = questPage.name || 'Unknown Quest';
+                console.log('ACTIVE OBJECTIVE | Quest name:', questName);
+                
+                // Find the quest in our panel data
+                let questEntry = null;
+                for (const category of this.categories) {
+                    questEntry = this.data[category]?.find(entry => entry.uuid === questUuid);
+                    if (questEntry) break;
+                }
+                
+                console.log('ACTIVE OBJECTIVE | Quest entry found:', questEntry);
+                if (questEntry?.tasks && questEntry.tasks[objectiveIndex]) {
+                    const objectiveText = questEntry.tasks[objectiveIndex].text || 'Unknown Objective';
+                    const objectiveNumber = objectiveIndex + 1;
+                    console.log('ACTIVE OBJECTIVE | Objective text:', objectiveText, 'Number:', objectiveNumber);
+                    this.notifyActiveObjective(questName, objectiveText, objectiveNumber);
+                } else {
+                    console.log('ACTIVE OBJECTIVE | No quest entry or tasks found in panel data');
+                }
+            } else {
+                console.log('ACTIVE OBJECTIVE | Quest page not found');
+            }
         } catch (error) {
             console.error('Coffee Pub Squire | Error setting active objective:', error);
         }
@@ -226,6 +319,9 @@ export class QuestPanel {
                 if (storedUuid === questUuid) {
                     activeObjectives.active = null;
                     await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
+                    
+                    // Clear the active objective notification
+                    this.clearActiveObjectiveNotification();
                 }
             }
         } catch (error) {
@@ -242,6 +338,9 @@ export class QuestPanel {
             const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
             activeObjectives.active = null;
             await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
+            
+            // Clear the active objective notification
+            this.clearActiveObjectiveNotification();
         } catch (error) {
             console.error('Coffee Pub Squire | Error clearing all active objectives:', error);
         }
@@ -2499,6 +2598,34 @@ export class QuestPanel {
         console.log('ACTIVE OBJECTIVE | Active objectives data:', activeObjectives);
         console.log('ACTIVE OBJECTIVE | Active quest UUID:', activeQuestUuid);
         console.log('ACTIVE OBJECTIVE | Active objective index:', activeObjectiveIndex);
+
+        // Show active objective notification if there's an active objective
+        if (activeQuestUuid && activeObjectiveIndex !== null) {
+            try {
+                const questPage = await fromUuid(activeQuestUuid);
+                if (questPage) {
+                    const questName = questPage.name || 'Unknown Quest';
+                    
+                    // Find the quest in our panel data
+                    let questEntry = null;
+                    for (const category of this.categories) {
+                        questEntry = this.data[category]?.find(entry => entry.uuid === activeQuestUuid);
+                        if (questEntry) break;
+                    }
+                    
+                    if (questEntry?.tasks && questEntry.tasks[activeObjectiveIndex]) {
+                        const objectiveText = questEntry.tasks[activeObjectiveIndex].text || 'Unknown Objective';
+                        const objectiveNumber = activeObjectiveIndex + 1;
+                        this.notifyActiveObjective(questName, objectiveText, objectiveNumber);
+                    }
+                }
+            } catch (error) {
+                console.error('Coffee Pub Squire | Error loading active objective notification:', error);
+            }
+        } else {
+            // Clear notification if no active objective
+            this.clearActiveObjectiveNotification();
+        }
 
         // Prepare template data
         let allTags;
