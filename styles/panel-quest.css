@@ -319,6 +319,37 @@
     text-align: center;
 }
 
+/* Active Objective Styling */
+.squire-tray[data-position="left"] .objective-number.active {
+    border: 2px solid #4CAF50;
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    font-weight: 900;
+}
+
+.squire-tray[data-position="left"] .objective-text.active {
+    position: relative;
+}
+
+.squire-tray[data-position="left"] .objective-text.active::before {
+    content: "[ACTIVE] ";
+    color: #4CAF50;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+/* Clickable Objective Number */
+.squire-tray[data-position="left"] .objective-number.clickable-objective {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .objective-number.clickable-objective:hover {
+    border-color: rgba(76, 175, 80, 0.6);
+    background-color: rgba(76, 175, 80, 0.1);
+    transform: scale(1.05);
+}
+
 /* IMAGE */
 
 .squire-tray[data-position="left"] .quest-entry-image {

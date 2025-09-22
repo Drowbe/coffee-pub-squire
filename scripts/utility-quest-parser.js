@@ -239,7 +239,7 @@ export class QuestParser {
         if (lastP) {
             let ul = lastP.nextElementSibling;
             if (ul && ul.tagName === 'UL') {
-                entry.tasks = Array.from(ul.querySelectorAll('li')).map(li => {
+                entry.tasks = Array.from(ul.querySelectorAll('li')).map((li, index) => {
                     // Detect state by child tags
                     let state = 'active';
                     let text = li.textContent.trim();
@@ -308,7 +308,8 @@ export class QuestParser {
                         gmHint,
                         treasureUnlocks,
                         state,
-                        completed: state === 'completed'
+                        completed: state === 'completed',
+                        objectiveNumber: index + 1
                     };
                 }).filter(t => t.text);
             }

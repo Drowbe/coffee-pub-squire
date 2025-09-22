@@ -59,9 +59,9 @@
                 <!-- Objective Checkbox -->
                 <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else if (eq this.state 'hidden')}}fa-square-question{{else}}fa-square{{/if}} task-checkbox" {{#if ../isGM}}data-task-index="{{@index}}" data-task-state="{{this.state}}"{{/if}}></i>
                 <!-- Objective Number -->
-                <span class="objective-number">{{this.objectiveNumber}}</span>
+                <span class="objective-number{{#if this.isActive}} active{{/if}}{{#if (and ../isPinned ../isGM)}} clickable-objective{{/if}}" {{#if (and ../isPinned ../isGM)}}data-task-index="{{@index}}" data-quest-uuid="{{../entry.uuid}}" title="Click to set as active objective"{{/if}}>{{this.objectiveNumber}}</span>
                 <!-- Objective Text -->
-                <div class="objective-text{{#if ../isGM}} objective-text-draggable{{/if}}" draggable="{{#if ../isGM}}true{{else}}false{{/if}}" {{#if (and ../isGM this.gmHint)}}data-tooltip="GM Note: {{this.gmHint}}"{{/if}}>
+                <div class="objective-text{{#if ../isGM}} objective-text-draggable{{/if}}{{#if this.isActive}} active{{/if}}" draggable="{{#if ../isGM}}true{{else}}false{{/if}}" {{#if (and ../isGM this.gmHint)}}data-tooltip="GM Note: {{this.gmHint}}"{{/if}}>
                     {{#if (and (eq this.state 'hidden') (not ../isGM))}}
                       Objective not discovered
                     {{else}}
