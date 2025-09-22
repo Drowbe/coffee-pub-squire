@@ -281,33 +281,49 @@ Hooks.once('init', async function() {
     const questEntryPartial = await fetch(`modules/${MODULE.ID}/templates/partials/quest-entry.hbs`).then(response => response.text());
     Handlebars.registerPartial('quest-entry', questEntryPartial);
     
-    // Register handle section partials
-    const handleHealthPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-health.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-health', handleHealthPartial);
+    // Register handle section partials with error handling
+    const partials = [
+        { name: 'handle-health', path: 'handle-health.hbs' },
+        { name: 'handle-health-tray', path: 'handle-health-tray.hbs' },
+        { name: 'handle-dice-tray', path: 'handle-dice-tray.hbs' },
+        { name: 'handle-macros', path: 'handle-macros.hbs' },
+        { name: 'handle-favorites', path: 'handle-favorites.hbs' },
+        { name: 'handle-conditions', path: 'handle-conditions.hbs' },
+        { name: 'handle-primary-stats', path: 'handle-primary-stats.hbs' },
+        { name: 'handle-secondary-stats', path: 'handle-secondary-stats.hbs' }
+    ];
     
-    const handleHealthTrayPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-health-tray.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-health-tray', handleHealthTrayPartial);
+    for (const partial of partials) {
+        try {
+            const partialContent = await fetch(`modules/${MODULE.ID}/templates/partials/${partial.path}`).then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${partial.path}: ${response.status} ${response.statusText}`);
+                }
+                return response.text();
+            });
+            Handlebars.registerPartial(partial.name, partialContent);
+            console.log(`Coffee Pub Squire | Successfully registered ${partial.name} partial`);
+        } catch (error) {
+            console.error(`Coffee Pub Squire | Error registering ${partial.name} partial:`, error);
+            // Register a fallback partial to prevent template errors
+            Handlebars.registerPartial(partial.name, `{{!-- ${partial.name} partial failed to load --}}`);
+        }
+    }
     
-    const handleDiceTrayPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-dice-tray.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-dice-tray', handleDiceTrayPartial);
-    
-    const handleMacrosPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-macros.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-macros', handleMacrosPartial);
-    
-    const handleFavoritesPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-favorites.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-favorites', handleFavoritesPartial);
-    
-    const handleConditionsPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-conditions.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-conditions', handleConditionsPartial);
-    
-    const handlePrimaryStatsPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-primary-stats.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-primary-stats', handlePrimaryStatsPartial);
-    
-    const handleSecondaryStatsPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-secondary-stats.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-secondary-stats', handleSecondaryStatsPartial);
-    
-    const handleCharacterPortraitPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-character-portrait.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-character-portrait', handleCharacterPortraitPartial);
+    try {
+        const handleCharacterPortraitPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-character-portrait.hbs`).then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch handle-character-portrait.hbs: ${response.status} ${response.statusText}`);
+            }
+            return response.text();
+        });
+        Handlebars.registerPartial('handle-character-portrait', handleCharacterPortraitPartial);
+        console.log('Coffee Pub Squire | Successfully registered handle-character-portrait partial');
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering handle-character-portrait partial:', error);
+        // Register a fallback partial to prevent template errors
+        Handlebars.registerPartial('handle-character-portrait', '{{!-- Character portrait partial failed to load --}}');
+    }
     
     // Set up API to expose PanelManager to other modules
     game.modules.get(MODULE.ID).api = {

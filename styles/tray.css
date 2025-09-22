@@ -5,7 +5,7 @@
     --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
     --squire-tray-top-offset: 70px;
     --squire-tray-bottom-offset: 300px;
-    --squire-tray-pinned-offset: 10px;
+    --squire-tray-pinned-offset: 35px;
     --squire-tray-banner-image: url('../images/banner-character-dark.webp');
 }
 
