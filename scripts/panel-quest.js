@@ -18,6 +18,68 @@ function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+// Quest notification functions
+export function notifyQuestPinned(questName, questCategory) {
+    try {
+        const blacksmith = getBlacksmith();
+        if (!blacksmith?.addNotification) return;
+        
+        const icon = questCategory === "Main Quest" ? "fas fa-flag" : "fas fa-map-signs";
+        
+        blacksmith.addNotification(
+            `Quest '${questName}' pinned to canvas`,
+            icon,
+            0, // 0 = persistent until manually removed
+            MODULE.ID
+        );
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error sending quest pinned notification:', error);
+    }
+}
+
+export function notifyObjectiveCompleted(objectiveText) {
+    try {
+        const blacksmith = getBlacksmith();
+        if (!blacksmith?.addNotification) return;
+        
+        blacksmith.addNotification(
+            `Objective completed: ${objectiveText}`,
+            "fas fa-check-circle",
+            5, // 5 seconds
+            MODULE.ID
+        );
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error sending objective completed notification:', error);
+    }
+}
+
+export function notifyQuestCompleted(questName) {
+    try {
+        const blacksmith = getBlacksmith();
+        if (!blacksmith?.addNotification) return;
+        
+        blacksmith.addNotification(
+            `Quest '${questName}' completed!`,
+            "fas fa-trophy",
+            5, // 5 seconds
+            MODULE.ID
+        );
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error sending quest completed notification:', error);
+    }
+}
+
+export function clearQuestNotifications() {
+    try {
+        const blacksmith = getBlacksmith();
+        if (!blacksmith?.clearNotificationsByModule) return;
+        
+        blacksmith.clearNotificationsByModule(MODULE.ID);
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error clearing quest notifications:', error);
+    }
+}
+
 export class QuestPanel {
     constructor() {
         this.element = null;
@@ -36,6 +98,40 @@ export class QuestPanel {
         this.isImporting = false; // Flag to prevent panel refreshes during import
         this._verifyAndUpdateCategories();
         this._setupHooks();
+    }
+
+    /**
+     * Check for pinned quests and show notification if found
+     * @private
+     */
+    async _checkAndNotifyPinnedQuest() {
+        try {
+            // Get pinned quests
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+            
+            if (pinnedQuestUuid) {
+                // Get the quest page to get name and category
+                const questPage = await fromUuid(pinnedQuestUuid);
+                if (questPage) {
+                    const questName = questPage.name || 'Unknown Quest';
+                    
+                    // Find which category this quest is pinned to
+                    let questCategory = 'Main Quest'; // default
+                    for (const [category, uuid] of Object.entries(pinnedQuests)) {
+                        if (uuid === pinnedQuestUuid) {
+                            questCategory = category;
+                            break;
+                        }
+                    }
+                    
+                    // Send quest pinned notification
+                    notifyQuestPinned(questName, questCategory);
+                }
+            }
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error checking pinned quest:', error);
+        }
     }
 
     /**
@@ -824,6 +920,10 @@ export class QuestPanel {
                     
                     // Now wrap in <s>
                     li.innerHTML = `<s>${li.innerHTML}</s>`;
+                    
+                    // Send objective completed notification
+                    const objectiveText = li.textContent.trim();
+                    notifyObjectiveCompleted(objectiveText);
                 }
                 const newTasksHtml = ul.innerHTML;
                 let newContent = content.replace(tasksMatch[1], newTasksHtml);
@@ -851,6 +951,10 @@ export class QuestPanel {
                             originalCategory = currentCategory;
                             await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
                         }
+                        
+                        // Send quest completed notification
+                        const questName = page.name || 'Unknown Quest';
+                        notifyQuestCompleted(questName);
                         
                         // Remove automatic category change to Completed
                     }
@@ -983,6 +1087,9 @@ export class QuestPanel {
                         pinnedQuests[cat] = null;
                     }
                 }
+                
+                // Clear quest notifications when unpinning
+                clearQuestNotifications();
             } else {
                 // Clear any existing pins
                 for (const cat in pinnedQuests) {
@@ -990,6 +1097,13 @@ export class QuestPanel {
                 }
                 // Pin this quest
                 pinnedQuests[category] = uuid;
+                
+                // Get quest name for notification
+                const questPage = await fromUuid(uuid);
+                const questName = questPage?.name || 'Unknown Quest';
+                
+                // Send quest pinned notification
+                notifyQuestPinned(questName, category);
             }
             
             await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
@@ -2201,6 +2315,9 @@ export class QuestPanel {
 
         // Always refresh data (safe even if no journal)
         await this._refreshData();
+
+        // Check for pinned quests and show notification
+        await this._checkAndNotifyPinnedQuest();
 
         // Get collapsed states
         const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
