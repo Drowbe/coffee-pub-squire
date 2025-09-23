@@ -1135,16 +1135,13 @@ export class PartyPanel {
                 const button = event.currentTarget;
                 const transferId = button.dataset.transferId;
                 const isAccept = button.classList.contains('accept');
-                const gmMessage = game.messages.find(m => 
-                    m.getFlag(MODULE.ID, 'transferId') === transferId && 
-                    m.getFlag(MODULE.ID, 'type') === 'transferRequest' &&
-                    m.getFlag(MODULE.ID, 'data')
-                );
-                if (!gmMessage) {
-                    ui.notifications.error("Transfer request not found");
+                
+                // Get transfer data from the current message (the one with the buttons)
+                const transferData = message.getFlag(MODULE.ID, 'data');
+                if (!transferData) {
+                    ui.notifications.error("Transfer request data not found");
                     return;
                 }
-                const transferData = gmMessage.getFlag(MODULE.ID, 'data');
                 const sourceActor = game.actors.get(transferData.sourceActorId);
                 const targetActor = game.actors.get(transferData.targetActorId);
                 const item = sourceActor?.items.get(transferData.itemId);

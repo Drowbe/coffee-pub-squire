@@ -1552,6 +1552,8 @@ export class PanelManager {
                 HookManager.registerPanel('codex', this.codexPanel);
                 HookManager.registerPanel('quest', this.questPanel);
                 HookManager.registerPanel('notes', this.notesPanel);
+                HookManager.registerPanel('party', this.partyPanel);
+                HookManager.registerPanel('partyStats', this.partyStatsPanel);
                 
                 // Register macros panel with updateHotbarVisibility function
                 if (this.macrosPanel) {
