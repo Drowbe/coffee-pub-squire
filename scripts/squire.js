@@ -368,7 +368,7 @@ Hooks.once('ready', async function() {
         const success = blacksmith.registerMenubarTool('squire-dice-tray', {
             icon: "fa-solid fa-dice-d20",
             name: "squire-dice-tray",
-            title: "Open Dice Tray",
+            title: "Dice Tray",
             zone: "middle",
             order: 5,
             moduleId: MODULE.ID,
@@ -394,7 +394,7 @@ Hooks.once('ready', async function() {
         const success = blacksmith.registerMenubarTool('squire-macros', {
             icon: "fas fa-sun",
             name: "squire-macros",
-            title: "Open Macros",
+            title: "Macros",
             zone: "middle",
             order: 6,
             moduleId: MODULE.ID,

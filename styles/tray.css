@@ -5,7 +5,7 @@
     --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
     --squire-tray-top-offset: 70px;
     --squire-tray-bottom-offset: 300px;
-    --squire-tray-pinned-offset: 35px;
+    --squire-tray-pinned-offset: 10px;
     --squire-tray-banner-image: url('../images/banner-character-dark.webp');
 }
 
@@ -78,9 +78,9 @@
 /* Drop Zone Styles */
 /* TRAY Left Position */
 .squire-tray[data-position="left"] {
-    top: var(--squire-tray-top-offset);
+    top: calc(var(--squire-tray-top-offset) + var(--blacksmith-menubar-interface-offset));
     left: 0px;
-    height: calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset));
+    height: calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset) - var(--blacksmith-menubar-interface-offset));
     border-radius: 8px 8px 8px 8px;
     display: flex;
     padding: 8px;
@@ -90,8 +90,9 @@
 
 /* Pinned state positioning */
 .squire-tray[data-position="left"].pinned {
-    top: var(--squire-tray-pinned-offset);
-    height: calc(100vh - calc(var(--squire-tray-pinned-offset) * 2));
+    /* we need to allow for the blacksmith menubar interface offset */
+    top: calc(var(--squire-tray-pinned-offset) + var(--blacksmith-menubar-interface-offset)); 
+    height: calc(100vh - calc(var(--squire-tray-pinned-offset) * 2) - var(--blacksmith-menubar-interface-offset));
 }
 
 /* Expanded Position */
