@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [12.1.4] - Bug Squashing
+
+### Added
+- **Active Objective Notifications**: QuestPanel now manages active objective notifications using Blacksmith API
+- **Quest Notification Management**: Enhanced quest notification system with proper creation, updates, and cleanup
+- **Party Panel Integration**: Added party and partyStats panels to PanelManager for improved party management
+- **Menubar Tool Registration**: Integrated macros functionality with Blacksmith menubar system
+
+### Changed
+- **Menubar Tool Titles**: Updated menubar tool titles for clarity - "Open Dice Tray" → "Dice Tray", "Open Macros" → "Macros"
+- **Tray Positioning**: Enhanced CSS positioning to account for Blacksmith menubar interface offset
+- **Quest Notification Messages**: Improved clarity of quest notification messages for better user feedback
+- **Panel Manager Structure**: Enhanced panel management system with proper party panel integration
+
+### Fixed
+- **Tray Layout Issues**: Fixed tray positioning conflicts with Blacksmith menubar interface
+- **Quest Notification Cleanup**: Improved quest notification cleanup when module is disabled
+- **Panel Registration**: Fixed party and partyStats panel registration in PanelManager
+- **Active Objective Management**: Enhanced active objective notification handling with proper ID tracking
+
+
 ## [12.1.3] - Quest Improvements
 
 ### Added
