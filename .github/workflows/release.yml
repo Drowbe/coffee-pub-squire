@@ -36,6 +36,7 @@ jobs:
             images/ \
             transfers/ \
             product/ \
+            prompts/ \
             -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
 
       # Create release
