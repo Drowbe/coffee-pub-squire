@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [12.1.5] - Bug Squashing
+
+### Fixed
+- **Codex Import Template**: Updated codex import to load template from `prompts/prompt-codex.txt` file instead of hardcoded template
+- **Rulebooks Replacement**: Codex import now properly replaces `[ADD-RULEBOOKS-HERE]` placeholder with user's default rulebooks setting
+- **Build Workflow**: Added `prompts/` folder to GitHub workflow build process to ensure prompt files are included in releases
+
+### Changed
+- **Consistent Template Loading**: Both quest and codex imports now use the same dynamic template loading approach
+- **Template Management**: Moved codex template from hardcoded JavaScript to external text file for easier maintenance
 
 ## [12.1.4] - Bug Squashing
 
