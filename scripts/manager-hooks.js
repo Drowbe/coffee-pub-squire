@@ -898,19 +898,19 @@ export class HookManager {
             "createItem",
             async (item) => {
                 const panelManager = getPanelManager();
-                // Only process if this item belongs to the actor currently being managed by Squire
-                if (panelManager?.currentActor?.id !== item.parent?.id) {
-                    return;
-                }
                 
                 // Only process if PanelManager instance exists
                 if (!panelManager?.instance) {
                     return;
                 }
                 
-                // No need to recreate the entire tray - just update relevant panels and handle
-                await panelManager.instance.renderPanels(panelManager.instance.element);
-                await panelManager.instance.updateHandle();
+                // Check if this item belongs to an actor that the current user owns
+                // This ensures the tray updates for the player receiving the item, regardless of which actor is currently displayed
+                if (item.parent && item.parent.isOwner) {
+                    // No need to recreate the entire tray - just update relevant panels and handle
+                    await panelManager.instance.renderPanels(panelManager.instance.element);
+                    await panelManager.instance.updateHandle();
+                }
             },
             ['global']
         );
