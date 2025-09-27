@@ -9,6 +9,32 @@ import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 import { HookManager } from './manager-hooks.js';
 
+
+
+
+// ================================================================== 
+// ===== BEGIN: BLACKSMITH API REGISTRATIONS ========================
+// ================================================================== 
+import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
+Hooks.once('ready', () => {
+    try {
+        // Register your module with Blacksmith
+        BlacksmithModuleManager.registerModule(MODULE.ID, {
+            name: MODULE.NAME,
+            version: MODULE.VERSION
+        });
+        console.log('✅ Module ' + MODULE.NAME + ' registered with Blacksmith successfully');
+    } catch (error) {
+        console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
+    }
+});
+// ================================================================== 
+// ===== END: BLACKSMITH API REGISTRATIONS ==========================
+// ================================================================== 
+
+
+
+
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
