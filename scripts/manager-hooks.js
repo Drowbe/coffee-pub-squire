@@ -363,6 +363,16 @@ export class HookManager {
     static registerPanel(panelType, panel) {
         HookManager[`${panelType}Panel`] = panel;
         
+        // If this is the party panel and we have a stored hook ID, activate the hook
+        if (panelType === 'party' && HookManager.partyRenderChatMessageHookId) {
+            // The hook is already registered, just ensure it's active
+            const hookInfo = HookManager.hookRegistry.get('renderChatMessage');
+            if (hookInfo && !hookInfo.isActive) {
+                Hooks.on('renderChatMessage', hookInfo.handler);
+                hookInfo.isActive = true;
+            }
+        }
+        
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
             `Panel registered with HookManager`,
@@ -587,6 +597,9 @@ export class HookManager {
             },
             ['party']
         );
+        
+        // Store the hook ID for later activation when party panel is registered
+        HookManager.partyRenderChatMessageHookId = partyRenderChatMessageHookId;
         
         // Macros Panel Hooks - Consolidated
         const macrosReadyHookId = HookManager.registerHook(
