@@ -20,6 +20,7 @@ import { MODULE, SQUIRE } from './const.js';
 import { getBlacksmith } from './helpers.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { QuestPin, loadPersistedPins } from './quest-pin.js';
+// BlacksmithHookManager is available as a global object after importing the bridge file
 
 // Helper function to get PanelManager dynamically to avoid circular dependencies
 function getPanelManager() {
@@ -517,146 +518,170 @@ export class HookManager {
             // Update the health panel with the selected tokens
             const panelManager = getPanelManager();
             if (panelManager?.instance && panelManager.instance.healthPanel) {
-                await panelManager.instance.healthPanel.updateFromTokens(controlledTokens);
+                panelManager.instance.healthPanel.updateActors(controlledTokens.map(token => token.actor));
             }
         }
         
         // Journal Entry Page Update Hook - Consolidated
-        const journalHookId = HookManager.registerHook(
-            "updateJournalEntryPage", 
-            async (page, changes, options, userId) => {
+        const journalHookId = BlacksmithHookManager.registerHook({
+            name: "updateJournalEntryPage",
+            description: "Coffee Pub Squire: Handle journal entry page updates for codex, quest, notes, and quest pins",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (page, changes, options, userId) => {
                 await this._handleJournalEntryPageUpdate(page, changes, options, userId);
-            },
-            ['codex', 'quest', 'notes', 'questPins']
-        );
+            }
+        });
         
         // Character Panel Hooks - Consolidated
-        const characterActorHookId = HookManager.registerHook(
-            "updateActor",
-            (document, change) => {
+        const characterActorHookId = BlacksmithHookManager.registerHook({
+            name: "updateActor",
+            description: "Coffee Pub Squire: Handle actor updates for character panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (document, change) => {
                 // Route to character panel if it exists
                 if (HookManager.characterPanel && HookManager.characterPanel._onActorUpdate) {
                     HookManager.characterPanel._onActorUpdate(document, change);
                 }
-            },
-            ['character']
-        );
+            }
+        });
         
-        const characterTokenHookId = HookManager.registerHook(
-            "updateToken",
-            (document, change) => {
+        const characterTokenHookId = BlacksmithHookManager.registerHook({
+            name: "updateToken",
+            description: "Coffee Pub Squire: Handle token updates for character panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (document, change) => {
                 // Route to character panel if it exists
                 if (HookManager.characterPanel && HookManager.characterPanel._onActorUpdate) {
                     HookManager.characterPanel._onActorUpdate(document, change);
                 }
-            },
-            ['character']
-        );
+            }
+        });
         
         // Party Panel Hooks - Consolidated
-        const partyTokenHookId = HookManager.registerHook(
-            "updateToken",
-            (document, change) => {
+        const partyTokenHookId = BlacksmithHookManager.registerHook({
+            name: "updateToken",
+            description: "Coffee Pub Squire: Handle token updates for party panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (document, change) => {
                 // Route to party panel if it exists
                 if (HookManager.partyPanel && HookManager.partyPanel._onTokenUpdate) {
                     HookManager.partyPanel._onTokenUpdate(document, change);
                 }
-            },
-            ['party']
-        );
+            }
+        });
         
-        const partyActorHookId = HookManager.registerHook(
-            "updateActor",
-            (document, change) => {
+        const partyActorHookId = BlacksmithHookManager.registerHook({
+            name: "updateActor",
+            description: "Coffee Pub Squire: Handle actor updates for party panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (document, change) => {
                 // Route to party panel if it exists
                 if (HookManager.partyPanel && HookManager.partyPanel._onActorUpdate) {
                     HookManager.partyPanel._onActorUpdate(document, change);
                 }
-            },
-            ['party']
-        );
+            }
+        });
         
-        const partyControlTokenHookId = HookManager.registerHook(
-            "controlToken",
-            (token, controlled) => {
+        const partyControlTokenHookId = BlacksmithHookManager.registerHook({
+            name: "controlToken",
+            description: "Coffee Pub Squire: Handle token control for party panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (token, controlled) => {
                 // Route to party panel if it exists
                 if (HookManager.partyPanel && HookManager.partyPanel._onControlToken) {
                     HookManager.partyPanel._onControlToken(token, controlled);
                 }
-            },
-            ['party']
-        );
+            }
+        });
         
-        const partyRenderChatMessageHookId = HookManager.registerHook(
-            "renderChatMessage",
-            (message, html, data) => {
+        const partyRenderChatMessageHookId = BlacksmithHookManager.registerHook({
+            name: "renderChatMessage",
+            description: "Coffee Pub Squire: Handle chat message rendering for party panel transfer buttons",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (message, html, data) => {
                 // Route to party panel if it exists
                 if (HookManager.partyPanel && HookManager.partyPanel._handleTransferButtons) {
                     HookManager.partyPanel._handleTransferButtons(message, html, data);
                 }
-            },
-            ['party']
-        );
+            }
+        });
         
         // Store the hook ID for later activation when party panel is registered
         HookManager.partyRenderChatMessageHookId = partyRenderChatMessageHookId;
         
         // Macros Panel Hooks - Consolidated
-        const macrosReadyHookId = HookManager.registerHook(
-            "ready",
-            () => {
+        const macrosReadyHookId = BlacksmithHookManager.registerHook({
+            name: "ready",
+            description: "Coffee Pub Squire: Handle ready event for macros panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
                 // Route to macros panel if it exists
                 if (HookManager.macrosPanel && HookManager.macrosPanel.updateHotbarVisibility) {
                     HookManager.macrosPanel.updateHotbarVisibility();
                 }
-            },
-            ['macros']
-        );
+            }
+        });
         
-        const macrosRenderSettingsConfigHookId = HookManager.registerHook(
-            "renderSettingsConfig",
-            () => {
+        const macrosRenderSettingsConfigHookId = BlacksmithHookManager.registerHook({
+            name: "renderSettingsConfig",
+            description: "Coffee Pub Squire: Handle settings config rendering for macros panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
                 // Route to macros panel if it exists
                 if (HookManager.macrosPanel && HookManager.macrosPanel.updateHotbarVisibility) {
                     HookManager.macrosPanel.updateHotbarVisibility();
                 }
-            },
-            ['macros']
-        );
+            }
+        });
         
         // Party Stats Panel Hooks - Consolidated
-        const partyStatsUpdateCombatHookId = HookManager.registerHook(
-            "updateCombat",
-            (combat, change) => {
+        const partyStatsUpdateCombatHookId = BlacksmithHookManager.registerHook({
+            name: "updateCombat",
+            description: "Coffee Pub Squire: Handle combat updates for party stats panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (combat, change) => {
                 // Route to party stats panel if it exists
                 if (HookManager.partyStatsPanel && HookManager.partyStatsPanel._boundUpdateHandler) {
                     HookManager.partyStatsPanel._boundUpdateHandler(combat, change);
                 }
-            },
-            ['partyStats']
-        );
+            }
+        });
         
-        const partyStatsUpdateActorHookId = HookManager.registerHook(
-            "updateActor",
-            (actor, change) => {
+        const partyStatsUpdateActorHookId = BlacksmithHookManager.registerHook({
+            name: "updateActor",
+            description: "Coffee Pub Squire: Handle actor updates for party stats panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (actor, change) => {
                 // Route to party stats panel if it exists
                 if (HookManager.partyStatsPanel && HookManager.partyStatsPanel._boundUpdateHandler) {
                     HookManager.partyStatsPanel._boundUpdateHandler(actor, change);
                 }
-            },
-            ['partyStats']
-        );
+            }
+        });
         
-        const partyStatsCreateChatMessageHookId = HookManager.registerHook(
-            "createChatMessage",
-            (message) => {
+        const partyStatsCreateChatMessageHookId = BlacksmithHookManager.registerHook({
+            name: "createChatMessage",
+            description: "Coffee Pub Squire: Handle chat message creation for party stats panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (message) => {
                 // Route to party stats panel if it exists
                 if (HookManager.partyStatsPanel && HookManager.partyStatsPanel._boundUpdateHandler) {
                     HookManager.partyStatsPanel._boundUpdateHandler(message);
                 }
-            },
-            ['partyStats']
-        );
+            }
+        });
         
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
@@ -690,9 +715,12 @@ export class HookManager {
         );
 
         // Global System Hooks - Consolidated
-        const globalControlTokenHookId = HookManager.registerHook(
-            "controlToken",
-            async (token, controlled) => {
+        const globalControlTokenHookId = BlacksmithHookManager.registerHook({
+            name: "controlToken",
+            description: "Coffee Pub Squire: Handle global token control for selection display",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (token, controlled) => {
                 // Only proceed if it's a GM or the token owner
                 if (!game.user.isGM && !token.actor?.isOwner) return;
                 
@@ -733,13 +761,15 @@ export class HookManager {
                 if (timeSinceLastSelection > SINGLE_SELECT_THRESHOLD) {
                     _selectionCount = 0;
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalDeleteTokenHookId = HookManager.registerHook(
-            "deleteToken",
-            async (token) => {
+        const globalDeleteTokenHookId = BlacksmithHookManager.registerHook({
+            name: "deleteToken",
+            description: "Coffee Pub Squire: Handle global token deletion",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (token) => {
                 const panelManager = getPanelManager();
                 if (panelManager?.currentActor?.id === token.actor?.id) {
                     // Try to find another token to display
@@ -792,13 +822,15 @@ export class HookManager {
                         panelManager.currentActor = null;
                     }
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalUpdateActorHookId = HookManager.registerHook(
-            "updateActor",
-            async (actor, changes) => {
+        const globalUpdateActorHookId = BlacksmithHookManager.registerHook({
+            name: "updateActor",
+            description: "Coffee Pub Squire: Handle global actor updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (actor, changes) => {
                 const panelManager = getPanelManager();
                 // Only process if this is the actor currently being managed by Squire
                 if (panelManager?.currentActor?.id !== actor.id) {
@@ -841,24 +873,28 @@ export class HookManager {
                         await panelManager.instance.updateHandle();
                     }
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalPauseGameHookId = HookManager.registerHook(
-            "pauseGame",
-            async (paused) => {
+        const globalPauseGameHookId = BlacksmithHookManager.registerHook({
+            name: "pauseGame",
+            description: "Coffee Pub Squire: Handle global game pause/unpause",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (paused) => {
                 const panelManager = getPanelManager();
                 if (!paused && panelManager?.instance && panelManager.instance.element) {
                     await panelManager.instance.renderPanels(panelManager.instance.element);
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalCreateActiveEffectHookId = HookManager.registerHook(
-            "createActiveEffect",
-            async (effect) => {
+        const globalCreateActiveEffectHookId = BlacksmithHookManager.registerHook({
+            name: "createActiveEffect",
+            description: "Coffee Pub Squire: Handle global active effect creation",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (effect) => {
                 const panelManager = getPanelManager();
                 // Only process if this effect belongs to the actor currently being managed by Squire
                 if (panelManager?.currentActor?.id !== effect.parent?.id) {
@@ -871,13 +907,15 @@ export class HookManager {
                 }
                 
                 await panelManager.instance.updateHandle();
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalDeleteActiveEffectHookId = HookManager.registerHook(
-            "deleteActiveEffect",
-            async (effect) => {
+        const globalDeleteActiveEffectHookId = BlacksmithHookManager.registerHook({
+            name: "deleteActiveEffect",
+            description: "Coffee Pub Squire: Handle global active effect deletion",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (effect) => {
                 const panelManager = getPanelManager();
                 // Only process if this effect belongs to the actor currently being managed by Squire
                 if (panelManager?.currentActor?.id !== effect.parent?.id) {
@@ -890,13 +928,15 @@ export class HookManager {
                 }
                 
                 await panelManager.instance.updateHandle();
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalCreateItemHookId = HookManager.registerHook(
-            "createItem",
-            async (item) => {
+        const globalCreateItemHookId = BlacksmithHookManager.registerHook({
+            name: "createItem",
+            description: "Coffee Pub Squire: Handle global item creation for tray updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (item) => {
                 const panelManager = getPanelManager();
                 
                 // Only process if PanelManager instance exists
@@ -911,13 +951,15 @@ export class HookManager {
                     await panelManager.instance.renderPanels(panelManager.instance.element);
                     await panelManager.instance.updateHandle();
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalUpdateItemHookId = HookManager.registerHook(
-            "updateItem",
-            async (item, changes) => {
+        const globalUpdateItemHookId = BlacksmithHookManager.registerHook({
+            name: "updateItem",
+            description: "Coffee Pub Squire: Handle global item updates for tray updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (item, changes) => {
                 if (!item.parent) return;
                 
                 const panelManager = getPanelManager();
@@ -954,13 +996,15 @@ export class HookManager {
                     // For other changes, just update the handle
                     await panelManager.instance.updateHandle();
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalDeleteItemHookId = HookManager.registerHook(
-            "deleteItem",
-            async (item) => {
+        const globalDeleteItemHookId = BlacksmithHookManager.registerHook({
+            name: "deleteItem",
+            description: "Coffee Pub Squire: Handle global item deletion for tray updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (item) => {
                 const panelManager = getPanelManager();
                 // Only process if this item belongs to the actor currently being managed by Squire
                 if (panelManager?.currentActor?.id !== item.parent?.id) {
@@ -975,24 +1019,28 @@ export class HookManager {
                 // No need to recreate the entire tray - just update relevant panels and handle
                 await panelManager.instance.renderPanels(panelManager.instance.element);
                 await panelManager.instance.updateHandle();
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalCloseGameHookId = HookManager.registerHook(
-            "closeGame",
-            () => {
+        const globalCloseGameHookId = BlacksmithHookManager.registerHook({
+            name: "closeGame",
+            description: "Coffee Pub Squire: Handle global game close",
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
                 const panelManager = getPanelManager();
                 if (panelManager?.instance) {
                     panelManager.cleanup();
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalDisableModuleHookId = HookManager.registerHook(
-            "disableModule",
-            (moduleId) => {
+        const globalDisableModuleHookId = BlacksmithHookManager.registerHook({
+            name: "disableModule",
+            description: "Coffee Pub Squire: Handle global module disable",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (moduleId) => {
                 if (moduleId === MODULE.ID) {
                     // Clear any pending multi-select timeout
                     if (_multiSelectTimeout) {
@@ -1016,13 +1064,15 @@ export class HookManager {
                         panelManager.cleanup();
                     }
                 }
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalCanvasReadyHookId = HookManager.registerHook(
-            "canvasReady",
-            () => {
+        const globalCanvasReadyHookId = BlacksmithHookManager.registerHook({
+            name: "canvasReady",
+            description: "Coffee Pub Squire: Handle global canvas ready",
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
                 // Monitor canvas selection changes
                 const originalSelectObjects = canvas.selectObjects;
                 canvas.selectObjects = function(...args) {
@@ -1044,13 +1094,15 @@ export class HookManager {
                     
                     return result;
                 };
-            },
-            ['global']
-        );
+            }
+        });
 
-        const globalCreateTokenHookId = HookManager.registerHook(
-            "createToken",
-            async (token) => {
+        const globalCreateTokenHookId = BlacksmithHookManager.registerHook({
+            name: "createToken",
+            description: "Coffee Pub Squire: Handle global token creation",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (token) => {
                 // Only process if this token is owned by the user
                 if (!token.actor?.isOwner) {
                     return;
@@ -1063,9 +1115,8 @@ export class HookManager {
                 }
                 
                 await panelManager.instance.updateHandle();
-            },
-            ['global']
-        );
+            }
+        });
 
         // Update the logging message to reflect all consolidated hooks including global system hooks
         getBlacksmith()?.utils.postConsoleAndNotification(
@@ -1077,9 +1128,12 @@ export class HookManager {
         );
 
         // Quest Pin Hooks - Consolidated
-        const questPinDropCanvasDataHookId = HookManager.registerHook(
-            "dropCanvasData",
-            async (canvas, data) => {
+        const questPinDropCanvasDataHookId = BlacksmithHookManager.registerHook({
+            name: "dropCanvasData",
+            description: "Coffee Pub Squire: Handle quest pin canvas data drops",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (canvas, data) => {
                 if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return; // Let Foundry handle all other drops!
                 
                 // Only GMs can create quest pins
@@ -1199,77 +1253,90 @@ export class HookManager {
                     }
                     return true;
                 }
-            },
-            ['questPins']
-        );
+            }
+        });
 
-        const questPinCanvasSceneChangeHookId = HookManager.registerHook(
-            "canvasSceneChange",
-            (scene) => {
+        const questPinCanvasSceneChangeHookId = BlacksmithHookManager.registerHook({
+            name: "canvasSceneChange",
+            description: "Coffee Pub Squire: Handle quest pin canvas scene changes",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (scene) => {
                 // Delay loading to ensure scene is fully loaded
                 const timeoutId = setTimeout(() => {
                     loadPersistedPins();
                     HookManager.questPinTimeouts.delete(timeoutId);
                 }, 1000); // Increased delay for scene changes
                 HookManager.questPinTimeouts.add(timeoutId);
-            },
-            ['questPins']
-        );
+            }
+        });
 
-        const questPinUpdateSceneHookId = HookManager.registerHook(
-            "updateScene",
-            (scene, changes, options, userId) => {
+        const questPinUpdateSceneHookId = BlacksmithHookManager.registerHook({
+            name: "updateScene",
+            description: "Coffee Pub Squire: Handle quest pin scene updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (scene, changes, options, userId) => {
                 if (scene.id === canvas.scene?.id && changes.flags && changes.flags[MODULE.ID]) {
                     // Delay loading to ensure the scene update is fully processed
                     setTimeout(() => {
                         loadPersistedPins();
                     }, 500);
                 }
-            },
-            ['questPins']
-        );
+            }
+        });
 
-        const questPinUpdateTokenHookId = HookManager.registerHook(
-            "updateToken",
-            (token, changes) => {
+        const questPinUpdateTokenHookId = BlacksmithHookManager.registerHook({
+            name: "updateToken",
+            description: "Coffee Pub Squire: Handle quest pin token updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (token, changes) => {
                 if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {
                     HookManager.debouncedUpdateAllPinVisibility();
                 }
-            },
-            ['questPins']
-        );
+            }
+        });
 
-        const questPinCreateTokenHookId = HookManager.registerHook(
-            "createToken",
-            (token) => {
+        const questPinCreateTokenHookId = BlacksmithHookManager.registerHook({
+            name: "createToken",
+            description: "Coffee Pub Squire: Handle quest pin token creation",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (token) => {
                 HookManager.debouncedUpdateAllPinVisibility();
-            },
-            ['questPins']
-        );
+            }
+        });
 
-        const questPinDeleteTokenHookId = HookManager.registerHook(
-            "deleteToken",
-            (token) => {
+        const questPinDeleteTokenHookId = BlacksmithHookManager.registerHook({
+            name: "deleteToken",
+            description: "Coffee Pub Squire: Handle quest pin token deletion",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (token) => {
                 HookManager.debouncedUpdateAllPinVisibility();
-            },
-            ['questPins']
-        );
+            }
+        });
 
-        const questPinRenderQuestPanelHookId = HookManager.registerHook(
-            "renderQuestPanel",
-            () => {
+        const questPinRenderQuestPanelHookId = BlacksmithHookManager.registerHook({
+            name: "renderQuestPanel",
+            description: "Coffee Pub Squire: Handle quest pin quest panel rendering",
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
                 HookManager.debouncedUpdateAllPinVisibility();
-            },
-            ['questPins']
-        );
+            }
+        });
 
-        const questPinSightRefreshHookId = HookManager.registerHook(
-            "sightRefresh",
-            () => {
+        const questPinSightRefreshHookId = BlacksmithHookManager.registerHook({
+            name: "sightRefresh",
+            description: "Coffee Pub Squire: Handle quest pin sight refresh",
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
                 HookManager.debouncedUpdateAllPinVisibility();
-            },
-            ['questPins']
-        );
+            }
+        });
 
 
 

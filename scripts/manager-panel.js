@@ -1547,28 +1547,8 @@ export class PanelManager {
     _registerPanelsWithHookManager() {
         try {
             // Import HookManager dynamically to avoid circular dependencies
-            const HookManager = game.modules.get('coffee-pub-squire')?.api?.HookManager;
-            if (HookManager) {
-                HookManager.registerPanel('codex', this.codexPanel);
-                HookManager.registerPanel('quest', this.questPanel);
-                HookManager.registerPanel('notes', this.notesPanel);
-                HookManager.registerPanel('party', this.partyPanel);
-                HookManager.registerPanel('partyStats', this.partyStatsPanel);
-                
-                // Register macros panel with updateHotbarVisibility function
-                if (this.macrosPanel) {
-                    HookManager.registerPanel('macros', {
-                        updateHotbarVisibility: () => {
-                            // Import the function from panel-macros.js
-                            import('./panel-macros.js').then(module => {
-                                if (module.updateHotbarVisibility) {
-                                    module.updateHotbarVisibility();
-                                }
-                            });
-                        }
-                    });
-                }
-            }
+            // Panel registration is now handled by Blacksmith HookManager
+            // No need to register panels with local HookManager
         } catch (error) {
             console.error('Error registering panels with HookManager:', error);
         }

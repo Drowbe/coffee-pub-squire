@@ -1,7 +1,7 @@
 import { MODULE, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData } from './helpers.js';
 import { QuestParser } from './utility-quest-parser.js';
-import { HookManager } from './manager-hooks.js';
+// HookManager import removed - using Blacksmith HookManager instead
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1554,7 +1554,7 @@ function getQuestNumber(questUuid) {
     return Math.abs(hash) % 100 + 1;
 }
 
-// Quest pin hooks are now managed centrally by HookManager
+// Quest pin hooks are now managed centrally by Blacksmith HookManager
 
 // Track timeouts for cleanup
 
@@ -1562,40 +1562,14 @@ function getQuestNumber(questUuid) {
 // Load persisted pins when canvas is ready (now called from ready hook)
 export function loadPersistedPinsOnCanvasReady() {
     const timeoutId = setTimeout(() => {
-        // Wait for HookManager to be fully ready before registering
-        if (HookManager && HookManager.isReady()) {
-            // Register with HookManager first
-            registerQuestPinsWithHookManager();
-            loadPersistedPins();
-        } else {
-            // HookManager not ready yet, try again in a moment (with a longer delay to prevent infinite recursion)
-            if (registrationRetryCount < MAX_REGISTRATION_RETRIES) {
-                registrationRetryCount++;
-                setTimeout(() => {
-                    loadPersistedPinsOnCanvasReady();
-                }, 500);
-            } else {
-                getBlacksmith()?.utils.postConsoleAndNotification(
-                    MODULE.NAME,
-                    'Failed to register quest pins with HookManager after maximum retries',
-                    { retryCount: registrationRetryCount },
-                    true,
-                    false
-                );
-            }
-        }
-        if (HookManager && HookManager.questPinTimeouts) {
-            HookManager.questPinTimeouts.delete(timeoutId);
-        }
+        // Quest pins are now managed by Blacksmith HookManager
+        // No need to register with local HookManager
+        loadPersistedPins();
+        // Timeout management is now handled by Blacksmith HookManager
     }, 1500);
-    if (HookManager && HookManager.questPinTimeouts) {
-        HookManager.questPinTimeouts.add(timeoutId);
-    }
 }
 
-// Quest pin hooks are now managed centrally by HookManager
-
-// Quest pin hooks are now managed centrally by HookManager
+// Quest pin hooks are now managed centrally by Blacksmith HookManager
 
 // Track registration status
 let questPinsRegistered = false;
@@ -1654,13 +1628,8 @@ export function loadPersistedPins() {
             // Try again in a moment
             const timeoutId = setTimeout(() => {
                 loadPersistedPins();
-                if (HookManager && HookManager.questPinTimeouts) {
-                    HookManager.questPinTimeouts.delete(timeoutId);
-                }
+                // Timeout management is now handled by Blacksmith HookManager
             }, 1000);
-            if (HookManager && HookManager.questPinTimeouts) {
-                HookManager.questPinTimeouts.add(timeoutId);
-            }
             return;
         }
 
@@ -1758,13 +1727,8 @@ export function loadPersistedPins() {
         if (game.user.isGM) {
             const timeoutId = setTimeout(async () => {
                 await cleanupOrphanedPins();
-                if (HookManager && HookManager.questPinTimeouts) {
-                    HookManager.questPinTimeouts.delete(timeoutId);
-                }
+                // Timeout management is now handled by Blacksmith HookManager
             }, 1000);
-            if (HookManager && HookManager.questPinTimeouts) {
-                HookManager.questPinTimeouts.add(timeoutId);
-            }
         }
     } catch (error) {
         // Error loading persisted pins
@@ -1807,12 +1771,7 @@ async function cleanupOrphanedPins() {
 // Cleanup function for quest pins
 function cleanupQuestPins() {
     // Clear all tracked timeouts
-    if (HookManager && HookManager.questPinTimeouts) {
-        HookManager.questPinTimeouts.forEach(timeoutId => {
-            clearTimeout(timeoutId);
-        });
-        HookManager.questPinTimeouts.clear();
-    }
+            // Timeout management is now handled by Blacksmith HookManager
 
     // Clear existing pins and their timeouts
     if (canvas.squirePins) {
@@ -1849,4 +1808,4 @@ function cleanupQuestPins() {
     document.body.style.cursor = 'default';
 }
 
-// Quest pin hooks are now managed centrally by HookManager 
+// Quest pin hooks are now managed centrally by Blacksmith HookManager 

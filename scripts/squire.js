@@ -24,6 +24,103 @@ Hooks.once('ready', () => {
             version: MODULE.VERSION
         });
         console.log('✅ Module ' + MODULE.NAME + ' registered with Blacksmith successfully');
+        
+        // Register all hooks after Blacksmith is ready
+        const renderActorSheet5eHookId = BlacksmithHookManager.registerHook({
+            name: 'renderActorSheet5e',
+            description: 'Coffee Pub Squire: Initialize tray when character sheet is rendered',
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (app, html, data) => {
+                if (!app.actor) return;
+                await PanelManager.initialize(app.actor);
+            }
+        });
+        
+        const canvasInitHookId = BlacksmithHookManager.registerHook({
+            name: 'canvasInit',
+            description: 'Coffee Pub Squire: Create squirePins container on canvas initialization',
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
+                if (!canvas.squirePins) {
+                    const squirePins = new PIXI.Container();
+                    squirePins.sortableChildren = true;
+                    squirePins.interactive = true;
+                    squirePins.eventMode = 'static';
+                    if (canvas.foregroundGroup) {
+                        canvas.foregroundGroup.addChild(squirePins);
+                    } else {
+                        canvas.stage.addChild(squirePins);
+                    }
+                    canvas.squirePins = squirePins;
+                }
+            }
+        });
+        
+        const canvasReadyHookId = BlacksmithHookManager.registerHook({
+            name: 'canvasReady',
+            description: 'Coffee Pub Squire: Ensure squirePins container is properly positioned',
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
+                if (!canvas.squirePins) {
+                    const squirePins = new PIXI.Container();
+                    squirePins.sortableChildren = true;
+                    squirePins.interactive = true;
+                    squirePins.eventMode = 'static';
+                    if (canvas.foregroundGroup) {
+                        canvas.foregroundGroup.addChild(squirePins);
+                    } else {
+                        canvas.stage.addChild(squirePins);
+                    }
+                    canvas.squirePins = squirePins;
+                }
+                
+                // Move squirePins to top of display order
+                if (canvas.squirePins) {
+                    const parent = canvas.squirePins.parent;
+                    if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
+                        parent.addChild(canvas.squirePins);
+                    }
+                    canvas.squirePins.interactive = true;
+                }
+            }
+        });
+        
+        const disableModuleHookId = BlacksmithHookManager.registerHook({
+            name: 'disableModule',
+            description: 'Coffee Pub Squire: Clean up when module is disabled',
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (moduleId) => {
+                if (moduleId === MODULE.ID) {
+                    // Clear quest notifications when module is disabled
+                    try {
+                        // Clear quest notifications through the panel manager
+                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.questPanel) {
+                            game.modules.get('coffee-pub-squire').api.PanelManager.instance.questPanel.clearQuestNotifications();
+                        }
+                    } catch (error) {
+                        console.error('Coffee Pub Squire | Error clearing quest notifications on disable:', error);
+                    }
+                    
+                    cleanupModule();
+                }
+            }
+        });
+        
+        const closeGameHookId = BlacksmithHookManager.registerHook({
+            name: 'closeGame',
+            description: 'Coffee Pub Squire: Clean up when game closes',
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
+                cleanupModule();
+            }
+        });
+        
+        console.log('✅ Coffee Pub Squire: All hooks registered with Blacksmith successfully');
     } catch (error) {
         console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
     }
@@ -520,14 +617,20 @@ Hooks.once('ready', async function() {
         loadPersistedPinsOnCanvasReady();
         
         // Register the controlToken hook AFTER settings are registered
-        Hooks.on('controlToken', async (token, controlled) => {
-            // Only care about token selection, not deselection
-            if (!controlled) return;
-            
-            // Only proceed if it's a GM or the token owner
-            if (!game.user.isGM && !token.actor?.isOwner) return;
-            
-            await PanelManager.initialize(token.actor);
+        const controlTokenHookId = BlacksmithHookManager.registerHook({
+            name: 'controlToken',
+            description: 'Coffee Pub Squire: Handle token control for tray initialization',
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (token, controlled) => {
+                // Only care about token selection, not deselection
+                if (!controlled) return;
+                
+                // Only proceed if it's a GM or the token owner
+                if (!game.user.isGM && !token.actor?.isOwner) return;
+                
+                await PanelManager.initialize(token.actor);
+            }
         });
         
         // Then initialize the main interface
@@ -556,54 +659,7 @@ Hooks.once('ready', async function() {
     }, 1000); // 1 second delay to ensure settings and canvas are fully ready
 });
 
-// Initialize panel when character sheet is rendered
-Hooks.on('renderActorSheet5e', async (app, html, data) => {
-    if (!app.actor) return;
-    await PanelManager.initialize(app.actor);
-});
-
-// controlToken hook will be registered in the ready hook after settings are registered
-
-// Restore the squirePins container creation in the canvasInit hook
-Hooks.on('canvasInit', () => {
-  if (!canvas.squirePins) {
-    const squirePins = new PIXI.Container();
-    squirePins.sortableChildren = true;
-    squirePins.interactive = true;
-    squirePins.eventMode = 'static';
-    if (canvas.foregroundGroup) {
-      canvas.foregroundGroup.addChild(squirePins);
-    } else {
-      canvas.stage.addChild(squirePins);
-    }
-    canvas.squirePins = squirePins;
-  }
-});
-
-// Ensure squirePins exists and is properly positioned when canvas is ready
-Hooks.on('canvasReady', () => {
-  if (!canvas.squirePins) {
-    const squirePins = new PIXI.Container();
-    squirePins.sortableChildren = true;
-    squirePins.interactive = true;
-    squirePins.eventMode = 'static';
-    if (canvas.foregroundGroup) {
-      canvas.foregroundGroup.addChild(squirePins);
-    } else {
-      canvas.stage.addChild(squirePins);
-    }
-    canvas.squirePins = squirePins;
-  }
-  
-  // Move squirePins to top of display order
-  if (canvas.squirePins) {
-    const parent = canvas.squirePins.parent;
-    if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
-      parent.addChild(canvas.squirePins);
-    }
-    canvas.squirePins.interactive = true;
-  }
-});
+// All hook registrations moved to ready hook below
 
 /**
  * Handle an incoming transfer request notification from another player
@@ -966,23 +1022,4 @@ function cleanupModule() {
     }
 }
 
-// Register cleanup hooks
-Hooks.on('disableModule', async (moduleId) => {
-    if (moduleId === MODULE.ID) {
-        // Clear quest notifications when module is disabled
-        try {
-            // Clear quest notifications through the panel manager
-            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.questPanel) {
-                game.modules.get('coffee-pub-squire').api.PanelManager.instance.questPanel.clearQuestNotifications();
-            }
-        } catch (error) {
-            console.error('Coffee Pub Squire | Error clearing quest notifications on disable:', error);
-        }
-        
-        cleanupModule();
-    }
-});
-
-Hooks.on('closeGame', () => {
-    cleanupModule();
-});
+// All hook registrations moved to ready hook below
