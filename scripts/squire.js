@@ -127,12 +127,13 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (page, changes, options, userId) => {
-                // Handle journal entry page updates
-                const panelManager = getPanelManager();
-                if (panelManager?.instance) {
-                    // Update relevant panels based on journal changes
-                    await panelManager.instance.renderPanels(panelManager.instance.element);
-                }
+                // Handle journal entry page updates - route to appropriate panels
+                await Promise.all([
+                    _routeToCodexPanel(page, changes, options, userId),
+                    _routeToQuestPanel(page, changes, options, userId),
+                    _routeToNotesPanel(page, changes, options, userId),
+                    _routeToQuestPins(page, changes, options, userId)
+                ]);
             }
         });
         
@@ -488,6 +489,99 @@ Hooks.once('ready', () => {
 // Helper function to get PanelManager dynamically to avoid circular dependencies
 function getPanelManager() {
     return game.modules.get('coffee-pub-squire')?.api?.PanelManager;
+}
+
+// Helper functions to route journal entry updates to appropriate panels
+async function _routeToCodexPanel(page, changes, options, userId) {
+    const panelManager = getPanelManager();
+    const codexPanel = panelManager?.instance?.codexPanel;
+    if (!codexPanel) return;
+    
+    try {
+        // Check if this is a CODEX entry and belongs to the selected journal
+        if (codexPanel._isPageInSelectedJournal && 
+            codexPanel._isPageInSelectedJournal(page) &&
+            codexPanel._isCodexEntry && 
+            codexPanel._isCodexEntry(page)) {
+            
+            // Skip panel refresh if currently importing
+            if (codexPanel.isImporting) {
+                return;
+            }
+            
+            // Always refresh the data first
+            await codexPanel._refreshData();
+            
+            // Trigger a refresh through the PanelManager if it's available
+            if (panelManager?.instance && panelManager.element) {
+                // Re-render the codex panel specifically
+                codexPanel.render(panelManager.element);
+            }
+        }
+    } catch (error) {
+        console.error('Error routing to codex panel:', error);
+    }
+}
+
+async function _routeToQuestPanel(page, changes, options, userId) {
+    const panelManager = getPanelManager();
+    const questPanel = panelManager?.instance?.questPanel;
+    if (!questPanel) return;
+    
+    try {
+        // Check if this is a QUEST entry and belongs to the selected journal
+        if (questPanel._isPageInSelectedJournal && 
+            questPanel._isPageInSelectedJournal(page) &&
+            questPanel._isQuestEntry && 
+            questPanel._isQuestEntry(page)) {
+            
+            // Always refresh the data first
+            await questPanel._refreshData();
+            
+            // Trigger a refresh through the PanelManager if it's available
+            if (panelManager?.instance && panelManager.element) {
+                // Re-render the quest panel specifically
+                questPanel.render(panelManager.element);
+            }
+        }
+    } catch (error) {
+        console.error('Error routing to quest panel:', error);
+    }
+}
+
+async function _routeToNotesPanel(page, changes, options, userId) {
+    const panelManager = getPanelManager();
+    const notesPanel = panelManager?.instance?.notesPanel;
+    if (!notesPanel) return;
+    
+    try {
+        // Check if this is a NOTES entry and belongs to the selected journal
+        if (notesPanel._isPageInSelectedJournal && 
+            notesPanel._isPageInSelectedJournal(page) &&
+            notesPanel._isNotesEntry && 
+            notesPanel._isNotesEntry(page)) {
+            
+            // Always refresh the data first
+            await notesPanel._refreshData();
+            
+            // Trigger a refresh through the PanelManager if it's available
+            if (panelManager?.instance && panelManager.element) {
+                // Re-render the notes panel specifically
+                notesPanel.render(panelManager.element);
+            }
+        }
+    } catch (error) {
+        console.error('Error routing to notes panel:', error);
+    }
+}
+
+async function _routeToQuestPins(page, changes, options, userId) {
+    try {
+        // Quest pins logic would go here
+        // For now, just a placeholder
+    } catch (error) {
+        console.error('Error routing to quest pins:', error);
+    }
 }
 
 
