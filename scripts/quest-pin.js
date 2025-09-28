@@ -1576,48 +1576,13 @@ let questPinsRegistered = false;
 let registrationRetryCount = 0;
 const MAX_REGISTRATION_RETRIES = 10;
 
-// Function to register quest pins with the HookManager
-function registerQuestPinsWithHookManager() {
-    try {
-        // Prevent multiple registrations
-        if (questPinsRegistered) {
-            return;
-        }
-        
-        if (HookManager && HookManager.updateAllPinVisibility) {
-            // Create a proxy object that provides the updateAllPinVisibility function
-            const questPinsProxy = {
-                updateAllPinVisibility: HookManager.updateAllPinVisibility
-            };
-            HookManager.registerPanel('questPins', questPinsProxy);
-            questPinsRegistered = true;
-            registrationRetryCount = 0; // Reset retry count on success
-            
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                'Quest Pins registered with HookManager',
-                {},
-                true,
-                false
-            );
-        } else {
-            getBlacksmith()?.utils.postConsoleAndNotification(
-                MODULE.NAME,
-                'HookManager not available for quest pins registration',
-                { hasHookManager: !!HookManager, hasUpdateMethod: !!(HookManager && HookManager.updateAllPinVisibility) },
-                true,
-                false
-            );
-        }
-    } catch (error) {
-        console.error('Error registering quest pins with HookManager:', error);
-    }
-}
+// Quest pins registration is now handled by Blacksmith HookManager
+// No need for local HookManager registration
 
 // Function to load persisted pins for current scene
 export function loadPersistedPins() {
     try {
-        // Don't register again - this should only be called after registration
+        // Quest pins are now managed by Blacksmith HookManager
         
         const scene = canvas.scene;
         if (!scene) {
