@@ -137,7 +137,6 @@ Hooks.once('ready', () => {
             }
         });
 
-
         
         // Character Panel Hooks
         const characterActorHookId = BlacksmithHookManager.registerHook({
@@ -561,10 +560,6 @@ async function _routeToNotesPanel(page, changes, options, userId) {
         if (notesPanel.element) {
             const currentPageId = notesPanel.element.find('.journal-content').data('page-id');
             if (currentPageId === page.id) {
-                // Remove the "being edited" badge when page is updated (editing complete)
-                const panelContainer = notesPanel.element.find('.panel-container[data-panel="panel-notes"]');
-                panelContainer.find('.being-edited-badge').remove();
-                
                 // Trigger a refresh through the PanelManager if it's available
                 if (panelManager?.instance && panelManager.element) {
                     // Re-render the notes panel specifically

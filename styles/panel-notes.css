@@ -207,24 +207,4 @@
     color: #800000 !important;
 }
 
-/* === Being Edited Badge === */
-
-.panel-container[data-panel="panel-notes"] .being-edited-badge {
-    position: absolute;
-    top: 100px;
-    right: 30px;
-    background: rgba(209, 80, 6, 0.9);
-    color: #fff;
-    font-weight: 900;
-    font-size: 1.2em;
-    padding: 8px 16px;
-    border-radius: 5px;
-    z-index: 101;
-    box-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.5), /* contact shadow */
-        0 2px 8px rgba(0, 0, 0, 0.3);  /* ambient/elevation */
-    letter-spacing: 1px;
-    pointer-events: none;
-    text-decoration: uppercase;
-}
 
