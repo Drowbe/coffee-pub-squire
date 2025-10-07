@@ -534,7 +534,7 @@ export class PartyPanel {
                                 if (gmApprovalRequired && gmUsers.length > 0) {
                                     await ChatMessage.create({
                                         content: `<div class="transfer-request-content">
-                                            <p>Transfer request approval needed:</p>
+                                            <p>LINE 537Transfer request approval needed:</p>
                                             <p>From: ${sourceActor.name} (${game.user.name})</p>
                                             <p>To: ${targetActor.name}</p>
                                             <p>Item: ${selectedQuantity}x ${sourceItem.name}</p>
@@ -816,7 +816,7 @@ export class PartyPanel {
                             if (gmApprovalRequired && gmUsers.length > 0) {
                                 await ChatMessage.create({
                                     content: `<div class="transfer-request-content">
-                                        <p>Transfer request approval needed:</p>
+                                        <p>LINE 819 Transfer request approval needed:</p>
                                         <p>From: ${sourceActor.name} (${game.user.name})</p>
                                         <p>To: ${targetActor.name}</p>
                                         <p>Item: ${selectedQuantity}x ${sourceItem.name}</p>
