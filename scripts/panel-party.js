@@ -38,24 +38,7 @@ export class PartyPanel {
         tokens.forEach(token => {
             if (token.actor?.system?.attributes?.hp) {
                 const hp = token.actor.system.attributes.hp;
-                let healthbarStatus = 'squire-tray-healthbar-healthy';
-                
-                if (hp.max > 0) {
-                    const hpPercentage = (hp.value / hp.max) * 100;
-                    
-                    if (hp.value <= 0) {
-                        healthbarStatus = 'squire-tray-healthbar-dead';
-                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
-                        healthbarStatus = 'squire-tray-healthbar-critical';
-                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
-                        healthbarStatus = 'squire-tray-healthbar-bloodied';
-                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
-                        healthbarStatus = 'squire-tray-healthbar-injured';
-                    }
-                }
-                
-                // Add healthbarStatus directly to the token object
-                token.healthbarStatus = healthbarStatus;
+                token.healthbarStatus = this._calculateHealthbarStatus(hp);
             }
         });
 
@@ -63,24 +46,7 @@ export class PartyPanel {
         nonPlayerTokens.forEach(token => {
             if (token.actor?.system?.attributes?.hp) {
                 const hp = token.actor.system.attributes.hp;
-                let healthbarStatus = 'squire-tray-healthbar-healthy';
-                
-                if (hp.max > 0) {
-                    const hpPercentage = (hp.value / hp.max) * 100;
-                    
-                    if (hp.value <= 0) {
-                        healthbarStatus = 'squire-tray-healthbar-dead';
-                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
-                        healthbarStatus = 'squire-tray-healthbar-critical';
-                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
-                        healthbarStatus = 'squire-tray-healthbar-bloodied';
-                    } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
-                        healthbarStatus = 'squire-tray-healthbar-injured';
-                    }
-                }
-                
-                // Add healthbarStatus directly to the token object
-                token.healthbarStatus = healthbarStatus;
+                token.healthbarStatus = this._calculateHealthbarStatus(hp);
             }
         });
         
@@ -943,6 +909,31 @@ export class PartyPanel {
             // Re-render to highlight the currently selected token
             this.render(this.element);
         }
+    }
+
+    /**
+     * Calculate healthbar status class based on HP values
+     * @param {Object} hp - HP object with value and max properties
+     * @returns {string} - CSS class name for healthbar status
+     */
+    _calculateHealthbarStatus(hp) {
+        let healthbarStatus = 'squire-tray-healthbar-healthy';
+        
+        if (hp.max > 0) {
+            const hpPercentage = (hp.value / hp.max) * 100;
+            
+            if (hp.value <= 0) {
+                healthbarStatus = 'squire-tray-healthbar-dead';
+            } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
+                healthbarStatus = 'squire-tray-healthbar-critical';
+            } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
+                healthbarStatus = 'squire-tray-healthbar-bloodied';
+            } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
+                healthbarStatus = 'squire-tray-healthbar-injured';
+            }
+        }
+        
+        return healthbarStatus;
     }
 
     destroy() {
