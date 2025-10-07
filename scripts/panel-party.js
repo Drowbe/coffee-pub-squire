@@ -969,7 +969,50 @@ export class PartyPanel {
             game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
             await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
         }
-        // No chat message here; handled in _handleTransferButtons
+        
+        // Create chat message for direct transfer completion
+        try {
+            const socket = game.modules.get(MODULE.ID)?.socket;
+            if (socket) {
+                await socket.executeAsGM('createTransferCompleteChat', {
+                    sourceActorId: sourceActor.id,
+                    sourceActorName: sourceActor.name,
+                    targetActorId: targetActor.id,
+                    targetActorName: targetActor.name,
+                    itemId: sourceItem.id,
+                    itemName: sourceItem.name,
+                    quantity: quantityToTransfer,
+                    hasQuantity: hasQuantity,
+                    isPlural: quantityToTransfer > 1,
+                    isTransferSender: true,
+                    receiverIds: [game.user.id] // Send to current user
+                });
+            } else {
+                // Fallback: create message directly if socket not available
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-complete",
+                        strCardIcon: "fas fa-backpack",
+                        strCardTitle: "Transfer Complete",
+                        sourceActor,
+                        sourceActorName: sourceActor.name,
+                        targetActor,
+                        targetActorName: targetActor.name,
+                        item: sourceItem,
+                        itemName: sourceItem.name,
+                        quantity: quantityToTransfer,
+                        hasQuantity: hasQuantity,
+                        isPlural: quantityToTransfer > 1,
+                        isTransferSender: true
+                    }),
+                    speaker: ChatMessage.getSpeaker({ actor: targetActor }),
+                    whisper: [game.user.id]
+                });
+            }
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error creating transfer complete chat message:', error);
+        }
     }
     
     async _sendTransferRequest(sourceActor, targetActor, item, quantity = 1, hasQuantity, timestamp) {

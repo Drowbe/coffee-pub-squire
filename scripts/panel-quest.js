@@ -72,6 +72,7 @@ export class QuestPanel {
         this.isImporting = false; // Flag to prevent panel refreshes during import
         this.questNotificationId = null; // Store quest notification ID for updates
         this.activeObjectiveNotificationId = null; // Store active objective notification ID for updates
+        this._notificationDebounceTimeouts = {}; // Debounce timeouts for notifications
         this._verifyAndUpdateCategories();
         this._setupHooks();
     }
@@ -82,28 +83,59 @@ export class QuestPanel {
      * @param {string} questCategory - The quest category
      */
     notifyQuestPinned(questName, questCategory) {
+        // Debounce rapid calls to prevent duplicate notifications
+        const debounceKey = 'questPinned';
+        if (this._notificationDebounceTimeouts[debounceKey]) {
+            clearTimeout(this._notificationDebounceTimeouts[debounceKey]);
+        }
+        
+        this._notificationDebounceTimeouts[debounceKey] = setTimeout(() => {
+            this._doNotifyQuestPinned(questName, questCategory);
+            delete this._notificationDebounceTimeouts[debounceKey];
+        }, 100); // 100ms debounce
+    }
+    
+    _doNotifyQuestPinned(questName, questCategory) {
         try {
             const blacksmith = getBlacksmith();
             if (!blacksmith?.addNotification) return;
             
             const icon = questCategory === "Main Quest" ? "fas fa-flag" : "fas fa-map-signs";
             
+            // DEBUG: Log all available methods on blacksmith object
+            console.log('Coffee Pub Squire | Blacksmith API methods:', Object.keys(blacksmith));
+            
+            // Check if we already have a notification with this content to prevent duplicates
             if (this.questNotificationId) {
-                // Update existing notification
-                blacksmith.updateNotification(this.questNotificationId, {
-                    text: questName,
-                    icon: icon,
-                    duration: 0 // Keep persistent
-                });
-            } else {
-                // Create new notification and store ID
-                this.questNotificationId = blacksmith.addNotification(
-                    questName,
-                    icon,
-                    0, // 0 = persistent until manually removed
-                    MODULE.ID
-                );
+                try {
+                    // Update existing notification
+                    const result = blacksmith.updateNotification(this.questNotificationId, {
+                        text: questName,
+                        icon: icon,
+                        duration: 0 // Keep persistent
+                    });
+                    
+                    // If update failed, the notification might have been removed
+                    if (!result) {
+                        this.questNotificationId = null;
+                        // Fall through to create new notification
+                    } else {
+                        return; // Successfully updated, no need to create new
+                    }
+                } catch (updateError) {
+                    console.warn('Coffee Pub Squire | Failed to update quest notification, creating new:', updateError);
+                    this.questNotificationId = null;
+                    // Fall through to create new notification
+                }
             }
+            
+            // Create new notification and store ID
+            this.questNotificationId = blacksmith.addNotification(
+                questName,
+                icon,
+                0, // 0 = persistent until manually removed
+                MODULE.ID
+            );
         } catch (error) {
             console.error('Coffee Pub Squire | Error sending quest pinned notification:', error);
         }
@@ -131,6 +163,19 @@ export class QuestPanel {
      * @param {number} objectiveNumber - The objective number
      */
     notifyActiveObjective(questName, objectiveText, objectiveNumber) {
+        // Debounce rapid calls to prevent duplicate notifications
+        const debounceKey = 'activeObjective';
+        if (this._notificationDebounceTimeouts[debounceKey]) {
+            clearTimeout(this._notificationDebounceTimeouts[debounceKey]);
+        }
+        
+        this._notificationDebounceTimeouts[debounceKey] = setTimeout(() => {
+            this._doNotifyActiveObjective(questName, objectiveText, objectiveNumber);
+            delete this._notificationDebounceTimeouts[debounceKey];
+        }, 100); // 100ms debounce
+    }
+    
+    _doNotifyActiveObjective(questName, objectiveText, objectiveNumber) {
         try {
             const blacksmith = getBlacksmith();
             if (!blacksmith?.addNotification) {
@@ -149,26 +194,41 @@ export class QuestPanel {
                 existingId: this.activeObjectiveNotificationId
             });
             
+            // Check if we already have a notification with this content to prevent duplicates
             if (this.activeObjectiveNotificationId) {
-                // Update existing notification
-                console.log('ACTIVE OBJECTIVE | Updating existing notification');
-                const result = blacksmith.updateNotification(this.activeObjectiveNotificationId, {
-                    text: notificationText,
-                    icon: icon,
-                    duration: 0 // Keep persistent
-                });
-                console.log('ACTIVE OBJECTIVE | Update result:', result);
-            } else {
-                // Create new notification and store ID
-                console.log('ACTIVE OBJECTIVE | Creating new notification');
-                this.activeObjectiveNotificationId = blacksmith.addNotification(
-                    notificationText,
-                    icon,
-                    0, // 0 = persistent until manually removed
-                    MODULE.ID
-                );
-                console.log('ACTIVE OBJECTIVE | Created notification with ID:', this.activeObjectiveNotificationId);
+                try {
+                    // Update existing notification
+                    console.log('ACTIVE OBJECTIVE | Updating existing notification');
+                    const result = blacksmith.updateNotification(this.activeObjectiveNotificationId, {
+                        text: notificationText,
+                        icon: icon,
+                        duration: 0 // Keep persistent
+                    });
+                    console.log('ACTIVE OBJECTIVE | Update result:', result);
+                    
+                    // If update failed, the notification might have been removed
+                    if (!result) {
+                        this.activeObjectiveNotificationId = null;
+                        // Fall through to create new notification
+                    } else {
+                        return; // Successfully updated, no need to create new
+                    }
+                } catch (updateError) {
+                    console.warn('Coffee Pub Squire | Failed to update active objective notification, creating new:', updateError);
+                    this.activeObjectiveNotificationId = null;
+                    // Fall through to create new notification
+                }
             }
+            
+            // Create new notification and store ID
+            console.log('ACTIVE OBJECTIVE | Creating new notification');
+            this.activeObjectiveNotificationId = blacksmith.addNotification(
+                notificationText,
+                icon,
+                0, // 0 = persistent until manually removed
+                MODULE.ID
+            );
+            console.log('ACTIVE OBJECTIVE | Created notification with ID:', this.activeObjectiveNotificationId);
         } catch (error) {
             console.error('Coffee Pub Squire | Error sending active objective notification:', error);
         }
@@ -400,6 +460,12 @@ export class QuestPanel {
      * @public
      */
     destroy() {
+        // Clear any pending debounce timeouts
+        Object.values(this._notificationDebounceTimeouts).forEach(timeout => {
+            if (timeout) clearTimeout(timeout);
+        });
+        this._notificationDebounceTimeouts = {};
+        
         this.element = null;
     }
 
