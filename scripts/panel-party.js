@@ -378,6 +378,7 @@ export class PartyPanel {
                             // Add to newlyAddedItems in PanelManager
                             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
                                 game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
+                                await createdItem[0].setFlag(MODULE.ID, 'isNew', true);
                             }
                             
                             // Send chat notification
@@ -398,6 +399,7 @@ export class PartyPanel {
                             // Add to newlyAddedItems in PanelManager
                             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
                                 game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(newItem[0].id, Date.now());
+                                await newItem[0].setFlag(MODULE.ID, 'isNew', true);
                             }
                             
                             // Send chat notification

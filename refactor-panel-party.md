@@ -339,6 +339,7 @@ case 'Actor':
 - ✅ Phase 2.2 (Sender Message) - Completed and tested successfully. Sender confirmation messages extracted to helper.
 - ✅ Phase 2.3 (Receiver Message) - Completed and tested successfully. Complex socketlib logic extracted to helper, Accept/Reject buttons working.
 - ✅ Phase 3.1 (Quantity Dialog) - Completed successfully. Dialog logic extracted to helper with promise handling.
-- 🐛 **Bug Fix**: Fixed pre-existing scope issue at line 488 - changed `targetActorId` to `targetActor.id` to fix GM dragging items from Items directory.
+- 🐛 **Bug Fix #1**: Fixed pre-existing scope issue at line 488 - changed `targetActorId` to `targetActor.id` to fix GM dragging items from Items directory.
+- 🐛 **Bug Fix #2**: Fixed missing `setFlag(MODULE.ID, 'isNew', true)` calls for world items and item directory drops - "new" tags now appear consistently.
 - Lines reduced so far: 398 lines saved (38 from Phase 1.1, 30 from Phase 1.2, 44 from Phase 2.1, 58 from Phase 2.2, 112 from Phase 2.3, 116 from Phase 3.1)
 
