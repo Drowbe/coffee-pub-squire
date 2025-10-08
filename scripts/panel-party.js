@@ -901,45 +901,94 @@ export class PartyPanel {
             await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
         }
         
-        // Create chat message for direct transfer completion
+        // Create chat messages for direct transfer completion
         try {
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket) {
-                await socket.executeAsGM('createTransferCompleteChat', {
-                    sourceActorId: sourceActor.id,
-                    sourceActorName: sourceActor.name,
-                    targetActorId: targetActor.id,
-                    targetActorName: targetActor.name,
-                    itemId: sourceItem.id,
-                    itemName: sourceItem.name,
-                    quantity: quantityToTransfer,
-                    hasQuantity: hasQuantity,
-                    isPlural: quantityToTransfer > 1,
-                    isTransferSender: true,
-                    receiverIds: [game.user.id] // Send to current user
-                });
-            } else {
-                // Fallback: create message directly if socket not available
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-complete",
-                        strCardIcon: "fas fa-backpack",
-                        strCardTitle: "Transfer Complete",
-                        sourceActor,
+            // Find the users who own the source and target actors
+            const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+            const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+            
+            // Send message to source actor's owner (sender)
+            if (sourceUsers.length > 0) {
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    await socket.executeAsGM('createTransferCompleteChat', {
+                        sourceActorId: sourceActor.id,
                         sourceActorName: sourceActor.name,
-                        targetActor,
+                        targetActorId: targetActor.id,
                         targetActorName: targetActor.name,
-                        item: sourceItem,
+                        itemId: sourceItem.id,
                         itemName: sourceItem.name,
                         quantity: quantityToTransfer,
                         hasQuantity: hasQuantity,
                         isPlural: quantityToTransfer > 1,
-                        isTransferSender: true
-                    }),
-                    speaker: ChatMessage.getSpeaker({ actor: targetActor }),
-                    whisper: [game.user.id]
-                });
+                        isTransferSender: true,
+                        receiverIds: sourceUsers.map(u => u.id)
+                    });
+                } else {
+                    // Fallback: create message directly if socket not available
+                    await ChatMessage.create({
+                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                            isPublic: false,
+                            cardType: "transfer-complete",
+                            strCardIcon: "fas fa-backpack",
+                            strCardTitle: "Transfer Complete",
+                            sourceActor,
+                            sourceActorName: sourceActor.name,
+                            targetActor,
+                            targetActorName: targetActor.name,
+                            item: sourceItem,
+                            itemName: sourceItem.name,
+                            quantity: quantityToTransfer,
+                            hasQuantity: hasQuantity,
+                            isPlural: quantityToTransfer > 1,
+                            isTransferSender: true
+                        }),
+                        speaker: ChatMessage.getSpeaker({ actor: sourceActor }),
+                        whisper: sourceUsers.map(u => u.id)
+                    });
+                }
+            }
+            
+            // Send message to target actor's owner (receiver) - only if different from sender
+            if (targetUsers.length > 0 && !targetUsers.some(u => sourceUsers.some(su => su.id === u.id))) {
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    await socket.executeAsGM('createTransferCompleteChat', {
+                        sourceActorId: sourceActor.id,
+                        sourceActorName: sourceActor.name,
+                        targetActorId: targetActor.id,
+                        targetActorName: targetActor.name,
+                        itemId: sourceItem.id,
+                        itemName: sourceItem.name,
+                        quantity: quantityToTransfer,
+                        hasQuantity: hasQuantity,
+                        isPlural: quantityToTransfer > 1,
+                        isTransferReceiver: true,
+                        receiverIds: targetUsers.map(u => u.id)
+                    });
+                } else {
+                    // Fallback: create message directly if socket not available
+                    await ChatMessage.create({
+                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                            isPublic: false,
+                            cardType: "transfer-complete",
+                            strCardIcon: "fas fa-backpack",
+                            strCardTitle: "Transfer Complete",
+                            sourceActor,
+                            sourceActorName: sourceActor.name,
+                            targetActor,
+                            targetActorName: targetActor.name,
+                            item: sourceItem,
+                            itemName: sourceItem.name,
+                            quantity: quantityToTransfer,
+                            hasQuantity: hasQuantity,
+                            isPlural: quantityToTransfer > 1,
+                            isTransferReceiver: true
+                        }),
+                        speaker: ChatMessage.getSpeaker({ actor: targetActor }),
+                        whisper: targetUsers.map(u => u.id)
+                    });
+                }
             }
         } catch (error) {
             console.error('Coffee Pub Squire | Error creating transfer complete chat message:', error);
