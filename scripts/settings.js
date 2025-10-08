@@ -637,6 +637,21 @@ export const registerSettings = function() {
         default: true
     });
 
+    // ---------- Transfers - Timeout ----------
+    game.settings.register(MODULE.ID, 'transferTimeout', {
+        name: 'Transfer Request Timeout (seconds)',
+        hint: 'How long transfer requests remain valid before automatically expiring',
+        scope: 'world',
+        config: true,
+        type: Number,
+        range: {
+            min: 10,
+            max: 180,
+            step: 10
+        },
+        default: 30
+    });
+
 
     
     // ***************************

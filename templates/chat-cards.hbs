@@ -207,6 +207,17 @@
       </div>
     </div>
 
+  {{!-- TRANSFER EXPIRED --}}
+  {{else if (eq cardType "transfer-expired")}}
+    <div class="blacksmith-card theme-orange">
+      <div class="section-header">
+        <i class="fas fa-clock"></i> Transfer Request Expired
+      </div>
+      <div class="section-content">
+        <p>The transfer request has expired and was automatically rejected.</p>
+      </div>
+    </div>
+
   {{!-- TRANSFER GM --}}
   {{else if (eq cardType "transfer-gm")}}
     <div class="blacksmith-card theme-default">
@@ -327,6 +338,17 @@
       </div>
       <div class="section-content">
         <p>{{failureReason}}</p>
+      </div>
+    </div>
+
+  {{!-- TRANSFER EXPIRED --}}
+  {{else if (eq cardType "transfer-expired")}}
+    <div class="blacksmith-card theme-orange">
+      <div class="section-header">
+        <i class="fas fa-clock"></i> Transfer Request Expired
+      </div>
+      <div class="section-content">
+        <p>The transfer request has expired and was automatically rejected.</p>
       </div>
     </div>
 

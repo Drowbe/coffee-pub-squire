@@ -833,6 +833,44 @@ Hooks.once('socketlib.ready', () => {
                 console.error('Error creating transfer rejected message:', error);
             }
         });
+
+        socket.register("createTransferExpiredChat", async (data) => {
+            if (!game.user.isGM) return;
+            
+            try {
+                // Get the actual referenced objects
+                const sourceActor = game.actors.get(data.sourceActorId);
+                const targetActor = game.actors.get(data.targetActorId);
+                
+                if (!sourceActor || !targetActor) {
+                    console.error('Missing required actors for transfer expired message:', { data });
+                    return;
+                }
+                
+                // Create the chat message as GM
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-expired",
+                        strCardIcon: "fas fa-clock",
+                        strCardTitle: "Transfer Request Expired",
+                        sourceActor,
+                        sourceActorName: data.sourceActorName,
+                        targetActor,
+                        targetActorName: data.targetActorName,
+                        itemName: data.itemName,
+                        quantity: data.quantity,
+                        hasQuantity: data.hasQuantity,
+                        isPlural: data.isPlural,
+                        isGMNotification: data.isGMNotification || false
+                    }),
+                    whisper: data.receiverIds || [data.receiverId] || [],
+                    speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
+                });
+            } catch (error) {
+                console.error('Error creating transfer expired message:', error);
+            }
+        });
         
         // Add socket handler for deleting transfer request messages
         socket.register("deleteTransferRequestMessage", async (messageId) => {
