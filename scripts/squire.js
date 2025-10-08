@@ -675,8 +675,8 @@ Hooks.once('socketlib.ready', () => {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-request",
-                        strCardIcon: "fas fa-people-arrows",
-                        strCardTitle: "Transfer Request",
+                        strCardIcon: data.isGMApproval ? "fas fa-gavel" : "fas fa-people-arrows",
+                        strCardTitle: data.isGMApproval ? "GM Approval Required" : "Transfer Request",
                         sourceActor,
                         sourceActorName: data.sourceActorName,
                         targetActor,
@@ -685,7 +685,8 @@ Hooks.once('socketlib.ready', () => {
                         quantity: data.quantity,
                         hasQuantity: data.hasQuantity,
                         isPlural: data.isPlural,
-                        isTransferReceiver: true,
+                        isTransferReceiver: data.isTransferReceiver || false,
+                        isGMApproval: data.isGMApproval || false,
                         transferId: data.transferId
                     }),
                     speaker: { alias: "System" },
@@ -694,7 +695,8 @@ Hooks.once('socketlib.ready', () => {
                         [MODULE.ID]: {
                             transferId: data.transferId,
                             type: 'transferRequest',
-                            isTransferReceiver: true,
+                            isTransferReceiver: data.isTransferReceiver || false,
+                            isGMApproval: data.isGMApproval || false,
                             targetUsers: data.receiverIds,
                             data: data.transferData
                         }

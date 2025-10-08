@@ -613,35 +613,58 @@ export class PartyPanel {
         const gmUsers = game.users.filter(u => u.isGM);
         
         if (gmUsers.length > 0) {
-            await ChatMessage.create({
-                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                    isPublic: false,
-                    cardType: "transfer-request",
-                    strCardIcon: "fas fa-gavel",
-                    strCardTitle: "GM Approval Required",
-                    sourceActor,
-                    sourceActorName: `${sourceActor.name} (${game.user.name})`,
-                    targetActor,
-                    targetActorName: targetActor.name,
-                    item: sourceItem,
-                    itemName: sourceItem.name,
-                    quantity: selectedQuantity,
-                    hasQuantity: !!sourceItem.system?.quantity,
-                    isPlural: selectedQuantity > 1,
-                    isGMApproval: true,
-                    transferId
-                }),
-                speaker: { alias: "System Transfer" },
-                whisper: gmUsers.map(u => u.id),
-                flags: {
-                    [MODULE.ID]: {
-                        transferId,
-                        type: 'transferRequest',
+            // If current user is not a GM, use socketlib to have a GM create the message
+            if (!game.user.isGM) {
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    await socket.executeAsGM('createTransferRequestChat', {
+                        cardType: "transfer-request",
+                        sourceActorId: sourceActor.id,
+                        sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                        targetActorId: targetActor.id,
+                        targetActorName: targetActor.name,
+                        itemId: sourceItem.id,
+                        itemName: sourceItem.name,
+                        quantity: selectedQuantity,
+                        hasQuantity: !!sourceItem.system?.quantity,
+                        isPlural: selectedQuantity > 1,
                         isGMApproval: true,
-                        data: transferData
-                    }
+                        transferId,
+                        receiverIds: gmUsers.map(u => u.id),
+                        transferData
+                    });
                 }
-            });
+            } else {
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-request",
+                        strCardIcon: "fas fa-gavel",
+                        strCardTitle: "GM Approval Required",
+                        sourceActor,
+                        sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                        targetActor,
+                        targetActorName: targetActor.name,
+                        item: sourceItem,
+                        itemName: sourceItem.name,
+                        quantity: selectedQuantity,
+                        hasQuantity: !!sourceItem.system?.quantity,
+                        isPlural: selectedQuantity > 1,
+                        isGMApproval: true,
+                        transferId
+                    }),
+                    speaker: { alias: "System Transfer" },
+                    whisper: gmUsers.map(u => u.id),
+                    flags: {
+                        [MODULE.ID]: {
+                            transferId,
+                            type: 'transferRequest',
+                            isGMApproval: true,
+                            data: transferData
+                        }
+                    }
+                });
+            }
         }
     }
 
