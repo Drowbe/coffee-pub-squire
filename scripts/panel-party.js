@@ -1053,6 +1053,7 @@ export class PartyPanel {
                                 quantity: transferData.selectedQuantity,
                                 hasQuantity: transferData.hasQuantity,
                                 isPlural: transferData.selectedQuantity > 1,
+                                isTransferSender: true,
                                 receiverIds: [senderUser.id],
                                 transferId
                             });
@@ -1071,6 +1072,7 @@ export class PartyPanel {
                                 quantity: transferData.selectedQuantity,
                                 hasQuantity: transferData.hasQuantity,
                                 isPlural: transferData.selectedQuantity > 1,
+                                isTransferReceiver: true,
                                 receiverIds: receiverUsers.map(u => u.id),
                                 transferId
                             });
@@ -1387,6 +1389,7 @@ export class PartyPanel {
                         quantity: transferData.selectedQuantity,
                         hasQuantity: transferData.hasQuantity,
                         isPlural: transferData.selectedQuantity > 1,
+                        isTransferSender: true,
                         receiverIds: [senderUser.id],
                         transferId
                     });
@@ -1405,6 +1408,7 @@ export class PartyPanel {
                         quantity: transferData.selectedQuantity,
                         hasQuantity: transferData.hasQuantity,
                         isPlural: transferData.selectedQuantity > 1,
+                        isTransferReceiver: true,
                         receiverIds: receiverUsers.map(u => u.id),
                         transferId
                     });
@@ -1672,6 +1676,7 @@ export class PartyPanel {
                         quantity: transferData.selectedQuantity,
                         hasQuantity: transferData.hasQuantity,
                         isPlural: transferData.selectedQuantity > 1,
+                        isTransferSender: true,
                         receiverIds: [senderUser.id],
                         transferId
                     });
@@ -1690,6 +1695,7 @@ export class PartyPanel {
                         quantity: transferData.selectedQuantity,
                         hasQuantity: transferData.hasQuantity,
                         isPlural: transferData.selectedQuantity > 1,
+                        isTransferReceiver: true,
                         receiverIds: receiverUsers.map(u => u.id),
                         transferId
                     });

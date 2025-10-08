@@ -862,6 +862,8 @@ Hooks.once('socketlib.ready', () => {
                         quantity: data.quantity,
                         hasQuantity: data.hasQuantity,
                         isPlural: data.isPlural,
+                        isTransferSender: data.isTransferSender || false,
+                        isTransferReceiver: data.isTransferReceiver || false,
                         isGMNotification: data.isGMNotification || false
                     }),
                     whisper: data.receiverIds || [data.receiverId] || [],

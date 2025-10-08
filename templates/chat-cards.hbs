@@ -169,7 +169,7 @@
           {{else if isTransferReceiver}}
             You have received {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong>.
           {{else if isGMNotification}}
-            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+            The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{else}}
             The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{/if}}
@@ -214,7 +214,17 @@
         <i class="fas fa-clock"></i> Transfer Request Expired
       </div>
       <div class="section-content">
-        <p>The transfer request has expired and was automatically rejected.</p>
+        <p>
+          {{#if isTransferSender}}
+            Your transfer request to send {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong> has expired.
+          {{else if isTransferReceiver}}
+            The transfer request to receive {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong> has expired.
+          {{else if isGMNotification}}
+            The transfer request for {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong> has expired.
+          {{else}}
+            The transfer request has expired and was automatically rejected.
+          {{/if}}
+        </p>
       </div>
     </div>
 
@@ -302,7 +312,7 @@
           {{else if isTransferReceiver}}
             You have received {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong>.
           {{else if isGMNotification}}
-            GM Notification: The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
+            The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{else}}
             The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> has been completed between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong>.
           {{/if}}
@@ -348,7 +358,17 @@
         <i class="fas fa-clock"></i> Transfer Request Expired
       </div>
       <div class="section-content">
-        <p>The transfer request has expired and was automatically rejected.</p>
+        <p>
+          {{#if isTransferSender}}
+            Your transfer request to send {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong> has expired.
+          {{else if isTransferReceiver}}
+            The transfer request to receive {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> from <strong>{{sourceActorName}}</strong> has expired.
+          {{else if isGMNotification}}
+            The transfer request for {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> between <strong>{{sourceActorName}}</strong> and <strong>{{targetActorName}}</strong> has expired.
+          {{else}}
+            The transfer request has expired and was automatically rejected.
+          {{/if}}
+        </p>
       </div>
     </div>
 
