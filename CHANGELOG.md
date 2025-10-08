@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [12.1.6] - Item Transfer Improvements
+
+### Added
+- **GM Approval System**: New setting to require GM approval for all player-to-player transfers
+- **Transfer Request Cards**: Interactive chat cards for transfer requests with Accept/Reject buttons
+- **GM Approval Cards**: Dedicated approval interface for GMs with Approve/Deny buttons
+- **Transfer Validation**: Items are validated before transfer to ensure they still exist and have sufficient quantity
+- **Automatic Expiration**: Transfer requests automatically expire after configurable timeout (10-180 seconds, default 30)
+- **Transfer Timeout Setting**: New world setting to configure how long transfer requests remain valid
+- **Personalized Messages**: Different chat messages for senders, receivers, and GMs for all transfer outcomes
+- **Transfer Status Messages**: Clear feedback for waiting, accepted, rejected, expired, and failed transfers
+- **Failure Notifications**: Detailed error messages when transfers fail due to missing items or insufficient quantity
+
+### Changed
+- **Transfer Flow**: Completely redesigned transfer system with proper approval workflows
+- **Chat Card System**: All transfer messages now use consistent chat card templates instead of hardcoded HTML
+- **Message Targeting**: Improved whisper targeting to ensure correct users receive appropriate messages
+- **GM Bypass**: GMs can transfer items between characters without requiring self-approval
+- **Transfer Cleanup**: Automatic cleanup of request messages and waiting messages after transfer completion
+- **Timer Management**: Background timer system for proactive transfer expiration with proper cleanup
+
+### Fixed
+- **Duplicate Messages**: Fixed GM receiving duplicate transfer complete messages
+- **Message Persistence**: Fixed sender "waiting" messages persisting after transfer completion
+- **Deleted Item Handling**: Fixed crashes when attempting to transfer deleted items
+- **Quantity Validation**: Fixed transfers proceeding when insufficient quantity available
+- **Template Errors**: Fixed duplicate closing tags in chat card templates
+- **Null Reference Errors**: Added proper null checks and fallbacks for deleted items
+
+
+
 ## [12.1.5] - Bug Squashing
 
 ### Fixed
