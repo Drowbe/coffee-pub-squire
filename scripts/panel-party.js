@@ -324,69 +324,14 @@ export class PartyPanel {
                             const hasSourcePermission = sourceActor.isOwner;
                             
                             // Handle quantity logic for stackable items
-                            let quantityToTransfer = 1;
                             const hasQuantity = sourceItem.system.quantity != null;
                             const maxQuantity = hasQuantity ? sourceItem.system.quantity : 1;
-                            
-                            // Always create a dialog, even for single items
-                            const timestamp = Date.now();
                             
                             // Check if we have direct permission to modify the target actor
                             const hasTargetPermission = targetActor.isOwner;
                             
-                            // Prepare template data for sender's dialog
-                            const senderTemplateData = {
-                                sourceItem,
-                                sourceActor,
-                                targetActor,
-                                maxQuantity,
-                                timestamp,
-                                canAdjustQuantity: hasQuantity && maxQuantity > 1,
-                                isReceiveRequest: false,
-                                hasQuantity
-                            };
-                            
-                            // Render the transfer dialog template for the sender
-                            const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
-                            
-                            // Initiate the transfer process
-                            let selectedQuantity = await new Promise(resolve => {
-                                new Dialog({
-                                    title: "Transfer Item",
-                                    content: senderContent,
-                                    buttons: {
-                                        transfer: {
-                                            icon: '<i class="fas fa-exchange-alt"></i>',
-                                            label: "Transfer",
-                                            callback: html => {
-                                                if (hasQuantity && maxQuantity > 1) {
-                                                    const quantity = Math.clamp(
-                                                        parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
-                                                        1,
-                                                        maxQuantity
-                                                    );
-                                                    resolve(quantity);
-                                                } else {
-                                                    resolve(1);
-                                                }
-                                            }
-                                        },
-                                        cancel: {
-                                            icon: '<i class="fas fa-times"></i>',
-                                            label: "Cancel",
-                                            callback: () => resolve(0)
-                                        }
-                                    },
-                                    default: "transfer",
-                                    close: () => resolve(0)
-                                }, {
-                                    classes: ["transfer-item"],
-                                    id: `transfer-item-${timestamp}`,
-                                    width: 320,
-                                    height: "auto"
-                                }).render(true);
-                            });
-                            
+                            // Show quantity selection dialog
+                            const selectedQuantity = await this._showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity);
                             if (selectedQuantity <= 0) return; // User cancelled
                             
                             if (!hasSourcePermission || !hasTargetPermission) {
@@ -488,69 +433,14 @@ export class PartyPanel {
                         const hasSourcePermission = sourceActor.isOwner;
                         
                         // Handle quantity logic for stackable items
-                        let quantityToTransfer = 1;
                         const hasQuantity = sourceItem.system.quantity != null;
                         const maxQuantity = hasQuantity ? sourceItem.system.quantity : 1;
-                        
-                        // Always create a dialog, even for single items
-                        const timestamp = Date.now();
                         
                         // Check if we have direct permission to modify the target actor
                         const hasTargetPermission = targetActor.isOwner;
                         
-                        // Prepare template data for sender's dialog
-                        const senderTemplateData = {
-                            sourceItem,
-                            sourceActor,
-                            targetActor,
-                            maxQuantity,
-                            timestamp,
-                            canAdjustQuantity: hasQuantity && maxQuantity > 1,
-                            isReceiveRequest: false,
-                            hasQuantity
-                        };
-                        
-                        // Render the transfer dialog template for the sender
-                        const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
-                        
-                        // Initiate the transfer process
-                        let selectedQuantity = await new Promise(resolve => {
-                            new Dialog({
-                                title: "Transfer Item",
-                                content: senderContent,
-                                buttons: {
-                                    transfer: {
-                                        icon: '<i class="fas fa-exchange-alt"></i>',
-                                        label: "Transfer",
-                                        callback: html => {
-                                            if (hasQuantity && maxQuantity > 1) {
-                                                const quantity = Math.clamp(
-                                                    parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
-                                                    1,
-                                                    maxQuantity
-                                                );
-                                                resolve(quantity);
-                                            } else {
-                                                resolve(1);
-                                            }
-                                        }
-                                    },
-                                    cancel: {
-                                        icon: '<i class="fas fa-times"></i>',
-                                        label: "Cancel",
-                                        callback: () => resolve(0)
-                                    }
-                                },
-                                default: "transfer",
-                                close: () => resolve(0)
-                            }, {
-                                classes: ["transfer-item"],
-                                id: `transfer-item-${timestamp}`,
-                                width: 320,
-                                height: "auto"
-                            }).render(true);
-                        });
-                        
+                        // Show quantity selection dialog
+                        const selectedQuantity = await this._showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity);
                         if (selectedQuantity <= 0) return; // User cancelled
                         
                         if (!hasSourcePermission || !hasTargetPermission) {
@@ -595,7 +485,7 @@ export class PartyPanel {
                 const panelManager = game.modules.get('coffee-pub-squire')?.api?.PanelManager;
                 if (panelManager?.instance) {
                     const currentActorId = panelManager.currentActor?.id;
-                    if (currentActorId === targetActorId || 
+                    if (currentActorId === targetActor.id || 
                         (data.type === 'Actor' && data.id === currentActorId)) {
                         // Just update the inventory panel content, don't recreate the entire tray
                         if (panelManager.instance.inventoryPanel) {
@@ -873,6 +763,74 @@ export class PartyPanel {
                 });
             }
         }
+    }
+
+    /**
+     * Show quantity selection dialog for item transfer
+     * @param {Item} sourceItem - Item being transferred
+     * @param {Actor} sourceActor - Source actor
+     * @param {Actor} targetActor - Target actor
+     * @param {number} maxQuantity - Maximum quantity available
+     * @param {boolean} hasQuantity - Whether item has quantity property
+     * @returns {Promise<number>} - Selected quantity (0 if cancelled)
+     */
+    async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
+        const timestamp = Date.now();
+        
+        // Prepare template data for sender's dialog
+        const senderTemplateData = {
+            sourceItem,
+            sourceActor,
+            targetActor,
+            maxQuantity,
+            timestamp,
+            canAdjustQuantity: hasQuantity && maxQuantity > 1,
+            isReceiveRequest: false,
+            hasQuantity
+        };
+        
+        // Render the transfer dialog template for the sender
+        const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
+        
+        // Initiate the transfer process
+        const selectedQuantity = await new Promise(resolve => {
+            new Dialog({
+                title: "Transfer Item",
+                content: senderContent,
+                buttons: {
+                    transfer: {
+                        icon: '<i class="fas fa-exchange-alt"></i>',
+                        label: "Transfer",
+                        callback: html => {
+                            if (hasQuantity && maxQuantity > 1) {
+                                const quantity = Math.clamp(
+                                    parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
+                                    1,
+                                    maxQuantity
+                                );
+                                resolve(quantity);
+                            } else {
+                                resolve(1);
+                            }
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: "Cancel",
+                        callback: () => resolve(0)
+                    }
+                },
+                default: "transfer",
+                close: () => resolve(0)
+            }, {
+                classes: ["transfer-item"],
+                id: `transfer-item-${timestamp}`,
+                width: 320,
+                height: "auto"
+            }).render(true);
+        });
+        
+        return selectedQuantity;
     }
 
     destroy() {

@@ -84,7 +84,7 @@
 - **Risk Level**: ⭐⭐⭐ Medium
 - **Returns**: Promise<number> (0 = cancelled)
 - **Test**: Dialog appears, quantity validation works, cancel works
-- **Status**: ⬜ Not Started
+- **Status**: ✅ Complete
 
 #### **3.2: Transfer Execution**
 - **Method**: `_executeTransferWithPermissions(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity)`
@@ -323,11 +323,11 @@ case 'Actor':
 
 ## Progress Tracking
 
-### Overall Progress: 45% Complete
+### Overall Progress: 50% Complete
 
 - [x] Phase 1 Complete (2/2 tasks done)
 - [x] Phase 2 Complete (3/3 tasks done)
-- [ ] Phase 3 Complete
+- [ ] Phase 3 Complete (1/2 tasks done)
 - [ ] Phase 4 Complete
 - [ ] Phase 5 Complete
 - [ ] Phase 6 Complete
@@ -338,5 +338,7 @@ case 'Actor':
 - ✅ Phase 2.1 (GM Notification) - Completed and tested successfully. Also removed debug markers "LINE 537" and "LINE 819".
 - ✅ Phase 2.2 (Sender Message) - Completed and tested successfully. Sender confirmation messages extracted to helper.
 - ✅ Phase 2.3 (Receiver Message) - Completed and tested successfully. Complex socketlib logic extracted to helper, Accept/Reject buttons working.
-- Lines reduced so far: 282 lines saved (38 from Phase 1.1, 30 from Phase 1.2, 44 from Phase 2.1, 58 from Phase 2.2, 112 from Phase 2.3)
+- ✅ Phase 3.1 (Quantity Dialog) - Completed successfully. Dialog logic extracted to helper with promise handling.
+- 🐛 **Bug Fix**: Fixed pre-existing scope issue at line 488 - changed `targetActorId` to `targetActor.id` to fix GM dragging items from Items directory.
+- Lines reduced so far: 398 lines saved (38 from Phase 1.1, 30 from Phase 1.2, 44 from Phase 2.1, 58 from Phase 2.2, 112 from Phase 2.3, 116 from Phase 3.1)
 
