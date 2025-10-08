@@ -348,24 +348,8 @@ export class PartyPanel {
                                 return;
                             }
                             
-                            if (hasSourcePermission && hasTargetPermission) {
-                                await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
-                                return;
-                            } else {
-                                const socket = game.modules.get(MODULE.ID)?.socket;
-                                if (!socket) {
-                                    ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-                                    return;
-                                }
-                                await socket.executeAsGM('executeItemTransfer', {
-                                    sourceActorId: sourceActor.id,
-                                    targetActorId: targetActor.id,
-                                    sourceItemId: sourceItem.id,
-                                    quantity: selectedQuantity,
-                                    hasQuantity: hasQuantity
-                                });
-                                return;
-                            }
+                            await this._executeTransferWithPermissions(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
+                            return;
                             
                         } else {
                             // This is a regular world item
@@ -459,24 +443,8 @@ export class PartyPanel {
                             return;
                         }
                         
-                        if (hasSourcePermission && hasTargetPermission) {
-                            await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
-                            return;
-                        } else {
-                            const socket = game.modules.get(MODULE.ID)?.socket;
-                            if (!socket) {
-                                ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-                                return;
-                            }
-                            await socket.executeAsGM('executeItemTransfer', {
-                                sourceActorId: sourceActor.id,
-                                targetActorId: targetActor.id,
-                                sourceItemId: sourceItem.id,
-                                quantity: selectedQuantity,
-                                hasQuantity: hasQuantity
-                            });
-                            return;
-                        }
+                        await this._executeTransferWithPermissions(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
+                        return;
                         break;
                 }
                 
@@ -833,6 +801,38 @@ export class PartyPanel {
         });
         
         return selectedQuantity;
+    }
+
+    /**
+     * Execute item transfer based on permissions
+     * @param {Actor} sourceActor - Source actor
+     * @param {Actor} targetActor - Target actor
+     * @param {Item} sourceItem - Item being transferred
+     * @param {number} selectedQuantity - Quantity to transfer
+     * @param {boolean} hasQuantity - Whether item has quantity property
+     */
+    async _executeTransferWithPermissions(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity) {
+        const hasSourcePermission = sourceActor.isOwner;
+        const hasTargetPermission = targetActor.isOwner;
+        
+        if (hasSourcePermission && hasTargetPermission) {
+            await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
+            return;
+        } else {
+            const socket = game.modules.get(MODULE.ID)?.socket;
+            if (!socket) {
+                ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+                return;
+            }
+            await socket.executeAsGM('executeItemTransfer', {
+                sourceActorId: sourceActor.id,
+                targetActorId: targetActor.id,
+                sourceItemId: sourceItem.id,
+                quantity: selectedQuantity,
+                hasQuantity: hasQuantity
+            });
+            return;
+        }
     }
 
     destroy() {

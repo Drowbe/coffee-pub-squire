@@ -91,7 +91,7 @@
 - **Lines to Replace**: 558-575, 840-857
 - **Risk Level**: ⭐⭐⭐⭐ High (handles actual item transfer)
 - **Test**: Items transfer correctly with proper permissions
-- **Status**: ⬜ Not Started
+- **Status**: ✅ Complete
 
 ---
 
@@ -226,7 +226,7 @@ case 'Actor':
 - **Result**: ✅ All messages work correctly - sender confirmations and receiver actionable messages with buttons
 
 ### **Step 5**: Dialog & Execution
-- **Status**: ⬜ Not Started
+- **Status**: ✅ Complete
 - Implement `_showTransferQuantityDialog()` and `_executeTransferWithPermissions()`
 - Replace inline in both cases
 - **Test**: Full transfer workflow with quantity selection
@@ -323,11 +323,11 @@ case 'Actor':
 
 ## Progress Tracking
 
-### Overall Progress: 50% Complete
+### Overall Progress: 55% Complete
 
 - [x] Phase 1 Complete (2/2 tasks done)
 - [x] Phase 2 Complete (3/3 tasks done)
-- [ ] Phase 3 Complete (1/2 tasks done)
+- [x] Phase 3 Complete (2/2 tasks done)
 - [ ] Phase 4 Complete
 - [ ] Phase 5 Complete
 - [ ] Phase 6 Complete
@@ -338,8 +338,9 @@ case 'Actor':
 - ✅ Phase 2.1 (GM Notification) - Completed and tested successfully. Also removed debug markers "LINE 537" and "LINE 819".
 - ✅ Phase 2.2 (Sender Message) - Completed and tested successfully. Sender confirmation messages extracted to helper.
 - ✅ Phase 2.3 (Receiver Message) - Completed and tested successfully. Complex socketlib logic extracted to helper, Accept/Reject buttons working.
-- ✅ Phase 3.1 (Quantity Dialog) - Completed successfully. Dialog logic extracted to helper with promise handling.
+- ✅ Phase 3.1 (Quantity Dialog) - Completed and tested successfully. Dialog logic extracted to helper with promise handling.
+- ✅ Phase 3.2 (Transfer Execution) - Completed successfully. Permission-based execution logic extracted to helper.
 - 🐛 **Bug Fix #1**: Fixed pre-existing scope issue at line 488 - changed `targetActorId` to `targetActor.id` to fix GM dragging items from Items directory.
 - 🐛 **Bug Fix #2**: Fixed missing `setFlag(MODULE.ID, 'isNew', true)` calls for world items and item directory drops - "new" tags now appear consistently.
-- Lines reduced so far: 398 lines saved (38 from Phase 1.1, 30 from Phase 1.2, 44 from Phase 2.1, 58 from Phase 2.2, 112 from Phase 2.3, 116 from Phase 3.1)
+- Lines reduced so far: 432 lines saved (38 from Phase 1.1, 30 from Phase 1.2, 44 from Phase 2.1, 58 from Phase 2.2, 112 from Phase 2.3, 116 from Phase 3.1, 34 from Phase 3.2)
 
