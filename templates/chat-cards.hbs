@@ -249,9 +249,16 @@
       </div>
       <div class="section-content">
         {{#if isTransferSender}}
-          <p>The request to send {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong>.</p> to <strong>{{targetActorName}}</strong> has been sent.</p>
+          <p>The request to send {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong> has been sent.</p>
+          {{#if strCardContent}}<p><em>{{strCardContent}}</em></p>{{/if}}
+        {{else if isGMApproval}}
+          <p><strong>{{sourceActorName}}</strong> wants to send {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong>.</p>
+          <div class="transfer-request-buttons blacksmith-chat-buttons">
+            <button class="gm-approval-button chat-button approve" data-transfer-id="{{transferId}}"><i class="fas fa-circle-check"></i> Approve</button>
+            <button class="gm-approval-button chat-button deny" data-transfer-id="{{transferId}}"><i class="fas fa-circle-xmark"></i> Deny</button>
+          </div>
         {{else if isTransferReceiver}}
-          <p><strong>{{sourceActorName}}</strong> wants to send you {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong>.</p>
+          <p><strong>{{sourceActorName}}</strong> wants to send you {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong>.</p>
           <div class="transfer-request-buttons blacksmith-chat-buttons">
             <button class="transfer-request-button chat-button accept" data-transfer-id="{{transferId}}"><i class="fas fa-circle-check"></i> Accept</button>
             <button class="transfer-request-button chat-button reject" data-transfer-id="{{transferId}}"><i class="fas fa-circle-xmark"></i> Reject</button>
@@ -297,6 +304,7 @@
             The transfer of {{#if hasQuantity}}{{quantity}} {{/if}} <strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> was rejected.
           {{/if}}
         </p>
+        {{#if strCardContent}}<p><em>{{strCardContent}}</em></p>{{/if}}
       </div>
     </div>
 

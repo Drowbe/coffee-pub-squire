@@ -338,14 +338,17 @@ export class PartyPanel {
                                 // Prepare transfer data
                                 const transferId = `transfer_${Date.now()}`;
                                 const transferData = this._createTransferData(transferId, sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
-                                // Sender: request sent message (no Accept/Reject buttons)
-                                await this._sendTransferSenderMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
-                                // Receiver: actionable message (with Accept/Reject buttons)
-                                await this._sendTransferReceiverMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
-                                // GM: only if approval is required (no Accept/Reject buttons)
                                 const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+                                
+                                // Sender: request sent message (no Accept/Reject buttons)
+                                await this._sendTransferSenderMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData, gmApprovalRequired);
+                                
                                 if (gmApprovalRequired) {
+                                    // GM: approval request with Approve/Deny buttons
                                     await this._sendGMTransferNotification(sourceActor, targetActor, sourceItem, selectedQuantity, transferId, transferData);
+                                } else {
+                                    // Receiver: actionable message (with Accept/Reject buttons) - only if GM approval NOT required
+                                    await this._sendTransferReceiverMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
                                 }
                                 // Do not execute the transfer yet
                                 return;
@@ -436,14 +439,17 @@ export class PartyPanel {
                             // Prepare transfer data
                             const transferId = `transfer_${Date.now()}`;
                             const transferData = this._createTransferData(transferId, sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
-                            // Sender: request sent message (no Accept/Reject buttons)
-                            await this._sendTransferSenderMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
-                            // Receiver: actionable message (with Accept/Reject buttons)
-                            await this._sendTransferReceiverMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
-                            // GM: only if approval is required (no Accept/Reject buttons)
                             const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+                            
+                            // Sender: request sent message (no Accept/Reject buttons)
+                            await this._sendTransferSenderMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData, gmApprovalRequired);
+                            
                             if (gmApprovalRequired) {
+                                // GM: approval request with Approve/Deny buttons
                                 await this._sendGMTransferNotification(sourceActor, targetActor, sourceItem, selectedQuantity, transferId, transferData);
+                            } else {
+                                // Receiver: actionable message (with Accept/Reject buttons) - only if GM approval NOT required
+                                await this._sendTransferReceiverMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
                             }
                             // Do not execute the transfer yet
                             return;
@@ -595,8 +601,8 @@ export class PartyPanel {
     }
 
     /**
-     * Send GM notification for transfer request (if approval required)
-     * @param {Actor} sourceActor - Source actor
+     * Send GM approval request for transfer (with Approve/Deny buttons)
+     * @param {Actor} sourceActor - Source actor  
      * @param {Actor} targetActor - Target actor  
      * @param {Item} sourceItem - Item being transferred
      * @param {number} selectedQuantity - Quantity to transfer
@@ -605,15 +611,14 @@ export class PartyPanel {
      */
     async _sendGMTransferNotification(sourceActor, targetActor, sourceItem, selectedQuantity, transferId, transferData) {
         const gmUsers = game.users.filter(u => u.isGM);
-        const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
         
-        if (gmApprovalRequired && gmUsers.length > 0) {
+        if (gmUsers.length > 0) {
             await ChatMessage.create({
                 content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                     isPublic: false,
                     cardType: "transfer-request",
                     strCardIcon: "fas fa-gavel",
-                    strCardTitle: "GM Approval",
+                    strCardTitle: "GM Approval Required",
                     sourceActor,
                     sourceActorName: `${sourceActor.name} (${game.user.name})`,
                     targetActor,
@@ -623,9 +628,8 @@ export class PartyPanel {
                     quantity: selectedQuantity,
                     hasQuantity: !!sourceItem.system?.quantity,
                     isPlural: selectedQuantity > 1,
-                    isGMNotification: true,
-                    transferId,
-                    strCardContent: "Waiting for the GM to approve the transfer."
+                    isGMApproval: true,
+                    transferId
                 }),
                 speaker: { alias: "System Transfer" },
                 whisper: gmUsers.map(u => u.id),
@@ -633,7 +637,7 @@ export class PartyPanel {
                     [MODULE.ID]: {
                         transferId,
                         type: 'transferRequest',
-                        isGMNotification: true,
+                        isGMApproval: true,
                         data: transferData
                     }
                 }
@@ -650,8 +654,9 @@ export class PartyPanel {
      * @param {boolean} hasQuantity - Whether item has quantity property
      * @param {string} transferId - Transfer identifier
      * @param {Object} transferData - Transfer data object
+     * @param {boolean} gmApprovalRequired - Whether GM approval is required
      */
-    async _sendTransferSenderMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData) {
+    async _sendTransferSenderMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData, gmApprovalRequired) {
         await ChatMessage.create({
             content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                 isPublic: false,
@@ -668,7 +673,8 @@ export class PartyPanel {
                 hasQuantity: !!hasQuantity,
                 isPlural: selectedQuantity > 1,
                 isTransferSender: true,
-                transferId
+                transferId,
+                strCardContent: gmApprovalRequired ? "Waiting for GM approval." : "Waiting for receiver to accept."
             }),
             speaker: { alias: "System" },
             whisper: [game.users.get(transferData.sourceUserId).id],
@@ -922,6 +928,18 @@ export class PartyPanel {
 
         // Only handle transfer request buttons
         if (message.flags[MODULE.ID].type === 'transferRequest') {
+            // Handle GM approval buttons
+            if (html.find('.gm-approval-button').length > 0) {
+                if (html.find('.gm-approval-button').data('handlers-attached')) return;
+                const gmButtons = html.find('.gm-approval-button');
+                gmButtons.data('handlers-attached', true);
+                gmButtons.click(async (event) => {
+                    await this._handleGMApprovalClick(event, message, html);
+                });
+                return;
+            }
+            
+            // Handle receiver accept/reject buttons
             if (html.find('.transfer-request-button').data('handlers-attached')) return;
             const buttons = html.find('.transfer-request-button');
             buttons.data('handlers-attached', true);
@@ -1184,6 +1202,136 @@ export class PartyPanel {
                     }
                 }
             });
+        }
+    }
+
+    /**
+     * Handle GM approval button clicks (Approve/Deny)
+     * @param {Event} event - Click event
+     * @param {ChatMessage} message - The chat message
+     * @param {jQuery} html - The message HTML
+     */
+    async _handleGMApprovalClick(event, message, html) {
+        const button = event.currentTarget;
+        const transferId = button.dataset.transferId;
+        const isApprove = button.classList.contains('approve');
+        
+        // Get transfer data from the message
+        const transferData = message.getFlag(MODULE.ID, 'data');
+        if (!transferData) {
+            ui.notifications.error("Transfer request data not found");
+            return;
+        }
+        
+        const sourceActor = game.actors.get(transferData.sourceActorId);
+        const targetActor = game.actors.get(transferData.targetActorId);
+        const item = sourceActor?.items.get(transferData.itemId);
+        const senderUser = game.users.get(transferData.sourceUserId);
+        
+        // Disable buttons immediately
+        html.find('.gm-approval-button').prop('disabled', true);
+        html.find('.gm-approval-button').addClass('disabled');
+        html.find('.transfer-request-buttons').append('<div class="processing-message" style="margin-top: 5px; text-align: center; font-style: italic;">Processing...</div>');
+        
+        // Replace the GM message with result
+        try {
+            const resultText = isApprove ? "approved" : "denied";
+            const replacementContent = `
+                <span style="visibility: none">coffeepub-hide-header</span>
+                <div class="blacksmith-card theme-default">
+                  <div class="section-header">
+                    <i class="${isApprove ? 'fas fa-check-circle' : 'fas fa-circle-xmark'}"></i> Transfer ${resultText.charAt(0).toUpperCase() + resultText.slice(1)}
+                  </div>
+                  <div class="section-content">
+                    <p>You have ${resultText} the transfer request.</p>
+                  </div>
+                </div>
+            `;
+            
+            await ChatMessage.create({
+                content: replacementContent,
+                whisper: [game.user.id],
+                speaker: ChatMessage.getSpeaker()
+            });
+            
+            // Delete the original message
+            const currentMessage = game.messages.get(message.id);
+            if (currentMessage && game.user.isGM) {
+                await currentMessage.delete();
+            }
+        } catch (error) {
+            console.error('Error handling GM approval message:', error);
+        }
+        
+        if (isApprove) {
+            // GM approved - now send to receiver for their accept/reject
+            await this._sendTransferReceiverMessage(sourceActor, targetActor, item, transferData.quantity, transferData.hasQuantity, transferId, transferData);
+            
+            // Update sender's message to reflect GM approval
+            if (senderUser) {
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-request",
+                        strCardIcon: "fas fa-people-arrows",
+                        strCardTitle: "Transfer Request",
+                        sourceActor,
+                        sourceActorName: sourceActor.name,
+                        targetActor,
+                        targetActorName: targetActor.name,
+                        item,
+                        itemName: item.name,
+                        quantity: transferData.quantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.quantity > 1,
+                        isTransferSender: true,
+                        strCardContent: "GM approved. Waiting for receiver to accept."
+                    }),
+                    speaker: { alias: "System" },
+                    whisper: [senderUser.id]
+                });
+            }
+        } else {
+            // GM denied - send rejection message to sender
+            const socket = game.modules.get(MODULE.ID)?.socket;
+            if (socket && !game.user.isGM) {
+                await socket.executeAsGM('createTransferRejectedChat', {
+                    sourceActorId: sourceActor.id,
+                    sourceActorName: sourceActor.name,
+                    targetActorId: targetActor.id,
+                    targetActorName: targetActor.name,
+                    itemId: item.id,
+                    itemName: item.name,
+                    quantity: transferData.quantity,
+                    hasQuantity: transferData.hasQuantity,
+                    isPlural: transferData.quantity > 1,
+                    isTransferSender: true,
+                    receiverId: senderUser.id,
+                    strCardContent: "The GM denied this transfer request.",
+                    transferId
+                });
+            } else if (game.user.isGM) {
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-rejected",
+                        strCardIcon: "fas fa-times-circle",
+                        strCardTitle: "Transfer Denied",
+                        sourceActor,
+                        sourceActorName: sourceActor.name,
+                        targetActor,
+                        targetActorName: targetActor.name,
+                        item,
+                        itemName: item.name,
+                        quantity: transferData.quantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.quantity > 1,
+                        strCardContent: "The GM denied this transfer request."
+                    }),
+                    whisper: [senderUser.id],
+                    speaker: ChatMessage.getSpeaker({user: game.user})
+                });
+            }
         }
     }
 
