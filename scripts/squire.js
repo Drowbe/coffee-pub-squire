@@ -611,17 +611,67 @@ Hooks.once('socketlib.ready', () => {
         
         // Register socket functions with socket handlers
         socket.register("executeItemTransfer", async (data) => {
-            if (!game.user.isGM) return;
+            if (!game.user.isGM) return false;
             
             try {
                 // Get actors and item
                 const sourceActor = game.actors.get(data.sourceActorId);
                 const targetActor = game.actors.get(data.targetActorId);
-                const sourceItem = sourceActor.items.get(data.sourceItemId);
                 
-                if (!sourceActor || !targetActor || !sourceItem) {
-                    console.error('Missing actor or item data for transfer:', { data });
-                    return;
+                if (!sourceActor || !targetActor) {
+                    console.error('Missing actor data for transfer:', { data });
+                    return false;
+                }
+                
+                // Get the item and validate it still exists
+                const sourceItem = sourceActor.items.get(data.sourceItemId);
+                if (!sourceItem) {
+                    console.error('Source item no longer exists for transfer:', { data });
+                    // Send error message to all relevant users
+                    const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+                    const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+                    const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
+                    
+                    await ChatMessage.create({
+                        content: `<div class="blacksmith-card theme-default">
+                            <div class="section-header">
+                                <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+                            </div>
+                            <div class="section-content">
+                                <p>The item "${data.itemName || 'Unknown Item'}" no longer exists and cannot be transferred.</p>
+                            </div>
+                        </div>`,
+                        speaker: { alias: "System" },
+                        whisper: allUsers
+                    });
+                    return false;
+                }
+                
+                // Validate quantity if applicable
+                if (data.hasQuantity && data.quantity > sourceItem.system.quantity) {
+                    console.error('Insufficient quantity for transfer:', { 
+                        requested: data.quantity, 
+                        available: sourceItem.system.quantity, 
+                        data 
+                    });
+                    // Send error message to all relevant users
+                    const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+                    const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+                    const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
+                    
+                    await ChatMessage.create({
+                        content: `<div class="blacksmith-card theme-default">
+                            <div class="section-header">
+                                <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+                            </div>
+                            <div class="section-content">
+                                <p>Insufficient quantity. Only ${sourceItem.system.quantity} ${sourceItem.name}${sourceItem.system.quantity !== 1 ? 's' : ''} available, but ${data.quantity} requested.</p>
+                            </div>
+                        </div>`,
+                        speaker: { alias: "System" },
+                        whisper: allUsers
+                    });
+                    return false;
                 }
                 
                 // Create a copy of the item data to transfer
@@ -652,8 +702,11 @@ Hooks.once('socketlib.ready', () => {
                     await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
                 }
                 
+                return true; // Success
+                
             } catch (error) {
                 console.error('Error executing item transfer:', error);
+                return false;
             }
         });
         
@@ -1302,16 +1355,66 @@ async function setTransferRequestFlag(targetActorId, flagKey, flagData) {
  * @param {boolean} accepted Whether the transfer was accepted
  */
 async function executeItemTransfer(transferData, accepted) {
-    if (!game.user.isGM) return;
+    if (!game.user.isGM) return false;
     
-    // Get actors and item
+    // Get actors
     const sourceActor = game.actors.get(transferData.sourceActorId);
     const targetActor = game.actors.get(transferData.targetActorId);
-    const sourceItem = sourceActor.items.get(transferData.sourceItemId);
     
-    if (!sourceActor || !targetActor || !sourceItem) {
-        console.error('Missing actor or item data for transfer:', { transferData });
-        return;
+    if (!sourceActor || !targetActor) {
+        console.error('Missing actor data for transfer:', { transferData });
+        return false;
+    }
+    
+    // Get the item and validate it still exists
+    const sourceItem = sourceActor.items.get(transferData.sourceItemId);
+    if (!sourceItem) {
+        console.error('Source item no longer exists for transfer:', { transferData });
+        // Send error message to all relevant users
+        const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+        const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+        const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), transferData.requester, game.user.id])].filter(id => id);
+        
+        await ChatMessage.create({
+            content: `<div class="blacksmith-card theme-default">
+                <div class="section-header">
+                    <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+                </div>
+                <div class="section-content">
+                    <p>The item "${transferData.itemName || 'Unknown Item'}" no longer exists and cannot be transferred.</p>
+                </div>
+            </div>`,
+            speaker: { alias: "System" },
+            whisper: allUsers
+        });
+        return false;
+    }
+    
+    // Validate quantity if applicable
+    if (transferData.hasQuantity && transferData.selectedQuantity > sourceItem.system.quantity) {
+        console.error('Insufficient quantity for transfer:', { 
+            requested: transferData.selectedQuantity, 
+            available: sourceItem.system.quantity, 
+            transferData 
+        });
+        // Send error message to all relevant users
+        const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+        const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+        const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), transferData.requester, game.user.id])].filter(id => id);
+        
+        await ChatMessage.create({
+            content: `<div class="blacksmith-card theme-default">
+                <div class="section-header">
+                    <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+                </div>
+                <div class="section-content">
+                    <p>Insufficient quantity. Only ${sourceItem.system.quantity} ${sourceItem.name}${sourceItem.system.quantity !== 1 ? 's' : ''} available, but ${transferData.selectedQuantity} requested.</p>
+                </div>
+            </div>`,
+            speaker: { alias: "System" },
+            whisper: allUsers
+        });
+        return false;
     }
     
     // Update the flag to show transfer is in progress
@@ -1347,7 +1450,7 @@ async function executeItemTransfer(transferData, accepted) {
             socket.executeAsGM('createTransferRejectedChat', messageData);
         }
         
-        return;
+        return false;
     }
     
     try {
@@ -1398,8 +1501,11 @@ async function executeItemTransfer(transferData, accepted) {
             socket.executeAsGM('createTransferCompleteChat', messageData);
         }
         
+        return true; // Success
+        
     } catch (error) {
         console.error('Error executing item transfer:', error);
+        return false;
     }
 }
 

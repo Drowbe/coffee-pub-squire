@@ -1037,34 +1037,27 @@ export class PartyPanel {
                 // Disable the buttons immediately to prevent double-clicking
                 html.find('.transfer-request-button').prop('disabled', true);
                 html.find('.transfer-request-button').addClass('disabled');
-                html.find('.transfer-request-buttons').append('<div class="processing-message" style="margin-top: 5px; text-align: center; font-style: italic;">Processing...</div>');
 
-                // First handle the original message to avoid ordering issues in chat
-                try {
-                    // Create a replacement message for the user FIRST
-                    const isAcceptText = isAccept ? "accepted" : "rejected";
-                    const replacementContent = `
-                        <span style="visibility: none">coffeepub-hide-header</span>
-                        <div class="blacksmith-card theme-default">
-                          <div class="section-header">
-                            <i class="${isAccept ? 'fas fa-check-circle' : 'fas fa-times-circle'}"></i> Transfer ${isAcceptText.charAt(0).toUpperCase() + isAcceptText.slice(1)}
-                          </div>
-                          <div class="section-content">
-                            <p>You have ${isAcceptText} the transfer request.</p>
-                          </div>
-                        </div>
-                    `;
-                    
-                    // First create a replacement message
-                    if (!game.user.isGM) {
-                        await ChatMessage.create({
-                            content: replacementContent,
-                            whisper: [game.user.id],
-                            speaker: ChatMessage.getSpeaker()
-                        });
+                if (isAccept) {
+                    // Execute the transfer
+                    const socket = game.modules.get(MODULE.ID)?.socket;
+                    if (!socket) {
+                        ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+                        return;
                     }
                     
-                    // Then ask a GM to delete the original message
+                    const transferSucceeded = await socket.executeAsGM('executeItemTransfer', {
+                        sourceActorId: sourceActor.id,
+                        targetActorId: targetActor.id,
+                        sourceItemId: item?.id || transferData.itemId,
+                        quantity: transferData.quantity,
+                        hasQuantity: true,
+                        sourceUserId: senderUser.id,
+                        targetUserId: game.user.id,
+                        itemName: item?.name || transferData.itemName
+                    });
+                    
+                    // Delete the request message
                     const currentMessage = game.messages.get(message.id);
                     if (currentMessage) {
                         if (game.user.isGM) {
@@ -1076,28 +1069,13 @@ export class PartyPanel {
                             }
                         }
                     }
-                } catch (error) {
-                    console.error('Error handling transfer request message:', error);
-                }
-
-                if (isAccept) {
-                    // Execute the transfer first
-                    const socket = game.modules.get(MODULE.ID)?.socket;
-                    if (!socket) {
-                        ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+                    
+                    // If transfer failed, the socket handler already sent error messages - we're done
+                    if (!transferSucceeded) {
                         return;
                     }
-                    await socket.executeAsGM('executeItemTransfer', {
-                        sourceActorId: sourceActor.id,
-                        targetActorId: targetActor.id,
-                        sourceItemId: item.id,
-                        quantity: transferData.quantity,
-                        hasQuantity: true
-                    });
-
-
-
-                    // Single completion message for sender - SEND VIA SOCKETLIB
+                    
+                    // Transfer succeeded - create success messages
                     if (!game.user.isGM) {
                         const socket = game.modules.get(MODULE.ID)?.socket;
                         if (socket) {
@@ -1106,8 +1084,8 @@ export class PartyPanel {
                                 sourceActorName: sourceActor.name,
                                 targetActorId: targetActor.id,
                                 targetActorName: targetActor.name,
-                                itemId: item.id,
-                                itemName: item.name,
+                                itemId: item?.id || transferData.itemId,
+                                itemName: item?.name || transferData.itemName,
                                 quantity: transferData.quantity,
                                 hasQuantity: true,
                                 isPlural: transferData.quantity > 1,
@@ -1128,81 +1106,79 @@ export class PartyPanel {
                                 sourceActorName: sourceActor.name,
                                 targetActor,
                                 targetActorName: targetActor.name,
-                                item,
-                                itemName: item.name,
+                                item: item || { name: transferData.itemName },
+                                itemName: item?.name || transferData.itemName,
                                 quantity: transferData.quantity,
                                 hasQuantity: true,
-                                isPlural: transferData.quantity > 1
+                                isPlural: transferData.quantity > 1,
+                                isTransferSender: true
                             }),
-                            whisper: [senderUser.id],
-                            // When GM sends it, it's properly from the GM
-                            speaker: ChatMessage.getSpeaker({user: game.user})
+                            speaker: ChatMessage.getSpeaker({ actor: sourceActor }),
+                            whisper: [senderUser.id]
                         });
                     }
-
-                    // Single completion message for receiver - ONLY IF the receiver is not the sender
-                    if (receiverUsers.length > 0 && !receiverUsers.some(u => u.id === senderUser.id)) {
-                        if (!game.user.isGM) {
-                            const socket = game.modules.get(MODULE.ID)?.socket;
-                            if (socket) {
-                                await socket.executeAsGM('createTransferCompleteChat', {
-                                    sourceActorId: sourceActor.id,
-                                    sourceActorName: sourceActor.name,
-                                    targetActorId: targetActor.id,
-                                    targetActorName: targetActor.name,
-                                    itemId: item.id,
-                                    itemName: item.name,
-                                    quantity: transferData.quantity,
-                                    hasQuantity: true,
-                                    isPlural: transferData.quantity > 1,
-                                    isTransferReceiver: true,
-                                    receiverIds: receiverUsers.map(u => u.id),
-                                    transferId
-                                });
-                            }
-                        } else {
-                            // GM creates and sends the message directly
-                            await ChatMessage.create({
-                                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                                    isPublic: false,
-                                    cardType: "transfer-complete",
-                                    strCardIcon: "fas fa-backpack",
-                                    strCardTitle: "Transfer Complete",
-                                    sourceActor,
-                                    sourceActorName: sourceActor.name,
-                                    targetActor,
-                                    targetActorName: targetActor.name,
-                                    item,
-                                    itemName: item.name,
-                                    quantity: transferData.quantity,
-                                    hasQuantity: true,
-                                    isPlural: transferData.quantity > 1
-                                }),
-                                whisper: receiverUsers.map(u => u.id),
-                                // When GM sends it, it's properly from the GM
-                                speaker: ChatMessage.getSpeaker({user: game.user})
+                    
+                    // Send completion message to receiver
+                    if (!game.user.isGM) {
+                        const socket = game.modules.get(MODULE.ID)?.socket;
+                        if (socket) {
+                            await socket.executeAsGM('createTransferCompleteChat', {
+                                sourceActorId: sourceActor.id,
+                                sourceActorName: sourceActor.name,
+                                targetActorId: targetActor.id,
+                                targetActorName: targetActor.name,
+                                itemId: item?.id || transferData.itemId,
+                                itemName: item?.name || transferData.itemName,
+                                quantity: transferData.quantity,
+                                hasQuantity: true,
+                                isPlural: transferData.quantity > 1,
+                                isTransferReceiver: true,
+                                receiverId: game.user.id,
+                                transferId
                             });
                         }
+                    } else {
+                        // GM creates and sends the message directly
+                        await ChatMessage.create({
+                            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                                isPublic: false,
+                                cardType: "transfer-complete",
+                                strCardIcon: "fas fa-backpack",
+                                strCardTitle: "Transfer Complete",
+                                sourceActor,
+                                sourceActorName: sourceActor.name,
+                                targetActor,
+                                targetActorName: targetActor.name,
+                                item: item || { name: transferData.itemName },
+                                itemName: item?.name || transferData.itemName,
+                                quantity: transferData.quantity,
+                                hasQuantity: true,
+                                isPlural: transferData.quantity > 1,
+                                isTransferReceiver: true
+                            }),
+                            speaker: ChatMessage.getSpeaker({ actor: targetActor }),
+                            whisper: [game.user.id]
+                        });
                     }
                 } else {
                     // Single rejection message for sender
                     if (!game.user.isGM) {
                         const socket = game.modules.get(MODULE.ID)?.socket;
                         if (socket) {
-                            await socket.executeAsGM('createTransferRejectedChat', {
-                                sourceActorId: sourceActor.id,
-                                sourceActorName: sourceActor.name,
-                                targetActorId: targetActor.id,
-                                targetActorName: targetActor.name,
-                                itemId: item.id,
-                                itemName: item.name,
-                                quantity: transferData.quantity,
-                                hasQuantity: true,
-                                isPlural: transferData.quantity > 1,
-                                isTransferSender: true,
-                                receiverId: senderUser.id,
-                                transferId
-                            });
+                        await socket.executeAsGM('createTransferRejectedChat', {
+                            sourceActorId: sourceActor.id,
+                            sourceActorName: sourceActor.name,
+                            targetActorId: targetActor.id,
+                            targetActorName: targetActor.name,
+                            itemId: item?.id || transferData.itemId,
+                            itemName: item?.name || transferData.itemName,
+                            quantity: transferData.quantity,
+                            hasQuantity: true,
+                            isPlural: transferData.quantity > 1,
+                            isTransferSender: false,
+                            receiverId: senderUser.id,
+                            transferId
+                        });
                         }
                     } else {
                         // GM creates and sends the message directly
@@ -1216,8 +1192,8 @@ export class PartyPanel {
                                 sourceActorName: sourceActor.name,
                                 targetActor,
                                 targetActorName: targetActor.name,
-                                item,
-                                itemName: item.name,
+                                item: item || { name: transferData.itemName },
+                                itemName: item?.name || transferData.itemName,
                                 quantity: transferData.quantity,
                                 hasQuantity: true,
                                 isPlural: transferData.quantity > 1
@@ -1233,20 +1209,20 @@ export class PartyPanel {
                         if (!game.user.isGM) {
                             const socket = game.modules.get(MODULE.ID)?.socket;
                             if (socket) {
-                                await socket.executeAsGM('createTransferRejectedChat', {
-                                    sourceActorId: sourceActor.id,
-                                    sourceActorName: sourceActor.name,
-                                    targetActorId: targetActor.id,
-                                    targetActorName: targetActor.name,
-                                    itemId: item.id,
-                                    itemName: item.name,
-                                    quantity: transferData.quantity,
-                                    hasQuantity: true,
-                                    isPlural: transferData.quantity > 1,
-                                    isTransferReceiver: true,
-                                    receiverIds: receiverUsers.map(u => u.id),
-                                    transferId
-                                });
+                            await socket.executeAsGM('createTransferRejectedChat', {
+                                sourceActorId: sourceActor.id,
+                                sourceActorName: sourceActor.name,
+                                targetActorId: targetActor.id,
+                                targetActorName: targetActor.name,
+                                itemId: item?.id || transferData.itemId,
+                                itemName: item?.name || transferData.itemName,
+                                quantity: transferData.quantity,
+                                hasQuantity: true,
+                                isPlural: transferData.quantity > 1,
+                                isTransferReceiver: true,
+                                receiverIds: receiverUsers.map(u => u.id),
+                                transferId
+                            });
                             }
                         } else {
                             // GM creates and sends the message directly
@@ -1260,8 +1236,8 @@ export class PartyPanel {
                                     sourceActorName: sourceActor.name,
                                     targetActor,
                                     targetActorName: targetActor.name,
-                                    item,
-                                    itemName: item.name,
+                                    item: item || { name: transferData.itemName },
+                                    itemName: item?.name || transferData.itemName,
                                     quantity: transferData.quantity,
                                     hasQuantity: true,
                                     isPlural: transferData.quantity > 1
@@ -1337,7 +1313,7 @@ export class PartyPanel {
         
         if (isApprove) {
             // GM approved - now send to receiver for their accept/reject
-            await this._sendTransferReceiverMessage(sourceActor, targetActor, item, transferData.quantity, transferData.hasQuantity, transferId, transferData);
+            await this._sendTransferReceiverMessage(sourceActor, targetActor, item || { name: transferData.itemName }, transferData.quantity, transferData.hasQuantity, transferId, transferData);
             
             // Update sender's message to reflect GM approval
             if (senderUser) {
@@ -1351,8 +1327,8 @@ export class PartyPanel {
                         sourceActorName: sourceActor.name,
                         targetActor,
                         targetActorName: targetActor.name,
-                        item,
-                        itemName: item.name,
+                        item: item || { name: transferData.itemName },
+                        itemName: item?.name || transferData.itemName,
                         quantity: transferData.quantity,
                         hasQuantity: transferData.hasQuantity,
                         isPlural: transferData.quantity > 1,
@@ -1372,8 +1348,8 @@ export class PartyPanel {
                     sourceActorName: sourceActor.name,
                     targetActorId: targetActor.id,
                     targetActorName: targetActor.name,
-                    itemId: item.id,
-                    itemName: item.name,
+                    itemId: item?.id || transferData.itemId,
+                    itemName: item?.name || transferData.itemName,
                     quantity: transferData.quantity,
                     hasQuantity: transferData.hasQuantity,
                     isPlural: transferData.quantity > 1,
@@ -1393,8 +1369,8 @@ export class PartyPanel {
                         sourceActorName: sourceActor.name,
                         targetActor,
                         targetActorName: targetActor.name,
-                        item,
-                        itemName: item.name,
+                        item: item || { name: transferData.itemName },
+                        itemName: item?.name || transferData.itemName,
                         quantity: transferData.quantity,
                         hasQuantity: transferData.hasQuantity,
                         isPlural: transferData.quantity > 1,
