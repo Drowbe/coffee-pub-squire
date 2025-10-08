@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { CharactersWindow } from './window-characters.js';
 
 export class InventoryPanel {
     constructor(actor) {
@@ -233,5 +234,146 @@ export class InventoryPanel {
                 this._updateVisibility(html);
             }
         });
+
+        // Send item (share icon)
+        panel.on('click.squireInventory', '.inventory-send-item', async (event) => {
+            const itemId = $(event.currentTarget).data('item-id');
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                // Open character selection window
+                await this._openCharacterSelection(item);
+            }
+        });
+    }
+
+    async _openCharacterSelection(item) {
+        // Create character selection window
+        const characterWindow = new CharactersWindow({
+            item: item,
+            sourceActor: this.actor,
+            sourceItemId: item.id,
+            onCharacterSelected: this._handleCharacterSelected.bind(this)
+        });
+        
+        // Render the window
+        await characterWindow.render(true);
+    }
+
+    async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId) {
+        // Reuse the existing transfer logic from panel-party.js
+        // We need to simulate the drop event that would happen in party panel
+        const transferData = {
+            sourceActorId: sourceActor.id,
+            targetActorId: targetActor.id,
+            sourceItemId: sourceItemId,
+            item: item
+        };
+
+        // Call the existing transfer logic
+        await this._executeItemTransfer(transferData);
+    }
+
+    async _executeItemTransfer(transferData) {
+        const { sourceActor, targetActor, item } = transferData;
+        
+        // Check if GM approval is required
+        const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+        
+        if (gmApprovalRequired) {
+            // Send to GM for approval first
+            await this._sendGMTransferNotification(sourceActor, targetActor, item);
+        } else {
+            // Send directly to receiver
+            await this._sendTransferReceiverMessage(sourceActor, targetActor, item);
+        }
+        
+        // Send waiting message to sender
+        await this._sendTransferSenderMessage(sourceActor, targetActor, item);
+    }
+
+    async _sendGMTransferNotification(sourceActor, targetActor, item) {
+        const socket = game.modules.get(MODULE.ID)?.socket;
+        if (!socket) {
+            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+            return;
+        }
+
+        await socket.executeAsGM('createTransferRequestChat', {
+            sourceActorId: sourceActor.id,
+            sourceActorName: sourceActor.name,
+            targetActorId: targetActor.id,
+            targetActorName: targetActor.name,
+            itemId: item.id,
+            itemName: item.name,
+            quantity: 1,
+            hasQuantity: false,
+            isPlural: false,
+            isGMApproval: true,
+            receiverIds: game.users.filter(u => u.isGM).map(u => u.id)
+        });
+    }
+
+    async _sendTransferReceiverMessage(sourceActor, targetActor, item) {
+        const socket = game.modules.get(MODULE.ID)?.socket;
+        if (!socket) {
+            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+            return;
+        }
+
+        // Get target actor owners (non-GM users)
+        const targetUsers = game.users.filter(user => 
+            targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && 
+            user.active && 
+            !user.isGM
+        );
+
+        if (targetUsers.length > 0) {
+            await socket.executeAsGM('createTransferRequestChat', {
+                sourceActorId: sourceActor.id,
+                sourceActorName: sourceActor.name,
+                targetActorId: targetActor.id,
+                targetActorName: targetActor.name,
+                itemId: item.id,
+                itemName: item.name,
+                quantity: 1,
+                hasQuantity: false,
+                isPlural: false,
+                isTransferReceiver: true,
+                receiverIds: targetUsers.map(u => u.id)
+            });
+        }
+    }
+
+    async _sendTransferSenderMessage(sourceActor, targetActor, item) {
+        const socket = game.modules.get(MODULE.ID)?.socket;
+        if (!socket) {
+            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+            return;
+        }
+
+        // Get source actor owners (non-GM users)
+        const sourceUsers = game.users.filter(user => 
+            sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && 
+            user.active && 
+            !user.isGM
+        );
+
+        if (sourceUsers.length > 0) {
+            const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+            
+            await socket.executeAsGM('createTransferRequestChat', {
+                sourceActorId: sourceActor.id,
+                sourceActorName: sourceActor.name,
+                targetActorId: targetActor.id,
+                targetActorName: targetActor.name,
+                itemId: item.id,
+                itemName: item.name,
+                quantity: 1,
+                hasQuantity: false,
+                isPlural: false,
+                isTransferSender: true,
+                receiverIds: sourceUsers.map(u => u.id)
+            });
+        }
     }
 } 
