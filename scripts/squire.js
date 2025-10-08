@@ -633,14 +633,11 @@ Hooks.once('socketlib.ready', () => {
                     const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
                     
                     await ChatMessage.create({
-                        content: `<div class="blacksmith-card theme-default">
-                            <div class="section-header">
-                                <i class="fas fa-exclamation-triangle"></i> Transfer Failed
-                            </div>
-                            <div class="section-content">
-                                <p>The item "${data.itemName || 'Unknown Item'}" no longer exists and cannot be transferred.</p>
-                            </div>
-                        </div>`,
+                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                            isPublic: false,
+                            cardType: "transfer-failed",
+                            failureReason: `The item "${data.itemName || 'Unknown Item'}" no longer exists and cannot be transferred.`
+                        }),
                         speaker: { alias: "System" },
                         whisper: allUsers
                     });
@@ -660,14 +657,11 @@ Hooks.once('socketlib.ready', () => {
                     const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
                     
                     await ChatMessage.create({
-                        content: `<div class="blacksmith-card theme-default">
-                            <div class="section-header">
-                                <i class="fas fa-exclamation-triangle"></i> Transfer Failed
-                            </div>
-                            <div class="section-content">
-                                <p>Insufficient quantity. Only ${sourceItem.system.quantity} ${sourceItem.name}${sourceItem.system.quantity !== 1 ? 's' : ''} available, but ${data.quantity} requested.</p>
-                            </div>
-                        </div>`,
+                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                            isPublic: false,
+                            cardType: "transfer-failed",
+                            failureReason: `Insufficient quantity. Only ${sourceItem.system.quantity} ${sourceItem.name}${sourceItem.system.quantity !== 1 ? 's' : ''} available, but ${data.quantity} requested.`
+                        }),
                         speaker: { alias: "System" },
                         whisper: allUsers
                     });

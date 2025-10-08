@@ -196,6 +196,17 @@
       </div>
     </div>
 
+  {{!-- TRANSFER FAILED --}}
+  {{else if (eq cardType "transfer-failed")}}
+    <div class="blacksmith-card theme-red">
+      <div class="section-header">
+        <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+      </div>
+      <div class="section-content">
+        <p>{{failureReason}}</p>
+      </div>
+    </div>
+
   {{!-- TRANSFER GM --}}
   {{else if (eq cardType "transfer-gm")}}
     <div class="blacksmith-card theme-default">
@@ -305,6 +316,17 @@
           {{/if}}
         </p>
         {{#if strCardContent}}<p><em>{{strCardContent}}</em></p>{{/if}}
+      </div>
+    </div>
+
+  {{!-- TRANSFER FAILED --}}
+  {{else if (eq cardType "transfer-failed")}}
+    <div class="blacksmith-card theme-red">
+      <div class="section-header">
+        <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+      </div>
+      <div class="section-content">
+        <p>{{failureReason}}</p>
       </div>
     </div>
 
