@@ -847,6 +847,23 @@ Hooks.once('socketlib.ready', () => {
             }
         });
         
+        // Add socket handler for deleting sender's waiting messages by transferId
+        socket.register("deleteSenderWaitingMessage", async (transferId) => {
+            if (!game.user.isGM) return;
+            
+            try {
+                const senderWaitingMessage = game.messages.find(msg => 
+                    msg.getFlag(MODULE.ID, 'transferId') === transferId && 
+                    msg.getFlag(MODULE.ID, 'isTransferSender') === true
+                );
+                if (senderWaitingMessage) {
+                    await senderWaitingMessage.delete();
+                }
+            } catch (error) {
+                console.error('Error deleting sender waiting message:', { transferId, error });
+            }
+        });
+        
     } catch (error) {
         console.error('Error during socketlib initialization:', error);
     }

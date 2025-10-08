@@ -1057,7 +1057,7 @@ export class PartyPanel {
                         itemName: item?.name || transferData.itemName
                     });
                     
-                    // Delete the request message
+                    // Delete the receiver's request message
                     const currentMessage = game.messages.get(message.id);
                     if (currentMessage) {
                         if (game.user.isGM) {
@@ -1067,6 +1067,23 @@ export class PartyPanel {
                             if (socket) {
                                 socket.executeAsGM('deleteTransferRequestMessage', currentMessage.id);
                             }
+                        }
+                    }
+                    
+                    // Delete sender's "Waiting" message
+                    if (game.user.isGM) {
+                        const senderWaitingMessage = game.messages.find(msg => 
+                            msg.getFlag(MODULE.ID, 'transferId') === transferId && 
+                            msg.getFlag(MODULE.ID, 'isTransferSender') === true
+                        );
+                        if (senderWaitingMessage) {
+                            await senderWaitingMessage.delete();
+                        }
+                    } else {
+                        // Non-GM: ask GM to delete the sender's waiting message
+                        const socket = game.modules.get(MODULE.ID)?.socket;
+                        if (socket) {
+                            socket.executeAsGM('deleteSenderWaitingMessage', transferId);
                         }
                     }
                     
@@ -1161,6 +1178,23 @@ export class PartyPanel {
                         });
                     }
                 } else {
+                    // Delete sender's "Waiting" message
+                    if (game.user.isGM) {
+                        const senderWaitingMessage = game.messages.find(msg => 
+                            msg.getFlag(MODULE.ID, 'transferId') === transferId && 
+                            msg.getFlag(MODULE.ID, 'isTransferSender') === true
+                        );
+                        if (senderWaitingMessage) {
+                            await senderWaitingMessage.delete();
+                        }
+                    } else {
+                        // Non-GM: ask GM to delete the sender's waiting message
+                        const socket = game.modules.get(MODULE.ID)?.socket;
+                        if (socket) {
+                            socket.executeAsGM('deleteSenderWaitingMessage', transferId);
+                        }
+                    }
+                    
                     // Single rejection message for sender
                     if (!game.user.isGM) {
                         const socket = game.modules.get(MODULE.ID)?.socket;
@@ -1281,41 +1315,30 @@ export class PartyPanel {
         html.find('.gm-approval-button').addClass('disabled');
         html.find('.transfer-request-buttons').append('<div class="processing-message" style="margin-top: 5px; text-align: center; font-style: italic;">Processing...</div>');
         
-        // Replace the GM message with result
+        // Delete the GM approval message
         try {
-            const resultText = isApprove ? "approved" : "denied";
-            const replacementContent = `
-                <span style="visibility: none">coffeepub-hide-header</span>
-                <div class="blacksmith-card theme-default">
-                  <div class="section-header">
-                    <i class="${isApprove ? 'fas fa-check-circle' : 'fas fa-circle-xmark'}"></i> Transfer ${resultText.charAt(0).toUpperCase() + resultText.slice(1)}
-                  </div>
-                  <div class="section-content">
-                    <p>You have ${resultText} the transfer request.</p>
-                  </div>
-                </div>
-            `;
-            
-            await ChatMessage.create({
-                content: replacementContent,
-                whisper: [game.user.id],
-                speaker: ChatMessage.getSpeaker()
-            });
-            
-            // Delete the original message
             const currentMessage = game.messages.get(message.id);
             if (currentMessage && game.user.isGM) {
                 await currentMessage.delete();
             }
+            
+            // Delete sender's "Waiting for GM approval" message
+            const senderWaitingMessage = game.messages.find(msg => 
+                msg.getFlag(MODULE.ID, 'transferId') === transferId && 
+                msg.getFlag(MODULE.ID, 'isTransferSender') === true
+            );
+            if (senderWaitingMessage && game.user.isGM) {
+                await senderWaitingMessage.delete();
+            }
         } catch (error) {
-            console.error('Error handling GM approval message:', error);
+            console.error('Error deleting GM approval message:', error);
         }
         
         if (isApprove) {
             // GM approved - now send to receiver for their accept/reject
             await this._sendTransferReceiverMessage(sourceActor, targetActor, item || { name: transferData.itemName }, transferData.quantity, transferData.hasQuantity, transferId, transferData);
             
-            // Update sender's message to reflect GM approval
+            // Send updated message to sender showing GM approval
             if (senderUser) {
                 await ChatMessage.create({
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
@@ -1336,7 +1359,14 @@ export class PartyPanel {
                         strCardContent: "GM approved. Waiting for receiver to accept."
                     }),
                     speaker: { alias: "System" },
-                    whisper: [senderUser.id]
+                    whisper: [senderUser.id],
+                    flags: {
+                        [MODULE.ID]: {
+                            transferId,
+                            type: 'transferRequest',
+                            isTransferSender: true
+                        }
+                    }
                 });
             }
         } else {
