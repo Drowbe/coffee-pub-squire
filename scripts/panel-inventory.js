@@ -320,8 +320,15 @@ export class InventoryPanel {
             return;
         }
 
+        // Validate targetActor exists
+        if (!targetActor) {
+            console.error('Target actor is undefined in _sendTransferReceiverMessage');
+            return;
+        }
+
         // Get target actor owners (non-GM users)
         const targetUsers = game.users.filter(user => 
+            targetActor.ownership && 
             targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && 
             user.active && 
             !user.isGM
@@ -351,8 +358,15 @@ export class InventoryPanel {
             return;
         }
 
+        // Validate actors exist
+        if (!sourceActor || !targetActor) {
+            console.error('Source or target actor is undefined in _sendTransferSenderMessage');
+            return;
+        }
+
         // Get source actor owners (non-GM users)
         const sourceUsers = game.users.filter(user => 
+            sourceActor.ownership && 
             sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && 
             user.active && 
             !user.isGM

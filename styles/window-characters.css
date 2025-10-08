@@ -9,6 +9,7 @@
   --border-color: #444;
   --accent-color: #9f9275;
   --background-color: rgba(0, 0, 0, 0.95);
+  --window-character-token-size: 120px;
 }
 
 /* ----- WINDOW STRUCTURE ----- */
@@ -158,8 +159,8 @@
 
 /* CHARACTER SLOT - NORMAL */
 .character-slot {
-  width: 40px;
-  height: 40px;
+  width: var(--window-character-token-size);
+  height: var(--window-character-token-size);
   border: 1px solid rgba(184,194,200,0.4);
   border-radius: 4px;
   background: rgba(0,0,0,0.2);
