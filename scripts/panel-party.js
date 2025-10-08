@@ -779,6 +779,9 @@ export class PartyPanel {
                     }
                 });
             }
+            
+            // Set up automatic expiration timer
+            this._scheduleTransferExpiration(transferId, transferData);
         }
     }
 
@@ -1465,6 +1468,9 @@ export class PartyPanel {
             console.error('Error deleting GM approval message:', error);
         }
         
+        // Clear the expiration timer since GM is processing the transfer
+        this._clearTransferTimer(transferId);
+        
         if (isApprove) {
             // GM approved - now send to receiver for their accept/reject
             await this._sendTransferReceiverMessage(sourceActor, targetActor, item || { name: transferData.itemName }, transferData.quantity, transferData.hasQuantity, transferId, transferData);
@@ -1585,6 +1591,147 @@ export class PartyPanel {
         Hooks.off('updateActor', this._onActorUpdate);
         Hooks.off('controlToken', this._onControlToken);
         Hooks.off('renderChatMessage', this._handleTransferButtons);
+        
+        // Clean up transfer timers
+        this._cleanupTransferTimers();
+        
         this.element = null;
+    }
+
+    /**
+     * Schedule automatic expiration for a transfer request
+     * @param {string} transferId - Transfer identifier
+     * @param {Object} transferData - Transfer data object
+     */
+    _scheduleTransferExpiration(transferId, transferData) {
+        const timeoutSeconds = game.settings.get(MODULE.ID, 'transferTimeout');
+        const timeoutMs = timeoutSeconds * 1000;
+        
+        // Clear any existing timer for this transfer
+        this._clearTransferTimer(transferId);
+        
+        // Set up new timer
+        const timerId = setTimeout(async () => {
+            await this._expireTransfer(transferId, transferData);
+        }, timeoutMs);
+        
+        // Store timer reference for cleanup
+        if (!this._transferTimers) {
+            this._transferTimers = new Map();
+        }
+        this._transferTimers.set(transferId, timerId);
+    }
+
+    /**
+     * Clear the timer for a specific transfer
+     * @param {string} transferId - Transfer identifier
+     */
+    _clearTransferTimer(transferId) {
+        if (this._transferTimers && this._transferTimers.has(transferId)) {
+            clearTimeout(this._transferTimers.get(transferId));
+            this._transferTimers.delete(transferId);
+        }
+    }
+
+    /**
+     * Automatically expire a transfer request
+     * @param {string} transferId - Transfer identifier
+     * @param {Object} transferData - Transfer data object
+     */
+    async _expireTransfer(transferId, transferData) {
+        try {
+            // Find and delete all transfer request messages for this transfer
+            const transferMessages = game.messages.filter(msg => 
+                msg.getFlag(MODULE.ID, 'transferId') === transferId
+            );
+            
+            for (const message of transferMessages) {
+                if (game.user.isGM) {
+                    await message.delete();
+                } else {
+                    const socket = game.modules.get(MODULE.ID)?.socket;
+                    if (socket) {
+                        socket.executeAsGM('deleteTransferRequestMessage', message.id);
+                    }
+                }
+            }
+            
+            // Send expiration messages to all relevant parties
+            const socket = game.modules.get(MODULE.ID)?.socket;
+            if (socket) {
+                // Send expiration message to sender
+                const senderUser = game.users.get(transferData.sourceUserId);
+                if (senderUser && !senderUser.isGM) {
+                    await socket.executeAsGM('createTransferExpiredChat', {
+                        sourceActorId: transferData.sourceActorId,
+                        sourceActorName: transferData.sourceActorName,
+                        targetActorId: transferData.targetActorId,
+                        targetActorName: transferData.targetActorName,
+                        itemId: transferData.sourceItemId,
+                        itemName: transferData.itemName,
+                        quantity: transferData.selectedQuantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.selectedQuantity > 1,
+                        receiverIds: [senderUser.id],
+                        transferId
+                    });
+                }
+                
+                // Send expiration message to receiver
+                const receiverUsers = game.users.filter(user => user.character?.id === transferData.targetActorId && user.active && !user.isGM);
+                if (receiverUsers.length > 0) {
+                    await socket.executeAsGM('createTransferExpiredChat', {
+                        sourceActorId: transferData.sourceActorId,
+                        sourceActorName: transferData.sourceActorName,
+                        targetActorId: transferData.targetActorId,
+                        targetActorName: transferData.targetActorName,
+                        itemId: transferData.sourceItemId,
+                        itemName: transferData.itemName,
+                        quantity: transferData.selectedQuantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.selectedQuantity > 1,
+                        receiverIds: receiverUsers.map(u => u.id),
+                        transferId
+                    });
+                }
+                
+                // Send expiration message to GMs
+                const gmUsers = game.users.filter(u => u.isGM);
+                if (gmUsers.length > 0) {
+                    await socket.executeAsGM('createTransferExpiredChat', {
+                        sourceActorId: transferData.sourceActorId,
+                        sourceActorName: transferData.sourceActorName,
+                        targetActorId: transferData.targetActorId,
+                        targetActorName: transferData.targetActorName,
+                        itemId: transferData.sourceItemId,
+                        itemName: transferData.itemName,
+                        quantity: transferData.selectedQuantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.selectedQuantity > 1,
+                        isGMNotification: true,
+                        receiverIds: gmUsers.map(u => u.id),
+                        transferId
+                    });
+                }
+            }
+            
+            // Clean up timer reference
+            this._clearTransferTimer(transferId);
+            
+        } catch (error) {
+            console.error('Error expiring transfer:', error);
+        }
+    }
+
+    /**
+     * Clean up all transfer timers (called when panel is destroyed)
+     */
+    _cleanupTransferTimers() {
+        if (this._transferTimers) {
+            for (const timerId of this._transferTimers.values()) {
+                clearTimeout(timerId);
+            }
+            this._transferTimers.clear();
+        }
     }
 } 
