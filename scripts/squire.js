@@ -789,7 +789,7 @@ Hooks.once('socketlib.ready', () => {
                         isTransferReceiver: data.isTransferReceiver || false,
                         isGMNotification: data.isGMNotification || false
                     }),
-                    whisper: data.isTransferSender ? [data.receiverId] : data.receiverIds,
+                    whisper: data.receiverIds || [data.receiverId] || [],
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
             } catch (error) {
