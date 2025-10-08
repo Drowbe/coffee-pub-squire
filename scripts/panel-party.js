@@ -343,7 +343,10 @@ export class PartyPanel {
                                 // Receiver: actionable message (with Accept/Reject buttons)
                                 await this._sendTransferReceiverMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
                                 // GM: only if approval is required (no Accept/Reject buttons)
-                                await this._sendGMTransferNotification(sourceActor, targetActor, sourceItem, selectedQuantity, transferId, transferData);
+                                const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+                                if (gmApprovalRequired) {
+                                    await this._sendGMTransferNotification(sourceActor, targetActor, sourceItem, selectedQuantity, transferId, transferData);
+                                }
                                 // Do not execute the transfer yet
                                 return;
                             }
@@ -438,7 +441,10 @@ export class PartyPanel {
                             // Receiver: actionable message (with Accept/Reject buttons)
                             await this._sendTransferReceiverMessage(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity, transferId, transferData);
                             // GM: only if approval is required (no Accept/Reject buttons)
-                            await this._sendGMTransferNotification(sourceActor, targetActor, sourceItem, selectedQuantity, transferId, transferData);
+                            const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+                            if (gmApprovalRequired) {
+                                await this._sendGMTransferNotification(sourceActor, targetActor, sourceItem, selectedQuantity, transferId, transferData);
+                            }
                             // Do not execute the transfer yet
                             return;
                         }
@@ -603,12 +609,24 @@ export class PartyPanel {
         
         if (gmApprovalRequired && gmUsers.length > 0) {
             await ChatMessage.create({
-                content: `<div class="transfer-request-content">
-                    <p>Transfer request approval needed:</p>
-                    <p>From: ${sourceActor.name} (${game.user.name})</p>
-                    <p>To: ${targetActor.name}</p>
-                    <p>Item: ${selectedQuantity}x ${sourceItem.name}</p>
-                </div>`,
+                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                    isPublic: false,
+                    cardType: "transfer-request",
+                    strCardIcon: "fas fa-gavel",
+                    strCardTitle: "GM Approval",
+                    sourceActor,
+                    sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                    targetActor,
+                    targetActorName: targetActor.name,
+                    item: sourceItem,
+                    itemName: sourceItem.name,
+                    quantity: selectedQuantity,
+                    hasQuantity: !!sourceItem.system?.quantity,
+                    isPlural: selectedQuantity > 1,
+                    isGMNotification: true,
+                    transferId,
+                    strCardContent: "Waiting for the GM to approve the transfer."
+                }),
                 speaker: { alias: "System Transfer" },
                 whisper: gmUsers.map(u => u.id),
                 flags: {
