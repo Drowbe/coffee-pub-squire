@@ -784,7 +784,10 @@ Hooks.once('socketlib.ready', () => {
                         itemName: data.itemName,
                         quantity: data.quantity,
                         hasQuantity: data.hasQuantity,
-                        isPlural: data.isPlural
+                        isPlural: data.isPlural,
+                        isTransferSender: data.isTransferSender || false,
+                        isTransferReceiver: data.isTransferReceiver || false,
+                        isGMNotification: data.isGMNotification || false
                     }),
                     whisper: data.isTransferSender ? [data.receiverId] : data.receiverIds,
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
