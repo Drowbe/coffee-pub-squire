@@ -219,11 +219,11 @@ case 'Actor':
 - **Result**: ✅ GM notifications work correctly, debug markers removed
 
 ### **Step 4**: Sender & Receiver Messages
-- **Status**: 🔄 In Progress (Sender Complete & Tested)
+- **Status**: ✅ Complete & Tested
 - Implement `_sendTransferSenderMessage()` and `_sendTransferReceiverMessage()`
 - Replace all four occurrences (2 each)
 - **Test**: Do transfer between two players, verify both get correct messages
-- **Result**: ✅ Sender messages work correctly
+- **Result**: ✅ All messages work correctly - sender confirmations and receiver actionable messages with buttons
 
 ### **Step 5**: Dialog & Execution
 - **Status**: ⬜ Not Started
@@ -337,6 +337,6 @@ case 'Actor':
 - ✅ Phase 1.2 (Transfer Data) - Completed and tested successfully. Transfer requests work correctly.
 - ✅ Phase 2.1 (GM Notification) - Completed and tested successfully. Also removed debug markers "LINE 537" and "LINE 819".
 - ✅ Phase 2.2 (Sender Message) - Completed and tested successfully. Sender confirmation messages extracted to helper.
-- ✅ Phase 2.3 (Receiver Message) - Completed successfully. Complex socketlib logic extracted to helper.
+- ✅ Phase 2.3 (Receiver Message) - Completed and tested successfully. Complex socketlib logic extracted to helper, Accept/Reject buttons working.
 - Lines reduced so far: 282 lines saved (38 from Phase 1.1, 30 from Phase 1.2, 44 from Phase 2.1, 58 from Phase 2.2, 112 from Phase 2.3)
 
