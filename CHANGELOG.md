@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Personalized Messages**: Different chat messages for senders, receivers, and GMs for all transfer outcomes
 - **Transfer Status Messages**: Clear feedback for waiting, accepted, rejected, expired, and failed transfers
 - **Failure Notifications**: Detailed error messages when transfers fail due to missing items or insufficient quantity
+- **Transfer from Tray**: New "Send" icon in inventory panel to initiate transfers via character selection window
+- **Character Selection Window**: Reusable window for selecting transfer recipients with resizable interface
+- **Actor Type Visualization**: Color-coded borders for different actor types (green=characters, red=monsters, blue=NPCs)
+- **Unified Transfer System**: Centralized TransferUtils for consistent transfer behavior across all flows
+- **Hostility-Based Classification**: NPCs classified as monsters (red) or friendly NPCs (blue) based on disposition
 
 ### Changed
 - **Transfer Flow**: Completely redesigned transfer system with proper approval workflows
@@ -26,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GM Bypass**: GMs can transfer items between characters without requiring self-approval
 - **Transfer Cleanup**: Automatic cleanup of request messages and waiting messages after transfer completion
 - **Timer Management**: Background timer system for proactive transfer expiration with proper cleanup
+- **Code Architecture**: Extracted transfer logic into reusable TransferUtils module for consistency
+- **Character Window Logic**: GMs now see all actor types (characters, monsters, NPCs) while players see only party members
+- **Transfer Unification**: Both drag-and-drop and send flows now use identical transfer logic
 
 ### Fixed
 - **Duplicate Messages**: Fixed GM receiving duplicate transfer complete messages
@@ -34,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quantity Validation**: Fixed transfers proceeding when insufficient quantity available
 - **Template Errors**: Fixed duplicate closing tags in chat card templates
 - **Null Reference Errors**: Added proper null checks and fallbacks for deleted items
+- **GM Approval for Offline Players**: Fixed GM not receiving approval cards when target player is offline in send flow
+- **Transfer Data Consistency**: Fixed "Transfer request data not found" errors by ensuring proper data structure
+- **Code Duplication**: Eliminated duplicate transfer methods across different panels
 
 
 
