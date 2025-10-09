@@ -22,34 +22,19 @@ export class TransferUtils {
         
         // Use same logic as drag-and-drop: if no permission to source OR target, use approval flow
         if (!hasSourcePermission || !hasTargetPermission) {
-            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: Using approval flow (no permission to source or target)`);
-            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: hasSourcePermission =`, hasSourcePermission);
-            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: hasTargetPermission =`, hasTargetPermission);
+            const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
             
-            // Check if GM approval is required (setting OR target player is offline)
-            const settingRequiresApproval = game.settings.get(MODULE.ID, 'transfersGMApproves');
-            const targetPlayerIsOffline = !this._isTargetPlayerOnline(targetActor);
-            const gmApprovalRequired = settingRequiresApproval || targetPlayerIsOffline;
-            
-            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: settingRequiresApproval =`, settingRequiresApproval);
-            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: targetPlayerIsOffline =`, targetPlayerIsOffline);
-            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: gmApprovalRequired =`, gmApprovalRequired);
+            // Send waiting message to sender
+            await this._sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired);
             
             if (gmApprovalRequired) {
-                console.log(`${MODULE.ID} | Sending GM transfer notification for approval`);
                 // Send to GM for approval first
                 await this._sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
             } else {
-                console.log(`${MODULE.ID} | Sending direct receiver message (no GM approval needed)`);
                 // Send directly to receiver
                 await this._sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
             }
-            
-            // Send waiting message to sender
-            console.log(`${MODULE.ID} | Sending sender waiting message`);
-            await this._sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired);
         } else {
-            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: User has permission to both actors, using direct transfer`);
             // User has permission to both actors - use direct transfer (same as drag-and-drop)
             await this.executeTransferWithPermissions(sourceActor, targetActor, item, quantity, hasQuantity);
         }
@@ -73,6 +58,7 @@ export class TransferUtils {
      * Create transfer data structure
      */
     static _createTransferData(transferId, sourceActor, targetActor, item, quantity, hasQuantity) {
+        // EXACT COPY of working drag-and-drop _createTransferData
         return {
             id: transferId,
             sourceActorId: sourceActor.id,
@@ -80,7 +66,6 @@ export class TransferUtils {
             itemId: item.id,
             itemName: item.name,
             quantity: quantity,
-            selectedQuantity: quantity,
             hasQuantity: hasQuantity,
             isPlural: quantity > 1,
             sourceActorName: sourceActor.name,
@@ -95,78 +80,128 @@ export class TransferUtils {
      * Send GM approval notification
      */
     static async _sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData) {
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) {
-            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-            return;
+        // EXACT COPY of working drag-and-drop _sendGMTransferNotification
+        const gmUsers = game.users.filter(u => u.isGM);
+        
+        if (gmUsers.length > 0) {
+            // If current user is not a GM, use socketlib to have a GM create the message
+            if (!game.user.isGM) {
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    await socket.executeAsGM('createTransferRequestChat', {
+                        cardType: "transfer-request",
+                        sourceActorId: sourceActor.id,
+                        sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                        targetActorId: targetActor.id,
+                        targetActorName: targetActor.name,
+                        itemId: item.id,
+                        itemName: item.name,
+                        quantity: quantity,
+                        hasQuantity: hasQuantity,
+                        isPlural: quantity > 1,
+                        isGMApproval: true,
+                        transferId,
+                        receiverIds: gmUsers.map(u => u.id),
+                        transferData
+                    });
+                }
+            } else {
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-request",
+                        strCardIcon: "fas fa-gavel",
+                        strCardTitle: "GM Approval Required",
+                        sourceActor,
+                        sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                        targetActor,
+                        targetActorName: targetActor.name,
+                        item: item,
+                        itemName: item.name,
+                        quantity: quantity,
+                        hasQuantity: hasQuantity,
+                        isPlural: quantity > 1,
+                        isGMApproval: true,
+                        transferId
+                    }),
+                    speaker: { alias: "System Transfer" },
+                    whisper: gmUsers.map(u => u.id),
+                    flags: {
+                        [MODULE.ID]: {
+                            transferId,
+                            type: 'transferRequest',
+                            isGMApproval: true,
+                            data: transferData
+                        }
+                    }
+                });
+            }
         }
-
-        console.log(`${MODULE.ID} | _sendGMTransferNotification: Calling socket.executeAsGM with data:`, {
-            sourceActorId: sourceActor.id,
-            sourceActorName: sourceActor.name,
-            targetActorId: targetActor.id,
-            targetActorName: targetActor.name,
-            itemId: item.id,
-            itemName: item.name,
-            quantity: quantity,
-            hasQuantity: hasQuantity,
-            isPlural: quantity > 1,
-            isGMApproval: true,
-            transferId: transferId,
-            receiverIds: game.users.filter(u => u.isGM).map(u => u.id)
-        });
-
-        await socket.executeAsGM('createTransferRequestChat', {
-            sourceActorId: sourceActor.id,
-            sourceActorName: sourceActor.name,
-            targetActorId: targetActor.id,
-            targetActorName: targetActor.name,
-            itemId: item.id,
-            itemName: item.name,
-            quantity: quantity,
-            hasQuantity: hasQuantity,
-            isPlural: quantity > 1,
-            isGMApproval: true,
-            transferId: transferId,
-            transferData: transferData,
-            receiverIds: game.users.filter(u => u.isGM).map(u => u.id)
-        });
     }
 
     /**
      * Send transfer request to receiver
      */
     static async _sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData) {
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) {
-            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-            return;
-        }
-
-        // Get target actor owners (non-GM users)
-        const targetUsers = game.users.filter(user => 
-            targetActor.ownership && 
-            targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && 
-            user.active && 
-            !user.isGM
-        );
-
+        // EXACT COPY of working drag-and-drop _sendTransferReceiverMessage
+        const targetUsers = game.users.filter(u => !u.isGM && targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+        
         if (targetUsers.length > 0) {
-            await socket.executeAsGM('createTransferRequestChat', {
-                sourceActorId: sourceActor.id,
-                sourceActorName: sourceActor.name,
-                targetActorId: targetActor.id,
-                targetActorName: targetActor.name,
-                itemId: item.id,
-                itemName: item.name,
-                quantity: quantity,
-                hasQuantity: hasQuantity,
-                isPlural: quantity > 1,
-                isTransferReceiver: true,
-                transferId: transferId,
-                transferData: transferData,
-                receiverIds: targetUsers.map(u => u.id)
-            });
+            // If current user is not a GM, use socketlib to have a GM create the message
+            if (!game.user.isGM) {
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    await socket.executeAsGM('createTransferRequestChat', {
+                        cardType: "transfer-request",
+                        sourceActorId: sourceActor.id,
+                        sourceActorName: sourceActor.name,
+                        targetActorId: targetActor.id,
+                        targetActorName: targetActor.name,
+                        itemId: item.id,
+                        itemName: item.name,
+                        quantity: quantity,
+                        hasQuantity: hasQuantity,
+                        isPlural: quantity > 1,
+                        isTransferReceiver: true,
+                        transferId,
+                        receiverIds: targetUsers.map(u => u.id),
+                        transferData
+                    });
+                }
+            } else {
+                await ChatMessage.create({
+                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                        isPublic: false,
+                        cardType: "transfer-request",
+                        strCardIcon: "fas fa-people-arrows",
+                        strCardTitle: "Transfer Request",
+                        sourceActor,
+                        sourceActorName: sourceActor.name,
+                        targetActor,
+                        targetActorName: targetActor.name,
+                        item: item,
+                        itemName: item.name,
+                        quantity: quantity,
+                        hasQuantity: hasQuantity,
+                        isPlural: quantity > 1,
+                        isTransferReceiver: true,
+                        transferId
+                    }),
+                    speaker: { alias: "System" },
+                    whisper: targetUsers.map(u => u.id),
+                    flags: {
+                        [MODULE.ID]: {
+                            transferId,
+                            type: 'transferRequest',
+                            isTransferReceiver: true,
+                            isTransferSender: false,
+                            isGMApproval: false,
+                            data: transferData,
+                            targetUsers: targetUsers.map(u => u.id)
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -174,37 +209,37 @@ export class TransferUtils {
      * Send waiting message to sender
      */
     static async _sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired) {
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) {
-            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-            return;
-        }
-
-        // Get source actor owners (non-GM users)
-        const sourceUsers = game.users.filter(user => 
-            sourceActor.ownership && 
-            sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && 
-            user.active && 
-            !user.isGM
-        );
-
-        if (sourceUsers.length > 0) {
-            await socket.executeAsGM('createTransferRequestChat', {
-                sourceActorId: sourceActor.id,
+        // EXACT COPY of working drag-and-drop _sendTransferSenderMessage
+        await ChatMessage.create({
+            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                isPublic: false,
+                cardType: "transfer-request",
+                strCardIcon: "fas fa-people-arrows",
+                strCardTitle: "Transfer Request",
+                sourceActor,
                 sourceActorName: sourceActor.name,
-                targetActorId: targetActor.id,
+                targetActor,
                 targetActorName: targetActor.name,
-                itemId: item.id,
+                item: item,
                 itemName: item.name,
                 quantity: quantity,
                 hasQuantity: hasQuantity,
                 isPlural: quantity > 1,
                 isTransferSender: true,
-                transferId: transferId,
-                transferData: transferData,
-                receiverIds: sourceUsers.map(u => u.id)
-            });
-        }
+                transferId,
+                strCardContent: gmApprovalRequired ? "Waiting for GM approval." : "Waiting for receiver to accept."
+            }),
+            speaker: { alias: "System" },
+            whisper: [game.users.get(transferData.sourceUserId).id],
+            flags: {
+                [MODULE.ID]: {
+                    transferId,
+                    type: 'transferRequest',
+                    isTransferSender: true,
+                    data: transferData
+                }
+            }
+        });
     }
 
     /**
