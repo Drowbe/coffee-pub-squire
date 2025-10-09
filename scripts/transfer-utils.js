@@ -298,16 +298,16 @@ export class TransferUtils {
      * @param {Actor} sourceActor - Source actor
      * @param {Actor} targetActor - Target actor
      * @param {Item} item - Item to transfer
+     * @param {number} [quantity=1] - Quantity to transfer
+     * @param {boolean} [hasQuantity=false] - Whether item has quantity
      */
-    static async handleCharacterSelectionTransfer(sourceActor, targetActor, item) {
-        const hasQuantity = item.system.quantity !== undefined && item.system.quantity > 1;
-        
+    static async handleCharacterSelectionTransfer(sourceActor, targetActor, item, quantity = 1, hasQuantity = false) {
         await this.executeTransfer({
             sourceActor,
             targetActor,
             item,
-            quantity: 1,
-            hasQuantity: false // Always transfer 1 item from inventory
+            quantity,
+            hasQuantity
         });
     }
 }

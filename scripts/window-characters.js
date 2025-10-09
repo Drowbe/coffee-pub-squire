@@ -6,6 +6,8 @@ export class CharactersWindow extends Application {
         this.item = options.item;
         this.sourceActor = options.sourceActor;
         this.sourceItemId = options.sourceItemId;
+        this.selectedQuantity = options.selectedQuantity || 1;
+        this.hasQuantity = options.hasQuantity || false;
         this.onCharacterSelected = options.onCharacterSelected;
     }
 
@@ -109,8 +111,8 @@ export class CharactersWindow extends Application {
                 // Find the character actor
                 const targetActor = game.actors.get(characterId);
                 if (targetActor && this.onCharacterSelected) {
-                    // Call the callback with the selected character
-                    this.onCharacterSelected(targetActor, this.item, this.sourceActor, this.sourceItemId);
+                    // Call the callback with the selected character and quantity data
+                    this.onCharacterSelected(targetActor, this.item, this.sourceActor, this.sourceItemId, this.selectedQuantity, this.hasQuantity);
                 }
                 // Close the window
                 this.close();

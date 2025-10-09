@@ -248,11 +248,25 @@ export class InventoryPanel {
     }
 
     async _openCharacterSelection(item) {
-        // Create character selection window
+        // Check if item has quantity and show quantity selection dialog first
+        const hasQuantity = item.system.quantity !== undefined && item.system.quantity > 1;
+        const maxQuantity = hasQuantity ? item.system.quantity : 1;
+        
+        let selectedQuantity = 1;
+        
+        if (hasQuantity && maxQuantity > 1) {
+            // Show quantity selection dialog
+            selectedQuantity = await this._showTransferQuantityDialog(item, this.actor, null, maxQuantity, hasQuantity);
+            if (selectedQuantity <= 0) return; // User cancelled
+        }
+        
+        // Create character selection window with the selected quantity
         const characterWindow = new CharactersWindow({
             item: item,
             sourceActor: this.actor,
             sourceItemId: item.id,
+            selectedQuantity: selectedQuantity,
+            hasQuantity: hasQuantity,
             onCharacterSelected: this._handleCharacterSelected.bind(this)
         });
         
@@ -260,8 +274,73 @@ export class InventoryPanel {
         await characterWindow.render(true);
     }
 
-    async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId) {
-        // Use the shared transfer utility
-        await TransferUtils.handleCharacterSelectionTransfer(sourceActor, targetActor, item);
+    async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId, selectedQuantity, hasQuantity) {
+        // Use the shared transfer utility with the selected quantity
+        await TransferUtils.executeTransfer({
+            sourceActor,
+            targetActor,
+            item,
+            quantity: selectedQuantity,
+            hasQuantity
+        });
+    }
+
+    async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
+        const timestamp = Date.now();
+        
+        // Prepare template data for sender's dialog
+        const senderTemplateData = {
+            sourceItem,
+            sourceActor,
+            targetActor,
+            maxQuantity,
+            timestamp,
+            canAdjustQuantity: hasQuantity && maxQuantity > 1,
+            isReceiveRequest: false,
+            hasQuantity
+        };
+        
+        // Render the transfer dialog template for the sender
+        const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
+        
+        // Initiate the transfer process
+        const selectedQuantity = await new Promise(resolve => {
+            new Dialog({
+                title: "Transfer Item",
+                content: senderContent,
+                buttons: {
+                    transfer: {
+                        icon: '<i class="fas fa-exchange-alt"></i>',
+                        label: "Transfer",
+                        callback: html => {
+                            if (hasQuantity && maxQuantity > 1) {
+                                const quantity = Math.clamp(
+                                    parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
+                                    1,
+                                    maxQuantity
+                                );
+                                resolve(quantity);
+                            } else {
+                                resolve(1);
+                            }
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: "Cancel",
+                        callback: () => resolve(0)
+                    }
+                },
+                default: "transfer",
+                close: () => resolve(0)
+            }, {
+                classes: ["transfer-item"],
+                id: `transfer-item-${timestamp}`,
+                width: 320,
+                height: "auto"
+            }).render(true);
+        });
+        
+        return selectedQuantity;
     }
 } 
