@@ -12,25 +12,51 @@ export class TransferUtils {
      * @param {Object} [params.context] - Additional context for the transfer
      */
     static async executeTransfer({ sourceActor, targetActor, item, quantity = 1, hasQuantity = false, context = {} }) {
+        // Create transfer data structure
+        const transferId = `transfer_${Date.now()}`;
+        const transferData = this._createTransferData(transferId, sourceActor, targetActor, item, quantity, hasQuantity);
+        
         // Check if GM approval is required
         const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
         
         if (gmApprovalRequired) {
             // Send to GM for approval first
-            await this._sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity);
+            await this._sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
         } else {
             // Send directly to receiver
-            await this._sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity);
+            await this._sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
         }
         
         // Send waiting message to sender
-        await this._sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, gmApprovalRequired);
+        await this._sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired);
+    }
+
+    /**
+     * Create transfer data structure
+     */
+    static _createTransferData(transferId, sourceActor, targetActor, item, quantity, hasQuantity) {
+        return {
+            id: transferId,
+            sourceActorId: sourceActor.id,
+            targetActorId: targetActor.id,
+            itemId: item.id,
+            itemName: item.name,
+            quantity: quantity,
+            selectedQuantity: quantity,
+            hasQuantity: hasQuantity,
+            isPlural: quantity > 1,
+            sourceActorName: sourceActor.name,
+            targetActorName: targetActor.name,
+            status: 'pending',
+            timestamp: Date.now(),
+            sourceUserId: game.user.id
+        };
     }
 
     /**
      * Send GM approval notification
      */
-    static async _sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity) {
+    static async _sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData) {
         const socket = game.modules.get(MODULE.ID)?.socket;
         if (!socket) {
             ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
@@ -48,6 +74,8 @@ export class TransferUtils {
             hasQuantity: hasQuantity,
             isPlural: quantity > 1,
             isGMApproval: true,
+            transferId: transferId,
+            transferData: transferData,
             receiverIds: game.users.filter(u => u.isGM).map(u => u.id)
         });
     }
@@ -55,7 +83,7 @@ export class TransferUtils {
     /**
      * Send transfer request to receiver
      */
-    static async _sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity) {
+    static async _sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData) {
         const socket = game.modules.get(MODULE.ID)?.socket;
         if (!socket) {
             ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
@@ -82,6 +110,8 @@ export class TransferUtils {
                 hasQuantity: hasQuantity,
                 isPlural: quantity > 1,
                 isTransferReceiver: true,
+                transferId: transferId,
+                transferData: transferData,
                 receiverIds: targetUsers.map(u => u.id)
             });
         }
@@ -90,7 +120,7 @@ export class TransferUtils {
     /**
      * Send waiting message to sender
      */
-    static async _sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, gmApprovalRequired) {
+    static async _sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired) {
         const socket = game.modules.get(MODULE.ID)?.socket;
         if (!socket) {
             ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
@@ -117,6 +147,8 @@ export class TransferUtils {
                 hasQuantity: hasQuantity,
                 isPlural: quantity > 1,
                 isTransferSender: true,
+                transferId: transferId,
+                transferData: transferData,
                 receiverIds: sourceUsers.map(u => u.id)
             });
         }

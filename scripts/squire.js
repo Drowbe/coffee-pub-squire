@@ -733,6 +733,7 @@ Hooks.once('socketlib.ready', () => {
                         hasQuantity: data.hasQuantity,
                         isPlural: data.isPlural,
                         isTransferReceiver: data.isTransferReceiver || false,
+                        isTransferSender: data.isTransferSender || false,
                         isGMApproval: data.isGMApproval || false,
                         transferId: data.transferId
                     }),
@@ -743,9 +744,10 @@ Hooks.once('socketlib.ready', () => {
                             transferId: data.transferId,
                             type: 'transferRequest',
                             isTransferReceiver: data.isTransferReceiver || false,
+                            isTransferSender: data.isTransferSender || false,
                             isGMApproval: data.isGMApproval || false,
-                            targetUsers: data.receiverIds,
-                            data: data.transferData
+                            data: data.transferData,
+                            targetUsers: data.receiverIds
                         }
                     }
                 });
