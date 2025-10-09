@@ -1,7 +1,7 @@
 <div class="characters-content">
     <div class="characters-grid">
         {{#each characters as |character|}}
-            <div class="character-slot {{#unless character.clickable}}current-character{{/unless}}" 
+            <div class="character-slot {{character.type}} {{#unless character.clickable}}current-character{{/unless}}" 
                  data-character-id="{{character.id}}" 
                  data-clickable="{{character.clickable}}"
                  {{#if character.clickable}}data-tooltip="{{character.name}}"{{else}}data-tooltip="Cannot send to yourself"{{/if}}>

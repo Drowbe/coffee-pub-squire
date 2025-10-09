@@ -173,8 +173,8 @@
 }
 
 .character-slot:hover {
-  border: 3px solid rgba(23, 204, 0, 0.7);
-  box-shadow: 0 0 8px rgba(72, 160, 0, 0.5);
+  border: 3px solid rgba(255, 173, 33, 0.9);
+  box-shadow: 0 0 8px rgba(255, 100, 0, 0.5);
 }
 
 .character-slot img {
@@ -189,6 +189,20 @@
   -webkit-filter: blur(2px); /* Safari 6.0 - 9.0 */
   filter: blur(1px);
 }
+
+
+/* ACTOR TYPES */
+
+.actor-character {
+  border-color: rgba(105, 139, 1, 0.9);
+}
+.actor-monster{
+  border-color: rgba(93, 17, 17, 0.9);
+}
+.actor-npc{
+  border-color: rgba(57, 96, 115, 0.9);
+}
+
 
 /* CHARACTER SLOT - CURRENT CHARACTER (NON-CLICKABLE) */
 .character-slot.current-character {
