@@ -39,19 +39,14 @@ export class CharactersWindow extends Application {
     }
 
     getData() {
-        // Get all party members (characters) that have owners
-        const partyMembers = game.actors.filter(actor => {
-            if (actor.type !== 'character') return false;
-            
-            // Check if this actor has any owners (active users)
-            const hasOwners = game.users.some(user => 
-                user.active && 
-                !user.isGM && 
-                actor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
-            );
-            
-            return hasOwners;
-        });
+        // Get party members based on tokens on the canvas (same logic as PartyPanel)
+        const partyTokens = canvas.tokens.placeables.filter(token => 
+            token.actor?.hasPlayerOwner && 
+            token.actor.type === 'character'
+        );
+        
+        // Extract actors from party tokens
+        const partyMembers = partyTokens.map(token => token.actor);
         
         // Get current active character from tray (if available)
         const currentCharacterId = this.sourceActor?.id;
