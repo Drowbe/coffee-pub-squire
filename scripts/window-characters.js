@@ -39,32 +39,56 @@ export class CharactersWindow extends Application {
     }
 
     getData() {
-        // Get party members based on tokens on the canvas (same logic as PartyPanel)
-        const partyTokens = canvas.tokens.placeables.filter(token => 
-            token.actor?.hasPlayerOwner && 
-            token.actor.type === 'character'
-        );
+        let characters = [];
         
-        // Extract actors from party tokens
-        const partyMembers = partyTokens.map(token => token.actor);
+        if (game.user.isGM) {
+            // GM sees all tokens on canvas (characters, monsters, NPCs)
+            const allTokens = canvas.tokens.placeables.filter(token => 
+                token.actor && 
+                ['character', 'npc', 'monster'].includes(token.actor.type)
+            );
+            
+            characters = allTokens.map(token => token.actor);
+        } else {
+            // Players only see party members (characters with player owners)
+            const partyTokens = canvas.tokens.placeables.filter(token => 
+                token.actor?.hasPlayerOwner && 
+                token.actor.type === 'character'
+            );
+            
+            characters = partyTokens.map(token => token.actor);
+        }
         
         // Get current active character from tray (if available)
         const currentCharacterId = this.sourceActor?.id;
         
-        // Mark current character as non-clickable
-        const characters = partyMembers.map(actor => ({
-            id: actor.id,
-            name: actor.name,
-            img: actor.img,
-            isCurrentCharacter: actor.id === currentCharacterId,
-            clickable: actor.id !== currentCharacterId
-        }));
+        // Map to character objects with type and clickable status
+        const characterData = characters.map(actor => {
+            // Determine display type based on actor type and hostility
+            let displayType = actor.type;
+            if (actor.type === 'npc') {
+                // Check if NPC is hostile (monster) or friendly (npc)
+                const disposition = actor.disposition || 0;
+                displayType = disposition <= -1 ? 'monster' : 'npc';
+            }
+            
+            return {
+                id: actor.id,
+                name: actor.name,
+                img: actor.img,
+                type: displayType,
+                isCurrentCharacter: actor.id === currentCharacterId,
+                clickable: actor.id !== currentCharacterId
+            };
+        });
 
         return {
-            characters,
+            characters: characterData,
             item: this.item,
             sourceActor: this.sourceActor,
-            sourceItemId: this.sourceItemId
+            sourceItemId: this.sourceItemId,
+            selectedQuantity: this.selectedQuantity,
+            hasQuantity: this.hasQuantity
         };
     }
 

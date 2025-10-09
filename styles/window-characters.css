@@ -193,13 +193,13 @@
 
 /* ACTOR TYPES */
 
-.actor-character {
+.character-slot.character {
   border-color: rgba(105, 139, 1, 0.9);
 }
-.actor-monster{
+.character-slot.monster {
   border-color: rgba(93, 17, 17, 0.9);
 }
-.actor-npc{
+.character-slot.npc {
   border-color: rgba(57, 96, 115, 0.9);
 }
 
