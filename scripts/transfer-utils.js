@@ -16,19 +16,57 @@ export class TransferUtils {
         const transferId = `transfer_${Date.now()}`;
         const transferData = this._createTransferData(transferId, sourceActor, targetActor, item, quantity, hasQuantity);
         
-        // Check if GM approval is required
-        const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+        // Check permissions (same logic as working drag-and-drop code)
+        const hasSourcePermission = sourceActor.isOwner;
+        const hasTargetPermission = targetActor.isOwner;
         
-        if (gmApprovalRequired) {
-            // Send to GM for approval first
-            await this._sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
+        // Use same logic as drag-and-drop: if no permission to source OR target, use approval flow
+        if (!hasSourcePermission || !hasTargetPermission) {
+            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: Using approval flow (no permission to source or target)`);
+            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: hasSourcePermission =`, hasSourcePermission);
+            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: hasTargetPermission =`, hasTargetPermission);
+            
+            // Check if GM approval is required (setting OR target player is offline)
+            const settingRequiresApproval = game.settings.get(MODULE.ID, 'transfersGMApproves');
+            const targetPlayerIsOffline = !this._isTargetPlayerOnline(targetActor);
+            const gmApprovalRequired = settingRequiresApproval || targetPlayerIsOffline;
+            
+            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: settingRequiresApproval =`, settingRequiresApproval);
+            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: targetPlayerIsOffline =`, targetPlayerIsOffline);
+            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: gmApprovalRequired =`, gmApprovalRequired);
+            
+            if (gmApprovalRequired) {
+                console.log(`${MODULE.ID} | Sending GM transfer notification for approval`);
+                // Send to GM for approval first
+                await this._sendGMTransferNotification(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
+            } else {
+                console.log(`${MODULE.ID} | Sending direct receiver message (no GM approval needed)`);
+                // Send directly to receiver
+                await this._sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
+            }
+            
+            // Send waiting message to sender
+            console.log(`${MODULE.ID} | Sending sender waiting message`);
+            await this._sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired);
         } else {
-            // Send directly to receiver
-            await this._sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
+            console.log(`${MODULE.ID} | TransferUtils.executeTransfer: User has permission to both actors, using direct transfer`);
+            // User has permission to both actors - use direct transfer (same as drag-and-drop)
+            await this.executeTransferWithPermissions(sourceActor, targetActor, item, quantity, hasQuantity);
         }
+    }
+
+    /**
+     * Check if the target player is online
+     */
+    static _isTargetPlayerOnline(targetActor) {
+        // Get all users who own this actor
+        const ownerUsers = targetActor.ownership ? Object.entries(targetActor.ownership)
+            .filter(([userId, permission]) => permission >= 3) // 3 = OWNER permission level
+            .map(([userId]) => game.users.get(userId))
+            .filter(user => user && !user.isGM) : [];
         
-        // Send waiting message to sender
-        await this._sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired);
+        // Check if any owner is online
+        return ownerUsers.some(user => user.active);
     }
 
     /**
@@ -62,6 +100,21 @@ export class TransferUtils {
             ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
             return;
         }
+
+        console.log(`${MODULE.ID} | _sendGMTransferNotification: Calling socket.executeAsGM with data:`, {
+            sourceActorId: sourceActor.id,
+            sourceActorName: sourceActor.name,
+            targetActorId: targetActor.id,
+            targetActorName: targetActor.name,
+            itemId: item.id,
+            itemName: item.name,
+            quantity: quantity,
+            hasQuantity: hasQuantity,
+            isPlural: quantity > 1,
+            isGMApproval: true,
+            transferId: transferId,
+            receiverIds: game.users.filter(u => u.isGM).map(u => u.id)
+        });
 
         await socket.executeAsGM('createTransferRequestChat', {
             sourceActorId: sourceActor.id,

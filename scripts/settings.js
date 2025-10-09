@@ -1293,6 +1293,13 @@ export const registerSettings = function() {
         default: {}
     });
 
+    game.settings.register(MODULE.ID, 'charactersWindowPosition', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {}
+    });
+
 };
 
 // ***************************
