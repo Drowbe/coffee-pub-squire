@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
+import { TransferUtils } from './transfer-utils.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -354,7 +355,7 @@ export class PartyPanel {
                                 return;
                             }
                             
-                            await this._executeTransferWithPermissions(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
+                            await TransferUtils.executeTransferWithPermissions(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
                             return;
                             
                         } else {
