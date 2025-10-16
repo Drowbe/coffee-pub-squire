@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [12.1.7] - Bug Squashing
+
+### Fixed
+- **Duplicate Quest Notifications**: Fixed multiple identical quest/objective notifications appearing in menubar when selecting tokens
+- **Memory Leaks**: Fixed severe memory leaks caused by PanelManager creating new instances without cleaning up old ones
+- **Quest Panel Instance Management**: Made notification IDs global static properties to prevent duplicates across QuestPanel instances
+- **Panel Cleanup**: Added proper cleanup of old PanelManager instances before creating new ones to prevent memory accumulation
+- **Event Listener Leaks**: Fixed event listeners and hooks not being properly cleaned up when switching between tokens
+
+### Changed
+- **Quest Notification System**: QuestPanel now uses static notification IDs instead of instance properties to prevent duplicates
+- **PanelManager Lifecycle**: Added `_cleanupOldInstance()` method to properly destroy old instances before creating new ones
+- **Memory Management**: Enhanced cleanup to destroy all panel instances (questPanel, characterPanel, etc.) when switching tokens
+
+
 ## [12.1.6] - Item Transfer Improvements
 
 ### Added
