@@ -181,6 +181,11 @@ export class PanelManager {
             const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
             const hadDiceTrayWindow = oldDiceTrayPanel?.isPoppedOut && oldDiceTrayPanel?.window;
 
+            // Clean up old instance before creating new one to prevent memory leaks
+            if (PanelManager.instance) {
+                PanelManager._cleanupOldInstance();
+            }
+
             // Create or update instance
             PanelManager.currentActor = actor;
             
@@ -1527,6 +1532,78 @@ export class PanelManager {
         } catch (error) {
             console.error('Coffee Pub Squire | Error creating transfer complete chat message:', error);
         }
+    }
+
+    /**
+     * Clean up old instance before creating new one to prevent memory leaks
+     * @private
+     */
+    static _cleanupOldInstance() {
+        if (!PanelManager.instance) return;
+        
+        // Destroy individual panels to clean up their hooks and event listeners
+        if (PanelManager.instance.notesPanel && typeof PanelManager.instance.notesPanel.destroy === 'function') {
+            PanelManager.instance.notesPanel.destroy();
+        }
+        if (PanelManager.instance.codexPanel && typeof PanelManager.instance.codexPanel.destroy === 'function') {
+            PanelManager.instance.codexPanel.destroy();
+        }
+        if (PanelManager.instance.questPanel && typeof PanelManager.instance.questPanel.destroy === 'function') {
+            PanelManager.instance.questPanel.destroy();
+        }
+        if (PanelManager.instance.characterPanel && typeof PanelManager.instance.characterPanel.destroy === 'function') {
+            PanelManager.instance.characterPanel.destroy();
+        }
+        if (PanelManager.instance.macrosPanel && typeof PanelManager.instance.macrosPanel.destroy === 'function') {
+            PanelManager.instance.macrosPanel.destroy();
+        }
+        if (PanelManager.instance.partyPanel && typeof PanelManager.instance.partyPanel.destroy === 'function') {
+            PanelManager.instance.partyPanel.destroy();
+        }
+        if (PanelManager.instance.partyStatsPanel && typeof PanelManager.instance.partyStatsPanel.destroy === 'function') {
+            PanelManager.instance.partyStatsPanel.destroy();
+        }
+        if (PanelManager.instance.handleManager && typeof PanelManager.instance.handleManager.destroy === 'function') {
+            PanelManager.instance.handleManager.destroy();
+        }
+        
+        // Clean up other panels that might have event listeners
+        if (PanelManager.instance.favoritesPanel && typeof PanelManager.instance.favoritesPanel.destroy === 'function') {
+            PanelManager.instance.favoritesPanel.destroy();
+        }
+        if (PanelManager.instance.spellsPanel && typeof PanelManager.instance.spellsPanel.destroy === 'function') {
+            PanelManager.instance.spellsPanel.destroy();
+        }
+        if (PanelManager.instance.weaponsPanel && typeof PanelManager.instance.weaponsPanel.destroy === 'function') {
+            PanelManager.instance.weaponsPanel.destroy();
+        }
+        if (PanelManager.instance.inventoryPanel && typeof PanelManager.instance.inventoryPanel.destroy === 'function') {
+            PanelManager.instance.inventoryPanel.destroy();
+        }
+        if (PanelManager.instance.featuresPanel && typeof PanelManager.instance.featuresPanel.destroy === 'function') {
+            PanelManager.instance.featuresPanel.destroy();
+        }
+        if (PanelManager.instance.experiencePanel && typeof PanelManager.instance.experiencePanel.destroy === 'function') {
+            PanelManager.instance.experiencePanel.destroy();
+        }
+        if (PanelManager.instance.statsPanel && typeof PanelManager.instance.statsPanel.destroy === 'function') {
+            PanelManager.instance.statsPanel.destroy();
+        }
+        if (PanelManager.instance.abilitiesPanel && typeof PanelManager.instance.abilitiesPanel.destroy === 'function') {
+            PanelManager.instance.abilitiesPanel.destroy();
+        }
+        if (PanelManager.instance.healthPanel && typeof PanelManager.instance.healthPanel.destroy === 'function') {
+            PanelManager.instance.healthPanel.destroy();
+        }
+        if (PanelManager.instance.dicetrayPanel && typeof PanelManager.instance.dicetrayPanel.destroy === 'function') {
+            PanelManager.instance.dicetrayPanel.destroy();
+        }
+        if (PanelManager.instance.controlPanel && typeof PanelManager.instance.controlPanel.destroy === 'function') {
+            PanelManager.instance.controlPanel.destroy();
+        }
+        
+        // Clear the old instance reference
+        PanelManager.instance = null;
     }
 
     /**
