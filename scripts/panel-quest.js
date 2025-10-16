@@ -55,6 +55,10 @@ export function notifyQuestCompleted(questName) {
 // Quest notification functions - moved to QuestPanel class methods
 
 export class QuestPanel {
+    // Global notification IDs to prevent duplicates across QuestPanel instances
+    static questNotificationId = null;
+    static activeObjectiveNotificationId = null;
+    
     constructor() {
         this.element = null;
         this.categories = game.settings.get(MODULE.ID, 'questCategories') || ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"];
@@ -70,8 +74,6 @@ export class QuestPanel {
         };
         this.allTags = new Set();
         this.isImporting = false; // Flag to prevent panel refreshes during import
-        this.questNotificationId = null; // Store quest notification ID for updates
-        this.activeObjectiveNotificationId = null; // Store active objective notification ID for updates
         this._notificationDebounceTimeouts = {}; // Debounce timeouts for notifications
         this._verifyAndUpdateCategories();
         this._setupHooks();
@@ -106,10 +108,10 @@ export class QuestPanel {
             console.log('Coffee Pub Squire | Blacksmith API methods:', Object.keys(blacksmith));
             
             // Check if we already have a notification with this content to prevent duplicates
-            if (this.questNotificationId) {
+            if (QuestPanel.questNotificationId) {
                 try {
                     // Update existing notification
-                    const result = blacksmith.updateNotification(this.questNotificationId, {
+                    const result = blacksmith.updateNotification(QuestPanel.questNotificationId, {
                         text: questName,
                         icon: icon,
                         duration: 0 // Keep persistent
@@ -117,20 +119,20 @@ export class QuestPanel {
                     
                     // If update failed, the notification might have been removed
                     if (!result) {
-                        this.questNotificationId = null;
+                        QuestPanel.questNotificationId = null;
                         // Fall through to create new notification
                     } else {
                         return; // Successfully updated, no need to create new
                     }
                 } catch (updateError) {
                     console.warn('Coffee Pub Squire | Failed to update quest notification, creating new:', updateError);
-                    this.questNotificationId = null;
+                    QuestPanel.questNotificationId = null;
                     // Fall through to create new notification
                 }
             }
             
             // Create new notification and store ID
-            this.questNotificationId = blacksmith.addNotification(
+            QuestPanel.questNotificationId = blacksmith.addNotification(
                 questName,
                 icon,
                 0, // 0 = persistent until manually removed
@@ -147,10 +149,10 @@ export class QuestPanel {
     clearQuestNotifications() {
         try {
             const blacksmith = getBlacksmith();
-            if (!blacksmith?.removeNotification || !this.questNotificationId) return;
+            if (!blacksmith?.removeNotification || !QuestPanel.questNotificationId) return;
             
-            blacksmith.removeNotification(this.questNotificationId);
-            this.questNotificationId = null;
+            blacksmith.removeNotification(QuestPanel.questNotificationId);
+            QuestPanel.questNotificationId = null;
         } catch (error) {
             console.error('Coffee Pub Squire | Error clearing quest notifications:', error);
         }
@@ -191,15 +193,15 @@ export class QuestPanel {
                 objectiveText,
                 objectiveNumber,
                 notificationText,
-                existingId: this.activeObjectiveNotificationId
+                existingId: QuestPanel.activeObjectiveNotificationId
             });
             
             // Check if we already have a notification with this content to prevent duplicates
-            if (this.activeObjectiveNotificationId) {
+            if (QuestPanel.activeObjectiveNotificationId) {
                 try {
                     // Update existing notification
                     console.log('ACTIVE OBJECTIVE | Updating existing notification');
-                    const result = blacksmith.updateNotification(this.activeObjectiveNotificationId, {
+                    const result = blacksmith.updateNotification(QuestPanel.activeObjectiveNotificationId, {
                         text: notificationText,
                         icon: icon,
                         duration: 0 // Keep persistent
@@ -208,27 +210,27 @@ export class QuestPanel {
                     
                     // If update failed, the notification might have been removed
                     if (!result) {
-                        this.activeObjectiveNotificationId = null;
+                        QuestPanel.activeObjectiveNotificationId = null;
                         // Fall through to create new notification
                     } else {
                         return; // Successfully updated, no need to create new
                     }
                 } catch (updateError) {
                     console.warn('Coffee Pub Squire | Failed to update active objective notification, creating new:', updateError);
-                    this.activeObjectiveNotificationId = null;
+                    QuestPanel.activeObjectiveNotificationId = null;
                     // Fall through to create new notification
                 }
             }
             
             // Create new notification and store ID
             console.log('ACTIVE OBJECTIVE | Creating new notification');
-            this.activeObjectiveNotificationId = blacksmith.addNotification(
+            QuestPanel.activeObjectiveNotificationId = blacksmith.addNotification(
                 notificationText,
                 icon,
                 0, // 0 = persistent until manually removed
                 MODULE.ID
             );
-            console.log('ACTIVE OBJECTIVE | Created notification with ID:', this.activeObjectiveNotificationId);
+            console.log('ACTIVE OBJECTIVE | Created notification with ID:', QuestPanel.activeObjectiveNotificationId);
         } catch (error) {
             console.error('Coffee Pub Squire | Error sending active objective notification:', error);
         }
@@ -240,10 +242,10 @@ export class QuestPanel {
     clearActiveObjectiveNotification() {
         try {
             const blacksmith = getBlacksmith();
-            if (!blacksmith?.removeNotification || !this.activeObjectiveNotificationId) return;
+            if (!blacksmith?.removeNotification || !QuestPanel.activeObjectiveNotificationId) return;
             
-            blacksmith.removeNotification(this.activeObjectiveNotificationId);
-            this.activeObjectiveNotificationId = null;
+            blacksmith.removeNotification(QuestPanel.activeObjectiveNotificationId);
+            QuestPanel.activeObjectiveNotificationId = null;
         } catch (error) {
             console.error('Coffee Pub Squire | Error clearing active objective notification:', error);
         }
