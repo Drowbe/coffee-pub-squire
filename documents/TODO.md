@@ -6,7 +6,6 @@
 - [ ] **BROKEN** Dragging quests or objectives to the canvas no longer works (pins do not show up on the canvas)
 
 ### PLAYER/TOKEN TAB
-- [ ] **BROKEN** "Print Character Sheet" icon button no longer works
 - [ ] **ENHANCEMENT** Need to add the "send item" icon to the weapons panel just like we did the inventory panel
 
 ### NOTES TAB

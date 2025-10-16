@@ -329,8 +329,8 @@ export class PanelManager {
         // Ensure viewMode is properly set
         PanelManager.viewMode = viewMode;
         
-        this.activateListeners(trayElement);
         await this.renderPanels(trayElement);
+        this.activateListeners(trayElement);
         
         // Populate handle with rich data immediately after creation
         await this.handleManager.updateHandle();
@@ -557,14 +557,12 @@ export class PanelManager {
     activateListeners(tray) {
         const handle = tray.find('.tray-handle');
         
-        // Print character button
-        tray.find('.print-character').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (this.actor) {
-                await PrintCharacterSheet.print(this.actor);
-            }
-        });
+        // Remove existing event listeners to prevent duplicates
+        tray.find('.tray-tab-button').off('click');
+        tray.find('.tray-gm-button').off('click');
+        tray.find('.tray-tools-button').off('click');
+        tray.find('#button-clear').off('click');
+        tray.find('#button-combat').off('click');
         
        
 

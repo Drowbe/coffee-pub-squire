@@ -69,6 +69,16 @@ export class CharacterPanel {
             this.actor.sheet.render(true);
         });
 
+        // Print character button
+        html.find('.print-character').click(async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (this.actor) {
+                const { PrintCharacterSheet } = await import('./utility-print-character.js');
+                await PrintCharacterSheet.print(this.actor);
+            }
+        });
+
         // Share portrait
         html.find('.character-portrait').click(() => {
             const imagePopout = new ImagePopout(this.actor.img, {
