@@ -23,6 +23,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Backup files
----BACKUPS---/ 
+# Temp folders
+_transfers/ 
 _backups/
+_temp/
