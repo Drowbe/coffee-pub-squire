@@ -43,7 +43,9 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: () => {
+                console.log('CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
                 if (!canvas.squirePins) {
+                    console.log('Creating squirePins container...');
                     const squirePins = new PIXI.Container();
                     squirePins.sortableChildren = true;
                     squirePins.interactive = true;
@@ -54,6 +56,7 @@ Hooks.once('ready', () => {
                         canvas.stage.addChild(squirePins);
                     }
                     canvas.squirePins = squirePins;
+                    console.log('squirePins container created:', !!canvas.squirePins);
                 }
             }
         });
@@ -64,7 +67,9 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: () => {
+                console.log('CanvasReady hook called, canvas.squirePins:', !!canvas.squirePins);
                 if (!canvas.squirePins) {
+                    console.log('Creating squirePins container in canvasReady...');
                     const squirePins = new PIXI.Container();
                     squirePins.sortableChildren = true;
                     squirePins.interactive = true;
@@ -75,6 +80,7 @@ Hooks.once('ready', () => {
                         canvas.stage.addChild(squirePins);
                     }
                     canvas.squirePins = squirePins;
+                    console.log('squirePins container created in canvasReady:', !!canvas.squirePins);
                 }
                 
                 // Move squirePins to top of display order
@@ -84,6 +90,7 @@ Hooks.once('ready', () => {
                         parent.addChild(canvas.squirePins);
                     }
                     canvas.squirePins.interactive = true;
+                    console.log('squirePins container positioned and interactive:', canvas.squirePins.interactive);
                 }
             }
         });
@@ -383,13 +390,122 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (canvas, data) => {
-                if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return;
+                console.log('Quest pin dropCanvasData hook called:', { data, canvas: !!canvas, squirePins: !!canvas?.squirePins });
+                
+                if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return; // Let Foundry handle all other drops!
                 
                 // Only GMs can create quest pins
                 if (!game.user.isGM) return false;
                 
-                // Handle quest pin creation
-                // This would need the actual quest pin logic
+                if (data.type === 'quest-objective') {
+                    // Handle objective-level pins
+                    const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory, questState } = data;
+                    
+                    // Use the objective state from the drag data (default to 'active' if not provided)
+                    const finalObjectiveState = objectiveState || 'active';
+                    
+                    const pin = new QuestPin({
+                        x: data.x, 
+                        y: data.y, 
+                        questUuid, 
+                        objectiveIndex, 
+                        objectiveState: finalObjectiveState,
+                        questIndex, 
+                        questCategory,
+                        questState: questState || 'visible'
+                    });
+                    
+                    if (canvas.squirePins) {
+                        canvas.squirePins.addChild(pin);
+                        // Save to persistence
+                        pin._saveToPersistence();
+                        
+                        // Auto-show quest pins if they're currently hidden and this is a GM
+                        const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
+                        if (currentVisibility) {
+                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
+                            ui.notifications.info('Quest pins automatically shown after placing new quest pin.');
+                            
+                            // Update the toggle button in the quest panel to reflect the new state
+                            const toggleButton = document.querySelector('.toggle-pin-visibility');
+                            if (toggleButton) {
+                                toggleButton.classList.remove('fa-location-dot');
+                                toggleButton.classList.add('fa-location-dot-slash');
+                                toggleButton.title = 'Show Quest Pins';
+                            }
+                        }
+                    } else {
+                        // canvas.squirePins is not available
+                    }
+                    return true;
+                } else if (data.type === 'quest-quest') {
+                    // Handle quest-level pins
+                    const { questUuid, questIndex, questCategory, questState, questStatus, participants } = data;
+                    
+                    // Convert participant UUIDs to participant objects with names
+                    const processedParticipants = [];
+                    if (participants && Array.isArray(participants)) {
+                        for (const participantUuid of participants) {
+                            try {
+                                if (participantUuid && participantUuid.trim()) {
+                                    // Try to get actor name from UUID
+                                    const actor = await fromUuid(participantUuid);
+                                    if (actor && actor.name) {
+                                        processedParticipants.push({
+                                            uuid: participantUuid,
+                                            name: actor.name,
+                                            img: actor.img || 'icons/svg/mystery-man.svg'
+                                        });
+                                    }
+                                }
+                            } catch (error) {
+                                // If we can't resolve the UUID, add a placeholder
+                                processedParticipants.push({
+                                    uuid: participantUuid,
+                                    name: 'Unknown',
+                                    img: 'icons/svg/mystery-man.svg'
+                                });
+                            }
+                        }
+                    }
+                    
+                    const pin = new QuestPin({
+                        x: data.x, 
+                        y: data.y, 
+                        questUuid, 
+                        objectiveIndex: null, // Indicates quest-level pin
+                        objectiveState: null, // Not applicable for quest pins
+                        questIndex, 
+                        questCategory,
+                        questState: questState || 'visible',
+                        questStatus: questStatus || 'Not Started',
+                        participants: processedParticipants
+                    });
+                    
+                    if (canvas.squirePins) {
+                        canvas.squirePins.addChild(pin);
+                        // Save to persistence
+                        pin._saveToPersistence();
+                        
+                        // Auto-show quest pins if they're currently hidden and this is a GM
+                        const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
+                        if (currentVisibility) {
+                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
+                            ui.notifications.info('Quest pins automatically shown after placing new quest pin.');
+                            
+                            // Update the toggle button in the quest panel to reflect the new state
+                            const toggleButton = document.querySelector('.toggle-pin-visibility');
+                            if (toggleButton) {
+                                toggleButton.classList.remove('fa-location-dot');
+                                toggleButton.classList.add('fa-location-dot-slash');
+                                toggleButton.title = 'Show Quest Pins';
+                            }
+                        }
+                    } else {
+                        // canvas.squirePins is not available
+                    }
+                    return true;
+                }
             }
         });
         
@@ -481,6 +597,53 @@ Hooks.once('ready', () => {
         console.log('✅ Coffee Pub Squire: All hooks registered with Blacksmith successfully');
     } catch (error) {
         console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
+    }
+});
+
+// Fallback: Use native FoundryVTT hooks for canvas initialization (Blacksmith HookManager may not handle these properly)
+Hooks.on('canvasInit', () => {
+    console.log('Native CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
+    if (!canvas.squirePins) {
+        console.log('Creating squirePins container via native hook...');
+        const squirePins = new PIXI.Container();
+        squirePins.sortableChildren = true;
+        squirePins.interactive = true;
+        squirePins.eventMode = 'static';
+        if (canvas.foregroundGroup) {
+            canvas.foregroundGroup.addChild(squirePins);
+        } else {
+            canvas.stage.addChild(squirePins);
+        }
+        canvas.squirePins = squirePins;
+        console.log('squirePins container created via native hook:', !!canvas.squirePins);
+    }
+});
+
+Hooks.on('canvasReady', () => {
+    console.log('Native CanvasReady hook called, canvas.squirePins:', !!canvas.squirePins);
+    if (!canvas.squirePins) {
+        console.log('Creating squirePins container via native canvasReady...');
+        const squirePins = new PIXI.Container();
+        squirePins.sortableChildren = true;
+        squirePins.interactive = true;
+        squirePins.eventMode = 'static';
+        if (canvas.foregroundGroup) {
+            canvas.foregroundGroup.addChild(squirePins);
+        } else {
+            canvas.stage.addChild(squirePins);
+        }
+        canvas.squirePins = squirePins;
+        console.log('squirePins container created via native canvasReady:', !!canvas.squirePins);
+    }
+    
+    // Move squirePins to top of display order
+    if (canvas.squirePins) {
+        const parent = canvas.squirePins.parent;
+        if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
+            parent.addChild(canvas.squirePins);
+        }
+        canvas.squirePins.interactive = true;
+        console.log('squirePins container positioned and interactive via native hook:', canvas.squirePins.interactive);
     }
 });
 // ================================================================== 
