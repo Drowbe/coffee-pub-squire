@@ -599,8 +599,79 @@ Hooks.once('ready', () => {
         console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
     }
 });
+// ================================================================== 
+// ===== END: BLACKSMITH API REGISTRATIONS ==========================
+// ================================================================== 
 
-// Fallback: Use native FoundryVTT hooks for canvas initialization (Blacksmith HookManager may not handle these properly)
+// Register canvas hooks in init hook to ensure they're registered before canvas is initialized
+Hooks.once('init', () => {
+    // Register canvas initialization hooks through Blacksmith HookManager
+    try {
+        const canvasInitHookId = BlacksmithHookManager.registerHook({
+            name: 'canvasInit',
+            description: 'Coffee Pub Squire: Create squirePins container on canvas initialization',
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
+                console.log('CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
+                if (!canvas.squirePins) {
+                    console.log('Creating squirePins container...');
+                    const squirePins = new PIXI.Container();
+                    squirePins.sortableChildren = true;
+                    squirePins.interactive = true;
+                    squirePins.eventMode = 'static';
+                    if (canvas.foregroundGroup) {
+                        canvas.foregroundGroup.addChild(squirePins);
+                    } else {
+                        canvas.stage.addChild(squirePins);
+                    }
+                    canvas.squirePins = squirePins;
+                    console.log('squirePins container created:', !!canvas.squirePins);
+                }
+            }
+        });
+
+        const canvasReadyHookId = BlacksmithHookManager.registerHook({
+            name: 'canvasReady',
+            description: 'Coffee Pub Squire: Ensure squirePins container is properly positioned',
+            context: MODULE.ID,
+            priority: 2,
+            callback: () => {
+                console.log('CanvasReady hook called, canvas.squirePins:', !!canvas.squirePins);
+                if (!canvas.squirePins) {
+                    console.log('Creating squirePins container in canvasReady...');
+                    const squirePins = new PIXI.Container();
+                    squirePins.sortableChildren = true;
+                    squirePins.interactive = true;
+                    squirePins.eventMode = 'static';
+                    if (canvas.foregroundGroup) {
+                        canvas.foregroundGroup.addChild(squirePins);
+                    } else {
+                        canvas.stage.addChild(squirePins);
+                    }
+                    canvas.squirePins = squirePins;
+                    console.log('squirePins container created in canvasReady:', !!canvas.squirePins);
+                }
+                
+                // Move squirePins to top of display order
+                if (canvas.squirePins) {
+                    const parent = canvas.squirePins.parent;
+                    if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
+                        parent.addChild(canvas.squirePins);
+                    }
+                    canvas.squirePins.interactive = true;
+                    console.log('squirePins container positioned and interactive:', canvas.squirePins.interactive);
+                }
+            }
+        });
+
+        console.log('✅ Canvas hooks registered with Blacksmith HookManager in init');
+    } catch (error) {
+        console.error('❌ Failed to register canvas hooks with Blacksmith:', error);
+    }
+});
+
+// Fallback: Use native FoundryVTT hooks if Blacksmith doesn't work
 Hooks.on('canvasInit', () => {
     console.log('Native CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
     if (!canvas.squirePins) {
@@ -646,9 +717,6 @@ Hooks.on('canvasReady', () => {
         console.log('squirePins container positioned and interactive via native hook:', canvas.squirePins.interactive);
     }
 });
-// ================================================================== 
-// ===== END: BLACKSMITH API REGISTRATIONS ==========================
-// ================================================================== 
 
 // Helper function to get PanelManager dynamically to avoid circular dependencies
 function getPanelManager() {
