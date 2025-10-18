@@ -2,7 +2,10 @@
 
 ## Current Issues (Fix First)
 
+
+
 ### QUESTS TAB
+- [ ] **CRITICAL** Objective status changes in quest list do not update on canvas pins (pins don't reflect completed/failed/hidden states)
 - [ ] **BROKEN** Dragging quests or objectives to the canvas no longer works (pins do not show up on the canvas)
 
 ### PLAYER/TOKEN TAB

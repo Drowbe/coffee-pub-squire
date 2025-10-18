@@ -390,8 +390,6 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (canvas, data) => {
-                console.log('Quest pin dropCanvasData hook called:', { data, canvas: !!canvas, squirePins: !!canvas?.squirePins });
-                
                 if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return; // Let Foundry handle all other drops!
                 
                 // Only GMs can create quest pins
@@ -544,8 +542,19 @@ Hooks.once('ready', () => {
             priority: 2,
             callback: (token, changes) => {
                 if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {
-                    // Update pin visibility
-                    // This would need the actual quest pin logic
+                    // Update pin visibility for all pins
+                    if (canvas.squirePins) {
+                        const pins = canvas.squirePins.children.filter(child => child.constructor.name === 'QuestPin');
+                        pins.forEach(pin => {
+                            try {
+                                if (pin.updateVisibility) {
+                                    pin.updateVisibility();
+                                }
+                            } catch (error) {
+                                // Error updating pin visibility
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -578,8 +587,19 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: () => {
-                // Update pin visibility
-                // This would need the actual quest pin logic
+                // Update pin visibility for all pins
+                if (canvas.squirePins) {
+                    const pins = canvas.squirePins.children.filter(child => child.constructor.name === 'QuestPin');
+                    pins.forEach(pin => {
+                        try {
+                            if (pin.updateVisibility) {
+                                pin.updateVisibility();
+                            }
+                        } catch (error) {
+                            // Error updating pin visibility
+                        }
+                    });
+                }
             }
         });
         
@@ -603,75 +623,7 @@ Hooks.once('ready', () => {
 // ===== END: BLACKSMITH API REGISTRATIONS ==========================
 // ================================================================== 
 
-// Register canvas hooks in init hook to ensure they're registered before canvas is initialized
-Hooks.once('init', () => {
-    // Register canvas initialization hooks through Blacksmith HookManager
-    try {
-        const canvasInitHookId = BlacksmithHookManager.registerHook({
-            name: 'canvasInit',
-            description: 'Coffee Pub Squire: Create squirePins container on canvas initialization',
-            context: MODULE.ID,
-            priority: 2,
-            callback: () => {
-                console.log('CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
-                if (!canvas.squirePins) {
-                    console.log('Creating squirePins container...');
-                    const squirePins = new PIXI.Container();
-                    squirePins.sortableChildren = true;
-                    squirePins.interactive = true;
-                    squirePins.eventMode = 'static';
-                    if (canvas.foregroundGroup) {
-                        canvas.foregroundGroup.addChild(squirePins);
-                    } else {
-                        canvas.stage.addChild(squirePins);
-                    }
-                    canvas.squirePins = squirePins;
-                    console.log('squirePins container created:', !!canvas.squirePins);
-                }
-            }
-        });
-
-        const canvasReadyHookId = BlacksmithHookManager.registerHook({
-            name: 'canvasReady',
-            description: 'Coffee Pub Squire: Ensure squirePins container is properly positioned',
-            context: MODULE.ID,
-            priority: 2,
-            callback: () => {
-                console.log('CanvasReady hook called, canvas.squirePins:', !!canvas.squirePins);
-                if (!canvas.squirePins) {
-                    console.log('Creating squirePins container in canvasReady...');
-                    const squirePins = new PIXI.Container();
-                    squirePins.sortableChildren = true;
-                    squirePins.interactive = true;
-                    squirePins.eventMode = 'static';
-                    if (canvas.foregroundGroup) {
-                        canvas.foregroundGroup.addChild(squirePins);
-                    } else {
-                        canvas.stage.addChild(squirePins);
-                    }
-                    canvas.squirePins = squirePins;
-                    console.log('squirePins container created in canvasReady:', !!canvas.squirePins);
-                }
-                
-                // Move squirePins to top of display order
-                if (canvas.squirePins) {
-                    const parent = canvas.squirePins.parent;
-                    if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
-                        parent.addChild(canvas.squirePins);
-                    }
-                    canvas.squirePins.interactive = true;
-                    console.log('squirePins container positioned and interactive:', canvas.squirePins.interactive);
-                }
-            }
-        });
-
-        console.log('✅ Canvas hooks registered with Blacksmith HookManager in init');
-    } catch (error) {
-        console.error('❌ Failed to register canvas hooks with Blacksmith:', error);
-    }
-});
-
-// Fallback: Use native FoundryVTT hooks if Blacksmith doesn't work
+// Canvas hooks use native FoundryVTT hooks as Blacksmith timing for canvas events is unreliable
 Hooks.on('canvasInit', () => {
     console.log('Native CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
     if (!canvas.squirePins) {
@@ -805,10 +757,114 @@ async function _routeToNotesPanel(page, changes, options, userId) {
 
 async function _routeToQuestPins(page, changes, options, userId) {
     try {
-        // Quest pins logic would go here
-        // For now, just a placeholder
+        // Handle quest-specific updates (visibility, pin updates, etc.)
+        if (changes.flags && changes.flags[MODULE.ID] && changes.flags[MODULE.ID].visible !== undefined) {
+            const isVisible = changes.flags[MODULE.ID].visible;
+            
+            // Update quest pins for this quest
+            if (canvas.squirePins) {
+                const questPins = canvas.squirePins.children.filter(child => 
+                    child.constructor.name === 'QuestPin' && child.questUuid === page.uuid
+                );
+                
+                questPins.forEach(pin => {
+                    try {
+                        // Update quest state
+                        pin.questState = isVisible ? 'visible' : 'hidden';
+                        
+                        // Update pin appearance
+                        if (pin._updatePinAppearance) {
+                            pin._updatePinAppearance();
+                        }
+                        
+                        // Update visibility
+                        if (pin.updateVisibility) {
+                            pin.updateVisibility();
+                        }
+                    } catch (error) {
+                        console.error('Error updating quest pin state:', { error, pin, page });
+                    }
+                });
+            }
+        }
+        
+        // Handle quest content changes (objective states, quest status, etc.)
+        if (changes.text && changes.text.content) {
+            // Update quest status
+            const statusMatch = changes.text.content.match(/## Quest Status:\s*(.+)/);
+            const newStatus = statusMatch ? statusMatch[1].trim() : '';
+            
+            if (newStatus && canvas.squirePins) {
+                const questPins = canvas.squirePins.children.filter(child => 
+                    child.constructor.name === 'QuestPin' && child.questUuid === page.uuid
+                );
+                
+                questPins.forEach(pin => {
+                    try {
+                        // Update quest status for quest-level pins
+                        if (pin.pinType === 'quest' && pin.updateQuestStatus) {
+                            pin.updateQuestStatus(newStatus);
+                        }
+                        
+                        // Update objective states for objective pins
+                        if (pin.pinType === 'objective') {
+                            _updateQuestPinObjectiveStates(pin, page);
+                        }
+                    } catch (error) {
+                        console.error('Error updating quest pin status:', { error, pin, page });
+                    }
+                });
+            }
+        }
+        
+        // Update pin visibility for all pins
+        if (canvas.squirePins) {
+            const pins = canvas.squirePins.children.filter(child => child.constructor.name === 'QuestPin');
+            pins.forEach(pin => {
+                try {
+                    if (pin.updateVisibility) {
+                        pin.updateVisibility();
+                    }
+                } catch (error) {
+                    // Error updating pin visibility
+                }
+            });
+        }
     } catch (error) {
         console.error('Error routing to quest pins:', error);
+    }
+}
+
+// Helper function to update quest pin objective states
+function _updateQuestPinObjectiveStates(pin, page) {
+    try {
+        if (pin.pinType === 'objective' && pin.objectiveIndex !== null && pin.objectiveIndex !== undefined) {
+            // Parse the quest content to find the objective state
+            const content = page.text?.content || '';
+            const tasksMatch = content.match(/## Tasks:\s*([\s\S]*?)(?=##|$)/);
+            
+            if (tasksMatch) {
+                const tasksHtml = tasksMatch[1];
+                const li = tasksHtml.split('<li>')[pin.objectiveIndex + 1];
+                
+                if (li) {
+                    let newState = 'active';
+                    if (li.includes('<s>')) {
+                        newState = 'completed';
+                    } else if (li.includes('<code>')) {
+                        newState = 'failed';
+                    } else if (li.includes('<em>')) {
+                        newState = 'hidden';
+                    }
+                    
+                    if (pin.updateObjectiveState) {
+                        pin.updateObjectiveState(newState);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating quest pin objective states:', { error, pin, page });
     }
 }
 
