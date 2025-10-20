@@ -178,11 +178,8 @@ export class PartyPanel {
             if (PanelManager.instance?.healthPanel) {
                 const healthPanel = PanelManager.instance.healthPanel;
                 
-                // Get all party actors
-                const partyActors = partyTokens.map(token => token.actor).filter(actor => actor);
-                
-                // Update the health panel with all party actors
-                healthPanel.updateActors(partyActors);
+                // Update the health panel with all party tokens
+                healthPanel.updateTokens(partyTokens);
                 
                 // If health panel is not already open, pop it out
                 if (!healthPanel.isPoppedOut) {
@@ -476,7 +473,7 @@ export class PartyPanel {
             const tokenId = $(event.currentTarget).closest('.character-card').data('token-id');
             const token = canvas.tokens.placeables.find(t => t.id === tokenId);
             if (token?.actor && PanelManager.instance && PanelManager.instance.healthPanel) {
-                PanelManager.instance.healthPanel.updateActor(token.actor);
+                PanelManager.instance.healthPanel.updateTokens([token]);
                 await PanelManager.instance.healthPanel._onPopOut();
             }
         });

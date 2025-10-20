@@ -227,8 +227,11 @@ export class PanelManager {
                 PanelManager.instance.healthPanel.window.panel = PanelManager.instance.healthPanel;
                 HealthPanel.isWindowOpen = true;
                 HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
-                // Update the panel and window with the new actor
-                PanelManager.instance.healthPanel.updateActor(actor);
+                // Update the panel and window with the new actor's token
+                const token = canvas.tokens.placeables.find(t => t.actor?.id === actor?.id);
+                if (token) {
+                    PanelManager.instance.healthPanel.updateTokens([token]);
+                }
             } else if (savedWindowStates.health && PanelManager.instance.healthPanel) {
                 // Restore from saved state
                 await PanelManager.instance.healthPanel._onPopOut();
@@ -264,6 +267,9 @@ export class PanelManager {
             if (PanelManager.instance.questMarkers) {
                 await PanelManager.instance.questMarkers.initializeSceneMarkers();
             }
+            
+            // Update health panel with current token selection
+            await _updateHealthPanelFromSelection();
         } finally {
             PanelManager._initializationInProgress = false;
         }
@@ -423,11 +429,10 @@ export class PanelManager {
         if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             this.healthPanel = new HealthPanel(this.actor);
             
-            // Update health panel with all controlled actors for bulk operations
+            // Update health panel with all controlled tokens for bulk operations
             const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-            const controlledActors = controlledTokens.map(t => t.actor);
-            if (controlledActors.length > 0) {
-                this.healthPanel.updateActors(controlledActors);
+            if (controlledTokens.length > 0) {
+                this.healthPanel.updateTokens(controlledTokens);
             }
         } else {
             this.healthPanel = null;
@@ -1912,28 +1917,28 @@ async function _updateSelectionDisplay() {
 }
 
 // Helper function to update health panel from current selection
-async function _updateHealthPanelFromSelection() {
+export async function _updateHealthPanelFromSelection() {
     // Get a list of all controlled tokens that the user owns
     const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
     
     // If no tokens are controlled, return
     if (!controlledTokens.length) return;
 
-    // Get all controlled actors for bulk operations
-    const controlledActors = controlledTokens.map(t => t.actor);
-
-    // Determine which actor to use for primary operations:
+    // Determine which token to use for primary operations:
     // - If the list includes player-owned characters, use the most recent player character
-    // - Otherwise, use the most recently selected token's actor
-    let actorToUse = controlledActors[0]; // Default to the first actor
+    // - Otherwise, use the most recently selected token
+    let tokenToUse = controlledTokens[0]; // Default to the first token
    
     // Look for player character tokens
     const playerTokens = controlledTokens.filter(t => t.actor?.type === 'character' && t.actor?.hasPlayerOwner);
     
     if (playerTokens.length > 0) {
         // Use the most recent player token (last one in the array)
-        actorToUse = playerTokens[playerTokens.length - 1].actor;
+        tokenToUse = playerTokens[playerTokens.length - 1];
     }
+
+    // Use the actor from the primary token for the tray
+    const actorToUse = tokenToUse.actor;
 
     // Save the current view mode before initializing
     const currentViewMode = PanelManager.viewMode;
@@ -1980,15 +1985,15 @@ async function _updateHealthPanelFromSelection() {
         await PanelManager.instance.actor.items._flush();
     }
     
-    // Update health panel with all controlled actors for bulk operations
+    // Update health panel with all controlled tokens for bulk operations
     if (PanelManager.instance && PanelManager.instance.healthPanel) {
-        // Only update if the actors have actually changed
-        const currentActors = PanelManager.instance.healthPanel.actors || [];
-        const currentActorIds = currentActors.map(a => a.id).sort();
-        const newActorIds = controlledActors.map(a => a.id).sort();
+        // Only update if the tokens have actually changed
+        const currentTokens = PanelManager.instance.healthPanel.tokens || [];
+        const currentTokenIds = currentTokens.map(t => t.id).sort();
+        const newTokenIds = controlledTokens.map(t => t.id).sort();
         
-        if (JSON.stringify(currentActorIds) !== JSON.stringify(newActorIds)) {
-            PanelManager.instance.healthPanel.updateActors(controlledActors);
+        if (JSON.stringify(currentTokenIds) !== JSON.stringify(newTokenIds)) {
+            PanelManager.instance.healthPanel.updateTokens(controlledTokens);
             // Only render if not popped out and health panel is enabled
             if (!PanelManager.instance.healthPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showHealthPanel')) {
                 await PanelManager.instance.healthPanel.render(PanelManager.instance.element);

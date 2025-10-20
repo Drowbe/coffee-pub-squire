@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { PanelManager } from './manager-panel.js';
+import { PanelManager, _updateHealthPanelFromSelection } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers } from './helpers.js';
@@ -1467,13 +1467,16 @@ Hooks.once('ready', async function() {
             context: MODULE.ID,
             priority: 2,
             callback: async (token, controlled) => {
-            // Only care about token selection, not deselection
-            if (!controlled) return;
-            
             // Only proceed if it's a GM or the token owner
             if (!game.user.isGM && !token.actor?.isOwner) return;
             
+            // Initialize panel manager if needed
             await PanelManager.initialize(token.actor);
+            
+            // Update health panel with current selection (works for both selection and deselection)
+            if (PanelManager.instance) {
+                await _updateHealthPanelFromSelection();
+            }
             }
         });
         

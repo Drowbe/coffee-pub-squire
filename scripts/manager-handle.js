@@ -714,20 +714,20 @@ export class HandleManager {
                 const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
                 if (token) {
                     token.control({releaseOthers: true});
-                }
-                
-                // Update PanelManager's current actor reference so the health panel shows the correct data
-                PanelManager.currentActor = actor;
-                
-                // Update the health panel with the party member's actor
-                PanelManager.instance.healthPanel.updateActor(actor);
-                
-                // If health panel is already popped out, update the window directly
-                if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
-                    PanelManager.instance.healthPanel.window.updateActor(actor);
-                } else {
-                    // Pop out the health panel
-                    await PanelManager.instance.healthPanel._onPopOut();
+                    
+                    // Update PanelManager's current actor reference so the health panel shows the correct data
+                    PanelManager.currentActor = actor;
+                    
+                    // Update the health panel with the party member's token
+                    PanelManager.instance.healthPanel.updateTokens([token]);
+                    
+                    // If health panel is already popped out, update the window directly
+                    if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
+                        PanelManager.instance.healthPanel.window.updateTokens([token]);
+                    } else {
+                        // Pop out the health panel
+                        await PanelManager.instance.healthPanel._onPopOut();
+                    }
                 }
             }
         });

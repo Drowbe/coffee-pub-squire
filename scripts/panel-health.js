@@ -13,20 +13,21 @@ export class HealthPanel {
 
     constructor(actor) {
         this.actor = actor;
-        this.actors = actor ? [actor] : []; // Support multiple actors for bulk operations
+        this.tokens = []; // Store tokens instead of actors for proper targeting
         this.element = null;
         // Check if there's an active window and restore state
         this.window = HealthPanel.activeWindow;
         this.isPoppedOut = HealthPanel.isWindowOpen;
         this.previousSibling = null; // Store reference for position
 
-        // Register for actor updates from all actors
-        if (this.actors && this.actors.length > 0) {
-            this.actors.forEach(a => {
-                if (a) {
-                    a.apps[this.id] = this;
-                }
-            });
+        // If actor provided, find its token and store it
+        if (actor) {
+            const token = canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
+            if (token) {
+                this.tokens = [token];
+                // Register for actor updates
+                token.actor.apps[this.id] = this;
+            }
         }
     }
 
@@ -34,40 +35,40 @@ export class HealthPanel {
         return `squire-health-${this.actor?.id || 'multi'}`;
     }
 
-    // Method to update actors for bulk operations
-    updateActors(actors) {
-        // Prevent infinite loops by checking if actors have actually changed
-        const currentActorIds = (this.actors || []).map(a => a.id).sort();
-        const newActorIds = (actors || []).map(a => a.id).sort();
+    // Method to update tokens for bulk operations
+    updateTokens(tokens) {
+        // Prevent infinite loops by checking if tokens have actually changed
+        const currentTokenIds = (this.tokens || []).map(t => t.id).sort();
+        const newTokenIds = (tokens || []).map(t => t.id).sort();
         
-        if (JSON.stringify(currentActorIds) === JSON.stringify(newActorIds)) {
+        if (JSON.stringify(currentTokenIds) === JSON.stringify(newTokenIds)) {
             return; // No change, don't update
         }
         
-        // Unregister from old actors
-        if (this.actors && this.actors.length > 0) {
-            this.actors.forEach(actor => {
-                if (actor) {
-                    delete actor.apps[this.id];
+        // Unregister from old token actors
+        if (this.tokens && this.tokens.length > 0) {
+            this.tokens.forEach(token => {
+                if (token.actor) {
+                    delete token.actor.apps[this.id];
                 }
             });
         }
         
-        this.actors = actors || [];
-        this.actor = actors?.[0] || null; // Keep first actor as primary for compatibility
+        this.tokens = tokens || [];
+        this.actor = tokens?.[0]?.actor || null; // Keep first actor as primary for compatibility
         
-        // Re-register for updates from all actors
-        if (this.actors && this.actors.length > 0) {
-            this.actors.forEach(actor => {
-                if (actor) {
-                    actor.apps[this.id] = this;
+        // Re-register for updates from all token actors
+        if (this.tokens && this.tokens.length > 0) {
+            this.tokens.forEach(token => {
+                if (token.actor) {
+                    token.actor.apps[this.id] = this;
                 }
             });
         }
         
         // Update window if popped out
         if (this.isPoppedOut && this.window) {
-            this.window.updateActors(actors);
+            this.window.updateTokens(tokens);
         }
     }
 
@@ -110,10 +111,10 @@ export class HealthPanel {
                 isHealthPopped: this.isPoppedOut
             };
         } else {
-            // Allow multi-token health as before
+            // Allow multi-token health - convert tokens to actors for template
             templateData = {
                 actor: this.actor,
-                actors: this.actors,
+                actors: this.tokens.map(t => t.actor),
                 position: game.settings.get(MODULE.ID, 'trayPosition'),
                 isGM: game.user.isGM,
                 isHealthPopped: this.isPoppedOut
@@ -231,101 +232,83 @@ export class HealthPanel {
         this._activateListeners(html);
     }
 
-    // Update actor reference and window if needed
+    // Update actor reference and window if needed (legacy support - wraps updateTokens)
     updateActor(actor) {
-        // Unregister from all actors
-        if (this.actors && this.actors.length > 0) {
-            this.actors.forEach(a => {
-                if (a) {
-                    delete a.apps[this.id];
-                }
-            });
-        }
-        
-        // Update actor reference
-        this.actor = actor;
-        this.actors = actor ? [actor] : [];
-        
-        // Re-register for updates
-        if (actor) {
-            actor.apps[this.id] = this;
-        }
-        
-        // Update window if popped out
-        if (this.isPoppedOut && this.window) {
-            this.window.updateActor(actor);
+        // Find the token for this actor
+        const token = canvas.tokens.placeables.find(t => t.actor?.id === actor?.id);
+        if (token) {
+            this.updateTokens([token]);
+        } else {
+            // Fallback if no token found - clear tokens
+            this.updateTokens([]);
+            this.actor = actor;
         }
     }
 
     async _onHPChange(direction) {
         const amount = parseInt(this.element.find('.hp-amount').val()) || 1;
         
-        // Handle bulk operations if multiple actors
-        if (this.actors.length > 1) {
-            const updates = this.actors.map(actor => {
-                const hp = actor.system.attributes.hp;
+        // Handle bulk operations if multiple tokens
+        if (this.tokens.length > 1) {
+            for (const token of this.tokens) {
+                const hp = token.actor.system.attributes.hp;
                 const newValue = Math.clamp(hp.value + (amount * direction), 0, hp.max);
-                return { _id: actor.id, 'system.attributes.hp.value': newValue };
-            });
-            await Actor.updateDocuments(updates);
-        } else if (this.actor) {
-            // Single actor operation
-            const hp = this.actor.system.attributes.hp;
+                await token.actor.update({'system.attributes.hp.value': newValue});
+            }
+        } else if (this.tokens[0]) {
+            // Single token operation
+            const token = this.tokens[0];
+            const hp = token.actor.system.attributes.hp;
             const newValue = Math.clamp(hp.value + (amount * direction), 0, hp.max);
-            await this.actor.update({'system.attributes.hp.value': newValue});
+            await token.actor.update({'system.attributes.hp.value': newValue});
         }
     }
 
     async _onFullHeal() {
-        // Handle bulk operations if multiple actors
-        if (this.actors.length > 1) {
-            const updates = this.actors.map(actor => {
-                const hp = actor.system.attributes.hp;
-                return { _id: actor.id, 'system.attributes.hp.value': hp.max };
-            });
-            await Actor.updateDocuments(updates);
-        } else if (this.actor) {
-            // Single actor operation
-            const hp = this.actor.system.attributes.hp;
-            await this.actor.update({'system.attributes.hp.value': hp.max});
+        // Handle bulk operations if multiple tokens
+        if (this.tokens.length > 1) {
+            for (const token of this.tokens) {
+                const hp = token.actor.system.attributes.hp;
+                await token.actor.update({'system.attributes.hp.value': hp.max});
+            }
+        } else if (this.tokens[0]) {
+            // Single token operation
+            const token = this.tokens[0];
+            const hp = token.actor.system.attributes.hp;
+            await token.actor.update({'system.attributes.hp.value': hp.max});
         }
     }
 
     async _onDeathToggle() {
-        // Handle bulk operations if multiple actors
-        if (this.actors.length > 1) {
-            const updates = [];
-            const effectUpdates = [];
-            
-            for (const actor of this.actors) {
+        // Handle bulk operations if multiple tokens
+        if (this.tokens.length > 1) {
+            for (const token of this.tokens) {
+                const actor = token.actor;
                 const isDead = actor.effects.find(e => e.statuses.has('dead'));
                 if (isDead) {
                     // Remove dead status
-                    effectUpdates.push({ _id: actor.id, embedded: { ActiveEffect: [{ _id: isDead.id, _operation: 2 }] } });
+                    await actor.deleteEmbeddedDocuments('ActiveEffect', [isDead.id]);
                 } else {
                     // Add dead status and set HP to 0
                     const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
                     if (effect) {
-                        effectUpdates.push({ _id: actor.id, embedded: { ActiveEffect: [effect] } });
-                        updates.push({ _id: actor.id, 'system.attributes.hp.value': 0 });
+                        await actor.createEmbeddedDocuments('ActiveEffect', [effect]);
+                        await actor.update({'system.attributes.hp.value': 0});
                     }
                 }
             }
-            
-            // Apply all updates
-            if (updates.length > 0) await Actor.updateDocuments(updates);
-            if (effectUpdates.length > 0) await Actor.updateDocuments(effectUpdates);
-        } else if (this.actor) {
-            // Single actor operation
-            const isDead = this.actor.effects.find(e => e.statuses.has('dead'));
+        } else if (this.tokens[0]) {
+            // Single token operation
+            const actor = this.tokens[0].actor;
+            const isDead = actor.effects.find(e => e.statuses.has('dead'));
             if (isDead) {
-                await this.actor.deleteEmbeddedDocuments('ActiveEffect', [isDead.id]);
+                await actor.deleteEmbeddedDocuments('ActiveEffect', [isDead.id]);
             } else {
                 const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
                 if (effect) {
-                    await this.actor.createEmbeddedDocuments('ActiveEffect', [effect]);
+                    await actor.createEmbeddedDocuments('ActiveEffect', [effect]);
                     // Set HP to 0 when applying dead status
-                    await this.actor.update({'system.attributes.hp.value': 0});
+                    await actor.update({'system.attributes.hp.value': 0});
                 }
             }
         }

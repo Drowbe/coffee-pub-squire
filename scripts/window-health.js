@@ -6,10 +6,18 @@ export class HealthWindow extends Application {
         this.panel = options.panel;
         
         // Register for actor updates from all actors in the selection
+        // Handle both old actors array and new tokens array
         if (this.panel?.actors && this.panel.actors.length > 0) {
             this.panel.actors.forEach(actor => {
                 if (actor) {
                     actor.apps[this.appId] = this;
+                }
+            });
+        } else if (this.panel?.tokens && this.panel.tokens.length > 0) {
+            // New token-based approach
+            this.panel.tokens.forEach(token => {
+                if (token.actor) {
+                    token.actor.apps[this.appId] = this;
                 }
             });
         } else if (this.panel?.actor) {
@@ -66,16 +74,22 @@ export class HealthWindow extends Application {
     }
 
     getData() {
+        // Handle both old actors array and new tokens array
+        let actors = this.panel.actors;
+        if (!actors && this.panel.tokens) {
+            actors = this.panel.tokens.map(t => t.actor);
+        }
+        
         const data = {
             actor: this.panel.actor,
-            actors: this.panel.actors, // Pass all actors for bulk operations
+            actors: actors, // Pass all actors for bulk operations
             position: "left",
             isGM: game.user.isGM,
             isHealthPopped: true
         };
         // Update window title with actor name or multiple selection
-        if (this.panel.actors && this.panel.actors.length > 1) {
-            this.options.title = `Health: ${this.panel.actors.length} Selected`;
+        if (actors && actors.length > 1) {
+            this.options.title = `Health: ${actors.length} Selected`;
         } else {
             this.options.title = `Health: ${this.panel.actor?.name || 'None Selected'}`;
         }
@@ -198,6 +212,41 @@ export class HealthWindow extends Application {
         // Register with new actor
         if (actor) {
             actor.apps[this.appId] = this;
+        }
+        
+        // Re-render with new actor data
+        this.render(false);
+    }
+
+    // Update the panel with tokens for bulk operations (new method)
+    updateTokens(tokens) {
+        // Convert tokens to actors for the window
+        const actors = tokens?.map(t => t.actor) || [];
+        
+        // Unregister from old actors
+        if (this.panel?.actors && this.panel.actors.length > 0) {
+            this.panel.actors.forEach(a => {
+                if (a) {
+                    delete a.apps[this.appId];
+                }
+            });
+        } else if (this.panel?.actor) {
+            delete this.panel.actor.apps[this.appId];
+        }
+        
+        // Update panel's actors directly (avoid recursive call)
+        if (this.panel) {
+            this.panel.actors = actors;
+            this.panel.actor = actors?.[0] || null;
+        }
+        
+        // Register with ALL actors in the selection for updates
+        if (actors && actors.length > 0) {
+            actors.forEach(actor => {
+                if (actor) {
+                    actor.apps[this.appId] = this;
+                }
+            });
         }
         
         // Re-render with new actor data
