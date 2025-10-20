@@ -121,6 +121,14 @@ export class HealthPanel {
             };
         }
 
+        console.log('HealthPanel render data:', {
+            tokens: this.tokens?.length || 0,
+            actor: this.actor?.name || 'none',
+            actors: templateData.actors?.length || 0,
+            isGM: templateData.isGM,
+            viewMode: PanelManager.viewMode
+        });
+
         const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
         this.element.html(content);
         this._activateListeners(this.element);
@@ -284,33 +292,12 @@ export class HealthPanel {
         if (this.tokens.length > 1) {
             for (const token of this.tokens) {
                 const actor = token.actor;
-                const isDead = actor.effects.find(e => e.statuses.has('dead'));
-                if (isDead) {
-                    // Remove dead status
-                    await actor.deleteEmbeddedDocuments('ActiveEffect', [isDead.id]);
-                } else {
-                    // Add dead status and set HP to 0
-                    const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
-                    if (effect) {
-                        await actor.createEmbeddedDocuments('ActiveEffect', [effect]);
-                        await actor.update({'system.attributes.hp.value': 0});
-                    }
-                }
+                await actor.update({'system.attributes.hp.value': 0});
             }
         } else if (this.tokens[0]) {
             // Single token operation
             const actor = this.tokens[0].actor;
-            const isDead = actor.effects.find(e => e.statuses.has('dead'));
-            if (isDead) {
-                await actor.deleteEmbeddedDocuments('ActiveEffect', [isDead.id]);
-            } else {
-                const effect = CONFIG.statusEffects.find(e => e.id === 'dead');
-                if (effect) {
-                    await actor.createEmbeddedDocuments('ActiveEffect', [effect]);
-                    // Set HP to 0 when applying dead status
-                    await actor.update({'system.attributes.hp.value': 0});
-                }
-            }
+            await actor.update({'system.attributes.hp.value': 0});
         }
     }
 
