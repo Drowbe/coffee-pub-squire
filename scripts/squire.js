@@ -383,6 +383,48 @@ Hooks.once('ready', () => {
             }
         });
         
+        const globalCreateActiveEffectHookId = BlacksmithHookManager.registerHook({
+            name: "createActiveEffect",
+            description: "Coffee Pub Squire: Handle global active effect creation for handle updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (effect, options, userId) => {
+                const panelManager = getPanelManager();
+                // Only process if this effect belongs to the actor currently being managed by Squire
+                if (panelManager?.currentActor?.id !== effect.parent?.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!panelManager?.instance) {
+                    return;
+                }
+                
+                await panelManager.instance.updateHandle();
+            }
+        });
+        
+        const globalDeleteActiveEffectHookId = BlacksmithHookManager.registerHook({
+            name: "deleteActiveEffect",
+            description: "Coffee Pub Squire: Handle global active effect deletion for handle updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (effect, options, userId) => {
+                const panelManager = getPanelManager();
+                // Only process if this effect belongs to the actor currently being managed by Squire
+                if (panelManager?.currentActor?.id !== effect.parent?.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!panelManager?.instance) {
+                    return;
+                }
+                
+                await panelManager.instance.updateHandle();
+            }
+        });
+        
         // Quest Pin Hooks
         const questPinDropCanvasDataHookId = BlacksmithHookManager.registerHook({
             name: "dropCanvasData",

@@ -2,7 +2,15 @@
 
 ## Current Issues (Fix First)
 
-
+### GLOBAL HOOKS
+- [ ] **CRITICAL** Missing `globalUpdateActor` hook causing health panel and handle sync issues
+  - Health bar in handle doesn't update when HP changes externally
+  - Health panel doesn't refresh when HP changes
+  - Party panel health bars may not update properly
+  - Handle stats don't refresh on major actor changes (name, img, level, AC, etc.)
+  - Missing spell slot change handling
+  - This hook was present in backup but removed from active code
+  - See `_backups/manager-hooks.js` lines 828-877 for reference implementation
 
 ### QUESTS TAB
 - [ ] **CRITICAL** Objective status changes in quest list do not update on canvas pins (pins don't reflect completed/failed/hidden states)
