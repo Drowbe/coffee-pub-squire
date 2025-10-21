@@ -103,10 +103,7 @@ export class QuestPanel {
             if (!blacksmith?.addNotification) return;
             
             const icon = questCategory === "Main Quest" ? "fas fa-flag" : "fas fa-map-signs";
-            
-            // DEBUG: Log all available methods on blacksmith object
-            console.log('Coffee Pub Squire | Blacksmith API methods:', Object.keys(blacksmith));
-            
+
             // Check if we already have a notification with this content to prevent duplicates
             if (QuestPanel.questNotificationId) {
                 try {
@@ -181,32 +178,21 @@ export class QuestPanel {
         try {
             const blacksmith = getBlacksmith();
             if (!blacksmith?.addNotification) {
-                console.log('ACTIVE OBJECTIVE | Blacksmith API not available');
                 return;
             }
             
             const notificationText = objectiveText;
             const icon = "fas fa-bullseye";
-            
-            console.log('ACTIVE OBJECTIVE | Notifying active objective:', {
-                questName,
-                objectiveText,
-                objectiveNumber,
-                notificationText,
-                existingId: QuestPanel.activeObjectiveNotificationId
-            });
-            
+                       
             // Check if we already have a notification with this content to prevent duplicates
             if (QuestPanel.activeObjectiveNotificationId) {
                 try {
                     // Update existing notification
-                    console.log('ACTIVE OBJECTIVE | Updating existing notification');
                     const result = blacksmith.updateNotification(QuestPanel.activeObjectiveNotificationId, {
                         text: notificationText,
                         icon: icon,
                         duration: 0 // Keep persistent
                     });
-                    console.log('ACTIVE OBJECTIVE | Update result:', result);
                     
                     // If update failed, the notification might have been removed
                     if (!result) {
@@ -216,21 +202,18 @@ export class QuestPanel {
                         return; // Successfully updated, no need to create new
                     }
                 } catch (updateError) {
-                    console.warn('Coffee Pub Squire | Failed to update active objective notification, creating new:', updateError);
                     QuestPanel.activeObjectiveNotificationId = null;
                     // Fall through to create new notification
                 }
             }
             
             // Create new notification and store ID
-            console.log('ACTIVE OBJECTIVE | Creating new notification');
             QuestPanel.activeObjectiveNotificationId = blacksmith.addNotification(
                 notificationText,
                 icon,
                 0, // 0 = persistent until manually removed
                 MODULE.ID
             );
-            console.log('ACTIVE OBJECTIVE | Created notification with ID:', QuestPanel.activeObjectiveNotificationId);
         } catch (error) {
             console.error('Coffee Pub Squire | Error sending active objective notification:', error);
         }
@@ -319,8 +302,7 @@ export class QuestPanel {
     async _setActiveObjective(questUuid, objectiveIndex) {
         try {
             const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
-            console.log('ACTIVE OBJECTIVE | Before setting - activeObjectives:', activeObjectives);
-            
+           
             // Clear any existing active objective first
             for (const key in activeObjectives) {
                 if (activeObjectives[key] !== null) {
@@ -330,17 +312,12 @@ export class QuestPanel {
             
             // Set the new active objective using a simple key
             activeObjectives.active = `${questUuid}|${objectiveIndex}`;
-            console.log('ACTIVE OBJECTIVE | After setting - activeObjectives:', activeObjectives);
-            console.log('ACTIVE OBJECTIVE | Saving questUuid:', questUuid, 'objectiveIndex:', objectiveIndex);
             await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
-            console.log('ACTIVE OBJECTIVE | Saved successfully');
             
             // Get quest and objective details for notification from panel data
             const questPage = await fromUuid(questUuid);
-            console.log('ACTIVE OBJECTIVE | Quest page loaded:', questPage);
             if (questPage) {
                 const questName = questPage.name || 'Unknown Quest';
-                console.log('ACTIVE OBJECTIVE | Quest name:', questName);
                 
                 // Find the quest in our panel data
                 let questEntry = null;
@@ -349,11 +326,9 @@ export class QuestPanel {
                     if (questEntry) break;
                 }
                 
-                console.log('ACTIVE OBJECTIVE | Quest entry found:', questEntry);
                 if (questEntry?.tasks && questEntry.tasks[objectiveIndex]) {
                     const objectiveText = questEntry.tasks[objectiveIndex].text || 'Unknown Objective';
                     const objectiveNumber = objectiveIndex + 1;
-                    console.log('ACTIVE OBJECTIVE | Objective text:', objectiveText, 'Number:', objectiveNumber);
                     this.notifyActiveObjective(questName, objectiveText, objectiveNumber);
                 } else {
                     console.log('ACTIVE OBJECTIVE | No quest entry or tasks found in panel data');
@@ -1415,21 +1390,16 @@ export class QuestPanel {
             
             // Get current active objective for this quest
             const currentActiveIndex = await this._getActiveObjectiveIndex(questUuid);
-            
-            console.log('ACTIVE OBJECTIVE | Clicking objective:', { questUuid, taskIndex, currentActiveIndex });
-            
+                        
             if (currentActiveIndex === taskIndex) {
                 // If clicking the same objective, clear it
-                console.log('ACTIVE OBJECTIVE | Clearing active objective');
                 await this._clearActiveObjective(questUuid);
                 ui.notifications.info('Active objective cleared.');
             } else {
                 // Clear ALL active objectives first (only one can be active at a time)
-                console.log('ACTIVE OBJECTIVE | Clearing all active objectives');
                 await this._clearAllActiveObjectives();
                 
                 // Set new active objective
-                console.log('ACTIVE OBJECTIVE | Setting active objective:', { questUuid, taskIndex });
                 await this._setActiveObjective(questUuid, taskIndex);
                 ui.notifications.info(`Objective ${taskIndex + 1} set as active.`);
             }
@@ -2663,10 +2633,6 @@ export class QuestPanel {
             activeObjectiveIndex = parseInt(indexStr);
         }
         
-        console.log('ACTIVE OBJECTIVE | Active objectives data:', activeObjectives);
-        console.log('ACTIVE OBJECTIVE | Active quest UUID:', activeQuestUuid);
-        console.log('ACTIVE OBJECTIVE | Active objective index:', activeObjectiveIndex);
-
         // Show active objective notification if there's an active objective
         if (activeQuestUuid && activeObjectiveIndex !== null) {
             try {
