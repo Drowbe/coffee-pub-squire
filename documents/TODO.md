@@ -1,5 +1,132 @@
 # Squire Tray TODO List
 
+## 🚨 HOOK RESTORATION PROJECT 🚨
+
+**Status:** In Progress  
+**Started:** 2025-10-21  
+**Reference:** `documents/HOOK-AUDIT-REPORT.md` | `_backups/manager-hooks.js`
+
+### PHASE 1: Critical Foundation (DO THESE FIRST)
+
+#### Priority 1A: `globalUpdateActor` Hook ⭐⭐⭐
+- [ ] Add hook to `scripts/squire.js` after line 426
+- [ ] Copy implementation from backup lines 828-877
+- [ ] Test: HP changes update handle
+- [ ] Test: AC/level changes trigger re-render
+- [ ] Test: Spell slot changes update spells panel
+- [ ] Test: Effect changes update handle
+- [ ] Commit: `fix: restore globalUpdateActor hook for sync issues`
+- **Impact:** Fixes 80% of sync issues (health bars, effects, stats)
+- **Risk:** LOW | **Time:** 15 min
+
+#### Priority 1B: `globalDeleteToken` Hook ⭐⭐⭐
+- [ ] Add hook to `scripts/squire.js` after globalUpdateActor
+- [ ] Copy implementation from backup lines 767-826
+- [ ] Test: Delete active token switches to next actor
+- [ ] Test: Delete last token handles gracefully
+- [ ] Commit: `fix: restore globalDeleteToken hook for token management`
+- **Impact:** Prevents tray crashes when tokens deleted
+- **Risk:** LOW | **Time:** 10 min
+
+### PHASE 2: High-Priority Improvements
+
+#### Priority 2A: Restore Full `globalControlToken` Implementation ⭐⭐
+- [ ] Review current implementation (lines 307-322)
+- [ ] Replace with full backup implementation (lines 718-765)
+- [ ] Verify helper functions exist
+- [ ] Test: Single token selection
+- [ ] Test: Multi-token selection (Shift+click)
+- [ ] Test: Canvas box selection
+- [ ] Monitor console for excessive renders
+- [ ] Commit: `fix: restore full globalControlToken with multi-select debouncing`
+- **Impact:** Fixes multi-select, reduces over-rendering
+- **Risk:** MEDIUM | **Time:** 20 min
+
+#### Priority 2B: `globalPauseGame` Hook ⭐⭐
+- [ ] Add hook to `scripts/squire.js` after globalDeleteToken
+- [ ] Copy implementation from backup lines 879-890
+- [ ] Test: Pause game, change actor, unpause - verify panels refresh
+- [ ] Commit: `fix: restore globalPauseGame hook`
+- **Impact:** Prevents stale data after pause
+- **Risk:** LOW | **Time:** 5 min
+
+### PHASE 3: Medium-Priority Completion
+
+#### Priority 3A: `globalCanvasReady` with Selection Handling ⭐
+- [ ] Note: Basic hook exists at line 64, needs enhancement
+- [ ] Add selection handling from backup lines 1070-1098
+- [ ] Add canvas.selectObjects monkey-patch
+- [ ] Test: Lasso/box selection tools
+- [ ] Test: Health panel updates with bulk selections
+- [ ] Commit: `fix: enhance globalCanvasReady with selection handling`
+- **Impact:** Bulk selection support
+- **Risk:** MEDIUM | **Time:** 15 min
+
+#### Priority 3B: `globalCreateToken` Hook ⭐
+- [ ] Add global version (quest pin version exists at line 604)
+- [ ] Copy implementation from backup lines 1100-1119
+- [ ] Test: Drag new token to canvas - verify handle updates
+- [ ] Commit: `fix: add globalCreateToken hook`
+- **Impact:** New token detection
+- **Risk:** LOW | **Time:** 5 min
+
+### PHASE 4: Optional Enhancements
+
+#### Priority 4A: Restore Auto-Favoriting in `globalUpdateItem` (DECIDE)
+- [ ] **DECISION REQUIRED:** Do we want auto-favoriting back?
+- [ ] If YES: Replace implementation (lines 346-364) with backup (lines 957-999)
+- [ ] Test: NPC equips weapon → auto-favorited
+- [ ] Test: NPC prepares spell → auto-favorited
+- [ ] Commit: `feat: restore auto-favoriting for NPCs`
+- **Impact:** QoL for NPCs/monsters
+- **Risk:** LOW | **Time:** 10 min
+- **Note:** Adds "magic" behavior that could be unexpected
+
+### PHASE 5: Cleanup & Documentation
+
+#### Priority 5A: Update False Comments
+- [ ] Update `scripts/manager-panel.js` lines 2046-2078
+- [ ] Mark implemented hooks as "✅ Implemented"
+- [ ] Remove or correct false claims
+- [ ] Commit: `docs: update hook management comments`
+- **Time:** 10 min
+
+#### Priority 5B: Remove Old HookManager Code
+- [ ] Search for any old HookManager references
+- [ ] Archive `_backups/manager-hooks.js` as reference only
+- [ ] Document in architecture that hooks now in `scripts/squire.js`
+- [ ] Commit: `docs: document hook migration completion`
+- **Time:** 15 min
+
+### Testing Checklist (Run After Each Phase)
+
+#### Must Test:
+- [ ] Select token → panels update
+- [ ] Change HP → health bars update
+- [ ] Add effect via token HUD → handle updates
+- [ ] Delete effect via character sheet → handle updates
+- [ ] Delete active token → tray handles gracefully
+- [ ] Multi-select tokens → all update correctly
+- [ ] Pause/unpause game → fresh data loads
+
+#### Regression Testing:
+- [ ] All 5 view modes work (player, party, notes, codex, quest)
+- [ ] Popped-out windows still functional
+- [ ] Quest pins still draggable
+- [ ] Favorites still manageable
+- [ ] No console errors during normal operation
+
+### Git Strategy
+- [ ] Create branch: `fix/restore-missing-hooks`
+- [ ] Commit current working state
+- [ ] Test baseline functionality
+- [ ] Implement ONE hook at a time
+- [ ] Test that specific hook
+- [ ] Commit with clear message
+- [ ] Easy to revert individual commits if needed
+
+---
+
 ## Current Issues (Fix First)
 
 ### GLOBAL HOOKS
@@ -11,6 +138,12 @@
   - Missing spell slot change handling
   - This hook was present in backup but removed from active code
   - See `_backups/manager-hooks.js` lines 828-877 for reference implementation
+- [ ] **HIGH** Missing `globalDeleteToken` hook - no fallback when active token deleted (backup lines 767-826)
+- [ ] **HIGH** `globalControlToken` hook degraded - lost multi-select debouncing and over-renders (backup lines 718-765)
+- [ ] **MEDIUM** Missing `globalPauseGame` hook - panels show stale data after unpause (backup lines 879-890)
+- [ ] **MEDIUM** Missing `globalCanvasReady` selection handling - bulk selections may not update (backup lines 1070-1098)
+- [ ] **MEDIUM** Missing `globalCreateToken` hook - new tokens don't trigger handle updates (backup lines 1100-1119)
+- [ ] **NOTE** See `documents/HOOK-AUDIT-REPORT.md` for complete analysis of all missing/changed hooks
 
 ### QUESTS TAB
 - [ ] **CRITICAL** Objective status changes in quest list do not update on canvas pins (pins don't reflect completed/failed/hidden states)
