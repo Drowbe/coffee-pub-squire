@@ -499,6 +499,7 @@ export class HandleManager {
             const effect = this.actor.effects.find(e => e.name === conditionName);
             if (effect) {
                 await effect.delete();
+                await this.updateHandle();
             }
         });
 
@@ -635,6 +636,7 @@ export class HandleManager {
                                     await effect.delete();
                                     $(e.currentTarget).removeClass('active');
                                     ui.notifications.info(`Removed ${condition.label} from ${this.actor.name}`);
+                                    await this.updateHandle();
                                 }
                             } else {
                                 // Add the effect
@@ -646,6 +648,7 @@ export class HandleManager {
                                 }]);
                                 $(e.currentTarget).addClass('active');
                                 ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
+                                await this.updateHandle();
                             }
                         } catch (error) {
                             console.error('Error managing condition:', error);
