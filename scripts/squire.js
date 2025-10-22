@@ -476,6 +476,67 @@ Hooks.once('ready', () => {
             }
         });
         
+        const globalDeleteTokenHookId = BlacksmithHookManager.registerHook({
+            name: "deleteToken",
+            description: "Coffee Pub Squire: Handle global token deletion",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (token) => {
+                const panelManager = getPanelManager();
+                if (panelManager?.currentActor?.id === token.actor?.id) {
+                    // Try to find another token to display
+                    const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
+                    if (nextToken) {
+                        // Add fade-out animation to tray panel wrapper if appropriate
+                        if (panelManager.instance) {
+                            panelManager.instance._applyFadeOutAnimation();
+                        }
+                        
+                        // Update the actor without recreating the tray
+                        panelManager.currentActor = nextToken.actor;
+                        if (panelManager.instance) {
+                            panelManager.instance.actor = nextToken.actor;
+                            
+                            // Update the actor reference in all panel instances
+                            if (panelManager.instance.characterPanel) panelManager.instance.characterPanel.actor = nextToken.actor;
+                            if (panelManager.instance.controlPanel) panelManager.instance.controlPanel.actor = nextToken.actor;
+                            if (panelManager.instance.favoritesPanel) panelManager.instance.favoritesPanel.actor = nextToken.actor;
+                            if (panelManager.instance.spellsPanel) panelManager.instance.spellsPanel.actor = nextToken.actor;
+                            if (panelManager.instance.weaponsPanel) panelManager.instance.weaponsPanel.actor = nextToken.actor;
+                            if (panelManager.instance.inventoryPanel) panelManager.instance.inventoryPanel.actor = nextToken.actor;
+                            if (panelManager.instance.featuresPanel) panelManager.instance.featuresPanel.actor = nextToken.actor;
+                            if (panelManager.instance.experiencePanel) panelManager.instance.experiencePanel.actor = nextToken.actor;
+                            if (panelManager.instance.statsPanel) panelManager.instance.statsPanel.actor = nextToken.actor;
+                            if (panelManager.instance.abilitiesPanel) panelManager.instance.abilitiesPanel.actor = nextToken.actor;
+                            if (panelManager.instance.dicetrayPanel) panelManager.instance.dicetrayPanel.actor = nextToken.actor;
+                            if (panelManager.instance.macrosPanel) panelManager.instance.macrosPanel.actor = nextToken.actor;
+                            
+                            // Update the handle manager's actor reference
+                            if (panelManager.instance.handleManager) {
+                                panelManager.instance.handleManager.updateActor(nextToken.actor);
+                            }
+                            
+                            await panelManager.instance.updateHandle();
+                            
+                            // Re-render all panels with the new actor data
+                            await panelManager.instance.renderPanels(panelManager.instance.element);
+                            
+                            // Add fade-in animation to tray panel wrapper after update if appropriate
+                            if (panelManager.instance) {
+                                panelManager.instance._applyFadeInAnimation();
+                            }
+                            
+                            // Re-attach event listeners to ensure tray functionality works
+                        }
+                    } else {
+                        // No more tokens, clear the instance
+                        panelManager.instance = null;
+                        panelManager.currentActor = null;
+                    }
+                }
+            }
+        });
+        
         // Quest Pin Hooks
         const questPinDropCanvasDataHookId = BlacksmithHookManager.registerHook({
             name: "dropCanvasData",

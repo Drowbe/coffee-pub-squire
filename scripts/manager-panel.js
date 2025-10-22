@@ -2043,21 +2043,6 @@ export async function _updateHealthPanelFromSelection() {
 
 }
 
-// Note: deleteToken hook is now managed centrally by HookManager
-
-// Note: updateActor hook is now managed centrally by HookManager
-
-// Note: pauseGame hook is now managed centrally by HookManager
-
-// Note: createActiveEffect hook is now managed centrally by HookManager
-
-// Note: deleteActiveEffect hook is now managed centrally by HookManager
-
-// Note: createItem hook is now managed centrally by HookManager
-
-// Note: updateItem hook is now managed centrally by HookManager
-
-// Note: deleteItem hook is now managed centrally by HookManager
 
 // Set up periodic cleanup of newly added items
 const globalCleanupInterval = setInterval(() => {
