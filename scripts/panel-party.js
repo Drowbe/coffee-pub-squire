@@ -1372,12 +1372,6 @@ export class PartyPanel {
     }
 
     destroy() {
-        // Remove hooks when panel is destroyed
-        Hooks.off('updateToken', this._onTokenUpdate);
-        Hooks.off('updateActor', this._onActorUpdate);
-        Hooks.off('controlToken', this._onControlToken);
-        Hooks.off('renderChatMessage', this._handleTransferButtons);
-        
         // Clean up transfer timers
         this._cleanupTransferTimers();
         

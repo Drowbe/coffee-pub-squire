@@ -425,6 +425,57 @@ Hooks.once('ready', () => {
             }
         });
         
+        const globalUpdateActorHookId = BlacksmithHookManager.registerHook({
+            name: "updateActor",
+            description: "Coffee Pub Squire: Handle global actor updates",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (actor, changes) => {
+                const panelManager = getPanelManager();
+                // Only process if this is the actor currently being managed by Squire
+                if (panelManager?.currentActor?.id !== actor.id) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                if (!panelManager?.instance) {
+                    return;
+                }
+                
+                // Only handle major changes that require full re-initialization
+                const needsFullUpdate = changes.name || // Name change
+                                       changes.img || // Image change
+                                       changes.system?.attributes?.prof || // Proficiency change
+                                       changes.system?.details?.level || // Level change
+                                       changes.system?.attributes?.ac || // AC change
+                                       changes.system?.attributes?.movement; // Movement change
+
+                if (needsFullUpdate) {
+                    await panelManager.initialize(actor);
+                    // Force a re-render of all panels
+                    await panelManager.instance.renderPanels(panelManager.instance.element);
+                    await panelManager.instance.updateHandle();
+                }
+                // For health, effects, and spell slot changes, update appropriately
+                else {
+                    // Handle health and effects changes
+                    if (changes.system?.attributes?.hp || changes.effects) {
+                        await panelManager.instance.updateHandle();
+                    }
+                    // Handle spell slot changes
+                    if (changes.system?.spells) {
+                        // Re-render just the spells panel
+                        if (panelManager.instance.spellsPanel?.element) {
+                            await panelManager.instance.spellsPanel.render(panelManager.instance.spellsPanel.element);
+                        }
+                    } else {
+                        // For other changes, just update the handle
+                        await panelManager.instance.updateHandle();
+                    }
+                }
+            }
+        });
+        
         // Quest Pin Hooks
         const questPinDropCanvasDataHookId = BlacksmithHookManager.registerHook({
             name: "dropCanvasData",
