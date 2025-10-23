@@ -28,9 +28,9 @@
 - **Impact:** Prevents tray crashes when tokens deleted
 - **Risk:** LOW | **Time:** 10 min
 
-### PHASE 2: High-Priority Improvements
+### PHASE 2: High-Priority Improvements ✅ COMPLETE
 
-#### Priority 2A: Restore Full `globalControlToken` Implementation ⭐⭐
+#### Priority 2A: Restore Full `globalControlToken` Implementation ⭐⭐ ✅
 - [x] Review current implementation (lines 307-322)
 - [x] Replace with full backup implementation (lines 718-765)
 - [x] Verify helper functions exist
@@ -38,11 +38,12 @@
 - [x] Test: Multi-token selection (Shift+click)
 - [x] Test: Canvas box selection
 - [x] Monitor console for excessive renders
-- [x] Commit: `fix: restore full globalControlToken with multi-select debouncing`
+- [x] Optimize for performance (simplified approach)
+- [x] Commit: `fix: restore globalControlToken with performance optimization`
 - **Impact:** Fixes multi-select, reduces over-rendering
 - **Risk:** MEDIUM | **Time:** 20 min
 
-#### Priority 2B: `globalPauseGame` Hook ⭐⭐
+#### Priority 2B: `globalPauseGame` Hook ⭐⭐ ✅
 - [x] Add hook to `scripts/squire.js` after globalDeleteToken
 - [x] Copy implementation from backup lines 879-890
 - [x] Test: Pause game, change actor, unpause - verify panels refresh
@@ -50,23 +51,23 @@
 - **Impact:** Prevents stale data after pause
 - **Risk:** LOW | **Time:** 5 min
 
-### PHASE 3: Medium-Priority Completion
+### PHASE 3: Medium-Priority Completion ✅ COMPLETE
 
-#### Priority 3A: `globalCanvasReady` with Selection Handling ⭐
-- [ ] Note: Basic hook exists at line 64, needs enhancement
-- [ ] Add selection handling from backup lines 1070-1098
-- [ ] Add canvas.selectObjects monkey-patch
-- [ ] Test: Lasso/box selection tools
-- [ ] Test: Health panel updates with bulk selections
-- [ ] Commit: `fix: enhance globalCanvasReady with selection handling`
+#### Priority 3A: `globalCanvasReady` with Selection Handling ⭐ ✅
+- [x] Note: Basic hook exists at line 64, needs enhancement
+- [x] Add selection handling from backup lines 1070-1098
+- [x] Add canvas.selectObjects monkey-patch
+- [x] Test: Lasso/box selection tools
+- [x] Test: Health panel updates with bulk selections
+- [x] Commit: `fix: enhance globalCanvasReady with selection handling`
 - **Impact:** Bulk selection support
 - **Risk:** MEDIUM | **Time:** 15 min
 
-#### Priority 3B: `globalCreateToken` Hook ⭐
-- [ ] Add global version (quest pin version exists at line 604)
-- [ ] Copy implementation from backup lines 1100-1119
-- [ ] Test: Drag new token to canvas - verify handle updates
-- [ ] Commit: `fix: add globalCreateToken hook`
+#### Priority 3B: `globalCreateToken` Hook ⭐ ✅
+- [x] Add global version (quest pin version exists at line 604)
+- [x] Copy implementation from backup lines 1100-1119
+- [x] Test: Drag new token to canvas - verify handle updates
+- [x] Commit: `fix: add globalCreateToken hook`
 - **Impact:** New token detection
 - **Risk:** LOW | **Time:** 5 min
 

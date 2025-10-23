@@ -63,7 +63,7 @@ Hooks.once('ready', () => {
         
         const canvasReadyHookId = BlacksmithHookManager.registerHook({
             name: 'canvasReady',
-            description: 'Coffee Pub Squire: Ensure squirePins container is properly positioned',
+            description: 'Coffee Pub Squire: Ensure squirePins container is properly positioned and handle canvas selection',
             context: MODULE.ID,
             priority: 2,
             callback: () => {
@@ -92,6 +92,19 @@ Hooks.once('ready', () => {
                     canvas.squirePins.interactive = true;
                     console.log('squirePins container positioned and interactive:', canvas.squirePins.interactive);
                 }
+
+                // Monitor canvas selection changes for bulk selection support
+                const originalSelectObjects = canvas.selectObjects;
+                canvas.selectObjects = function(...args) {
+                    const result = originalSelectObjects.apply(this, args);
+                    
+                    // After selection, update the selection display
+                    setTimeout(async () => {
+                        await _updateSelectionDisplay();
+                    }, 100); // Slightly longer delay for canvas selection methods
+                    
+                    return result;
+                };
             }
         });
         
@@ -736,6 +749,27 @@ Hooks.once('ready', () => {
             callback: (token) => {
                 // Update pin visibility
                 // This would need the actual quest pin logic
+            }
+        });
+        
+        const globalCreateTokenHookId = BlacksmithHookManager.registerHook({
+            name: "createToken",
+            description: "Coffee Pub Squire: Handle global token creation",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (token) => {
+                // Only process if this token is owned by the user
+                if (!token.actor?.isOwner) {
+                    return;
+                }
+                
+                // Only process if PanelManager instance exists
+                const panelManager = getPanelManager();
+                if (!panelManager?.instance) {
+                    return;
+                }
+                
+                await panelManager.instance.updateHandle();
             }
         });
         
