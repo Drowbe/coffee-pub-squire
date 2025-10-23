@@ -121,13 +121,7 @@ export class HealthPanel {
             };
         }
 
-        console.log('HealthPanel render data:', {
-            tokens: this.tokens?.length || 0,
-            actor: this.actor?.name || 'none',
-            actors: templateData.actors?.length || 0,
-            isGM: templateData.isGM,
-            viewMode: PanelManager.viewMode
-        });
+        // HealthPanel render data logged
 
         const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
         this.element.html(content);

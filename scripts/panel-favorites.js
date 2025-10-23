@@ -115,7 +115,7 @@ export class FavoritesPanel {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            // Debug: Cannot clear favorites for actor from compendium
+            // Cannot clear favorites for actor from compendium
             return [];
         }
         await actor.unsetFlag(MODULE.ID, 'favoritePanel');
@@ -169,7 +169,7 @@ export class FavoritesPanel {
             // Check if actor is from a compendium (more robust check)
             const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
             if (isFromCompendium) {
-                // Debug: Cannot modify favorites for actor from compendium
+                // Cannot modify favorites for actor from compendium
                 return false;
             }
 
@@ -401,7 +401,7 @@ export class FavoritesPanel {
             // Check if actor is from a compendium before trying to modify it
             const isFromCompendium = this.actor.pack || (this.actor.collection && this.actor.collection.locked);
             if (isFromCompendium) {
-                // Debug: Skipping auto-favorites initialization for actor from compendium
+                // Skipping auto-favorites initialization for actor from compendium
             } else {
                 FavoritesPanel.initializeNpcFavorites(this.actor);
             }
@@ -780,7 +780,7 @@ export class FavoritesPanel {
         });
     }
 
-    // _syncHandleFavorites method removed - handle favorites are now completely manual
+    // _syncHandleFavorites method removed - handle favorites are now manual
 
     async _reorderFavorite(itemId, newIndex) {
         const actor = this.actor;

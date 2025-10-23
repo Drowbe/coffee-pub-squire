@@ -74,7 +74,7 @@ export class PanelManager {
         this.hiddenCategories = new Set();
         this.macrosPanel = new MacrosPanel({ actor });
         
-        // Register panels with the centralized HookManager
+        // Register panels with HookManager
         this._registerPanelsWithHookManager();
         
         // Create handle manager for handle-specific functionality
@@ -484,9 +484,6 @@ export class PanelManager {
 
 
     }
-
-    // _getPinnedQuestData() method - MOVED TO HandleManager
-    // (All handle-related quest data logic is now centralized in HandleManager)
 
     async updateHandle() {
         // Delegate to the handle manager
@@ -1732,7 +1729,7 @@ export class PanelManager {
     }
     
     /**
-     * Register panels with the centralized HookManager
+     * Register panels with HookManager
      * @private
      */
     _registerPanelsWithHookManager() {

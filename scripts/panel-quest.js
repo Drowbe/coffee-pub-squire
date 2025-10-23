@@ -331,10 +331,10 @@ export class QuestPanel {
                     const objectiveNumber = objectiveIndex + 1;
                     this.notifyActiveObjective(questName, objectiveText, objectiveNumber);
                 } else {
-                    console.log('ACTIVE OBJECTIVE | No quest entry or tasks found in panel data');
+                    // No quest entry or tasks found in panel data
                 }
             } else {
-                console.log('ACTIVE OBJECTIVE | Quest page not found');
+                // Quest page not found
             }
         } catch (error) {
             console.error('Coffee Pub Squire | Error setting active objective:', error);
@@ -421,11 +421,11 @@ export class QuestPanel {
      * @private
      */
     _setupHooks() {
-        // Journal hooks are now handled by the centralized HookManager
+        // Journal hooks are handled by HookManager
         // This method is kept for compatibility but no longer registers hooks
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,
-            'Quest Panel: Hooks now managed by centralized HookManager',
+            'Quest Panel: Hooks managed by HookManager',
             {},
             true,
             false

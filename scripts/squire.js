@@ -23,7 +23,7 @@ Hooks.once('ready', () => {
             name: MODULE.NAME,
             version: MODULE.VERSION
         });
-        console.log('✅ Module ' + MODULE.NAME + ' registered with Blacksmith successfully');
+        // Module registered with Blacksmith successfully
         
         // Register all hooks after Blacksmith is ready
         const renderActorSheet5eHookId = BlacksmithHookManager.registerHook({
@@ -43,9 +43,9 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: () => {
-                console.log('CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
+                // CanvasInit hook called
                 if (!canvas.squirePins) {
-                    console.log('Creating squirePins container...');
+                    // Creating squirePins container
                     const squirePins = new PIXI.Container();
                     squirePins.sortableChildren = true;
                     squirePins.interactive = true;
@@ -56,7 +56,7 @@ Hooks.once('ready', () => {
                         canvas.stage.addChild(squirePins);
                     }
                     canvas.squirePins = squirePins;
-                    console.log('squirePins container created:', !!canvas.squirePins);
+                    // squirePins container created
                 }
             }
         });
@@ -67,9 +67,9 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: () => {
-                console.log('CanvasReady hook called, canvas.squirePins:', !!canvas.squirePins);
+                // CanvasReady hook called
                 if (!canvas.squirePins) {
-                    console.log('Creating squirePins container in canvasReady...');
+                    // Creating squirePins container in canvasReady
                     const squirePins = new PIXI.Container();
                     squirePins.sortableChildren = true;
                     squirePins.interactive = true;
@@ -80,7 +80,7 @@ Hooks.once('ready', () => {
                         canvas.stage.addChild(squirePins);
                     }
                     canvas.squirePins = squirePins;
-                    console.log('squirePins container created in canvasReady:', !!canvas.squirePins);
+                    // squirePins container created in canvasReady
                 }
                 
                 // Move squirePins to top of display order
@@ -90,7 +90,7 @@ Hooks.once('ready', () => {
                         parent.addChild(canvas.squirePins);
                     }
                     canvas.squirePins.interactive = true;
-                    console.log('squirePins container positioned and interactive:', canvas.squirePins.interactive);
+                    // squirePins container positioned and interactive
                 }
 
                 // Monitor canvas selection changes for bulk selection support
@@ -841,7 +841,7 @@ Hooks.once('ready', () => {
             }
         });
         
-        console.log('✅ Coffee Pub Squire: All hooks registered with Blacksmith successfully');
+        // All hooks registered with Blacksmith successfully
     } catch (error) {
         console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
     }
@@ -852,9 +852,9 @@ Hooks.once('ready', () => {
 
 // Canvas hooks use native FoundryVTT hooks as Blacksmith timing for canvas events is unreliable
 Hooks.on('canvasInit', () => {
-    console.log('Native CanvasInit hook called, canvas.squirePins:', !!canvas.squirePins);
+    // Native CanvasInit hook called
     if (!canvas.squirePins) {
-        console.log('Creating squirePins container via native hook...');
+        // Creating squirePins container via native hook
         const squirePins = new PIXI.Container();
         squirePins.sortableChildren = true;
         squirePins.interactive = true;
@@ -865,14 +865,14 @@ Hooks.on('canvasInit', () => {
             canvas.stage.addChild(squirePins);
         }
         canvas.squirePins = squirePins;
-        console.log('squirePins container created via native hook:', !!canvas.squirePins);
+        // squirePins container created via native hook
     }
 });
 
 Hooks.on('canvasReady', () => {
-    console.log('Native CanvasReady hook called, canvas.squirePins:', !!canvas.squirePins);
+    // Native CanvasReady hook called
     if (!canvas.squirePins) {
-        console.log('Creating squirePins container via native canvasReady...');
+        // Creating squirePins container via native canvasReady
         const squirePins = new PIXI.Container();
         squirePins.sortableChildren = true;
         squirePins.interactive = true;
@@ -883,7 +883,7 @@ Hooks.on('canvasReady', () => {
             canvas.stage.addChild(squirePins);
         }
         canvas.squirePins = squirePins;
-        console.log('squirePins container created via native canvasReady:', !!canvas.squirePins);
+        // squirePins container created via native canvasReady
     }
     
     // Move squirePins to top of display order
@@ -893,7 +893,7 @@ Hooks.on('canvasReady', () => {
             parent.addChild(canvas.squirePins);
         }
         canvas.squirePins.interactive = true;
-        console.log('squirePins container positioned and interactive via native hook:', canvas.squirePins.interactive);
+        // squirePins container positioned and interactive via native hook
     }
 });
 
@@ -1439,7 +1439,7 @@ Hooks.once('init', async function() {
         false
     );
     
-    // Register module settings -- moved to READY
+    // Register module settings
     //registerSettings();
 
     // Load CSS
@@ -1502,7 +1502,7 @@ Hooks.once('init', async function() {
                 return response.text();
             });
             Handlebars.registerPartial(partial.name, partialContent);
-            console.log(`Coffee Pub Squire | Successfully registered ${partial.name} partial`);
+            // Successfully registered partial
         } catch (error) {
             console.error(`Coffee Pub Squire | Error registering ${partial.name} partial:`, error);
             // Register a fallback partial to prevent template errors
@@ -1518,7 +1518,7 @@ Hooks.once('init', async function() {
             return response.text();
         });
         Handlebars.registerPartial('handle-character-portrait', handleCharacterPortraitPartial);
-        console.log('Coffee Pub Squire | Successfully registered handle-character-portrait partial');
+        // Successfully registered handle-character-portrait partial
     } catch (error) {
         console.error('Coffee Pub Squire | Error registering handle-character-portrait partial:', error);
         // Register a fallback partial to prevent template errors
@@ -1579,7 +1579,7 @@ Hooks.once('ready', async function() {
         });
 
         if (success) {
-            console.log('Coffee Pub Squire | Successfully registered dice tray with Blacksmith menubar');
+            // Successfully registered dice tray with Blacksmith menubar
         } else {
             console.error('Coffee Pub Squire | Failed to register dice tray with Blacksmith menubar');
         }
@@ -1605,7 +1605,7 @@ Hooks.once('ready', async function() {
         });
 
         if (success) {
-            console.log('Coffee Pub Squire | Successfully registered macros with Blacksmith menubar');
+            // Successfully registered macros with Blacksmith menubar
         } else {
             console.error('Coffee Pub Squire | Failed to register macros with Blacksmith menubar');
         }
@@ -1733,7 +1733,7 @@ Hooks.once('ready', async function() {
     }, 1000); // 1 second delay to ensure settings and canvas are fully ready
 });
 
-// All hook registrations moved to ready hook below
+// Hook registrations handled in ready hook
 
 /**
  * Handle an incoming transfer request notification from another player
@@ -1985,4 +1985,4 @@ function cleanupModule() {
     }
 }
 
-// All hook registrations moved to ready hook below
+// Hook registrations handled in ready hook

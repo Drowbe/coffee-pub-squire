@@ -83,20 +83,20 @@
 - **Risk:** LOW | **Time:** 10 min
 - **Note:** Adds "magic" behavior that could be unexpected
 
-### PHASE 5: Cleanup & Documentation
+### PHASE 5: Cleanup & Documentation ✅ COMPLETE
 
-#### Priority 5A: Update False Comments
-- [ ] Update `scripts/manager-panel.js` lines 2046-2078
-- [ ] Mark implemented hooks as "✅ Implemented"
-- [ ] Remove or correct false claims
-- [ ] Commit: `docs: update hook management comments`
+#### Priority 5A: Update False Comments ✅
+- [x] Update `scripts/manager-panel.js` lines 2046-2078
+- [x] Mark implemented hooks as "✅ Implemented"
+- [x] Remove or correct false claims
+- [x] Commit: `docs: update hook management comments`
 - **Time:** 10 min
 
-#### Priority 5B: Remove Old HookManager Code
-- [ ] Search for any old HookManager references
-- [ ] Archive `_backups/manager-hooks.js` as reference only
-- [ ] Document in architecture that hooks now in `scripts/squire.js`
-- [ ] Commit: `docs: document hook migration completion`
+#### Priority 5B: Remove Old HookManager Code ✅
+- [x] Search for any old HookManager references
+- [x] Archive `_backups/manager-hooks.js` as reference only
+- [x] Document in architecture that hooks now in `scripts/squire.js`
+- [x] Commit: `docs: document hook migration completion`
 - **Time:** 15 min
 
 ### Testing Checklist (Run After Each Phase)

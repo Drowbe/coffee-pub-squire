@@ -228,7 +228,7 @@ class CodexForm extends FormApplication {
             entry[key] = value;
         }
         
-        // Debug: Log the form submission
+        // Form submission logged
         
         // Call the original _updateObject method
         await this._updateObject(event, entry);
@@ -496,7 +496,7 @@ export class CodexPanel {
      * @private
      */
     _setupHooks() {
-        // Journal hooks are now handled by the centralized HookManager
+        // Journal hooks are handled by HookManager
         // This method is kept for compatibility but no longer registers hooks
     }
 
@@ -1609,7 +1609,7 @@ export class CodexPanel {
                             // Find which character(s) had this item
                             const discoverers = [];
                             
-                            // Debug: Log what we're looking for
+                            // Log what we're looking for
                             
                             for (const token of tokens) {
                                 const actor = token.actor;
@@ -1647,7 +1647,7 @@ export class CodexPanel {
                                 }
                             }
                             
-                            // Debug: Log what we found
+                            // Log what we found
                             
                             // Make it visible
                             await page.update({ 'ownership.default': CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER });

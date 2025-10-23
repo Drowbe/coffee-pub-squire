@@ -554,7 +554,7 @@ export class NotesPanel {
                         contentContainer.find('a').attr('target', '_blank');
                         return;
                     } else {
-                        // Debug: Failed to extract content from journal UI
+                        // Failed to extract content from journal UI
                     }
                 }
             } catch (uiError) {

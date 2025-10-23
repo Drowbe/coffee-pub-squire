@@ -211,7 +211,7 @@ export class QuestPin extends PIXI.Container {
     }
   }
 
-  // Centralized method to update pin appearance based on objective state
+  // Method to update pin appearance based on objective state
   _updatePinAppearance() {
     // Remove previous children
     this.removeChildren();
@@ -684,7 +684,7 @@ export class QuestPin extends PIXI.Container {
     
 
     
-    // Update pin appearance using centralized method
+    // Update pin appearance using method
     this._updatePinAppearance();
     
     // Save to persistence
@@ -702,7 +702,7 @@ export class QuestPin extends PIXI.Container {
     
 
     
-    // Update pin appearance using centralized method
+    // Update pin appearance using method
     this._updatePinAppearance();
     
     // Save to persistence
@@ -828,7 +828,7 @@ export class QuestPin extends PIXI.Container {
     this._endDrag();
   }
 
-  // Centralized drag end logic
+  // Drag end logic
   _endDrag() {
     // Check if we actually dragged before cleaning up
     const wasDragging = this.isDragging;
