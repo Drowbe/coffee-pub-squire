@@ -415,8 +415,9 @@ Hooks.once('ready', () => {
                     return;
                 }
                 
-                // Update the tray
+                // Update relevant panels and handle
                 if (panelManager?.instance) {
+                    await panelManager.instance.renderPanels(panelManager.instance.element);
                     await panelManager.instance.updateHandle();
                 }
             }

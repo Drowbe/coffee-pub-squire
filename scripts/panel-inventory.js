@@ -283,6 +283,8 @@ export class InventoryPanel {
             quantity: selectedQuantity,
             hasQuantity
         });
+        
+        // Panel refresh is handled automatically by the deleteItem hook
     }
 
     async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
