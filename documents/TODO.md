@@ -129,6 +129,15 @@
 
 ## Current Issues (Fix First)
 
+### TOKEN NAME DISPLAY ISSUE
+- [ ] **CRITICAL** Fix token name display inconsistency - handle shows actor name instead of token name
+  - Handle shows "CULTIST" instead of "Belix (Cultist)" when token is selected
+  - Health panel shows "HEALTH: CULTIST" instead of token-specific name
+  - Token Configuration correctly shows "Belix (Cultist)" - this data is available
+  - Need simple fix: ensure handle gets correct token reference when tokens are selected
+  - Previous attempt overcomplicated the solution - need minimal, targeted approach
+  - Consider rolling back recent changes and starting fresh
+
 ### GLOBAL HOOKS
 - [ ] **CRITICAL** Missing `globalUpdateActor` hook causing health panel and handle sync issues
   - Health bar in handle doesn't update when HP changes externally
