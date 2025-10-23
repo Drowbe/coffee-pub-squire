@@ -351,8 +351,13 @@ Hooks.once('ready', () => {
                 
                 // Check if this item belongs to an actor that the current user owns
                 if (item.parent && item.parent.isOwner) {
-                    // Update relevant panels and handle
-                    await panelManager.instance.renderPanels(panelManager.instance.element);
+                    // Only refresh weapons and inventory panels for item transfers
+                    if (panelManager.instance.weaponsPanel?.element) {
+                        await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
+                    }
+                    if (panelManager.instance.inventoryPanel?.element) {
+                        await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
+                    }
                     await panelManager.instance.updateHandle();
                 }
             }
@@ -415,9 +420,14 @@ Hooks.once('ready', () => {
                     return;
                 }
                 
-                // Update relevant panels and handle
+                // Only refresh weapons and inventory panels for item deletions
                 if (panelManager?.instance) {
-                    await panelManager.instance.renderPanels(panelManager.instance.element);
+                    if (panelManager.instance.weaponsPanel?.element) {
+                        await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
+                    }
+                    if (panelManager.instance.inventoryPanel?.element) {
+                        await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
+                    }
                     await panelManager.instance.updateHandle();
                 }
             }

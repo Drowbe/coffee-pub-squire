@@ -1,11 +1,5 @@
 # Squire Tray TODO List
 
-## 🎉 HOOK RESTORATION PROJECT COMPLETE! 🎉
-
-**Status:** ✅ **COMPLETED**  
-**Completed:** 2025-01-27  
-**All 5 Phases Complete:** Critical hooks restored, performance optimized, code cleaned up
-
 ---
 
 ## Current Issues (Fix First)
@@ -36,7 +30,6 @@
 ## Remaining Issues
 
 ### Panel Functionality
-- [ ] **BROKEN** Manual refresh button on codex panel doesn't seem to do anything
 - [ ] **BROKEN** Feather icon in party view opens character sheet AND changes tray to that actor (should only open sheet)
 
 ### UI/UX Improvements
@@ -60,14 +53,10 @@
 ## Investigation Needed
 
 - [ ] Investigate why expand animation changed from sliding to fading
-- [ ] Investigate codex refresh button implementation
-- [ ] Investigate party view feather icon event handling
 
 ## Notes
 
 - **Current Status**: Tray state management is working correctly after recent fixes
 - **Animation Issue**: Expand animation broke during hook optimization changes
-- **Memory Management**: ✅ **FIXED** - Severe memory leaks resolved, duplicate event handlers removed
-- **Quest Notifications**: ✅ **FIXED** - Duplicate notifications resolved with global notification IDs
 - **Codex Refresh**: Could be missing event handler or broken refresh logic
 - **Party View**: Feather icon likely has unintended side effects in event handling
