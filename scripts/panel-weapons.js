@@ -1,6 +1,8 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
+import { TransferUtils } from './transfer-utils.js';
+import { CharactersWindow } from './window-characters.js';
 
 export class WeaponsPanel {
     constructor(actor) {
@@ -238,6 +240,16 @@ export class WeaponsPanel {
                 this._updateVisibility(html);
             }
         });
+
+        // Send weapon (share icon)
+        panel.on('click.squireWeapons', '.weapons-send-item', async (event) => {
+            const itemId = $(event.currentTarget).data('item-id');
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                // Open character selection window
+                await this._openCharacterSelection(item);
+            }
+        });
     }
 
     _toggleCategory(categoryId) {
@@ -258,5 +270,103 @@ export class WeaponsPanel {
 
     _onShowDetails(event) {
         // Implementation of _onShowDetails method
+    }
+
+    async _openCharacterSelection(item) {
+        // Check if item has quantity and show quantity selection dialog first
+        const hasQuantity = item.system.quantity !== undefined && item.system.quantity > 1;
+        const maxQuantity = hasQuantity ? item.system.quantity : 1;
+        
+        let selectedQuantity = 1;
+        
+        if (hasQuantity && maxQuantity > 1) {
+            // Show quantity selection dialog
+            selectedQuantity = await this._showTransferQuantityDialog(item, this.actor, null, maxQuantity, hasQuantity);
+            if (selectedQuantity <= 0) return; // User cancelled
+        }
+        
+        // Create character selection window with the selected quantity
+        const characterWindow = new CharactersWindow({
+            item: item,
+            sourceActor: this.actor,
+            sourceItemId: item.id,
+            selectedQuantity: selectedQuantity,
+            hasQuantity: hasQuantity,
+            onCharacterSelected: this._handleCharacterSelected.bind(this)
+        });
+        
+        // Render the window
+        await characterWindow.render(true);
+    }
+
+    async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId, selectedQuantity, hasQuantity) {
+        // Use the shared transfer utility with the selected quantity
+        await TransferUtils.executeTransfer({
+            sourceActor: sourceActor,
+            targetActor: targetActor,
+            item: item,
+            sourceItemId: sourceItemId,
+            quantity: selectedQuantity,
+            hasQuantity: hasQuantity
+        });
+    }
+
+    async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
+        const timestamp = Date.now();
+        
+        // Prepare template data for sender's dialog
+        const senderTemplateData = {
+            sourceItem,
+            sourceActor,
+            targetActor,
+            maxQuantity,
+            timestamp,
+            canAdjustQuantity: hasQuantity && maxQuantity > 1,
+            isReceiveRequest: false,
+            hasQuantity
+        };
+        
+        // Render the transfer dialog template for the sender
+        const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
+        
+        // Initiate the transfer process
+        const selectedQuantity = await new Promise(resolve => {
+            new Dialog({
+                title: "Transfer Item",
+                content: senderContent,
+                buttons: {
+                    transfer: {
+                        icon: '<i class="fas fa-exchange-alt"></i>',
+                        label: "Transfer",
+                        callback: html => {
+                            if (hasQuantity && maxQuantity > 1) {
+                                const quantity = Math.clamp(
+                                    parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
+                                    1,
+                                    maxQuantity
+                                );
+                                resolve(quantity);
+                            } else {
+                                resolve(1);
+                            }
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: "Cancel",
+                        callback: () => resolve(0)
+                    }
+                },
+                default: "transfer",
+                close: () => resolve(0)
+            }, {
+                classes: ["transfer-item"],
+                id: `transfer-item-${timestamp}`,
+                width: 320,
+                height: "auto"
+            }).render(true);
+        });
+        
+        return selectedQuantity;
     }
 } 
