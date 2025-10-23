@@ -23,11 +23,11 @@ import { QuestPin } from './quest-pin.js';
 import { HandleManager } from './manager-handle.js';
 
 // Add multi-select tracking variables at the top of the file
-let _multiSelectTimeout = null;
-let _lastSelectionTime = 0;
-let _selectionCount = 0;
-const MULTI_SELECT_DELAY = 150; // ms to wait after last selection event
-const SINGLE_SELECT_THRESHOLD = 300; // ms threshold to consider as single selection
+export let _multiSelectTimeout = null;
+export let _lastSelectionTime = 0;
+export let _selectionCount = 0;
+export const MULTI_SELECT_DELAY = 150; // ms to wait after last selection event
+export const SINGLE_SELECT_THRESHOLD = 300; // ms threshold to consider as single selection
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1871,7 +1871,7 @@ async function initializeSquireAfterSettings() {
 // Note: controlToken hook is now managed centrally by HookManager
 
 // Helper function to update selection display
-async function _updateSelectionDisplay() {
+export async function _updateSelectionDisplay() {
     if (!PanelManager.instance || !PanelManager.element) return;
     
     // Calculate selection data

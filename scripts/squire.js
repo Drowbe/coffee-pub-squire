@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { PanelManager, _updateHealthPanelFromSelection } from './manager-panel.js';
+import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers } from './helpers.js';
@@ -304,6 +304,11 @@ Hooks.once('ready', () => {
         });
         
         // Global System Hooks
+        // Multi-select tracking variables
+        let _multiSelectTimeout = null;
+        let _lastSelectionTime = 0;
+        let _selectionCount = 0;
+        
         const globalControlTokenHookId = BlacksmithHookManager.registerHook({
             name: "controlToken",
             description: "Coffee Pub Squire: Handle global token control for selection display",
@@ -314,9 +319,41 @@ Hooks.once('ready', () => {
                 if (!game.user.isGM && !token.actor?.isOwner) return;
                 
                 // Update selection display for both selection and release
-                const panelManager = getPanelManager();
-                if (panelManager?.instance) {
-                    await panelManager.instance.renderPanels(panelManager.instance.element);
+                await _updateSelectionDisplay();
+                
+                // Only care about token selection for health panel updates
+                if (!controlled) return;
+
+                // Track selection timing and count
+                const now = Date.now();
+                const timeSinceLastSelection = now - _lastSelectionTime;
+                _lastSelectionTime = now;
+                _selectionCount++;
+
+                // Clear any existing timeout
+                if (_multiSelectTimeout) {
+                    clearTimeout(_multiSelectTimeout);
+                    _multiSelectTimeout = null;
+                }
+
+                // Determine if this is likely multi-selection
+                const isMultiSelect = _selectionCount > 1 && timeSinceLastSelection < 300; // SINGLE_SELECT_THRESHOLD
+
+                // For multi-selection, debounce the update
+                if (isMultiSelect) {
+                    _multiSelectTimeout = setTimeout(async () => {
+                        await _updateHealthPanelFromSelection();
+                        _selectionCount = 0; // Reset counter
+                    }, 150); // MULTI_SELECT_DELAY
+                    return;
+                }
+
+                // For single selection or first selection, update immediately
+                await _updateHealthPanelFromSelection();
+                
+                // Reset counter if enough time has passed
+                if (timeSinceLastSelection > 300) { // SINGLE_SELECT_THRESHOLD
+                    _selectionCount = 0;
                 }
             }
         });

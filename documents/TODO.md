@@ -31,14 +31,14 @@
 ### PHASE 2: High-Priority Improvements
 
 #### Priority 2A: Restore Full `globalControlToken` Implementation ⭐⭐
-- [ ] Review current implementation (lines 307-322)
-- [ ] Replace with full backup implementation (lines 718-765)
-- [ ] Verify helper functions exist
-- [ ] Test: Single token selection
-- [ ] Test: Multi-token selection (Shift+click)
-- [ ] Test: Canvas box selection
-- [ ] Monitor console for excessive renders
-- [ ] Commit: `fix: restore full globalControlToken with multi-select debouncing`
+- [x] Review current implementation (lines 307-322)
+- [x] Replace with full backup implementation (lines 718-765)
+- [x] Verify helper functions exist
+- [x] Test: Single token selection
+- [x] Test: Multi-token selection (Shift+click)
+- [x] Test: Canvas box selection
+- [x] Monitor console for excessive renders
+- [x] Commit: `fix: restore full globalControlToken with multi-select debouncing`
 - **Impact:** Fixes multi-select, reduces over-rendering
 - **Risk:** MEDIUM | **Time:** 20 min
 
@@ -137,6 +137,14 @@
   - Need simple fix: ensure handle gets correct token reference when tokens are selected
   - Previous attempt overcomplicated the solution - need minimal, targeted approach
   - Consider rolling back recent changes and starting fresh
+
+### COMBAT INTEGRATION ISSUE
+- [ ] **HIGH** Fix "Add to Combat" button error: `token.actor.addToCombat is not a function`
+  - Error occurs when clicking "Add to Combat" button in tray
+  - `manager-panel.js:703:43` - `token.actor.addToCombat()` method doesn't exist
+  - Need to check D&D 5e system API for correct combat integration method
+  - May need to use `CombatTracker.createCombatant()` or similar FoundryVTT API
+  - Error prevents GMs from easily adding tokens to combat from tray
 
 ### GLOBAL HOOKS
 - [ ] **CRITICAL** Missing `globalUpdateActor` hook causing health panel and handle sync issues
