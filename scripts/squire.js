@@ -360,7 +360,7 @@ Hooks.once('ready', () => {
         
         const globalUpdateItemHookId = BlacksmithHookManager.registerHook({
             name: "updateItem",
-            description: "Coffee Pub Squire: Handle global item updates for tray updates",
+            description: "Coffee Pub Squire: Handle global item updates for tray updates and auto-favoriting",
             context: MODULE.ID,
             priority: 2,
             callback: async (item, changes) => {
@@ -372,8 +372,32 @@ Hooks.once('ready', () => {
                     return;
                 }
                 
-                // Update the tray
-                if (panelManager?.instance) {
+                // Only process if PanelManager instance exists
+                if (!panelManager?.instance) {
+                    return;
+                }
+                
+                // Check if this is an NPC/monster and the item is a weapon being equipped
+                // or a spell being prepared
+                if (item.parent.type !== "character") {
+                    // Check if actor is from a compendium before trying to modify it
+                    const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
+                    if (isFromCompendium) {
+                        // Skip auto-favoriting for actors from compendiums
+                    } else {
+                        // For weapons, check if equipped status changed to true
+                        if (item.type === "weapon" && item.system.equipped === true) {
+                            // Add to favorites if it's now equipped
+                            await FavoritesPanel.manageFavorite(item.parent, item.id);
+                        }
+                        // For spells, check if prepared status changed to true
+                        else if (item.type === "spell" && item.system.preparation?.mode === "prepared" && item.system.preparation?.prepared === true) {
+                            // Add to favorites if it's now prepared
+                            await FavoritesPanel.manageFavorite(item.parent, item.id);
+                        }
+                    }
+                } else {
+                    // For other changes, just update the handle
                     await panelManager.instance.updateHandle();
                 }
             }

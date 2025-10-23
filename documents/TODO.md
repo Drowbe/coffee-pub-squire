@@ -71,14 +71,14 @@
 - **Impact:** New token detection
 - **Risk:** LOW | **Time:** 5 min
 
-### PHASE 4: Optional Enhancements
+### PHASE 4: Optional Enhancements ✅ COMPLETE
 
-#### Priority 4A: Restore Auto-Favoriting in `globalUpdateItem` (DECIDE)
-- [ ] **DECISION REQUIRED:** Do we want auto-favoriting back?
-- [ ] If YES: Replace implementation (lines 346-364) with backup (lines 957-999)
-- [ ] Test: NPC equips weapon → auto-favorited
-- [ ] Test: NPC prepares spell → auto-favorited
-- [ ] Commit: `feat: restore auto-favoriting for NPCs`
+#### Priority 4A: Restore Auto-Favoriting in `globalUpdateItem` ✅
+- [x] **DECISION REQUIRED:** Do we want auto-favoriting back? **YES**
+- [x] Replace implementation (lines 346-364) with backup (lines 957-999)
+- [x] Test: NPC equips weapon → auto-favorited
+- [x] Test: NPC prepares spell → auto-favorited
+- [x] Commit: `feat: restore auto-favoriting for NPCs`
 - **Impact:** QoL for NPCs/monsters
 - **Risk:** LOW | **Time:** 10 min
 - **Note:** Adds "magic" behavior that could be unexpected
