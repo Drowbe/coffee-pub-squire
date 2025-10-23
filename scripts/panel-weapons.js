@@ -108,7 +108,8 @@ export class WeaponsPanel {
             weapons: this.weapons.all,
             weaponsByType: this.weapons.byType,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
-            showOnlyEquipped: this.showOnlyEquipped
+            showOnlyEquipped: this.showOnlyEquipped,
+            newlyAddedItems: PanelManager.newlyAddedItems
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_WEAPONS, weaponData);
