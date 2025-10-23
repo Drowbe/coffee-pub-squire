@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Token Deletion Handling**: Restored `globalDeleteToken` hook to prevent tray crashes when tokens are deleted
 - **Active Effect Hooks**: Added `createActiveEffect` and `deleteActiveEffect` hooks for proper condition synchronization
 - **Comprehensive Hook Audit**: Created detailed audit report identifying 5-6 missing critical hooks
+- **Multi-Token Selection Support**: Enhanced `globalControlToken` hook with optimized multi-select handling and debouncing
+- **Bulk Selection Tools**: Added canvas selection support for lasso and box selection tools via `globalCanvasReady` enhancement
+- **New Token Detection**: Restored `globalCreateToken` hook for automatic handle updates when new tokens are created
+- **Auto-Favoriting for NPCs**: Restored automatic favoriting of equipped weapons and prepared spells for NPCs/monsters
+- **Pause Game Handling**: Restored `globalPauseGame` hook to prevent stale data after game pause/resume
 
 ### Fixed
 - **Health Panel Sync**: Health bars now update immediately when HP changes externally (spells, damage, healing)
@@ -21,17 +26,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Spell Slot Updates**: Spells panel now refreshes when spell slots are modified
 - **Token Deletion Crashes**: Tray no longer crashes when active token is deleted, gracefully switches to next available token
 - **Memory Leaks**: Removed legacy dead code from panel cleanup methods that was causing hook accumulation
+- **Multi-Select Performance**: Fixed 3-5 second lag during multi-token selection with optimized update logic
+- **Selection Display Updates**: Fixed selection display not updating properly during rapid token selection
+- **Canvas Selection Tools**: Fixed lasso and box selection tools not updating tray display
+- **New Token Integration**: Fixed handle not updating when new tokens are created on canvas
+- **NPC Equipment Management**: Fixed NPCs/monsters not auto-favoriting equipped weapons and prepared spells
+- **Game Pause Issues**: Fixed stale data display after game pause/resume cycles
 
 ### Changed
 - **Hook Management**: Migrated to centralized BlacksmithHookManager for consistent hook lifecycle management
 - **Panel Lifecycle**: Enhanced PanelManager to properly track and update token references alongside actor references
 - **Legacy Code Cleanup**: Removed outdated hook cleanup comments and dead code from panel destroy methods
+- **Performance Optimization**: Simplified multi-select logic to eliminate complex debouncing that was causing delays
+- **Debug Logging**: Removed excessive console.log statements and replaced with clean, production-ready comments
+- **Documentation**: Updated false comments about "moved" or "centralized" hooks to reflect actual architecture
+- **Code Quality**: Cleaned up temporary debug comments, keeping only durable, necessary documentation
 
 ### Technical Improvements
 - **Hook Architecture**: Restored proper hook registration pattern following established BlacksmithHookManager conventions
 - **Token Reference Tracking**: Enhanced system to maintain both actor and token references for proper name display
 - **Error Prevention**: Added comprehensive null checks and fallbacks in hook implementations
 - **Performance**: Eliminated unnecessary re-renders by implementing targeted updates for specific change types
+- **Multi-Select Optimization**: Implemented efficient selection handling that scales with token count
+- **Canvas Integration**: Enhanced canvas selection tools integration with proper event handling
+- **Auto-Favoriting Logic**: Restored intelligent auto-favoriting system for NPCs with compendium safety checks
+- **Code Cleanup**: Comprehensive removal of debug logging, false comments, and legacy code references
+- **Production Readiness**: Cleaned up all temporary development artifacts for production deployment
 
 ## [12.1.7] - Bug Squashing
 
