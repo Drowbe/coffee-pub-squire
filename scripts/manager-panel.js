@@ -564,7 +564,6 @@ export class PanelManager {
         tray.find('.tray-gm-button').off('click');
         tray.find('.tray-tools-button').off('click');
         tray.find('#button-clear').off('click');
-        tray.find('#button-combat').off('click');
         
        
 
@@ -680,40 +679,6 @@ export class PanelManager {
             }
         });
 
-        // Add to combat button (GM only)
-        tray.find('#button-combat').click(async (event) => {
-            if (!game.user.isGM) {
-                ui.notifications.warn("Only GMs can add tokens to combat.");
-                return;
-            }
-
-            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-            if (controlledTokens.length === 0) {
-                ui.notifications.warn("No tokens selected to add to combat.");
-                return;
-            }
-
-            try {
-                // Add each controlled token to combat
-                for (const token of controlledTokens) {
-                    if (token.actor && !token.actor.hasCombatTracker) {
-                        await token.actor.addToCombat();
-                    }
-                }
-                
-                ui.notifications.info(`Added ${controlledTokens.length} token${controlledTokens.length !== 1 ? 's' : ''} to combat.`);
-                
-                // Play sound
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-            } catch (error) {
-                console.error('Error adding tokens to combat:', error);
-                ui.notifications.error("Error adding tokens to combat. See console for details.");
-            }
-        });
 
         // Add drag and drop handlers for stacked panels
         const stackedContainer = tray.find('.panel-containers.stacked');
@@ -1888,7 +1853,6 @@ export async function _updateSelectionDisplay() {
                     <span class="tray-selection-count">${selectionCount} tokens selected</span>
                     <div class="tray-selection-actions" data-tooltip="Use Shift+Click to select multiple or modify selection">
                         <button id="button-clear" class="tray-selection-button button-clear" data-tooltip="Clear all selections">Clear All</button>
-                        ${game.user.isGM ? '<button id="button-combat" class="tray-selection-button button-combat" data-tooltip="Add selected tokens to combat">Add to Combat</button>' : ''}
                     </div>
                 </div>
             `;

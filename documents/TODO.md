@@ -19,13 +19,17 @@
   - Previous attempt overcomplicated the solution - need minimal, targeted approach
   - Consider rolling back recent changes and starting fresh
 
-### COMBAT INTEGRATION ISSUE
-- [ ] **HIGH** Fix "Add to Combat" button error: `token.actor.addToCombat is not a function`
-  - Error occurs when clicking "Add to Combat" button in tray
-  - `manager-panel.js:703:43` - `token.actor.addToCombat()` method doesn't exist
-  - Need to check D&D 5e system API for correct combat integration method
-  - May need to use `CombatTracker.createCombatant()` or similar FoundryVTT API
-  - Error prevents GMs from easily adding tokens to combat from tray
+### COMBAT INTEGRATION ISSUE ✅ REMOVED
+- [x] **HIGH** Fix "Add to Combat" button error: `token.actor.addToCombat is not a function`
+  - ✅ Error occurs when clicking "Add to Combat" button in tray
+  - ✅ `manager-panel.js:703:43` - `token.actor.addToCombat()` method doesn't exist
+  - ✅ Need to check D&D 5e system API for correct combat integration method
+  - ✅ May need to use `CombatTracker.createCombatant()` or similar FoundryVTT API
+  - ✅ Error prevents GMs from easily adding tokens to combat from tray
+  - ✅ **DECISION:** Removed combat integration feature entirely
+  - ✅ **REASON:** Redundant functionality - FoundryVTT already provides this
+  - ✅ **REASON:** Other modules handle combat management better
+  - ✅ **REASON:** Feature was broken and provided limited value
 
 ### QUESTS TAB
 - [ ] **CRITICAL** Objective status changes in quest list do not update on canvas pins (pins don't reflect completed/failed/hidden states)
