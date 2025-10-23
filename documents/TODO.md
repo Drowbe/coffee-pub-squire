@@ -43,10 +43,10 @@
 - **Risk:** MEDIUM | **Time:** 20 min
 
 #### Priority 2B: `globalPauseGame` Hook ⭐⭐
-- [ ] Add hook to `scripts/squire.js` after globalDeleteToken
-- [ ] Copy implementation from backup lines 879-890
-- [ ] Test: Pause game, change actor, unpause - verify panels refresh
-- [ ] Commit: `fix: restore globalPauseGame hook`
+- [x] Add hook to `scripts/squire.js` after globalDeleteToken
+- [x] Copy implementation from backup lines 879-890
+- [x] Test: Pause game, change actor, unpause - verify panels refresh
+- [x] Commit: `fix: restore globalPauseGame hook`
 - **Impact:** Prevents stale data after pause
 - **Risk:** LOW | **Time:** 5 min
 

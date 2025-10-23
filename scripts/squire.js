@@ -319,7 +319,10 @@ Hooks.once('ready', () => {
                 if (!game.user.isGM && !token.actor?.isOwner) return;
                 
                 // Update selection display for both selection and release
-                await _updateSelectionDisplay();
+                // Only update immediately for single selections to avoid performance issues
+                if (!controlled || _selectionCount <= 1) {
+                    await _updateSelectionDisplay();
+                }
                 
                 // Only care about token selection for health panel updates
                 if (!controlled) return;
@@ -342,7 +345,8 @@ Hooks.once('ready', () => {
                 // For multi-selection, debounce the update
                 if (isMultiSelect) {
                     _multiSelectTimeout = setTimeout(async () => {
-                        await _updateHealthPanelFromSelection();
+                        // For multi-select, update selection display once at the end
+                        await _updateSelectionDisplay();
                         _selectionCount = 0; // Reset counter
                     }, 150); // MULTI_SELECT_DELAY
                     return;
@@ -570,6 +574,19 @@ Hooks.once('ready', () => {
                         panelManager.instance = null;
                         panelManager.currentActor = null;
                     }
+                }
+            }
+        });
+        
+        const globalPauseGameHookId = BlacksmithHookManager.registerHook({
+            name: "pauseGame",
+            description: "Coffee Pub Squire: Handle global game pause/unpause",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (paused) => {
+                const panelManager = getPanelManager();
+                if (!paused && panelManager?.instance && panelManager.instance.element) {
+                    await panelManager.instance.renderPanels(panelManager.instance.element);
                 }
             }
         });
