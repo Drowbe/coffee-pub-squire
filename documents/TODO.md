@@ -16,9 +16,6 @@
 ### QUESTS TAB
 - [ ] **CRITICAL** Objective status changes in quest list do not update on canvas pins (pins don't reflect completed/failed/hidden states)
 
-### PLAYER/TOKEN TAB
-- [ ] **ENHANCEMENT** Need to add the "send item" icon to the weapons panel just like we did the inventory panel
-
 ### NOTES TAB
 - [ ] **ENHANCEMENT** Expand and optimize this section. It needs to have a shared note, character note, and scratchpad
 
