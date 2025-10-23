@@ -318,47 +318,8 @@ Hooks.once('ready', () => {
                 // Only proceed if it's a GM or the token owner
                 if (!game.user.isGM && !token.actor?.isOwner) return;
                 
-                // Update selection display for both selection and release
-                // Only update immediately for single selections to avoid performance issues
-                if (!controlled || _selectionCount <= 1) {
-                    await _updateSelectionDisplay();
-                }
-                
-                // Only care about token selection for health panel updates
-                if (!controlled) return;
-
-                // Track selection timing and count
-                const now = Date.now();
-                const timeSinceLastSelection = now - _lastSelectionTime;
-                _lastSelectionTime = now;
-                _selectionCount++;
-
-                // Clear any existing timeout
-                if (_multiSelectTimeout) {
-                    clearTimeout(_multiSelectTimeout);
-                    _multiSelectTimeout = null;
-                }
-
-                // Determine if this is likely multi-selection
-                const isMultiSelect = _selectionCount > 1 && timeSinceLastSelection < 300; // SINGLE_SELECT_THRESHOLD
-
-                // For multi-selection, debounce the update
-                if (isMultiSelect) {
-                    _multiSelectTimeout = setTimeout(async () => {
-                        // For multi-select, update selection display once at the end
-                        await _updateSelectionDisplay();
-                        _selectionCount = 0; // Reset counter
-                    }, 150); // MULTI_SELECT_DELAY
-                    return;
-                }
-
-                // For single selection or first selection, update immediately
-                await _updateHealthPanelFromSelection();
-                
-                // Reset counter if enough time has passed
-                if (timeSinceLastSelection > 300) { // SINGLE_SELECT_THRESHOLD
-                    _selectionCount = 0;
-                }
+                // Simple approach: just update selection display, skip expensive operations
+                await _updateSelectionDisplay();
             }
         });
         
