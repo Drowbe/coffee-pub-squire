@@ -54,9 +54,3 @@
 
 - [ ] Investigate why expand animation changed from sliding to fading
 
-## Notes
-
-- **Current Status**: Tray state management is working correctly after recent fixes
-- **Animation Issue**: Expand animation broke during hook optimization changes
-- **Codex Refresh**: Could be missing event handler or broken refresh logic
-- **Party View**: Feather icon likely has unintended side effects in event handling
