@@ -9,22 +9,22 @@
 ### PHASE 1: Critical Foundation (DO THESE FIRST)
 
 #### Priority 1A: `globalUpdateActor` Hook ⭐⭐⭐
-- [ ] Add hook to `scripts/squire.js` after line 426
-- [ ] Copy implementation from backup lines 828-877
-- [ ] Test: HP changes update handle
-- [ ] Test: AC/level changes trigger re-render
-- [ ] Test: Spell slot changes update spells panel
-- [ ] Test: Effect changes update handle
-- [ ] Commit: `fix: restore globalUpdateActor hook for sync issues`
+- [x] Add hook to `scripts/squire.js` after line 426
+- [x] Copy implementation from backup lines 828-877
+- [x] Test: HP changes update handle
+- [x] Test: AC/level changes trigger re-render
+- [x] Test: Spell slot changes update spells panel
+- [x] Test: Effect changes update handle
+- [x] Commit: `fix: restore globalUpdateActor hook for sync issues`
 - **Impact:** Fixes 80% of sync issues (health bars, effects, stats)
 - **Risk:** LOW | **Time:** 15 min
 
 #### Priority 1B: `globalDeleteToken` Hook ⭐⭐⭐
-- [ ] Add hook to `scripts/squire.js` after globalUpdateActor
-- [ ] Copy implementation from backup lines 767-826
-- [ ] Test: Delete active token switches to next actor
-- [ ] Test: Delete last token handles gracefully
-- [ ] Commit: `fix: restore globalDeleteToken hook for token management`
+- [x] Add hook to `scripts/squire.js` after globalUpdateActor
+- [x] Copy implementation from backup lines 767-826
+- [x] Test: Delete active token switches to next actor
+- [x] Test: Delete last token handles gracefully
+- [x] Commit: `fix: restore globalDeleteToken hook for token management`
 - **Impact:** Prevents tray crashes when tokens deleted
 - **Risk:** LOW | **Time:** 10 min
 

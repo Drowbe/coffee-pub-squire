@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [12.1.8] - Hook Restoration & Critical Sync Fixes
+
+### Added
+- **Critical Hook Restoration**: Restored missing `globalUpdateActor` hook that was causing major synchronization issues
+- **Token Deletion Handling**: Restored `globalDeleteToken` hook to prevent tray crashes when tokens are deleted
+- **Active Effect Hooks**: Added `createActiveEffect` and `deleteActiveEffect` hooks for proper condition synchronization
+- **Comprehensive Hook Audit**: Created detailed audit report identifying 5-6 missing critical hooks
+
+### Fixed
+- **Health Panel Sync**: Health bars now update immediately when HP changes externally (spells, damage, healing)
+- **Handle Synchronization**: Handle now refreshes when actor attributes change (AC, level, movement, etc.)
+- **Effect Display**: Status effects in handle now update when conditions are added/removed via token HUD
+- **Spell Slot Updates**: Spells panel now refreshes when spell slots are modified
+- **Token Deletion Crashes**: Tray no longer crashes when active token is deleted, gracefully switches to next available token
+- **Memory Leaks**: Removed legacy dead code from panel cleanup methods that was causing hook accumulation
+
+### Changed
+- **Hook Management**: Migrated to centralized BlacksmithHookManager for consistent hook lifecycle management
+- **Panel Lifecycle**: Enhanced PanelManager to properly track and update token references alongside actor references
+- **Legacy Code Cleanup**: Removed outdated hook cleanup comments and dead code from panel destroy methods
+
+### Technical Improvements
+- **Hook Architecture**: Restored proper hook registration pattern following established BlacksmithHookManager conventions
+- **Token Reference Tracking**: Enhanced system to maintain both actor and token references for proper name display
+- **Error Prevention**: Added comprehensive null checks and fallbacks in hook implementations
+- **Performance**: Eliminated unnecessary re-renders by implementing targeted updates for specific change types
+
 ## [12.1.7] - Bug Squashing
 
 ### Fixed
