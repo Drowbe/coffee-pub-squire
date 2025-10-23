@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New Token Detection**: Restored `globalCreateToken` hook for automatic handle updates when new tokens are created
 - **Auto-Favoriting for NPCs**: Restored automatic favoriting of equipped weapons and prepared spells for NPCs/monsters
 - **Pause Game Handling**: Restored `globalPauseGame` hook to prevent stale data after game pause/resume
+- **Item Transfer System**: Added "send item" functionality to weapons panel matching inventory panel capabilities
+- **Panel Refresh Optimization**: Implemented targeted panel refresh for item transfers (weapons/inventory only) instead of full panel re-render
 
 ### Fixed
 - **Health Panel Sync**: Health bars now update immediately when HP changes externally (spells, damage, healing)
@@ -32,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New Token Integration**: Fixed handle not updating when new tokens are created on canvas
 - **NPC Equipment Management**: Fixed NPCs/monsters not auto-favoriting equipped weapons and prepared spells
 - **Game Pause Issues**: Fixed stale data display after game pause/resume cycles
+- **Item Transfer Panel Updates**: Fixed weapons and inventory panels not refreshing after item transfers
+- **"New" Badge Display**: Fixed "new" badges not appearing on weapons panel after item transfers
+- **Transfer Performance**: Eliminated 5+ second delay during item transfers by optimizing panel refresh logic
 
 ### Changed
 - **Hook Management**: Migrated to centralized BlacksmithHookManager for consistent hook lifecycle management
