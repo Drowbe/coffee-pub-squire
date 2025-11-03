@@ -81,6 +81,11 @@ export class MacrosPanel {
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
             const placeholder = $('#macros-panel-placeholder');
+            // NULL SAFETY: If placeholder doesn't exist in DOM, skip rendering
+            // This prevents crashes during multi-select when DOM is being rebuilt
+            if (!placeholder.length) {
+                return;
+            }
             let container = placeholder.find('.panel-container[data-panel="macros"]');
             if (!container.length) {
                 // Create the panel container if it doesn't exist

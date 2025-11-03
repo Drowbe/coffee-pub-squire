@@ -1901,6 +1901,23 @@ export async function _updateHealthPanelFromSelection() {
     // Use the actor from the primary token for the tray
     const actorToUse = tokenToUse.actor;
 
+    // EARLY RETURN OPTIMIZATION: Skip expensive operations if nothing changed
+    // This prevents lag during multi-select when selecting same-type tokens
+    const actorUnchanged = PanelManager.currentActor?.id === actorToUse.id;
+    
+    if (actorUnchanged) {
+        // Check if tokens actually changed by comparing IDs
+        const currentTokens = PanelManager.instance?.healthPanel?.tokens || [];
+        const currentTokenIds = currentTokens.map(t => t.id).sort();
+        const newTokenIds = controlledTokens.map(t => t.id).sort();
+        const tokensUnchanged = JSON.stringify(currentTokenIds) === JSON.stringify(newTokenIds);
+        
+        if (tokensUnchanged) {
+            // Nothing meaningful changed - skip all expensive operations
+            return;
+        }
+    }
+
     // Save the current view mode before initializing
     const currentViewMode = PanelManager.viewMode;
 
