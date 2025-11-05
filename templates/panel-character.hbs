@@ -23,8 +23,8 @@
                 </div>
                 <div class="details-secondary">
                     {{#if (ne actor.type "character")}}
-                        <div>RESISTANCES: {{#if actor.system.traits.dr.value}}{{#each actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
-                        <div>IMMUNITITES: {{#if actor.system.traits.di.value}}{{#each actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
+                        {{#if actor.system.traits.dr.value}}<div>RESISTANCES: {{#each actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>{{/if}}
+                        {{#if actor.system.traits.di.value}}<div>IMMUNITITES: {{#each actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>{{/if}}
                     {{/if}}
                 </div>
             </div>
