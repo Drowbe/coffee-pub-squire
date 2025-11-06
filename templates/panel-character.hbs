@@ -22,6 +22,9 @@
                     {{#if actor.system.details.alignment}} • {{actor.system.details.alignment}}{{/if}}
                 </div>
                 <div class="details-secondary">
+                    {{#if speeds}}
+                        <div>SPEED: {{#each speeds}}{{#unless @first}}, {{/unless}}{{label}} {{value}}{{#if ../speedUnits}} {{../speedUnits}}{{/if}}{{#if (and (eq type "fly") ../canHover)}} (hover){{/if}}{{/each}}</div>
+                    {{/if}}
                     {{#if (ne actor.type "character")}}
                         {{#if actor.system.traits.dr.value}}<div>RESISTANCES: {{#each actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>{{/if}}
                         {{#if actor.system.traits.di.value}}<div>IMMUNITITES: {{#each actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>{{/if}}

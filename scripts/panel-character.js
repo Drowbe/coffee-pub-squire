@@ -53,10 +53,86 @@ export class CharacterPanel {
         }
         if (!this.element) return;
 
+        // Prepare speed data - extract all speed types that have values
+        // Always read from token.actor to get the synthetic/calculated actor (PCs & NPCs)
+        const log = (...args) => getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, ...args);
+        
+        // Resolve the "selected token for this actor" first
+        // Prefer controlled token, then fall back to active tokens on current scene
+        const controlled = canvas.tokens?.controlled ?? [];
+        let token = controlled.find(t => t.actor?.id === this.actor.id);
+        
+        if (!token) {
+            // Fallback: any active token for this actor on the current scene
+            const active = this.actor.getActiveTokens?.(true) ?? [];
+            token = active.find(t => t.scene?.id === canvas.scene?.id) || active[0];
+        }
+        
+        log(`CHARACTER DETAILS Token resolved: ${token ? token.id : "none"} for actor ${this.actor.id}`, '', false, false);
+        
+        // Prefer token.actor (synthetic) if we have it; otherwise the base actor
+        const sourceActor = token?.actor ?? this.actor;
+        const mov = sourceActor?.system?.attributes?.movement ?? {};
+        
+        log(`CHARACTER DETAILS Movement data: ${JSON.stringify(mov)}`, '', false, false);
+        
+        // Build movement type list from system config (object OR array), with a stable fallback order
+        let speedTypes;
+        const mt = CONFIG.DND5E?.movementTypes;
+        
+        if (Array.isArray(mt)) {
+            speedTypes = mt.slice();
+        } else if (mt && typeof mt === "object") {
+            // Keys are canonical type ids in newer 5e (e.g. walk, fly, swim, climb, burrow)
+            speedTypes = Object.keys(mt);
+        } else {
+            speedTypes = ["burrow", "climb", "fly", "swim", "walk"];
+        }
+        
+        // Ensure a good display order
+        const desired = ["walk", "fly", "swim", "climb", "burrow"];
+        speedTypes.sort((a, b) => desired.indexOf(a) - desired.indexOf(b));
+        
+        // Labels: prefer config labels when available
+        const speedLabelFor = (type) => {
+            if (mt && typeof mt === "object" && mt[type]) {
+                return game.i18n?.localize?.(mt[type]) ?? mt[type];
+            }
+            return type.charAt(0).toUpperCase() + type.slice(1);
+        };
+        
+        const speeds = [];
+        for (const type of speedTypes) {
+            let v = mov[type];
+            
+            // Normalize: handle both {value: number} objects and direct numbers/strings
+            if (v && typeof v === "object" && "value" in v) {
+                v = v.value;
+            }
+            
+            // Only include if it's a valid number (not null, undefined, empty, or NaN)
+            if (v != null && v !== "" && !Number.isNaN(Number(v))) {
+                const n = Number(v);
+                if (n > 0) {
+                    speeds.push({ type, label: speedLabelFor(type), value: n });
+                    log(`CHARACTER DETAILS Added speed: ${type}=${n}`, '', false, false);
+                }
+            }
+        }
+        
+        // Attach units and hover so the template can render "(hover)"
+        const units = mov.units ?? "ft";
+        const hover = !!mov.hover;
+        
+        log(`CHARACTER DETAILS Final speeds array: ${JSON.stringify(speeds)}`, '', false, false);
+
         const template = await renderTemplate(TEMPLATES.PANEL_CHARACTER, {
             actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             isGM: game.user.isGM,
+            speeds,
+            speedUnits: units,
+            canHover: hover
         });
         
         this.element.find('[data-panel="character"]').html(template);
