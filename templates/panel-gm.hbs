@@ -1,0 +1,19 @@
+<div id="gmpanel-panel" class="gm-panel">
+    <div class="tray-title-small gmdetails-header">
+        <span>GM Details</span>
+        <div class="gmdetails-controls">
+            <i class="fas fa-chevron-down gmdetails-toggle" title="Toggle GM Details Panel"></i>
+        </div>
+    </div>
+    <div class="gmdetails-content{{#if isCollapsed}} collapsed{{/if}}">
+        {{#if resistances.length}}
+            <div class="gm-row">RESISTANCES: {{#each resistances}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>
+        {{/if}}
+        {{#if immunities.length}}
+            <div class="gm-row">IMMUNITIES: {{#each immunities}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>
+        {{/if}}
+        {{#if biographyHtmlRaw}}
+            <div class="details-biography">{{{biographyHtmlRaw}}}</div>
+        {{/if}}
+    </div>
+</div>

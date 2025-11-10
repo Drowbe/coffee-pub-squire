@@ -25,10 +25,6 @@
                     {{#if speeds}}
                         <div>SPEED: {{#each speeds}}{{#unless @first}}, {{/unless}}{{label}} {{value}}{{#if ../speedUnits}} {{../speedUnits}}{{/if}}{{#if (and (eq type "fly") ../canHover)}} (hover){{/if}}{{/each}}</div>
                     {{/if}}
-                    {{#if (ne actor.type "character")}}
-                        {{#if actor.system.traits.dr.value}}<div>RESISTANCES: {{#each actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>{{/if}}
-                        {{#if actor.system.traits.di.value}}<div>IMMUNITITES: {{#each actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>{{/if}}
-                    {{/if}}
                 </div>
             </div>
         </div>
@@ -37,5 +33,7 @@
         <i class="fas fa-scroll print-character" title="Print Character Sheet"></i>
         <i class="fas fa-feather character-sheet-toggle" title="Open Character Sheet"></i>
     </div>
-
 </div> 
+
+
+

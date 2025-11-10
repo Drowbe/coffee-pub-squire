@@ -126,13 +126,217 @@ export class CharacterPanel {
         
         log(`CHARACTER DETAILS Final speeds array: ${JSON.stringify(speeds)}`, '', false, false);
 
+        // Prepare trait display helpers (resistances, immunities, etc.)
+        const normalizeTraitValues = (trait) => {
+            if (!trait) return { values: [], custom: '' };
+
+            const raw = trait.value;
+            let values = [];
+
+            if (Array.isArray(raw)) {
+                values = raw;
+            } else if (raw instanceof Set) {
+                values = Array.from(raw);
+            } else if (raw instanceof Map) {
+                values = Array.from(raw.keys());
+            } else if (raw && typeof raw === 'object') {
+                values = Object.keys(raw).filter(key => {
+                    const entry = raw[key];
+                    if (typeof entry === 'boolean') return entry;
+                    if (entry instanceof Set || Array.isArray(entry)) return Array.from(entry).length > 0;
+                    if (entry instanceof Map) return entry.size > 0;
+                    if (entry && typeof entry === 'object' && 'value' in entry) return !!entry.value;
+                    return true;
+                });
+            } else if (typeof raw === 'string') {
+                values = raw.split(/[,;]+/).map(v => v.trim()).filter(Boolean);
+            }
+
+            const custom = (trait.custom || '').trim();
+
+            return { values, custom };
+        };
+
+        const damageTypeLabels = CONFIG.DND5E?.damageTypes ?? {};
+        const resistanceTypeLabels = CONFIG.DND5E?.damageResistanceTypes ?? damageTypeLabels;
+        const immunityTypeLabels = CONFIG.DND5E?.damageImmunityTypes ?? damageTypeLabels;
+
+        const resolveLabelEntry = (map, key) => {
+            if (!map || key === undefined || key === null) return null;
+
+            if (map instanceof Map) {
+                return map.get(key);
+            }
+
+            return map[key];
+        };
+
+        const normalizeLabelValue = (entry) => {
+            if (!entry) return null;
+
+            if (typeof entry === 'string') {
+                return entry;
+            }
+
+            if (Array.isArray(entry)) {
+                return normalizeLabelValue(entry[0]);
+            }
+
+            if (entry instanceof Map) {
+                const iterator = entry.values()?.next?.();
+                if (iterator && !iterator.done) {
+                    return normalizeLabelValue(iterator.value);
+                }
+            }
+
+            if (typeof entry === 'object') {
+                if (typeof entry.label === 'string') return entry.label;
+                if (typeof entry.localizationKey === 'string') return entry.localizationKey;
+                if (typeof entry.name === 'string') return entry.name;
+            }
+
+            return null;
+        };
+
+        const safelyLocalize = (label) => {
+            if (typeof label !== 'string' || label.length === 0) return null;
+            try {
+                if (game.i18n?.localize) {
+                    return game.i18n.localize(label);
+                }
+            } catch (error) {
+                log(`CHARACTER DETAILS Localization failed for ${label}: ${error}`, '', false, false);
+            }
+            return label;
+        };
+
+        const labelDamageType = (value, labelMap) => {
+            const rawLabel =
+                normalizeLabelValue(resolveLabelEntry(labelMap, value)) ??
+                normalizeLabelValue(resolveLabelEntry(damageTypeLabels, value));
+
+            if (rawLabel) {
+                return safelyLocalize(rawLabel);
+            }
+
+            if (typeof value === 'string' && value.length > 0) {
+                return value.charAt(0).toUpperCase() + value.slice(1);
+            }
+            return null;
+        };
+
+        const buildTraitList = (trait, labelMap) => {
+            const { values, custom } = normalizeTraitValues(trait);
+            const labels = [];
+
+            const rawLabels = trait?.labels ?? trait?.label;
+            if (Array.isArray(rawLabels)) {
+                labels.push(...rawLabels);
+            } else if (rawLabels instanceof Set) {
+                labels.push(...Array.from(rawLabels));
+            } else if (rawLabels instanceof Map) {
+                labels.push(...Array.from(rawLabels.values()));
+            } else if (typeof rawLabels === 'string') {
+                labels.push(...rawLabels.split(/[,;]+/).map(v => v.trim()).filter(Boolean));
+            } else if (rawLabels && typeof rawLabels === 'object' && 'value' in rawLabels) {
+                if (Array.isArray(rawLabels.value)) {
+                    labels.push(...rawLabels.value);
+                }
+            }
+
+            values.forEach((value) => {
+                const label = labelDamageType(value, labelMap);
+                if (label) {
+                    labels.push(label);
+                }
+            });
+
+            if (custom) {
+                labels.push(custom);
+            }
+
+            const seen = new Set();
+            return labels
+                .map(label => (typeof label === 'string' ? label.trim() : ''))
+                .filter(label => {
+                    if (!label) return false;
+                    if (seen.has(label)) return false;
+                    seen.add(label);
+                    return true;
+                });
+        };
+
+        const traitData = sourceActor?.system?.traits ?? {};
+        const resistances = buildTraitList(traitData.dr, resistanceTypeLabels);
+        const immunities = buildTraitList(traitData.di, immunityTypeLabels);
+
+        log(`CHARACTER DETAILS Resistances: ${JSON.stringify(resistances)}`, '', false, false);
+        log(`CHARACTER DETAILS Immunities: ${JSON.stringify(immunities)}`, '', false, false);
+
+        // Prepare biography text (strip HTML/links)
+        const biographySource = sourceActor?.system?.details?.biography ?? {};
+        const biographyHtml = biographySource.public || biographySource.value || '';
+        let biography = '';
+        let biographyHtmlSafe = '';
+        let biographyHtmlRaw = '';
+        if (biographyHtml) {
+            try {
+                if (TextEditor?.enrichHTML) {
+                    const enriched = await TextEditor.enrichHTML(biographyHtml, { async: true, secrets: false });
+                    biographyHtmlRaw = typeof enriched === 'string' ? enriched : '';
+                    biography = TextEditor?.getPlainText
+                        ? TextEditor.getPlainText(enriched, { secrets: false })?.trim() ?? ''
+                        : enriched.replace(/<[^>]+>/g, '').trim();
+                } else if (TextEditor?.getPlainText) {
+                    biographyHtmlRaw = biographyHtml;
+                    biography = TextEditor.getPlainText(biographyHtml, { secrets: false })?.trim() ?? '';
+                } else {
+                    biographyHtmlRaw = biographyHtml;
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(biographyHtml, 'text/html');
+                    biography = (doc.body.textContent || '').trim();
+                }
+            } catch (error) {
+                log(`CHARACTER DETAILS Biography parsing error: ${error}`, '', false, false);
+            }
+        }
+
+        if (!biographyHtmlRaw && biographyHtml) {
+            biographyHtmlRaw = biographyHtml;
+        }
+
+        if (biography) {
+            biographyHtmlSafe = biography
+                .split(/\r?\n+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .join('<br>');
+        }
+
+        log(`CHARACTER DETAILS Biography summary: ${biography ? biography.substring(0, 120) : 'none'}`, '', false, false);
+
+        if (game.user.isGM) {
+            PanelManager?.setGmDetails?.({
+                resistances,
+                immunities,
+                biography,
+                biographyHtml: biographyHtmlSafe,
+                biographyHtmlRaw
+            });
+        }
+
         const template = await renderTemplate(TEMPLATES.PANEL_CHARACTER, {
             actor: this.actor,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             isGM: game.user.isGM,
             speeds,
             speedUnits: units,
-            canHover: hover
+            canHover: hover,
+            resistances,
+            immunities,
+            biography,
+            biographyHtml: biographyHtmlSafe,
+            biographyHtmlRaw
         });
         
         this.element.find('[data-panel="character"]').html(template);

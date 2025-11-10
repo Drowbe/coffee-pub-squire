@@ -1,0 +1,46 @@
+.gm-panel {
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid #444;
+    border-radius: 4px;
+    margin-top: 6px;
+    padding: 4px;
+    color: #9f9275;
+    font-size: 1.2em;
+}
+
+.gm-panel .gmdetails-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gm-panel .gmdetails-controls i {
+    transition: transform 0.2s ease;
+}
+
+.gm-panel .gmdetails-content {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.75em;
+    text-transform: uppercase;
+}
+
+.gm-panel .gmdetails-content.collapsed {
+    display: none;
+}
+
+.gm-panel .gm-row {
+    border-top: 1px dotted rgba(155, 142, 114, 0.5);
+    padding-top: 4px;
+}
+
+.gm-panel .details-biography {
+    font-size: 0.75em;
+    line-height: 1.4;
+    text-transform: none;
+}
+

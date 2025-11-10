@@ -697,6 +697,13 @@ export const registerSettings = function() {
         default: false
     });
 
+    game.settings.register(MODULE.ID, 'isGmPanelCollapsed', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
     game.settings.register(MODULE.ID, 'isDiceTrayPanelCollapsed', {
         scope: 'client',
         config: false,

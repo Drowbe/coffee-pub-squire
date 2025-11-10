@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
+import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
@@ -47,12 +48,23 @@ export class PanelManager {
     static _eventListeners = new Map(); // Track event listeners for cleanup
     static _timeouts = new Set(); // Track timeouts for cleanup
     static _intervals = new Set(); // Track intervals for cleanup
+    static gmDetails = {
+        resistances: [],
+        immunities: [],
+        biography: '',
+        biographyHtml: '',
+        biographyHtmlRaw: ''
+    };
 
     constructor(actor) {
         this.actor = actor;
         this.element = null;
+        this.gmPanel = null;
         if (actor) {
             this.characterPanel = new CharacterPanel(actor);
+            if (game.user.isGM) {
+                this.gmPanel = new GmPanel(actor);
+            }
             this.controlPanel = new ControlPanel(actor);
             this.favoritesPanel = new FavoritesPanel(actor);
             this.spellsPanel = new SpellsPanel(actor);
@@ -460,6 +472,9 @@ export class PanelManager {
 
         // Update panel element references for non-popped panels
         this.characterPanel.element = PanelManager.element;
+        if (this.gmPanel) {
+            this.gmPanel.element = PanelManager.element;
+        }
         this.controlPanel.element = PanelManager.element;
         this.favoritesPanel.element = PanelManager.element;
         this.spellsPanel.element = PanelManager.element;
@@ -498,6 +513,13 @@ export class PanelManager {
         // Render all panels
         if (this.actor) {
             this.characterPanel?.render(element);
+            if (game.user.isGM) {
+                if (this.gmPanel) {
+                    this.gmPanel.render(element, PanelManager.gmDetails);
+                }
+            } else {
+                PanelManager.removePanelDom(this.gmPanel);
+            }
             this.controlPanel?.render(element);
             this.favoritesPanel?.render(element);
             this.spellsPanel?.render(element);
@@ -1510,6 +1532,9 @@ export class PanelManager {
         if (PanelManager.instance.notesPanel && typeof PanelManager.instance.notesPanel.destroy === 'function') {
             PanelManager.instance.notesPanel.destroy();
         }
+        if (PanelManager.instance.gmPanel && typeof PanelManager.instance.gmPanel.destroy === 'function') {
+            PanelManager.instance.gmPanel.destroy();
+        }
         if (PanelManager.instance.codexPanel && typeof PanelManager.instance.codexPanel.destroy === 'function') {
             PanelManager.instance.codexPanel.destroy();
         }
@@ -1569,6 +1594,13 @@ export class PanelManager {
         
         // Clear the old instance reference
         PanelManager.instance = null;
+        PanelManager.gmDetails = {
+            resistances: [],
+            immunities: [],
+            biography: '',
+            biographyHtml: '',
+            biographyHtmlRaw: ''
+        };
     }
 
     /**
@@ -1690,6 +1722,23 @@ export class PanelManager {
         if (panel && panel.element) {
             const dom = $(panel.element).find(`#${panel.constructor.name.toLowerCase()}-panel, .${panel.constructor.name.toLowerCase()}-panel`);
             if (dom.length) dom.remove();
+        }
+    }
+
+    static setGmDetails(details) {
+        PanelManager.gmDetails = {
+            resistances: details?.resistances ?? [],
+            immunities: details?.immunities ?? [],
+            biography: details?.biography ?? '',
+            biographyHtml: details?.biographyHtml ?? '',
+            biographyHtmlRaw: details?.biographyHtmlRaw ?? ''
+        };
+
+        if (game.user.isGM && PanelManager.instance?.gmPanel?.element) {
+            PanelManager.instance.gmPanel.render(
+                PanelManager.instance.gmPanel.element,
+                PanelManager.gmDetails
+            );
         }
     }
     

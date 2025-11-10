@@ -122,6 +122,13 @@
                     <!-- CHARACTER - ALWAYS SHOW -->  
                     <div class="panel-container" data-panel="character" data-clickable="true"></div>
 
+
+                    <!-- GM DETAILS -->
+                    {{#if isGM}}
+                        <div class="panel-container" data-panel="gm"></div>
+                    {{/if}}
+
+
                     <!-- HEALTH -->
                     {{#if @root.settings.showHealthPanel}}
                         {{#unless isHealthPopped}}
