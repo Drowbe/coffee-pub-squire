@@ -27,6 +27,9 @@
     gap: 4px;
     font-size: 0.75em;
     text-transform: uppercase;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .gm-panel .gmdetails-content.collapsed {
