@@ -9,6 +9,8 @@ export class PartyStatsPanel {
     constructor() {
         this.element = null;
         this._boundUpdateHandler = this._onStatsUpdate.bind(this);
+        this._sessionRetryTimeout = null;
+        this._sessionRetryAttempts = 0;
     }
 
     async getData() {
@@ -48,10 +50,35 @@ export class PartyStatsPanel {
             actionsPerHour: '-'
         };
 
+        if (window.BlacksmithAPI?.waitForReady) {
+            try {
+                await window.BlacksmithAPI.waitForReady();
+            } catch (readyError) {
+                console.error('Error waiting for Blacksmith readiness:', readyError);
+            }
+        }
+
+        const blacksmith = getBlacksmith();
+
+        let trackPlayerStats = false;
+        try {
+            trackPlayerStats = game.settings.get('coffee-pub-blacksmith', 'trackPlayerStats');
+        } catch (settingsError) {
+            console.error('Error reading Blacksmith player stats setting:', settingsError);
+        }
+
+        const canUseSessionStats = Boolean(
+            trackPlayerStats &&
+            blacksmith?.stats?.player &&
+            typeof blacksmith.stats.player.getSessionStats === 'function'
+        );
+
+        let totalSessionSeconds = 0;
+        let sessionAttempted = false;
+        let sessionSucceeded = false;
+
         try {
             // Get fresh reference to Blacksmith API
-            const blacksmith = getBlacksmith();
-
             if (!blacksmith?.stats?.player) {
                 getBlacksmith()?.utils.postConsoleAndNotification(
                     MODULE.NAME,
@@ -100,6 +127,33 @@ export class PartyStatsPanel {
                     if (crits > 0) critsByPlayer.set(actor.name, crits);
                     if (turnTime > 0) turnTimeByPlayer.set(actor.name, turnTime);
 
+                    if (canUseSessionStats) {
+                        sessionAttempted = true;
+                        try {
+                            const sessionStats = blacksmith.stats.player.getSessionStats(actor.id);
+                            if (sessionStats?.turnStats?.total) {
+                                totalSessionSeconds += Number(sessionStats.turnStats.total) || 0;
+                                sessionSucceeded = true;
+                            } else if (Array.isArray(sessionStats?.currentCombat?.turns)) {
+                                for (const turn of sessionStats.currentCombat.turns) {
+                                    if (typeof turn?.duration === 'number') {
+                                        totalSessionSeconds += turn.duration;
+                                        sessionSucceeded = true;
+                                    }
+                                }
+                            }
+                        } catch (sessionError) {
+                            getBlacksmith()?.utils.postConsoleAndNotification(
+                                MODULE.NAME,
+                                'PARTY STATS failed to read session stats',
+                                { actor: actor.name, sessionError },
+                                true,
+                                false
+                            );
+                            console.error('Error reading Blacksmith session stats:', sessionError);
+                        }
+                    }
+
                 } catch (error) {
                     console.error(`Error processing stats for ${actor.name}:`, { actor: actor.name, error });
                 }
@@ -127,24 +181,23 @@ export class PartyStatsPanel {
                 data.averageTurnTime = blacksmith.utils.formatTime(averageTime * 1000);
             }
 
-            // Get session duration and calculate actions per hour
-            try {
-                const sessionStats = blacksmith.stats.player.getSessionStats();
-                if (sessionStats?.turnStats?.total) {
-                    const totalSeconds = sessionStats.turnStats.total;
-                    data.sessionDuration = blacksmith.utils.formatTime(totalSeconds * 1000);
-                    
-                    if (data.totalHits > 0 && totalSeconds > 0) {
-                        const hours = totalSeconds / 3600;
+            if (canUseSessionStats && totalSessionSeconds > 0) {
+                data.sessionDuration = blacksmith.utils.formatTime(totalSessionSeconds * 1000);
+
+                if (data.totalHits > 0) {
+                    const hours = totalSessionSeconds / 3600;
+                    if (hours > 0) {
                         data.actionsPerHour = Math.round(data.totalHits / hours);
                     }
                 }
-            } catch (error) {
-                console.error('Error getting session duration:', error);
             }
 
         } catch (error) {
             console.error('Error gathering party stats:', error);
+        } finally {
+            if (sessionAttempted && !sessionSucceeded) {
+                this._scheduleSessionRetry();
+            }
         }
 
         return data;
@@ -197,6 +250,28 @@ export class PartyStatsPanel {
     destroy() {
         // Note: Hooks are now managed centrally by HookManager
         // No need to manually remove hooks here anymore
+        if (this._sessionRetryTimeout) {
+            clearTimeout(this._sessionRetryTimeout);
+            this._sessionRetryTimeout = null;
+            this._sessionRetryAttempts = 0;
+        }
         this.element = null;
+    }
+
+    _scheduleSessionRetry() {
+        const MAX_RETRIES = 6;
+        if (this._sessionRetryTimeout || this._sessionRetryAttempts >= MAX_RETRIES) {
+            return;
+        }
+
+        const delay = 500 * Math.pow(2, this._sessionRetryAttempts);
+        this._sessionRetryAttempts += 1;
+
+        this._sessionRetryTimeout = setTimeout(async () => {
+            this._sessionRetryTimeout = null;
+            if (this.element) {
+                await this._updateDisplay();
+            }
+        }, delay);
     }
 } 
