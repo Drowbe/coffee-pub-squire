@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [12.1.9] - Multi-Select Performance Improvements
 
+### Added
+- **GM Details Panel**: Introduced a dedicated, collapsible GM-only panel that surfaces resistances, immunities, and enriched biography content with a fixed-height, scrollable layout.
+- **GM Panel State Setting**: Added a persistent `isGmPanelCollapsed` client setting so each GM retains their preferred panel state between sessions.
+
+### Changed
+- **Panel Manager Lifecycle**: Updated `PanelManager` to instantiate, track, and destroy the new `GmPanel`, including shared caching via `PanelManager.setGmDetails` and tray template updates.
+- **Stylesheet Organization**: Hooked the new GM panel stylesheet into the default bundle to keep styling centralized and consistent.
+
 ### Fixed
 - **Multi-Select Performance**: Eliminated 5-10 second lag during multi-token selection with early return optimization
   - Added smart early return check in `_updateHealthPanelFromSelection` to skip expensive operations when nothing changed
@@ -15,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Macros Panel Crash**: Fixed "Cannot read properties of null" error in macros panel during multi-select
   - Added null safety check to prevent rendering when DOM placeholder doesn't exist
   - Prevents crashes when tray is being rebuilt during rapid token selection events
+- **Party Stats Session Data**: Delayed session statistics pulls until Blacksmith reports ready, with guarded retries so the Party tab populates once tracking finishes booting.
 
 ## [12.1.8] - Hook Restoration & Critical Sync Fixes
 
