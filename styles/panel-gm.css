@@ -26,8 +26,8 @@
     flex-direction: column;
     gap: 4px;
     font-size: 0.75em;
-    text-transform: uppercase;
-    max-height: 200px;
+    text-transform: none;
+    max-height: 250px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -37,13 +37,24 @@
 }
 
 .gm-panel .gm-row {
-    border-top: 1px dotted rgba(155, 142, 114, 0.5);
+    border: 0px dotted rgba(155, 142, 114, 0.5);
     padding-top: 4px;
 }
 
 .gm-panel .details-biography {
-    font-size: 0.75em;
+    font-size: inherit;
+    line-height: inherit;
+    text-transform: inherit;
+}
+
+.gm-panel h1.gm-row-title {
+    font-size: 1.2em;
     line-height: 1.4;
-    text-transform: none;
+    text-transform: uppercase;
+    padding: 2px 4px 2px 4px;
+    margin: 10px 0px 10px 0px;
+    border: 0px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.9);
 }
 

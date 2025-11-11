@@ -7,13 +7,22 @@
     </div>
     <div class="gmdetails-content{{#if isCollapsed}} collapsed{{/if}}">
         {{#if resistances.length}}
-            <div class="gm-row">RESISTANCES: {{#each resistances}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>
+            <div class="gm-row">
+                <h1 class="gm-row-title">RESISTANCES</h1> 
+                {{#each resistances}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
+            </div>
         {{/if}}
         {{#if immunities.length}}
-            <div class="gm-row">IMMUNITIES: {{#each immunities}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</div>
+            <div class="gm-row">
+                <h1 class="gm-row-title">IMMUNITIES</h1> 
+                {{#each immunities}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
+            </div>
         {{/if}}
         {{#if biographyHtmlRaw}}
-            <div class="details-biography">{{{biographyHtmlRaw}}}</div>
+            <div class="gm-row">
+                <h1 class="gm-row-title">BIOGRAPHY</h1> 
+                {{{biographyHtmlRaw}}}
+            </div>
         {{/if}}
     </div>
 </div>
