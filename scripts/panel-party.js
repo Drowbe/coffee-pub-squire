@@ -122,6 +122,9 @@ export class PartyPanel {
             const tokenId = $(event.target).closest('.party-card').data('token-id');
             const token = canvas.tokens.placeables.find(t => t.id === tokenId);
             if (token?.actor) {
+                if (PanelManager.instance) {
+                    PanelManager.instance._suppressSheetRender = true;
+                }
                 token.actor.sheet.render(true);
             }
         });

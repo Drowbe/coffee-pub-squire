@@ -12,11 +12,6 @@
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, we need to pull the bio and put it in the description
 
-## Remaining Issues
-
-### Panel Functionality
-- [ ] **BROKEN** Feather icon in party view opens character sheet AND changes tray to that actor (should only open sheet)
-
 ## Architecture & Code Quality
 
 ### Code Cleanup

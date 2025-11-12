@@ -34,6 +34,11 @@ Hooks.once('ready', () => {
             priority: 2,
             callback: async (app, html, data) => {
                 if (!app.actor) return;
+                const panelManager = getPanelManager();
+                if (panelManager?.instance?._suppressSheetRender) {
+                    panelManager.instance._suppressSheetRender = false;
+                    return;
+                }
                 await PanelManager.initialize(app.actor);
             }
         });
