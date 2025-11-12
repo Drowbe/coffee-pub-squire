@@ -580,6 +580,25 @@ export class QuestPanel {
     }
 
     /**
+     * Check if a journal page looks like a quest entry
+     * @private
+     * @param {JournalEntryPage} page - The journal page to check
+     * @returns {boolean} True if the page appears to be a quest entry
+     */
+    _isQuestEntry(page) {
+        try {
+            const rawContent = page?.text?.content;
+            if (!rawContent || typeof rawContent !== 'string') return false;
+
+            const normalized = rawContent.toLowerCase();
+            return normalized.includes('## tasks') || normalized.includes('<strong>tasks:');
+        } catch (error) {
+            console.error('QuestPanel | Error checking quest entry:', error);
+            return false;
+        }
+    }
+
+    /**
      * Refresh data from the journal
      * @private
      */
