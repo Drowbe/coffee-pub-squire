@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **GM Details Panel**: Introduced a dedicated, collapsible GM-only panel that surfaces resistances, immunities, and enriched biography content with a fixed-height, scrollable layout.
 - **GM Panel State Setting**: Added a persistent `isGmPanelCollapsed` client setting so each GM retains their preferred panel state between sessions.
+- **Token Display Helper**: New shared utility normalises token display names (token document → token → prototype → actor) for use across panels and handle logic.
 
 ### Changed
 - **Panel Manager Lifecycle**: Updated `PanelManager` to instantiate, track, and destroy the new `GmPanel`, including shared caching via `PanelManager.setGmDetails` and tray template updates.
 - **Stylesheet Organization**: Hooked the new GM panel stylesheet into the default bundle to keep styling centralized and consistent.
+- **Handle & Panel Names**: Character panel, handle manager, health panel, and tray headers now rely on the token display helper so UI labels always match placed tokens.
 
 ### Fixed
 - **Multi-Select Performance**: Eliminated 5-10 second lag during multi-token selection with early return optimization
@@ -24,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added null safety check to prevent rendering when DOM placeholder doesn't exist
   - Prevents crashes when tray is being rebuilt during rapid token selection events
 - **Party Stats Session Data**: Delayed session statistics pulls until Blacksmith reports ready, with guarded retries so the Party tab populates once tracking finishes booting.
+- **Token Name Display**: Restored token-based naming across handle portrait, party listings, character panel, health, macros, and dice tray panels so custom token labels appear everywhere.
 
 ## [12.1.8] - Hook Restoration & Critical Sync Fixes
 

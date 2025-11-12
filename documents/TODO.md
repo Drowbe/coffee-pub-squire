@@ -6,13 +6,11 @@
 
 
 ### TOKEN NAME DISPLAY ISSUE
-- [ ] **CRITICAL** Fix token name display inconsistency - handle shows actor name instead of token name
+- [x] **CRITICAL** Fix token name display inconsistency - handle shows actor name instead of token name
   - Handle shows "CULTIST" instead of "Belix (Cultist)" when token is selected
   - Health panel shows "HEALTH: CULTIST" instead of token-specific name
   - Token Configuration correctly shows "Belix (Cultist)" - this data is available
   - Need simple fix: ensure handle gets correct token reference when tokens are selected
-  - Previous attempt overcomplicated the solution - need minimal, targeted approach
-  - Consider rolling back recent changes and starting fresh
 
 ### QUESTS TAB
 - [ ] **CRITICAL** Objective status changes in quest list do not update on canvas pins (pins don't reflect completed/failed/hidden states)

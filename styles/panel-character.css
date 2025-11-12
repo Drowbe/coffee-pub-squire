@@ -103,7 +103,7 @@
 
 /* Name */
 
-.squire-tray[data-position="left"] .character-name {
+.squire-tray[data-position="left"] .character-info .character-name {
     display: block;
     font-size: 1.0em;
     font-weight: 900;
@@ -112,13 +112,13 @@
 
 /* Details */
 
-.squire-tray[data-position="left"] .character-details {
+.squire-tray[data-position="left"] .character-info .character-details {
     display: block;
     margin-top: 4px;
 }
 
-.squire-tray[data-position="left"] .details-secondary,
-.squire-tray[data-position="left"] .details-primary {
+.squire-tray[data-position="left"] .character-info .details-secondary,
+.squire-tray[data-position="left"] .character-info .details-primary {
     text-transform: uppercase;
     font-size: 0.6em;
     font-weight: 700;
