@@ -1,7 +1,7 @@
 {{#if (eq position "left")}}
 {{#unless isMacrosPopped}}
 <div class="tray-title-small">
-    {{#if actor}}Macros: {{actor.name}}{{else}}Macros: No Character{{/if}}
+    {{#if actor}}Macros: {{default actor.handleDisplayName actor.name}}{{else}}Macros: No Character{{/if}}
     <div class="macros-controls">
         <i class="fas fa-folder-open open-macro-folder" data-tooltip="<div class='squire-data-tooltip-label'>Macros</div><div class='squire-data-tooltip-text'>Open macor folder and then drag macros to the macro window.</div>"></i>
         <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>

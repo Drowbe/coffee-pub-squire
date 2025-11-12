@@ -1,7 +1,7 @@
 {{#if (eq position "left")}}
 {{#unless isDiceTrayPopped}}
 <div class="tray-title-small">
-    {{#if actor}}Dice Tray: {{actor.name}}{{else}}Dice Tray: No Character{{/if}}
+    {{#if actor}}Dice Tray: {{default actor.handleDisplayName actor.name}}{{else}}Dice Tray: No Character{{/if}}
     <div class="dicetray-controls">
         <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
         <i class="fas fa-chevron-down dicetray-toggle" title="Toggle Dice Tray"></i>

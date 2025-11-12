@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { HealthWindow } from './window-health.js';
 import { PanelManager } from './manager-panel.js';
+import { getTokenDisplayName } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -25,6 +26,7 @@ export class HealthPanel {
             const token = canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
             if (token) {
                 this.tokens = [token];
+                this.actor.handleDisplayName = getTokenDisplayName(token, this.actor);
                 // Register for actor updates
                 token.actor.apps[this.id] = this;
             }
@@ -56,11 +58,16 @@ export class HealthPanel {
         
         this.tokens = tokens || [];
         this.actor = tokens?.[0]?.actor || null; // Keep first actor as primary for compatibility
+        if (this.actor) {
+            const primaryToken = this.tokens[0];
+            this.actor.handleDisplayName = getTokenDisplayName(primaryToken, this.actor);
+        }
         
         // Re-register for updates from all token actors
         if (this.tokens && this.tokens.length > 0) {
             this.tokens.forEach(token => {
                 if (token.actor) {
+                    token.actor.handleDisplayName = getTokenDisplayName(token, token.actor);
                     token.actor.apps[this.id] = this;
                 }
             });

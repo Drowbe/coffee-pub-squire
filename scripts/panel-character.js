@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
+import { getTokenDisplayName } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -16,6 +17,7 @@ Handlebars.registerHelper('healthOverlayHeight', function(hp) {
 export class CharacterPanel {
     constructor(actor) {
         this.actor = actor;
+        this.displayName = actor?.name || '';
         
         // Bind the update method to this instance
         this._onActorUpdate = this._onActorUpdate.bind(this);
@@ -72,6 +74,8 @@ export class CharacterPanel {
         
         // Prefer token.actor (synthetic) if we have it; otherwise the base actor
         const sourceActor = token?.actor ?? this.actor;
+        const displayName = getTokenDisplayName(token, this.actor);
+        this.displayName = displayName || this.actor.name;
         const mov = sourceActor?.system?.attributes?.movement ?? {};
         
         log(`CHARACTER DETAILS Movement data: ${JSON.stringify(mov)}`, '', false, false);
@@ -327,6 +331,7 @@ export class CharacterPanel {
 
         const template = await renderTemplate(TEMPLATES.PANEL_CHARACTER, {
             actor: this.actor,
+            displayName: this.displayName,
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             isGM: game.user.isGM,
             speeds,
@@ -362,7 +367,7 @@ export class CharacterPanel {
         // Share portrait
         html.find('.character-portrait').click(() => {
             const imagePopout = new ImagePopout(this.actor.img, {
-                title: this.actor.name,
+                title: this.displayName || this.actor.name,
                 shareable: true,
                 uuid: this.actor.uuid
             });

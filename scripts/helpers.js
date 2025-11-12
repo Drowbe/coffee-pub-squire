@@ -7,6 +7,15 @@ export function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+export function getTokenDisplayName(token, actor) {
+    if (token?.document?.name) return token.document.name;
+    if (token?.name) return token.name;
+    if (actor?.prototypeToken?.name) return actor.prototypeToken.name;
+    if (actor?.name) return actor.name;
+    if (token?.actor?.name) return token.actor.name;
+    return '';
+}
+
 // Helper function to determine weapon type using activities system
 function getWeaponType(weapon) {
     if (!weapon || weapon.type !== 'weapon') return null;

@@ -14,7 +14,7 @@
 {{!-- PLAYER --}} 
 <div class="handle-partymembers">
     {{!-- CHARACTER PORTRAIT --}} 
-    {{> handle-character-portrait}}
+    {{> handle-character-portrait actor=actor displayName=(default actorDisplayName actor.handleDisplayName)}}
     {{!-- PLAYER HEALTH --}} 
     {{#if showHandleHealthBar}}
         {{> handle-health id="player"}}

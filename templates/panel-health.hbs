@@ -16,7 +16,7 @@
                 <div class="bar-section {{#if (gt ../actors.length 1)}}multi-token{{/if}}">
                     <div class="hp-bar">
                         {{#if (gt ../actors.length 1)}}
-                        <div class="token-name-overlay">{{actor.name}}</div>
+                        <div class="token-name-overlay">{{default actor.handleDisplayName actor.name}}</div>
                         {{/if}}
                         <div class="hp-current">
                             <span class="hp-label">REMAINING</span>

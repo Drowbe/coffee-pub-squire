@@ -7,7 +7,7 @@ import { MacrosPanel } from './panel-macros.js';
 import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith } from './helpers.js';
+import { getBlacksmith, getTokenDisplayName } from './helpers.js';
 
 // FoundryVTT function imports
 const { renderTemplate, fromUuid, TextEditor } = globalThis;
@@ -36,6 +36,21 @@ export class HandleManager {
         
         // Add the resize listener
         window.addEventListener('resize', this._resizeHandler);
+    }
+
+    _resolveTokenForActor(actor) {
+        if (!actor) return null;
+        const controlled = canvas?.tokens?.controlled ?? [];
+        let token = controlled.find(t => t.actor?.id === actor.id);
+        if (token) return token;
+        const activeTokens = actor.getActiveTokens?.(true) ?? [];
+        if (!activeTokens?.length) return null;
+        const sameScene = activeTokens.find(t => t.scene?.id === canvas?.scene?.id);
+        return sameScene || activeTokens[0];
+    }
+
+    _getDisplayName(token, actor) {
+        return getTokenDisplayName(token, actor) || '';
     }
 
     /**
@@ -90,6 +105,8 @@ export class HandleManager {
 
         // Always gather party context
         const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
+        const primaryToken = this._resolveTokenForActor(this.actor);
+        const actorDisplayName = this._getDisplayName(primaryToken, this.actor);
         const controlledTokenIds = canvas.tokens.controlled
             .filter(token => token.actor)
             .map(token => token.actor.id);
@@ -107,19 +124,26 @@ export class HandleManager {
             const healthData = calculateHealthStatus(currentActor);
             currentActor.healthStatus = healthData.status;
             currentActor.healthPercentage = healthData.percentage;
+            const currentToken = tokens.find(t => t.actor?.id === currentActor.id) || this._resolveTokenForActor(currentActor);
+            currentActor.handleDisplayName = this._getDisplayName(currentToken, currentActor);
         }
 
         const otherPartyMembers = tokens
             .filter(token => token.actor && token.actor.id !== currentActor?.id)
-            .map(token => ({
-                id: token.actor.id,
-                name: token.actor.name,
-                img: token.actor.img,
-                system: token.actor.system,
-                isOwner: token.actor.isOwner,
-                healthStatus: calculateHealthStatus(token.actor).status,
-                healthPercentage: calculateHealthStatus(token.actor).percentage
-            }));
+            .map(token => {
+                const memberActor = token.actor;
+                const healthData = calculateHealthStatus(memberActor);
+                return {
+                    id: memberActor.id,
+                    name: memberActor.name,
+                    displayName: this._getDisplayName(token, memberActor),
+                    img: memberActor.img,
+                    system: memberActor.system,
+                    isOwner: memberActor.isOwner,
+                    healthStatus: healthData.status,
+                    healthPercentage: healthData.percentage
+                };
+            });
 
         // Fetch handle favorites
         const handleFavoriteIds = FavoritesPanel.getHandleFavorites(this.actor);
@@ -146,8 +170,10 @@ export class HandleManager {
                 // Add health properties to the original actor object without spreading
                 this.actor.healthStatus = healthData.status;
                 this.actor.healthPercentage = healthData.percentage;
+                this.actor.handleDisplayName = actorDisplayName || this.actor.name;
                 return this.actor;
             })() : null,
+            actorDisplayName: actorDisplayName || this.actor?.name || '',
             isGM: game.user.isGM,
             effects: this.actor?.effects?.map(e => ({
                 name: e.name,
@@ -176,8 +202,13 @@ export class HandleManager {
                 // Add health properties to the original actor object without spreading
                 currentActor.healthStatus = healthData.status;
                 currentActor.healthPercentage = healthData.percentage;
+                currentActor.handleDisplayName = currentActor.handleDisplayName || this._getDisplayName(this._resolveTokenForActor(currentActor), currentActor) || currentActor.name;
                 return currentActor;
             })() : null;
+            handleData.actorDisplayName = currentActor?.handleDisplayName || handleData.actorDisplayName;
+            handleData.otherPartyMembers = otherPartyMembers;
+        }
+        else {
             handleData.otherPartyMembers = otherPartyMembers;
         }
 

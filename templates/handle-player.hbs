@@ -2,7 +2,7 @@
 
     {{!-- CHARACTER NAME --}} 
     <div class="handle-info-container">
-        <span class="handle-info-title">{{actor.name}}</span>
+        <span class="handle-info-title">{{default actorDisplayName actor.name}}</span>
     </div>
 
     <span class="tray-handle-separator spacer"></span>
@@ -10,7 +10,7 @@
     {{!-- PLAYER --}} 
     <div class="handle-partymembers">
         {{!-- CHARACTER PORTRAIT --}} 
-        {{> handle-character-portrait}}
+        {{> handle-character-portrait actor=actor displayName=(default actorDisplayName actor.handleDisplayName)}} 
         {{!-- PLAYER HEALTH --}} 
          {{#if showHandleHealthBar}}
             {{> handle-health id="player"}}
