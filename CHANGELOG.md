@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Panel Manager Lifecycle**: Updated `PanelManager` to instantiate, track, and destroy the new `GmPanel`, including shared caching via `PanelManager.setGmDetails` and tray template updates.
 - **Stylesheet Organization**: Hooked the new GM panel stylesheet into the default bundle to keep styling centralized and consistent.
 - **Handle & Panel Names**: Character panel, handle manager, health panel, and tray headers now rely on the token display helper so UI labels always match placed tokens.
+- **Party Panel Namespace**: Renamed party panel classes and selectors to a dedicated `party-` prefix, avoiding CSS bleed from the character panel.
 
 ### Fixed
 - **Multi-Select Performance**: Eliminated 5-10 second lag during multi-token selection with early return optimization
