@@ -4,9 +4,6 @@
 
 ## Current Issues (Fix First)
 
-### QUESTS TAB
-- [ ] **CRITICAL** Objective status changes in quest list do not update on canvas pins (pins don't reflect completed/failed/hidden states)
-
 ### NOTES TAB
 - [ ] **ENHANCEMENT** Expand and optimize this section. It needs to have a shared note, character note, and scratchpad
 
@@ -19,14 +16,6 @@
 
 ### Panel Functionality
 - [ ] **BROKEN** Feather icon in party view opens character sheet AND changes tray to that actor (should only open sheet)
-
-### UI/UX Improvements
-
-#### Quests
-- [ ] **GM Notes** We should find a way to show the gm notes for objectives since they may mention pin locations
-
-#### Windows
-- [ ] **Planned** Popped out windows should ignore "esc" keypresses
 
 ## Architecture & Code Quality
 
