@@ -1028,32 +1028,41 @@ async function _routeToQuestPins(page, changes, options, userId) {
         }
         
         // Handle quest content changes (objective states, quest status, etc.)
-        if (changes.text && changes.text.content) {
-            // Update quest status
-            const statusMatch = changes.text.content.match(/## Quest Status:\s*(.+)/);
-            const newStatus = statusMatch ? statusMatch[1].trim() : '';
-            
-            if (newStatus && canvas.squirePins) {
-                const questPins = canvas.squirePins.children.filter(child => 
-                    child.constructor.name === 'QuestPin' && child.questUuid === page.uuid
-                );
-                
-                questPins.forEach(pin => {
-                    try {
-                        // Update quest status for quest-level pins
-                        if (pin.pinType === 'quest' && pin.updateQuestStatus) {
-                            pin.updateQuestStatus(newStatus);
-                        }
-                        
-                        // Update objective states for objective pins
-                        if (pin.pinType === 'objective') {
-                            _updateQuestPinObjectiveStates(pin, page);
-                        }
-                    } catch (error) {
-                        console.error('Error updating quest pin status:', { error, pin, page });
-                    }
-                });
+        if (changes.text && changes.text.content && canvas.squirePins) {
+            const updatedContent = changes?.text?.content ?? page.text?.content ?? '';
+            let newStatus = '';
+
+            // Check for markdown-style status first ("## Quest Status: ...")
+            const markdownStatus = updatedContent.match(/## Quest Status:\s*(.+)/);
+            if (markdownStatus) {
+                newStatus = markdownStatus[1].trim();
+            } else {
+                // Fallback to HTML structure "<strong>Status:</strong> ..."
+                const htmlStatus = updatedContent.match(/<strong>Status:<\/strong>\s*([^<]*)/i);
+                if (htmlStatus) {
+                    newStatus = htmlStatus[1].trim();
+                }
             }
+
+            const questPins = canvas.squirePins.children.filter(child => 
+                child.constructor.name === 'QuestPin' && child.questUuid === page.uuid
+            );
+            
+            questPins.forEach(pin => {
+                try {
+                    // Update quest status for quest-level pins when we have it
+                    if (pin.pinType === 'quest' && newStatus && pin.updateQuestStatus) {
+                        pin.updateQuestStatus(newStatus);
+                    }
+                    
+                    // Update objective states for objective pins regardless of quest status
+                    if (pin.pinType === 'objective') {
+                        _updateQuestPinObjectiveStates(pin, updatedContent);
+                    }
+                } catch (error) {
+                    console.error('Error updating quest pin status:', { error, pin, page });
+                }
+            });
         }
         
         // Update pin visibility for all pins
@@ -1075,35 +1084,67 @@ async function _routeToQuestPins(page, changes, options, userId) {
 }
 
 // Helper function to update quest pin objective states
-function _updateQuestPinObjectiveStates(pin, page) {
+function _updateQuestPinObjectiveStates(pin, pageContent) {
     try {
         if (pin.pinType === 'objective' && pin.objectiveIndex !== null && pin.objectiveIndex !== undefined) {
             // Parse the quest content to find the objective state
-            const content = page.text?.content || '';
-            const tasksMatch = content.match(/## Tasks:\s*([\s\S]*?)(?=##|$)/);
-            
-            if (tasksMatch) {
-                const tasksHtml = tasksMatch[1];
-                const li = tasksHtml.split('<li>')[pin.objectiveIndex + 1];
+            const content = pageContent || '';
+            let listItems = [];
+
+            // Attempt to match markdown-style tasks first
+            const markdownMatch = content.match(/## Tasks:\s*([\s\S]*?)(?=##|$)/);
+            if (markdownMatch) {
+                const tasksHtml = markdownMatch[1];
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                listItems = Array.from(doc.querySelectorAll('li'));
+            }
+
+            // If markdown match failed, look for HTML structure
+            if (!listItems.length) {
+                const htmlMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/i);
+                if (htmlMatch) {
+                    const tasksHtml = htmlMatch[1];
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+                    listItems = Array.from(doc.querySelectorAll('li'));
+                }
+            }
+
+            // Final fallback: parse full document and locate the Tasks section
+            if (!listItems.length) {
+                const parser = new DOMParser();
+                const fullDoc = parser.parseFromString(content, 'text/html');
+                const strongTags = Array.from(fullDoc.querySelectorAll('strong'));
+                const tasksStrong = strongTags.find(tag => tag.textContent.trim().toUpperCase() === 'TASKS:');
+
+                if (tasksStrong) {
+                    const parentParagraph = tasksStrong.closest('p');
+                    const potentialList = parentParagraph?.nextElementSibling;
+                    if (potentialList && potentialList.tagName === 'UL') {
+                        listItems = Array.from(potentialList.querySelectorAll('li'));
+                    }
+                }
+            }
+
+            const li = listItems[pin.objectiveIndex];
+            if (li) {
+                let newState = 'active';
+                if (li.querySelector('s, del, strike')) {
+                    newState = 'completed';
+                } else if (li.querySelector('code')) {
+                    newState = 'failed';
+                } else if (li.querySelector('em, i')) {
+                    newState = 'hidden';
+                }
                 
-                if (li) {
-                    let newState = 'active';
-                    if (li.includes('<s>')) {
-                        newState = 'completed';
-                    } else if (li.includes('<code>')) {
-                        newState = 'failed';
-                    } else if (li.includes('<em>')) {
-                        newState = 'hidden';
-                    }
-                    
-                    if (pin.updateObjectiveState) {
-                        pin.updateObjectiveState(newState);
-                    }
+                if (pin.updateObjectiveState) {
+                    pin.updateObjectiveState(newState);
                 }
             }
         }
     } catch (error) {
-        console.error('Error updating quest pin objective states:', { error, pin, page });
+        console.error('Error updating quest pin objective states:', { error, pin });
     }
 }
 
