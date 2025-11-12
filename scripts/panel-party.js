@@ -119,7 +119,7 @@ export class PartyPanel {
         html.find('.open-sheet').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const tokenId = $(event.target).closest('.character-card').data('token-id');
+            const tokenId = $(event.target).closest('.party-card').data('token-id');
             const token = canvas.tokens.placeables.find(t => t.id === tokenId);
             if (token?.actor) {
                 token.actor.sheet.render(true);
@@ -127,10 +127,10 @@ export class PartyPanel {
         });
 
         // Handle portrait clicks
-        html.find('.character-image.clickable').click(async (event) => {
+        html.find('.party-card-image.party-card-clickable').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const tokenId = $(event.currentTarget).closest('.character-card').data('token-id');
+            const tokenId = $(event.currentTarget).closest('.party-card').data('token-id');
             const token = canvas.tokens.placeables.find(t => t.id === tokenId);
             if (token?.actor) {
                 const imagePopout = new ImagePopout(token.actor.img, {
@@ -143,9 +143,9 @@ export class PartyPanel {
         });
 
         // Handle character card clicks for token selection
-        html.find('.character-card.clickable').click(async (event) => {
+        html.find('.party-card.party-card-clickable').click(async (event) => {
             // Don't handle clicks if they originated from the open-sheet button or portrait
-            if ($(event.target).closest('.open-sheet, .character-image.clickable').length) return;
+            if ($(event.target).closest('.open-sheet, .party-card-image.party-card-clickable').length) return;
 
             const tokenId = $(event.currentTarget).data('token-id');
             const token = canvas.tokens.placeables.find(t => t.id === tokenId);
@@ -189,7 +189,7 @@ export class PartyPanel {
         });
         
         // Add drag and drop functionality to character cards
-        const characterCards = html.find('.character-card');
+        const characterCards = html.find('.party-card');
         
         // Remove any existing drag event listeners
         characterCards.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
@@ -227,7 +227,7 @@ export class PartyPanel {
             const relatedTarget = $(event.relatedTarget);
             
             // Check if we're actually leaving the card
-            if (!relatedTarget.closest('.character-card').is(card)) {
+            if (!relatedTarget.closest('.party-card').is(card)) {
                 card.removeClass('drop-target');
             }
         });
@@ -467,10 +467,10 @@ export class PartyPanel {
         });
 
         // Handle individual character health bar clicks in the party tab
-        html.find('.character-card .party-hp-bar').click(async (event) => {
+        html.find('.party-card .party-hp-bar').click(async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const tokenId = $(event.currentTarget).closest('.character-card').data('token-id');
+            const tokenId = $(event.currentTarget).closest('.party-card').data('token-id');
             const token = canvas.tokens.placeables.find(t => t.id === tokenId);
             if (token?.actor && PanelManager.instance && PanelManager.instance.healthPanel) {
                 PanelManager.instance.healthPanel.updateTokens([token]);

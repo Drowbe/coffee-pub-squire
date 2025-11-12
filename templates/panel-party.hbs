@@ -21,8 +21,8 @@
 <!-- PARTY CHARACTERS -->
 
 {{#each tokens as |token|}}
-    <div class="character-card {{#if token.actor.isOwner}}clickable{{/if}} {{#if (includes ../controlledTokenIds token.id)}}selected{{/if}}" data-token-id="{{token.id}}">
-        <div class="character-image clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">
+    <div class="party-card {{#if token.actor.isOwner}}party-card-clickable{{/if}} {{#if (includes ../controlledTokenIds token.id)}}party-card-selected{{/if}}" data-token-id="{{token.id}}">
+        <div class="party-card-image party-card-clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">
             {{#if token.actor.system.attributes.hp}}
             <div class="health-overlay" style="height: {{healthOverlayHeight token.actor.system.attributes.hp}}"></div>
             {{#if (eq token.actor.system.attributes.hp.value 0)}}
@@ -30,10 +30,10 @@
             {{/if}}
             {{/if}}
         </div>
-        <div class="character-info">
-            <div class="character-name">{{token.name}}</div>
-            <div class="character-details">
-                <div class="details-primary">
+        <div class="party-card-info">
+            <div class="party-card-name">{{token.name}}</div>
+            <div class="party-card-details">
+                <div class="party-card-details-primary">
                     {{#if (eq token.actor.type "character")}}
                         {{#each token.actor.items as |item|}}
                             {{#if (eq item.type "class")}}
@@ -45,7 +45,7 @@
                     {{/if}}
                     {{#if token.actor.system.details.alignment}} • {{token.actor.system.details.alignment}}{{/if}}
                 </div>
-                <div class="details-secondary">
+                <div class="party-card-details-secondary">
                     {{#if (ne token.actor.type "character")}}
                         <div>RESISTANCES: {{#if token.actor.system.traits.dr.value}}{{#each token.actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
                         <div>IMMUNITITES: {{#if token.actor.system.traits.di.value}}{{#each token.actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
@@ -64,7 +64,7 @@
                 {{/if}}
             </div>
         </div>
-        <div class="character-actions">
+        <div class="party-card-actions">
             {{#if token.actor.isOwner}}
             <i class="fas fa-feather-alt open-sheet" title="Open Character Sheet"></i>
             {{/if}}
@@ -86,8 +86,8 @@
         </div>
         
         {{#each nonPlayerTokens as |token|}}
-            <div class="character-card npc-card {{#if token.actor.isOwner}}clickable{{/if}} {{#if (includes ../controlledTokenIds token.id)}}selected{{/if}}" data-token-id="{{token.id}}">
-                <div class="character-image clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">
+            <div class="party-card party-npc-card {{#if token.actor.isOwner}}party-card-clickable{{/if}} {{#if (includes ../controlledTokenIds token.id)}}party-card-selected{{/if}}" data-token-id="{{token.id}}">
+                <div class="party-card-image party-card-clickable" style="background-image: url('{{token.actor.img}}')" title="Click to share portrait with all players">
                     {{#if token.actor.system.attributes.hp}}
                     <div class="health-overlay" style="height: {{healthOverlayHeight token.actor.system.attributes.hp}}"></div>
                     {{#if (eq token.actor.system.attributes.hp.value 0)}}
@@ -95,14 +95,14 @@
                     {{/if}}
                     {{/if}}
                 </div>
-                <div class="character-info">
-                    <div class="character-name">{{token.name}}</div>
-                    <div class="character-details">
-                        <div class="details-primary">
+                <div class="party-card-info">
+                    <div class="party-card-name">{{token.name}}</div>
+                    <div class="party-card-details">
+                        <div class="party-card-details-primary">
                             {{#if token.actor.system.details.cr}}CR {{token.actor.system.details.cr}}{{/if}}
                             {{#if token.actor.system.details.alignment}} • {{token.actor.system.details.alignment}}{{/if}}
                         </div>
-                        <div class="details-secondary">
+                        <div class="party-card-details-secondary">
                             <div>RESISTANCES: {{#if token.actor.system.traits.dr.value}}{{#each token.actor.system.traits.dr.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
                             <div>IMMUNITITES: {{#if token.actor.system.traits.di.value}}{{#each token.actor.system.traits.di.value}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}{{else}}None{{/if}}</div>
                         </div>
@@ -119,7 +119,7 @@
                         {{/if}}
                     </div>
                 </div>
-                <div class="character-actions">
+                <div class="party-card-actions">
                     <i class="fas fa-feather-alt open-sheet" title="Open Character Sheet"></i>
                 </div>
             </div>

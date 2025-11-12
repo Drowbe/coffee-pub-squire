@@ -1,5 +1,5 @@
 /* Party Panel */
-.party-view .character-card {
+.party-view .party-card {
     background: rgba(0, 0, 0, 0.4);
     color: #9f9275;
     padding: 3px;
@@ -12,21 +12,21 @@
     border-radius: 4px;
     transition: all 0.2s ease;
 }
-.party-view .character-card:hover {
+.party-view .party-card:hover {
     background: rgba(0, 0, 0, 0.8);
     border: 2px solid rgba(255, 100, 0, 0.9);
     transition: all 0.15s ease;
 }
 
 /* Selected character state */
-.party-view .character-card.selected {
+.party-view .party-card.party-card-selected {
     background: rgba(62, 81, 28, 0.4);
     border-color: #48a000;
     box-shadow: 0 0 3px rgba(159, 146, 117, 0.2);
     position: relative;
 }
 
-.party-view .character-card.selected::before {
+.party-view .party-card.party-card-selected::before {
     content: '';
     position: absolute;
     top: 0;
@@ -38,12 +38,12 @@
     border-radius: 2px 0px 0px 2px;
 }
 
-.party-view .character-card.clickable {
+.party-view .party-card.party-card-clickable {
     cursor: pointer;
 }
 
 /* Portrait */
-.party-view .character-image {
+.party-view .party-card-image {
     width: 70px;
     aspect-ratio: 1;
     border-radius: 6px;
@@ -56,12 +56,12 @@
     background-color: rgba(0, 0, 0, 0.4);
 }
 
-.party-view .character-image.clickable {
+.party-view .party-card-image.party-card-clickable {
     cursor: zoom-in;
 }
 
 /* Health Overlay */
-.party-view .character-image .health-overlay {
+.party-view .party-card-image .health-overlay {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -71,7 +71,7 @@
     pointer-events: none;
 }
 
-.party-view .character-image .death-skull {
+.party-view .party-card-image .death-skull {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -92,59 +92,59 @@
 }
 
 /* Info Section */
-.party-view .character-info {
+.party-view .party-card-info {
     flex: 1;
     padding: 0 8px;
 }
 
 
-.party-view .character-name {
+.party-view .party-card-name {
     display: block;
     font-size: 0.85em;
     font-weight: 900;
     text-transform: uppercase;
 }
 
-.party-view .character-details {
+.party-view .party-card-details {
     display: block;
     border-top: 1px dotted #444;
     margin-top: 2px;
     padding-top: 4px;
 }
 
-.party-view .details-primary {
+.party-view .party-card-details-primary {
     text-transform: uppercase;
     font-size: 0.6em;
     font-weight: 700;
 }
 
-.party-view .details-secondary {
+.party-view .party-card-details-secondary {
     font-size: 0.5em;
     font-weight: 400;
     margin-top: 2px;
 }
 
 /* Character Actions */
-.party-view .character-actions {
+.party-view .party-card-actions {
     display: flex;
     align-items: center;
     padding-right: 8px;
 }
 
-.party-view .character-actions i {
+.party-view .party-card-actions i {
     color: #9f9275;
     cursor: pointer;
     transition: color 0.2s ease;
     font-size: 0.85em;
 }
 
-.party-view .character-actions i:hover {
+.party-view .party-card-actions i:hover {
     color: #fff;
 }
 
 /* Drop Target - for drag and drop */
 
-.party-view .character-card.drop-target {
+.party-view .party-card.drop-target {
     border-color: #48a000;
     box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
     background: rgba(72, 160, 0, 0.15);
@@ -155,7 +155,7 @@
     z-index: 100;
 }
 
-.party-view .character-card.drop-target::after {
+.party-view .party-card.drop-target::after {
     content: 'DROP ITEM';
     position: absolute;
     bottom: -15px;	
@@ -301,20 +301,20 @@
 }
 
 /* NPC Cards */
-.party-view .npc-card {
+.party-view .party-npc-card {
     background: rgba(32, 8, 7, 0.4);
     border: 2px solid rgba(84, 23, 20, 0.7);
     position: relative;
     color: #9f9275;
 }
 
-.party-view .npc-card:hover {
+.party-view .party-npc-card:hover {
     background: rgba(32, 8, 7, 0.8);
     border: 2px solid rgba(255, 100, 0, 0.9);
     transition: all 0.15s ease;
 }
 
-.party-view .npc-card::after {
+.party-view .party-npc-card::after {
     content: '';
     position: absolute;
     top: 0;
@@ -326,42 +326,42 @@
     z-index: 0;
 }
 
-.party-view .npc-card.selected {
+.party-view .party-npc-card.party-card-selected {
     border: 2px solid rgba(220, 12, 15, 0.8);
     background: rgba(60, 0, 0, 0.4);
     box-shadow: 0 0 5px rgba(146, 38, 16, 0.4);
 }
 
-.party-view .npc-card.selected::before {
+.party-view .party-npc-card.party-card-selected::before {
     background: #922610;
     opacity: 0.5;
 }
 
-.party-view .npc-card .character-name {
+.party-view .party-npc-card .party-card-name {
     color: #9f9275;
     position: relative;
     z-index: 1;
 }
 
 
-.party-view .npc-card .character-image {
+.party-view .party-npc-card .party-card-image {
     background-color: rgba(0, 0, 0, 0.7);
 }
 
 
 
-.party-view .npc-card .details-primary, 
-.party-view .npc-card .details-secondary {
+.party-view .party-npc-card .party-card-details-primary, 
+.party-view .party-npc-card .party-card-details-secondary {
     color: #9f9275;
 }
 
-.party-view .npc-card.drop-target {
+.party-view .party-npc-card.drop-target {
     border-color: #922610;
     box-shadow: 0 0 5px rgba(146, 38, 16, 0.5);
     background: rgba(146, 38, 16, 0.15);
 }
 
-.party-view .npc-card.drop-target::after {
+.party-view .party-npc-card.drop-target::after {
     background: #922610;
     border: 2px solid #922610;
 }
