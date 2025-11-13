@@ -1,70 +1,51 @@
-{{!-- Party Stats Panel --}}
 <div class="panel party-stats-panel">
-    {{#each sections}}
-    <div class="section" data-key="{{@key}}">
-        <div class="section-header">
-            <div class="header-left">
-                <i class="fas {{icon}}"></i>
-                <span>{{title}}</span>
-            </div>
-            {{#if collapsible}}
-            <div class="header-right">
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            {{/if}}
+    <div class="mvp-panel">
+        <div class="mvp-panel__header">
+            <i class="fas fa-trophy"></i>
+            <span>Lifetime MVP Leaderboard</span>
         </div>
-        <div class="section-content">
-            {{#if (eq @key "combat")}}
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">TOTAL HITS</div>
-                    <div class="stat-value">{{../totalHits}}</div>
+
+        {{#if hasBlacksmith}}
+            {{#if leaderboard.length}}
+            <div class="mvp-table" role="table">
+                <div class="mvp-table__row mvp-table__row--header" role="row">
+                    <span class="mvp-table__cell mvp-table__cell--rank" role="columnheader">#</span>
+                    <span class="mvp-table__cell mvp-table__cell--player" role="columnheader">Player</span>
+                    <span class="mvp-table__cell mvp-table__cell--score" role="columnheader">Total</span>
+                    <span class="mvp-table__cell mvp-table__cell--average" role="columnheader">Avg</span>
+                    <span class="mvp-table__cell mvp-table__cell--best" role="columnheader">Best</span>
+                    <span class="mvp-table__cell mvp-table__cell--combats" role="columnheader">Battles</span>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-label">HIT RATE</div>
-                    <div class="stat-value">{{../hitRate}}</div>
+
+                {{#each leaderboard}}
+                <div class="mvp-table__row" role="row">
+                    <span class="mvp-table__cell mvp-table__cell--rank" role="cell">{{rank}}</span>
+                    <span class="mvp-table__cell mvp-table__cell--player" role="cell">
+                        <img class="mvp-player__portrait" src="{{img}}" alt="{{name}}" data-tooltip="{{name}}">
+                        <span class="mvp-player__name"></span>
+                    </span>
+                    <span class="mvp-table__cell mvp-table__cell--score" role="cell">{{totalScoreDisplay}}</span>
+                    <span class="mvp-table__cell mvp-table__cell--average" role="cell">{{averageScoreDisplay}}</span>
+                    <span class="mvp-table__cell mvp-table__cell--best" role="cell">{{bestScoreDisplay}}</span>
+                    <span class="mvp-table__cell mvp-table__cell--combats" role="cell">{{combats}}</span>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-label">CRITICAL HITS</div>
-                    <div class="stat-value">{{../criticalHits}}</div>
-                </div>
+                {{/each}}
+            </div>
+            {{else}}
+            <div class="mvp-panel__empty">
+                <i class="fas fa-moon"></i>
+                <span>No MVP data. Complete a combat to start the leaderboard.</span>
             </div>
             {{/if}}
-            {{#if (eq @key "contributions")}}
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">MOST ACCURATE</div>
-                    <div class="stat-value">{{../mostAccurate.name}}</div>
-                    <div class="stat-detail">{{../mostAccurate.value}} hits</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">CRITICAL MASTER</div>
-                    <div class="stat-value">{{../criticalMaster.name}}</div>
-                    <div class="stat-detail">{{../criticalMaster.value}} crits</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">TOTAL HEALING</div>
-                    <div class="stat-value">{{../totalHealing}}</div>
-                </div>
+        {{else}}
+            <div class="mvp-panel__empty">
+                <i class="fas fa-plug"></i>
+                {{#if isGM}}
+                    <span>Blacksmith stats are unavailable. Ensure Coffee Pub Blacksmith is active and tracking player stats.</span>
+                {{else}}
+                    <span>Party MVP data can be viewed by the GM when Blacksmith stats tracking is enabled.</span>
+                {{/if}}
             </div>
-            {{/if}}
-            {{#if (eq @key "session")}}
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">SESSION DURATION</div>
-                    <div class="stat-value">{{../sessionDuration}}</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">AVERAGE TURN</div>
-                    <div class="stat-value">{{../averageTurnTime}}</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">ACTIONS/HOUR</div>
-                    <div class="stat-value">{{../actionsPerHour}}</div>
-                </div>
-            </div>
-            {{/if}}
-        </div>
+        {{/if}}
     </div>
-    {{/each}}
-</div> 
+</div>

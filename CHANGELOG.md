@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+
+
+
 ## [12.1.9] - Multi-Select Performance Improvements & Name Fixes
 
 ### Added
@@ -18,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Handle & Panel Names**: Character panel, handle manager, health panel, and tray headers now rely on the token display helper so UI labels always match placed tokens.
 - **Party Panel Namespace**: Renamed party panel classes and selectors to a dedicated `party-` prefix, avoiding CSS bleed from the character panel.
 - **Party Feather Click**: Suppressed tray re-initialization when the party-view feather icon opens an actor sheet so the tray no longer jumps actors.
+- **Party Stats Panel**: Replaced the legacy combat/session aggregates with a streamlined MVP leaderboard sourced from Blacksmith lifetime data, removing the obsolete stats code path.
 
 ### Fixed
 - **Multi-Select Performance**: Eliminated 5-10 second lag during multi-token selection with early return optimization
@@ -27,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Macros Panel Crash**: Fixed "Cannot read properties of null" error in macros panel during multi-select
   - Added null safety check to prevent rendering when DOM placeholder doesn't exist
   - Prevents crashes when tray is being rebuilt during rapid token selection events
-- **Party Stats Session Data**: Delayed session statistics pulls until Blacksmith reports ready, with guarded retries so the Party tab populates once tracking finishes booting.
 - **Token Name Display**: Restored token-based naming across handle portrait, party listings, character panel, health, macros, and dice tray panels so custom token labels appear everywhere.
 
 ## [12.1.8] - Hook Restoration & Critical Sync Fixes

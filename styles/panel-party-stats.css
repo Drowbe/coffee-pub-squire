@@ -1,384 +1,173 @@
-/* Panel Party Stats Styles */
+/* ------------------------------------ */
+/* PARTY STATS PANEL WRAPPER           */
+/* ------------------------------------ */
+
 .party-stats-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 0.5rem;
+    padding: 0;
     height: 100%;
-    overflow-y: auto;
-}
-
-.party-stats-panel .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.party-stats-panel .panel-header h2 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #fff;
-}
-
-.party-stats-panel .panel-content {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 0.5rem;
+    overflow-y: auto;
+    gap: 8px;
 }
 
-.party-stats-panel .stats-section {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 0.5rem;
-    padding: 1rem;
-}
-
-.party-stats-panel .stats-section h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.1rem;
-    color: #fff;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 0.5rem;
-}
-
-.party-stats-panel .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-}
-
-.party-stats-panel .stat-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 0.3rem;
-    padding: 0.75rem;
-    text-align: center;
-    transition: background-color 0.2s;
-}
-
-.party-stats-panel .stat-card:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.party-stats-panel .stat-label {
-    font-size: 0.9rem;
-    color: #aaa;
-    margin-bottom: 0.3rem;
-}
-
-.party-stats-panel .stat-value {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #fff;
-    margin-bottom: 0.2rem;
-}
-
-.party-stats-panel .stat-subtext {
-    font-size: 0.8rem;
-    color: #888;
-}
-
-/* Scrollbar styling */
 .party-stats-panel::-webkit-scrollbar {
     width: 6px;
 }
 
 .party-stats-panel::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 3px;
 }
 
 .party-stats-panel::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(159, 146, 117, 0.35);
     border-radius: 3px;
 }
 
 .party-stats-panel::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(159, 146, 117, 0.55);
 }
 
-/* Responsive adjustments */
-@media (max-width: 400px) {
-    .party-stats-panel .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
 
-/* Section Styling */
-.stats-section {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    padding: 8px;
-}
+/* ------------------------------------ */
+/* MVP PANEL CARD                       */
+/* ------------------------------------ */
 
-/* Section Headers - Matching existing tray style */
-.stats-section .section-header {
-    background: rgba(69, 29, 36, 0.6) !important;
-    color: #9f9275;
-    padding: 6px;
-    font-size: 1.2em;
-    font-weight: 900;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
+.mvp-panel {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(159, 146, 117, 0.35);
+    border-radius: 6px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.stats-section .section-header .header-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.stats-section .section-header i {
-    color: #9f9275;
-}
-
-/* Combat Overview Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 4px;
-}
-
-.stat-card {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 8px;
-    border-radius: 4px;
-    position: relative;
+    flex-direction: column;
     overflow: hidden;
 }
 
-.stat-value {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #fff;
-    text-align: center;
-    position: relative;
-    z-index: 2;
-}
-
-.stat-label {
+.mvp-panel__header {
+    background: rgba(69, 29, 36, 0.6);
     color: #9f9275;
-    text-align: center;
-    font-size: 0.9em;
-    position: relative;
-    z-index: 2;
-}
-
-.stat-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 4px;
-    background: #9f9275;
-    opacity: 0.5;
-    transition: width 0.3s ease;
-}
-
-/* Champion Cards */
-.champion-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 4px;
-}
-
-.champion-card {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    padding: 8px;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.champion-card img {
-    width: 40px;
-    height: 40px;
-    border-radius: 4px;
-    border: 1px solid #9f9275;
-}
-
-.champion-details {
-    flex: 1;
-}
-
-.champion-title {
-    color: #9f9275;
-    font-size: 0.8em;
-    text-transform: uppercase;
-}
-
-.champion-name {
-    color: #fff;
-    font-size: 0.9em;
-    font-weight: bold;
-}
-
-.champion-value {
-    color: #9f9275;
-    font-size: 0.9em;
-}
-
-/* Achievement Cards */
-.achievement-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 4px;
-}
-
-.achievement-card {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    padding: 8px;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.achievement-card i {
-    font-size: 2em;
-    color: #9f9275;
-}
-
-.achievement-details {
-    flex: 1;
-}
-
-.achievement-title {
-    color: #9f9275;
-    font-size: 0.8em;
-    text-transform: uppercase;
-}
-
-.achievement-holder {
-    color: #fff;
-    font-size: 0.9em;
-    font-weight: bold;
-}
-
-.achievement-value {
-    color: #9f9275;
-    font-size: 0.9em;
-}
-
-/* Party Stats Panel */
-.party-stats-panel .section {
-    background: rgba(0, 0, 0, 0.4);
-    margin-bottom: 4px;
-    border: 2px solid #444;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.party-stats-panel .section-header {
-    background: rgba(69, 29, 36, 0.6) !important;
-    color: #9f9275;
-    padding: 6px;
-    font-size: 1.2em;
-    font-weight: 900;
-    border-bottom: 0px solid #444;
-    border-top: 0px solid #444;
-    margin-bottom: 0;
-    margin-left: 0px;
-    margin-right: 0px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 8px 10px;
     text-transform: uppercase;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-radius: 4px 4px 0 0;
+    gap: 8px;
 }
 
-.party-stats-panel .header-left {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-}
-
-.party-stats-panel .header-left i {
+.mvp-panel__header i {
     color: #9f9275;
-    font-size: .85em;
-    margin-right: 4px;
-    padding-top: 3px;
 }
 
-.party-stats-panel .header-right {
-    cursor: pointer;
+
+/* ------------------------------------ */
+/* MVP TABLE LAYOUT (TABLE MODE)       */
+/* ------------------------------------ */
+
+.mvp-table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.party-stats-panel .header-right i {
-    color: #9f9275;
-    font-size: .85em;
-    transition: color 0.2s ease;
-}
-
-.party-stats-panel .header-right i:hover {
-    color: #fff;
-}
-
-.party-stats-panel .section-content {
-    padding: 8px;
+.mvp-table__row {
+    display: table-row;
     background: rgba(0, 0, 0, 0.2);
 }
 
-.party-stats-panel .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-}
-
-.party-stats-panel .stat-box {
+.mvp-table__row:nth-child(even) {
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 6px;
-    text-align: center;
 }
 
-.party-stats-panel .stat-label {
-    color: #9f9275;
-    font-size: 10px;
+.mvp-table__row--header {
+    background: rgba(0, 0, 0, 0.45);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    color: #9f9275;
 }
 
-.party-stats-panel .stat-value {
-    color: #fff;
-    font-size: 16px;
-    font-weight: bold;
+/* cells */
+
+.mvp-table__cell {
+    display: table-cell;
+    padding: 6px 10px;
+    vertical-align: middle;
+    color: #f5f1e8;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.party-stats-panel .stat-detail {
-    color: #666;
-    font-size: 12px;
-    margin-top: 4px;
+/* column alignment */
+
+.mvp-table__cell--rank {
+    width: 2.5ch;
+    text-align: center;
+    font-weight: 700;
+    color: rgba(122, 188, 2, 0.9);
 }
 
-/* Section-specific colors */
-.party-stats-panel [data-key="combat"] .stat-value {
-    color: #4ecdc4;
+.mvp-table__cell--player {
+    text-align: left;
+    width: 100%;
+    color: rgba(194, 203, 194, 0.9);
 }
 
-.party-stats-panel [data-key="contributions"] .stat-value {
-    color: #ffd93d;
+.mvp-table__cell--score,
+.mvp-table__cell--combats,
+.mvp-table__cell--average,
+.mvp-table__cell--best {
+    width: 4.5ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: rgba(194, 203, 194, 0.9);
+    
 }
 
-.party-stats-panel [data-key="session"] .stat-value {
-    color: #ff6b6b;
+/* header cells inherit the same alignment rules, so no overrides needed */
+
+
+/* ------------------------------------ */
+/* PLAYER CELL                          */
+/* ------------------------------------ */
+
+.mvp-player__portrait {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid rgba(159, 146, 117, 0.6);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+    margin-right: 6px;
 }
 
-/* Collapsible sections */
-.party-stats-panel .section.collapsed .section-content {
-    display: none;
+.mvp-player__name {
+    color: #f5f1e8;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.party-stats-panel .section.collapsed .header-right i {
-    transform: rotate(-90deg);
-} 
+
+/* ------------------------------------ */
+/* EMPTY STATE                          */
+/* ------------------------------------ */
+
+.mvp-panel__empty {
+    padding: 8px 16px;
+    text-align: center;
+    color: #c6bca2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.mvp-panel__empty i {
+    font-size: 1.8rem;
+    color: rgba(159, 146, 117, 0.8);
+}
