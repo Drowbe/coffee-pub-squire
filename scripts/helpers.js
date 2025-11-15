@@ -377,7 +377,7 @@ export function getOrCreateQuestTooltip(tooltipId) {
  * @param {Object} event - Mouse event for positioning
  * @param {number} delay - Delay in milliseconds before showing tooltip (default: 500ms)
  */
-export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
+export async function showQuestTooltip(tooltipId, data, event, delay = 500, autoHide = 4000) {
     try {
         // Validate input parameters
         if (!tooltipId || typeof tooltipId !== 'string') {
@@ -426,6 +426,13 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
                 }
                 // Clear the timeout reference
                 tooltipTimeouts.delete(tooltipId);
+
+                if (autoHide > 0) {
+                    const hideId = trackModuleTimeout(() => {
+                        hideQuestTooltip(tooltipId);
+                    }, autoHide);
+                    tooltipTimeouts.set(`${tooltipId}-autohide`, hideId);
+                }
             } catch (error) {
                 console.error('showQuestTooltip: Error in timeout callback', { tooltipId, error: error.message });
             }
@@ -446,6 +453,11 @@ export function hideQuestTooltip(tooltipId) {
     if (tooltipTimeouts.has(tooltipId)) {
         clearTrackedTimeout(tooltipTimeouts.get(tooltipId));
         tooltipTimeouts.delete(tooltipId);
+    }
+    const autoKey = `${tooltipId}-autohide`;
+    if (tooltipTimeouts.has(autoKey)) {
+        clearTrackedTimeout(tooltipTimeouts.get(autoKey));
+        tooltipTimeouts.delete(autoKey);
     }
     
     const tooltip = document.getElementById(tooltipId);

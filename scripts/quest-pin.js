@@ -108,6 +108,8 @@ export class QuestPin extends PIXI.Container {
     this.on('pointerup', this._onDragEnd.bind(this));
     this.on('pointerupoutside', this._onDragEnd.bind(this));
     this.on('pointermove', this._onDragMove.bind(this));
+
+    this.on('removed', () => this._forceEndDrag());
   }
 
   // Generate unique pin ID for persistence
@@ -802,10 +804,20 @@ export class QuestPin extends PIXI.Container {
     this.on('pointerupoutside', this._onDragEnd, this);
     
     // Also listen for global mouse events to continue drag even when mouse leaves pin
-    this._onGlobalDragMove = this._onGlobalDragMove.bind(this);
-    this._onGlobalDragEnd = this._onGlobalDragEnd.bind(this);
-    document.addEventListener('pointermove', this._onGlobalDragMove, { passive: false });
-    document.addEventListener('pointerup', this._onGlobalDragEnd, { passive: false });
+    if (!this._boundGlobalDragMove) {
+      this._boundGlobalDragMove = this._onGlobalDragMove.bind(this);
+    }
+    if (!this._boundGlobalDragEnd) {
+      this._boundGlobalDragEnd = this._onGlobalDragEnd.bind(this);
+    }
+    document.addEventListener('pointermove', this._boundGlobalDragMove, { passive: false });
+    document.addEventListener('pointerup', this._boundGlobalDragEnd, { passive: false });
+
+    hideQuestTooltip('quest-tooltip');
+    hideQuestTooltip('quest-pin-tooltip');
+    hideQuestTooltip('squire-handle-objective-tooltip');
+    hideQuestTooltip('squire-questpin-quest-tooltip');
+    hideQuestTooltip('squire-questpin-objective-tooltip');
   }
 
   _onDragEnd(event) {
@@ -834,35 +846,43 @@ export class QuestPin extends PIXI.Container {
     // Check if we actually dragged before cleaning up
     const wasDragging = this.isDragging;
     
-    // Clean up drag state
+    this._forceEndDrag();
+    
+    // Only save if we actually dragged
+    if (wasDragging) {
+      this._saveToPersistence();
+    }
+  }
+
+  _forceEndDrag() {
     this.isDragging = false;
     this.dragData = null;
     this._dragStartPosition = null;
     this._dragStartTime = null;
     this._hasStartedDrag = false;
     this.alpha = 1.0;
-    
-    // Always reset cursor to default
-    document.body.style.cursor = '';
-    document.body.style.cursor = 'default';
-    
-    // Remove drag listeners
+
     this.off('pointermove', this._onDragMove, this);
     this.off('pointerup', this._onDragEnd, this);
     this.off('pointerupoutside', this._onDragEnd, this);
-    
-    // Remove global listeners
-    if (this._onGlobalDragMove) {
-      document.removeEventListener('pointermove', this._onGlobalDragMove);
+
+    if (this._boundGlobalDragMove) {
+      document.removeEventListener('pointermove', this._boundGlobalDragMove);
+      this._boundGlobalDragMove = null;
     }
-    if (this._onGlobalDragEnd) {
-      document.removeEventListener('pointerup', this._onGlobalDragEnd);
+    if (this._boundGlobalDragEnd) {
+      document.removeEventListener('pointerup', this._boundGlobalDragEnd);
+      this._boundGlobalDragEnd = null;
     }
-    
-    // Only save if we actually dragged
-    if (wasDragging) {
-      this._saveToPersistence();
-    }
+
+    document.body.style.cursor = '';
+    document.body.style.cursor = 'default';
+
+    hideQuestTooltip('quest-tooltip');
+    hideQuestTooltip('quest-pin-tooltip');
+    hideQuestTooltip('squire-handle-objective-tooltip');
+    hideQuestTooltip('squire-questpin-quest-tooltip');
+    hideQuestTooltip('squire-questpin-objective-tooltip');
   }
 
   _onDragMove(event) {
@@ -1760,6 +1780,7 @@ function cleanupQuestPins() {
             if (pin._onGlobalDragEnd) {
                 document.removeEventListener('pointerup', pin._onGlobalDragEnd);
             }
+            pin._forceEndDrag();
             canvas.squirePins.removeChild(pin);
         });
     }
