@@ -21,6 +21,8 @@
 - [ ] **PLANNED** Remove legacy code from our fixes
 - [ ] **PLANNED** Modularize manager-panel.js (too large, not modular enough)
 - [ ] **PLANNED** Review and clean up any remaining unnecessary `updateTray()` calls
+- [ ] **PLANNED** Revisit party transfer refactor goals (`panel-party.js`) now that `TransferUtils` handles most workflows; decide what parts of the old plan still add value.
+- [ ] **PLANNED** Break the `HandleManager` ↔ `PanelManager` circular import by passing required data via constructors or shared context.
 
 ### Performance Optimization
 - [ ] **INVESTIGATE** Disabled tabs still load/render all data even when hidden - consider skipping panel construction for disabled tabs
