@@ -11,6 +11,9 @@
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, we need to pull the bio and put it in the description
+- [ ] **BUG** Guard the `canvas.selectObjects` override (`squire.js` canvasReady hook) so we don’t stack wrappers and timers every scene load; restore original during cleanup.
+- [ ] **BUG** Replace `cleanupModule`’s zero-delay interval sweep (`squire.js`) with targeted tracked timers; avoid spawning the extra `setInterval(() => {}, 0)` that never clears.
+- [ ] **BUG** Ensure quest-pin drag listeners on `document` are always removed (`quest-pin.js`); call `_endDrag` when pins are destroyed/scene changes so pointermove/up handlers don’t leak.
 
 ## Architecture & Code Quality
 
