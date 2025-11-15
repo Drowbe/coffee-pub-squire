@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { MacrosWindow } from './window-macros.js';
 import { PanelManager } from './manager-panel.js';
+import { trackModuleTimeout } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -352,7 +353,7 @@ export class MacrosPanel {
                             slot.append('<span class="macro-loader"><i class="fas fa-sun macro-spinner"></i></span>');
                         }
                         slot.addClass('loading');
-                        setTimeout(() => {
+                        trackModuleTimeout(() => {
                             slot.removeClass('loading');
                             slot.find('.macro-loader').remove();
                         }, 600);

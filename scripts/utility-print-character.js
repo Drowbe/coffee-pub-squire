@@ -1,4 +1,5 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE, SQUIRE, TEMPLATES } from './const.js';
+import { moduleDelay } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -234,7 +235,7 @@ export class PrintCharacterSheet {
                         }
                     }
                 }),
-                new Promise(resolve => setTimeout(resolve, PRINT_CONFIG.IMAGE_LOAD_TIMEOUT))
+                moduleDelay(PRINT_CONFIG.IMAGE_LOAD_TIMEOUT)
             ]);
 
         } catch (error) {

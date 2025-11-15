@@ -8,6 +8,7 @@ import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { getBlacksmith, getTokenDisplayName } from './helpers.js';
+import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
 const { renderTemplate, fromUuid, TextEditor } = globalThis;
@@ -877,7 +878,7 @@ export class HandleManager {
                     const pin = questPins[0];
                     canvas.animatePan({ x: pin.x, y: pin.y });
                     pin.alpha = 0.6;
-                    setTimeout(() => { pin.alpha = 1.0; }, 200);
+                    trackModuleTimeout(() => { pin.alpha = 1.0; }, 200);
                 } else {
                     ui.notifications.warn(`No pin found for objective ${taskIndex + 1}.`);
                 }

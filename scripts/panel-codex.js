@@ -1,6 +1,7 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { copyToClipboard } from './helpers.js';
+import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1133,7 +1134,7 @@ export class CodexPanel {
                                     
                                     // Small delay to make progress visible
                                     if (i % 5 === 0) {
-                                        await new Promise(resolve => setTimeout(resolve, 100));
+                                        await moduleDelay(100);
                                     }
                                 }
                                 
@@ -1159,7 +1160,7 @@ export class CodexPanel {
                                 this._updateProgressBar(100, 'Import complete!');
                                 
                                 // Keep completion message visible for a moment
-                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                await moduleDelay(2000);
                                 
                                 // Hide progress bar
                                 this._hideProgressBar();
@@ -1334,7 +1335,7 @@ export class CodexPanel {
                                     a.remove();
                                     
                                     // Always revoke after a tick so the download starts
-                                    setTimeout(() => URL.revokeObjectURL(url), 0);
+                                    trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
                                     
                                     ui.notifications.info(`Codex export downloaded as ${filename}`);
                                 }
@@ -1377,7 +1378,7 @@ export class CodexPanel {
         });
 
         // On load, ensure all entries are visible if no filters are set
-        setTimeout(() => {
+        trackModuleTimeout(() => {
             if (!this.filters.search && (!this.filters.tags || this.filters.tags.length === 0)) {
                 html.find('.codex-entry').show();
                 html.find('.codex-section').show();
@@ -1466,7 +1467,7 @@ export class CodexPanel {
             progressText.text('Starting scan...');
             
             // Small delay to make progress visible
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await moduleDelay(500);
         }
 
         try {
@@ -1487,7 +1488,7 @@ export class CodexPanel {
                     progressText.text('No players found');
                     progressFill.css('width', '100%');
                     // Hide progress area after a delay
-                    setTimeout(() => {
+                    trackModuleTimeout(() => {
                         progressArea.hide();
                     }, 2000);
                 }
@@ -1523,7 +1524,7 @@ export class CodexPanel {
                 }
                 
                 // Add a small delay to make player scanning visible
-                await new Promise(resolve => setTimeout(resolve, 200));
+                await moduleDelay(200);
                 
                 // Use the same approach as the inventory panel
                 if (actor.items && actor.items.contents) {
@@ -1556,7 +1557,7 @@ export class CodexPanel {
                     progressText.text('No items found');
                     progressFill.css('width', '100%');
                     // Hide progress area after a delay
-                    setTimeout(() => {
+                    trackModuleTimeout(() => {
                         progressArea.hide();
                     }, 2000);
                 }
@@ -1596,7 +1597,7 @@ export class CodexPanel {
                     
                     // Add a small delay every 5 entries to make progress visible
                     if (processedEntries % 5 === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        await moduleDelay(100);
                     }
                     
                     // Check if entry name matches any inventory item
@@ -1664,7 +1665,7 @@ export class CodexPanel {
                                 progressText.text(`✓ Found: ${entry.name}`);
                                 lastDiscoveryTime = Date.now(); // Mark when discovery was shown
                                 // Keep discovery visible for a moment - increased delay
-                                await new Promise(resolve => setTimeout(resolve, 1200));
+                                await moduleDelay(1200);
                             }
                         }
                     }
@@ -1683,7 +1684,7 @@ export class CodexPanel {
             }
             
             // Keep final summary visible for a moment
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await moduleDelay(1500);
             
             // Log detailed results with discoverer information
             
@@ -1697,7 +1698,7 @@ export class CodexPanel {
                 progressArea.addClass('scan-complete');
                 
                 // Keep completion message visible for 5 seconds
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                await moduleDelay(5000);
                 
                 // Remove completion styling and hide progress area
                 progressArea.removeClass('scan-complete');
@@ -1722,7 +1723,7 @@ export class CodexPanel {
                 progressFill.css('width', '100%');
                 
                 // Hide progress area after a delay
-                setTimeout(() => {
+                trackModuleTimeout(() => {
                     progressArea.hide();
                 }, 3000);
             }

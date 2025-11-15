@@ -8,6 +8,7 @@ import { QuestForm } from './window-quest.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { trackModuleTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
 
@@ -769,7 +770,7 @@ Hooks.once('ready', () => {
             priority: 2,
             callback: (scene) => {
                 // Delay loading to ensure scene is fully loaded
-                setTimeout(() => {
+                trackModuleTimeout(() => {
                     loadPersistedPins();
                 }, 1000);
             }
@@ -783,7 +784,7 @@ Hooks.once('ready', () => {
             callback: (scene, changes, options, userId) => {
                 if (scene.id === canvas.scene?.id && changes.flags && changes.flags[MODULE.ID]) {
                     // Delay loading to ensure the scene update is fully processed
-                    setTimeout(() => {
+                    trackModuleTimeout(() => {
                         loadPersistedPins();
                     }, 500);
                 }
@@ -1770,7 +1771,7 @@ Hooks.once('ready', async function() {
 
 
     // Initialize Squire after settings are registered (with delay to ensure everything is ready)
-    setTimeout(async () => {
+    trackModuleTimeout(async () => {
         // Hook management is now handled by Blacksmith HookManager
         // No need to initialize local HookManager
         
@@ -1795,7 +1796,7 @@ Hooks.once('ready', async function() {
                 await _updateHealthPanelFromSelection();
             }
             }
-        });
+    });
         
         // Then initialize the main interface
         const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
@@ -2063,16 +2064,7 @@ function cleanupModule() {
         nativeSelectObjects = null;
         wrappedSelectObjects = null;
 
-        // Clear any remaining timeouts or intervals
-        const highestTimeoutId = setTimeout(() => {}, 0);
-        for (let i = 0; i < highestTimeoutId; i++) {
-            clearTimeout(i);
-        }
-
-        const highestIntervalId = setInterval(() => {}, 0);
-        for (let i = 0; i < highestIntervalId; i++) {
-            clearInterval(i);
-        }
+        clearAllModuleTimers();
 
         getBlacksmith()?.utils.postConsoleAndNotification(
             MODULE.NAME,

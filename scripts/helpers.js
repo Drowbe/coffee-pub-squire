@@ -1,6 +1,7 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin } from './quest-pin.js';
+import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
 export function getBlacksmith() {
@@ -396,12 +397,12 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
 
         // Clear any existing timeout for this tooltip
         if (tooltipTimeouts.has(tooltipId)) {
-            clearTimeout(tooltipTimeouts.get(tooltipId));
+            clearTrackedTimeout(tooltipTimeouts.get(tooltipId));
             tooltipTimeouts.delete(tooltipId);
         }
         
         // Set new timeout to show tooltip after delay
-        const timeoutId = setTimeout(async () => {
+        const timeoutId = trackModuleTimeout(async () => {
             try {
                 const tooltip = getOrCreateQuestTooltip(tooltipId);
                 
@@ -443,7 +444,7 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500) {
 export function hideQuestTooltip(tooltipId) {
     // Clear any pending timeout for this tooltip
     if (tooltipTimeouts.has(tooltipId)) {
-        clearTimeout(tooltipTimeouts.get(tooltipId));
+        clearTrackedTimeout(tooltipTimeouts.get(tooltipId));
         tooltipTimeouts.delete(tooltipId);
     }
     

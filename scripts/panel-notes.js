@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
+import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -566,14 +567,9 @@ export class NotesPanel {
                 if (!renderSuccessful && typeof page.render === 'function') {
                     // Wrap in a promise with a timeout to prevent hanging
                     const renderPromise = new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => {
+                        const timeout = trackModuleTimeout(() => {
                             reject(new Error("Render timeout"));
                         }, 3000);
-                        
-                        // Track timeout for cleanup
-                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                            game.modules.get('coffee-pub-squire').api.PanelManager.trackTimeout(timeout);
-                        }
                         
                         try {
                             // Check if render returns a Promise - if not, handle it accordingly
@@ -582,20 +578,20 @@ export class NotesPanel {
                             if (renderResult && typeof renderResult.then === 'function') {
                                 renderResult
                                     .then(() => {
-                                        clearTimeout(timeout);
+                                        clearTrackedTimeout(timeout);
                                         resolve(true);
                                     })
                                     .catch(err => {
-                                        clearTimeout(timeout);
+                                        clearTrackedTimeout(timeout);
                                         reject(err);
                                     });
                             } else {
                                 // If render doesn't return a Promise, resolve immediately
-                                clearTimeout(timeout);
+                                clearTrackedTimeout(timeout);
                                 resolve(true);
                             }
                         } catch (immediateError) {
-                            clearTimeout(timeout);
+                            clearTrackedTimeout(timeout);
                             reject(immediateError);
                         }
                     });
@@ -1214,7 +1210,7 @@ export class NotesPanel {
                 
                 // Delay slightly to let the rendering complete
                 return new Promise(resolve => {
-                    setTimeout(() => {
+                    trackModuleTimeout(() => {
                         try {
                             // Try to extract content from the rendered journal
                             const pageContent = tempSheet.element.find(`.journal-page-content[data-page-id="${page.id}"]`);

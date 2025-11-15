@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
+import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1394,7 +1395,7 @@ export class PartyPanel {
         this._clearTransferTimer(transferId);
         
         // Set up new timer
-        const timerId = setTimeout(async () => {
+        const timerId = trackModuleTimeout(async () => {
             await this._expireTransfer(transferId, transferData);
         }, timeoutMs);
         
@@ -1411,7 +1412,7 @@ export class PartyPanel {
      */
     _clearTransferTimer(transferId) {
         if (this._transferTimers && this._transferTimers.has(transferId)) {
-            clearTimeout(this._transferTimers.get(transferId));
+            clearTrackedTimeout(this._transferTimers.get(transferId));
             this._transferTimers.delete(transferId);
         }
     }
@@ -1514,7 +1515,7 @@ export class PartyPanel {
     _cleanupTransferTimers() {
         if (this._transferTimers) {
             for (const timerId of this._transferTimers.values()) {
-                clearTimeout(timerId);
+                clearTrackedTimeout(timerId);
             }
             this._transferTimers.clear();
         }

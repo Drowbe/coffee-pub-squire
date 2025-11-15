@@ -1,6 +1,7 @@
 import { MODULE, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData } from './helpers.js';
 import { QuestParser } from './utility-quest-parser.js';
+import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
 // Helper function to safely get Blacksmith API
@@ -877,7 +878,7 @@ export class QuestPin extends PIXI.Container {
     if (!this.isDragging && distance > 1) {
       // Cancel any pending click action
       if (this._clickTimeout) {
-        clearTimeout(this._clickTimeout);
+        clearTrackedTimeout(this._clickTimeout);
         this._clickTimeout = null;
       }
       
@@ -951,7 +952,7 @@ export class QuestPin extends PIXI.Container {
           this._toggleHiddenState();
         } else {
           // Delay the click action to allow for drag detection
-          this._clickTimeout = setTimeout(() => {
+          this._clickTimeout = trackModuleTimeout(() => {
             // Only execute if we're not dragging and haven't started dragging
             if (!this.isDragging && !this._hasStartedDrag) {
               this._selectPinAndJumpToQuest();
@@ -980,7 +981,7 @@ export class QuestPin extends PIXI.Container {
       this._lastRightClickTime = null;
       // Clear any pending timeout
       if (this._rightClickTimeout) {
-        clearTimeout(this._rightClickTimeout);
+        clearTrackedTimeout(this._rightClickTimeout);
         this._rightClickTimeout = null;
       }
       this._removePin();
@@ -989,7 +990,7 @@ export class QuestPin extends PIXI.Container {
       this._lastRightClickTime = clickTime;
       
       // Single right-click: toggle visibility for quest pins, fail objective for objective pins
-      this._rightClickTimeout = setTimeout(async () => {
+      this._rightClickTimeout = trackModuleTimeout(async () => {
         // Only execute if this is still the most recent right-click
         if (this._lastRightClickTime === clickTime) {
           
@@ -1017,7 +1018,7 @@ export class QuestPin extends PIXI.Container {
   _selectPinAndJumpToQuest() {
     // Highlight the pin briefly
     this.alpha = 0.6;
-    setTimeout(() => {
+    trackModuleTimeout(() => {
       this.alpha = 1.0;
     }, 200);
     
@@ -1076,7 +1077,7 @@ export class QuestPin extends PIXI.Container {
           if (this.pinType === 'quest') {
             // For quest-level pins, highlight the entire quest entry
             questEntry.classList.add('quest-highlighted');
-            setTimeout(() => {
+            trackModuleTimeout(() => {
               questEntry.classList.remove('quest-highlighted');
             }, 2000);
             
@@ -1090,7 +1091,7 @@ export class QuestPin extends PIXI.Container {
             
             if (targetObjective) {
               targetObjective.classList.add('objective-highlighted');
-              setTimeout(() => {
+              trackModuleTimeout(() => {
                 targetObjective.classList.remove('objective-highlighted');
               }, 2000);
             }
@@ -1101,9 +1102,9 @@ export class QuestPin extends PIXI.Container {
       
       // Try immediately, then retry with increasing delays
       findAndHighlightQuest();
-      setTimeout(findAndHighlightQuest, 200);
-      setTimeout(findAndHighlightQuest, 500);
-      setTimeout(findAndHighlightQuest, 1000);
+      trackModuleTimeout(findAndHighlightQuest, 200);
+      trackModuleTimeout(findAndHighlightQuest, 500);
+      trackModuleTimeout(findAndHighlightQuest, 1000);
     } else {
     }
   }
@@ -1561,11 +1562,8 @@ function getQuestNumber(questUuid) {
 
 // Load persisted pins when canvas is ready (now called from ready hook)
 export function loadPersistedPinsOnCanvasReady() {
-    const timeoutId = setTimeout(() => {
-        // Quest pins are now managed by Blacksmith HookManager
-        // No need to register with local HookManager
+    trackModuleTimeout(() => {
         loadPersistedPins();
-        // Timeout management is now handled by Blacksmith HookManager
     }, 1500);
 }
 
@@ -1591,9 +1589,8 @@ export function loadPersistedPins() {
         
         if (!canvas.squirePins) {
             // Try again in a moment
-            const timeoutId = setTimeout(() => {
+            trackModuleTimeout(() => {
                 loadPersistedPins();
-                // Timeout management is now handled by Blacksmith HookManager
             }, 1000);
             return;
         }
@@ -1690,9 +1687,8 @@ export function loadPersistedPins() {
         
         // Clean up orphaned pins (pins that reference non-existent quests)
         if (game.user.isGM) {
-            const timeoutId = setTimeout(async () => {
+            trackModuleTimeout(async () => {
                 await cleanupOrphanedPins();
-                // Timeout management is now handled by Blacksmith HookManager
             }, 1000);
         }
     } catch (error) {
@@ -1744,17 +1740,17 @@ function cleanupQuestPins() {
         existingPins.forEach(pin => {
             // Clear any pending click timeouts
             if (pin._clickTimeout) {
-                clearTimeout(pin._clickTimeout);
+                clearTrackedTimeout(pin._clickTimeout);
                 pin._clickTimeout = null;
             }
             // Clear any pending right-click timeouts
             if (pin._rightClickTimeout) {
-                clearTimeout(pin._rightClickTimeout);
+                clearTrackedTimeout(pin._rightClickTimeout);
                 pin._rightClickTimeout = null;
             }
             // Clear any pending click timeouts
             if (pin._clickTimeout) {
-                clearTimeout(pin._clickTimeout);
+                clearTrackedTimeout(pin._clickTimeout);
                 pin._clickTimeout = null;
             }
             // Remove global event listeners

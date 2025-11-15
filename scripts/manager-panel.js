@@ -22,6 +22,7 @@ import { MacrosPanel } from './panel-macros.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
 import { QuestPin } from './quest-pin.js';
 import { HandleManager } from './manager-handle.js';
+import { trackModuleInterval, trackModuleTimeout, registerTimeoutId, registerIntervalId, clearTrackedInterval, clearTrackedTimeout } from './timer-utils.js';
 
 // Add multi-select tracking variables at the top of the file
 export let _multiSelectTimeout = null;
@@ -176,7 +177,7 @@ export class PanelManager {
 
             // Set up cleanup interval if not already set
             if (!PanelManager._cleanupInterval) {
-                const intervalId = setInterval(() => {
+                const intervalId = trackModuleInterval(() => {
                     PanelManager.cleanupNewlyAddedItems();
                     // Force a re-render of the inventory panel if it exists
                     if (PanelManager.instance?.inventoryPanel?.element) {
@@ -1609,13 +1610,13 @@ export class PanelManager {
     static cleanup() {
         // Clear all intervals
         PanelManager._intervals.forEach(intervalId => {
-            clearInterval(intervalId);
+            clearTrackedInterval(intervalId);
         });
         PanelManager._intervals.clear();
 
         // Clear all timeouts
         PanelManager._timeouts.forEach(timeoutId => {
-            clearTimeout(timeoutId);
+            clearTrackedTimeout(timeoutId);
         });
         PanelManager._timeouts.clear();
 
@@ -1696,6 +1697,7 @@ export class PanelManager {
      * Track a timeout for cleanup
      */
     static trackTimeout(timeoutId) {
+        registerTimeoutId(timeoutId);
         PanelManager._timeouts.add(timeoutId);
         return timeoutId;
     }
@@ -1704,6 +1706,7 @@ export class PanelManager {
      * Track an interval for cleanup
      */
     static trackInterval(intervalId) {
+        registerIntervalId(intervalId);
         PanelManager._intervals.add(intervalId);
         return intervalId;
     }
@@ -1787,7 +1790,7 @@ export class PanelManager {
             trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
             
             // Remove the content-updated class after animation completes
-            setTimeout(() => {
+            trackModuleTimeout(() => {
                 trayPanelWrapper.removeClass('content-updated');
             }, 200);
         }
@@ -2072,7 +2075,7 @@ export async function _updateHealthPanelFromSelection() {
 
 
 // Set up periodic cleanup of newly added items
-const globalCleanupInterval = setInterval(() => {
+const globalCleanupInterval = trackModuleInterval(() => {
     if (PanelManager.instance) {
         PanelManager.cleanupNewlyAddedItems();
         // No need to recreate the entire tray for cleanup - just clean up data

@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPins } from './quest-pin.js';
 import { copyToClipboard } from './helpers.js';
+import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 
 // Helper function to get quest number from UUID
 function getQuestNumber(questUuid) {
@@ -88,10 +89,10 @@ export class QuestPanel {
         // Debounce rapid calls to prevent duplicate notifications
         const debounceKey = 'questPinned';
         if (this._notificationDebounceTimeouts[debounceKey]) {
-            clearTimeout(this._notificationDebounceTimeouts[debounceKey]);
+            clearTrackedTimeout(this._notificationDebounceTimeouts[debounceKey]);
         }
         
-        this._notificationDebounceTimeouts[debounceKey] = setTimeout(() => {
+        this._notificationDebounceTimeouts[debounceKey] = trackModuleTimeout(() => {
             this._doNotifyQuestPinned(questName, questCategory);
             delete this._notificationDebounceTimeouts[debounceKey];
         }, 100); // 100ms debounce
@@ -165,10 +166,10 @@ export class QuestPanel {
         // Debounce rapid calls to prevent duplicate notifications
         const debounceKey = 'activeObjective';
         if (this._notificationDebounceTimeouts[debounceKey]) {
-            clearTimeout(this._notificationDebounceTimeouts[debounceKey]);
+            clearTrackedTimeout(this._notificationDebounceTimeouts[debounceKey]);
         }
         
-        this._notificationDebounceTimeouts[debounceKey] = setTimeout(() => {
+        this._notificationDebounceTimeouts[debounceKey] = trackModuleTimeout(() => {
             this._doNotifyActiveObjective(questName, objectiveText, objectiveNumber);
             delete this._notificationDebounceTimeouts[debounceKey];
         }, 100); // 100ms debounce
@@ -439,7 +440,7 @@ export class QuestPanel {
     destroy() {
         // Clear any pending debounce timeouts
         Object.values(this._notificationDebounceTimeouts).forEach(timeout => {
-            if (timeout) clearTimeout(timeout);
+            if (timeout) clearTrackedTimeout(timeout);
         });
         this._notificationDebounceTimeouts = {};
         
@@ -1757,7 +1758,7 @@ export class QuestPanel {
                                     
                                     // Small delay to make progress visible
                                     if (i % 5 === 0) {
-                                        await new Promise(resolve => setTimeout(resolve, 100));
+                                        await moduleDelay(100);
                                     }
                                 }
                                 
@@ -1787,7 +1788,7 @@ export class QuestPanel {
                                 this._updateProgressBar(100, 'Import complete!');
                                 
                                 // Keep completion message visible for a moment
-                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                await moduleDelay(2000);
                                 
                                 // Hide progress bar
                                 this._hideProgressBar();
@@ -2041,7 +2042,7 @@ export class QuestPanel {
                                     a.remove();
                                     
                                     // Always revoke after a tick so the download starts
-                                    setTimeout(() => URL.revokeObjectURL(url), 0);
+                                    trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
                                     
                                     ui.notifications.info(`Quest export downloaded as ${filename}`);
                                 }
@@ -2333,7 +2334,7 @@ export class QuestPanel {
                                 updated = true;
                                 ui.notifications.info(`Added ${actor.name} as a participant.`);
                                 $entry.addClass('dropped-success');
-                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
+                                trackModuleTimeout(() => $entry.removeClass('dropped-success'), 800);
                             } else {
                                 // No participants section exists, create one at the end
                                 const participantsSection = `
@@ -2346,7 +2347,7 @@ export class QuestPanel {
                                 updated = true;
                                 ui.notifications.info(`Added ${actor.name} as a participant.`);
                                 $entry.addClass('dropped-success');
-                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
+                                trackModuleTimeout(() => $entry.removeClass('dropped-success'), 800);
                             }
                         } else {
                             ui.notifications.error('Could not resolve actor from drop.');
@@ -2444,7 +2445,7 @@ export class QuestPanel {
                                 updated = true;
                                 ui.notifications.info(`Added ${item.name} as treasure.`);
                                 $entry.addClass('dropped-success');
-                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
+                                trackModuleTimeout(() => $entry.removeClass('dropped-success'), 800);
                             } else {
                                 // No treasure section exists, create one at the end
                                 const treasureSection = `
@@ -2457,7 +2458,7 @@ export class QuestPanel {
                                 updated = true;
                                 ui.notifications.info(`Added ${item.name} as treasure.`);
                                 $entry.addClass('dropped-success');
-                                setTimeout(() => $entry.removeClass('dropped-success'), 800);
+                                trackModuleTimeout(() => $entry.removeClass('dropped-success'), 800);
                             }
                         } else {
                             ui.notifications.error('Could not resolve item from drop.');
@@ -3268,7 +3269,7 @@ export class QuestPanel {
                 
                 // Reload pins on canvas if available
                 if (canvas.squirePins && typeof loadPersistedPins === 'function') {
-                    setTimeout(() => {
+                    trackModuleTimeout(() => {
                         loadPersistedPins();
                     }, 1000);
                 }
