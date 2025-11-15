@@ -17,6 +17,48 @@ import { FavoritesPanel } from './panel-favorites.js';
 // ===== BEGIN: BLACKSMITH API REGISTRATIONS ========================
 // ================================================================== 
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
+
+let nativeSelectObjects = null;
+let wrappedSelectObjects = null;
+let selectionUpdateFrameId = null;
+
+function queueSelectionDisplayUpdate() {
+    if (selectionUpdateFrameId !== null) {
+        return;
+    }
+
+    selectionUpdateFrameId = requestAnimationFrame(async () => {
+        selectionUpdateFrameId = null;
+        try {
+            await _updateSelectionDisplay();
+        } catch (error) {
+            console.error('Coffee Pub Squire | Failed to update selection display:', error);
+        }
+    });
+}
+
+function ensureSelectObjectsWrapper() {
+    if (!canvas || typeof canvas.selectObjects !== 'function') {
+        return;
+    }
+
+    const currentMethod = canvas.selectObjects;
+
+    if (currentMethod === wrappedSelectObjects) {
+        return;
+    }
+
+    nativeSelectObjects = currentMethod;
+
+    wrappedSelectObjects = function(...args) {
+        const result = nativeSelectObjects.apply(this, args);
+        queueSelectionDisplayUpdate();
+        return result;
+    };
+
+    canvas.selectObjects = wrappedSelectObjects;
+}
+
 Hooks.once('ready', () => {
     try {
         // Register your module with Blacksmith
@@ -100,17 +142,7 @@ Hooks.once('ready', () => {
                 }
 
                 // Monitor canvas selection changes for bulk selection support
-                const originalSelectObjects = canvas.selectObjects;
-                canvas.selectObjects = function(...args) {
-                    const result = originalSelectObjects.apply(this, args);
-                    
-                    // After selection, update the selection display
-                    setTimeout(async () => {
-                        await _updateSelectionDisplay();
-                    }, 100); // Slightly longer delay for canvas selection methods
-                    
-                    return result;
-                };
+                ensureSelectObjectsWrapper();
             }
         });
         
@@ -2019,6 +2051,17 @@ function cleanupModule() {
         // Remove any remaining DOM elements
         $('.squire-tray').remove();
         $('.squire-questpin-tooltip').remove();
+
+        if (selectionUpdateFrameId !== null) {
+            cancelAnimationFrame(selectionUpdateFrameId);
+            selectionUpdateFrameId = null;
+        }
+
+        if (nativeSelectObjects && canvas?.selectObjects === wrappedSelectObjects) {
+            canvas.selectObjects = nativeSelectObjects;
+        }
+        nativeSelectObjects = null;
+        wrappedSelectObjects = null;
 
         // Clear any remaining timeouts or intervals
         const highestTimeoutId = setTimeout(() => {}, 0);
