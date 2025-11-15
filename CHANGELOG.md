@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [12.1.11] - Timer Tracking & Memory Leak Fixes
+
+### Added
+- **Timer Utilities**: Introduced `scripts/timer-utils.js` with shared helpers (`trackModuleTimeout`, `trackModuleInterval`, `moduleDelay`, etc.) so every timeout/interval is registered and automatically cleaned up during `cleanupModule()`.
+
+### Changed
+- **Global Timer Usage**: Updated `squire.js`, `manager-panel.js`, quest panels, notes/codex/macro panels, quest pins, helpers, and transfer flows to use the new timer helpers, ensuring consistent cleanup and easier diagnostics.
+- **Cleanup Module**: Replaced the zero-delay `setInterval(() => {}, 0)` sweep with targeted `clearAllModuleTimers()` plus tracked animation-frame cancellation to avoid spawning a runaway interval.
+
+### Fixed
+- **Canvas Selection Leak**: Wrapped `canvas.selectObjects` only once per session and restored the native method during cleanup so scene swaps no longer stack wrappers or timers.
+- **Quest Pin Drags**: Added `_forceEndDrag()` plus PIXI removal hooks to guarantee document-level `pointermove`/`pointerup` listeners are removed even when pins are deleted or scenes change mid-drag; hover tooltips now auto-hide on drag start/end.
+- **Quest Tooltips**: Added auto-hide timers and proper cancellation, preventing hover tooltips from lingering indefinitely when events are missed.
+
 ## [12.1.10] - Party Stats Panel Improvements
 
 ### Changed
