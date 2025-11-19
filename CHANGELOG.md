@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [12.1.12] - Auto-Favor Actions for NPCs
+
+### Fixed
+- **NPC Auto-Favoring**: Fixed auto-favoring not working when items were created on NPCs before the panel was initialized
+  - Updated `createItem` hook to trigger `initializeNpcFavorites` for NPCs even when panel isn't active
+  - Added deferred execution pattern using `Promise.resolve().then()` to prevent race conditions during actor/item creation
+  - Re-fetches actor to ensure latest state before initializing favorites
+  - Added duplicate work prevention to avoid re-initializing if favorites already exist
+- **Item Creation Race Conditions**: Fixed potential race conditions when items are created as part of actor creation by deferring auto-favor initialization until after synchronous hook cycle completes
+
+### Changed
+- **Error Handling**: Enhanced `createItem` hook with comprehensive try-catch error handling to prevent hook failures from breaking other functionality
+- **Safety Checks**: Added validation for item and parent existence before processing in `createItem` hook
+
+### Technical Improvements
+- **Deferred Execution**: Implemented microtask-based deferred execution to ensure items are fully initialized before auto-favoring logic runs
+- **Actor State Verification**: Added actor re-fetch and state verification to ensure accurate favorite initialization
+
 ## [12.1.11] - Timer Tracking & Memory Leak Fixes
 
 ### Added
