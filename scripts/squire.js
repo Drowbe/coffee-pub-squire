@@ -377,27 +377,35 @@ Hooks.once('ready', () => {
         
         const globalCreateItemHookId = BlacksmithHookManager.registerHook({
             name: "createItem",
-            description: "Coffee Pub Squire: Handle global item creation for tray updates",
+            description: "Coffee Pub Squire: Handle global item creation for tray updates and auto-favoriting",
             context: MODULE.ID,
             priority: 2,
             callback: async (item) => {
                 const panelManager = getPanelManager();
                 
-                // Only process if PanelManager instance exists
-                if (!panelManager?.instance) {
-                    return;
-                }
-                
                 // Check if this item belongs to an actor that the current user owns
                 if (item.parent && item.parent.isOwner) {
-                    // Only refresh weapons and inventory panels for item transfers
-                    if (panelManager.instance.weaponsPanel?.element) {
-                        await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
+                    // Check if this is an NPC/monster and trigger auto-favoring if needed
+                    if (item.parent.type !== "character") {
+                        // Check if actor is from a compendium before trying to modify it
+                        const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
+                        if (!isFromCompendium) {
+                            // Try to initialize NPC favorites (will only work if actor has no favorites yet)
+                            await FavoritesPanel.initializeNpcFavorites(item.parent);
+                        }
                     }
-                    if (panelManager.instance.inventoryPanel?.element) {
-                        await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
+                    
+                    // Only refresh panels if PanelManager instance exists
+                    if (panelManager?.instance) {
+                        // Only refresh weapons and inventory panels for item transfers
+                        if (panelManager.instance.weaponsPanel?.element) {
+                            await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
+                        }
+                        if (panelManager.instance.inventoryPanel?.element) {
+                            await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
+                        }
+                        await panelManager.instance.updateHandle();
                     }
-                    await panelManager.instance.updateHandle();
                 }
             }
         });
