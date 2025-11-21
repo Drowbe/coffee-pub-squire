@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [12.1.13] - Character Panel Render Safety Fix
+
+### Fixed
+- **Character Panel Render Crash**: Fixed `TypeError: Cannot read properties of null (reading 'find')` error in `CharacterPanel.render()` method
+  - Added comprehensive safety checks after async operations to validate `this.element` exists and is a valid jQuery object
+  - Added validation for character panel container existence in DOM before attempting DOM manipulation
+  - Prevents crashes when element becomes null during async operations (TextEditor.enrichHTML, renderTemplate)
+  - Added graceful error handling with early returns when element is invalid
+
+### Added
+- **Render Cancellation System**: Implemented render cancellation flag to prevent race conditions
+  - Added `_renderInProgress` flag and `_renderCancellationToken` tracking to prevent overlapping renders
+  - Cancels stale renders when new render starts, preventing race conditions during rapid token selection
+  - Ensures only the most recent render completes, preventing UI inconsistencies
+  - Added `try/finally` block to guarantee render flag is always cleared, even on errors
+
+### Changed
+- **Error Handling**: Enhanced `CharacterPanel.render()` with comprehensive validation and error logging
+  - Added validation checks after async operations to ensure element is still valid before DOM manipulation
+  - Added error logging using Blacksmith API for better debugging when render issues occur
+  - Improved error messages with actor context (actorId, actorName) for easier troubleshooting
+
+### Technical Improvements
+- **Memory Safety**: Verified no memory leaks introduced - all new properties are primitives (boolean, Symbol) that are properly garbage collected
+- **Performance**: Improved performance by preventing wasted async computation and DOM manipulation when element is invalid
+- **Race Condition Prevention**: Implemented token-based cancellation system to prevent overlapping renders from interfering with each other
+- **Code Quality**: Removed redundant flag clearing (finally block handles cleanup), improved code clarity
+
+
+
 ## [12.1.12] - Auto-Favor Actions for NPCs
 
 ### Fixed
