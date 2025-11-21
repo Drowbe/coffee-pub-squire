@@ -69,8 +69,7 @@ export class CharacterPanel {
                 this.element = html;
             }
             if (!this.element) {
-                this._renderInProgress = false;
-                return;
+                return; // finally block will clear _renderInProgress
             }
 
             // Prepare speed data - extract all speed types that have values
