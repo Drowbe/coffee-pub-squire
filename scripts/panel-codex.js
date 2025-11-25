@@ -753,8 +753,13 @@ export class CodexPanel {
             });
         };
 
-        searchInput.on('input', (event) => {
-            const searchValue = event.target.value.toLowerCase();
+        if (searchInput) {
+            // Clone to remove existing listeners
+            const newInput = searchInput.cloneNode(true);
+            searchInput.parentNode?.replaceChild(newInput, searchInput);
+            
+            newInput.addEventListener('input', (event) => {
+                const searchValue = event.target.value.toLowerCase();
             this.filters.search = searchValue;
             // Show all entries and sections before filtering
             html.find('.codex-entry').show();
@@ -780,7 +785,8 @@ export class CodexPanel {
                     filterEntries();
                 }
             }
-        });
+            });
+        }
 
         // Clear search button
         clearButton.removeClass('disabled');

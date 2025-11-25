@@ -718,8 +718,13 @@ export class QuestPanel {
         const searchInput = questSearchContainer?.querySelector('input');
         const clearButton = nativeHtml.querySelector('.clear-search');
         
-        searchInput.on('input', (event) => {
-            const searchValue = event.target.value.toLowerCase();
+        if (searchInput) {
+            // Clone to remove existing listeners
+            const newInput = searchInput.cloneNode(true);
+            searchInput.parentNode?.replaceChild(newInput, searchInput);
+            
+            newInput.addEventListener('input', (event) => {
+                const searchValue = event.target.value.toLowerCase();
             this.filters.search = searchValue;
             
             // Show all entries first
@@ -780,7 +785,8 @@ export class QuestPanel {
                     }
                 }
             }
-        });
+            });
+        }
 
         // Refresh button
         html.find('.refresh-quest-button').click(async () => {

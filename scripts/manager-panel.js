@@ -1383,6 +1383,7 @@ export class PanelManager {
      * @param {HTMLElement} panel - The panel element
      */
     resetCategories(panel) {
+        if (!panel) return; // v13: Guard against undefined panel
         this.hiddenCategories.clear();
         const filters = panel.querySelectorAll('[data-filter-id]');
         filters.forEach(filter => {

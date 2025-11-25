@@ -479,24 +479,26 @@ export class FavoritesPanel {
         favoritesPanel.innerHTML = template;
         
         // Add equipped class and handle shield icon visibility for equipped items
-        favoritesPanel.find('.favorite-item').each((_, item) => {
-            const $item = $(item);
-            const itemId = $item.data('item-id');
+        // v13: Use native DOM querySelectorAll instead of jQuery find().each()
+        favoritesPanel.querySelectorAll('.favorite-item').forEach(item => {
+            const itemId = item.dataset.itemId;
             const favoriteItem = this.favorites.find(f => f.id === itemId);
             
             if (favoriteItem) {
                 // Handle equipped state
                 if (favoriteItem.equipped) {
-                    $item.addClass('equipped');
+                    item.classList.add('equipped');
                 }
                 
                 // Handle shield icon visibility and state
-                const $shieldIcon = $item.find('.fa-shield-alt');
-                if (favoriteItem.showEquipToggle) {
-                    $shieldIcon.show();
-                    $shieldIcon.toggleClass('faded', !favoriteItem.equipped);
-                } else {
-                    $shieldIcon.hide();
+                const shieldIcon = item.querySelector('.fa-shield-alt');
+                if (shieldIcon) {
+                    if (favoriteItem.showEquipToggle) {
+                        shieldIcon.style.display = '';
+                        shieldIcon.classList.toggle('faded', !favoriteItem.equipped);
+                    } else {
+                        shieldIcon.style.display = 'none';
+                    }
                 }
             }
         });

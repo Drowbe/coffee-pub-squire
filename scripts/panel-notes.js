@@ -253,7 +253,13 @@ export class NotesPanel {
         }
 
         // Edit page button (for owners)
-        html.find('.edit-page-button').click(async (event) => {
+        const editPageButton = nativeHtml.querySelector('.edit-page-button');
+        if (editPageButton) {
+            // Clone to remove existing listeners
+            const newButton = editPageButton.cloneNode(true);
+            editPageButton.parentNode?.replaceChild(newButton, editPageButton);
+            
+            newButton.addEventListener('click', async (event) => {
             event.preventDefault();
 
             if (journal && page) {
@@ -267,7 +273,8 @@ export class NotesPanel {
                     ui.notifications.warn("You don't have permission to edit this page.");
                 }
             }
-        });
+            });
+        }
         
         // Toggle edit mode button 
         html.find('.toggle-edit-mode-button').click(async (event) => {

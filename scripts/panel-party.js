@@ -174,20 +174,29 @@ export class PartyPanel {
         });
 
         // Handle character card clicks for token selection
-        html.find('.party-card.party-card-clickable').click(async (event) => {
-            // Don't handle clicks if they originated from the open-sheet button or portrait
-            if ($(event.target).closest('.open-sheet, .party-card-image.party-card-clickable').length) return;
+        const clickableCards = nativeHtml.querySelectorAll('.party-card.party-card-clickable');
+        clickableCards.forEach(card => {
+            // Clone to remove existing listeners
+            const newCard = card.cloneNode(true);
+            card.parentNode?.replaceChild(newCard, card);
+            
+            newCard.addEventListener('click', async (event) => {
+                // Don't handle clicks if they originated from the open-sheet button or portrait
+                // v13: Use native DOM methods
+                const clickedElement = event.target.closest('.open-sheet, .party-card-image.party-card-clickable');
+                if (clickedElement) return;
 
-            const tokenId = $(event.currentTarget).data('token-id');
-            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
-            if (token) {
-                // Check ownership - only allow selection of tokens the user owns
-                if (!token.actor.isOwner) return;
-                
-                // Multi-select with shift+click, single select without shift
-                const releaseOthers = !event.shiftKey;
-                token.control({releaseOthers});
-            }
+                const tokenId = event.currentTarget.dataset.tokenId;
+                const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+                if (token) {
+                    // Check ownership - only allow selection of tokens the user owns
+                    if (!token.actor.isOwner) return;
+                    
+                    // Multi-select with shift+click, single select without shift
+                    const releaseOthers = !event.shiftKey;
+                    token.control({releaseOthers});
+                }
+            });
         });
 
         // Handle party overview health bar clicks

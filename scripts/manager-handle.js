@@ -7,7 +7,7 @@ import { MacrosPanel } from './panel-macros.js';
 import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getTokenDisplayName } from './helpers.js';
+import { getBlacksmith, getTokenDisplayName, getNativeElement } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
