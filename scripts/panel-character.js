@@ -117,7 +117,12 @@ export class CharacterPanel {
             // Labels: prefer config labels when available
             const speedLabelFor = (type) => {
                 if (mt && typeof mt === "object" && mt[type]) {
-                    return game.i18n?.localize?.(mt[type]) ?? mt[type];
+                    const label = mt[type];
+                    // v13: Ensure label is a string before localizing
+                    if (typeof label === 'string') {
+                        return game.i18n?.localize?.(label) ?? label;
+                    }
+                    return String(label || '');
                 }
                 return type.charAt(0).toUpperCase() + type.slice(1);
             };

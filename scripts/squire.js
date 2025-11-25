@@ -1026,7 +1026,14 @@ async function _routeToNotesPanel(page, changes, options, userId) {
     try {
         // Check if this is the currently displayed page in notes panel
         if (notesPanel.element) {
-            const currentPageId = notesPanel.element.find('.journal-content').data('page-id');
+            // v13: Detect and convert jQuery to native DOM if needed
+            let nativeElement = notesPanel.element;
+            if (notesPanel.element.jquery || typeof notesPanel.element.find === 'function') {
+                nativeElement = notesPanel.element[0] || notesPanel.element.get?.(0) || notesPanel.element;
+            }
+            
+            const journalContent = nativeElement.querySelector?.('.journal-content');
+            const currentPageId = journalContent?.getAttribute('data-page-id');
             if (currentPageId === page.id) {
                 // Trigger a refresh through the PanelManager if it's available
                 if (panelManager?.instance && panelManager.element) {
@@ -2058,8 +2065,9 @@ function cleanupModule() {
         }
 
         // Remove any remaining DOM elements
-        $('.squire-tray').remove();
-        $('.squire-questpin-tooltip').remove();
+        // v13: Use native DOM instead of jQuery
+        document.querySelectorAll('.squire-tray').forEach(el => el.remove());
+        document.querySelectorAll('.squire-questpin-tooltip').forEach(el => el.remove());
 
         if (selectionUpdateFrameId !== null) {
             cancelAnimationFrame(selectionUpdateFrameId);

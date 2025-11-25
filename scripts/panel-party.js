@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
+import { getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -24,9 +25,10 @@ export class PartyPanel {
         // If no element is provided, exit early
         if (!element) return;
         
-        this.element = element;
-        const partyContainer = element.find('[data-panel="party"]');
-        if (!partyContainer.length) return;
+        // v13: Convert jQuery to native DOM if needed
+        this.element = getNativeElement(element);
+        const partyContainer = this.element?.querySelector('[data-panel="party"]');
+        if (!partyContainer) return;
 
         // Get all player-owned tokens on the canvas
         const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);

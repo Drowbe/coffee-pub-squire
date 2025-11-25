@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
+import { getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -445,8 +446,10 @@ export class FavoritesPanel {
     async render(html) {
         if (!html) return;
         
+        // v13: Convert jQuery to native DOM if needed
+        const nativeHtml = getNativeElement(html);
         // Store the element reference
-        this.element = html;
+        this.element = nativeHtml;
         
         // Refresh favorites data
         this.favorites = this._getFavorites();
@@ -464,8 +467,9 @@ export class FavoritesPanel {
         const template = await renderTemplate(TEMPLATES.PANEL_FAVORITES, favoritesData);
         
         // Get the favorites panel element
-        const favoritesPanel = html.find('[data-panel="favorites"]');
-        if (!favoritesPanel.length) return;
+        // v13: Use native DOM querySelector
+        const favoritesPanel = nativeHtml?.querySelector('[data-panel="favorites"]');
+        if (!favoritesPanel) return;
         
         // Clean up old event listeners
         this._removeEventListeners(favoritesPanel);

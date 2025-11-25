@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
+import { getNativeElement } from './helpers.js';
 
 export class ControlPanel {
     constructor(actor) {
@@ -8,7 +9,8 @@ export class ControlPanel {
 
     async render(html) {
         if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element) return;
 
@@ -17,7 +19,11 @@ export class ControlPanel {
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_CONTROL, templateData);
-        this.element.find('[data-panel="control"]').html(content);
+        // v13: Use native DOM methods
+        const controlPanel = this.element.querySelector('[data-panel="control"]');
+        if (controlPanel) {
+            controlPanel.innerHTML = content;
+        }
         
         this._activateListeners(this.element);
         this._updateVisibility();

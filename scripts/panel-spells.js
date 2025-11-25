@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
+import { getNativeElement } from './helpers.js';
 
 export class SpellsPanel {
     constructor(actor) {
@@ -66,7 +67,8 @@ export class SpellsPanel {
 
     async render(html) {
         if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element) {
             return;
@@ -119,11 +121,15 @@ export class SpellsPanel {
         this._removeEventListeners(this.element);
         
         // Update the panel content
-        this.element.find('[data-panel="spells"]').html(template);
+        // v13: Use native DOM methods
+        const spellsPanel = this.element.querySelector('[data-panel="spells"]');
+        if (spellsPanel) {
+            spellsPanel.innerHTML = template;
+        }
         
         // Reset all categories to visible initially
         if (this.panelManager) {
-            this.panelManager.resetCategories(this.element[0]);
+            this.panelManager.resetCategories(this.element);
         }
         
         // Activate listeners on the root element

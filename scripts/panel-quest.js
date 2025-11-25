@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPins } from './quest-pin.js';
-import { copyToClipboard } from './helpers.js';
+import { copyToClipboard, getNativeElement } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 
 // Helper function to get quest number from UUID
@@ -2621,10 +2621,11 @@ export class QuestPanel {
      */
     async render(element) {
         if (!element) return;
-        this.element = element;
+        // v13: Convert jQuery to native DOM if needed
+        this.element = getNativeElement(element);
 
-        const questContainer = element.find('[data-panel="panel-quest"]');
-        if (!questContainer.length) return;
+        const questContainer = this.element?.querySelector('[data-panel="panel-quest"]');
+        if (!questContainer) return;
 
         // Always refresh data (safe even if no journal)
         await this._refreshData();

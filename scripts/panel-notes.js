@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
+import { getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -28,9 +29,10 @@ export class NotesPanel {
         // If no element is provided, exit early
         if (!element) return;
         
-        this.element = element;
-        const notesContainer = element.find('[data-panel="panel-notes"]');
-        if (!notesContainer.length) return;
+        // v13: Convert jQuery to native DOM if needed
+        this.element = getNativeElement(element);
+        const notesContainer = this.element?.querySelector('[data-panel="panel-notes"]');
+        if (!notesContainer) return;
 
         // Get the selected journal ID
         const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');

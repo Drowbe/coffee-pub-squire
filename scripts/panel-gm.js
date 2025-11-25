@@ -1,4 +1,5 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
+import { getNativeElement } from './helpers.js';
 
 export class GmPanel {
     constructor(actor) {
@@ -8,12 +9,13 @@ export class GmPanel {
 
     async render(html, details = {}) {
         if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element) return;
 
-        const panel = this.element.find('[data-panel="gm"]');
-        if (!panel.length) return;
+        const panel = this.element.querySelector('[data-panel="gm"]');
+        if (!panel) return;
 
         const collapsed = !!game.settings.get(MODULE.ID, 'isGmPanelCollapsed');
         const templateData = {
@@ -24,47 +26,65 @@ export class GmPanel {
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_GM, templateData);
-        panel.html(content);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        panel.innerHTML = content;
 
         this._applyCollapsedState(panel, collapsed);
         this._activateListeners(panel);
     }
 
     _applyCollapsedState(panel, collapsed) {
-        const content = panel.find('.gmdetails-content');
-        const toggle = panel.find('.gmdetails-toggle');
-        if (!content.length || !toggle.length) return;
+        // v13: Use native DOM methods
+        const content = panel.querySelector('.gmdetails-content');
+        const toggle = panel.querySelector('.gmdetails-toggle');
+        if (!content || !toggle) return;
 
         if (collapsed) {
-            content.addClass('collapsed');
-            toggle.css('transform', 'rotate(-90deg)');
+            content.classList.add('collapsed');
+            toggle.style.transform = 'rotate(-90deg)';
         } else {
-            content.removeClass('collapsed');
-            toggle.css('transform', 'rotate(0deg)');
+            content.classList.remove('collapsed');
+            toggle.style.transform = 'rotate(0deg)';
         }
     }
 
     _activateListeners(panel) {
-        if (!panel?.length) return;
+        if (!panel) return;
 
-        const title = panel.find('.gmdetails-header');
-        if (!title.length) return;
+        // v13: Use native DOM methods
+        const title = panel.querySelector('.gmdetails-header');
+        if (!title) return;
 
-        title.off('click.squire-gm').on('click.squire-gm', async () => {
-            const content = panel.find('.gmdetails-content');
-            const toggle = panel.find('.gmdetails-toggle');
-            if (!content.length || !toggle.length) return;
+        // Clone to remove existing listeners
+        const newTitle = title.cloneNode(true);
+        title.parentNode?.replaceChild(newTitle, title);
 
-            const isCollapsed = !content.hasClass('collapsed');
-            content.toggleClass('collapsed', isCollapsed);
-            toggle.css('transform', isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)');
+        newTitle.addEventListener('click', async () => {
+            const content = panel.querySelector('.gmdetails-content');
+            const toggle = panel.querySelector('.gmdetails-toggle');
+            if (!content || !toggle) return;
+
+            const isCollapsed = !content.classList.contains('collapsed');
+            if (isCollapsed) {
+                content.classList.add('collapsed');
+                toggle.style.transform = 'rotate(-90deg)';
+            } else {
+                content.classList.remove('collapsed');
+                toggle.style.transform = 'rotate(0deg)';
+            }
             await game.settings.set(MODULE.ID, 'isGmPanelCollapsed', isCollapsed);
         });
     }
 
     destroy() {
-        const panel = this.element?.find('[data-panel="gm"]');
-        panel?.find('.gmdetails-header')?.off('click.squire-gm');
+        // v13: Use native DOM methods
+        const panel = this.element?.querySelector('[data-panel="gm"]');
+        const header = panel?.querySelector('.gmdetails-header');
+        if (header) {
+            // Create a new element to remove listeners
+            const newHeader = header.cloneNode(true);
+            header.parentNode?.replaceChild(newHeader, header);
+        }
         this.element = null;
     }
 }

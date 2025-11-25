@@ -229,8 +229,11 @@ export class HandleManager {
         const handleContent = tempDiv.querySelector('.tray-handle-content-wrapper').innerHTML;
         
         // Update the handle content
-        const handleLeft = PanelManager.element.find('.tray-handle-content-wrapper');
-        handleLeft.html(handleContent);
+        // v13: Use native DOM instead of jQuery
+        const handleLeft = PanelManager.element?.querySelector('.tray-handle-content-wrapper');
+        if (handleLeft) {
+            handleLeft.innerHTML = handleContent;
+        }
 
         // Set up resize listener if not already set up
         if (!this._resizeHandler) {

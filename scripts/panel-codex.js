@@ -1,6 +1,6 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
-import { copyToClipboard } from './helpers.js';
+import { copyToClipboard, getNativeElement } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
@@ -1801,10 +1801,11 @@ export class CodexPanel {
      */
     async render(element) {
         if (!element) return;
-        this.element = element;
+        // v13: Convert jQuery to native DOM if needed
+        this.element = getNativeElement(element);
 
-        const codexContainer = element.find('[data-panel="panel-codex"]');
-        if (!codexContainer.length) return;
+        const codexContainer = this.element?.querySelector('[data-panel="panel-codex"]');
+        if (!codexContainer) return;
 
         // Refresh data if needed
         await this._refreshData();

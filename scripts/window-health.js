@@ -101,42 +101,77 @@ export class HealthWindow extends Application {
         const content = await renderTemplate(this.options.template, data);
         
         // Create the wrapper structure with window namespace
-        const html = `
-            <div class="squire-popout squire-window-health" data-position="left">
-                <div class="tray-content">
-                    <div class="panel-container" data-panel="health">
-                        ${content}
-                    </div>
-                </div>
-            </div>
-        `;
+        // v13: Return native DOM element instead of jQuery
+        const wrapper = document.createElement('div');
+        wrapper.className = 'squire-popout squire-window-health';
+        wrapper.setAttribute('data-position', 'left');
         
-        return $(html);
+        const trayContent = document.createElement('div');
+        trayContent.className = 'tray-content';
+        
+        const panelContainer = document.createElement('div');
+        panelContainer.className = 'panel-container';
+        panelContainer.setAttribute('data-panel', 'health');
+        panelContainer.innerHTML = content;
+        
+        trayContent.appendChild(panelContainer);
+        wrapper.appendChild(trayContent);
+        
+        return wrapper;
+    }
+
+    /**
+     * Get native DOM element from this.element (handles jQuery conversion)
+     * @returns {HTMLElement|null} Native DOM element
+     */
+    _getNativeElement() {
+        if (!this.element) return null;
+        // v13: Detect and convert jQuery to native DOM if needed
+        if (this.element.jquery || typeof this.element.find === 'function') {
+            return this.element[0] || this.element.get?.(0) || this.element;
+        }
+        return this.element;
     }
 
     activateListeners(html) {
         super.activateListeners(html);
         
-        // Find the panel container within the window content
-        const panelContainer = html.find('[data-panel="health"]').closest('.panel-container');
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
         
-        if (this.panel) {
+        // Find the panel container within the window content
+        const panelElement = nativeHtml.querySelector('[data-panel="health"]');
+        const panelContainer = panelElement?.closest('.panel-container');
+        
+        if (this.panel && panelContainer) {
             // Update the panel's element reference with the panel container
             this.panel.updateElement(panelContainer);
         }
 
         // Add close button handler
-        html.closest('.app').find('.close').click(ev => {
-            ev.preventDefault();
-            this.close();
-        });
+        const appElement = nativeHtml.closest('.app');
+        const closeButton = appElement?.querySelector('.close');
+        if (closeButton) {
+            closeButton.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                this.close();
+            });
+        }
     }
 
     async _onToggleMinimize(ev) {
         ev?.preventDefault();
         if (!this.rendered) return;
         this._minimized = !this._minimized;
-        this.element.toggleClass("minimized");
+        
+        // v13: Use native classList instead of jQuery toggleClass
+        const element = this._getNativeElement();
+        if (element) {
+            element.classList.toggle("minimized");
+        }
     }
 
     async close(options={}) {

@@ -96,46 +96,81 @@ export class CharactersWindow extends Application {
         // First render the template
         const content = await renderTemplate(this.options.template, data);
         // Create the wrapper structure using squire-popout
-        const html = `
-            <div class="squire-popout" data-position="left">
-                <div class="tray-content">
-                    <div class="panel-container" data-panel="characters">
-                        ${content}
-                    </div>
-                </div>
-            </div>
-        `;
+        // v13: Return native DOM element instead of jQuery
+        const wrapper = document.createElement('div');
+        wrapper.className = 'squire-popout';
+        wrapper.setAttribute('data-position', 'left');
+        
+        const trayContent = document.createElement('div');
+        trayContent.className = 'tray-content';
+        
+        const panelContainer = document.createElement('div');
+        panelContainer.className = 'panel-container';
+        panelContainer.setAttribute('data-panel', 'characters');
+        panelContainer.innerHTML = content;
+        
+        trayContent.appendChild(panelContainer);
+        wrapper.appendChild(trayContent);
+        
+        return wrapper;
+    }
 
-        return $(html);
+    /**
+     * Get native DOM element from this.element (handles jQuery conversion)
+     * @returns {HTMLElement|null} Native DOM element
+     */
+    _getNativeElement() {
+        if (!this.element) return null;
+        // v13: Detect and convert jQuery to native DOM if needed
+        if (this.element.jquery || typeof this.element.find === 'function') {
+            return this.element[0] || this.element.get?.(0) || this.element;
+        }
+        return this.element;
     }
 
     activateListeners(html) {
         super.activateListeners(html);
 
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+
         // Add close button handler
-        html.closest('.app').find('.close').click(ev => {
-            ev.preventDefault();
-            this.close();
-        });
+        const appElement = nativeHtml.closest('.app');
+        const closeButton = appElement?.querySelector('.close');
+        if (closeButton) {
+            closeButton.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                this.close();
+            });
+        }
 
         // Set up data-panel attribute for CSS targeting
-        html.closest('.window-content').attr('data-panel', 'characters');
+        const windowContent = nativeHtml.closest('.window-content');
+        if (windowContent) {
+            windowContent.setAttribute('data-panel', 'characters');
+        }
 
         // Add character selection handlers
-        html.find('.character-slot').click(ev => {
-            const characterId = ev.currentTarget.dataset.characterId;
-            const clickable = ev.currentTarget.dataset.clickable === 'true';
-            
-            if (clickable && characterId) {
-                // Find the character actor
-                const targetActor = game.actors.get(characterId);
-                if (targetActor && this.onCharacterSelected) {
-                    // Call the callback with the selected character and quantity data
-                    this.onCharacterSelected(targetActor, this.item, this.sourceActor, this.sourceItemId, this.selectedQuantity, this.hasQuantity);
+        const characterSlots = nativeHtml.querySelectorAll('.character-slot');
+        characterSlots.forEach(slot => {
+            slot.addEventListener('click', (ev) => {
+                const characterId = ev.currentTarget.dataset.characterId;
+                const clickable = ev.currentTarget.dataset.clickable === 'true';
+                
+                if (clickable && characterId) {
+                    // Find the character actor
+                    const targetActor = game.actors.get(characterId);
+                    if (targetActor && this.onCharacterSelected) {
+                        // Call the callback with the selected character and quantity data
+                        this.onCharacterSelected(targetActor, this.item, this.sourceActor, this.sourceItemId, this.selectedQuantity, this.hasQuantity);
+                    }
+                    // Close the window
+                    this.close();
                 }
-                // Close the window
-                this.close();
-            }
+            });
         });
     }
 
@@ -175,6 +210,11 @@ export class CharactersWindow extends Application {
         ev?.preventDefault();
         if (!this.rendered) return;
         this._minimized = !this._minimized;
-        this.element.toggleClass("minimized");
+        
+        // v13: Use native classList instead of jQuery toggleClass
+        const element = this._getNativeElement();
+        if (element) {
+            element.classList.toggle("minimized");
+        }
     }
 }

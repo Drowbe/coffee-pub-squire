@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
+import { getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -90,7 +91,8 @@ export class FeaturesPanel {
 
     async render(html) {
         if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element) return;
 
@@ -107,7 +109,8 @@ export class FeaturesPanel {
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_FEATURES, featureData);
-        const featuresPanel = this.element.find('[data-panel="features"]');
+        // v13: Use native DOM querySelector
+        const featuresPanel = this.element.querySelector('[data-panel="features"]');
         
         // Clean up old event listeners before updating HTML
         this._removeEventListeners(featuresPanel);

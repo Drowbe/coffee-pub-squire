@@ -8,6 +8,28 @@ export function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+/**
+ * v13: Convert jQuery object to native DOM element, or return native DOM as-is
+ * @param {jQuery|HTMLElement} element - jQuery object or native DOM element
+ * @returns {HTMLElement|null} Native DOM element
+ */
+export function getNativeElement(element) {
+    if (!element) return null;
+    // If it's already a native DOM element, return it
+    if (element instanceof HTMLElement || element instanceof Element || element.nodeType) {
+        return element;
+    }
+    // If it's a jQuery object, extract the native element
+    if (element.jquery || typeof element.find === 'function') {
+        return element[0] || element.get?.(0) || element;
+    }
+    // If it's a NodeList or array-like, return first element
+    if (element.length && element[0]) {
+        return getNativeElement(element[0]);
+    }
+    return element;
+}
+
 export function getTokenDisplayName(token, actor) {
     if (token?.document?.name) return token.document.name;
     if (token?.name) return token.name;

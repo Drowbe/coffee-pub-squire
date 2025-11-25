@@ -271,7 +271,8 @@ export class PanelManager {
             }
 
             // Remove any existing trays first
-            $('.squire-tray').remove();
+            // v13: Use native DOM instead of jQuery
+            document.querySelectorAll('.squire-tray').forEach(el => el.remove());
             
             // Create the tray
             await PanelManager.instance.createTray();
@@ -334,15 +335,19 @@ export class PanelManager {
             selectionCount,
             showSelectionBox
         });
-        const trayElement = $(trayHtml);
-        $('body').append(trayElement);
+        // v13: Create native DOM element instead of jQuery
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = trayHtml;
+        const trayElement = wrapper.firstElementChild || wrapper;
+        
+        document.body.appendChild(trayElement);
         PanelManager.element = trayElement;
         
         // Set initial position and restore pin state
-        trayElement.attr('data-position', 'left');
+        trayElement.setAttribute('data-position', 'left');
         PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
         if (PanelManager.isPinned) {
-            trayElement.addClass('pinned expanded');
+            trayElement.classList.add('pinned', 'expanded');
         }
 
         // Ensure viewMode is properly set
@@ -366,8 +371,9 @@ export class PanelManager {
         if (!this.element) return;
         
         // Store current state
-        const wasExpanded = this.element.hasClass('expanded');
-        const wasPinned = this.element.hasClass('pinned');
+        // v13: Use native classList instead of jQuery hasClass
+        const wasExpanded = this.element.classList.contains('expanded');
+        const wasPinned = this.element.classList.contains('pinned');
         
         // Create new tray element
         const viewMode = PanelManager.viewMode;
@@ -411,17 +417,22 @@ export class PanelManager {
             selectionCount,
             showSelectionBox
         });
-        const newTrayElement = $(trayHtml);
+        // v13: Create native DOM element instead of jQuery
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = trayHtml;
+        const newTrayElement = wrapper.firstElementChild || wrapper;
         
         // Preserve expanded/pinned state without animation
+        // v13: Use native classList instead of jQuery addClass
         if (wasExpanded) {
-            newTrayElement.addClass('expanded');
+            newTrayElement.classList.add('expanded');
         }
         if (wasPinned) {
-            newTrayElement.addClass('pinned expanded');
+            newTrayElement.classList.add('pinned', 'expanded');
         }
         
         // Replace the old tray with the new one
+        // v13: Use native DOM replaceWith method
         PanelManager.element.replaceWith(newTrayElement);
         PanelManager.element = newTrayElement;
 
@@ -580,27 +591,38 @@ export class PanelManager {
     }
 
     activateListeners(tray) {
-        const handle = tray.find('.tray-handle');
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeTray = tray;
+        if (tray && (tray.jquery || typeof tray.find === 'function')) {
+            nativeTray = tray[0] || tray.get?.(0) || tray;
+        }
         
-        // Remove existing event listeners to prevent duplicates
-        tray.find('.tray-tab-button').off('click');
-        tray.find('.tray-gm-button').off('click');
-        tray.find('.tray-tools-button').off('click');
-        tray.find('#button-clear').off('click');
-        
-       
+        const handle = nativeTray.querySelector('.tray-handle');
 
         // View tab buttons
-        tray.find('.tray-tab-button').click(async (event) => {
-            event.preventDefault();
-            const view = event.currentTarget.dataset.view;
-            await this.setViewMode(view);
+        const tabButtons = nativeTray.querySelectorAll('.tray-tab-button');
+        tabButtons.forEach(button => {
+            // Clone to remove existing listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const view = event.currentTarget.dataset.view;
+                await this.setViewMode(view);
+            });
         });
         
         // GM-only buttons
         if (game.user.isGM) {
             // Award Button
-            tray.find('.tray-gm-button[data-action="award"]').click(async (event) => {
+            const awardButton = nativeTray.querySelector('.tray-gm-button[data-action="award"]');
+            if (awardButton) {
+                // Clone to remove existing listeners
+                const newButton = awardButton.cloneNode(true);
+                awardButton.parentNode?.replaceChild(newButton, awardButton);
+                
+                newButton.addEventListener('click', async (event) => {
                 // Check if DnD5e module is available
                 if (!game.dnd5e) {
                     ui.notifications.error("The DnD5e system is required for the Award functionality.");
@@ -650,10 +672,17 @@ export class PanelManager {
                     blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
             });
+            }
         }
             
         // Select Party Button - available to all users
-        tray.find('.tray-tools-button[data-action="select-party"]').click(async (event) => {
+        const selectPartyButton = nativeTray.querySelector('.tray-tools-button[data-action="select-party"]');
+        if (selectPartyButton) {
+            // Clone to remove existing listeners
+            const newButton = selectPartyButton.cloneNode(true);
+            selectPartyButton.parentNode?.replaceChild(newButton, selectPartyButton);
+            
+            newButton.addEventListener('click', async (event) => {
             // Find all player character tokens on the canvas
             const partyTokens = canvas.tokens.placeables.filter(t => 
                 t.actor?.hasPlayerOwner && t.actor?.type === "character"
@@ -686,11 +715,18 @@ export class PanelManager {
                 const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
                 blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
             }
-        });
+            });
+        }
 
         // Selection wrapper button handlers
         // Clear selection button
-        tray.find('#button-clear').click(async (event) => {
+        const clearButton = nativeTray.querySelector('#button-clear');
+        if (clearButton) {
+            // Clone to remove existing listeners
+            const newButton = clearButton.cloneNode(true);
+            clearButton.parentNode?.replaceChild(newButton, clearButton);
+            
+            newButton.addEventListener('click', async (event) => {
             // Deselect all currently selected tokens
             canvas.tokens.releaseAll();
             
@@ -700,53 +736,58 @@ export class PanelManager {
                 const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
                 blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
             }
-        });
-
+            });
+        }
 
         // Add drag and drop handlers for stacked panels
-        const stackedContainer = tray.find('.panel-containers.stacked');
+        const stackedContainer = nativeTray.querySelector('.panel-containers.stacked');
         
-        // Remove any existing drag event listeners
-        stackedContainer.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
-        
-        // Add new drag event listeners
-        stackedContainer.on('dragenter.squire', (event) => {
-            event.preventDefault();
-            // Add drop hover styles for any drag operation
-            $(event.currentTarget).addClass('drop-target');
-            // Play hover sound
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (blacksmith) {
-                const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
-                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-            }
-        });
-
-        stackedContainer.on('dragleave.squire', (event) => {
-            event.preventDefault();
-            // Remove the style if we're leaving the container or entering a child element
-            const container = $(event.currentTarget);
-            const relatedTarget = $(event.relatedTarget);
-            // Check if we're actually leaving the container
-            if (!relatedTarget.closest('.panel-containers.stacked').is(container)) {
-                container.removeClass('drop-target');
-            }
-        });
-
-        stackedContainer.on('dragover.squire', (event) => {
-            event.preventDefault();
-            event.originalEvent.dataTransfer.dropEffect = 'copy';
-        });
-
-        stackedContainer.on('drop.squire', async (event) => {
-            event.preventDefault();
+        if (stackedContainer) {
+            // v13: Store handler references for cleanup (can't use namespaced events in native DOM)
+            // For now, we'll remove old handlers by cloning the container
+            const containerClone = stackedContainer.cloneNode(true);
+            stackedContainer.parentNode?.replaceChild(containerClone, stackedContainer);
+            const newStackedContainer = containerClone;
             
-            // Get the container and remove hover state
-            const $container = $(event.currentTarget);
-            $container.removeClass('drop-target');
+            // v13: Add new drag event listeners with native DOM
+            newStackedContainer.addEventListener('dragenter', (event) => {
+                event.preventDefault();
+                // Add drop hover styles for any drag operation
+                event.currentTarget.classList.add('drop-target');
+                // Play hover sound
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                }
+            });
+
+            newStackedContainer.addEventListener('dragleave', (event) => {
+                event.preventDefault();
+                // Remove the style if we're leaving the container or entering a child element
+                const container = event.currentTarget;
+                const relatedTarget = event.relatedTarget;
+                // Check if we're actually leaving the container
+                if (!relatedTarget || !newStackedContainer.contains(relatedTarget)) {
+                    container.classList.remove('drop-target');
+                }
+            });
+
+            newStackedContainer.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'copy';
+            });
+
+            newStackedContainer.addEventListener('drop', async (event) => {
+                event.preventDefault();
+                
+                // Get the container and remove hover state
+                const container = event.currentTarget;
+                container.classList.remove('drop-target');
             
             try {
-                const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
+                // v13: Use event.dataTransfer directly (no originalEvent in native DOM)
+                const dataTransfer = event.dataTransfer.getData('text/plain');
                 const data = JSON.parse(dataTransfer);
                 
                 // Play drop sound
@@ -1104,7 +1145,8 @@ export class PanelManager {
                 console.error('DROPZONE | Error handling drop:', error);
                 ui.notifications.error("Error handling drop. See console for details.");
             }
-        });
+            });
+        }
 
 
     }
@@ -1143,35 +1185,49 @@ export class PanelManager {
             return;
         }
         
+        // v13: Use native DOM methods instead of jQuery
         // Update tab buttons
-        tray.find('.tray-tab-button').removeClass('active');
-        tray.find(`.tray-tab-button[data-view="${mode}"]`).addClass('active');
+        const tabButtons = tray.querySelectorAll('.tray-tab-button');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        const activeTab = tray.querySelector(`.tray-tab-button[data-view="${mode}"]`);
+        if (activeTab) activeTab.classList.add('active');
         
         // Update view content visibility
-        tray.find('.tray-view-content').addClass('hidden');
-        tray.find(`.${mode}-view`).removeClass('hidden');
+        const viewContents = tray.querySelectorAll('.tray-view-content');
+        viewContents.forEach(vc => vc.classList.add('hidden'));
+        const activeView = tray.querySelector(`.${mode}-view`);
+        if (activeView) activeView.classList.remove('hidden');
         
         // Update tools toolbar visibility
-        tray.find('.tray-tools-toolbar').toggleClass('hidden', mode !== 'party');
+        const toolsToolbar = tray.querySelector('.tray-tools-toolbar');
+        if (toolsToolbar) {
+            if (mode !== 'party') {
+                toolsToolbar.classList.add('hidden');
+            } else {
+                toolsToolbar.classList.remove('hidden');
+            }
+        }
         
         // Update toggle button icon
-        const icon = tray.find('.tray-handle-button-viewcycle i');
-        icon.removeClass('fa-user fa-users fa-sticky-note fa-book fa-scroll');
-        switch (mode) {
-            case 'party':
-                icon.addClass('fa-users');
-                break;
-            case 'notes':
-                icon.addClass('fa-sticky-note');
-                break;
-            case 'codex':
-                icon.addClass('fa-book');
-                break;
-            case 'quest':
-                icon.addClass('fa-scroll');
-                break;
-            default:
-                icon.addClass('fa-user');
+        const icon = tray.querySelector('.tray-handle-button-viewcycle i');
+        if (icon) {
+            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note', 'fa-book', 'fa-scroll');
+            switch (mode) {
+                case 'party':
+                    icon.classList.add('fa-users');
+                    break;
+                case 'notes':
+                    icon.classList.add('fa-sticky-note');
+                    break;
+                case 'codex':
+                    icon.classList.add('fa-book');
+                    break;
+                case 'quest':
+                    icon.classList.add('fa-scroll');
+                    break;
+                default:
+                    icon.classList.add('fa-user');
+            }
         }
         
         // Update handle content using HandleManager to avoid code duplication
@@ -1723,8 +1779,15 @@ export class PanelManager {
     // Utility to remove a panel's DOM from the tray
     static removePanelDom(panel) {
         if (panel && panel.element) {
-            const dom = $(panel.element).find(`#${panel.constructor.name.toLowerCase()}-panel, .${panel.constructor.name.toLowerCase()}-panel`);
-            if (dom.length) dom.remove();
+            // v13: Use native DOM instead of jQuery
+            let nativeElement = panel.element;
+            if (panel.element.jquery || typeof panel.element.find === 'function') {
+                nativeElement = panel.element[0] || panel.element.get?.(0) || panel.element;
+            }
+            
+            const panelName = panel.constructor.name.toLowerCase();
+            const dom = nativeElement.querySelector(`#${panelName}-panel, .${panelName}-panel`);
+            if (dom) dom.remove();
         }
     }
 
@@ -1775,8 +1838,11 @@ export class PanelManager {
      */
     _applyFadeOutAnimation() {
         if (this._shouldApplyFadeAnimation() && PanelManager.element) {
-            const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-            trayPanelWrapper.addClass('content-updating');
+            // v13: Use native DOM instead of jQuery
+            const trayPanelWrapper = PanelManager.element?.querySelector('.tray-panel-wrapper');
+            if (trayPanelWrapper) {
+                trayPanelWrapper.classList.add('content-updating');
+            }
         }
     }
 
@@ -1786,13 +1852,17 @@ export class PanelManager {
      */
     _applyFadeInAnimation() {
         if (this._shouldApplyFadeAnimation() && PanelManager.element) {
-            const trayPanelWrapper = PanelManager.element.find('.tray-panel-wrapper');
-            trayPanelWrapper.removeClass('content-updating').addClass('content-updated');
-            
-            // Remove the content-updated class after animation completes
-            trackModuleTimeout(() => {
-                trayPanelWrapper.removeClass('content-updated');
-            }, 200);
+            // v13: Use native DOM instead of jQuery
+            const trayPanelWrapper = PanelManager.element?.querySelector('.tray-panel-wrapper');
+            if (trayPanelWrapper) {
+                trayPanelWrapper.classList.remove('content-updating');
+                trayPanelWrapper.classList.add('content-updated');
+                
+                // Remove the content-updated class after animation completes
+                trackModuleTimeout(() => {
+                    trayPanelWrapper.classList.remove('content-updated');
+                }, 200);
+            }
         }
     }
 }
@@ -1859,7 +1929,8 @@ async function initializeSquireAfterSettings() {
     // Initialize with the found actor
     if (initialActor) {
         if (PanelManager.element) {
-            PanelManager.element.removeClass('expanded');
+            // v13: Use native classList instead of jQuery
+            PanelManager.element.classList.remove('expanded');
         }
         
         await PanelManager.initialize(initialActor);
@@ -1877,7 +1948,8 @@ async function initializeSquireAfterSettings() {
         }
         
         if (PanelManager.element) {
-            PanelManager.element.addClass('expanded');
+            // v13: Use native classList instead of jQuery
+            PanelManager.element.classList.add('expanded');
         }
     }
 }
@@ -1894,36 +1966,52 @@ export async function _updateSelectionDisplay() {
     const showSelectionBox = selectionCount > 1;
     
     // Update the selection display
-    const selectionWrapper = PanelManager.element.find('.tray-selection-wrapper');
-    const selectionCountSpan = PanelManager.element.find('.tray-selection-count');
+    // v13: Use native DOM instead of jQuery
+    const selectionWrapper = PanelManager.element?.querySelector('.tray-selection-wrapper');
+    const selectionCountSpan = PanelManager.element?.querySelector('.tray-selection-count');
     
     if (showSelectionBox) {
         // Show selection box if it doesn't exist
-        if (selectionWrapper.length === 0) {
-            const selectionHtml = `
-                <div class="tray-selection-wrapper">
-                    <span class="tray-selection-count">${selectionCount} tokens selected</span>
-                    <div class="tray-selection-actions" data-tooltip="Use Shift+Click to select multiple or modify selection">
-                        <button id="button-clear" class="tray-selection-button button-clear" data-tooltip="Clear all selections">Clear All</button>
-                    </div>
-                </div>
-            `;
+        if (!selectionWrapper) {
+            // v13: Create native DOM elements instead of HTML string
+            const selectionWrapperDiv = document.createElement('div');
+            selectionWrapperDiv.className = 'tray-selection-wrapper';
+            
+            const countSpan = document.createElement('span');
+            countSpan.className = 'tray-selection-count';
+            countSpan.textContent = `${selectionCount} tokens selected`;
+            selectionWrapperDiv.appendChild(countSpan);
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'tray-selection-actions';
+            actionsDiv.setAttribute('data-tooltip', 'Use Shift+Click to select multiple or modify selection');
+            
+            const clearButton = document.createElement('button');
+            clearButton.id = 'button-clear';
+            clearButton.className = 'tray-selection-button button-clear';
+            clearButton.setAttribute('data-tooltip', 'Clear all selections');
+            clearButton.textContent = 'Clear All';
+            actionsDiv.appendChild(clearButton);
+            
+            selectionWrapperDiv.appendChild(actionsDiv);
             
             // Insert after the party toolbar
-            const partyToolbar = PanelManager.element.find('.tray-tools-toolbar');
-            if (partyToolbar.length > 0) {
-                partyToolbar.after(selectionHtml);
+            const partyToolbar = PanelManager.element?.querySelector('.tray-tools-toolbar');
+            if (partyToolbar && partyToolbar.parentNode) {
+                partyToolbar.parentNode.insertBefore(selectionWrapperDiv, partyToolbar.nextSibling);
             }
             
             // Re-attach event listeners for the new buttons
             PanelManager.instance.activateListeners(PanelManager.element);
         } else {
             // Update existing selection count
-            selectionCountSpan.text(`${selectionCount} tokens selected`);
+            if (selectionCountSpan) {
+                selectionCountSpan.textContent = `${selectionCount} tokens selected`;
+            }
         }
     } else {
         // Hide selection box if it exists
-        if (selectionWrapper.length > 0) {
+        if (selectionWrapper) {
             selectionWrapper.remove();
         }
     }

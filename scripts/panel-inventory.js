@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { CharactersWindow } from './window-characters.js';
+import { getNativeElement } from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 
 export class InventoryPanel {
@@ -84,7 +85,8 @@ export class InventoryPanel {
 
     async render(html) {
         if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element) return;
 
@@ -107,7 +109,8 @@ export class InventoryPanel {
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_INVENTORY, itemData);
-        const inventoryPanel = this.element.find('[data-panel="inventory"]');
+        // v13: Use native DOM querySelector
+        const inventoryPanel = this.element.querySelector('[data-panel="inventory"]');
         
         // Clean up old event listeners before updating HTML
         this._removeEventListeners(inventoryPanel);

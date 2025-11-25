@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
+import { getNativeElement } from './helpers.js';
 import { CharactersWindow } from './window-characters.js';
 
 export class WeaponsPanel {
@@ -94,7 +95,8 @@ export class WeaponsPanel {
 
     async render(html) {
         if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element) return;
 
@@ -113,7 +115,8 @@ export class WeaponsPanel {
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_WEAPONS, weaponData);
-        const weaponsPanel = this.element.find('[data-panel="weapons"]');
+        // v13: Use native DOM querySelector
+        const weaponsPanel = this.element.querySelector('[data-panel="weapons"]');
         
         // Clean up old event listeners before updating HTML
         this._removeEventListeners(weaponsPanel);
