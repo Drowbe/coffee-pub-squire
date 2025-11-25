@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [12.1.14] - Final v12 Release
+
+### Important Notice
+- **FINAL v12 RELEASE:** This is the final build of Coffee Pub Squire compatible with FoundryVTT v12
+- **v13 Migration:** All future builds will require FoundryVTT v13 or later
+- **Breaking Changes:** Users must upgrade to FoundryVTT v13 to use future versions of this module
+
 ## [12.1.13] - Character Panel Render Safety Fix
 
 ### Fixed

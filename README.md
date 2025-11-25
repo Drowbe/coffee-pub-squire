@@ -16,6 +16,10 @@ If you stumble upon this repository and find it useful, feel free to try it out!
 
 A comprehensive FoundryVTT module that provides an extensive suite of character management tools, quest systems, and quality-of-life features through an intuitive sliding tray interface. Part of the Coffee Pub suite of modules.
 
+## IMPORTANT NOTICE
+
+Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible with FoundryVTT v12. All future builds will be compatible with FoundryVTT v13 and later. There are no current plans to continue to improve or maintain Squire on FoundryVTT v12.
+
 ## Visual Showcase
 
 ### **Main Interface**
