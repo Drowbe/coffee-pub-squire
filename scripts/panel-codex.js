@@ -718,9 +718,11 @@ export class CodexPanel {
      * @private
      */
     _activateListeners(html) {
+        // v13: html is guaranteed to be a native DOM element (from querySelector in render method)
         // Search input - live DOM filtering
-        const searchInput = html.find('.codex-search input');
-        const clearButton = html.find('.clear-search');
+        const codexSearchContainer = html.querySelector('.codex-search');
+        const searchInput = codexSearchContainer?.querySelector('input');
+        const clearButton = html.querySelector('.clear-search');
         
         // --- DOM-based filtering for search and tags ---
         const filterEntries = () => {
@@ -1905,7 +1907,8 @@ export class CodexPanel {
         // Deep clone to break references and ensure only primitives are passed
         const safeTemplateData = JSON.parse(JSON.stringify(templateData));
         const html = await renderTemplate(TEMPLATES.PANEL_CODEX, safeTemplateData);
-        codexContainer.html(html);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        codexContainer.innerHTML = html;
 
         // Activate listeners
         this._activateListeners(codexContainer);

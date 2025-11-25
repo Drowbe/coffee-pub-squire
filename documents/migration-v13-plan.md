@@ -6,6 +6,47 @@
 
 ---
 
+## ⚠️ Important Note: jQuery Detection Pattern is Technical Debt
+
+**The jQuery detection pattern used in migration is TRANSITIONAL/HACKY and should be treated as technical debt.**
+
+### Why This Pattern is Problematic
+
+In FoundryVTT v13, jQuery is **completely removed**. Ideally, `html` parameters should **always** be native DOM elements.
+
+The jQuery detection pattern indicates we're still in a mixed state where jQuery might be passed in. This is defensive code to handle an inconsistency we should fix at the source, not normalize at the destination.
+
+### What We Should Do Instead
+
+**Long-term (fully migrated v13):**
+- Ensure call sites pass native DOM elements consistently
+- Remove all jQuery detection code
+- TypeScript or explicit checks at call sites can enforce this
+
+**Short-term (during migration):**
+- This pattern is acceptable to prevent crashes while migrating
+- Plan to remove it once all call sites are fixed
+- Track which methods use this pattern and why
+
+### The Real Question
+
+**Where is `html` coming from that might be a jQuery object?**
+- If it's from FoundryVTT's Application classes: they should return native DOM in v13, so the check isn't needed
+- If it's from our code: fix the call sites to pass native DOM
+- If it's unknown: keep the check temporarily, but track and fix the sources
+
+### Bottom Line
+
+**Keep jQuery detection during migration, but treat it as technical debt.** Once all call sites are confirmed to pass native DOM elements (especially when elements come from `querySelector()` which always returns native DOM), **remove the detection code**.
+
+**Example of unnecessary detection:**
+- `codexContainer` comes from `this.element.querySelector()` → guaranteed native DOM
+- No jQuery detection needed in `_activateListeners(codexContainer)`
+
+**Action Item:** After migration, audit all jQuery detection patterns and remove those where the source is guaranteed to be native DOM (e.g., `querySelector()` results).
+
+---
+
 ## Executive Summary
 
 This module requires extensive jQuery-to-native-DOM migration. The codebase has:

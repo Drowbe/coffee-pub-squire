@@ -30,16 +30,36 @@ export class ControlPanel {
     }
 
     _updateVisibility() {
+        if (!this.element) return;
+        
+        // v13: Use native DOM methods instead of jQuery
         ['favorites', 'weapons', 'spells', 'features', 'inventory'].forEach(panel => {
             const isVisible = game.settings.get(MODULE.ID, `show${panel.charAt(0).toUpperCase() + panel.slice(1)}Panel`);
+            
             // Update icon state
-            this.element.find(`[data-panel="control"] .control-toggle[data-toggle-panel="${panel}"]`)
-                .toggleClass('active', isVisible)
-                .toggleClass('faded', !isVisible);
+            const controlPanel = this.element.querySelector('[data-panel="control"]');
+            if (controlPanel) {
+                const toggle = controlPanel.querySelector(`.control-toggle[data-toggle-panel="${panel}"]`);
+                if (toggle) {
+                    if (isVisible) {
+                        toggle.classList.add('active');
+                        toggle.classList.remove('faded');
+                    } else {
+                        toggle.classList.remove('active');
+                        toggle.classList.add('faded');
+                    }
+                }
+            }
             
             // Update panel visibility
-            this.element.find(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`)
-                .toggleClass('visible', isVisible);
+            const panelContainer = this.element.querySelector(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`);
+            if (panelContainer) {
+                if (isVisible) {
+                    panelContainer.classList.add('visible');
+                } else {
+                    panelContainer.classList.remove('visible');
+                }
+            }
         });
     }
 
@@ -172,20 +192,49 @@ export class ControlPanel {
     }
 
     _activateListeners(html) {
-        html.find('[data-panel="control"] .control-toggle').click(async (event) => {
-            const panelType = $(event.currentTarget).data('toggle-panel');
-            await this._togglePanel(panelType);
+        // v13: Use native DOM methods instead of jQuery
+        const controlPanel = html.querySelector('[data-panel="control"]');
+        if (!controlPanel) return;
+
+        // Control toggle buttons
+        const toggleButtons = controlPanel.querySelectorAll('.control-toggle');
+        toggleButtons.forEach(button => {
+            // Clone to remove existing listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            
+            newButton.addEventListener('click', async (event) => {
+                const panelType = event.currentTarget.dataset.togglePanel;
+                await this._togglePanel(panelType);
+            });
         });
 
         // Add search input listener
-        html.find('[data-panel="control"] .global-search').on('input', (event) => {
-            this._handleSearch(event.target.value);
-        });
+        const searchInput = controlPanel.querySelector('.global-search');
+        if (searchInput) {
+            // Clone to remove existing listeners
+            const newInput = searchInput.cloneNode(true);
+            searchInput.parentNode?.replaceChild(newInput, searchInput);
+            
+            newInput.addEventListener('input', (event) => {
+                this._handleSearch(event.target.value);
+            });
+        }
 
         // Add search clear button listener
-        html.find('[data-panel="control"] .search-clear').click((event) => {
-            const $search = $(event.currentTarget).siblings('.global-search');
-            $search.val('').trigger('input');
-        });
+        const clearButton = controlPanel.querySelector('.search-clear');
+        if (clearButton) {
+            // Clone to remove existing listeners
+            const newButton = clearButton.cloneNode(true);
+            clearButton.parentNode?.replaceChild(newButton, clearButton);
+            
+            newButton.addEventListener('click', (event) => {
+                const searchInput = event.currentTarget.parentElement?.querySelector('.global-search');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
     }
 } 

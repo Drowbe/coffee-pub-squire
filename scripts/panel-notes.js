@@ -147,7 +147,8 @@ export class NotesPanel {
             isPersistent: game.user.isGM && persistentJournalId === journalId && journalId !== 'none',
             position: "left" // Hard-code position for now as it's always left in current implementation
         });
-        notesContainer.html(html);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        notesContainer.innerHTML = html;
 
         this.activateListeners(notesContainer, journal, page);
     }
@@ -194,6 +195,12 @@ export class NotesPanel {
     }
 
     activateListeners(html, journal, page) {
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
         // Define permission levels
         const PERMISSION_LEVELS = {
             NONE: 0,
@@ -203,33 +210,47 @@ export class NotesPanel {
         };
         
         // Add event listeners for notes panel here
-        html.find('.character-sheet-toggle').click(async (event) => {
-            event.preventDefault();
+        const characterSheetToggle = nativeHtml.querySelector('.character-sheet-toggle');
+        if (characterSheetToggle) {
+            // Clone to remove existing listeners
+            const newToggle = characterSheetToggle.cloneNode(true);
+            characterSheetToggle.parentNode?.replaceChild(newToggle, characterSheetToggle);
             
-            // Open the current actor's character sheet when the toggle is clicked
-            const actor = game.user.character || canvas.tokens?.controlled[0]?.actor;
-            if (actor) {
-                actor.sheet.render(true);
-            } else {
-                ui.notifications.warn("No character selected. Please select a token first.");
-            }
-        });
+            newToggle.addEventListener('click', async (event) => {
+                event.preventDefault();
+                
+                // Open the current actor's character sheet when the toggle is clicked
+                const actor = game.user.character || canvas.tokens?.controlled[0]?.actor;
+                if (actor) {
+                    actor.sheet.render(true);
+                } else {
+                    ui.notifications.warn("No character selected. Please select a token first.");
+                }
+            });
+        }
 
         // Open journal button
-        html.find('.open-journal-button').click(async (event) => {
-            event.preventDefault();
+        const openJournalButton = nativeHtml.querySelector('.open-journal-button');
+        if (openJournalButton) {
+            // Clone to remove existing listeners
+            const newButton = openJournalButton.cloneNode(true);
+            openJournalButton.parentNode?.replaceChild(newButton, openJournalButton);
             
-            if (journal) {
-                if (page) {
-                    // Open directly to the selected page if we have one
-                    journal.sheet.render(true, {pageId: page.id});
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                
+                if (journal) {
+                    if (page) {
+                        // Open directly to the selected page if we have one
+                        journal.sheet.render(true, {pageId: page.id});
+                    } else {
+                        journal.sheet.render(true);
+                    }
                 } else {
-                    journal.sheet.render(true);
+                    ui.notifications.warn("No journal selected. Please select a journal in the module settings.");
                 }
-            } else {
-                ui.notifications.warn("No journal selected. Please select a journal in the module settings.");
-            }
-        });
+            });
+        }
 
         // Edit page button (for owners)
         html.find('.edit-page-button').click(async (event) => {
@@ -337,14 +358,12 @@ export class NotesPanel {
                     return;
                 }
                 
-                            // Close the editor
-            this.journalSheet.close();
-            this.journalSheet = null;
-        }
+                // Close the editor
+                this.journalSheet.close();
+                this.journalSheet = null;
+            }
         
-
-        
-        if (game.user.isGM) {
+            if (game.user.isGM) {
             // Save the selected page globally for all users if GM
             await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
         } else {

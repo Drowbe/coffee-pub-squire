@@ -707,9 +707,16 @@ export class QuestPanel {
      * @private
      */
     _activateListeners(html) {
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
         // Search input - live DOM filtering
-        const searchInput = html.find('.quest-search input');
-        const clearButton = html.find('.clear-search');
+        const questSearchContainer = nativeHtml.querySelector('.quest-search');
+        const searchInput = questSearchContainer?.querySelector('input');
+        const clearButton = nativeHtml.querySelector('.clear-search');
         
         searchInput.on('input', (event) => {
             const searchValue = event.target.value.toLowerCase();
@@ -2804,7 +2811,8 @@ export class QuestPanel {
         // Deep clone to break references and ensure only primitives are passed
         const safeTemplateData = JSON.parse(JSON.stringify(templateData));
         const html = await renderTemplate(TEMPLATES.PANEL_QUEST, safeTemplateData);
-        questContainer.html(html);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        questContainer.innerHTML = html;
 
         // Activate listeners
         this._activateListeners(questContainer);

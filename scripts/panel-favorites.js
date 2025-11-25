@@ -475,7 +475,8 @@ export class FavoritesPanel {
         this._removeEventListeners(favoritesPanel);
         
         // Update HTML
-        favoritesPanel.html(template);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        favoritesPanel.innerHTML = template;
         
         // Add equipped class and handle shield icon visibility for equipped items
         favoritesPanel.find('.favorite-item').each((_, item) => {
@@ -510,26 +511,15 @@ export class FavoritesPanel {
     _removeEventListeners(panel) {
         if (!panel) return;
         
-        // Remove all event listeners using proper namespacing
-        panel.off('.squireFavorites');
-        
-        // Remove specific event bindings that might not be namespaced
-        panel.find('.favorite-item .fa-heart').off();
-        panel.find('.favorite-image-container').off();
-        panel.find('.fa-feather').off();
-        panel.find('.fa-dagger').off();
-        panel.find('.favorites-spell-toggle').off();
-        panel.find('.favorites-weapon-toggle').off();
-        panel.find('.favorites-features-toggle').off();
-        panel.find('.favorites-inventory-toggle').off();
+        // v13: Native DOM doesn't support jQuery's .off() method
+        // Event listeners will be removed when elements are cloned in _activateListeners
+        // This method is kept for compatibility but does nothing in v13
         
         // Properly cleanup context menu
         if (this._contextMenu) {
             this._contextMenu.close();
             this._contextMenu = null;
         }
-        // Remove any existing context menu bindings
-        panel.find('.favorites-list').off('contextmenu');
     }
 
     _updateVisibility(html) {

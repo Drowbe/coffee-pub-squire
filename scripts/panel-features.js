@@ -115,7 +115,8 @@ export class FeaturesPanel {
         // Clean up old event listeners before updating HTML
         this._removeEventListeners(featuresPanel);
         
-        featuresPanel.html(template);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        featuresPanel.innerHTML = template;
         
         // Reset all categories to visible initially
         if (this.panelManager) {
@@ -164,8 +165,9 @@ export class FeaturesPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
-        // Remove all event listeners using proper namespacing
-        panel.off('.squireFeatures');
+        // v13: Native DOM doesn't support jQuery's .off() method
+        // Event listeners will be removed when elements are cloned in _activateListeners
+        // This method is kept for compatibility but does nothing in v13
     }
 
     _activateListeners(html) {

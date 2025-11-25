@@ -255,14 +255,25 @@ export class HandleManager {
         // Check if PanelManager.element exists before proceeding
         if (!PanelManager.element) return;
         
-        const handle = PanelManager.element.find('.tray-handle');
+        // v13: Use native DOM querySelector instead of jQuery find
+        const nativePanelManagerElement = getNativeElement(PanelManager.element);
+        if (!nativePanelManagerElement) return;
+        
+        const handle = nativePanelManagerElement.querySelector('.tray-handle');
+        if (!handle) return;
+        
+        // v13: Clone handle to remove existing listeners
+        const newHandle = handle.cloneNode(true);
+        handle.parentNode?.replaceChild(newHandle, handle);
+        const handleElement = newHandle;
         
         // Handle click on handle (collapse chevron)
-        handle.off('click').on('click', (event) => {
+        handleElement.addEventListener('click', (event) => {
             // Only allow tray toggle on specific elements
-            const $target = $(event.target);
-            const isToggleButton = $target.closest('.tray-handle-button-toggle').length > 0;
-            const isCharacterPanel = $target.closest('[data-clickable="true"]').length > 0;
+            // v13: Use native DOM methods
+            const target = event.target;
+            const isToggleButton = target.closest('.tray-handle-button-toggle') !== null;
+            const isCharacterPanel = target.closest('[data-clickable="true"]') !== null;
             
             // If not clicking on toggle button or character panel, don't toggle
             if (!isToggleButton && !isCharacterPanel) {
@@ -279,8 +290,8 @@ export class HandleManager {
             }
             
             // Play tray open sound when expanding
-            const tray = handle.closest('.squire-tray');
-            if (!tray.hasClass('expanded')) {
+            const tray = nativePanelManagerElement.querySelector('.squire-tray');
+            if (tray && !tray.classList.contains('expanded')) {
                 const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
                 if (blacksmith) {
                     const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
@@ -288,7 +299,9 @@ export class HandleManager {
                 }
             }
             
-            tray.toggleClass('expanded');
+            if (tray) {
+                tray.classList.toggle('expanded');
+            }
             return false;
         });
 
@@ -804,16 +817,18 @@ export class HandleManager {
         // Check if PanelManager.element exists before proceeding
         if (!PanelManager.element) return;
         
-        const handle = PanelManager.element.find('.tray-handle');
-        if (!handle || !handle.length) return;
+        // v13: Use native DOM querySelector instead of jQuery find
+        const handle = PanelManager.element.querySelector('.tray-handle');
+        if (!handle) return;
         
-        const container = handle.find('.tray-handle-content-container');
-        const fade = handle.find('.tray-handle-fade-bottom');
-        if (!container || !container.length || !fade || !fade.length) return;
+        const container = handle.querySelector('.tray-handle-content-container');
+        const fade = handle.querySelector('.tray-handle-fade-bottom');
+        if (!container || !fade) return;
         
         // Check if content is overflowing vertically
-        const isOverflowing = container[0].scrollHeight > container[0].clientHeight;
-        fade.toggle(isOverflowing);
+        // v13: Use native DOM properties directly
+        const isOverflowing = container.scrollHeight > container.clientHeight;
+        fade.style.display = isOverflowing ? 'block' : 'none';
     }
 
     /**

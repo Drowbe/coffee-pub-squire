@@ -112,40 +112,65 @@ export class PartyPanel {
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros')
         });
-        partyContainer.html(html);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        partyContainer.innerHTML = html;
 
         this.activateListeners(partyContainer);
     }
 
     activateListeners(html) {
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
         // Handle character sheet button clicks
-        html.find('.open-sheet').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const tokenId = $(event.target).closest('.party-card').data('token-id');
-            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
-            if (token?.actor) {
-                if (PanelManager.instance) {
-                    PanelManager.instance._suppressSheetRender = true;
+        const openSheetButtons = nativeHtml.querySelectorAll('.open-sheet');
+        openSheetButtons.forEach(button => {
+            // Clone to remove existing listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                // v13: Use native DOM methods
+                const partyCard = event.target.closest('.party-card');
+                const tokenId = partyCard?.dataset.tokenId;
+                const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+                if (token?.actor) {
+                    if (PanelManager.instance) {
+                        PanelManager.instance._suppressSheetRender = true;
+                    }
+                    token.actor.sheet.render(true);
                 }
-                token.actor.sheet.render(true);
-            }
+            });
         });
 
         // Handle portrait clicks
-        html.find('.party-card-image.party-card-clickable').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const tokenId = $(event.currentTarget).closest('.party-card').data('token-id');
-            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
-            if (token?.actor) {
-                const imagePopout = new ImagePopout(token.actor.img, {
-                    title: token.actor.name,
-                    shareable: true,
-                    uuid: token.actor.uuid
-                });
-                imagePopout.render(true);
-            }
+        const portraitButtons = nativeHtml.querySelectorAll('.party-card-image.party-card-clickable');
+        portraitButtons.forEach(button => {
+            // Clone to remove existing listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                // v13: Use native DOM methods
+                const partyCard = event.currentTarget.closest('.party-card');
+                const tokenId = partyCard?.dataset.tokenId;
+                const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+                if (token?.actor) {
+                    const imagePopout = new ImagePopout(token.actor.img, {
+                        title: token.actor.name,
+                        shareable: true,
+                        uuid: token.actor.uuid
+                    });
+                    imagePopout.render(true);
+                }
+            });
         });
 
         // Handle character card clicks for token selection

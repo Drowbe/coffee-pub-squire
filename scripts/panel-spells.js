@@ -233,15 +233,17 @@ export class SpellsPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
-        // Remove all event listeners using proper namespacing
-        panel.off('.squireSpells');
+        // v13: Native DOM doesn't support jQuery's .off() method
+        // Event listeners will be removed when elements are cloned in _activateListeners
+        // This method is kept for compatibility but does nothing in v13
     }
 
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
-        // Use event delegation for all handlers
-        const panel = html.find('[data-panel="spells"]');
+        // v13: Use native DOM querySelector instead of jQuery find
+        const panel = html.querySelector('[data-panel="spells"]');
+        if (!panel) return;
 
         // Remove any existing listeners first
         this._removeEventListeners(panel);
