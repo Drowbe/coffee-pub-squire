@@ -306,43 +306,50 @@ export class HandleManager {
         });
 
         // Pin button handling
-        handle.find('.tray-handle-button-pin').off('click').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+        const pinButton = handleElement.querySelector('.tray-handle-button-pin');
+        if (pinButton) {
+            // Clone to remove existing listeners
+            const newPinButton = pinButton.cloneNode(true);
+            pinButton.parentNode?.replaceChild(newPinButton, pinButton);
             
-            PanelManager.isPinned = !PanelManager.isPinned;
-            await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
-            
-            // Play pin/unpin sound
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (blacksmith) {
-                const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
-                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-            }
-            
-            if (PanelManager.isPinned) {
-                // When pinning, ensure tray is expanded
-                const tray = handle.closest('.squire-tray');
-                tray.addClass('pinned expanded');
-                // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
-                const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
-                const uiLeft = document.querySelector('#ui-left');
-                if (uiLeft) {
-                    uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+            newPinButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                PanelManager.isPinned = !PanelManager.isPinned;
+                await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
+                
+                // Play pin/unpin sound
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (blacksmith) {
+                    const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
+                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
-            } else {
-                // When unpinning, maintain expanded state but remove pinned class
-                const tray = handle.closest('.squire-tray');
-                tray.removeClass('pinned');
-                // Reset UI margin when unpinned - need both handle width and offset
-                const uiLeft = document.querySelector('#ui-left');
-                if (uiLeft) {
-                    uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                
+                if (PanelManager.isPinned) {
+                    // When pinning, ensure tray is expanded
+                    const tray = handle.closest('.squire-tray');
+                    tray.classList.add('pinned', 'expanded');
+                    // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
+                    const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+                    const uiLeft = document.querySelector('#ui-left');
+                    if (uiLeft) {
+                        uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                    }
+                } else {
+                    // When unpinning, maintain expanded state but remove pinned class
+                    const tray = handle.closest('.squire-tray');
+                    tray.classList.remove('pinned');
+                    // Reset UI margin when unpinned - need both handle width and offset
+                    const uiLeft = document.querySelector('#ui-left');
+                    if (uiLeft) {
+                        uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                    }
                 }
-            }
-            
-            return false;
-        });
+                
+                return false;
+            });
+        }
 
         // View mode toggle button
         handle.find('.tray-handle-button-viewcycle').off('click').on('click', async (event) => {

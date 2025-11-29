@@ -2063,7 +2063,8 @@ export async function _updateHealthPanelFromSelection() {
     const currentViewMode = PanelManager.viewMode;
 
     // Store the current tray state before initializing
-    const wasExpanded = PanelManager.element?.hasClass('expanded') || false;
+    // v13: Use native DOM classList instead of jQuery hasClass
+    const wasExpanded = PanelManager.element?.classList.contains('expanded') || false;
     
     // Check if we need to change actors
     if (PanelManager.currentActor?.id !== actorToUse.id) {

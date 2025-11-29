@@ -789,27 +789,46 @@ export class CodexPanel {
         }
 
         // Clear search button
-        clearButton.removeClass('disabled');
-        clearButton.off('click').on('click', (event) => {
-            this.filters.search = "";
-            this.filters.tags = [];
-            searchInput.val("");
-            html.find('.codex-tag.selected').removeClass('selected');
+        if (clearButton) {
+            clearButton.classList.remove('disabled');
+            // Clone to remove existing listeners
+            const newClearButton = clearButton.cloneNode(true);
+            clearButton.parentNode?.replaceChild(newClearButton, clearButton);
             
-            // Show all entries and sections
-            html.find('.codex-entry').show();
-            html.find('.codex-section').show();
-            
-            // Restore original collapsed states
-            const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
-            for (const [category, collapsed] of Object.entries(collapsedCategories)) {
-                if (collapsed) {
-                    html.find(`.codex-section[data-category="${category}"]`).addClass('collapsed');
+            newClearButton.addEventListener('click', (event) => {
+                this.filters.search = "";
+                this.filters.tags = [];
+                if (searchInput) {
+                    searchInput.value = "";
                 }
-            }
-            
-            this.render(this.element);
-        });
+                // v13: Use native DOM methods
+                nativeHtml.querySelectorAll('.codex-tag.selected').forEach(tag => {
+                    tag.classList.remove('selected');
+                });
+                
+                // Show all entries and sections
+                nativeHtml.querySelectorAll('.codex-entry').forEach(entry => {
+                    entry.style.display = '';
+                });
+                nativeHtml.querySelectorAll('.codex-section').forEach(section => {
+                    section.style.display = '';
+                });
+                
+                // Restore original collapsed states
+                const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+                for (const [category, collapsed] of Object.entries(collapsedCategories)) {
+                    if (collapsed) {
+                        // v13: Use native DOM methods
+                        const section = nativeHtml.querySelector(`.codex-section[data-category="${category}"]`);
+                        if (section) {
+                            section.classList.add('collapsed');
+                        }
+                    }
+                }
+                
+                this.render(this.element);
+            });
+        }
 
         // Tag cloud tag selection
         html.find('.codex-tag-cloud .codex-tag').click((event) => {
@@ -1388,8 +1407,13 @@ export class CodexPanel {
         // On load, ensure all entries are visible if no filters are set
         trackModuleTimeout(() => {
             if (!this.filters.search && (!this.filters.tags || this.filters.tags.length === 0)) {
-                html.find('.codex-entry').show();
-                html.find('.codex-section').show();
+                // v13: Use native DOM methods
+                nativeHtml.querySelectorAll('.codex-entry').forEach(entry => {
+                    entry.style.display = '';
+                });
+                nativeHtml.querySelectorAll('.codex-section').forEach(section => {
+                    section.style.display = '';
+                });
             } else {
                 filterEntries();
             }
@@ -1920,9 +1944,13 @@ export class CodexPanel {
         this._activateListeners(codexContainer);
 
         // Restore collapsed states
+        // v13: Use native DOM methods
         for (const [category, collapsed] of Object.entries(collapsedCategories)) {
             if (collapsed) {
-                codexContainer.find(`.codex-section[data-category="${category}"]`).addClass('collapsed');
+                const section = codexContainer.querySelector(`.codex-section[data-category="${category}"]`);
+                if (section) {
+                    section.classList.add('collapsed');
+                }
             }
         }
     }

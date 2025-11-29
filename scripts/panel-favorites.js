@@ -591,9 +591,16 @@ export class FavoritesPanel {
 
     _activateListeners(html) {
         if (!html) return;
+        
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
 
-        const panel = html.find('[data-panel="favorites"]');
-        const favoritesList = panel.find('.favorites-list');
+        const panel = nativeHtml.querySelector('[data-panel="favorites"]');
+        if (!panel) return;
+        const favoritesList = panel.querySelector('.favorites-list');
         
         // Always create a fresh context menu
         try {

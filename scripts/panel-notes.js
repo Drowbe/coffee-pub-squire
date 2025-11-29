@@ -276,8 +276,14 @@ export class NotesPanel {
             });
         }
         
-        // Toggle edit mode button 
-        html.find('.toggle-edit-mode-button').click(async (event) => {
+        // Toggle edit mode button
+        const toggleEditModeButton = nativeHtml.querySelector('.toggle-edit-mode-button');
+        if (toggleEditModeButton) {
+            // Clone to remove existing listeners
+            const newButton = toggleEditModeButton.cloneNode(true);
+            toggleEditModeButton.parentNode?.replaceChild(newButton, toggleEditModeButton);
+            
+            newButton.addEventListener('click', async (event) => {
             event.preventDefault();
             
             if (journal && page) {
@@ -291,7 +297,8 @@ export class NotesPanel {
                     ui.notifications.warn("You don't have permission to edit this page.");
                 }
             }
-        });
+            });
+        }
         
         // Set journal button (GM only)
         html.find('.set-journal-button, .set-journal-button-large').click(async (event) => {

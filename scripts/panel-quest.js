@@ -789,13 +789,20 @@ export class QuestPanel {
         }
 
         // Refresh button
-        html.find('.refresh-quest-button').click(async () => {
+        const refreshButton = nativeHtml.querySelector('.refresh-quest-button');
+        if (refreshButton) {
+            // Clone to remove existing listeners
+            const newButton = refreshButton.cloneNode(true);
+            refreshButton.parentNode?.replaceChild(newButton, refreshButton);
+            
+            newButton.addEventListener('click', async () => {
             if (this.selectedJournal) {
                 await this._refreshData();
                 this.render(this.element);
                 ui.notifications.info("Quests refreshed.");
             }
-        });
+            });
+        }
 
         // Open quest journal button
         html.find('.open-quest-journal').click(async () => {

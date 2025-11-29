@@ -200,7 +200,13 @@ export class PartyPanel {
         });
 
         // Handle party overview health bar clicks
-        html.find('.party-health-card').click(async (event) => {
+        const partyHealthCard = nativeHtml.querySelector('.party-health-card');
+        if (partyHealthCard) {
+            // Clone to remove existing listeners
+            const newCard = partyHealthCard.cloneNode(true);
+            partyHealthCard.parentNode?.replaceChild(newCard, partyHealthCard);
+            
+            newCard.addEventListener('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -227,6 +233,7 @@ export class PartyPanel {
                 }
             }
         });
+        }
         
         // Add drag and drop functionality to character cards
         const characterCards = html.find('.party-card');

@@ -241,18 +241,28 @@ export class SpellsPanel {
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
 
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+
         // v13: Use native DOM querySelector instead of jQuery find
-        const panel = html.querySelector('[data-panel="spells"]');
+        const panel = nativeHtml.querySelector('[data-panel="spells"]');
         if (!panel) return;
 
         // Remove any existing listeners first
         this._removeEventListeners(panel);
 
-        // Category filter toggles
-        panel.on('click.squireSpells', '.spell-level-filter', (event) => {
-            const $filter = $(event.currentTarget);
-            const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, panel[0]);
+        // Category filter toggles - v13: Convert to native DOM event delegation
+        // TODO: Convert panel.on() event delegation to native DOM addEventListener
+        panel.addEventListener('click', (event) => {
+            const filter = event.target.closest('.spell-category-filter');
+            if (!filter) return;
+            const categoryId = filter.dataset.filterId;
+            if (categoryId) {
+                this.panelManager.toggleCategory(categoryId, panel);
+            }
         });
 
         // Add filter toggle handler

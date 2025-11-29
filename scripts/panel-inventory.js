@@ -173,9 +173,16 @@ export class InventoryPanel {
 
     _activateListeners(html) {
         if (!html || !this.panelManager) return;
+        
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
 
         // Use event delegation for all handlers
-        const panel = html.find('[data-panel="inventory"]');
+        const panel = nativeHtml.querySelector('[data-panel="inventory"]');
+        if (!panel) return;
 
         // Remove any existing listeners first
         this._removeEventListeners(panel);
