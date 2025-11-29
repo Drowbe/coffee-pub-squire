@@ -1295,10 +1295,10 @@ export class NotesPanel {
      * Try to get content directly from an open journal sheet
      * @param {Journal} journal - The journal document
      * @param {JournalEntryPage} page - The journal page
-     * @returns {string|null} The HTML content or null if not found
+     * @returns {Promise<string|null>} The HTML content or null if not found
      * @private
      */
-    _getContentFromJournalUI(journal, page) {
+    async _getContentFromJournalUI(journal, page) {
         if (!journal || !page) return null;
         
         try {
@@ -1331,80 +1331,49 @@ export class NotesPanel {
             
             // First check if the journal sheet is open
             if (!journal.sheet || !journal.sheet.element) {
-                // If not, we need to temporarily render it to get content
-                
-                // Create a temporary journal sheet to extract content
-                const tempSheet = new JournalSheet(journal);
-                tempSheet.render(true, { pageId: page.id });
-                
-                // Delay slightly to let the rendering complete
-                return new Promise(resolve => {
-                    trackModuleTimeout(() => {
-                        try {
-                            // Try to extract content from the rendered journal
-                            // v13: Normalize element first
-                            const tempSheetElement = getNativeElement(tempSheet.element);
-                            const pageContent = tempSheetElement?.querySelector(`.journal-page-content[data-page-id="${page.id}"]`);
-                            let content = pageContent?.innerHTML || '';
-                            
-                            // If we can't get content from the sheet, try a direct enrichment
-                            if (!content) {
-                                // Get the raw text content
-                                let rawContent = page.text?.content ?? page.text ?? '';
-                                if (rawContent && typeof rawContent === 'string') {
-                                    // Enrich the content
-                                    TextEditor.enrichHTML(rawContent, {
-                                        secrets: game.user.isGM,
-                                        documents: true,
-                                        links: true,
-                                        rolls: true
-                                    }).then(enriched => {
-                                        content = enriched;
-                                        try { tempSheet.close(); } catch (e) {}
-                                        resolve(content);
-                                    });
-                                    return; // Don't resolve yet, wait for enrichment
-                                }
-                            }
-                            
-                            // Close the temporary sheet
-                            tempSheet.close();
-                            
-                            // Return the content
-                            resolve(content || null);
-                        } catch (extractError) {
-                            console.error('Error extracting content from temporary journal:', extractError);
-                            
-                            // Make sure to close the sheet even if there's an error
-                            try { tempSheet.close(); } catch (e) {}
-                            
-                            resolve(null);
-                        }
-                    }, 100);
-                });
+                // If not, use direct enrichment (more reliable than trying to extract from rendered sheet)
+                // Get the raw text content directly
+                let rawContent = page.text?.content ?? page.text ?? '';
+                if (rawContent && typeof rawContent === 'string') {
+                    // Enrich the content
+                    return await TextEditor.enrichHTML(rawContent, {
+                        secrets: game.user.isGM,
+                        documents: true,
+                        links: true,
+                        rolls: true
+                    });
+                }
+                return null;
             } else {
-                // If the journal is already open, extract directly
-                // v13: Normalize element first
+                // If the journal is already open, try to extract directly
+                // v13: Normalize element first and validate it's a DOM element
+                if (!journal.sheet || !journal.sheet.element) {
+                    return null;
+                }
                 const journalSheetElement = getNativeElement(journal.sheet.element);
-                const pageContent = journalSheetElement?.querySelector(`.journal-page-content[data-page-id="${page.id}"]`);
-                const content = pageContent?.innerHTML || '';
-                
-                // If we can't get content from the sheet, try a direct enrichment
-                if (!content && ['text', 'markdown'].includes(page.type)) {
-                    // Get the raw text content
-                    let rawContent = page.text?.content ?? page.text ?? '';
-                    if (rawContent && typeof rawContent === 'string') {
-                        // Return a promise to match the async pattern
-                        return TextEditor.enrichHTML(rawContent, {
-                            secrets: game.user.isGM,
-                            documents: true,
-                            links: true,
-                            rolls: true
-                        });
+                // Verify we have a valid DOM element with querySelector
+                if (journalSheetElement && typeof journalSheetElement.querySelector === 'function') {
+                    const pageContent = journalSheetElement.querySelector(`.journal-page-content[data-page-id="${page.id}"]`);
+                    const content = pageContent?.innerHTML || '';
+                    
+                    // If we got content from the sheet, return it
+                    if (content) {
+                        return content;
                     }
                 }
                 
-                return content || null;
+                // Fallback: If we can't get content from the sheet, use direct enrichment
+                let rawContent = page.text?.content ?? page.text ?? '';
+                if (rawContent && typeof rawContent === 'string') {
+                    return await TextEditor.enrichHTML(rawContent, {
+                        secrets: game.user.isGM,
+                        documents: true,
+                        links: true,
+                        rolls: true
+                    });
+                }
+                
+                return null;
             }
         } catch (error) {
             console.error('Error getting content from journal UI:', error);
