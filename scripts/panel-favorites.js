@@ -518,16 +518,10 @@ export class FavoritesPanel {
         // This method is kept for compatibility but does nothing in v13
         
         // Properly cleanup context menu
+        // v13: Don't try to close the context menu during render - the DOM is about to be replaced
+        // The old context menu will be garbage collected, and a new one will be created in _activateListeners
         if (this._contextMenu) {
-            try {
-                // Check if context menu is still valid before closing
-                if (this._contextMenu.element && this._contextMenu.element.isConnected) {
-                    this._contextMenu.close();
-                }
-            } catch (error) {
-                // Ignore errors if context menu is already destroyed
-                console.warn('Error closing context menu:', error);
-            }
+            // Just nullify the reference - don't try to close it as the DOM is being replaced
             this._contextMenu = null;
         }
     }

@@ -223,21 +223,24 @@ export class SpellsPanel {
     _updateSpellSlots(html) {
         if (!html || !this.actor) return;
         
+        // v13: Normalize to native DOM element
+        const nativeHtml = getNativeElement(html);
+        if (!nativeHtml) return;
+        
         const spellSlots = this._getSpellSlots();
         
         // Update each spell level's slot display
         spellSlots.forEach(slotData => {
             const level = slotData.level;
-            const $slotGroup = html.find(`[data-level="${level}"]`);
-            if (!$slotGroup.length) return;
+            const slotGroup = nativeHtml.querySelector(`[data-level="${level}"]`);
+            if (!slotGroup) return;
             
-            const $pips = $slotGroup.find('.slot-pip');
-            $pips.each((index, pip) => {
-                const $pip = $(pip);
+            const pips = slotGroup.querySelectorAll('.slot-pip');
+            pips.forEach((pip, index) => {
                 if (index < slotData.reversedUsed) {
-                    $pip.addClass('filled'); // Available slots = filled (first/left)
+                    pip.classList.add('filled'); // Available slots = filled (first/left)
                 } else {
-                    $pip.removeClass('filled'); // Expended slots = unfilled (last/right)
+                    pip.classList.remove('filled'); // Expended slots = unfilled (last/right)
                 }
             });
         });
