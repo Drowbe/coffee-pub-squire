@@ -236,74 +236,73 @@ export class PartyPanel {
         }
         
         // Add drag and drop functionality to character cards
-        const characterCards = html.find('.party-card');
+        // v13: Use nativeHtml instead of html
+        const characterCards = nativeHtml.querySelectorAll('.party-card');
         
-        // Remove any existing drag event listeners
-        characterCards.off('dragenter.squire dragleave.squire dragover.squire drop.squire');
-        
-        // Add new drag event listeners
-        characterCards.on('dragenter.squire', (event) => {
-            event.preventDefault();
-            
-            try {
-                const data = JSON.parse(event.originalEvent.dataTransfer.getData('text/plain'));
-                const dropType = data.type;
+        // v13: Add new drag event listeners using native DOM
+        characterCards.forEach(card => {
+            card.addEventListener('dragenter', (event) => {
+                event.preventDefault();
                 
-                // Only handle item-related drops
-                if (['Item', 'ItemDirectory', 'Actor'].includes(dropType)) {
-                    // Add drop hover styles
-                    $(event.currentTarget).addClass('drop-target');
+                try {
+                    const data = JSON.parse(event.dataTransfer.getData('text/plain'));
+                    const dropType = data.type;
                     
-                    // Play hover sound
+                    // Only handle item-related drops
+                    if (['Item', 'ItemDirectory', 'Actor'].includes(dropType)) {
+                        // Add drop hover styles
+                        event.currentTarget.classList.add('drop-target');
+                        
+                        // Play hover sound
+                        const blacksmith = getBlacksmith();
+                        if (blacksmith) {
+                            const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
+                            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                        }
+                    }
+                } catch (error) {
+                    // If we can't parse data, still show hover state
+                    event.currentTarget.classList.add('drop-target');
+                }
+            });
+
+            card.addEventListener('dragleave', (event) => {
+                event.preventDefault();
+                // Remove the style if we're leaving the card or entering a child element
+                const cardElement = event.currentTarget;
+                const relatedTarget = event.relatedTarget;
+                
+                // Check if we're actually leaving the card
+                if (!relatedTarget || !cardElement.contains(relatedTarget)) {
+                    cardElement.classList.remove('drop-target');
+                }
+            });
+
+            card.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'copy';
+            });
+
+            card.addEventListener('drop', async (event) => {
+                event.preventDefault();
+                
+                // Get the character card and remove hover state
+                const cardElement = event.currentTarget;
+                cardElement.classList.remove('drop-target');
+                
+                try {
+                    const dataTransfer = event.dataTransfer.getData('text/plain');
+                    const data = JSON.parse(dataTransfer);
+                    
+                    // Play drop sound
                     const blacksmith = getBlacksmith();
                     if (blacksmith) {
-                        const sound = game.settings.get(MODULE.ID, 'dragEnterSound');
+                        const sound = game.settings.get(MODULE.ID, 'dropSound');
                         blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                     }
-                }
-            } catch (error) {
-                // If we can't parse data, still show hover state
-                $(event.currentTarget).addClass('drop-target');
-            }
-        });
-
-        characterCards.on('dragleave.squire', (event) => {
-            event.preventDefault();
-            // Remove the style if we're leaving the card or entering a child element
-            const card = $(event.currentTarget);
-            const relatedTarget = $(event.relatedTarget);
-            
-            // Check if we're actually leaving the card
-            if (!relatedTarget.closest('.party-card').is(card)) {
-                card.removeClass('drop-target');
-            }
-        });
-
-        characterCards.on('dragover.squire', (event) => {
-            event.preventDefault();
-            event.originalEvent.dataTransfer.dropEffect = 'copy';
-        });
-
-        characterCards.on('drop.squire', async (event) => {
-            event.preventDefault();
-            
-            // Get the character card and remove hover state
-            const $card = $(event.currentTarget);
-            $card.removeClass('drop-target');
-            
-            try {
-                const dataTransfer = event.originalEvent.dataTransfer.getData('text/plain');
-                const data = JSON.parse(dataTransfer);
-                
-                // Play drop sound
-                const blacksmith = getBlacksmith();
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'dropSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-                
-                // Get the actor for this card
-                const targetTokenId = $card.data('token-id');
+                    
+                    // Get the actor for this card
+                    const targetTokenId = cardElement.dataset.tokenId;
                 const targetToken = canvas.tokens.placeables.find(t => t.id === targetTokenId);
                 const targetActor = targetToken?.actor;
                 
@@ -511,18 +510,26 @@ export class PartyPanel {
                 console.error('Error handling drop on character card:', error);
                 ui.notifications.error("Failed to add item to character.");
             }
+            });
         });
 
         // Handle individual character health bar clicks in the party tab
-        html.find('.party-card .party-hp-bar').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const tokenId = $(event.currentTarget).closest('.party-card').data('token-id');
-            const token = canvas.tokens.placeables.find(t => t.id === tokenId);
-            if (token?.actor && PanelManager.instance && PanelManager.instance.healthPanel) {
-                PanelManager.instance.healthPanel.updateTokens([token]);
-                await PanelManager.instance.healthPanel._onPopOut();
-            }
+        // v13: Use nativeHtml instead of html
+        nativeHtml.querySelectorAll('.party-card .party-hp-bar').forEach(hpBar => {
+            const newHpBar = hpBar.cloneNode(true);
+            hpBar.parentNode?.replaceChild(newHpBar, hpBar);
+            newHpBar.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const partyCard = event.currentTarget.closest('.party-card');
+                if (!partyCard) return;
+                const tokenId = partyCard.dataset.tokenId;
+                const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+                if (token?.actor && PanelManager.instance && PanelManager.instance.healthPanel) {
+                    PanelManager.instance.healthPanel.updateTokens([token]);
+                    await PanelManager.instance.healthPanel._onPopOut();
+                }
+            });
         });
 
         // Note: Handle party member icon clicks are handled by the handle manager, not the party panel

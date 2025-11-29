@@ -130,10 +130,14 @@ export class InventoryPanel {
     _updateVisibility(html) {
         if (!html || !this.panelManager) return;
         
-        const items = html.find('.inventory-item');
-        items.each((_, item) => {
-            const $item = $(item);
-            const itemId = $item.data('item-id');
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
+        nativeHtml.querySelectorAll('.inventory-item').forEach((item) => {
+            const itemId = item.dataset.itemId;
             const inventoryItem = this.items.all.find(i => i.id === itemId);
             
             if (!inventoryItem) return;
@@ -142,12 +146,12 @@ export class InventoryPanel {
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             const equippedMatch = !this.showOnlyEquipped || inventoryItem.system.equipped;
             
-            $item.toggle(!isCategoryHidden && equippedMatch);
+            item.style.display = (!isCategoryHidden && equippedMatch) ? '' : 'none';
         });
 
         // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(html[0]);
-        this.panelManager._updateEmptyMessage(html[0]);
+        this.panelManager._updateHeadersVisibility(nativeHtml);
+        this.panelManager._updateEmptyMessage(nativeHtml);
     }
 
     /**
@@ -188,24 +192,38 @@ export class InventoryPanel {
         this._removeEventListeners(panel);
 
         // Category filter toggles
-        panel.on('click.squireInventory', '.inventory-category-filter', (event) => {
-            const $filter = $(event.currentTarget);
-            const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, panel[0]);
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', (event) => {
+            const filter = event.target.closest('.inventory-category-filter');
+            if (!filter) return;
+            const categoryId = filter.dataset.filterId;
+            if (categoryId) {
+                this.panelManager.toggleCategory(categoryId, panel);
+            }
         });
 
         // Add filter toggle handler
-        panel.on('click.squireInventory', '.inventory-filter-toggle', async (event) => {
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const filterToggle = event.target.closest('.inventory-filter-toggle');
+            if (!filterToggle) return;
+            
             this.showOnlyEquipped = !this.showOnlyEquipped;
             await game.settings.set(MODULE.ID, 'showOnlyEquippedInventory', this.showOnlyEquipped);
-            $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
-            $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
-            this._updateVisibility(html);
+            filterToggle.classList.toggle('active', this.showOnlyEquipped);
+            filterToggle.classList.toggle('faded', !this.showOnlyEquipped);
+            this._updateVisibility(nativeHtml);
         });
 
         // Item info click (feather icon)
-        panel.on('click.squireInventory', '.tray-buttons .fa-feather', async (event) => {
-            const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const featherIcon = event.target.closest('.tray-buttons .fa-feather');
+            if (!featherIcon) return;
+            
+            const inventoryItem = featherIcon.closest('.inventory-item');
+            if (!inventoryItem) return;
+            const itemId = inventoryItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
                 item.sheet.render(true);
@@ -213,8 +231,14 @@ export class InventoryPanel {
         });
 
         // Toggle favorite
-        panel.on('click.squireInventory', '.tray-buttons .fa-heart', async (event) => {
-            const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const heartIcon = event.target.closest('.tray-buttons .fa-heart');
+            if (!heartIcon) return;
+            
+            const inventoryItem = heartIcon.closest('.inventory-item');
+            if (!inventoryItem) return;
+            const itemId = inventoryItem.dataset.itemId;
             await FavoritesPanel.manageFavorite(this.actor, itemId);
             // Refresh the panel data to update heart icon states
             this.items = this._getItems();
@@ -222,8 +246,14 @@ export class InventoryPanel {
         });
 
         // Item use click (image overlay)
-        panel.on('click.squireInventory', '.inventory-image-container .inventory-roll-overlay', async (event) => {
-            const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const rollOverlay = event.target.closest('.inventory-image-container .inventory-roll-overlay');
+            if (!rollOverlay) return;
+            
+            const inventoryItem = rollOverlay.closest('.inventory-item');
+            if (!inventoryItem) return;
+            const itemId = inventoryItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
                 await item.use({}, { event });
@@ -231,8 +261,14 @@ export class InventoryPanel {
         });
 
         // Toggle equip state (shield icon)
-        panel.on('click.squireInventory', '.tray-buttons .fa-shield-alt', async (event) => {
-            const itemId = $(event.currentTarget).closest('.inventory-item').data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const shieldIcon = event.target.closest('.tray-buttons .fa-shield-alt');
+            if (!shieldIcon) return;
+            
+            const inventoryItem = shieldIcon.closest('.inventory-item');
+            if (!inventoryItem) return;
+            const itemId = inventoryItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
                 const newEquipped = !item.system.equipped;
@@ -240,17 +276,20 @@ export class InventoryPanel {
                     'system.equipped': newEquipped
                 });
                 // Update the UI immediately
-                const $item = $(event.currentTarget).closest('.inventory-item');
-                $item.toggleClass('prepared', newEquipped);
-                $(event.currentTarget).toggleClass('faded', !newEquipped);
+                inventoryItem.classList.toggle('prepared', newEquipped);
+                shieldIcon.classList.toggle('faded', !newEquipped);
                 // Update visibility in case we're filtering by equipped
-                this._updateVisibility(html);
+                this._updateVisibility(nativeHtml);
             }
         });
 
         // Send item (share icon)
-        panel.on('click.squireInventory', '.inventory-send-item', async (event) => {
-            const itemId = $(event.currentTarget).data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const sendButton = event.target.closest('.inventory-send-item');
+            if (!sendButton) return;
+            
+            const itemId = sendButton.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
                 // Open character selection window

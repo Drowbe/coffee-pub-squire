@@ -352,65 +352,87 @@ export class HandleManager {
         }
 
         // View mode toggle button
-        handle.find('.tray-handle-button-viewcycle').off('click').on('click', async (event) => {
-            event.preventDefault();
-            const currentMode = PanelManager.viewMode;
-            
-            // Get enabled tabs from settings
-            const enabledTabs = ['player']; // Player is always enabled
-            if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
-            if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
-            if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
-            if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
-            
-            // Find current position in enabled tabs
-            const currentIndex = enabledTabs.indexOf(currentMode);
-            if (currentIndex === -1) {
-                // Current mode not in enabled tabs, default to first enabled tab
-                await PanelManager.instance.setViewMode(enabledTabs[0]);
-                return;
-            }
-            
-            // Cycle to next enabled tab
-            const nextIndex = (currentIndex + 1) % enabledTabs.length;
-            const newMode = enabledTabs[nextIndex];
-            
-            await PanelManager.instance.setViewMode(newMode);
-        });
+        // v13: handle is native DOM from querySelector, use querySelector and addEventListener
+        const viewCycleButton = handle.querySelector('.tray-handle-button-viewcycle');
+        if (viewCycleButton) {
+            const newButton = viewCycleButton.cloneNode(true);
+            viewCycleButton.parentNode?.replaceChild(newButton, viewCycleButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const currentMode = PanelManager.viewMode;
+                
+                // Get enabled tabs from settings
+                const enabledTabs = ['player']; // Player is always enabled
+                if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
+                if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
+                if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
+                if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
+                
+                // Find current position in enabled tabs
+                const currentIndex = enabledTabs.indexOf(currentMode);
+                if (currentIndex === -1) {
+                    // Current mode not in enabled tabs, default to first enabled tab
+                    await PanelManager.instance.setViewMode(enabledTabs[0]);
+                    return;
+                }
+                
+                // Cycle to next enabled tab
+                const nextIndex = (currentIndex + 1) % enabledTabs.length;
+                const newMode = enabledTabs[nextIndex];
+                
+                await PanelManager.instance.setViewMode(newMode);
+            });
+        }
 
         // Handle dice tray icon clicks
-        handle.find('#dice-tray-button').off('click').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isPoppedOut) {
-                await PanelManager.instance.dicetrayPanel._onPopOut();
-            }
-        });
+        // v13: Use native DOM
+        const diceTrayButton = handle.querySelector('#dice-tray-button');
+        if (diceTrayButton) {
+            const newButton = diceTrayButton.cloneNode(true);
+            diceTrayButton.parentNode?.replaceChild(newButton, diceTrayButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isPoppedOut) {
+                    await PanelManager.instance.dicetrayPanel._onPopOut();
+                }
+            });
+        }
 
         // Handle pinned quest clicks
-        handle.find('.handle-pinned-quest-name').off('click').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            // Get the pinned quest UUID from the current data
-            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-            
-            if (pinnedQuestUuid) {
-                try {
-                    const doc = await fromUuid(pinnedQuestUuid);
-                    if (doc) {
-                        doc.sheet.render(true);
+        // v13: Use native DOM
+        const pinnedQuestName = handle.querySelector('.handle-pinned-quest-name');
+        if (pinnedQuestName) {
+            const newElement = pinnedQuestName.cloneNode(true);
+            pinnedQuestName.parentNode?.replaceChild(newElement, pinnedQuestName);
+            newElement.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Get the pinned quest UUID from the current data
+                const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+                const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+                
+                if (pinnedQuestUuid) {
+                    try {
+                        const doc = await fromUuid(pinnedQuestUuid);
+                        if (doc) {
+                            doc.sheet.render(true);
+                        }
+                    } catch (error) {
+                        console.error('Error opening pinned quest:', error);
+                        ui.notifications.warn('Could not open pinned quest.');
                     }
-                } catch (error) {
-                    console.error('Error opening pinned quest:', error);
-                    ui.notifications.warn('Could not open pinned quest.');
                 }
-            }
-        });
+            });
+        }
 
         // Handle health bar clicks
-        handle.find('.handle-healthbar').off('click').on('click', async (event) => {
+        // v13: Use native DOM event delegation
+        handle.addEventListener('click', async (event) => {
+            const healthBar = event.target.closest('.handle-healthbar');
+            if (!healthBar) return;
+            
             event.preventDefault();
             event.stopPropagation();
             if (PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
@@ -419,19 +441,29 @@ export class HandleManager {
         });
 
         // Handle health tray icon clicks (GM only)
-        handle.find('#health-tray-button').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (game.user.isGM && PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
-                await PanelManager.instance.healthPanel._onPopOut();
-            }
-        });
+        // v13: Use native DOM
+        const healthTrayButton = handle.querySelector('#health-tray-button');
+        if (healthTrayButton) {
+            const newButton = healthTrayButton.cloneNode(true);
+            healthTrayButton.parentNode?.replaceChild(newButton, healthTrayButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (game.user.isGM && PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
+                    await PanelManager.instance.healthPanel._onPopOut();
+                }
+            });
+        }
 
         // Handle favorite item clicks
-        handle.find('.handle-favorite-icon').on('click', async (event) => {
+        // v13: Use native DOM event delegation
+        handle.addEventListener('click', async (event) => {
+            const favoriteIcon = event.target.closest('.handle-favorite-icon');
+            if (!favoriteIcon) return;
+            
             // If clicking on roll overlay, use the item
-            if ($(event.target).hasClass('handle-favorite-roll-overlay')) {
-                const itemId = $(event.currentTarget).data('item-id');
+            if (event.target.classList.contains('handle-favorite-roll-overlay')) {
+                const itemId = favoriteIcon.dataset.itemId;
                 const item = this.actor.items.get(itemId);
                 if (item) {
                     await item.use({}, { event });
@@ -440,11 +472,11 @@ export class HandleManager {
             }
             
             // If clicking on the heart icon itself, toggle the favorite state
-            if ($(event.target).hasClass('fa-heart')) {
+            if (event.target.classList.contains('fa-heart')) {
                 event.preventDefault();
                 event.stopPropagation();
                 
-                const itemId = $(event.currentTarget).closest('.handle-favorite-icon').data('item-id');
+                const itemId = favoriteIcon.dataset.itemId;
                 if (!itemId) return;
                 
                 // Toggle the favorite state using the FavoritesPanel
@@ -454,14 +486,17 @@ export class HandleManager {
         });
 
         // Handle condition icon clicks
-        handle.find('.handle-condition-icon').off('click').on('click', async (event) => {
+        // v13: Use native DOM event delegation
+        handle.addEventListener('click', async (event) => {
+            const conditionIcon = event.target.closest('.handle-condition-icon');
+            if (!conditionIcon) return;
+            
             event.preventDefault();
             event.stopPropagation();
             
-            const conditionName = $(event.currentTarget).data('tooltip');
+            const conditionName = conditionIcon.dataset.tooltip;
             
             if (!conditionName) {
-
                 return;
             }
             
@@ -535,7 +570,13 @@ export class HandleManager {
                 console.error('Error getting condition description:', error);
                 ui.notifications.warn("Could not load condition description.");
             }
-        }).off('contextmenu').on('contextmenu', async (event) => {
+        });
+        
+        // Handle condition icon right-click (contextmenu) - separate handler
+        handle.addEventListener('contextmenu', async (event) => {
+            const conditionIcon = event.target.closest('.handle-condition-icon');
+            if (!conditionIcon) return;
+            
             event.preventDefault();
             event.stopPropagation();
             
@@ -545,7 +586,7 @@ export class HandleManager {
                 return;
             }
             
-            const conditionName = $(event.currentTarget).data('tooltip');
+            const conditionName = conditionIcon.dataset.tooltip;
             if (!conditionName) {
                 return;
             }
@@ -560,7 +601,12 @@ export class HandleManager {
 
         // Handle conditions button clicks - PRIMARY IMPLEMENTATION
         // (This opens the Add Condition dialog with grid of available conditions)
-        handle.find('#conditions-button').off('click').on('click', async (event) => {
+        // v13: Use native DOM
+        const conditionsButton = handle.querySelector('#conditions-button');
+        if (conditionsButton) {
+            const newButton = conditionsButton.cloneNode(true);
+            conditionsButton.parentNode?.replaceChild(newButton, conditionsButton);
+            newButton.addEventListener('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -678,37 +724,45 @@ export class HandleManager {
                     }
                 },
                 render: (html) => {
-                    html.find('.effect-option').click(async (e) => {
-                        const conditionId = e.currentTarget.dataset.conditionId;
-                        const condition = CONFIG.DND5E.conditionTypes[conditionId];
-                        const isActive = $(e.currentTarget).hasClass('active');
-                        
-                        try {
-                            if (isActive) {
-                                // Remove the effect
-                                const effect = this.actor.effects.find(e => e.name === condition.label);
-                                if (effect) {
-                                    await effect.delete();
-                                    $(e.currentTarget).removeClass('active');
-                                    ui.notifications.info(`Removed ${condition.label} from ${this.actor.name}`);
+                    // v13: Detect and convert jQuery to native DOM if needed
+                    let nativeDialogHtml = html;
+                    if (html && (html.jquery || typeof html.find === 'function')) {
+                        nativeDialogHtml = html[0] || html.get?.(0) || html;
+                    }
+                    
+                    nativeDialogHtml.querySelectorAll('.effect-option').forEach(option => {
+                        option.addEventListener('click', async (e) => {
+                            const conditionId = e.currentTarget.dataset.conditionId;
+                            const condition = CONFIG.DND5E.conditionTypes[conditionId];
+                            const isActive = e.currentTarget.classList.contains('active');
+                            
+                            try {
+                                if (isActive) {
+                                    // Remove the effect
+                                    const effect = this.actor.effects.find(e => e.name === condition.label);
+                                    if (effect) {
+                                        await effect.delete();
+                                        e.currentTarget.classList.remove('active');
+                                        ui.notifications.info(`Removed ${condition.label} from ${this.actor.name}`);
+                                        await this.updateHandle();
+                                    }
+                                } else {
+                                    // Add the effect
+                                    await this.actor.createEmbeddedDocuments('ActiveEffect', [{
+                                        name: condition.label,
+                                        icon: condition.icon,
+                                        origin: this.actor.uuid,
+                                        disabled: false
+                                    }]);
+                                    e.currentTarget.classList.add('active');
+                                    ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
                                     await this.updateHandle();
                                 }
-                            } else {
-                                // Add the effect
-                                await this.actor.createEmbeddedDocuments('ActiveEffect', [{
-                                    name: condition.label,
-                                    icon: condition.icon,
-                                    origin: this.actor.uuid,
-                                    disabled: false
-                                }]);
-                                $(e.currentTarget).addClass('active');
-                                ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
-                                await this.updateHandle();
+                            } catch (error) {
+                                console.error('Error managing condition:', error);
+                                ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
                             }
-                        } catch (error) {
-                            console.error('Error managing condition:', error);
-                            ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
-                        }
+                        });
                     });
                 }
             }, {
@@ -717,31 +771,46 @@ export class HandleManager {
                 height: "auto"
             });
             dialog.render(true);
-        });
+            });
+        }
 
         // Handle macros icon clicks
-        handle.find('#macros-button').off('click').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isPoppedOut) {
-                await PanelManager.instance.macrosPanel._onPopOut();
-            }
-        });
+        // v13: Use native DOM
+        const macrosButton = handle.querySelector('#macros-button');
+        if (macrosButton) {
+            const newButton = macrosButton.cloneNode(true);
+            macrosButton.parentNode?.replaceChild(newButton, macrosButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isPoppedOut) {
+                    await PanelManager.instance.macrosPanel._onPopOut();
+                }
+            });
+        }
 
         // Add click handler for favorite macros in handle
-        handle.find('.handle-macro-icon').on('click', function(e) {
+        // v13: Use native DOM event delegation
+        handle.addEventListener('click', function(e) {
+            const macroIcon = e.target.closest('.handle-macro-icon');
+            if (!macroIcon) return;
+            
             e.preventDefault();
             e.stopPropagation();
-            const macroId = $(this).data('macro-id');
+            const macroId = macroIcon.dataset.macroId;
             const macro = game.macros.get(macroId);
             if (macro) macro.execute();
         });
 
         // Add click handler for party member portraits in the handle
-        handle.find('.handle-partymember-icon.clickable').on('click', async function(event) {
+        // v13: Use native DOM event delegation
+        handle.addEventListener('click', async function(event) {
+            const partyMemberIcon = event.target.closest('.handle-partymember-icon.clickable');
+            if (!partyMemberIcon) return;
+            
             event.preventDefault();
             event.stopPropagation();
-            const actorId = $(this).closest('.handle-partymember-icon').data('actor-id');
+            const actorId = partyMemberIcon.dataset.actorId;
             const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
             if (token) {
                 token.control({releaseOthers: true});
@@ -749,57 +818,68 @@ export class HandleManager {
         });
 
         // Add click handler for party member health bars in the handle
-        const partyHealthBars = handle.find('.handle-healthbar.party.clickable');
-        
-        partyHealthBars.on('click', async function(event) {
-            event.preventDefault();
-            event.stopPropagation();
+        // v13: Use native DOM
+        const partyHealthBars = handle.querySelectorAll('.handle-healthbar.party.clickable');
+        partyHealthBars.forEach(healthBar => {
+            const newHealthBar = healthBar.cloneNode(true);
+            healthBar.parentNode?.replaceChild(newHealthBar, healthBar);
             
-            // Get the actor ID directly from the clicked health bar element
-            const actorId = $(this).data('actor-id');
-            
-            if (!actorId) {
-                return;
-            }
-            
-            const actor = game.actors.get(actorId);
-            if (!actor) {
-                return;
-            }
-            
-            if (PanelManager.instance?.healthPanel) {
-                // Control the token if it exists on canvas
-                const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
-                if (token) {
-                    token.control({releaseOthers: true});
-                    
-                    // Update PanelManager's current actor reference so the health panel shows the correct data
-                    PanelManager.currentActor = actor;
-                    
-                    // Update the health panel with the party member's token
-                    PanelManager.instance.healthPanel.updateTokens([token]);
-                    
-                    // If health panel is already popped out, update the window directly
-                    if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
-                        PanelManager.instance.healthPanel.window.updateTokens([token]);
-                    } else {
-                        // Pop out the health panel
-                        await PanelManager.instance.healthPanel._onPopOut();
+            newHealthBar.addEventListener('click', async function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Get the actor ID directly from the clicked health bar element
+                const actorId = newHealthBar.dataset.actorId;
+                
+                if (!actorId) {
+                    return;
+                }
+                
+                const actor = game.actors.get(actorId);
+                if (!actor) {
+                    return;
+                }
+                
+                if (PanelManager.instance?.healthPanel) {
+                    // Control the token if it exists on canvas
+                    const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+                    if (token) {
+                        token.control({releaseOthers: true});
+                        
+                        // Update PanelManager's current actor reference so the health panel shows the correct data
+                        PanelManager.currentActor = actor;
+                        
+                        // Update the health panel with the party member's token
+                        PanelManager.instance.healthPanel.updateTokens([token]);
+                        
+                        // If health panel is already popped out, update the window directly
+                        if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
+                            PanelManager.instance.healthPanel.window.updateTokens([token]);
+                        } else {
+                            // Pop out the health panel
+                            await PanelManager.instance.healthPanel._onPopOut();
+                        }
                     }
                 }
-            }
+            });
         });
 
         // Handle character portrait click in the handle
-        handle.find('.handle-character-icon').on('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            // Use the actor from the handle context
-            const actor = this.actor || PanelManager.currentActor;
-            if (actor) {
-                actor.sheet.render(true);
-            }
-        });
+        // v13: Use native DOM
+        const characterIcon = handle.querySelector('.handle-character-icon');
+        if (characterIcon) {
+            const newIcon = characterIcon.cloneNode(true);
+            characterIcon.parentNode?.replaceChild(newIcon, characterIcon);
+            newIcon.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                // Use the actor from the handle context
+                const actor = this.actor || PanelManager.currentActor;
+                if (actor) {
+                    actor.sheet.render(true);
+                }
+            });
+        }
 
         // Attach objective click handlers
         this._attachObjectiveClickHandlers(handle);
@@ -846,15 +926,18 @@ export class HandleManager {
     _attachObjectiveClickHandlers(handle) {
         // Handle objective clicks in quest progress (handle)
         
-        // Remove existing handlers first to prevent duplicates
-        handle.find('.handle-pinnedquest-icon-fill').off('click mouseenter mouseleave');
+        // Remove existing handlers first - v13: Use native DOM
+        // Cloning elements in the main handler already removes old listeners
         
-        handle.find('.handle-pinnedquest-icon-fill').on('click', async (event) => {
+        // v13: Use native DOM event delegation
+        handle.addEventListener('click', async (event) => {
+            const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
+            if (!objectiveIcon) return;
+            
             event.preventDefault();
             event.stopPropagation();
             
-            const objectiveElement = $(event.currentTarget);
-            const taskIndex = parseInt(objectiveElement.data('task-index'));
+            const taskIndex = parseInt(objectiveIcon.dataset.taskIndex);
             
             // Get the pinned quest UUID from the current data
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
@@ -913,9 +996,12 @@ export class HandleManager {
         });
 
         // Add enhanced tooltip functionality
-        handle.find('.handle-pinnedquest-icon-fill').on('mouseenter', async (event) => {
-            const objectiveElement = $(event.currentTarget);
-            const taskIndex = parseInt(objectiveElement.data('task-index'));
+        // v13: Use native DOM event delegation
+        handle.addEventListener('mouseenter', async (event) => {
+            const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
+            if (!objectiveIcon) return;
+            
+            const taskIndex = parseInt(objectiveIcon.dataset.taskIndex);
             // Get the pinned quest UUID from the current data
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
             const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
@@ -931,7 +1017,10 @@ export class HandleManager {
             }
         });
 
-        handle.find('.handle-pinnedquest-icon-fill').on('mouseleave', (event) => {
+        // v13: Use native DOM event delegation
+        handle.addEventListener('mouseleave', (event) => {
+            const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
+            if (!objectiveIcon) return;
             hideQuestTooltip('squire-handle-objective-tooltip');
         });
     }

@@ -168,10 +168,14 @@ export class SpellsPanel {
     _updateVisibility(html) {
         if (!html || !this.panelManager) return;
         
-        const items = html.find('.spell-item');
-        items.each((_, item) => {
-            const $item = $(item);
-            const spellId = $item.data('spell-id');
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
+        nativeHtml.querySelectorAll('.spell-item').forEach((item) => {
+            const spellId = item.dataset.spellId;
             const spell = this.spells.find(s => s.id === spellId);
             
             if (!spell) return;
@@ -183,12 +187,12 @@ export class SpellsPanel {
                 spell.system.preparation?.mode === 'atwill' || // At-will spells are always prepared
                 spell.system.preparation?.prepared;
             
-            $item.toggle(!isCategoryHidden && preparedMatch);
+            item.style.display = (!isCategoryHidden && preparedMatch) ? '' : 'none';
         });
 
         // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(html[0]);
-        this.panelManager._updateEmptyMessage(html[0]);
+        this.panelManager._updateHeadersVisibility(nativeHtml);
+        this.panelManager._updateEmptyMessage(nativeHtml);
     }
 
     /**
@@ -266,17 +270,27 @@ export class SpellsPanel {
         });
 
         // Add filter toggle handler
-        panel.on('click.squireSpells', '.spell-filter-toggle', async (event) => {
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const filterToggle = event.target.closest('.spell-filter-toggle');
+            if (!filterToggle) return;
+            
             this.showOnlyPrepared = !this.showOnlyPrepared;
             await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
-            $(event.currentTarget).toggleClass('active', this.showOnlyPrepared);
-            $(event.currentTarget).toggleClass('faded', !this.showOnlyPrepared);
-            this._updateVisibility(html);
+            filterToggle.classList.toggle('active', this.showOnlyPrepared);
+            filterToggle.classList.toggle('faded', !this.showOnlyPrepared);
+            this._updateVisibility(nativeHtml);
         });
 
         // Spell info click (feather icon)
-        panel.on('click.squireSpells', '.tray-buttons .fa-feather', async (event) => {
-            const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const featherIcon = event.target.closest('.tray-buttons .fa-feather');
+            if (!featherIcon) return;
+            
+            const spellItem = featherIcon.closest('.spell-item');
+            if (!spellItem) return;
+            const spellId = spellItem.dataset.spellId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 spell.sheet.render(true);
@@ -284,8 +298,14 @@ export class SpellsPanel {
         });
 
         // Toggle favorite
-        panel.on('click.squireSpells', '.tray-buttons .fa-heart', async (event) => {
-            const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const heartIcon = event.target.closest('.tray-buttons .fa-heart');
+            if (!heartIcon) return;
+            
+            const spellItem = heartIcon.closest('.spell-item');
+            if (!spellItem) return;
+            const spellId = spellItem.dataset.spellId;
             await FavoritesPanel.manageFavorite(this.actor, spellId);
             // Refresh the panel data to update heart icon states
             this.spells = this._getSpells();
@@ -293,8 +313,14 @@ export class SpellsPanel {
         });
 
         // Cast spell (roll overlay)
-        panel.on('click.squireSpells', '.spell-image-container .spell-roll-overlay', async (event) => {
-            const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const rollOverlay = event.target.closest('.spell-image-container .spell-roll-overlay');
+            if (!rollOverlay) return;
+            
+            const spellItem = rollOverlay.closest('.spell-item');
+            if (!spellItem) return;
+            const spellId = spellItem.dataset.spellId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 await spell.use({}, { event });
@@ -302,8 +328,14 @@ export class SpellsPanel {
         });
 
         // Toggle prepared state (sun icon)
-        panel.on('click.squireSpells', '.tray-buttons .fa-sun', async (event) => {
-            const spellId = $(event.currentTarget).closest('.spell-item').data('spell-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const sunIcon = event.target.closest('.tray-buttons .fa-sun');
+            if (!sunIcon) return;
+            
+            const spellItem = sunIcon.closest('.spell-item');
+            if (!spellItem) return;
+            const spellId = spellItem.dataset.spellId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 const newPrepared = !spell.system.preparation.prepared;
@@ -311,19 +343,21 @@ export class SpellsPanel {
                     'system.preparation.prepared': newPrepared
                 });
                 // Update the UI immediately
-                const $item = $(event.currentTarget).closest('.spell-item');
-                $item.toggleClass('prepared', newPrepared);
-                $(event.currentTarget).toggleClass('faded', !newPrepared);
+                spellItem.classList.toggle('prepared', newPrepared);
+                sunIcon.classList.toggle('faded', !newPrepared);
                 // Update visibility in case we're filtering by prepared
-                this._updateVisibility(html);
+                this._updateVisibility(nativeHtml);
             }
         });
 
         // Spell slot pip clicks (GM only)
+        // v13: Use native DOM event delegation
         if (game.user.isGM) {
-            panel.on('click.squireSpells', '.slot-pip', async (event) => {
-                const $pip = $(event.currentTarget);
-                const level = parseInt($pip.data('level'));
+            panel.addEventListener('click', async (event) => {
+                const pip = event.target.closest('.slot-pip');
+                if (!pip) return;
+                
+                const level = parseInt(pip.dataset.level);
                 
                 if (isNaN(level)) return;
                 
@@ -334,7 +368,7 @@ export class SpellsPanel {
                 const currentAvailable = spellLevel.value || 0; // Current available slots
                 
                 // Simple logic: if pip is filled (available), use it (-1). If unfilled (expended), restore it (+1)
-                const isCurrentlyAvailable = $pip.hasClass('filled');
+                const isCurrentlyAvailable = pip.classList.contains('filled');
                 let newAvailable;
                 
                 if (isCurrentlyAvailable) {
@@ -351,7 +385,7 @@ export class SpellsPanel {
                 });
                 
                 // Refresh the spell slots display
-                this._updateSpellSlots(html);
+                this._updateSpellSlots(nativeHtml);
             });
         }
     }

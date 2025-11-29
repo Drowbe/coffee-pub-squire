@@ -525,21 +525,26 @@ export class FavoritesPanel {
     }
 
     _updateVisibility(html) {
-        html.find('.favorite-item').each((i, el) => {
-            const $item = $(el);
-            const itemId = $item.data('item-id');
-            const item = this.favorites.find(f => f.id === itemId);
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
+        nativeHtml.querySelectorAll('.favorite-item').forEach((item) => {
+            const itemId = item.dataset.itemId;
+            const favoriteItem = this.favorites.find(f => f.id === itemId);
             
-            if (!item) return;
+            if (!favoriteItem) return;
 
             let shouldShow = false;
-            if (item.type === 'spell' && this.showSpells) shouldShow = true;
-            if (item.type === 'weapon' && this.showWeapons) shouldShow = true;
-            if (item.type === 'feat' && this.showFeatures) shouldShow = true;
-            if (['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type) && 
-                this.showInventory && item.type !== 'weapon') shouldShow = true;
+            if (favoriteItem.type === 'spell' && this.showSpells) shouldShow = true;
+            if (favoriteItem.type === 'weapon' && this.showWeapons) shouldShow = true;
+            if (favoriteItem.type === 'feat' && this.showFeatures) shouldShow = true;
+            if (['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(favoriteItem.type) && 
+                this.showInventory && favoriteItem.type !== 'weapon') shouldShow = true;
 
-            $item.toggle(shouldShow);
+            item.style.display = shouldShow ? '' : 'none';
         });
     }
 
@@ -608,68 +613,107 @@ export class FavoritesPanel {
         } catch (error) {
             console.error('Error creating context menu:', error);
             // Fallback: use native context menu
-            favoritesList.on('contextmenu.squireFavorites', '.favorite-item', (event) => {
+            // v13: Use native DOM event delegation
+            panel.addEventListener('contextmenu', (event) => {
+                const favoriteItem = event.target.closest('.favorite-item');
+                if (!favoriteItem) return;
                 event.preventDefault();
-                const itemId = $(event.currentTarget).data('item-id');
+                const itemId = favoriteItem.dataset.itemId;
                 // For now, just log - we can implement a custom context menu later
             });
         }
         
         // Filter toggles
-        html.find('.favorites-spell-toggle').on('click.squireFavorites', async (event) => {
-            await this._toggleFilter('spells');
-            $(event.currentTarget)
-                .toggleClass('active', this.showSpells)
-                .toggleClass('faded', !this.showSpells);
-        });
+        // v13: Use nativeHtml instead of html, native DOM methods
+        const spellToggle = nativeHtml.querySelector('.favorites-spell-toggle');
+        if (spellToggle) {
+            const newSpellToggle = spellToggle.cloneNode(true);
+            spellToggle.parentNode?.replaceChild(newSpellToggle, spellToggle);
+            newSpellToggle.addEventListener('click', async (event) => {
+                await this._toggleFilter('spells');
+                event.currentTarget.classList.toggle('active', this.showSpells);
+                event.currentTarget.classList.toggle('faded', !this.showSpells);
+            });
+        }
 
-        html.find('.favorites-weapon-toggle').on('click.squireFavorites', async (event) => {
-            await this._toggleFilter('weapons');
-            $(event.currentTarget)
-                .toggleClass('active', this.showWeapons)
-                .toggleClass('faded', !this.showWeapons);
-        });
+        const weaponToggle = nativeHtml.querySelector('.favorites-weapon-toggle');
+        if (weaponToggle) {
+            const newWeaponToggle = weaponToggle.cloneNode(true);
+            weaponToggle.parentNode?.replaceChild(newWeaponToggle, weaponToggle);
+            newWeaponToggle.addEventListener('click', async (event) => {
+                await this._toggleFilter('weapons');
+                event.currentTarget.classList.toggle('active', this.showWeapons);
+                event.currentTarget.classList.toggle('faded', !this.showWeapons);
+            });
+        }
 
-        html.find('.favorites-features-toggle').on('click.squireFavorites', async (event) => {
-            await this._toggleFilter('features');
-            $(event.currentTarget)
-                .toggleClass('active', this.showFeatures)
-                .toggleClass('faded', !this.showFeatures);
-        });
+        const featuresToggle = nativeHtml.querySelector('.favorites-features-toggle');
+        if (featuresToggle) {
+            const newFeaturesToggle = featuresToggle.cloneNode(true);
+            featuresToggle.parentNode?.replaceChild(newFeaturesToggle, featuresToggle);
+            newFeaturesToggle.addEventListener('click', async (event) => {
+                await this._toggleFilter('features');
+                event.currentTarget.classList.toggle('active', this.showFeatures);
+                event.currentTarget.classList.toggle('faded', !this.showFeatures);
+            });
+        }
 
-        html.find('.favorites-inventory-toggle').on('click.squireFavorites', async (event) => {
-            await this._toggleFilter('inventory');
-            $(event.currentTarget)
-                .toggleClass('active', this.showInventory)
-                .toggleClass('faded', !this.showInventory);
-        });
+        const inventoryToggle = nativeHtml.querySelector('.favorites-inventory-toggle');
+        if (inventoryToggle) {
+            const newInventoryToggle = inventoryToggle.cloneNode(true);
+            inventoryToggle.parentNode?.replaceChild(newInventoryToggle, inventoryToggle);
+            newInventoryToggle.addEventListener('click', async (event) => {
+                await this._toggleFilter('inventory');
+                event.currentTarget.classList.toggle('active', this.showInventory);
+                event.currentTarget.classList.toggle('faded', !this.showInventory);
+            });
+        }
 
         // Roll/Use item
-        html.find('.favorite-image-container').on('click.squireFavorites', async (event) => {
-            if ($(event.target).hasClass('favorite-roll-overlay')) {
-                const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
-                const item = this.actor.items.get(itemId);
-                if (item) {
-                    await item.use({}, { event });
+        // v13: Use native DOM event delegation
+        nativeHtml.querySelectorAll('.favorite-image-container').forEach(container => {
+            const newContainer = container.cloneNode(true);
+            container.parentNode?.replaceChild(newContainer, container);
+            newContainer.addEventListener('click', async (event) => {
+                if (event.target.classList.contains('favorite-roll-overlay')) {
+                    const favoriteItem = event.currentTarget.closest('.favorite-item');
+                    if (!favoriteItem) return;
+                    const itemId = favoriteItem.dataset.itemId;
+                    const item = this.actor.items.get(itemId);
+                    if (item) {
+                        await item.use({}, { event });
+                    }
                 }
-            }
+            });
         });
 
         // View item details
-        html.find('.favorite-item .fa-feather').on('click.squireFavorites', async (event) => {
-            const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
-            const item = this.actor.items.get(itemId);
-            if (item) {
-                item.sheet.render(true);
-            }
+        // v13: Use native DOM event delegation
+        nativeHtml.querySelectorAll('.favorite-item .fa-feather').forEach(icon => {
+            const newIcon = icon.cloneNode(true);
+            icon.parentNode?.replaceChild(newIcon, icon);
+            newIcon.addEventListener('click', async (event) => {
+                const favoriteItem = event.currentTarget.closest('.favorite-item');
+                if (!favoriteItem) return;
+                const itemId = favoriteItem.dataset.itemId;
+                const item = this.actor.items.get(itemId);
+                if (item) {
+                    item.sheet.render(true);
+                }
+            });
         });
 
         // Toggle favorite
-        panel.on('click.squireFavorites', '.tray-buttons .fa-heart', async (event) => {
+        // v13: Use native DOM event delegation on panel (from querySelector)
+        panel.addEventListener('click', async (event) => {
+            const heartButton = event.target.closest('.tray-buttons .fa-heart');
+            if (!heartButton) return;
+            
             event.preventDefault();
             event.stopPropagation();
-            const $item = $(event.currentTarget).closest('.favorite-item');
-            const itemId = $item.data('item-id');
+            const favoriteItem = event.currentTarget.closest('.favorite-item') || heartButton.closest('.favorite-item');
+            if (!favoriteItem) return;
+            const itemId = favoriteItem.dataset.itemId;
             if (!itemId) {
                 return;
             }
@@ -684,8 +728,14 @@ export class FavoritesPanel {
         });
 
         // Toggle prepared state (sun icon)
-        panel.on('click.squireFavorites', '.tray-buttons .fa-sun', async (event) => {
-            const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const sunButton = event.target.closest('.tray-buttons .fa-sun');
+            if (!sunButton) return;
+            
+            const favoriteItem = sunButton.closest('.favorite-item');
+            if (!favoriteItem) return;
+            const itemId = favoriteItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
                 const newPrepared = !item.system.preparation.prepared;
@@ -693,9 +743,8 @@ export class FavoritesPanel {
                     'system.preparation.prepared': newPrepared
                 });
                 // Update the UI immediately
-                const $item = $(event.currentTarget).closest('.favorite-item');
-                $item.toggleClass('prepared', newPrepared);
-                $(event.currentTarget).toggleClass('faded', !newPrepared);
+                favoriteItem.classList.toggle('prepared', newPrepared);
+                sunButton.classList.toggle('faded', !newPrepared);
 
                 // Sync handle favorites and update the handle to reflect the new prepared state
                 if (PanelManager.instance) {
@@ -711,8 +760,14 @@ export class FavoritesPanel {
         });
 
         // Toggle equip state (shield icon)
-        panel.on('click.squireFavorites', '.tray-buttons .fa-shield-alt', async (event) => {
-            const itemId = $(event.currentTarget).closest('.favorite-item').data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const shieldButton = event.target.closest('.tray-buttons .fa-shield-alt');
+            if (!shieldButton) return;
+            
+            const favoriteItem = shieldButton.closest('.favorite-item');
+            if (!favoriteItem) return;
+            const itemId = favoriteItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
                 const newEquipped = !item.system.equipped;
@@ -720,9 +775,8 @@ export class FavoritesPanel {
                     'system.equipped': newEquipped
                 });
                 // Update the UI immediately
-                const $item = $(event.currentTarget).closest('.favorite-item');
-                $item.toggleClass('equipped', newEquipped);
-                $(event.currentTarget).toggleClass('faded', !newEquipped);
+                favoriteItem.classList.toggle('equipped', newEquipped);
+                shieldButton.classList.toggle('faded', !newEquipped);
 
                 // Update the handle to reflect the new equipped state
                 if (PanelManager.instance) {
@@ -750,11 +804,16 @@ export class FavoritesPanel {
         });
 
         // Toggle handle favorite
-        panel.on('click.squireFavorites', '.tray-buttons .fa-dagger', async (event) => {
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const daggerButton = event.target.closest('.tray-buttons .fa-dagger');
+            if (!daggerButton) return;
+            
             event.preventDefault();
             event.stopPropagation();
-            const $item = $(event.currentTarget).closest('.favorite-item');
-            const itemId = $item.data('item-id');
+            const favoriteItem = daggerButton.closest('.favorite-item');
+            if (!favoriteItem) return;
+            const itemId = favoriteItem.dataset.itemId;
             if (!itemId) return;
             const item = this.actor.items.get(itemId);
             if (!item) return;
@@ -774,13 +833,19 @@ export class FavoritesPanel {
             
             // Update the visual state of the dagger icon immediately
             const newState = FavoritesPanel.isHandleFavorite(this.actor, itemId);
-            $(event.currentTarget).toggleClass('faded', !newState);
+            daggerButton.classList.toggle('faded', !newState);
         });
 
         // Add clear all button listener
-        html.find('.favorites-clear-all').on('click.squireFavorites', async () => {
-            await FavoritesPanel.clearFavorites(this.actor);
-        });
+        // v13: Use nativeHtml instead of html
+        const clearAllButton = nativeHtml.querySelector('.favorites-clear-all');
+        if (clearAllButton) {
+            const newClearAllButton = clearAllButton.cloneNode(true);
+            clearAllButton.parentNode?.replaceChild(newClearAllButton, clearAllButton);
+            newClearAllButton.addEventListener('click', async () => {
+                await FavoritesPanel.clearFavorites(this.actor);
+            });
+        }
     }
 
     // _syncHandleFavorites method removed - handle favorites are now manual

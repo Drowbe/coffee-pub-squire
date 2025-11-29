@@ -301,149 +301,191 @@ export class NotesPanel {
         }
         
         // Set journal button (GM only)
-        html.find('.set-journal-button, .set-journal-button-large').click(async (event) => {
-            event.preventDefault();
-            
-            // Show journal picker dialog for GMs
-            if (game.user.isGM) {
-                this._showJournalPicker();
-            }
+        // v13: Use nativeHtml instead of html
+        nativeHtml.querySelectorAll('.set-journal-button, .set-journal-button-large').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                
+                // Show journal picker dialog for GMs
+                if (game.user.isGM) {
+                    this._showJournalPicker();
+                }
+            });
         });
 
         // Toggle persistent journal (GM only)
-        html.find('.toggle-persistent-button').click(async (event) => {
-            event.preventDefault();
+        // v13: Use nativeHtml instead of html
+        const togglePersistentButton = nativeHtml.querySelector('.toggle-persistent-button');
+        if (togglePersistentButton) {
+            const newButton = togglePersistentButton.cloneNode(true);
+            togglePersistentButton.parentNode?.replaceChild(newButton, togglePersistentButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                
+                if (!game.user.isGM) return;
+                
+                if (!journal) {
+                    ui.notifications.warn("No journal selected. Please select a journal first.");
+                    return;
+                }
+                
+                // Get current persistent and GM journal IDs
+                const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');
+                const gmJournalId = game.settings.get(MODULE.ID, 'notesGMJournal');
+                
+                if (persistentJournalId === journal.id) {
+                    // Journal is already persistent, unpin it
+                    await game.settings.set(MODULE.ID, 'notesPersistentJournal', 'none');
+                    ui.notifications.info(`Journal "${journal.name}" unpinned from players view.`);
+                } else {
+                    // Make this journal persistent
+                    await game.settings.set(MODULE.ID, 'notesPersistentJournal', journal.id);
+                    
+                    // Also update the GM journal to match
+                    await game.settings.set(MODULE.ID, 'notesGMJournal', journal.id);
+                    
+                    ui.notifications.info(`Journal "${journal.name}" pinned for all players.`);
+                }
+                
+                // Re-render the notes panel
+                this.render(this.element);
+            });
+        }
+
+        // Page selection dropdown
+        // v13: Use nativeHtml instead of html
+        const pageSelect = nativeHtml.querySelector('.page-select');
+        if (pageSelect) {
+            const newSelect = pageSelect.cloneNode(true);
+            pageSelect.parentNode?.replaceChild(newSelect, pageSelect);
+            newSelect.addEventListener('change', async (event) => {
+                const pageId = event.currentTarget.value;
+                
+                if (pageId === 'browse-pages') {
+                    // Show page picker dialog - GM only option
+                    if (game.user.isGM) {
+                        this._showPagePicker(journal);
+                    }
+                    return;
+                }
+                
+                // If we have an active editor, ask if they want to close it
+                if (this.journalSheet) {
+                    // Ask the user if they want to switch away from editing
+                    let confirmSwitch = await Dialog.confirm({
+                        title: "Switch Page While Editing?",
+                        content: "<p>You're currently editing a page. Switching to another page will close the editor.</p><p>Any changes you've made will be saved automatically.</p>",
+                        yes: () => true,
+                        no: () => false,
+                        defaultYes: true
+                    });
+                    
+                    if (!confirmSwitch) {
+                        // Reset the dropdown to current page
+                        newSelect.value = page.id;
+                        return;
+                    }
+                    
+                    // Close the editor
+                    this.journalSheet.close();
+                    this.journalSheet = null;
+                }
             
-            if (!game.user.isGM) return;
-            
-            if (!journal) {
-                ui.notifications.warn("No journal selected. Please select a journal first.");
-                return;
-            }
-            
-            // Get current persistent and GM journal IDs
-            const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');
-            const gmJournalId = game.settings.get(MODULE.ID, 'notesGMJournal');
-            
-            if (persistentJournalId === journal.id) {
-                // Journal is already persistent, unpin it
-                await game.settings.set(MODULE.ID, 'notesPersistentJournal', 'none');
-                ui.notifications.info(`Journal "${journal.name}" unpinned from players view.`);
+                if (game.user.isGM) {
+                // Save the selected page globally for all users if GM
+                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
             } else {
-                // Make this journal persistent
-                await game.settings.set(MODULE.ID, 'notesPersistentJournal', journal.id);
-                
-                // Also update the GM journal to match
-                await game.settings.set(MODULE.ID, 'notesGMJournal', journal.id);
-                
-                ui.notifications.info(`Journal "${journal.name}" pinned for all players.`);
+                // For players, just update locally
+                game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
             }
             
             // Re-render the notes panel
             this.render(this.element);
-        });
-
-        // Page selection dropdown
-        html.find('.page-select').change(async (event) => {
-            const pageId = event.currentTarget.value;
-            
-            if (pageId === 'browse-pages') {
-                // Show page picker dialog - GM only option
-                if (game.user.isGM) {
-                    this._showPagePicker(journal);
-                }
-                return;
-            }
-            
-            // If we have an active editor, ask if they want to close it
-            if (this.journalSheet) {
-                // Ask the user if they want to switch away from editing
-                let confirmSwitch = await Dialog.confirm({
-                    title: "Switch Page While Editing?",
-                    content: "<p>You're currently editing a page. Switching to another page will close the editor.</p><p>Any changes you've made will be saved automatically.</p>",
-                    yes: () => true,
-                    no: () => false,
-                    defaultYes: true
-                });
-                
-                if (!confirmSwitch) {
-                    // Reset the dropdown to current page
-                    html.find('.page-select').val(page.id);
-                    return;
-                }
-                
-                // Close the editor
-                this.journalSheet.close();
-                this.journalSheet = null;
-            }
-        
-            if (game.user.isGM) {
-            // Save the selected page globally for all users if GM
-            await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
-        } else {
-            // For players, just update locally
-            game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
+            });
         }
-        
-        // Re-render the notes panel
-        this.render(this.element);
-        });
 
         // If we have a journal and a page, render the page content
         if (journal && page) {
-            this._renderJournalContent(html, journal, page);
+            this._renderJournalContent(nativeHtml, journal, page);
         }
 
         // Inline edit toggle (for text pages)
-        html.find('.inline-edit-toggle').click(async (event) => {
-            event.preventDefault();
+        // v13: Use nativeHtml instead of html
+        const inlineEditToggle = nativeHtml.querySelector('.inline-edit-toggle');
+        if (inlineEditToggle) {
+            const newToggle = inlineEditToggle.cloneNode(true);
+            inlineEditToggle.parentNode?.replaceChild(newToggle, inlineEditToggle);
+            newToggle.addEventListener('click', async (event) => {
+                event.preventDefault();
 
-            if (journal && page && page.type === 'text') {
-                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+                if (journal && page && page.type === 'text') {
+                    const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
 
-                if (canEdit) {
-                    // Use our helper method to embed the editor
-                    await this._embedEditor(html, journal, page);
-                } else {
-                    ui.notifications.warn("You don't have permission to edit this page.");
+                    if (canEdit) {
+                        // Use our helper method to embed the editor
+                        await this._embedEditor(nativeHtml, journal, page);
+                    } else {
+                        ui.notifications.warn("You don't have permission to edit this page.");
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Save edit button - now just triggers the done button 
-        html.find('.save-edit-button').click(async (event) => {
-            event.preventDefault();
-            
-            // If we have an active editor, trigger the done button
-            if (this.journalSheet) {
-                html.find('.done-embedded-edit').click();
-            } else if (journal && page) {
-                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-                if (canEdit) {
-                    await this._embedEditor(html, journal, page);
+        // v13: Use nativeHtml instead of html
+        const saveEditButton = nativeHtml.querySelector('.save-edit-button');
+        if (saveEditButton) {
+            const newButton = saveEditButton.cloneNode(true);
+            saveEditButton.parentNode?.replaceChild(newButton, saveEditButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                
+                // If we have an active editor, trigger the done button
+                if (this.journalSheet) {
+                    const doneButton = nativeHtml.querySelector('.done-embedded-edit');
+                    if (doneButton) doneButton.click();
+                } else if (journal && page) {
+                    const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+                    if (canEdit) {
+                        await this._embedEditor(nativeHtml, journal, page);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Cancel edit button 
-        html.find('.cancel-edit-button').click((event) => {
-            event.preventDefault();
-            
-            // If we have an active editor sheet, close it
-            if (this.journalSheet) {
-                this.journalSheet.close();
-                this.journalSheet = null;
-                this.render(this.element);
-            } else if (journal && page) {
-                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-                if (canEdit) {
-                    this._embedEditor(html, journal, page);
+        // v13: Use nativeHtml instead of html
+        const cancelEditButton = nativeHtml.querySelector('.cancel-edit-button');
+        if (cancelEditButton) {
+            const newButton = cancelEditButton.cloneNode(true);
+            cancelEditButton.parentNode?.replaceChild(newButton, cancelEditButton);
+            newButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                
+                // If we have an active editor sheet, close it
+                if (this.journalSheet) {
+                    this.journalSheet.close();
+                    this.journalSheet = null;
+                    this.render(this.element);
+                } else if (journal && page) {
+                    const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
+                    if (canEdit) {
+                        this._embedEditor(nativeHtml, journal, page);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     async _renderJournalContent(html, journal, page) {
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
         // Define permission levels
         const PERMISSION_LEVELS = {
             NONE: 0,
@@ -454,8 +496,8 @@ export class NotesPanel {
         
         // Set a global error handler for any unexpected errors in this method
         try {
-            const contentContainer = html.find('.journal-content');
-            if (!contentContainer.length) {
+            const contentContainer = nativeHtml.querySelector('.journal-content');
+            if (!contentContainer) {
                 console.error('Journal content container not found');
                 return;
             }
@@ -465,25 +507,25 @@ export class NotesPanel {
             }
             
             // Store the page ID in a data attribute for reference by hooks
-            contentContainer.attr('data-page-id', page.id);
+            contentContainer.setAttribute('data-page-id', page.id);
             
             // Verify the page is a valid object
             if (typeof page !== 'object' || page === null) {
                 console.error('Invalid page object:', page);
-                contentContainer.html(`
+                contentContainer.innerHTML = `
                     <div class="render-error">
                         <i class="fas fa-exclamation-triangle"></i>
                         <p>Invalid journal page data.</p>
                         <p>Click the "Open Journal" button to view it in the full journal viewer.</p>
                     </div>
-                `);
+                `;
                 return;
             }
             
             // Verify permission to view this page
             const canViewPage = game.user.isGM || this._userCanAccessPage(page, game.user, PERMISSION_LEVELS);
             if (!canViewPage) {
-                contentContainer.html(`<div class="permission-error"><i class="fas fa-lock"></i><p>You don't have permission to view this page.</p></div>`);
+                contentContainer.innerHTML = `<div class="permission-error"><i class="fas fa-lock"></i><p>You don't have permission to view this page.</p></div>`;
                 return;
             }
             
@@ -491,7 +533,7 @@ export class NotesPanel {
             const canEditPage = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
             
             // Clear the container and prepare for rendering
-            contentContainer.empty();
+            contentContainer.innerHTML = '';
             
             // Track if rendering was successful with any approach
             let renderSuccessful = false;
@@ -528,35 +570,37 @@ export class NotesPanel {
                         const formattedContent = this._applyFoundryJournalStyling(contentContainer, renderedContent);
                         
                         // Add classes to match Foundry's styling
-                        contentContainer.addClass("journal-entry-page journal-page-content prose");
+                        contentContainer.classList.add("journal-entry-page", "journal-page-content", "prose");
                         
                         // Insert the content
-                        contentContainer.html(formattedContent || renderedContent);
+                        contentContainer.innerHTML = formattedContent || renderedContent;
                         
                         // Activate listeners to enable rollables, links, etc.
                         if (typeof JournalTextPageSheet !== 'undefined' && JournalTextPageSheet.activateListeners) {
-                            JournalTextPageSheet.activateListeners(contentContainer[0]);
+                            JournalTextPageSheet.activateListeners(contentContainer);
                         }
                         
                         // Check if content was actually rendered
-                        const contentText = contentContainer.text();
-                        const hasContent = contentContainer.children().length > 0 || contentText.trim().length > 0;
+                        const contentText = contentContainer.textContent || '';
+                        const hasContent = contentContainer.children.length > 0 || contentText.trim().length > 0;
                         
                         // If no content was rendered, add placeholder text
                         if (!hasContent) {
-                            contentContainer.html(`
+                            contentContainer.innerHTML = `
                                 <div class="empty-page-content">
                                     <p>${canEditPage ? 
                                         'This page appears to be empty. Click the edit button to add content.' : 
                                         'This page appears to be empty.'}</p>
                                 </div>
-                            `);
+                            `;
                         }
                         
                         renderSuccessful = true;
                         
                         // Make all links open in a new tab
-                        contentContainer.find('a').attr('target', '_blank');
+                        contentContainer.querySelectorAll('a').forEach(a => {
+                            a.target = '_blank';
+                        });
                         return;
                     } catch (innerError) {
                         console.error('Error rendering content:', innerError);
@@ -576,10 +620,10 @@ export class NotesPanel {
                     
                     if (uiContent) {
                         // Add classes for consistent styling
-                        contentContainer.addClass("journal-entry-page journal-page-content");
+                        contentContainer.classList.add("journal-entry-page", "journal-page-content");
                         
                         // Insert the content
-                        contentContainer.html(uiContent);
+                        contentContainer.innerHTML = uiContent;
                         
                         // Apply styling
                         this._adjustJournalContentStyles(contentContainer);
@@ -587,7 +631,9 @@ export class NotesPanel {
                         renderSuccessful = true;
                         
                         // Make all links open in a new tab
-                        contentContainer.find('a').attr('target', '_blank');
+                        contentContainer.querySelectorAll('a').forEach(a => {
+                            a.target = '_blank';
+                        });
                         return;
                     } else {
                         // Failed to extract content from journal UI
@@ -608,7 +654,7 @@ export class NotesPanel {
                         
                         try {
                             // Check if render returns a Promise - if not, handle it accordingly
-                            const renderResult = page.render(contentContainer[0], { editable: false });
+                            const renderResult = page.render(contentContainer, { editable: false });
                             
                             if (renderResult && typeof renderResult.then === 'function') {
                                 renderResult
@@ -637,24 +683,26 @@ export class NotesPanel {
                     this._adjustJournalContentStyles(contentContainer);
                     
                     // Check if content was actually rendered
-                    const contentText = contentContainer.text();
-                    const hasContent = contentContainer.children().length > 0 || contentText.trim().length > 0;
+                    const contentText = contentContainer.textContent || '';
+                    const hasContent = contentContainer.children.length > 0 || contentText.trim().length > 0;
                     
                     // If no content was rendered, add placeholder text
                     if (!hasContent) {
-                        contentContainer.html(`
+                        contentContainer.innerHTML = `
                             <div class="empty-page-content">
                                 <p>${canEditPage ? 
                                     'This page appears to be empty. You can edit it in the journal.' : 
                                     'This page appears to be empty.'}</p>
                             </div>
-                        `);
+                        `;
                     }
                     
                     renderSuccessful = true;
                     
                     // Make all links open in a new tab
-                    contentContainer.find('a').attr('target', '_blank');
+                    contentContainer.querySelectorAll('a').forEach(a => {
+                        a.target = '_blank';
+                    });
                     return;
                 }
             } catch (error) {
@@ -666,35 +714,38 @@ export class NotesPanel {
                 try {
                     // First, handle specific page types differently
                     if (page.type === 'image') {
-                        contentContainer.html(`
+                        contentContainer.innerHTML = `
                             <div class="journal-image-container" style="text-align: center; padding: 10px; background: white; border-radius: 5px;">
                                 <img src="${page.src}" alt="${page.name}" style="max-width: 100%; max-height: 500px;">
                                 ${page.title ? `<h3>${page.title}</h3>` : ''}
                                 ${page.caption ? `<div class="image-caption">${page.caption}</div>` : ''}
                             </div>
-                        `);
+                        `;
                         renderSuccessful = true;
                         this._adjustJournalContentStyles(contentContainer);
                         return;
                     }
                     
                     if (page.type === 'pdf') {
-                        contentContainer.html(`
+                        contentContainer.innerHTML = `
                             <div class="pdf-container" style="text-align: center; padding: 20px; background: white; border-radius: 5px;">
                                 <p>This journal contains a PDF file that cannot be displayed directly in the panel.</p>
                                 <button class="open-journal-button" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
                                     Open in Journal Viewer
                                 </button>
                             </div>
-                        `);
+                        `;
                         
                         // Add click handler to open journal button
-                        contentContainer.find('.open-journal-button').click(async (event) => {
-                            event.preventDefault();
-                            if (journal) {
-                                journal.sheet.render(true, {pageId: page.id});
-                            }
-                        });
+                        const pdfButton = contentContainer.querySelector('.open-journal-button');
+                        if (pdfButton) {
+                            pdfButton.addEventListener('click', async (event) => {
+                                event.preventDefault();
+                                if (journal) {
+                                    journal.sheet.render(true, {pageId: page.id});
+                                }
+                            });
+                        }
                         
                         renderSuccessful = true;
                         this._adjustJournalContentStyles(contentContainer);
@@ -702,22 +753,25 @@ export class NotesPanel {
                     }
                     
                     if (!['text', 'markdown'].includes(page.type)) {
-                        contentContainer.html(`
+                        contentContainer.innerHTML = `
                             <div class="unsupported-type" style="text-align: center; padding: 20px; background: white; border-radius: 5px;">
                                 <p>This journal page uses a special type (${page.type}) that cannot be displayed directly in the panel.</p>
                                 <button class="open-journal-button" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;">
                                     Open in Journal Viewer
                                 </button>
                             </div>
-                        `);
+                        `;
                         
                         // Add click handler to open journal button
-                        contentContainer.find('.open-journal-button').click(async (event) => {
-                            event.preventDefault();
-                            if (journal) {
-                                journal.sheet.render(true, {pageId: page.id});
-                            }
-                        });
+                        const unsupportedButton = contentContainer.querySelector('.open-journal-button');
+                        if (unsupportedButton) {
+                            unsupportedButton.addEventListener('click', async (event) => {
+                                event.preventDefault();
+                                if (journal) {
+                                    journal.sheet.render(true, {pageId: page.id});
+                                }
+                            });
+                        }
                         
                         renderSuccessful = true;
                         this._adjustJournalContentStyles(contentContainer);
@@ -776,13 +830,58 @@ export class NotesPanel {
                     }
                     
                     // Add classes for consistent styling
-                    contentContainer.addClass("journal-entry-page journal-page-content");
+                    contentContainer.classList.add("journal-entry-page", "journal-page-content");
                     
                     // Insert the content
-                    contentContainer.html(content);
+                    contentContainer.innerHTML = content;
                     
                     // Add click handler to open journal button if there is one
-                    contentContainer.find('.open-journal-button').click(async (event) => {
+                    const openJournalButton = contentContainer.querySelector('.open-journal-button');
+                    if (openJournalButton) {
+                        openJournalButton.addEventListener('click', async (event) => {
+                            event.preventDefault();
+                            if (journal) {
+                                if (page) {
+                                    journal.sheet.render(true, {pageId: page.id});
+                                } else {
+                                    journal.sheet.render(true);
+                                }
+                            }
+                        });
+                    }
+                    
+                    renderSuccessful = true;
+                    
+                    // Apply additional styling
+                    this._adjustJournalContentStyles(contentContainer);
+                    
+                    // Make all links open in a new tab (except the open journal button)
+                    contentContainer.querySelectorAll('a:not(.open-journal-button)').forEach(a => {
+                        a.target = '_blank';
+                    });
+                } catch (textError) {
+                    console.error('Text fallback rendering failed:', textError);
+                }
+            }
+        } catch (globalError) {
+            console.error('Catastrophic error in _renderJournalContent:', globalError);
+            try {
+                const errorContainer = nativeHtml.querySelector('.journal-content');
+                if (errorContainer) {
+                    errorContainer.innerHTML = `
+                        <div class="render-error">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>An unexpected error occurred while rendering the journal.</p>
+                            <p>Error: ${globalError.message || "Unknown error"}</p>
+                            <p>Click the "Open Journal" button to view it in the full journal viewer.</p>
+                        </div>
+                    `;
+                }
+                
+                // Add click handler to open journal directly
+                const openJournalBtn = nativeHtml.querySelector('.open-journal-button');
+                if (openJournalBtn) {
+                    openJournalBtn.addEventListener('click', async (event) => {
                         event.preventDefault();
                         if (journal) {
                             if (page) {
@@ -792,41 +891,7 @@ export class NotesPanel {
                             }
                         }
                     });
-                    
-                    renderSuccessful = true;
-                    
-                    // Apply additional styling
-                    this._adjustJournalContentStyles(contentContainer);
-                    
-                    // Make all links open in a new tab
-                    contentContainer.find('a:not(.open-journal-button)').attr('target', '_blank');
-                } catch (textError) {
-                    console.error('Text fallback rendering failed:', textError);
                 }
-            }
-        } catch (globalError) {
-            console.error('Catastrophic error in _renderJournalContent:', globalError);
-            try {
-                html.find('.journal-content').html(`
-                    <div class="render-error">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>An unexpected error occurred while rendering the journal.</p>
-                        <p>Error: ${globalError.message || "Unknown error"}</p>
-                        <p>Click the "Open Journal" button to view it in the full journal viewer.</p>
-                    </div>
-                `);
-                
-                // Add click handler to open journal directly
-                html.find('.open-journal-button').click(async (event) => {
-                    event.preventDefault();
-                    if (journal) {
-                        if (page) {
-                            journal.sheet.render(true, {pageId: page.id});
-                        } else {
-                            journal.sheet.render(true);
-                        }
-                    }
-                });
             } catch (e) {
                 console.error('Failed to display error message:', e);
             }
@@ -839,8 +904,11 @@ export class NotesPanel {
      * @private
      */
     _adjustJournalContentStyles(container) {
+        // v13: Use native DOM methods
         // Add journal-specific classes if they don't exist
-        container.addClass("journal-entry-page journal-page-content");
+        if (container && container.classList) {
+            container.classList.add("journal-entry-page", "journal-page-content");
+        }
     }
 
     _showJournalPicker() {
@@ -901,41 +969,53 @@ export class NotesPanel {
             content: content,
             buttons: {},
             render: html => {
+                // v13: Detect and convert jQuery to native DOM if needed
+                let nativeDlgHtml = html;
+                if (html && (html.jquery || typeof html.find === 'function')) {
+                    nativeDlgHtml = html[0] || html.get?.(0) || html;
+                }
+                
                 // Handle journal item clicks
-                html.find('.journal-item').click(async event => {
-                    const journalId = event.currentTarget.dataset.id;
-                    
-                    
-                    
-                    // For GMs, update their personal view first
-                    if (game.user.isGM) {
-                        await game.settings.set(MODULE.ID, 'notesGMJournal', journalId);
-                    }
-                    
-                    ui.notifications.info(`Journal ${journalId === 'none' ? 'selection cleared' : 'selected'}.`);
-                    dialog.close();
-                    
-                    // If we've selected a journal (not 'none'), show the page picker
-                    if (journalId !== 'none') {
-                        const journal = game.journal.get(journalId);
-                        if (journal && journal.pages.size > 0) {
-                            this._showPagePicker(journal);
+                nativeDlgHtml.querySelectorAll('.journal-item').forEach(item => {
+                    item.addEventListener('click', async event => {
+                        const journalId = event.currentTarget.dataset.id;
+                        
+                        // For GMs, update their personal view first
+                        if (game.user.isGM) {
+                            await game.settings.set(MODULE.ID, 'notesGMJournal', journalId);
+                        }
+                        
+                        ui.notifications.info(`Journal ${journalId === 'none' ? 'selection cleared' : 'selected'}.`);
+                        dialog.close();
+                        
+                        // If we've selected a journal (not 'none'), show the page picker
+                        if (journalId !== 'none') {
+                            const journal = game.journal.get(journalId);
+                            if (journal && journal.pages.size > 0) {
+                                this._showPagePicker(journal);
+                            } else {
+                                this.render(this.element);
+                            }
                         } else {
                             this.render(this.element);
                         }
-                    } else {
-                        this.render(this.element);
-                    }
+                    });
                 });
                 
                 // Handle cancel button
-                html.find('.cancel-button').click(() => dialog.close());
+                const cancelButton = nativeDlgHtml.querySelector('.cancel-button');
+                if (cancelButton) {
+                    cancelButton.addEventListener('click', () => dialog.close());
+                }
                 
                 // Handle refresh button
-                html.find('.refresh-button').click(() => {
-                    dialog.close();
-                    this._showJournalPicker();
-                });
+                const refreshButton = nativeDlgHtml.querySelector('.refresh-button');
+                if (refreshButton) {
+                    refreshButton.addEventListener('click', () => {
+                        dialog.close();
+                        this._showJournalPicker();
+                    });
+                }
             },
             default: '',
             close: () => {}
@@ -1003,23 +1083,37 @@ export class NotesPanel {
             content: content,
             buttons: {},
             render: html => {
+                // v13: Detect and convert jQuery to native DOM if needed
+                let nativeDlgHtml = html;
+                if (html && (html.jquery || typeof html.find === 'function')) {
+                    nativeDlgHtml = html[0] || html.get?.(0) || html;
+                }
+                
                 // Handle page item clicks
-                html.find('.page-item').click(async event => {
-                    const pageId = event.currentTarget.dataset.id;
-                    await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
-                    ui.notifications.info(`Journal page selected.`);
-                    dialog.close();
-                    this.render(this.element);
+                nativeDlgHtml.querySelectorAll('.page-item').forEach(item => {
+                    item.addEventListener('click', async event => {
+                        const pageId = event.currentTarget.dataset.id;
+                        await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
+                        ui.notifications.info(`Journal page selected.`);
+                        dialog.close();
+                        this.render(this.element);
+                    });
                 });
                 
                 // Handle cancel button
-                html.find('.cancel-button').click(() => dialog.close());
+                const cancelButton = nativeDlgHtml.querySelector('.cancel-button');
+                if (cancelButton) {
+                    cancelButton.addEventListener('click', () => dialog.close());
+                }
                 
                 // Handle open journal button
-                html.find('.open-journal-button').click(() => {
-                    journal.sheet.render(true);
-                    dialog.close();
-                });
+                const openJournalButton = nativeDlgHtml.querySelector('.open-journal-button');
+                if (openJournalButton) {
+                    openJournalButton.addEventListener('click', () => {
+                        journal.sheet.render(true);
+                        dialog.close();
+                    });
+                }
             },
             default: '',
             close: () => {}
@@ -1248,8 +1342,10 @@ export class NotesPanel {
                     trackModuleTimeout(() => {
                         try {
                             // Try to extract content from the rendered journal
-                            const pageContent = tempSheet.element.find(`.journal-page-content[data-page-id="${page.id}"]`);
-                            let content = pageContent.html();
+                            // v13: Normalize element first
+                            const tempSheetElement = getNativeElement(tempSheet.element);
+                            const pageContent = tempSheetElement?.querySelector(`.journal-page-content[data-page-id="${page.id}"]`);
+                            let content = pageContent?.innerHTML || '';
                             
                             // If we can't get content from the sheet, try a direct enrichment
                             if (!content) {
@@ -1288,8 +1384,10 @@ export class NotesPanel {
                 });
             } else {
                 // If the journal is already open, extract directly
-                const pageContent = journal.sheet.element.find(`.journal-page-content[data-page-id="${page.id}"]`);
-                const content = pageContent.html();
+                // v13: Normalize element first
+                const journalSheetElement = getNativeElement(journal.sheet.element);
+                const pageContent = journalSheetElement?.querySelector(`.journal-page-content[data-page-id="${page.id}"]`);
+                const content = pageContent?.innerHTML || '';
                 
                 // If we can't get content from the sheet, try a direct enrichment
                 if (!content && ['text', 'markdown'].includes(page.type)) {
@@ -1388,9 +1486,15 @@ export class NotesPanel {
         try {
             if (!journal || !page) return null;
             
+            // v13: Detect and convert jQuery to native DOM if needed
+            let nativeHtml = html;
+            if (html && (html.jquery || typeof html.find === 'function')) {
+                nativeHtml = html[0] || html.get?.(0) || html;
+            }
+            
             // Get the content container
-            const contentContainer = html.find('.journal-content');
-            if (!contentContainer.length) return;
+            const contentContainer = nativeHtml.querySelector('.journal-content');
+            if (!contentContainer) return;
             
             // Open the native journal sheet directly to this page
             if (page.sheet) {

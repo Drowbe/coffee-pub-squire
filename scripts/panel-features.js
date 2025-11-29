@@ -130,10 +130,14 @@ export class FeaturesPanel {
     _updateVisibility(html) {
         if (!html || !this.panelManager) return;
         
-        const items = html.find('.feature-item');
-        items.each((_, item) => {
-            const $item = $(item);
-            const featureId = $item.data('feature-id');
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
+        nativeHtml.querySelectorAll('.feature-item').forEach((item) => {
+            const featureId = item.dataset.featureId;
             const feature = this.features.all.find(f => f.id === featureId);
             
             if (!feature) return;
@@ -141,12 +145,12 @@ export class FeaturesPanel {
             const categoryId = feature.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             
-            $item.toggle(!isCategoryHidden);
+            item.style.display = !isCategoryHidden ? '' : 'none';
         });
 
         // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(html[0]);
-        this.panelManager._updateEmptyMessage(html[0]);
+        this.panelManager._updateHeadersVisibility(nativeHtml);
+        this.panelManager._updateEmptyMessage(nativeHtml);
     }
 
     /**
@@ -187,16 +191,26 @@ export class FeaturesPanel {
         this._removeEventListeners(panel);
 
         // Category filter toggles
-        panel.on('click.squireFeatures', '.features-category-filter', (event) => {
-            const $filter = $(event.currentTarget);
-            const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, panel[0]);
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', (event) => {
+            const filter = event.target.closest('.features-category-filter');
+            if (!filter) return;
+            const categoryId = filter.dataset.filterId;
+            if (categoryId) {
+                this.panelManager.toggleCategory(categoryId, panel);
+            }
         });
 
         // Feature info click (feather icon)
-        panel.on('click.squireFeatures', '.tray-buttons .fa-feather', async (event) => {
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const featherIcon = event.target.closest('.tray-buttons .fa-feather');
+            if (!featherIcon) return;
+            
             try {
-                const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
+                const featureItem = featherIcon.closest('.feature-item');
+                if (!featureItem) return;
+                const featureId = featureItem.dataset.featureId;
                 const feature = this.actor.items.get(featureId);
                 if (!feature) {
                     console.error('Feature not found:', featureId);
@@ -211,8 +225,14 @@ export class FeaturesPanel {
         });
 
         // Toggle favorite
-        panel.on('click.squireFeatures', '.tray-buttons .fa-heart', async (event) => {
-            const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const heartIcon = event.target.closest('.tray-buttons .fa-heart');
+            if (!heartIcon) return;
+            
+            const featureItem = heartIcon.closest('.feature-item');
+            if (!featureItem) return;
+            const featureId = featureItem.dataset.featureId;
             await FavoritesPanel.manageFavorite(this.actor, featureId);
             // Refresh the panel data to update heart icon states
             this.features = this._getFeatures();
@@ -220,8 +240,14 @@ export class FeaturesPanel {
         });
 
         // Feature use click (image overlay)
-        panel.on('click.squireFeatures', '.feature-image-container .feature-roll-overlay', async (event) => {
-            const featureId = $(event.currentTarget).closest('.feature-item').data('feature-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const rollOverlay = event.target.closest('.feature-image-container .feature-roll-overlay');
+            if (!rollOverlay) return;
+            
+            const featureItem = rollOverlay.closest('.feature-item');
+            if (!featureItem) return;
+            const featureId = featureItem.dataset.featureId;
             const feature = this.actor.items.get(featureId);
             if (feature) {
                 await feature.use({}, { event });

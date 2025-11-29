@@ -136,10 +136,14 @@ export class WeaponsPanel {
     _updateVisibility(html) {
         if (!html || !this.panelManager) return;
         
-        const items = html.find('.weapon-item');
-        items.each((_, item) => {
-            const $item = $(item);
-            const weaponId = $item.data('weapon-id');
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
+        nativeHtml.querySelectorAll('.weapon-item').forEach((item) => {
+            const weaponId = item.dataset.weaponId;
             const weapon = this.weapons.all.find(w => w.id === weaponId);
             
             if (!weapon) return;
@@ -148,12 +152,12 @@ export class WeaponsPanel {
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             const equippedMatch = !this.showOnlyEquipped || weapon.system.equipped;
             
-            $item.toggle(!isCategoryHidden && equippedMatch);
+            item.style.display = (!isCategoryHidden && equippedMatch) ? '' : 'none';
         });
 
         // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(html[0]);
-        this.panelManager._updateEmptyMessage(html[0]);
+        this.panelManager._updateHeadersVisibility(nativeHtml);
+        this.panelManager._updateEmptyMessage(nativeHtml);
     }
 
     /**
@@ -194,24 +198,38 @@ export class WeaponsPanel {
         this._removeEventListeners(panel);
 
         // Category filter toggles
-        panel.on('click.squireWeapons', '.weapons-category-filter', (event) => {
-            const $filter = $(event.currentTarget);
-            const categoryId = $filter.data('filter-id');
-            this.panelManager.toggleCategory(categoryId, panel[0]);
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', (event) => {
+            const filter = event.target.closest('.weapons-category-filter');
+            if (!filter) return;
+            const categoryId = filter.dataset.filterId;
+            if (categoryId) {
+                this.panelManager.toggleCategory(categoryId, panel);
+            }
         });
 
         // Add filter toggle handler
-        panel.on('click.squireWeapons', '.weapon-filter-toggle', async (event) => {
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const filterToggle = event.target.closest('.weapon-filter-toggle');
+            if (!filterToggle) return;
+            
             this.showOnlyEquipped = !this.showOnlyEquipped;
             await game.settings.set(MODULE.ID, 'showOnlyEquippedWeapons', this.showOnlyEquipped);
-            $(event.currentTarget).toggleClass('active', this.showOnlyEquipped);
-            $(event.currentTarget).toggleClass('faded', !this.showOnlyEquipped);
-            this._updateVisibility(html);
+            filterToggle.classList.toggle('active', this.showOnlyEquipped);
+            filterToggle.classList.toggle('faded', !this.showOnlyEquipped);
+            this._updateVisibility(nativeHtml);
         });
 
         // Weapon info click (feather icon)
-        panel.on('click.squireWeapons', '.tray-buttons .fa-feather', async (event) => {
-            const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const featherIcon = event.target.closest('.tray-buttons .fa-feather');
+            if (!featherIcon) return;
+            
+            const weaponItem = featherIcon.closest('.weapon-item');
+            if (!weaponItem) return;
+            const weaponId = weaponItem.dataset.weaponId;
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
                 weapon.sheet.render(true);
@@ -219,8 +237,14 @@ export class WeaponsPanel {
         });
 
         // Toggle favorite
-        panel.on('click.squireWeapons', '.tray-buttons .fa-heart', async (event) => {
-            const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const heartIcon = event.target.closest('.tray-buttons .fa-heart');
+            if (!heartIcon) return;
+            
+            const weaponItem = heartIcon.closest('.weapon-item');
+            if (!weaponItem) return;
+            const weaponId = weaponItem.dataset.weaponId;
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
             // Refresh the panel data to update heart icon states
             this.weapons = this._getWeapons();
@@ -228,8 +252,14 @@ export class WeaponsPanel {
         });
 
         // Weapon use click (image overlay)
-        panel.on('click.squireWeapons', '.weapon-image-container .weapon-roll-overlay', async (event) => {
-            const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const rollOverlay = event.target.closest('.weapon-image-container .weapon-roll-overlay');
+            if (!rollOverlay) return;
+            
+            const weaponItem = rollOverlay.closest('.weapon-item');
+            if (!weaponItem) return;
+            const weaponId = weaponItem.dataset.weaponId;
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
                 await weapon.use({}, { event });
@@ -237,8 +267,14 @@ export class WeaponsPanel {
         });
 
         // Toggle equip state (shield icon)
-        panel.on('click.squireWeapons', '.tray-buttons .fa-shield-alt', async (event) => {
-            const weaponId = $(event.currentTarget).closest('.weapon-item').data('weapon-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const shieldIcon = event.target.closest('.tray-buttons .fa-shield-alt');
+            if (!shieldIcon) return;
+            
+            const weaponItem = shieldIcon.closest('.weapon-item');
+            if (!weaponItem) return;
+            const weaponId = weaponItem.dataset.weaponId;
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
                 const newEquipped = !weapon.system.equipped;
@@ -246,17 +282,20 @@ export class WeaponsPanel {
                     'system.equipped': newEquipped
                 });
                 // Update the UI immediately
-                const $item = $(event.currentTarget).closest('.weapon-item');
-                $item.toggleClass('prepared', newEquipped);
-                $(event.currentTarget).toggleClass('faded', !newEquipped);
+                weaponItem.classList.toggle('prepared', newEquipped);
+                shieldIcon.classList.toggle('faded', !newEquipped);
                 // Update visibility in case we're filtering by equipped
-                this._updateVisibility(html);
+                this._updateVisibility(nativeHtml);
             }
         });
 
         // Send weapon (share icon)
-        panel.on('click.squireWeapons', '.weapons-send-item', async (event) => {
-            const itemId = $(event.currentTarget).data('item-id');
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const sendButton = event.target.closest('.weapons-send-item');
+            if (!sendButton) return;
+            
+            const itemId = sendButton.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
                 // Open character selection window
