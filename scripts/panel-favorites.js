@@ -519,7 +519,15 @@ export class FavoritesPanel {
         
         // Properly cleanup context menu
         if (this._contextMenu) {
-            this._contextMenu.close();
+            try {
+                // Check if context menu is still valid before closing
+                if (this._contextMenu.element && this._contextMenu.element.isConnected) {
+                    this._contextMenu.close();
+                }
+            } catch (error) {
+                // Ignore errors if context menu is already destroyed
+                console.warn('Error closing context menu:', error);
+            }
             this._contextMenu = null;
         }
     }

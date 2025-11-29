@@ -201,10 +201,18 @@ export class SpellsPanel {
     _updateHeartIcons() {
         if (!this.element) return;
         
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+        
         this.spells.forEach(spell => {
-            const $heartIcon = this.element.find(`[data-spell-id="${spell.id}"] .fa-heart`);
-            if ($heartIcon.length) {
-                $heartIcon.toggleClass('faded', !spell.isFavorite);
+            const heartIcon = nativeElement.querySelector(`[data-spell-id="${spell.id}"] .fa-heart`);
+            if (heartIcon) {
+                if (spell.isFavorite) {
+                    heartIcon.classList.remove('faded');
+                } else {
+                    heartIcon.classList.add('faded');
+                }
             }
         });
     }

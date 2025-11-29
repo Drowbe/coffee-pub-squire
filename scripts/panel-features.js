@@ -159,10 +159,18 @@ export class FeaturesPanel {
     _updateHeartIcons() {
         if (!this.element) return;
         
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+        
         this.features.all.forEach(feature => {
-            const $heartIcon = this.element.find(`[data-feature-id="${feature.id}"] .fa-heart`);
-            if ($heartIcon.length) {
-                $heartIcon.toggleClass('faded', !feature.isFavorite);
+            const heartIcon = nativeElement.querySelector(`[data-feature-id="${feature.id}"] .fa-heart`);
+            if (heartIcon) {
+                if (feature.isFavorite) {
+                    heartIcon.classList.remove('faded');
+                } else {
+                    heartIcon.classList.add('faded');
+                }
             }
         });
     }

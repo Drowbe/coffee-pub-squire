@@ -160,10 +160,18 @@ export class InventoryPanel {
     _updateHeartIcons() {
         if (!this.element) return;
         
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+        
         this.items.all.forEach(item => {
-            const $heartIcon = this.element.find(`[data-item-id="${item.id}"] .fa-heart`);
-            if ($heartIcon.length) {
-                $heartIcon.toggleClass('faded', !item.isFavorite);
+            const heartIcon = nativeElement.querySelector(`[data-item-id="${item.id}"] .fa-heart`);
+            if (heartIcon) {
+                if (item.isFavorite) {
+                    heartIcon.classList.remove('faded');
+                } else {
+                    heartIcon.classList.add('faded');
+                }
             }
         });
     }

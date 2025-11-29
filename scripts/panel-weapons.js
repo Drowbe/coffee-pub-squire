@@ -166,10 +166,18 @@ export class WeaponsPanel {
     _updateHeartIcons() {
         if (!this.element) return;
         
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+        
         this.weapons.all.forEach(weapon => {
-            const $heartIcon = this.element.find(`[data-weapon-id="${weapon.id}"] .fa-heart`);
-            if ($heartIcon.length) {
-                $heartIcon.toggleClass('faded', !weapon.isFavorite);
+            const heartIcon = nativeElement.querySelector(`[data-weapon-id="${weapon.id}"] .fa-heart`);
+            if (heartIcon) {
+                if (weapon.isFavorite) {
+                    heartIcon.classList.remove('faded');
+                } else {
+                    heartIcon.classList.add('faded');
+                }
             }
         });
     }
