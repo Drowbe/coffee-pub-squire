@@ -448,10 +448,29 @@ Hooks.once('ready', () => {
                             await FavoritesPanel.manageFavorite(item.parent, item.id);
                         }
                     }
-                } else {
-                    // For other changes, just update the handle
-                    await panelManager.instance.updateHandle();
                 }
+                
+                // Refresh relevant panels when items are updated
+                // Check if the update affects inventory/weapons (quantity, equipped status, etc.)
+                const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type);
+                const affectsWeapons = item.type === 'weapon';
+                
+                if (affectsInventory || affectsWeapons) {
+                    // Refresh the appropriate panels
+                    if (affectsWeapons && panelManager.instance.weaponsPanel?.element) {
+                        await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
+                    }
+                    if (affectsInventory && panelManager.instance.inventoryPanel?.element) {
+                        await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
+                    }
+                    // Also update favorites panel if item favorite status might have changed
+                    if (panelManager.instance.favoritesPanel?.element) {
+                        await panelManager.instance.favoritesPanel.render(panelManager.instance.favoritesPanel.element);
+                    }
+                }
+                
+                // Always update the handle to reflect any changes
+                await panelManager.instance.updateHandle();
             }
         });
         
