@@ -11,6 +11,7 @@ export class WeaponsPanel {
         this.weapons = this._getWeapons();
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
         // Don't set panelManager in constructor
+        this._transferDialogOpen = false; // Guard to prevent multiple dialogs
     }
 
     _getWeapons() {
@@ -303,6 +304,12 @@ export class WeaponsPanel {
             const sendButton = event.target.closest('.weapons-send-item');
             if (!sendButton) return;
             
+            // Prevent multiple dialogs from opening
+            if (this._transferDialogOpen) {
+                event.stopPropagation();
+                return;
+            }
+            
             const itemId = sendButton.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
@@ -333,6 +340,9 @@ export class WeaponsPanel {
     }
 
     async _openCharacterSelection(item) {
+        // Prevent multiple dialogs from opening
+        if (this._transferDialogOpen) return;
+        
         // Check if item has quantity and show quantity selection dialog first
         const hasQuantity = item.system.quantity !== undefined && item.system.quantity > 1;
         const maxQuantity = hasQuantity ? item.system.quantity : 1;
@@ -341,8 +351,17 @@ export class WeaponsPanel {
         
         if (hasQuantity && maxQuantity > 1) {
             // Show quantity selection dialog
-            selectedQuantity = await this._showTransferQuantityDialog(item, this.actor, null, maxQuantity, hasQuantity);
-            if (selectedQuantity <= 0) return; // User cancelled
+            this._transferDialogOpen = true;
+            try {
+                selectedQuantity = await this._showTransferQuantityDialog(item, this.actor, null, maxQuantity, hasQuantity);
+                if (selectedQuantity <= 0) {
+                    this._transferDialogOpen = false;
+                    return; // User cancelled
+                }
+            } catch (error) {
+                this._transferDialogOpen = false;
+                throw error;
+            }
         }
         
         // Create character selection window with the selected quantity
@@ -352,11 +371,20 @@ export class WeaponsPanel {
             sourceItemId: item.id,
             selectedQuantity: selectedQuantity,
             hasQuantity: hasQuantity,
-            onCharacterSelected: this._handleCharacterSelected.bind(this)
+            onCharacterSelected: async (...args) => {
+                this._transferDialogOpen = false;
+                await this._handleCharacterSelected(...args);
+            }
         });
         
         // Render the window
         await characterWindow.render(true);
+        // Reset flag when character window closes (if quantity dialog wasn't shown)
+        if (!hasQuantity || maxQuantity <= 1) {
+            characterWindow.app.onClose = () => {
+                this._transferDialogOpen = false;
+            };
+        }
     }
 
     async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId, selectedQuantity, hasQuantity) {
@@ -376,6 +404,13 @@ export class WeaponsPanel {
     async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
         const timestamp = Date.now();
         
+        // Check if a dialog with this ID already exists
+        const existingDialog = document.querySelector(`#transfer-item-${timestamp}`);
+        if (existingDialog) {
+            // Dialog already exists, don't create another
+            return 0;
+        }
+        
         // Prepare template data for sender's dialog
         const senderTemplateData = {
             sourceItem,
@@ -393,7 +428,7 @@ export class WeaponsPanel {
         
         // Initiate the transfer process
         const selectedQuantity = await new Promise(resolve => {
-            new Dialog({
+            const dialog = new Dialog({
                 title: "Transfer Item",
                 content: senderContent,
                 buttons: {
@@ -415,8 +450,10 @@ export class WeaponsPanel {
                                     1,
                                     maxQuantity
                                 );
+                                this._transferDialogOpen = false;
                                 resolve(quantity);
                             } else {
+                                this._transferDialogOpen = false;
                                 resolve(1);
                             }
                         }
@@ -424,17 +461,25 @@ export class WeaponsPanel {
                     cancel: {
                         icon: '<i class="fa-solid fa-times"></i>',
                         label: "Cancel",
-                        callback: () => resolve(0)
+                        callback: () => {
+                            this._transferDialogOpen = false;
+                            resolve(0);
+                        }
                     }
                 },
                 default: "transfer",
-                close: () => resolve(0)
+                close: () => {
+                    this._transferDialogOpen = false;
+                    resolve(0);
+                }
             }, {
                 classes: ["transfer-item"],
                 id: `transfer-item-${timestamp}`,
                 width: 320,
                 height: "auto"
-            }).render(true);
+            });
+            
+            dialog.render(true);
         });
         
         return selectedQuantity;
