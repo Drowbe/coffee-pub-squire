@@ -117,12 +117,22 @@ export class CharacterPanel {
             // Labels: prefer config labels when available
             const speedLabelFor = (type) => {
                 if (mt && typeof mt === "object" && mt[type]) {
-                    const label = mt[type];
-                    // v13: Ensure label is a string before localizing
-                    if (typeof label === 'string') {
-                        return game.i18n?.localize?.(label) ?? label;
+                    const labelValue = mt[type];
+                    // v13: DND5E 5.1+ - movementTypes values are now objects with .label property
+                    // The old string value can be accessed from .label
+                    let label;
+                    if (typeof labelValue === 'string') {
+                        // Old format: direct string
+                        label = labelValue;
+                    } else if (labelValue && typeof labelValue === 'object' && labelValue.label) {
+                        // New format: object with .label property
+                        label = labelValue.label;
+                    } else {
+                        // Fallback: try to convert to string
+                        label = String(labelValue || '');
                     }
-                    return String(label || '');
+                    // Localize if it's a localization key
+                    return game.i18n?.localize?.(label) ?? label;
                 }
                 return type.charAt(0).toUpperCase() + type.slice(1);
             };

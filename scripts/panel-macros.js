@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { MacrosWindow } from './window-macros.js';
 import { PanelManager } from './manager-panel.js';
 import { trackModuleTimeout } from './timer-utils.js';
-import { renderTemplate } from './helpers.js';
+import { renderTemplate, getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -82,21 +82,25 @@ export class MacrosPanel {
     async render(html, { showAddSlot = false } = {}) {
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
-            const placeholder = $('#macros-panel-placeholder');
+            // v13: Use native DOM instead of jQuery
+            const placeholder = document.querySelector('#macros-panel-placeholder');
             // NULL SAFETY: If placeholder doesn't exist in DOM, skip rendering
             // This prevents crashes during multi-select when DOM is being rebuilt
-            if (!placeholder.length) {
+            if (!placeholder) {
                 return;
             }
-            let container = placeholder.find('.panel-container[data-panel="macros"]');
-            if (!container.length) {
+            let container = placeholder.querySelector('.panel-container[data-panel="macros"]');
+            if (!container) {
                 // Create the panel container if it doesn't exist
-                container = $('<div class="panel-container" data-panel="macros"></div>');
-                placeholder.append(container);
+                container = document.createElement('div');
+                container.className = 'panel-container';
+                container.setAttribute('data-panel', 'macros');
+                placeholder.appendChild(container);
             }
             this.element = container;
         } else if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element || this.isPoppedOut) {
             return;
@@ -133,153 +137,209 @@ export class MacrosPanel {
 
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_MACROS, templateData);
-        this.element.html(content);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        this.element.innerHTML = content;
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
         const panel = this.element;
         const isCollapsed = game.settings.get(MODULE.ID, 'isMacrosPanelCollapsed');
         if (isCollapsed) {
-            const macrosContent = panel.find('.macros-content');
-            const toggle = panel.find('.macros-toggle');
-            macrosContent.addClass('collapsed');
-            toggle.css('transform', 'rotate(-90deg)');
+            // v13: Use native DOM instead of jQuery
+            const macrosContent = panel.querySelector('.macros-content');
+            const toggle = panel.querySelector('.macros-toggle');
+            if (macrosContent) macrosContent.classList.add('collapsed');
+            if (toggle) toggle.style.transform = 'rotate(-90deg)';
         }
     }
 
     _activateListeners(html) {
         if (!html) return;
 
-        const panel = html;
+        // v13: Convert jQuery to native DOM if needed
+        const panel = getNativeElement(html);
+        if (!panel) return;
+
         let showAddSlot = false;
         let dragActive = false;
 
         // Toggle panel handler
-        panel.find('.tray-title-small').click(() => {
-            const macrosContent = panel.find('.macros-content');
-            const toggle = panel.find('.macros-toggle');
-            macrosContent.toggleClass('collapsed');
-            toggle.css('transform', macrosContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
-            // Save collapsed state
-            game.settings.set(MODULE.ID, 'isMacrosPanelCollapsed', macrosContent.hasClass('collapsed'));
-        });
+        // v13: Use native DOM event delegation
+        const trayTitle = panel.querySelector('.tray-title-small');
+        if (trayTitle) {
+            const newTitle = trayTitle.cloneNode(true);
+            trayTitle.parentNode?.replaceChild(newTitle, trayTitle);
+            newTitle.addEventListener('click', () => {
+                const macrosContent = panel.querySelector('.macros-content');
+                const toggle = panel.querySelector('.macros-toggle');
+                if (macrosContent && toggle) {
+                    const isCollapsed = macrosContent.classList.contains('collapsed');
+                    macrosContent.classList.toggle('collapsed');
+                    toggle.style.transform = macrosContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+                    // Save collapsed state
+                    game.settings.set(MODULE.ID, 'isMacrosPanelCollapsed', macrosContent.classList.contains('collapsed'));
+                }
+            });
+        }
 
         // Pop-out button handler
-        panel.find('.pop-out-button').click(() => this._onPopOut());
+        // v13: Use native DOM event delegation
+        const popOutButton = panel.querySelector('.pop-out-button');
+        if (popOutButton) {
+            const newButton = popOutButton.cloneNode(true);
+            popOutButton.parentNode?.replaceChild(newButton, popOutButton);
+            newButton.addEventListener('click', () => this._onPopOut());
+        }
 
         // Open macro folder button handler
-        panel.find('.open-macro-folder').click((e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (ui.macros && typeof ui.macros.renderPopout === 'function') ui.macros.renderPopout();
-        });
+        // v13: Use native DOM event delegation
+        const openFolderButton = panel.querySelector('.open-macro-folder');
+        if (openFolderButton) {
+            const newButton = openFolderButton.cloneNode(true);
+            openFolderButton.parentNode?.replaceChild(newButton, openFolderButton);
+            newButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (ui.macros && typeof ui.macros.renderPopout === 'function') ui.macros.renderPopout();
+            });
+        }
 
         // Add drag and drop handlers for the entire macros grid
-        const macrosGrid = panel.find('.macros-grid');
-        macrosGrid.off('dragenter.macroDnd dragleave.macroDnd dragover.macroDnd drop.macroDnd');
-        
-        macrosGrid.on('dragenter.macroDnd', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!dragActive) {
-                dragActive = true;
-                // Only show add slot if there are no empty slots
-                let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                macros = macros.filter(m => m && m.id);
-                if (this.isPoppedOut && this.window) {
-                    // Popped-out window path: ask the window to show add slot and re-render
-                    this.window.showAddSlot = true;
-                    this.window.render(false);
+        // v13: Use native DOM event listeners
+        const macrosGrid = panel.querySelector('.macros-grid');
+        if (macrosGrid) {
+            // Clone to remove old listeners
+            const newGrid = macrosGrid.cloneNode(true);
+            macrosGrid.parentNode?.replaceChild(newGrid, macrosGrid);
+            
+            // Drag enter handler
+            newGrid.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!dragActive) {
+                    dragActive = true;
+                    // Only show add slot if there are no empty slots
+                    let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                    macros = macros.filter(m => m && m.id);
+                    if (this.isPoppedOut && this.window) {
+                        // Popped-out window path: ask the window to show add slot and re-render
+                        this.window.showAddSlot = true;
+                        this.window.render(false);
                     // Ensure we hide add-slot when drag ends anywhere
-                    $(document).off('dragend.squireMacros').on('dragend.squireMacros', () => {
-                        if (this.window) {
-                            this.window.showAddSlot = false;
-                            this.window.render(false);
-                        }
-                        $(document).off('dragend.squireMacros');
-                    });
-                } else {
-                    // Tray path: re-render panel with add slot
-                    this.render(undefined, { showAddSlot: true });
+                    // Store handler reference for cleanup
+                    if (!this._dragEndHandler) {
+                        this._dragEndHandler = () => {
+                            if (this.window) {
+                                this.window.showAddSlot = false;
+                                this.window.render(false);
+                            }
+                            document.removeEventListener('dragend', this._dragEndHandler);
+                            this._dragEndHandler = null;
+                        };
+                    }
+                    document.removeEventListener('dragend', this._dragEndHandler); // Remove any existing
+                    document.addEventListener('dragend', this._dragEndHandler);
+                    } else {
+                        // Tray path: re-render panel with add slot
+                        this.render(undefined, { showAddSlot: true });
+                    }
                 }
-            }
-        });
-        macrosGrid.on('dragleave.macroDnd', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (dragActive) {
+            });
+            
+            // Drag leave handler
+            newGrid.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (dragActive) {
+                    dragActive = false;
+                    if (this.isPoppedOut && this.window) {
+                        this.window.showAddSlot = false;
+                        this.window.render(false);
+                        // Remove dragend listener if it exists
+                        if (this._dragEndHandler) {
+                            document.removeEventListener('dragend', this._dragEndHandler);
+                            this._dragEndHandler = null;
+                        }
+                    } else {
+                        this.render();
+                    }
+                }
+            });
+            
+            // Drag over handler
+            newGrid.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+            });
+            
+            // Drop handler
+            newGrid.addEventListener('drop', (e) => {
                 dragActive = false;
                 if (this.isPoppedOut && this.window) {
                     this.window.showAddSlot = false;
                     this.window.render(false);
-                    $(document).off('dragend.squireMacros');
+                    // Remove dragend listener if it exists
+                    if (this._dragEndHandler) {
+                        document.removeEventListener('dragend', this._dragEndHandler);
+                        this._dragEndHandler = null;
+                    }
                 } else {
                     this.render();
                 }
-            }
-        });
-        macrosGrid.on('dragover.macroDnd', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            e.originalEvent.dataTransfer.dropEffect = 'move';
-        });
-        macrosGrid.on('drop.macroDnd', (e) => {
-            dragActive = false;
-            if (this.isPoppedOut && this.window) {
-                this.window.showAddSlot = false;
-                this.window.render(false);
-                $(document).off('dragend.squireMacros');
-            } else {
-                this.render();
-            }
-        });
+            });
+        }
 
         // Note: Handle macro icon clicks are handled by the handle manager, not the macros panel
 
         // Macro grid interactions
+        // v13: Use native DOM instead of jQuery
         const self = this;
-        panel.find('.macro-slot').each(function(idx) {
-            const slot = $(this);
-            // Remove any previous event listeners
-            slot.off('.macroDnd');
+        const macroSlots = panel.querySelectorAll('.macro-slot');
+        macroSlots.forEach((slotElement, idx) => {
+            // Clone to remove old listeners
+            const slot = slotElement.cloneNode(true);
+            slotElement.parentNode?.replaceChild(slot, slotElement);
+            
             // Drag & drop events
-            slot.on('dragstart.macroDnd', function(e) {
-                if (!slot.hasClass('empty')) {
-                    e.originalEvent.dataTransfer.setData('text/plain', JSON.stringify({
+            slot.addEventListener('dragstart', function(e) {
+                if (!slot.classList.contains('empty')) {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
                         type: 'internal-macro',
                         fromIndex: idx
                     }));
                     // Optionally, set a drag image
-                    const img = slot.find('img')[0];
-                    if (img) e.originalEvent.dataTransfer.setDragImage(img, 16, 16);
+                    const img = slot.querySelector('img');
+                    if (img) e.dataTransfer.setDragImage(img, 16, 16);
                 }
             });
-            slot.attr('draggable', !slot.hasClass('empty'));
+            slot.setAttribute('draggable', !slot.classList.contains('empty'));
 
             // Restore dragover, dragenter, dragleave for drop to work and feedback
-            slot.on('dragover.macroDnd', (e) => {
+            // v13: Use native DOM event listeners
+            slot.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                e.originalEvent.dataTransfer.dropEffect = 'move';
+                e.dataTransfer.dropEffect = 'move';
             });
-            slot.on('dragenter.macroDnd', (e) => {
+            slot.addEventListener('dragenter', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                slot.addClass('dragover');
+                slot.classList.add('dragover');
             });
-            slot.on('dragleave.macroDnd', (e) => {
+            slot.addEventListener('dragleave', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                slot.removeClass('dragover');
+                slot.classList.remove('dragover');
             });
 
-            slot.on('drop.macroDnd', async function(e) {
+            slot.addEventListener('drop', async function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                slot.removeClass('dragover');
+                slot.classList.remove('dragover');
                 let data;
                 try {
-                    data = JSON.parse(e.originalEvent.dataTransfer.getData('text/plain'));
+                    data = JSON.parse(e.dataTransfer.getData('text/plain'));
                 } catch (error) {
                     ui.notifications.warn('Invalid drag data.');
                     return;
@@ -314,7 +374,7 @@ export class MacrosPanel {
                         let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                         macros = macros.filter(m => m && m.id);
                         // If dropped on add slot, push new macro
-                        if (slot.hasClass('add-slot')) {
+                        if (slot.classList.contains('add-slot')) {
                             macros.push({ id: macro.id, name: macro.name, img: macro.img });
                         } else {
                             macros[idx] = { id: macro.id, name: macro.name, img: macro.img };
@@ -342,31 +402,37 @@ export class MacrosPanel {
                 }
             });
             // Left click: run macro (unless Shift is held)
-            slot.on('click.macroDnd', async function(e) {
-                if (slot.hasClass('empty')) return;
+            // v13: Use native DOM event listeners
+            slot.addEventListener('click', async function(e) {
+                if (slot.classList.contains('empty')) return;
                 if (e.button === 0 && !e.shiftKey) {
                     let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                     const macroId = macros[idx]?.id;
                     const macro = game.macros.get(macroId);
                     if (macro) {
                         // Show loader animation
-                        if (!slot.find('.macro-loader').length) {
-                            slot.append('<span class="macro-loader"><i class="fa-solid fa-sun macro-spinner"></i></span>');
+                        if (!slot.querySelector('.macro-loader')) {
+                            const loader = document.createElement('span');
+                            loader.className = 'macro-loader';
+                            loader.innerHTML = '<i class="fa-solid fa-sun macro-spinner"></i>';
+                            slot.appendChild(loader);
                         }
-                        slot.addClass('loading');
+                        slot.classList.add('loading');
                         trackModuleTimeout(() => {
-                            slot.removeClass('loading');
-                            slot.find('.macro-loader').remove();
+                            slot.classList.remove('loading');
+                            const loader = slot.querySelector('.macro-loader');
+                            if (loader) loader.remove();
                         }, 600);
                         macro.execute();
                     }
                 }
             });
             // Right click: toggle favorite on/off
-            slot.on('contextmenu.macroDnd', async function(e) {
+            // v13: Use native DOM event listeners
+            slot.addEventListener('contextmenu', async function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (slot.hasClass('empty')) return;
+                if (slot.classList.contains('empty')) return;
                 let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
                 let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
                 const macroId = macros[idx]?.id;
@@ -389,7 +455,8 @@ export class MacrosPanel {
                 }
             });
             // Middle click or Shift+Left click: clear/remove slot
-            slot.on('mousedown.macroDnd', async function(e) {
+            // v13: Use native DOM event listeners
+            slot.addEventListener('mousedown', async function(e) {
                 if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -444,9 +511,13 @@ export class MacrosPanel {
         if (this.window || this.isPoppedOut) return;
 
         // Remove the panel container from the placeholder
-        const container = $('#macros-panel-placeholder .panel-container[data-panel="macros"]');
-        if (container.length) {
-            container.remove();
+        // v13: Use native DOM instead of jQuery
+        const placeholder = document.querySelector('#macros-panel-placeholder');
+        if (placeholder) {
+            const container = placeholder.querySelector('.panel-container[data-panel="macros"]');
+            if (container) {
+                container.remove();
+            }
         }
 
         // Set state before creating window
@@ -475,11 +546,15 @@ export class MacrosPanel {
         if (!isMacrosEnabled) return;
 
         // (Re)create the panel container inside the placeholder if missing
-        const placeholder = $('#macros-panel-placeholder');
-        let container = placeholder.find('.panel-container[data-panel="macros"]');
-        if (!container.length) {
-            container = $('<div class="panel-container" data-panel="macros"></div>');
-            placeholder.append(container);
+        // v13: Use native DOM instead of jQuery
+        const placeholder = document.querySelector('#macros-panel-placeholder');
+        if (!placeholder) return;
+        let container = placeholder.querySelector('.panel-container[data-panel="macros"]');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'panel-container';
+            container.setAttribute('data-panel', 'macros');
+            placeholder.appendChild(container);
         }
         this.element = container;
         // Re-render into the panel container

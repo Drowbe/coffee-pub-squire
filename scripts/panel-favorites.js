@@ -337,30 +337,35 @@ export class FavoritesPanel {
         this.showInventory = game.settings.get(MODULE.ID, 'showInventoryFavorites');
 
         // Set up the context menu options once
+        // v13: Callbacks receive native DOM elements (not jQuery) when jQuery: false is passed
         this.menuOptions = [{
             name: "Move to Top",
             icon: '<i class="fa-solid fa-angle-double-up"></i>',
             condition: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex > 0;
             },
             callback: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 this._reorderFavorite(itemId, 0);
             }
         }, {
             name: "Move Up",
             icon: '<i class="fa-solid fa-angle-up"></i>',
             condition: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex > 0;
             },
             callback: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 this._reorderFavorite(itemId, currentIndex - 1);
@@ -369,13 +374,15 @@ export class FavoritesPanel {
             name: "Move Down",
             icon: '<i class="fa-solid fa-angle-down"></i>',
             condition: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex < favorites.length - 1;
             },
             callback: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 this._reorderFavorite(itemId, currentIndex + 1);
@@ -384,13 +391,15 @@ export class FavoritesPanel {
             name: "Move to Bottom",
             icon: '<i class="fa-solid fa-angle-double-down"></i>',
             condition: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 const currentIndex = favorites.indexOf(itemId);
                 return currentIndex < favorites.length - 1;
             },
             callback: li => {
-                const itemId = $(li).data('item-id');
+                // v13: Use native DOM dataset instead of jQuery .data()
+                const itemId = li.dataset.itemId;
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
                 this._reorderFavorite(itemId, favorites.length - 1);
             }
