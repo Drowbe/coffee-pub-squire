@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -610,8 +610,10 @@ export class FavoritesPanel {
         const favoritesList = panel.querySelector('.favorites-list');
         
         // Always create a fresh context menu
+        // v13: Use namespaced API and opt out of jQuery
         try {
-            this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions);
+            const ContextMenu = getContextMenu();
+            this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions, { jQuery: false });
         } catch (error) {
             console.error('Error creating context menu:', error);
             // Fallback: use native context menu

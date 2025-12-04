@@ -48,6 +48,14 @@ export function getTextEditor() {
     return foundry.applications.ux.TextEditor.implementation;
 }
 
+/**
+ * v13: Get ContextMenu class using namespaced API
+ * @returns {class} ContextMenu class
+ */
+export function getContextMenu() {
+    return foundry.applications.ux.ContextMenu.implementation;
+}
+
 export function getTokenDisplayName(token, actor) {
     if (token?.document?.name) return token.document.name;
     if (token?.name) return token.name;
