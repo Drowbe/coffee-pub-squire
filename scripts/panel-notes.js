@@ -577,7 +577,11 @@ export class NotesPanel {
                         contentContainer.innerHTML = formattedContent || renderedContent;
                         
                         // Activate listeners to enable rollables, links, etc.
-                        if (typeof JournalTextPageSheet !== 'undefined' && JournalTextPageSheet.activateListeners) {
+                        // v13: Use namespaced API if available, fallback to global for compatibility
+                        const JournalTextPageSheet = foundry?.appv1?.sheets?.JournalTextPageSheet || 
+                                                      foundry?.applications?.sheets?.JournalTextPageSheet || 
+                                                      globalThis.JournalTextPageSheet;
+                        if (JournalTextPageSheet && typeof JournalTextPageSheet.activateListeners === 'function') {
                             JournalTextPageSheet.activateListeners(contentContainer);
                         }
                         
