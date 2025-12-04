@@ -619,14 +619,18 @@ export class CodexPanel {
      * @private
      */
     _showProgressBar() {
-        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
-        const progressFill = this.element?.find('.tray-progress-bar-inner');
-        const progressText = this.element?.find('.tray-progress-bar-text');
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+        
+        const progressArea = nativeElement.querySelector('.tray-progress-bar-wrapper');
+        const progressFill = nativeElement.querySelector('.tray-progress-bar-inner');
+        const progressText = nativeElement.querySelector('.tray-progress-bar-text');
         
         if (progressArea && progressFill && progressText) {
-            progressArea.show();
-            progressFill.css('width', '0%');
-            progressText.text('Starting codex import...');
+            progressArea.style.display = '';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Starting codex import...';
         }
     }
 
@@ -635,12 +639,16 @@ export class CodexPanel {
      * @private
      */
     _updateProgressBar(percent, text) {
-        const progressFill = this.element?.find('.tray-progress-bar-inner');
-        const progressText = this.element?.find('.tray-progress-bar-text');
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+        
+        const progressFill = nativeElement.querySelector('.tray-progress-bar-inner');
+        const progressText = nativeElement.querySelector('.tray-progress-bar-text');
         
         if (progressFill && progressText) {
-            progressFill.css('width', `${percent}%`);
-            progressText.text(text);
+            progressFill.style.width = `${percent}%`;
+            progressText.textContent = text;
         }
     }
 
@@ -649,9 +657,13 @@ export class CodexPanel {
      * @private
      */
     _hideProgressBar() {
-        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+        
+        const progressArea = nativeElement.querySelector('.tray-progress-bar-wrapper');
         if (progressArea) {
-            progressArea.hide();
+            progressArea.style.display = 'none';
         }
     }
 
@@ -1758,22 +1770,26 @@ export class CodexPanel {
         // Set import flag to prevent panel refreshes during auto-discovery
         this.isImporting = true;
 
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+
         // Get the button element and show it's working
-        const button = this.element?.find('.auto-discover-button');
+        const button = nativeElement.querySelector('.auto-discover-button');
         if (button) {
-            button.addClass('working');
-            button.attr('title', 'Scanning party inventories...');
+            button.classList.add('working');
+            button.setAttribute('title', 'Scanning party inventories...');
         }
 
         // Show progress area
-        const progressArea = this.element?.find('.tray-progress-bar-wrapper');
-        const progressFill = this.element?.find('.tray-progress-bar-inner');
-        const progressText = this.element?.find('.tray-progress-bar-text');
+        const progressArea = nativeElement.querySelector('.tray-progress-bar-wrapper');
+        const progressFill = nativeElement.querySelector('.tray-progress-bar-inner');
+        const progressText = nativeElement.querySelector('.tray-progress-bar-text');
         
         if (progressArea && progressFill && progressText) {
-            progressArea.show();
-            progressFill.css('width', '0%');
-            progressText.text('Starting scan...');
+            progressArea.style.display = '';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Starting scan...';
             
             // Small delay to make progress visible
             await moduleDelay(500);
@@ -1794,11 +1810,11 @@ export class CodexPanel {
                 ui.notifications.warn("No player character tokens found on the canvas.");
                 // Clean up progress bar before returning
                 if (progressArea && progressFill && progressText) {
-                    progressText.text('No players found');
-                    progressFill.css('width', '100%');
+                    progressText.textContent = 'No players found';
+                    progressFill.style.width = '100%';
                     // Hide progress area after a delay
                     trackModuleTimeout(() => {
-                        progressArea.hide();
+                        progressArea.style.display = 'none';
                     }, 2000);
                 }
                 return;
@@ -1812,10 +1828,10 @@ export class CodexPanel {
             
             // Update progress for character scanning phase
             if (progressText) {
-                progressText.text('Scanning party inventories...');
+                progressText.textContent = 'Scanning party inventories...';
             }
             if (progressFill) {
-                progressFill.css('width', '0%');
+                progressFill.style.width = '0%';
             }
             
             for (const token of tokens) {
@@ -1826,10 +1842,10 @@ export class CodexPanel {
                 // Update progress for this character - REAL PROGRESS
                 const playerProgressPercent = (processedPlayers / totalPlayers) * 20; // 0-20% range for player scanning
                 if (progressFill) {
-                    progressFill.css('width', `${playerProgressPercent}%`);
+                    progressFill.style.width = `${playerProgressPercent}%`;
                 }
                 if (progressText) {
-                    progressText.text(`Scanning ${actor.name}...`);
+                    progressText.textContent = `Scanning ${actor.name}...`;
                 }
                 
                 // Add a small delay to make player scanning visible
@@ -1863,11 +1879,11 @@ export class CodexPanel {
                 ui.notifications.warn("No inventory items found in party members' inventories.");
                 // Clean up progress bar before returning
                 if (progressArea && progressFill && progressText) {
-                    progressText.text('No items found');
-                    progressFill.css('width', '100%');
+                    progressText.textContent = 'No items found';
+                    progressFill.style.width = '100%';
                     // Hide progress area after a delay
                     trackModuleTimeout(() => {
-                        progressArea.hide();
+                        progressArea.style.display = 'none';
                     }, 2000);
                 }
                 return;
@@ -1882,10 +1898,10 @@ export class CodexPanel {
 
             // Update progress for codex scanning phase
             if (progressText) {
-                progressText.text(`Scanning ${totalEntries} codex entries...`);
+                progressText.textContent = `Scanning ${totalEntries} codex entries...`;
             }
             if (progressFill) {
-                progressFill.css('width', '20%');
+                progressFill.style.width = '20%';
             }
 
             for (const [category, entries] of Object.entries(this.data)) {
@@ -1895,13 +1911,13 @@ export class CodexPanel {
                     // Update progress bar with current entry info - REAL PROGRESS, no throttling
                     const progressPercent = 20 + ((processedEntries / totalEntries) * 80); // 20-100% range for codex scanning
                     if (progressFill) {
-                        progressFill.css('width', `${progressPercent}%`);
+                        progressFill.style.width = `${progressPercent}%`;
                     }
                     
                     // Only update progress text if we haven't shown a discovery recently
                     const now = Date.now();
                     if (progressText && (now - lastDiscoveryTime) > 1000) {
-                        progressText.text(`Scanning: ${entry.name}`);
+                        progressText.textContent = `Scanning: ${entry.name}`;
                     }
                     
                     // Add a small delay every 5 entries to make progress visible
@@ -1971,7 +1987,7 @@ export class CodexPanel {
                             
                             // Show discovery immediately with progress update
                             if (progressText) {
-                                progressText.text(`✓ Found: ${entry.name}`);
+                                progressText.textContent = `✓ Found: ${entry.name}`;
                                 lastDiscoveryTime = Date.now(); // Mark when discovery was shown
                                 // Keep discovery visible for a moment - increased delay
                                 await moduleDelay(1200);
@@ -1984,11 +2000,11 @@ export class CodexPanel {
             // Show final summary regardless of results
             if (discoveredEntries.length === 0) {
                 if (progressText) {
-                    progressText.text(`No new entries found`);
+                    progressText.textContent = `No new entries found`;
                 }
             } else {
                 if (progressText) {
-                    progressText.text(`Found ${discoveredEntries.length} new entries`);
+                    progressText.textContent = `Found ${discoveredEntries.length} new entries`;
                 }
             }
             
@@ -2000,18 +2016,18 @@ export class CodexPanel {
             // Show completion message and hide progress area after delay
             if (progressArea && progressFill && progressText) {
                 // Show prominent completion message
-                progressText.text('Scan Complete!');
-                progressFill.css('width', '100%');
+                progressText.textContent = 'Scan Complete!';
+                progressFill.style.width = '100%';
                 
                 // Add a visual completion indicator
-                progressArea.addClass('scan-complete');
+                progressArea.classList.add('scan-complete');
                 
                 // Keep completion message visible for 5 seconds
                 await moduleDelay(5000);
                 
                 // Remove completion styling and hide progress area
-                progressArea.removeClass('scan-complete');
-                progressArea.hide();
+                progressArea.classList.remove('scan-complete');
+                progressArea.style.display = 'none';
             }
             
             // Clear import flag and refresh panel once at the end
@@ -2028,19 +2044,19 @@ export class CodexPanel {
             
             // Show error in progress area
             if (progressArea && progressFill && progressText) {
-                progressText.text(`Error: ${error.message}`);
-                progressFill.css('width', '100%');
+                progressText.textContent = `Error: ${error.message}`;
+                progressFill.style.width = '100%';
                 
                 // Hide progress area after a delay
                 trackModuleTimeout(() => {
-                    progressArea.hide();
+                    progressArea.style.display = 'none';
                 }, 3000);
             }
         } finally {
             // Reset button state
             if (button) {
-                button.removeClass('working');
-                button.attr('title', 'Auto-Discover from Party Inventories');
+                button.classList.remove('working');
+                button.setAttribute('title', 'Auto-Discover from Party Inventories');
             }
         }
     }
