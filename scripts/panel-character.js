@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName } from './helpers.js';
+import { getTokenDisplayName, getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -380,8 +380,9 @@ export class CharacterPanel {
                 return;
             }
             
-            // Validate element exists and is a valid jQuery object
-            if (!this.element || typeof this.element.find !== 'function') {
+            // v13: Convert to native DOM element if needed
+            const nativeElement = getNativeElement(this.element);
+            if (!nativeElement) {
                 const blacksmith = getBlacksmith();
                 blacksmith?.utils.postConsoleAndNotification(
                     MODULE.NAME,
@@ -394,8 +395,9 @@ export class CharacterPanel {
             }
             
             // Validate character panel container exists in DOM
-            const characterPanelContainer = this.element.find('[data-panel="character"]');
-            if (!characterPanelContainer.length) {
+            // v13: Use native DOM querySelector instead of jQuery find
+            const characterPanelContainer = nativeElement.querySelector('[data-panel="character"]');
+            if (!characterPanelContainer) {
                 const blacksmith = getBlacksmith();
                 blacksmith?.utils.postConsoleAndNotification(
                     MODULE.NAME,
@@ -408,8 +410,9 @@ export class CharacterPanel {
             }
             
             // All validations passed - proceed with rendering
-            characterPanelContainer.html(template);
-            this._activateListeners(this.element);
+            // v13: Use native DOM innerHTML instead of jQuery html()
+            characterPanelContainer.innerHTML = template;
+            this._activateListeners(nativeElement);
         } finally {
             // Always clear render flag, even if an error occurred
             this._renderInProgress = false;
@@ -417,120 +420,169 @@ export class CharacterPanel {
     }
 
     _activateListeners(html) {
+        // v13: Convert to native DOM if needed
+        const nativeHtml = getNativeElement(html);
+        if (!nativeHtml) return;
+
         // Character sheet toggle
-        html.find('.character-sheet-toggle').click(() => {
-            this.actor.sheet.render(true);
-        });
+        // v13: Use native DOM querySelector and addEventListener
+        const sheetToggle = nativeHtml.querySelector('.character-sheet-toggle');
+        if (sheetToggle) {
+            sheetToggle.addEventListener('click', () => {
+                this.actor.sheet.render(true);
+            });
+        }
 
         // Print character button
-        html.find('.print-character').click(async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (this.actor) {
-                const { PrintCharacterSheet } = await import('./utility-print-character.js');
-                await PrintCharacterSheet.print(this.actor);
-            }
-        });
+        // v13: Use native DOM querySelector and addEventListener
+        const printButton = nativeHtml.querySelector('.print-character');
+        if (printButton) {
+            printButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (this.actor) {
+                    const { PrintCharacterSheet } = await import('./utility-print-character.js');
+                    await PrintCharacterSheet.print(this.actor);
+                }
+            });
+        }
 
         // Share portrait
-        html.find('.character-portrait').click(() => {
-            const imagePopout = new ImagePopout(this.actor.img, {
-                title: this.displayName || this.actor.name,
-                shareable: true,
-                uuid: this.actor.uuid
+        // v13: Use native DOM querySelector and addEventListener
+        const portrait = nativeHtml.querySelector('.character-portrait');
+        if (portrait) {
+            portrait.addEventListener('click', () => {
+                const imagePopout = new ImagePopout(this.actor.img, {
+                    title: this.displayName || this.actor.name,
+                    shareable: true,
+                    uuid: this.actor.uuid
+                });
+                imagePopout.render(true);
             });
-            imagePopout.render(true);
-        });
+        }
 
         // Note: Conditions button is handled by the handle manager, not the character panel
 
         // Refresh tray
-        html.find('.tray-refresh').click(async (event) => {
-            const $refreshIcon = $(event.currentTarget);
-            if (PanelManager.instance && !$refreshIcon.hasClass('spinning')) {
-                try {
-                    $refreshIcon.addClass('spinning');
-                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                    await PanelManager.initialize(this.actor);
-                    // Force a re-render of all panels
-                    if (PanelManager.instance) {
-                        await PanelManager.instance.renderPanels(PanelManager.element);
+        // v13: Use native DOM querySelector and addEventListener
+        const refreshButton = nativeHtml.querySelector('.tray-refresh');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', async (event) => {
+                const refreshIcon = event.currentTarget;
+                if (PanelManager.instance && !refreshIcon.classList.contains('spinning')) {
+                    try {
+                        refreshIcon.classList.add('spinning');
+                        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                        await PanelManager.initialize(this.actor);
+                        // Force a re-render of all panels
+                        if (PanelManager.instance) {
+                            await PanelManager.instance.renderPanels(PanelManager.element);
+                        }
+                    } catch (error) {
+                        console.error('Error refreshing tray:', error);
+                        ui.notifications.error("Failed to refresh tray");
+                    } finally {
+                        refreshIcon.classList.remove('spinning');
                     }
-                } catch (error) {
-                    console.error('Error refreshing tray:', error);
-                    ui.notifications.error("Failed to refresh tray");
-                } finally {
-                    $refreshIcon.removeClass('spinning');
                 }
-            }
-        });
+            });
+        }
 
         // HP Controls
-        html.find('.death-toggle').click(async () => {
-            const isDead = this.actor.system.attributes.hp.value <= 0;
-            await this.actor.update({
-                'system.attributes.hp.value': isDead ? 1 : 0,
-                'system.attributes.death.failure': isDead ? 0 : 3
+        // v13: Use native DOM querySelector and addEventListener
+        const deathToggle = nativeHtml.querySelector('.death-toggle');
+        if (deathToggle) {
+            deathToggle.addEventListener('click', async () => {
+                const isDead = this.actor.system.attributes.hp.value <= 0;
+                await this.actor.update({
+                    'system.attributes.hp.value': isDead ? 1 : 0,
+                    'system.attributes.death.failure': isDead ? 0 : 3
+                });
+                await this._updateHPDisplay();
             });
-            await this._updateHPDisplay();
-        });
+        }
 
         // Clear HP amount input on click
-        html.find('.hp-amount').click(function() {
-            $(this).val('');
+        // v13: Use native DOM querySelector and addEventListener
+        const hpAmount = nativeHtml.querySelector('.hp-amount');
+        if (hpAmount) {
+            hpAmount.addEventListener('click', function() {
+                this.value = '';
+            });
+        }
+
+        // HP up/down buttons
+        // v13: Use native DOM querySelectorAll and addEventListener
+        const hpButtons = nativeHtml.querySelectorAll('.hp-up, .hp-down');
+        hpButtons.forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const isIncrease = event.currentTarget.classList.contains('hp-up');
+                const hp = this.actor.system.attributes.hp;
+                const hpAmountInput = nativeHtml.querySelector('.hp-amount');
+                const inputValue = parseInt(hpAmountInput?.value || '0') || 1;
+                const change = isIncrease ? inputValue : -inputValue;
+                
+                await this.actor.update({
+                    'system.attributes.hp.value': Math.clamp(
+                        hp.value + change,
+                        0,
+                        hp.max
+                    )
+                });
+                await this._updateHPDisplay();
+            });
         });
 
-        html.find('.hp-up, .hp-down').click(async (event) => {
-            const isIncrease = event.currentTarget.classList.contains('hp-up');
-            const hp = this.actor.system.attributes.hp;
-            const inputValue = parseInt(html.find('.hp-amount').val()) || 1;
-            const change = isIncrease ? inputValue : -inputValue;
-            
-            await this.actor.update({
-                'system.attributes.hp.value': Math.clamp(
-                    hp.value + change,
-                    0,
-                    hp.max
-                )
+        // HP full button
+        // v13: Use native DOM querySelector and addEventListener
+        const hpFull = nativeHtml.querySelector('.hp-full');
+        if (hpFull) {
+            hpFull.addEventListener('click', async () => {
+                const hp = this.actor.system.attributes.hp;
+                await this.actor.update({
+                    'system.attributes.hp.value': hp.max
+                });
+                await this._updateHPDisplay();
             });
-            await this._updateHPDisplay();
-        });
-
-        html.find('.hp-full').click(async () => {
-            const hp = this.actor.system.attributes.hp;
-            await this.actor.update({
-                'system.attributes.hp.value': hp.max
-            });
-            await this._updateHPDisplay();
-        });
+        }
 
         // Ability Score Buttons
-        html.find('.ability-btn').click(async (event) => {
-            const ability = event.currentTarget.dataset.ability;
-            await this.actor.rollAbilityTest(ability);
-        });
-
-        html.find('.ability-btn').contextmenu(async (event) => {
-            event.preventDefault();
-            const ability = event.currentTarget.dataset.ability;
-            await this.actor.rollAbilitySave(ability);
+        // v13: Use native DOM querySelectorAll and addEventListener
+        const abilityButtons = nativeHtml.querySelectorAll('.ability-btn');
+        abilityButtons.forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const ability = event.currentTarget.dataset.ability;
+                await this.actor.rollAbilityTest(ability);
+            });
+            
+            button.addEventListener('contextmenu', async (event) => {
+                event.preventDefault();
+                const ability = event.currentTarget.dataset.ability;
+                await this.actor.rollAbilitySave(ability);
+            });
         });
 
         // Note: Print character button is handled by the panel manager, not the character panel
     }
 
     async _updateHPDisplay() {
-        const hp = this.actor.system.attributes.hp;
-        const hpBar = this.element.find('.hp-bar');
-        const hpValue = hpBar.find('.hp-current .hp-value');
-        const hpMax = hpBar.find('.hp-max .hp-value');
-        const hpFill = hpBar.find('.hp-fill');
+        // v13: Use native DOM methods
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
         
-        if (hpValue.length && hpMax.length && hpFill.length) {
-            hpValue.text(hp.value);
-            hpMax.text(hp.max);
+        const hp = this.actor.system.attributes.hp;
+        const hpBar = nativeElement.querySelector('.hp-bar');
+        if (!hpBar) return;
+        
+        const hpValue = hpBar.querySelector('.hp-current .hp-value');
+        const hpMax = hpBar.querySelector('.hp-max .hp-value');
+        const hpFill = hpBar.querySelector('.hp-fill');
+        
+        if (hpValue && hpMax && hpFill) {
+            hpValue.textContent = hp.value;
+            hpMax.textContent = hp.max;
             const percentage = Math.clamped((hp.value / hp.max) * 100, 0, 100);
-            hpFill.css('width', `${percentage}%`);
+            hpFill.style.width = `${percentage}%`;
         }
     }
 

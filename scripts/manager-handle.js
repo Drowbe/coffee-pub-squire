@@ -149,7 +149,7 @@ export class HandleManager {
         // Fetch handle favorites
         const handleFavoriteIds = FavoritesPanel.getHandleFavorites(this.actor);
         const handleFavorites = handleFavoriteIds.map(id => {
-            const item = this.actor.items.get(id);
+            const item = this.actor?.items.get(id);
             return item ? {
                 id: item.id,
                 name: item.name,
