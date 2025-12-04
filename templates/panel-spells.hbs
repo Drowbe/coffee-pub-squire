@@ -48,7 +48,7 @@
                     </div>
                 </div>
                 {{#each spells as |spell|}}
-                    {{#if (eq spell.system.preparation.mode "atwill")}}
+                    {{#if (eq spell.system.method "atwill")}}
                     <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-at-will">
                         <div class="spell-row">
                             <div class="spell-image-container">
@@ -127,7 +127,7 @@
                         </div>
                     </div>
                     {{#each (lookup ../spellsByLevel slot.level) as |spell|}}
-                        <div class="spell-item {{#if spell.system.preparation.prepared}}prepared{{/if}}" 
+                        <div class="spell-item {{#if spell.system.prepared}}prepared{{/if}}" 
                              data-spell-id="{{spell.id}}" 
                              data-category-id="category-spell-level-{{slot.level}}">
                             <div class="spell-row">
@@ -148,7 +148,7 @@
                                     </div>
                                 </div>
                                 <div class="tray-buttons">
-                                    <i class="fa-solid fa-sun {{#unless spell.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
+                                    <i class="fa-solid fa-sun {{#unless spell.system.prepared}}faded{{/unless}}" title="Prepared"></i>
                                     <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                                     <i class="fa-solid fa-feather"></i>
                                 </div>

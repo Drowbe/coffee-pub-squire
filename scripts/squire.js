@@ -443,7 +443,7 @@ Hooks.once('ready', () => {
                             await FavoritesPanel.manageFavorite(item.parent, item.id);
                         }
                         // For spells, check if prepared status changed to true
-                        else if (item.type === "spell" && item.system.preparation?.mode === "prepared" && item.system.preparation?.prepared === true) {
+                        else if (item.type === "spell" && item.system.method === "prepared" && item.system.prepared === true) {
                             // Add to favorites if it's now prepared
                             await FavoritesPanel.manageFavorite(item.parent, item.id);
                         }

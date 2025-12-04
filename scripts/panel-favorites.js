@@ -274,7 +274,7 @@ export class FavoritesPanel {
             // Add prepared spells to panel favorites
             const spells = actor.items.filter(item => 
                 item.type === "spell" && 
-                item.system.preparation?.prepared === true
+                item.system.prepared === true
             );
             // Add monster features that are actions
             const monsterFeatures = actor.items.filter(item => 
@@ -740,9 +740,9 @@ export class FavoritesPanel {
             const itemId = favoriteItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
-                const newPrepared = !item.system.preparation.prepared;
+                const newPrepared = !item.system.prepared;
                 await item.update({
-                    'system.preparation.prepared': newPrepared
+                    'system.prepared': newPrepared
                 });
                 // Update the UI immediately
                 favoriteItem.classList.toggle('prepared', newPrepared);

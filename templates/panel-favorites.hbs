@@ -28,7 +28,7 @@
                 <div class="favorite-name">{{this.name}}</div>
                 <div class="tray-buttons">
                     {{#if (eq this.type 'spell')}}
-                    <i class="fa-solid fa-sun {{#unless this.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
+                    <i class="fa-solid fa-sun {{#unless this.system.prepared}}faded{{/unless}}" title="Prepared"></i>
                     {{else if (eq this.type 'feat')}}
                     <i class="fa-solid fa-stars" title="Always Available"></i>
                     {{else if (or (eq this.type 'weapon') (eq this.type 'equipment') (eq this.type 'consumable') (eq this.type 'tool') (eq this.type 'loot'))}}

@@ -24,7 +24,7 @@ export class SpellsPanel {
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
             const level = spell.system.level;
-            const isAtWill = spell.system.preparation?.mode === 'atwill';
+            const isAtWill = spell.system.method === 'atwill';
             
             return {
                 id: spell.id,
@@ -84,12 +84,12 @@ export class SpellsPanel {
         const spellsByLevel = {};
         const spellsByType = {
             atwill: this.spells
-                .filter(s => s.system.preparation?.mode === 'atwill')
+                .filter(s => s.system.method === 'atwill')
                 .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
         };
 
         this.spells.forEach(spell => {
-            if (spell.system.preparation?.mode !== 'atwill') {
+            if (spell.system.method !== 'atwill') {
                 const level = spell.system.level;
                 if (!spellsByLevel[level]) {
                     spellsByLevel[level] = [];
@@ -184,8 +184,8 @@ export class SpellsPanel {
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             const preparedMatch = !this.showOnlyPrepared || 
                 spell.system.level === 0 || // Cantrips are always prepared
-                spell.system.preparation?.mode === 'atwill' || // At-will spells are always prepared
-                spell.system.preparation?.prepared;
+                spell.system.method === 'atwill' || // At-will spells are always prepared
+                spell.system.prepared;
             
             item.style.display = (!isCategoryHidden && preparedMatch) ? '' : 'none';
         });
@@ -349,9 +349,9 @@ export class SpellsPanel {
             const spellId = spellItem.dataset.spellId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
-                const newPrepared = !spell.system.preparation.prepared;
+                const newPrepared = !spell.system.prepared;
                 await spell.update({
-                    'system.preparation.prepared': newPrepared
+                    'system.prepared': newPrepared
                 });
                 // Update the UI immediately
                 spellItem.classList.toggle('prepared', newPrepared);
