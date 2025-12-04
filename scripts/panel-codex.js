@@ -1,6 +1,6 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
-import { copyToClipboard, getNativeElement } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
@@ -783,6 +783,7 @@ export class CodexPanel {
                     }
                     
                     if (content) {
+                        const TextEditor = getTextEditor();
                         const enriched = await TextEditor.enrichHTML(content, {
                             secrets: game.user.isGM,
                             documents: true,
@@ -2069,6 +2070,7 @@ export class CodexPanel {
      */
     async _addDiscoveredByInfo(page, discoverers) {
         try {
+            const TextEditor = getTextEditor();
             const enrichedContent = await TextEditor.enrichHTML(page.text.content, {
                 secrets: game.user.isGM,
                 documents: true,
@@ -2161,6 +2163,7 @@ export class CodexPanel {
             // Enrich links for Foundry UUID handling
             for (const entry of entries) {
                 if (entry.link && entry.link.uuid && entry.link.label) {
+                    const TextEditor = getTextEditor();
                     entry.linkHtml = await TextEditor.enrichHTML(
                         `@UUID[${entry.link.uuid}]{${entry.link.label}}`,
                         { documents: true, links: true }

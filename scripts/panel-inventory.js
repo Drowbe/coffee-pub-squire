@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { CharactersWindow } from './window-characters.js';
-import { getNativeElement } from './helpers.js';
+import { getNativeElement, renderTemplate } from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 
 export class InventoryPanel {

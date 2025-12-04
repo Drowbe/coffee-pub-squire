@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { getNativeElement } from './helpers.js';
+import { getNativeElement, renderTemplate } from './helpers.js';
 
 export class DiceTrayWindow extends Application {
     constructor(options = {}) {

@@ -1,5 +1,5 @@
 import { MODULE, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getQuestTooltipData, getTextEditor } from './helpers.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
@@ -135,6 +135,7 @@ export class QuestPin extends PIXI.Container {
       
       if (page) {
         // Enrich the page HTML if needed (same as tooltip functions)
+        const TextEditor = getTextEditor();
         const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
         // Parse the quest entry using the same method as tooltip functions
         const entry = await QuestParser.parseSinglePage(page, enrichedHtml);

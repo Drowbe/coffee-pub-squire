@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPins } from './quest-pin.js';
-import { copyToClipboard, getNativeElement } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 
 // Helper function to get quest number from UUID
@@ -629,6 +629,7 @@ export class QuestPanel {
                         content = await page.text.content;
                     }
                     if (content) {
+                        const TextEditor = getTextEditor();
                         const enriched = await TextEditor.enrichHTML(content, {
                             secrets: game.user.isGM,
                             documents: true,

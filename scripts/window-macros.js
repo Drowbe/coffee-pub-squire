@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { getNativeElement } from './helpers.js';
+import { getNativeElement, renderTemplate } from './helpers.js';
 
 export class MacrosWindow extends Application {
     constructor(options = {}) {

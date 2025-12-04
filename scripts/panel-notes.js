@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getNativeElement } from './helpers.js';
+import { getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -555,6 +555,7 @@ export class NotesPanel {
                             // Fallback with Manual Enrichment as suggested
                             let content = page.text?.content ?? page.text ?? '';
                             if (content && typeof content === 'string') {
+                                const TextEditor = getTextEditor();
                                 renderedContent = await TextEditor.enrichHTML(content, {
                                     secrets: game.user.isGM,
                                     documents: true,
@@ -802,6 +803,7 @@ export class NotesPanel {
                     // If we have content, enrich it
                     if (content && typeof content === 'string') {
                         try {
+                            const TextEditor = getTextEditor();
                             content = await TextEditor.enrichHTML(content, {
                                 secrets: game.user.isGM,
                                 documents: true,
@@ -1336,6 +1338,7 @@ export class NotesPanel {
                 let rawContent = page.text?.content ?? page.text ?? '';
                 if (rawContent && typeof rawContent === 'string') {
                     // Enrich the content
+                    const TextEditor = getTextEditor();
                     return await TextEditor.enrichHTML(rawContent, {
                         secrets: game.user.isGM,
                         documents: true,
@@ -1365,6 +1368,7 @@ export class NotesPanel {
                 // Fallback: If we can't get content from the sheet, use direct enrichment
                 let rawContent = page.text?.content ?? page.text ?? '';
                 if (rawContent && typeof rawContent === 'string') {
+                    const TextEditor = getTextEditor();
                     return await TextEditor.enrichHTML(rawContent, {
                         secrets: game.user.isGM,
                         documents: true,

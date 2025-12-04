@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName, getNativeElement } from './helpers.js';
+import { getTokenDisplayName, getNativeElement, getTextEditor, renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -307,6 +307,7 @@ export class CharacterPanel {
             let biographyHtmlRaw = '';
             if (biographyHtml) {
                 try {
+                    const TextEditor = getTextEditor();
                     if (TextEditor?.enrichHTML) {
                         const enriched = await TextEditor.enrichHTML(biographyHtml, { async: true, secrets: false });
                         biographyHtmlRaw = typeof enriched === 'string' ? enriched : '';

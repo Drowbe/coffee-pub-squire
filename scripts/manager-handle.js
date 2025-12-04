@@ -7,11 +7,11 @@ import { MacrosPanel } from './panel-macros.js';
 import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getTokenDisplayName, getNativeElement } from './helpers.js';
+import { getBlacksmith, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
-const { renderTemplate, fromUuid, TextEditor } = globalThis;
+const { fromUuid } = globalThis;
 
 export class HandleManager {
     constructor(panelManager) {
@@ -960,6 +960,7 @@ export class HandleManager {
                     
                     if (page) {
                         // Enrich the page HTML if needed
+                        const TextEditor = getTextEditor();
                         const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
                         // Parse the quest entry using the source of truth
                         const entry = await QuestParser.parseSinglePage(page, enrichedHtml);

@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
-import { registerHelpers } from './helpers.js';
+import { registerHelpers, renderTemplate } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestForm } from './window-quest.js';
 import { QuestParser } from './utility-quest-parser.js';

@@ -30,6 +30,24 @@ export function getNativeElement(element) {
     return element;
 }
 
+/**
+ * v13: Render template using namespaced API
+ * @param {string} template - Template path
+ * @param {object} data - Template data
+ * @returns {Promise<string>} Rendered HTML
+ */
+export async function renderTemplate(template, data) {
+    return foundry.applications.handlebars.renderTemplate(template, data);
+}
+
+/**
+ * v13: Get TextEditor implementation using namespaced API
+ * @returns {object} TextEditor implementation
+ */
+export function getTextEditor() {
+    return foundry.applications.ux.TextEditor.implementation;
+}
+
 export function getTokenDisplayName(token, actor) {
     if (token?.document?.name) return token.document.name;
     if (token?.name) return token.name;
@@ -574,6 +592,7 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
         }
 
         // Enrich the page HTML if needed
+        const TextEditor = getTextEditor();
         const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
         // Parse the quest entry using the source of truth
         const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
@@ -662,6 +681,7 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
         }
 
         // Enrich the page HTML if needed
+        const TextEditor = getTextEditor();
         const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
         // Parse the quest entry using the source of truth
         const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
