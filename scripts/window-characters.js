@@ -1,6 +1,17 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 
+// v13: Override _activateCoreListeners to prevent errors since we don't have forms
+// This window doesn't need FoundryVTT's form handling
 export class CharactersWindow extends Application {
+    /**
+     * Override to prevent FoundryVTT core from trying to access form elements we don't have
+     * @override
+     */
+    _activateCoreListeners(html) {
+        // Skip the parent implementation since we don't have forms
+        // Our activateListeners handles all the listeners we need
+        return;
+    }
     constructor(options = {}) {
         super(options);
         this.item = options.item;
@@ -94,25 +105,22 @@ export class CharactersWindow extends Application {
 
     async _renderInner(data) {
         // First render the template
-        const content = await renderTemplate(this.options.template, data);
+        // v13: Use namespaced renderTemplate
+        const content = await foundry.applications.handlebars.renderTemplate(this.options.template, data);
         // Create the wrapper structure using squire-popout
         // v13: Return native DOM element instead of jQuery
-        const wrapper = document.createElement('div');
-        wrapper.className = 'squire-popout';
-        wrapper.setAttribute('data-position', 'left');
-        
-        const trayContent = document.createElement('div');
-        trayContent.className = 'tray-content';
-        
-        const panelContainer = document.createElement('div');
-        panelContainer.className = 'panel-container';
-        panelContainer.setAttribute('data-panel', 'characters');
-        panelContainer.innerHTML = content;
-        
-        trayContent.appendChild(panelContainer);
-        wrapper.appendChild(trayContent);
-        
-        return wrapper;
+        // Use innerHTML like macros window to ensure proper structure
+        const html = document.createElement('div');
+        html.className = 'squire-popout';
+        html.setAttribute('data-position', 'left');
+        html.innerHTML = `
+            <div class="tray-content">
+                <div class="panel-container" data-panel="characters">
+                    ${content}
+                </div>
+            </div>
+        `;
+        return html;
     }
 
     /**
@@ -129,34 +137,58 @@ export class CharactersWindow extends Application {
     }
 
     activateListeners(html) {
-        super.activateListeners(html);
-
+        // v13: Call super first, but wrap in try-catch since our window doesn't have forms
+        // FoundryVTT's _activateCoreListeners expects form elements that we don't have
+        try {
+            super.activateListeners(html);
+        } catch (error) {
+            // FoundryVTT core may fail if it expects form elements we don't have
+            // This is safe to ignore since we handle all our own listeners below
+            console.debug('CharactersWindow: super.activateListeners error (expected for non-form windows):', error);
+        }
+        
         // v13: Detect and convert jQuery to native DOM if needed
         let nativeHtml = html;
         if (html && (html.jquery || typeof html.find === 'function')) {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
 
-        // Add close button handler
-        const appElement = nativeHtml.closest('.app');
-        const closeButton = appElement?.querySelector('.close');
-        if (closeButton) {
-            closeButton.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                this.close();
-            });
+        // Use this.element which is properly connected to the DOM after render
+        const nativeElement = this._getNativeElement() || nativeHtml;
+        if (!nativeElement) return;
+
+        // Add close button handler - find it in the window structure
+        // v13: Use this.element which is properly connected to the DOM
+        const appElement = nativeElement.closest('.app') || document.querySelector(`#${this.id}`);
+        if (appElement) {
+            const closeButton = appElement.querySelector('.close');
+            if (closeButton) {
+                // Clone to remove existing listeners
+                const newButton = closeButton.cloneNode(true);
+                closeButton.parentNode?.replaceChild(newButton, closeButton);
+                
+                newButton.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    this.close();
+                });
+            }
         }
 
         // Set up data-panel attribute for CSS targeting
-        const windowContent = nativeHtml.closest('.window-content');
+        const windowContent = nativeElement.closest('.window-content') || appElement?.querySelector('.window-content');
         if (windowContent) {
             windowContent.setAttribute('data-panel', 'characters');
         }
 
         // Add character selection handlers
-        const characterSlots = nativeHtml.querySelectorAll('.character-slot');
+        // v13: Use nativeElement which is the element returned from _renderInner
+        const characterSlots = nativeElement.querySelectorAll('.character-slot');
         characterSlots.forEach(slot => {
-            slot.addEventListener('click', (ev) => {
+            // Clone to remove existing listeners
+            const newSlot = slot.cloneNode(true);
+            slot.parentNode?.replaceChild(newSlot, slot);
+            
+            newSlot.addEventListener('click', (ev) => {
                 const characterId = ev.currentTarget.dataset.characterId;
                 const clickable = ev.currentTarget.dataset.clickable === 'true';
                 

@@ -401,9 +401,17 @@ export class WeaponsPanel {
                         icon: '<i class="fa-solid fa-exchange-alt"></i>',
                         label: "Transfer",
                         callback: html => {
+                            // v13: Convert jQuery to native DOM if needed
+                            let nativeHtml = html;
+                            if (html && (html.jquery || typeof html.find === 'function')) {
+                                nativeHtml = html[0] || html.get?.(0) || html;
+                            }
+                            
                             if (hasQuantity && maxQuantity > 1) {
+                                // v13: Use native DOM querySelector and value
+                                const input = nativeHtml.querySelector(`input[name="quantity_${timestamp}"]`);
                                 const quantity = Math.clamp(
-                                    parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
+                                    parseInt(input?.value || '1'),
                                     1,
                                     maxQuantity
                                 );
