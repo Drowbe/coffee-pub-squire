@@ -540,10 +540,10 @@ export class PartyPanel {
     // Helper method to get the appropriate icon based on item type
     _getDropIcon(type) {
         switch(type) {
-            case 'spell': return 'fas fa-stars';
-            case 'weapon': return 'fas fa-swords';
-            case 'feat': return 'fas fa-sparkles';
-            default: return 'fas fa-backpack';
+            case 'spell': return 'fa-solid fa-stars';
+            case 'weapon': return 'fa-solid fa-swords';
+            case 'feat': return 'fa-solid fa-sparkles';
+            default: return 'fa-solid fa-backpack';
         }
     }
 
@@ -655,7 +655,7 @@ export class PartyPanel {
                 content: senderContent,
                 buttons: {
                     transfer: {
-                        icon: '<i class="fas fa-exchange-alt"></i>',
+                        icon: '<i class="fa-solid fa-exchange-alt"></i>',
                         label: "Transfer",
                         callback: html => {
                             if (hasQuantity && maxQuantity > 1) {
@@ -671,7 +671,7 @@ export class PartyPanel {
                         }
                     },
                     cancel: {
-                        icon: '<i class="fas fa-times"></i>',
+                        icon: '<i class="fa-solid fa-times"></i>',
                         label: "Cancel",
                         callback: () => resolve(0)
                     }
@@ -769,7 +769,7 @@ export class PartyPanel {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-complete",
-                        strCardIcon: "fas fa-backpack",
+                        strCardIcon: "fa-solid fa-backpack",
                         strCardTitle: "Transfer Complete",
                         sourceActor,
                         sourceActorName: sourceActor.name,
@@ -811,7 +811,7 @@ export class PartyPanel {
                         content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                             isPublic: false,
                             cardType: "transfer-complete",
-                            strCardIcon: "fas fa-backpack",
+                            strCardIcon: "fa-solid fa-backpack",
                             strCardTitle: "Transfer Complete",
                             sourceActor,
                             sourceActorName: sourceActor.name,
@@ -1117,7 +1117,7 @@ export class PartyPanel {
                             content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                                 isPublic: false,
                                 cardType: "transfer-rejected",
-                                strCardIcon: "fas fa-times-circle",
+                                strCardIcon: "fa-solid fa-times-circle",
                                 strCardTitle: "Transfer Rejected", 
                                 sourceActor,
                                 sourceActorName: sourceActor.name,
@@ -1161,7 +1161,7 @@ export class PartyPanel {
                                 content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                                     isPublic: false,
                                     cardType: "transfer-rejected",
-                                    strCardIcon: "fas fa-times-circle",
+                                    strCardIcon: "fa-solid fa-times-circle",
                                     strCardTitle: "Transfer Rejected",
                                     sourceActor,
                                     sourceActorName: sourceActor.name,
@@ -1321,7 +1321,7 @@ export class PartyPanel {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-request",
-                        strCardIcon: "fas fa-people-arrows",
+                        strCardIcon: "fa-solid fa-people-arrows",
                         strCardTitle: "Transfer Request",
                         sourceActor,
                         sourceActorName: sourceActor.name,
@@ -1370,7 +1370,7 @@ export class PartyPanel {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-rejected",
-                        strCardIcon: "fas fa-times-circle",
+                        strCardIcon: "fa-solid fa-times-circle",
                         strCardTitle: "Transfer Denied",
                         sourceActor,
                         sourceActorName: sourceActor.name,
@@ -1407,7 +1407,7 @@ export class PartyPanel {
         return {
             cardType,
             isPublic: cardType === "compendium-drop" || cardType === "world-drop" || cardType === "actor-transfer",
-            strCardIcon: item ? this._getDropIcon(item.type) : "fas fa-backpack",
+            strCardIcon: item ? this._getDropIcon(item.type) : "fa-solid fa-backpack",
             strCardTitle: this._getDropTitle(item?.type),
             isTransferFromCharacter: cardType === "actor-transfer" || cardType === "request" || cardType === "response" || cardType === "execution",
             sourceActorName: sourceActor?.name || (cardType === "compendium-drop" ? "Compendium" : null),

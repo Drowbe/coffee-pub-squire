@@ -556,7 +556,7 @@ export class HandleManager {
                     content: content,
                     buttons: {
                         close: {
-                            icon: '<i class="fas fa-times"></i>',
+                            icon: '<i class="fa-solid fa-times"></i>',
                             label: "Close"
                         }
                     },
@@ -632,7 +632,7 @@ export class HandleManager {
             const content = `
                 <div class="squire-description-window">
                     <div class="squire-description-header">
-                        <i class="fas fa-sparkles"></i>
+                        <i class="fa-solid fa-sparkles"></i>
                         <h1>Add Condition</h1>
                     </div>
                     
@@ -719,7 +719,7 @@ export class HandleManager {
                 content: content,
                 buttons: {
                     close: {
-                        icon: '<i class="fas fa-times"></i>',
+                        icon: '<i class="fa-solid fa-times"></i>',
                         label: "Close"
                     }
                 },

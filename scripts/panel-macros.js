@@ -350,7 +350,7 @@ export class MacrosPanel {
                     if (macro) {
                         // Show loader animation
                         if (!slot.find('.macro-loader').length) {
-                            slot.append('<span class="macro-loader"><i class="fas fa-sun macro-spinner"></i></span>');
+                            slot.append('<span class="macro-loader"><i class="fa-solid fa-sun macro-spinner"></i></span>');
                         }
                         slot.addClass('loading');
                         trackModuleTimeout(() => {

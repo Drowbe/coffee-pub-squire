@@ -1008,7 +1008,7 @@ export class CodexPanel {
                 content: 'Are you sure you want to delete this entry? This cannot be undone.',
                 buttons: {
                     yes: {
-                        icon: '<i class="fas fa-trash"></i>',
+                        icon: '<i class="fa-solid fa-trash"></i>',
                         label: 'Delete',
                         callback: async () => {
                             const page = await fromUuid(uuid);
@@ -1020,7 +1020,7 @@ export class CodexPanel {
                         }
                     },
                     no: {
-                        icon: '<i class="fas fa-times"></i>',
+                        icon: '<i class="fa-solid fa-times"></i>',
                         label: 'Cancel'
                     }
                 },
@@ -1147,11 +1147,11 @@ export class CodexPanel {
                     }),
                     buttons: {
                         cancel: {
-                            icon: '<i class="fas fa-times"></i>',
+                            icon: '<i class="fa-solid fa-times"></i>',
                             label: 'Cancel Import'
                         },
                         import: {
-                            icon: '<i class="fas fa-file-import"></i>',
+                            icon: '<i class="fa-solid fa-file-import"></i>',
                             label: 'Import JSON',
                             callback: async (html) => {
                             ui.notifications.info('Importing Codex entries. This may take some time as entries are added, updated, indexed, and sorted. You will be notified when the process is complete.');
@@ -1460,11 +1460,11 @@ export class CodexPanel {
                     }),
                     buttons: {
                         close: {
-                            icon: '<i class="fas fa-times"></i>',
+                            icon: '<i class="fa-solid fa-times"></i>',
                             label: 'Cancel Export',
                         },
                         download: {
-                            icon: '<i class="fas fa-download"></i>',
+                            icon: '<i class="fa-solid fa-download"></i>',
                             label: 'Download JSON',
                             callback: () => {
                                 try {
@@ -1603,7 +1603,7 @@ export class CodexPanel {
             `,
             buttons: {
                 save: {
-                    icon: '<i class="fas fa-save"></i>',
+                    icon: '<i class="fa-solid fa-save"></i>',
                     label: 'Save',
                     callback: async (html) => {
                         const journalId = html.find('select[name="journal"]').val();
@@ -1613,7 +1613,7 @@ export class CodexPanel {
                     }
                 },
                 cancel: {
-                    icon: '<i class="fas fa-times"></i>',
+                    icon: '<i class="fa-solid fa-times"></i>',
                     label: 'Cancel'
                 }
             },

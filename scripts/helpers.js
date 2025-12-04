@@ -298,7 +298,7 @@ export const registerHelpers = function() {
         if (isGM && Array.isArray(task.treasureUnlocks) && task.treasureUnlocks.length > 0) {
             if (!task.completed) {
                 html += ' <span class="locked-objective-treasure">';
-                html += '<i class="fas fa-lock"></i> ';
+                html += '<i class="fa-solid fa-lock"></i> ';
                 html += task.treasureUnlocks.join(', ');
                 html += '</span>';
             } else {
@@ -718,11 +718,11 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
         // Get quest category icon based on category
         let questCategoryIcon = '';
         if (entry.category === 'Main Quest') {
-            questCategoryIcon = '<i class="fas fa-flag" title="Main Quest"></i>';
+            questCategoryIcon = '<i class="fa-solid fa-flag" title="Main Quest"></i>';
         } else if (entry.category === 'Side Quest') {
-            questCategoryIcon = '<i class="fas fa-map-signs" title="Side Quest"></i>';
+            questCategoryIcon = '<i class="fa-solid fa-map-signs" title="Side Quest"></i>';
         } else {
-            questCategoryIcon = '<i class="fas fa-question" title="Quest"></i>';
+            questCategoryIcon = '<i class="fa-solid fa-question" title="Quest"></i>';
         }
 
         const result = {

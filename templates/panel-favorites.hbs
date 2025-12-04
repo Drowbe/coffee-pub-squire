@@ -2,16 +2,16 @@
     {{#if (eq position "left")}}
     <div class="section-header">
         <div class="header-left">
-            <i class="fas fa-heart"></i> Favorites
+            <i class="fa-solid fa-heart"></i> Favorites
         </div>
         <div class="header-right">
             {{#if hasFavorites}}
-            <i class="fas fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
+            <i class="fa-solid fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
             {{/if}}
-            <i class="fas fa-sparkles favorites-spell-toggle filter-toggle {{#if showSpells}}active{{else}}faded{{/if}}" title="Toggle Spell Favorites"></i>
-            <i class="fas fa-swords favorites-weapon-toggle filter-toggle {{#if showWeapons}}active{{else}}faded{{/if}}" title="Toggle Weapon Favorites"></i>
-            <i class="fas fa-stars favorites-features-toggle filter-toggle {{#if showFeatures}}active{{else}}faded{{/if}}" title="Toggle Feature Favorites"></i>
-            <i class="fas fa-backpack favorites-inventory-toggle filter-toggle {{#if showInventory}}active{{else}}faded{{/if}}" title="Toggle Inventory Favorites"></i>
+            <i class="fa-solid fa-sparkles favorites-spell-toggle filter-toggle {{#if showSpells}}active{{else}}faded{{/if}}" title="Toggle Spell Favorites"></i>
+            <i class="fa-solid fa-swords favorites-weapon-toggle filter-toggle {{#if showWeapons}}active{{else}}faded{{/if}}" title="Toggle Weapon Favorites"></i>
+            <i class="fa-solid fa-stars favorites-features-toggle filter-toggle {{#if showFeatures}}active{{else}}faded{{/if}}" title="Toggle Feature Favorites"></i>
+            <i class="fa-solid fa-backpack favorites-inventory-toggle filter-toggle {{#if showInventory}}active{{else}}faded{{/if}}" title="Toggle Inventory Favorites"></i>
         </div>
     </div>
     {{/if}}
@@ -23,20 +23,20 @@
             <div class="favorite-row">
                 <div class="favorite-image-container">
                     <img class="favorite-image" src="{{this.img}}" alt="{{this.name}}"/>
-                    <i class="fas fa-dice-d20 favorite-roll-overlay"></i>
+                    <i class="fa-solid fa-dice-d20 favorite-roll-overlay"></i>
                 </div>
                 <div class="favorite-name">{{this.name}}</div>
                 <div class="tray-buttons">
                     {{#if (eq this.type 'spell')}}
-                    <i class="fas fa-sun {{#unless this.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
+                    <i class="fa-solid fa-sun {{#unless this.system.preparation.prepared}}faded{{/unless}}" title="Prepared"></i>
                     {{else if (eq this.type 'feat')}}
-                    <i class="fas fa-stars" title="Always Available"></i>
+                    <i class="fa-solid fa-stars" title="Always Available"></i>
                     {{else if (or (eq this.type 'weapon') (eq this.type 'equipment') (eq this.type 'consumable') (eq this.type 'tool') (eq this.type 'loot'))}}
-                    <i class="fas fa-shield-alt {{#unless this.system.equipped}}faded{{/unless}}" title="Equipped"></i>
+                    <i class="fa-solid fa-shield-alt {{#unless this.system.equipped}}faded{{/unless}}" title="Equipped"></i>
                     {{/if}}
-                    <i class="fas fa-dagger handle-favorite-toggle {{#unless this.isHandleFavorite}}faded{{/unless}}" title="Toggle Handle Favorite"></i>
-                    <i class="fas fa-heart" title="Remove from Favorites"></i>
-                    <i class="fas fa-feather"></i>
+                    <i class="fa-solid fa-dagger handle-favorite-toggle {{#unless this.isHandleFavorite}}faded{{/unless}}" title="Toggle Handle Favorite"></i>
+                    <i class="fa-solid fa-heart" title="Remove from Favorites"></i>
+                    <i class="fa-solid fa-feather"></i>
                 </div>
             </div>
         </div>

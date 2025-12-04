@@ -398,7 +398,7 @@ export class WeaponsPanel {
                 content: senderContent,
                 buttons: {
                     transfer: {
-                        icon: '<i class="fas fa-exchange-alt"></i>',
+                        icon: '<i class="fa-solid fa-exchange-alt"></i>',
                         label: "Transfer",
                         callback: html => {
                             if (hasQuantity && maxQuantity > 1) {
@@ -414,7 +414,7 @@ export class WeaponsPanel {
                         }
                     },
                     cancel: {
-                        icon: '<i class="fas fa-times"></i>',
+                        icon: '<i class="fa-solid fa-times"></i>',
                         label: "Cancel",
                         callback: () => resolve(0)
                     }

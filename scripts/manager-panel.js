@@ -877,7 +877,7 @@ export class PanelManager {
                                     content: senderContent,
                                     buttons: {
                                         transfer: {
-                                            icon: '<i class="fas fa-exchange-alt"></i>',
+                                            icon: '<i class="fa-solid fa-exchange-alt"></i>',
                                             label: "Transfer",
                                             callback: () => {
                                                 const quantityInput = document.querySelector(`#transfer-item-${timestamp} input[type="number"]`);
@@ -885,7 +885,7 @@ export class PanelManager {
                                             }
                                         },
                                         cancel: {
-                                            icon: '<i class="fas fa-times"></i>',
+                                            icon: '<i class="fa-solid fa-times"></i>',
                                             label: "Cancel",
                                             callback: () => resolve(0)
                                         }
@@ -928,7 +928,7 @@ export class PanelManager {
                                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                                         isPublic: false,
                                         cardType: "transfer-request",
-                                        strCardIcon: "fas fa-people-arrows",
+                                        strCardIcon: "fa-solid fa-people-arrows",
                                         strCardTitle: "Transfer Request",
                                         sourceActor,
                                         sourceActorName: sourceActor.name,
@@ -985,7 +985,7 @@ export class PanelManager {
                                                 content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                                                     isPublic: false,
                                                     cardType: "transfer-request",
-                                                    strCardIcon: "fas fa-gavel",
+                                                    strCardIcon: "fa-solid fa-gavel",
                                                     strCardTitle: "GM Approval Required",
                                                     sourceActor,
                                                     sourceActorName: `${sourceActor.name} (${game.user.name})`,
@@ -1042,7 +1042,7 @@ export class PanelManager {
                                                 content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                                                     isPublic: false,
                                                     cardType: "transfer-request",
-                                                    strCardIcon: "fas fa-people-arrows",
+                                                    strCardIcon: "fa-solid fa-people-arrows",
                                                     strCardTitle: "Transfer Request",
                                                     sourceActor,
                                                     sourceActorName: sourceActor.name,
@@ -1237,10 +1237,10 @@ export class PanelManager {
     // Helper method to get the appropriate icon based on item type
     _getDropIcon(type) {
         switch(type) {
-            case 'spell': return 'fas fa-stars';
-            case 'weapon': return 'fas fa-swords';
-            case 'feat': return 'fas fa-sparkles';
-            default: return 'fas fa-backpack';
+            case 'spell': return 'fa-solid fa-stars';
+            case 'weapon': return 'fa-solid fa-swords';
+            case 'feat': return 'fa-solid fa-sparkles';
+            default: return 'fa-solid fa-backpack';
         }
     }
 
@@ -1514,7 +1514,7 @@ export class PanelManager {
                         content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                             isPublic: false,
                             cardType: "transfer-complete",
-                            strCardIcon: "fas fa-backpack",
+                            strCardIcon: "fa-solid fa-backpack",
                             strCardTitle: "Transfer Complete",
                             sourceActor,
                             sourceActorName: sourceActor.name,
@@ -1556,7 +1556,7 @@ export class PanelManager {
                         content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                             isPublic: false,
                             cardType: "transfer-complete",
-                            strCardIcon: "fas fa-backpack",
+                            strCardIcon: "fa-solid fa-backpack",
                             strCardTitle: "Transfer Complete",
                             sourceActor,
                             sourceActorName: sourceActor.name,

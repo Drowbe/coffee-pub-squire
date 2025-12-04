@@ -2,17 +2,17 @@
   <!-- ENTRY HEADER -->
   <div class="quest-entry-header">
     <div class="quest-entry-name" {{#if isGM}}draggable="true"{{/if}} data-tooltip="{{entry.name}}">
-      {{#if (eq entry.category "Main Quest")}}<i class="fas fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fas fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
+      {{#if (eq entry.category "Main Quest")}}<i class="fa-solid fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fa-solid fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
       <span class="quest-number">{{entry.questNumber}}</span>
       {{entry.name}}
     </div>
     <div class="quest-toolbar">
-      <i class="fas fa-thumbtack quest-pin {{#if entry.isPinned}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{entry.category}}" title="Pin this quest"></i>
+      <i class="fa-solid fa-thumbtack quest-pin {{#if entry.isPinned}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{entry.category}}" title="Pin this quest"></i>
       {{#if isGM}}
-        <i class="fas fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
+        <i class="fa-solid fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
         <i class="fas {{#if entry.visible}}fa-eye quest-entry-visibility visible{{else}}fa-eye-slash quest-entry-visibility{{/if}} toggle-visible" data-uuid="{{entry.uuid}}" title="{{#if entry.visible}}Hide from players{{else}}Show to players{{/if}}"></i>
-        <i class="fas fa-location-xmark clear-quest-pins" data-uuid="{{entry.uuid}}" title="Clear Quest Pins"></i>
-        <i class="fas fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Change Status"></i>
+        <i class="fa-solid fa-location-xmark clear-quest-pins" data-uuid="{{entry.uuid}}" title="Clear Quest Pins"></i>
+        <i class="fa-solid fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Change Status"></i>
         <div class="quest-status-dropdown" style="display:none;">
           <div class="quest-status-option" data-status="Not Started" data-uuid="{{entry.uuid}}">Not Started</div>
           <div class="quest-status-option" data-status="In Progress" data-uuid="{{entry.uuid}}">In Progress</div>
@@ -20,7 +20,7 @@
           <div class="quest-status-option" data-status="Failed" data-uuid="{{entry.uuid}}">Failed</div>
         </div>
       {{/if}}
-      <i class="fas fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
+      <i class="fa-solid fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
     </div>
   </div>
   <!-- PROGRESS BAR -->
@@ -71,7 +71,7 @@
                   {{#if (and ../isGM this.treasureUnlocks this.treasureUnlocks.length)}}
                     {{#unless this.completed}}
                       <span class="locked-objective-treasure">
-                        <i class="fas fa-lock"></i>
+                        <i class="fa-solid fa-lock"></i>
                         {{#each this.treasureUnlocks}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
                       </span>
                     {{else}}
@@ -83,7 +83,7 @@
                   <!-- GM Note -->
                   {{#if (and ../isGM this.gmHint)}}
                     <span class="objective-gm-note">
-                      <i class="fas fa-file-certificate"></i>
+                      <i class="fa-solid fa-file-certificate"></i>
                       {{this.gmHint}}
                     </span>
                   {{/if}}
@@ -116,14 +116,14 @@
               <li>
                 {{#if this.boundToObjective}}
                   {{#unless this.unlocked}}
-                    <i class="fas fa-lock treasure-lock"></i>
+                    <i class="fa-solid fa-lock treasure-lock"></i>
                   {{/unless}}
                 {{/if}}
                 {{#if this.uuid}}
-                  <i class="fas fa-gem treasure-icon"></i>
+                  <i class="fa-solid fa-gem treasure-icon"></i>
                   <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                 {{else if this.name}}
-                  <i class="fas fa-gem treasure-icon"></i>
+                  <i class="fa-solid fa-gem treasure-icon"></i>
                   <span class="treasure-name">{{this.name}}</span>
                 {{else}}
                   {{this.text}}
@@ -135,11 +135,11 @@
               {{#unless this.boundToObjective}}
                 <li>
                   {{#if this.uuid}}
-                    <i class="fas fa-gem treasure-icon"></i>
+                    <i class="fa-solid fa-gem treasure-icon"></i>
                     <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                   {{else}}
                     {{#if this.name}}
-                      <i class="fas fa-gem treasure-icon"></i>
+                      <i class="fa-solid fa-gem treasure-icon"></i>
                       <span class="treasure-name">{{this.name}}</span>
                     {{else}}
                       {{this.text}}
@@ -150,11 +150,11 @@
                 {{#if this.unlocked}}
                   <li class="treasure-unlocked">
                     {{#if this.uuid}}
-                      <i class="fas fa-gem treasure-icon"></i>
+                      <i class="fa-solid fa-gem treasure-icon"></i>
                       <a class="treasure-link" data-uuid="{{this.uuid}}">{{this.name}}</a>
                     {{else}}
                       {{#if this.name}}
-                        <i class="fas fa-gem treasure-icon"></i>
+                        <i class="fa-solid fa-gem treasure-icon"></i>
                         <span class="treasure-name">{{this.name}}</span>
                       {{else}}
                         {{this.text}}

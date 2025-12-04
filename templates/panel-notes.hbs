@@ -9,7 +9,7 @@
         </span>
         <div class="notes-controls">
             {{#if isGM}}
-            <i class="fas fa-cog set-journal-button" title="Set Journal"></i>
+            <i class="fa-solid fa-cog set-journal-button" title="Set Journal"></i>
             <i class="fas {{#if isPersistent}}fa-thumbtack{{else}}fa-thumbtack unpinned{{/if}} toggle-persistent-button" title="{{#if isPersistent}}Journal is pinned for players{{else}}Pin this journal for players{{/if}}"></i>
             {{/if}}
         </div>
@@ -35,9 +35,9 @@
                 </div>
                 <div class="notes-controls">
                     {{#if canEditPage}}
-                        <i class="fas fa-edit toggle-edit-mode-button" title="Edit with Foundry's Collaborative Editor"></i>
+                        <i class="fa-solid fa-edit toggle-edit-mode-button" title="Edit with Foundry's Collaborative Editor"></i>
                     {{/if}}
-                    <i class="fas fa-book-open open-journal-button" title="Open in Journal Viewer"></i>
+                    <i class="fa-solid fa-book-open open-journal-button" title="Open in Journal Viewer"></i>
                 </div>
                 {{/if}}
             </div>
@@ -46,7 +46,7 @@
     <div class="notes-content">
         {{#if hasPermissionIssue}}
         <div class="permission-error">
-            <i class="fas fa-lock"></i>
+            <i class="fa-solid fa-lock"></i>
             <p>You don't have permission to view this journal.</p>
         </div>
         {{else if hasJournal}}
@@ -55,9 +55,9 @@
         <div class="no-journal-selected">
             {{#if isGM}}
             <p>No journal has been selected for notes.</p>
-            <p>Click the <i class="fas fa-cog"></i> icon to select a journal.</p>
+            <p>Click the <i class="fa-solid fa-cog"></i> icon to select a journal.</p>
             <button class="set-journal-button-large">
-                <i class="fas fa-book"></i> Select Journal
+                <i class="fa-solid fa-book"></i> Select Journal
             </button>
             {{else}}
             <p>No journal has been selected by the GM yet.</p>

@@ -5,15 +5,15 @@
         </span>
         <div class="codex-toolbar">
             {{#if hasJournal}}
-                <i class="fas fa-feather codex-open-journal" title="Open Codex Journal"></i>
+                <i class="fa-solid fa-feather codex-open-journal" title="Open Codex Journal"></i>
             {{/if}}
-            <i class="fas fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
-            <i class="fas fa-search-plus auto-discover-button" title="Auto-Discover from Party Inventories"></i>
+            <i class="fa-solid fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
+            <i class="fa-solid fa-search-plus auto-discover-button" title="Auto-Discover from Party Inventories"></i>
             {{#if isGM}}
-            <i class="fas fa-plus add-codex-button" title="Add Codex Entry"></i>
-            <i class="fas fa-cog codex-set-journal" title="Select Journal"></i>
-            <i class="fas fa-file-import import-json-button" title="Import JSON"></i>
-            <i class="fas fa-file-export export-json-button" title="Export JSON"></i>
+            <i class="fa-solid fa-plus add-codex-button" title="Add Codex Entry"></i>
+            <i class="fa-solid fa-cog codex-set-journal" title="Select Journal"></i>
+            <i class="fa-solid fa-file-import import-json-button" title="Import JSON"></i>
+            <i class="fa-solid fa-file-export export-json-button" title="Export JSON"></i>
             {{/if}}
         </div>
     </div>
@@ -21,8 +21,8 @@
     <div class="codex-filters">
         <div class="codex-search">
             <input type="text" placeholder="Search entries..." value="{{filters.search}}">
-            <i class="fas fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
-            <i class="fas fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
+            <i class="fa-solid fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+            <i class="fa-solid fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
         </div>
         {{#if allTags.length}}
             <div class="codex-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
@@ -42,7 +42,7 @@
                         {{cat.name}} {{#if cat.entries.length}}({{cat.visibleCount}} of {{cat.totalCount}} Discovered){{/if}}
                     </h3>
                     <div class="codex-toolbar">
-                        <i class="fas fa-chevron-down" title="Toggle {{cat.name}}"></i>
+                        <i class="fa-solid fa-chevron-down" title="Toggle {{cat.name}}"></i>
                     </div>
                 </div>
                 <div class="codex-entries">
@@ -56,17 +56,17 @@
                                 </div>
                                 <div class="codex-toolbar">
                                     {{#if @root.isGM}}
-                                        <i class="fas fa-feather codex-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page (GM)"></i>
-                                        <i class="fas fa-trash codex-entry-delete" data-uuid="{{entry.uuid}}" title="Delete this entry"></i>
+                                        <i class="fa-solid fa-feather codex-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page (GM)"></i>
+                                        <i class="fa-solid fa-trash codex-entry-delete" data-uuid="{{entry.uuid}}" title="Delete this entry"></i>
                                         {{#if (gte entry.ownership.default 2)}}
-                                            <i class="fas fa-eye codex-entry-visibility visible" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
+                                            <i class="fa-solid fa-eye codex-entry-visibility visible" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
                                         {{else}}
-                                            <i class="fas fa-eye-slash codex-entry-visibility" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
+                                            <i class="fa-solid fa-eye-slash codex-entry-visibility" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
                                         {{/if}}
                                     {{else}}
-                                        <i class="fas fa-feather codex-entry-feather-user" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
+                                        <i class="fa-solid fa-feather codex-entry-feather-user" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
                                     {{/if}}
-                                    <i class="fas fa-chevron-right codex-entry-toggle" title="Toggle entry"></i>
+                                    <i class="fa-solid fa-chevron-right codex-entry-toggle" title="Toggle entry"></i>
                                 </div>
                             </div>
 

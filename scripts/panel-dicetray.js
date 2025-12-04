@@ -498,7 +498,7 @@ export class DiceTrayPanel {
         historyEntry.classList.add('history-entry');
         historyEntry.innerHTML = `
             <span class="history-formula">${formula} = ${result}</span>
-            <i class="fas fa-dice reroll-button" title="Re-roll this formula"></i>
+            <i class="fa-solid fa-dice reroll-button" title="Re-roll this formula"></i>
         `;
 
         // Add click handler for the re-roll button

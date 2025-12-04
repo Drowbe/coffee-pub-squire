@@ -3,7 +3,7 @@
     <div class="inventory-row">
         <div class="inventory-image-container">
             <img class="inventory-image" src="{{img}}" alt="{{name}}"/>
-            <i class="fas fa-dice-d20 inventory-roll-overlay"></i>
+            <i class="fa-solid fa-dice-d20 inventory-roll-overlay"></i>
         </div>
         <div class="inventory-name">
             {{{name}}}
@@ -11,10 +11,10 @@
             {{#if isNew}}<span class="new-tag">NEW</span>{{/if}}
             {{#if actionType}}
             <span class="action-type">
-                {{#if (eq actionType "action")}}<i class="fas fa-circle-a" title="Action"></i>
-                {{else if (eq actionType "bonus")}}<i class="fas fa-circle-b" title="Bonus Action"></i>
-                {{else if (eq actionType "reaction")}}<i class="fas fa-circle-r" title="Reaction"></i>
-                {{else if (eq actionType "special")}}<i class="fas fa-circle-s" title="Special"></i>{{/if}}
+                {{#if (eq actionType "action")}}<i class="fa-solid fa-circle-a" title="Action"></i>
+                {{else if (eq actionType "bonus")}}<i class="fa-solid fa-circle-b" title="Bonus Action"></i>
+                {{else if (eq actionType "reaction")}}<i class="fa-solid fa-circle-r" title="Reaction"></i>
+                {{else if (eq actionType "special")}}<i class="fa-solid fa-circle-s" title="Special"></i>{{/if}}
             </span>
             {{/if}}
             {{#if quantity}}
@@ -24,18 +24,18 @@
         <div class="tray-buttons">
             {{#if (or (eq type "weapon") (eq type "equipment") (eq type "tool") (eq type "consumable"))}}
                 {{#if system.equipped}}
-                <i class="fas fa-shield-alt" title="Toggle Equipped"></i>
+                <i class="fa-solid fa-shield-alt" title="Toggle Equipped"></i>
                 {{else}}
-                <i class="fas fa-shield-alt faded" title="Toggle Equipped"></i>
+                <i class="fa-solid fa-shield-alt faded" title="Toggle Equipped"></i>
                 {{/if}}
             {{/if}}
-            <i class="fas fa-share inventory-send-item" title="Send Item" data-item-id="{{id}}"></i>
+            <i class="fa-solid fa-share inventory-send-item" title="Send Item" data-item-id="{{id}}"></i>
             {{#if isFavorite}}
-            <i class="fas fa-heart" title="Toggle Favorite"></i>
+            <i class="fa-solid fa-heart" title="Toggle Favorite"></i>
             {{else}}
-            <i class="fas fa-heart faded" title="Toggle Favorite"></i>
+            <i class="fa-solid fa-heart faded" title="Toggle Favorite"></i>
             {{/if}}
-            <i class="fas fa-feather"></i>
+            <i class="fa-solid fa-feather"></i>
         </div>
     </div>
 </div>
@@ -45,15 +45,15 @@
     {{#if (eq position "left")}}
     <div class="section-header">
         <div class="header-left">
-            <i class="fas fa-backpack"></i> Inventory
+            <i class="fa-solid fa-backpack"></i> Inventory
         </div>
         <div class="header-right">
-            {{#if (lookup itemsByType "equipment")}}<i class="fas fa-shirt inventory-category-filter active" data-filter-id="category-inventory-equipment" title="Toggle Equipment"></i>{{/if}}
-            {{#if (lookup itemsByType "consumable")}}<i class="fas fa-flask inventory-category-filter active" data-filter-id="category-inventory-consumable" title="Toggle Consumables"></i>{{/if}}
-            {{#if (lookup itemsByType "tool")}}<i class="fas fa-hammer inventory-category-filter active" data-filter-id="category-inventory-tool" title="Toggle Tools"></i>{{/if}}
-            {{#if (lookup itemsByType "loot")}}<i class="fas fa-coins inventory-category-filter active" data-filter-id="category-inventory-loot" title="Toggle Loot"></i>{{/if}}
-            {{#if (lookup itemsByType "container")}}<i class="fas fa-box inventory-category-filter active" data-filter-id="category-inventory-container" title="Toggle Containers"></i>{{/if}}
-            <i class="fas fa-shield-halved inventory-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Items"></i>
+            {{#if (lookup itemsByType "equipment")}}<i class="fa-solid fa-shirt inventory-category-filter active" data-filter-id="category-inventory-equipment" title="Toggle Equipment"></i>{{/if}}
+            {{#if (lookup itemsByType "consumable")}}<i class="fa-solid fa-flask inventory-category-filter active" data-filter-id="category-inventory-consumable" title="Toggle Consumables"></i>{{/if}}
+            {{#if (lookup itemsByType "tool")}}<i class="fa-solid fa-hammer inventory-category-filter active" data-filter-id="category-inventory-tool" title="Toggle Tools"></i>{{/if}}
+            {{#if (lookup itemsByType "loot")}}<i class="fa-solid fa-coins inventory-category-filter active" data-filter-id="category-inventory-loot" title="Toggle Loot"></i>{{/if}}
+            {{#if (lookup itemsByType "container")}}<i class="fa-solid fa-box inventory-category-filter active" data-filter-id="category-inventory-container" title="Toggle Containers"></i>{{/if}}
+            <i class="fa-solid fa-shield-halved inventory-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Items"></i>
         </div>
     </div>
     {{/if}}

@@ -6,10 +6,10 @@
         <div class="tray-handle-content-container">
 
             <button class="tray-handle-button-pin" title="Pin Tray">
-                <i class="fas fa-thumbtack"></i>
+                <i class="fa-solid fa-thumbtack"></i>
             </button>
             <button class="tray-handle-button-toggle" title="Toggle Tray">
-                <i class="fas fa-chevron-right"></i>
+                <i class="fa-solid fa-chevron-right"></i>
             </button>
             <button class="tray-handle-button-viewcycle" title="Toggle View Mode">
                 <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quest')}}fa-scroll{{else}}fa-user{{/if}}"></i>
@@ -45,26 +45,26 @@
 
         <div class="tray-view-tabs">
             <button class="tray-tab-button {{#if (eq viewMode 'player')}}active{{/if}}" data-view="player" title="Player View">
-                <i class="fas fa-user"></i> Token
+                <i class="fa-solid fa-user"></i> Token
             </button>
             {{#if showTabParty}}
             <button class="tray-tab-button {{#if (eq viewMode 'party')}}active{{/if}}" data-view="party" title="Party View">
-                <i class="fas fa-users"></i> Party
+                <i class="fa-solid fa-users"></i> Party
             </button>
             {{/if}}
             {{#if showTabNotes}}
             <button class="tray-tab-button {{#if (eq viewMode 'notes')}}active{{/if}}" data-view="notes" title="Notes">
-                <i class="fas fa-sticky-note"></i> Notes
+                <i class="fa-solid fa-sticky-note"></i> Notes
             </button>
             {{/if}}
             {{#if showTabCodex}}
             <button class="tray-tab-button {{#if (eq viewMode 'codex')}}active{{/if}}" data-view="codex" title="Codex">
-                <i class="fas fa-book"></i> Codex
+                <i class="fa-solid fa-book"></i> Codex
             </button>
             {{/if}}
             {{#if showTabQuests}}
             <button class="tray-tab-button {{#if (eq viewMode 'quest')}}active{{/if}}" data-view="quest" title="Quests">
-                <i class="fas fa-scroll"></i> Quests
+                <i class="fa-solid fa-scroll"></i> Quests
             </button>
             {{/if}}
         </div>
@@ -89,14 +89,14 @@
             <div class="tray-tools-toolbar {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
                 {{#if isGM}}
                     <button class="tray-gm-button" data-action="award">
-                        <i class="fas fa-medal"></i> Award
+                        <i class="fa-solid fa-medal"></i> Award
                     </button>
                     <button class="tray-tools-button" data-action="select-party">
-                        <i class="fas fa-users-viewfinder"></i> Select Party
+                        <i class="fa-solid fa-users-viewfinder"></i> Select Party
                     </button>
                 {{else}}
                     <button class="tray-tools-button" data-action="select-party">
-                        <i class="fas fa-users-viewfinder"></i> Select Owned
+                        <i class="fa-solid fa-users-viewfinder"></i> Select Owned
                     </button>
                 {{/if}}
             </div>

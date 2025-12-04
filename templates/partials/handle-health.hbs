@@ -3,14 +3,14 @@
     <!-- PLAYER -->
     <div class="handle-healthbar {{#if actor.isOwner}}clickable{{/if}}" data-actor-id="{{actor.id}}">
         <div class="handle-healthbar-value {{actor.healthStatus}}">{{actor.system.attributes.hp.value}}</div>
-        <div class="handle-healthbar-icon {{actor.healthStatus}}"><i class="fas fa-skull"></i></div>
+        <div class="handle-healthbar-icon {{actor.healthStatus}}"><i class="fa-solid fa-skull"></i></div>
         <div class="handle-healthbar-fill {{actor.healthStatus}}" style="height: {{actor.healthPercentage}}%" data-tooltip="{{actor.system.attributes.hp.value}} HP"></div>
     </div>
 {{else}}
     <!-- PARTY -->
     <div class="handle-healthbar party {{#if member.isOwner}}clickable{{/if}}" data-actor-id="{{member.id}}">
         <div class="handle-healthbar-value {{member.healthStatus}}">{{member.system.attributes.hp.value}}</div>
-        <div class="handle-healthbar-icon {{member.healthStatus}}"><i class="fas fa-skull"></i></div>
+        <div class="handle-healthbar-icon {{member.healthStatus}}"><i class="fa-solid fa-skull"></i></div>
         <div class="handle-healthbar-fill {{member.healthStatus}}" style="height: {{member.healthPercentage}}%" data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
     </div>
 {{/if}}

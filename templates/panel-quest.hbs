@@ -5,19 +5,19 @@
         </span>
         <div class="quest-toolbar">
             {{#if isGM}}
-                <i class="fas fa-plus add-quest-button" title="Add New Quest"></i>
-                <i class="fas fa-location-xmark clear-all-quest-pins" title="Clear All Quest Pins"></i>
-                <i class="fas fa-feather open-quest-journal" title="Open Quest Journal"></i>
+                <i class="fa-solid fa-plus add-quest-button" title="Add New Quest"></i>
+                <i class="fa-solid fa-location-xmark clear-all-quest-pins" title="Clear All Quest Pins"></i>
+                <i class="fa-solid fa-feather open-quest-journal" title="Open Quest Journal"></i>
             {{/if}}
-            <i class="fas fa-sync-alt refresh-quest-button" title="Refresh Quests"></i>
+            <i class="fa-solid fa-sync-alt refresh-quest-button" title="Refresh Quests"></i>
 
-            <i class="fas fa-text-slash toggle-pin-labels" title="Hide/Show Quest Labels"></i>
-            <i class="fas fa-location-dot-slash toggle-pin-visibility" title="Hide/Show Quest Pins"></i>
+            <i class="fa-solid fa-text-slash toggle-pin-labels" title="Hide/Show Quest Labels"></i>
+            <i class="fa-solid fa-location-dot-slash toggle-pin-visibility" title="Hide/Show Quest Pins"></i>
 
             {{#if isGM}}
-                <i class="fas fa-cog set-quest-button" title="Select Journal for Quests"></i>
-                <i class="fas fa-file-import import-quests-json" title="Import Quests from JSON"></i>
-                <i class="fas fa-file-export export-quests-json" title="Export Quests to JSON"></i>
+                <i class="fa-solid fa-cog set-quest-button" title="Select Journal for Quests"></i>
+                <i class="fa-solid fa-file-import import-quests-json" title="Import Quests from JSON"></i>
+                <i class="fa-solid fa-file-export export-quests-json" title="Export Quests to JSON"></i>
             {{/if}}
         </div>
     </div>
@@ -25,8 +25,8 @@
     <div class="quest-filters">
         <div class="quest-search">
             <input type="text" placeholder="Search quests..." value="{{filters.search}}">
-            <i class="fas fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
-            <i class="fas fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
+            <i class="fa-solid fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+            <i class="fa-solid fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
         </div>
         {{#if allTags.length}}
             <div class="quest-tag-cloud {{#if isTagCloudCollapsed}}collapsed{{/if}}">
@@ -43,11 +43,11 @@
             <div class="quest-section" data-status="In Progress">
                 <div class="quest-category">
                     <h3>
-                        <i class="fas fa-bow-arrow"></i>
+                        <i class="fa-solid fa-bow-arrow"></i>
                         In Progress {{#if statusGroups.inProgress.length}}({{statusGroups.inProgress.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
-                        <i class="fas fa-chevron-down" title="Toggle In Progress"></i>
+                        <i class="fa-solid fa-chevron-down" title="Toggle In Progress"></i>
                     </div>
                 </div>
                 <div class="quest-entries">
@@ -61,11 +61,11 @@
             <div class="quest-section" data-status="Not Started">
                 <div class="quest-category">
                     <h3>
-                        <i class="fas fa-campground"></i>
+                        <i class="fa-solid fa-campground"></i>
                         Not Started {{#if statusGroups.notStarted.length}}({{statusGroups.notStarted.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
-                        <i class="fas fa-chevron-down" title="Toggle Not Started"></i>
+                        <i class="fa-solid fa-chevron-down" title="Toggle Not Started"></i>
                     </div>
                 </div>
                 <div class="quest-entries">
@@ -79,11 +79,11 @@
             <div class="quest-section" data-status="Complete">
                 <div class="quest-category">
                     <h3>
-                        <i class="fas fa-crown"></i>
+                        <i class="fa-solid fa-crown"></i>
                         Completed {{#if statusGroups.completed.length}}({{statusGroups.completed.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
-                        <i class="fas fa-chevron-down" title="Toggle Completed"></i>
+                        <i class="fa-solid fa-chevron-down" title="Toggle Completed"></i>
                     </div>
                 </div>
                 <div class="quest-entries">
@@ -97,11 +97,11 @@
             <div class="quest-section" data-status="Failed">
                 <div class="quest-category">
                     <h3>
-                        <i class="fas fa-skull"></i>
+                        <i class="fa-solid fa-skull"></i>
                         Failed {{#if statusGroups.failed.length}}({{statusGroups.failed.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
-                        <i class="fas fa-chevron-down" title="Toggle Failed"></i>
+                        <i class="fa-solid fa-chevron-down" title="Toggle Failed"></i>
                     </div>
                 </div>
                 <div class="quest-entries">
@@ -114,7 +114,7 @@
             <div class="no-quest-selected">
                 {{#if isGM}}
                     <p>No journal has been selected for quests.</p>
-                    <p>Click the <i class="fas fa-cog"></i> button to select a journal.</p>
+                    <p>Click the <i class="fa-solid fa-cog"></i> button to select a journal.</p>
                 {{else}}
                     <p>No quest journal has been selected by the GM yet.</p>
                 {{/if}}

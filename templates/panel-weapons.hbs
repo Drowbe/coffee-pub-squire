@@ -3,24 +3,24 @@
     <div class="weapon-row">
         <div class="weapon-image-container">
             <img class="weapon-image" src="{{img}}" alt="{{name}}"/>
-            <i class="fas fa-dice-d20 weapon-roll-overlay"></i>
+            <i class="fa-solid fa-dice-d20 weapon-roll-overlay"></i>
         </div>
         <div class="weapon-name">
             {{name}}
             {{#if actionType}}
             <span class="action-type">
-                {{#if (eq actionType "action")}}<i class="fas fa-circle-a" title="Action"></i>
-                {{else if (eq actionType "bonus")}}<i class="fas fa-circle-b" title="Bonus Action"></i>
-                {{else if (eq actionType "reaction")}}<i class="fas fa-circle-r" title="Reaction"></i>
-                {{else if (eq actionType "special")}}<i class="fas fa-circle-s" title="Special"></i>{{/if}}
+                {{#if (eq actionType "action")}}<i class="fa-solid fa-circle-a" title="Action"></i>
+                {{else if (eq actionType "bonus")}}<i class="fa-solid fa-circle-b" title="Bonus Action"></i>
+                {{else if (eq actionType "reaction")}}<i class="fa-solid fa-circle-r" title="Reaction"></i>
+                {{else if (eq actionType "special")}}<i class="fa-solid fa-circle-s" title="Special"></i>{{/if}}
             </span>
             {{/if}}
         </div>
         <div class="tray-buttons">
-            <i class="fas fa-shield-alt {{#unless system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
-            <i class="fas fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-            <i class="fas fa-share weapons-send-item" title="Send Weapon" data-item-id="{{id}}"></i>
-            <i class="fas fa-feather"></i>
+            <i class="fa-solid fa-shield-alt {{#unless system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
+            <i class="fa-solid fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+            <i class="fa-solid fa-share weapons-send-item" title="Send Weapon" data-item-id="{{id}}"></i>
+            <i class="fa-solid fa-feather"></i>
         </div>
     </div>
 </div>
@@ -30,15 +30,15 @@
     {{#if (eq position "left")}}
     <div class="section-header">
         <div class="header-left">
-            <i class="fas fa-swords"></i> Weapons
+            <i class="fa-solid fa-swords"></i> Weapons
         </div>
         <div class="header-right">
-            {{#if (lookup weaponsByType "simple-melee")}}<i class="fas fa-hand-fist weapons-category-filter active" data-filter-id="category-weapon-simple-melee" title="Toggle Simple Melee"></i>{{/if}}
-            {{#if (lookup weaponsByType "martial-melee")}}<i class="fas fa-sword weapons-category-filter active" data-filter-id="category-weapon-martial-melee" title="Toggle Martial Melee"></i>{{/if}}
-            {{#if (lookup weaponsByType "simple-ranged")}}<i class="fas fa-bow-arrow weapons-category-filter active" data-filter-id="category-weapon-simple-ranged" title="Toggle Simple Ranged"></i>{{/if}}
-            {{#if (lookup weaponsByType "martial-ranged")}}<i class="fas fa-crosshairs weapons-category-filter active" data-filter-id="category-weapon-martial-ranged" title="Toggle Martial Ranged"></i>{{/if}}
-            {{#if (lookup weaponsByType "natural")}}<i class="fas fa-paw weapons-category-filter active" data-filter-id="category-weapon-natural" title="Toggle Natural Weapons"></i>{{/if}}
-            <i class="fas fa-shield-halved weapon-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Weapons"></i>
+            {{#if (lookup weaponsByType "simple-melee")}}<i class="fa-solid fa-hand-fist weapons-category-filter active" data-filter-id="category-weapon-simple-melee" title="Toggle Simple Melee"></i>{{/if}}
+            {{#if (lookup weaponsByType "martial-melee")}}<i class="fa-solid fa-sword weapons-category-filter active" data-filter-id="category-weapon-martial-melee" title="Toggle Martial Melee"></i>{{/if}}
+            {{#if (lookup weaponsByType "simple-ranged")}}<i class="fa-solid fa-bow-arrow weapons-category-filter active" data-filter-id="category-weapon-simple-ranged" title="Toggle Simple Ranged"></i>{{/if}}
+            {{#if (lookup weaponsByType "martial-ranged")}}<i class="fa-solid fa-crosshairs weapons-category-filter active" data-filter-id="category-weapon-martial-ranged" title="Toggle Martial Ranged"></i>{{/if}}
+            {{#if (lookup weaponsByType "natural")}}<i class="fa-solid fa-paw weapons-category-filter active" data-filter-id="category-weapon-natural" title="Toggle Natural Weapons"></i>{{/if}}
+            <i class="fa-solid fa-shield-halved weapon-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Weapons"></i>
         </div>
     </div>
     {{/if}}

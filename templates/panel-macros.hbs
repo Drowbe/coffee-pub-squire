@@ -3,9 +3,9 @@
 <div class="tray-title-small">
     {{#if actor}}Macros: {{default actor.handleDisplayName actor.name}}{{else}}Macros: No Character{{/if}}
     <div class="macros-controls">
-        <i class="fas fa-folder-open open-macro-folder" data-tooltip="<div class='squire-data-tooltip-label'>Macros</div><div class='squire-data-tooltip-text'>Open macor folder and then drag macros to the macro window.</div>"></i>
+        <i class="fa-solid fa-folder-open open-macro-folder" data-tooltip="<div class='squire-data-tooltip-label'>Macros</div><div class='squire-data-tooltip-text'>Open macor folder and then drag macros to the macro window.</div>"></i>
         <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
-        <i class="fas fa-chevron-down macros-toggle" title="Toggle Macros Panel"></i>
+        <i class="fa-solid fa-chevron-down macros-toggle" title="Toggle Macros Panel"></i>
     </div>
 </div>
 {{/unless}}
@@ -17,16 +17,16 @@
                 {{#if macro.id}}
                     <img src="{{macro.img}}" data-tooltip="{{macro.name}}" draggable="false" />
                     {{#if (includes ../favoriteMacroIds macro.id)}}
-                      <i class="fas fa-heart macro-favorite" data-tooltip="Favorited"></i>
+                      <i class="fa-solid fa-heart macro-favorite" data-tooltip="Favorited"></i>
                     {{/if}}
                 {{else}}
-                    <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
+                    <div class="macro-placeholder"><i class="fa-solid fa-plus"></i></div>
                 {{/if}}
             </div>
         {{/each}}
         {{#if showAddSlot}}
             <div class="macro-slot empty add-slot" data-slot="add" draggable="false">
-                <div class="macro-placeholder"><i class="fas fa-plus"></i></div>
+                <div class="macro-placeholder"><i class="fa-solid fa-plus"></i></div>
             </div>
         {{/if}}
     </div>

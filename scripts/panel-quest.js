@@ -28,7 +28,7 @@ export function notifyObjectiveCompleted(objectiveText) {
         
         blacksmith.addNotification(
             `${objectiveText} completed!`,
-            "fas fa-check-circle",
+            "fa-solid fa-check-circle",
             5, // 5 seconds
             MODULE.ID
         );
@@ -44,7 +44,7 @@ export function notifyQuestCompleted(questName) {
         
         blacksmith.addNotification(
             `Quest '${questName}' completed!`,
-            "fas fa-trophy",
+            "fa-solid fa-trophy",
             5, // 5 seconds
             MODULE.ID
         );
@@ -103,7 +103,7 @@ export class QuestPanel {
             const blacksmith = getBlacksmith();
             if (!blacksmith?.addNotification) return;
             
-            const icon = questCategory === "Main Quest" ? "fas fa-flag" : "fas fa-map-signs";
+            const icon = questCategory === "Main Quest" ? "fa-solid fa-flag" : "fa-solid fa-map-signs";
 
             // Check if we already have a notification with this content to prevent duplicates
             if (QuestPanel.questNotificationId) {
@@ -183,7 +183,7 @@ export class QuestPanel {
             }
             
             const notificationText = objectiveText;
-            const icon = "fas fa-bullseye";
+            const icon = "fa-solid fa-bullseye";
                        
             // Check if we already have a notification with this content to prevent duplicates
             if (QuestPanel.activeObjectiveNotificationId) {
@@ -1596,7 +1596,7 @@ export class QuestPanel {
                     `,
                     buttons: {
                         clear: {
-                            icon: '<i class="fas fa-trash-alt"></i>',
+                            icon: '<i class="fa-solid fa-trash-alt"></i>',
                             label: 'Clear Pins',
                             callback: async (dlgHtml) => {
                                 // v13: Detect and convert jQuery to native DOM if needed
@@ -1612,7 +1612,7 @@ export class QuestPanel {
                             }
                         },
                         cancel: {
-                            icon: '<i class="fas fa-times"></i>',
+                            icon: '<i class="fa-solid fa-times"></i>',
                             label: 'Cancel'
                         }
                     }
@@ -1643,14 +1643,14 @@ export class QuestPanel {
                     `,
                     buttons: {
                         clear: {
-                            icon: '<i class="fas fa-trash-alt"></i>',
+                            icon: '<i class="fa-solid fa-trash-alt"></i>',
                             label: 'Clear Quest Pins',
                             callback: async () => {
                                 await this._clearQuestPins(uuid);
                             }
                         },
                         cancel: {
-                            icon: '<i class="fas fa-times"></i>',
+                            icon: '<i class="fa-solid fa-times"></i>',
                             label: 'Cancel'
                         }
                     }
@@ -1769,11 +1769,11 @@ export class QuestPanel {
                 }),
                 buttons: {
                     cancel: {
-                        icon: '<i class="fas fa-times"></i>',
+                        icon: '<i class="fa-solid fa-times"></i>',
                         label: 'Cancel Import'
                     },
                     import: {
-                        icon: '<i class="fas fa-file-import"></i>',
+                        icon: '<i class="fa-solid fa-file-import"></i>',
                         label: 'Import JSON',
                         callback: async (dlgHtml) => {
                             // v13: Detect and convert jQuery to native DOM if needed
@@ -2221,11 +2221,11 @@ export class QuestPanel {
                 }),
                 buttons: {
                     close: {
-                        icon: '<i class="fas fa-times"></i>',
+                        icon: '<i class="fa-solid fa-times"></i>',
                         label: 'Cancel Export'
                     },
                     download: {
-                        icon: '<i class="fas fa-download"></i>',
+                        icon: '<i class="fa-solid fa-download"></i>',
                         label: 'Download JSON',
                         callback: () => {
                             try {
@@ -2823,21 +2823,21 @@ export class QuestPanel {
         <h2 style="text-align: center; margin-bottom: 15px;">Select a Journal for Quests</h2>
         ${journals.length === 0 ? 
             `<div class="no-journals-message" style="text-align: center; padding: 20px;">
-                <i class="fas fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
+                <i class="fa-solid fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
                 <p>No journals found in your world.</p>
                 <p>You need to create at least one journal in the Journals tab first.</p>
             </div>` :
             `<div class="journal-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;">
                 <div class="journal-item" data-id="none" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
                     <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-times-circle" style="font-size: 3em; color: #aa0000;"></i>
+                        <i class="fa-solid fa-times-circle" style="font-size: 3em; color: #aa0000;"></i>
                     </div>
                     <div class="journal-name" style="margin-top: 5px; font-weight: bold;">None</div>
                 </div>
                 ${journals.map(j => `
                 <div class="journal-item" data-id="${j.id}" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
                     <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center; background-size: contain; background-position: center; background-repeat: no-repeat; background-image: url('${j.img}');">
-                        ${!j.img ? `<i class="fas fa-book" style="font-size: 3em; color: #666;"></i>` : ''}
+                        ${!j.img ? `<i class="fa-solid fa-book" style="font-size: 3em; color: #666;"></i>` : ''}
                     </div>
                     <div class="journal-name" style="margin-top: 5px; font-weight: bold;">${j.name}</div>
                     <div class="journal-pages" style="font-size: 0.8em; color: #999;">${j.pages} page${j.pages !== 1 ? 's' : ''}</div>
@@ -2846,7 +2846,7 @@ export class QuestPanel {
             </div>`
         }
         <div style="margin-bottom: 10px; padding: 10px; background: rgba(50, 50, 80, 0.3); border-radius: 5px;">
-            <p style="margin-bottom: 5px; color: #ddd;"><i class="fas fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate quest.</p>
+            <p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate quest.</p>
         </div>
         <div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;">
             <button class="cancel-button" style="flex: 1; margin-right: 5px;">Cancel</button>

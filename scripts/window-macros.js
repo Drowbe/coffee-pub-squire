@@ -113,7 +113,7 @@ export class MacrosWindow extends Application {
         buttons.splice(buttons.length - 1, 0, {
             label: 'Macros',
             class: 'open-macro-folder',
-            icon: 'fas fa-folder-open',
+            icon: 'fa-solid fa-folder-open',
             onclick: (ev) => {
                 ev?.preventDefault();
                 if (ui.macros && typeof ui.macros.renderPopout === 'function') ui.macros.renderPopout();

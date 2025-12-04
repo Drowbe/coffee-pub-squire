@@ -1342,7 +1342,7 @@ Hooks.once('socketlib.ready', () => {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-request",
-                        strCardIcon: data.isGMApproval ? "fas fa-gavel" : "fas fa-people-arrows",
+                        strCardIcon: data.isGMApproval ? "fa-solid fa-gavel" : "fa-solid fa-people-arrows",
                         strCardTitle: data.isGMApproval ? "GM Approval Required" : "Transfer Request",
                         sourceActor,
                         sourceActorName: data.sourceActorName,
@@ -1397,7 +1397,7 @@ Hooks.once('socketlib.ready', () => {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-complete",
-                        strCardIcon: "fas fa-backpack",
+                        strCardIcon: "fa-solid fa-backpack",
                         strCardTitle: "Transfer Complete",
                         sourceActor,
                         sourceActorName: data.sourceActorName,
@@ -1437,7 +1437,7 @@ Hooks.once('socketlib.ready', () => {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-rejected",
-                        strCardIcon: "fas fa-times-circle",
+                        strCardIcon: "fa-solid fa-times-circle",
                         strCardTitle: "Transfer Rejected",
                         sourceActor,
                         sourceActorName: data.sourceActorName,
@@ -1474,7 +1474,7 @@ Hooks.once('socketlib.ready', () => {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-expired",
-                        strCardIcon: "fas fa-clock",
+                        strCardIcon: "fa-solid fa-clock",
                         strCardTitle: "Transfer Request Expired",
                         sourceActor,
                         sourceActorName: data.sourceActorName,
@@ -1698,7 +1698,7 @@ Hooks.once('ready', async function() {
         const { openMacros } = await import('./panel-macros.js');
         
         const success = blacksmith.registerMenubarTool('squire-macros', {
-            icon: "fas fa-sun",
+            icon: "fa-solid fa-sun",
             name: "squire-macros",
             title: "Macros",
             zone: "middle",
@@ -1889,13 +1889,13 @@ async function handleTransferRequest(transferData) {
                 content: receiverContent,
                 buttons: {
                     accept: {
-                        icon: '<i class="fas fa-check"></i>',
+                        icon: '<i class="fa-solid fa-check"></i>',
                         label: "Accept",
                         cssClass: "accept",
                         callback: () => resolve(true)
                     },
                     decline: {
-                        icon: '<i class="fas fa-times"></i>',
+                        icon: '<i class="fa-solid fa-times"></i>',
                         label: "Decline",
                         cssClass: "decline",
                         callback: () => resolve(false)

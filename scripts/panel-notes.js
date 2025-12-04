@@ -514,7 +514,7 @@ export class NotesPanel {
                 console.error('Invalid page object:', page);
                 contentContainer.innerHTML = `
                     <div class="render-error">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <i class="fa-solid fa-exclamation-triangle"></i>
                         <p>Invalid journal page data.</p>
                         <p>Click the "Open Journal" button to view it in the full journal viewer.</p>
                     </div>
@@ -525,7 +525,7 @@ export class NotesPanel {
             // Verify permission to view this page
             const canViewPage = game.user.isGM || this._userCanAccessPage(page, game.user, PERMISSION_LEVELS);
             if (!canViewPage) {
-                contentContainer.innerHTML = `<div class="permission-error"><i class="fas fa-lock"></i><p>You don't have permission to view this page.</p></div>`;
+                contentContainer.innerHTML = `<div class="permission-error"><i class="fa-solid fa-lock"></i><p>You don't have permission to view this page.</p></div>`;
                 return;
             }
             
@@ -870,7 +870,7 @@ export class NotesPanel {
                 if (errorContainer) {
                     errorContainer.innerHTML = `
                         <div class="render-error">
-                            <i class="fas fa-exclamation-triangle"></i>
+                            <i class="fa-solid fa-exclamation-triangle"></i>
                             <p>An unexpected error occurred while rendering the journal.</p>
                             <p>Error: ${globalError.message || "Unknown error"}</p>
                             <p>Click the "Open Journal" button to view it in the full journal viewer.</p>
@@ -931,22 +931,22 @@ export class NotesPanel {
         <h2 style="text-align: center; margin-bottom: 15px;">Select a Journal for Notes</h2>
         ${journals.length === 0 ? 
             `<div class="no-journals-message" style="text-align: center; padding: 20px;">
-                <i class="fas fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
+                <i class="fa-solid fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
                 <p>No journals found in your world.</p>
                 <p>You need to create at least one journal in the Journals tab first.</p>
             </div>` :
             `<div class="journal-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;">
                 <div class="journal-item" data-id="none" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
                     <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-times-circle" style="font-size: 3em; color: #aa0000;"></i>
+                        <i class="fa-solid fa-times-circle" style="font-size: 3em; color: #aa0000;"></i>
                     </div>
                     <div class="journal-name" style="margin-top: 5px; font-weight: bold;">None</div>
                 </div>
                 ${journals.map(j => `
                 <div class="journal-item" data-id="${j.id}" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
                     <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center; background-size: contain; background-position: center; background-repeat: no-repeat; background-image: url('${j.img}');">
-                        ${!j.img ? `<i class="fas fa-book" style="font-size: 3em; color: #666;"></i>` : ''}
-                        ${j.id === persistentJournalId ? `<i class="fas fa-thumbtack" style="position: absolute; top: 10px; right: 10px; color: gold; font-size: 1.2em;" title="Pinned for players"></i>` : ''}
+                        ${!j.img ? `<i class="fa-solid fa-book" style="font-size: 3em; color: #666;"></i>` : ''}
+                        ${j.id === persistentJournalId ? `<i class="fa-solid fa-thumbtack" style="position: absolute; top: 10px; right: 10px; color: gold; font-size: 1.2em;" title="Pinned for players"></i>` : ''}
                     </div>
                     <div class="journal-name" style="margin-top: 5px; font-weight: bold;">${j.name}</div>
                     <div class="journal-pages" style="font-size: 0.8em; color: #999;">${j.pages} page${j.pages !== 1 ? 's' : ''}</div>
@@ -955,8 +955,8 @@ export class NotesPanel {
             </div>`
         }
         <div style="margin-bottom: 10px; padding: 10px; background: rgba(50, 50, 80, 0.3); border-radius: 5px;">
-            <p style="margin-bottom: 5px; color: #ddd;"><i class="fas fa-info-circle" style="color: #88f;"></i> As GM, you can select a journal for your own viewing without changing what players see.</p>
-            <p style="color: #ddd;">Use the <i class="fas fa-thumbtack" style="color: gold;"></i> button to set what journal players will see.</p>
+            <p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> As GM, you can select a journal for your own viewing without changing what players see.</p>
+            <p style="color: #ddd;">Use the <i class="fa-solid fa-thumbtack" style="color: gold;"></i> button to set what journal players will see.</p>
         </div>
         <div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;">
             <button class="cancel-button" style="flex: 1; margin-right: 5px;">Cancel</button>
@@ -1053,7 +1053,7 @@ export class NotesPanel {
         <p style="text-align: center; margin-bottom: 15px; color: #999;">Select a page to display</p>
         ${pages.length === 0 ? 
             `<div class="no-pages-message" style="text-align: center; padding: 20px;">
-                <i class="fas fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
+                <i class="fa-solid fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
                 <p>No pages found in this journal.</p>
                 <p>You need to add at least one page to the journal first.</p>
             </div>` :
@@ -1130,22 +1130,22 @@ export class NotesPanel {
      * @private
      */
     _getPagePermissionLabel(page, permLevels) {
-        if (!page) return `<i class="fas fa-question" title="Unknown"></i>`;
+        if (!page) return `<i class="fa-solid fa-question" title="Unknown"></i>`;
         
         // Check if page has specific permissions or inherits from journal
         const hasSpecificPermissions = Object.keys(page.ownership).some(id => id !== "default");
         const defaultPermission = page.ownership.default;
         
         if (!hasSpecificPermissions && defaultPermission === 0) {
-            return `<i class="fas fa-link" title="Inherits journal permissions"></i>`;
+            return `<i class="fa-solid fa-link" title="Inherits journal permissions"></i>`;
         }
         
         if (defaultPermission >= permLevels.OWNER) {
-            return `<i class="fas fa-edit" title="Players can edit"></i>`;
+            return `<i class="fa-solid fa-edit" title="Players can edit"></i>`;
         } else if (defaultPermission >= permLevels.OBSERVER) {
-            return `<i class="fas fa-eye" title="Players can view"></i>`;
+            return `<i class="fa-solid fa-eye" title="Players can view"></i>`;
         } else {
-            return `<i class="fas fa-lock" title="GM only"></i>`;
+            return `<i class="fa-solid fa-lock" title="GM only"></i>`;
         }
     }
 

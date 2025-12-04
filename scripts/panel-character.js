@@ -46,7 +46,7 @@ export class CharacterPanel {
         // Update death skull
         if (hp.value <= 0) {
             if (!portraitElement?.find('.death-skull').length) {
-                portraitElement?.append('<i class="fas fa-skull death-skull"></i>');
+                portraitElement?.append('<i class="fa-solid fa-skull death-skull"></i>');
             }
         } else {
             portraitElement?.find('.death-skull').remove();

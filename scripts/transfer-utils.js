@@ -110,7 +110,7 @@ export class TransferUtils {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-request",
-                        strCardIcon: "fas fa-gavel",
+                        strCardIcon: "fa-solid fa-gavel",
                         strCardTitle: "GM Approval Required",
                         sourceActor,
                         sourceActorName: `${sourceActor.name} (${game.user.name})`,
@@ -173,7 +173,7 @@ export class TransferUtils {
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-request",
-                        strCardIcon: "fas fa-people-arrows",
+                        strCardIcon: "fa-solid fa-people-arrows",
                         strCardTitle: "Transfer Request",
                         sourceActor,
                         sourceActorName: sourceActor.name,
@@ -214,7 +214,7 @@ export class TransferUtils {
             content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                 isPublic: false,
                 cardType: "transfer-request",
-                strCardIcon: "fas fa-people-arrows",
+                strCardIcon: "fa-solid fa-people-arrows",
                 strCardTitle: "Transfer Request",
                 sourceActor,
                 sourceActorName: sourceActor.name,

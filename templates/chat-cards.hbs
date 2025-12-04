@@ -6,7 +6,7 @@
   {{#if isPlanningStart}}
     <div class="blacksmith-card theme-blue">
       <div class="section-header">
-        <i class="fas fa-hourglass-start"></i> Planning Phase Started
+        <i class="fa-solid fa-hourglass-start"></i> Planning Phase Started
       </div>
       <div class="section-content">
         <p>The planning phase has begun! You have {{duration}} to strategize, make plans, and decide what you'll do.</p>
@@ -17,7 +17,7 @@
   {{else if isPlanningPaused}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
-        <i class="fas fa-pause"></i> Planning Phase Paused
+        <i class="fa-solid fa-pause"></i> Planning Phase Paused
       </div>
       <div class="section-content">
         <p>The planning timer has been paused with {{timeRemaining}} remaining.</p>
@@ -28,7 +28,7 @@
   {{else if isPlanningResumed}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
-        <i class="fas fa-play"></i> Planning Phase Resumed
+        <i class="fa-solid fa-play"></i> Planning Phase Resumed
       </div>
       <div class="section-content">
         <p>The planning timer has resumed with {{timeRemaining}} remaining.</p>
@@ -40,19 +40,19 @@
     <div class="blacksmith-card {{#if theme}}theme-{{theme}}{{else}}theme-default{{/if}}">
       <div class="section-header">
         {{#if isTimerSet}}
-          <i class="fas fa-clock"></i> {{timerLabel}} Timer Updated
+          <i class="fa-solid fa-clock"></i> {{timerLabel}} Timer Updated
         {{else if isTimerStart}}
-          <i class="fas fa-hourglass-start"></i> {{timerLabel}} Started
+          <i class="fa-solid fa-hourglass-start"></i> {{timerLabel}} Started
         {{else if isTimerPaused}}
-          <i class="fas fa-pause"></i> {{timerLabel}} Paused
+          <i class="fa-solid fa-pause"></i> {{timerLabel}} Paused
         {{else if isTimerResumed}}
-          <i class="fas fa-play"></i> {{timerLabel}} Resumed
+          <i class="fa-solid fa-play"></i> {{timerLabel}} Resumed
         {{else if isTimerWarning}}
-          <i class="fas fa-exclamation-triangle"></i> {{timerLabel}} Warning
+          <i class="fa-solid fa-exclamation-triangle"></i> {{timerLabel}} Warning
         {{else if isTimerExpiringSoon}}
-          <i class="fas fa-exclamation-circle"></i> {{timerLabel}} Ending Soon
+          <i class="fa-solid fa-exclamation-circle"></i> {{timerLabel}} Ending Soon
         {{else if isTimerExpired}}
-          <i class="fas fa-stopwatch"></i> {{timerLabel}} Ended
+          <i class="fa-solid fa-stopwatch"></i> {{timerLabel}} Ended
         {{/if}}
       </div>
       <div class="section-content">
@@ -82,7 +82,7 @@
   {{else if isRoundAnnouncement}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
-        <i class="fas fa-swords"></i> Round {{roundNumber}} Has Started
+        <i class="fa-solid fa-swords"></i> Round {{roundNumber}} Has Started
       </div>
       <div class="section-content"></div>
     </div>
@@ -91,7 +91,7 @@
   {{else if isLootDrop}}
     <div class="blacksmith-card theme-default">
       <div class="section-header">
-        <i class="fas fa-coins"></i> Loot Dropped!
+        <i class="fa-solid fa-coins"></i> Loot Dropped!
       </div>
       <div class="section-content">
         <p>{{tokenName}} has been defeated and dropped their belongings!</p>
@@ -124,7 +124,7 @@
   {{else if isLeaderChange}}
       <div class="blacksmith-card theme-default">
           <div class="section-header">
-              <i class="fas fa-crown"></i> {{leaderName}} is Party Leader
+              <i class="fa-solid fa-crown"></i> {{leaderName}} is Party Leader
           </div>
           <div class="section-content">
               <p>All hail <strong>{{leaderName}}</strong>, party leader for this session!</p>
@@ -200,7 +200,7 @@
   {{else if (eq cardType "transfer-failed")}}
     <div class="blacksmith-card theme-red">
       <div class="section-header">
-        <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+        <i class="fa-solid fa-exclamation-triangle"></i> Transfer Failed
       </div>
       <div class="section-content">
         <p>{{failureReason}}</p>
@@ -211,7 +211,7 @@
   {{else if (eq cardType "transfer-expired")}}
     <div class="blacksmith-card theme-orange">
       <div class="section-header">
-        <i class="fas fa-clock"></i> Transfer Request Expired
+        <i class="fa-solid fa-clock"></i> Transfer Request Expired
       </div>
       <div class="section-content">
         <p>
@@ -246,7 +246,7 @@
         {{#if strCardTitle}}
           <i class="{{strCardIcon}}"></i> {{strCardTitle}}
         {{else}}
-          <i class="fas fa-seal-exclamation"></i> Card Error
+          <i class="fa-solid fa-seal-exclamation"></i> Card Error
         {{/if}}
       </div>
       <div class="section-content">
@@ -266,7 +266,7 @@
   {{#if isLeaderChange}}
       <div class="blacksmith-card theme-red">
           <div class="section-header">
-              <i class="fas fa-crown"></i> You Are Party Leader!
+              <i class="fa-solid fa-crown"></i> You Are Party Leader!
           </div>
           <div class="section-content">
               <p>The party has chosen {{leaderName}} to be their leader.</p>
@@ -286,14 +286,14 @@
         {{else if isGMApproval}}
           <p><strong>{{sourceActorName}}</strong> wants to send {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong>.</p>
           <div class="transfer-request-buttons blacksmith-chat-buttons">
-            <button class="gm-approval-button chat-button approve" data-transfer-id="{{transferId}}"><i class="fas fa-circle-check"></i> Approve</button>
-            <button class="gm-approval-button chat-button deny" data-transfer-id="{{transferId}}"><i class="fas fa-circle-xmark"></i> Deny</button>
+            <button class="gm-approval-button chat-button approve" data-transfer-id="{{transferId}}"><i class="fa-solid fa-circle-check"></i> Approve</button>
+            <button class="gm-approval-button chat-button deny" data-transfer-id="{{transferId}}"><i class="fa-solid fa-circle-xmark"></i> Deny</button>
           </div>
         {{else if isTransferReceiver}}
           <p><strong>{{sourceActorName}}</strong> wants to send {{#if hasQuantity}}{{quantity}} {{/if}}<strong>{{itemName}}{{#if isPlural}}s{{/if}}</strong> to <strong>{{targetActorName}}</strong>.</p>
           <div class="transfer-request-buttons blacksmith-chat-buttons">
-            <button class="transfer-request-button chat-button accept" data-transfer-id="{{transferId}}"><i class="fas fa-circle-check"></i> Accept</button>
-            <button class="transfer-request-button chat-button reject" data-transfer-id="{{transferId}}"><i class="fas fa-circle-xmark"></i> Reject</button>
+            <button class="transfer-request-button chat-button accept" data-transfer-id="{{transferId}}"><i class="fa-solid fa-circle-check"></i> Accept</button>
+            <button class="transfer-request-button chat-button reject" data-transfer-id="{{transferId}}"><i class="fa-solid fa-circle-xmark"></i> Reject</button>
           </div>
         {{/if}}
       </div>
@@ -344,7 +344,7 @@
   {{else if (eq cardType "transfer-failed")}}
     <div class="blacksmith-card theme-red">
       <div class="section-header">
-        <i class="fas fa-exclamation-triangle"></i> Transfer Failed
+        <i class="fa-solid fa-exclamation-triangle"></i> Transfer Failed
       </div>
       <div class="section-content">
         <p>{{failureReason}}</p>
@@ -355,7 +355,7 @@
   {{else if (eq cardType "transfer-expired")}}
     <div class="blacksmith-card theme-orange">
       <div class="section-header">
-        <i class="fas fa-clock"></i> Transfer Request Expired
+        <i class="fa-solid fa-clock"></i> Transfer Request Expired
       </div>
       <div class="section-content">
         <p>
@@ -390,7 +390,7 @@
         {{#if strCardTitle}}
           <i class="{{strCardIcon}}"></i> {{strCardTitle}}
         {{else}}
-          <i class="fas fa-seal-exclamation"></i> Card Error
+          <i class="fa-solid fa-seal-exclamation"></i> Card Error
         {{/if}}
       </div>
       <div class="section-content">

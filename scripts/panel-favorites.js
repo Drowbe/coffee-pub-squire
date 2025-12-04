@@ -339,7 +339,7 @@ export class FavoritesPanel {
         // Set up the context menu options once
         this.menuOptions = [{
             name: "Move to Top",
-            icon: '<i class="fas fa-angle-double-up"></i>',
+            icon: '<i class="fa-solid fa-angle-double-up"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
@@ -352,7 +352,7 @@ export class FavoritesPanel {
             }
         }, {
             name: "Move Up",
-            icon: '<i class="fas fa-angle-up"></i>',
+            icon: '<i class="fa-solid fa-angle-up"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
@@ -367,7 +367,7 @@ export class FavoritesPanel {
             }
         }, {
             name: "Move Down",
-            icon: '<i class="fas fa-angle-down"></i>',
+            icon: '<i class="fa-solid fa-angle-down"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
@@ -382,7 +382,7 @@ export class FavoritesPanel {
             }
         }, {
             name: "Move to Bottom",
-            icon: '<i class="fas fa-angle-double-down"></i>',
+            icon: '<i class="fa-solid fa-angle-double-down"></i>',
             condition: li => {
                 const itemId = $(li).data('item-id');
                 const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];

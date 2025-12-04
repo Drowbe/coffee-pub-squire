@@ -3,16 +3,16 @@
     <div class="feature-row">
         <div class="feature-image-container">
             <img class="feature-image" src="{{img}}" alt="{{name}}"/>
-            <i class="fas fa-dice-d20 feature-roll-overlay"></i>
+            <i class="fa-solid fa-dice-d20 feature-roll-overlay"></i>
         </div>
         <div class="feature-name">
             {{name}}
             {{#if actionType}}
             <span class="action-type">
-                {{#if (eq actionType "action")}}<i class="fas fa-circle-a" title="Action"></i>
-                {{else if (eq actionType "bonus")}}<i class="fas fa-circle-b" title="Bonus Action"></i>
-                {{else if (eq actionType "reaction")}}<i class="fas fa-circle-r" title="Reaction"></i>
-                {{else if (eq actionType "special")}}<i class="fas fa-circle-s" title="Special"></i>{{/if}}
+                {{#if (eq actionType "action")}}<i class="fa-solid fa-circle-a" title="Action"></i>
+                {{else if (eq actionType "bonus")}}<i class="fa-solid fa-circle-b" title="Bonus Action"></i>
+                {{else if (eq actionType "reaction")}}<i class="fa-solid fa-circle-r" title="Reaction"></i>
+                {{else if (eq actionType "special")}}<i class="fa-solid fa-circle-s" title="Special"></i>{{/if}}
             </span>
             {{/if}}
             {{#if uses}}
@@ -22,8 +22,8 @@
             {{/if}}
         </div>
         <div class="tray-buttons">
-            <i class="fas fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-            <i class="fas fa-feather"></i>
+            <i class="fa-solid fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+            <i class="fa-solid fa-feather"></i>
         </div>
     </div>
 </div>
@@ -33,14 +33,14 @@
     {{#if (eq position "left")}}
     <div class="section-header">
         <div class="header-left">
-            <i class="fas fa-stars"></i> Features
+            <i class="fa-solid fa-stars"></i> Features
         </div>
         <div class="header-right">
-            {{#if (lookup featuresByType "class")}}<i class="fas fa-graduation-cap features-category-filter active" data-filter-id="category-feature-class" title="Toggle Class Features"></i>{{/if}}
-            {{#if (lookup featuresByType "subclass")}}<i class="fas fa-book-sparkles features-category-filter active" data-filter-id="category-feature-subclass" title="Toggle Subclass Features"></i>{{/if}}
-            {{#if (lookup featuresByType "race")}}<i class="fas fa-users features-category-filter active" data-filter-id="category-feature-race" title="Toggle Racial Features"></i>{{/if}}
-            {{#if (lookup featuresByType "background")}}<i class="fas fa-scroll features-category-filter active" data-filter-id="category-feature-background" title="Toggle Background Features"></i>{{/if}}
-            {{#if (lookup featuresByType "feat")}}<i class="fas fa-hand-sparkles features-category-filter active" data-filter-id="category-feature-feat" title="Toggle Feats"></i>{{/if}}
+            {{#if (lookup featuresByType "class")}}<i class="fa-solid fa-graduation-cap features-category-filter active" data-filter-id="category-feature-class" title="Toggle Class Features"></i>{{/if}}
+            {{#if (lookup featuresByType "subclass")}}<i class="fa-solid fa-book-sparkles features-category-filter active" data-filter-id="category-feature-subclass" title="Toggle Subclass Features"></i>{{/if}}
+            {{#if (lookup featuresByType "race")}}<i class="fa-solid fa-users features-category-filter active" data-filter-id="category-feature-race" title="Toggle Racial Features"></i>{{/if}}
+            {{#if (lookup featuresByType "background")}}<i class="fa-solid fa-scroll features-category-filter active" data-filter-id="category-feature-background" title="Toggle Background Features"></i>{{/if}}
+            {{#if (lookup featuresByType "feat")}}<i class="fa-solid fa-hand-sparkles features-category-filter active" data-filter-id="category-feature-feat" title="Toggle Feats"></i>{{/if}}
         </div>
     </div>
     {{/if}}
