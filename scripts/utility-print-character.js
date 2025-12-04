@@ -1,5 +1,6 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { moduleDelay } from './timer-utils.js';
+import { renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

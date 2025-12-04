@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { MacrosWindow } from './window-macros.js';
 import { PanelManager } from './manager-panel.js';
 import { trackModuleTimeout } from './timer-utils.js';
+import { renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

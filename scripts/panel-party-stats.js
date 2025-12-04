@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { renderTemplate } from './helpers.js';
 
 function getBlacksmith() {
     return game.modules.get('coffee-pub-blacksmith')?.api;

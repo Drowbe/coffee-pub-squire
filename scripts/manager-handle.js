@@ -1045,6 +1045,7 @@ export class HandleManager {
             }
             
             // Get the quest data from the journal entry
+            const TextEditor = getTextEditor();
             const enrichedHtml = await TextEditor.enrichHTML(doc.text.content, { async: true });
             
             const entry = await QuestParser.parseSinglePage(doc, enrichedHtml);

@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { renderTemplate } from './helpers.js';
 
 export class HealthWindow extends Application {
     constructor(options = {}) {

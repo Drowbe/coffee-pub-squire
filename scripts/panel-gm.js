@@ -1,5 +1,5 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
-import { getNativeElement } from './helpers.js';
+import { getNativeElement, renderTemplate } from './helpers.js';
 
 export class GmPanel {
     constructor(actor) {

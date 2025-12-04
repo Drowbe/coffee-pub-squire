@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement } from './helpers.js';
+import { getNativeElement, renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
+import { renderTemplate } from './helpers.js';
 
 export class TransferUtils {
     /**

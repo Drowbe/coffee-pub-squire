@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { renderTemplate } from './helpers.js';
 
 export class ExperiencePanel {
     constructor(actor) {

@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { DiceTrayWindow } from './window-dicetray.js';
 import { PanelManager } from './manager-panel.js';
+import { renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { HealthWindow } from './window-health.js';
 import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName } from './helpers.js';
+import { getTokenDisplayName, renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
