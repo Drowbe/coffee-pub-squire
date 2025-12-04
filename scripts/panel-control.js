@@ -64,11 +64,18 @@ export class ControlPanel {
     }
 
     _handleSearch(searchTerm) {
+        // v13: Use native DOM methods instead of jQuery
+        if (!this.element) return;
+        
         // Convert search term to lowercase for case-insensitive comparison
         searchTerm = searchTerm.toLowerCase();
 
         // Toggle visibility of individual search boxes based on global search state
-        this.element.find('.panel-containers.stacked .panel-container .search-container').toggle(searchTerm === '');
+        // v13: Use native DOM querySelectorAll
+        const searchContainers = this.element.querySelectorAll('.panel-containers.stacked .panel-container .search-container');
+        searchContainers.forEach(container => {
+            container.style.display = searchTerm === '' ? '' : 'none';
+        });
 
         // Track visible items for each panel
         const visibleCounts = {
@@ -90,59 +97,65 @@ export class ControlPanel {
 
         // Process each visible panel separately
         Object.keys(visibleCounts).forEach(panelType => {
-            const panelElement = this.element.find(`[data-panel="${panelType}"]`);
-            if (!panelElement.hasClass('visible')) return;
+            // v13: Use native DOM querySelector
+            const panelElement = this.element.querySelector(`[data-panel="${panelType}"]`);
+            if (!panelElement || !panelElement.classList.contains('visible')) return;
 
             // Find all items in this panel using the correct class name
             const itemClass = itemClassMap[panelType];
-            const items = panelElement.find(`.${itemClass}-item`);
+            const items = panelElement.querySelectorAll(`.${itemClass}-item`);
 
             let visibleItemsInPanel = 0;  // Initialize counter for this panel
 
             // Process items
-            items.each((_, item) => {
-                const $item = $(item);
-                const nameElement = $item.find(`.${itemClass}-name`);
+            // v13: Use native DOM forEach
+            items.forEach(item => {
+                const nameElement = item.querySelector(`.${itemClass}-name`);
                 
                 // Skip if no name element found
-                if (nameElement.length === 0) {
+                if (!nameElement) {
                     return;
                 }
 
-                const itemName = nameElement
-                    .clone()
-                    .children()
-                    .remove()
-                    .end()
-                    .text()
-                    .toLowerCase()
-                    .trim();
+                // v13: Clone element, remove children, get text content
+                const clonedName = nameElement.cloneNode(true);
+                clonedName.querySelectorAll('*').forEach(child => child.remove());
+                const itemName = clonedName.textContent.toLowerCase().trim();
                 
                 const shouldShow = searchTerm === '' || itemName.includes(searchTerm);
                 
                 // Toggle item visibility
-                $item.toggle(shouldShow);
+                // v13: Use style.display instead of jQuery toggle
+                item.style.display = shouldShow ? '' : 'none';
                 if (shouldShow) visibleItemsInPanel++;
             });
 
             // Handle ALL category headers in this panel
             if (searchTerm !== '') {
                 // First hide all headers
-                panelElement.find('.category-header').hide();
+                // v13: Use native DOM querySelectorAll
+                const categoryHeaders = panelElement.querySelectorAll('.category-header');
+                categoryHeaders.forEach(header => {
+                    header.style.display = 'none';
+                });
                 
                 // Then only show headers that have visible items
-                const visibleItems = panelElement.find(`.${itemClass}-item:visible`);
+                // v13: Use native DOM querySelectorAll with :not([style*="display: none"])
+                const visibleItems = Array.from(panelElement.querySelectorAll(`.${itemClass}-item`))
+                    .filter(item => item.style.display !== 'none');
                 const visibleCategories = new Set();
                 
-                visibleItems.each((_, item) => {
-                    const categoryId = $(item).data('category-id');
+                visibleItems.forEach(item => {
+                    const categoryId = item.dataset.categoryId;
                     if (categoryId) visibleCategories.add(categoryId);
                 });
                 
                 visibleCategories.forEach(categoryId => {
-                    const header = panelElement.find(`.category-header[data-category-id="${categoryId}"]`);
-                    if (header.length) {
-                        header.show();
+                    // v13: Use safer selector approach for data attributes
+                    const headers = panelElement.querySelectorAll('.category-header[data-category-id]');
+                    const header = Array.from(headers).find(h => h.dataset.categoryId === categoryId);
+                    if (header) {
+                        header.style.display = '';
                     }
                 });
             }
@@ -151,33 +164,57 @@ export class ControlPanel {
             visibleCounts[panelType] = visibleItemsInPanel;
 
             // Toggle "No matches" message - only show during search with no results
-            const noMatchesElement = panelElement.find('.no-matches');
-            if (searchTerm === '') {
-                noMatchesElement.removeClass('show').hide();
-            } else {
-                const shouldShowNoMatches = visibleItemsInPanel === 0 && panelElement.hasClass('visible');
-                noMatchesElement.toggleClass('show', shouldShowNoMatches).toggle(shouldShowNoMatches);
+            // v13: Use native DOM querySelector
+            const noMatchesElement = panelElement.querySelector('.no-matches');
+            if (noMatchesElement) {
+                if (searchTerm === '') {
+                    noMatchesElement.classList.remove('show');
+                    noMatchesElement.style.display = 'none';
+                } else {
+                    const shouldShowNoMatches = visibleItemsInPanel === 0 && panelElement.classList.contains('visible');
+                    if (shouldShowNoMatches) {
+                        noMatchesElement.classList.add('show');
+                        noMatchesElement.style.display = '';
+                    } else {
+                        noMatchesElement.classList.remove('show');
+                        noMatchesElement.style.display = 'none';
+                    }
+                }
             }
         });
 
         // Handle spell level headers separately since they're structured differently
-        const spellsPanel = this.element.find('[data-panel="spells"]');
-        if (spellsPanel.length && spellsPanel.hasClass('visible')) {
-            spellsPanel.find('.category-header').each((_, header) => {
-                const $header = $(header);
-                const categoryId = $header.data('category-id');
-                const $nextSpells = spellsPanel.find(`[data-category-id="${categoryId}"]:visible`);
-                $header.toggle($nextSpells.length > 0);
+        // v13: Use native DOM querySelector
+        const spellsPanel = this.element.querySelector('[data-panel="spells"]');
+        if (spellsPanel && spellsPanel.classList.contains('visible')) {
+            const spellHeaders = spellsPanel.querySelectorAll('.category-header');
+            spellHeaders.forEach(header => {
+                const categoryId = header.dataset.categoryId;
+                // v13: Find visible items with this category ID
+                const categoryItems = Array.from(spellsPanel.querySelectorAll(`[data-category-id="${categoryId}"]`))
+                    .filter(item => item.style.display !== 'none' && !item.classList.contains('category-header'));
+                header.style.display = categoryItems.length > 0 ? '' : 'none';
             });
         }
 
         // Clear individual search boxes when global search is cleared
         if (searchTerm === '') {
-            this.element.find('.panel-containers.stacked .panel-container .search-container input').val('');
+            // v13: Use native DOM querySelectorAll
+            const searchInputs = this.element.querySelectorAll('.panel-containers.stacked .panel-container .search-container input');
+            searchInputs.forEach(input => {
+                input.value = '';
+            });
             // Show all headers when search is cleared
-            this.element.find('.category-header').show();
+            const allHeaders = this.element.querySelectorAll('.category-header');
+            allHeaders.forEach(header => {
+                header.style.display = '';
+            });
             // Hide all "No matches" messages
-            this.element.find('.no-matches').removeClass('show').hide();
+            const noMatchesElements = this.element.querySelectorAll('.no-matches');
+            noMatchesElements.forEach(element => {
+                element.classList.remove('show');
+                element.style.display = 'none';
+            });
         }
     }
 
