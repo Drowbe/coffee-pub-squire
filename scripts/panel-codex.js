@@ -13,6 +13,21 @@ class CodexForm extends FormApplication {
         super(entry, options);
         this.entry = entry || this._getDefaultEntry();
         this.dragActive = false;
+        // v13: Store event handlers for cleanup
+        this._eventHandlers = [];
+    }
+
+    /**
+     * Get native DOM element from this.element (handles jQuery conversion)
+     * @returns {HTMLElement|null} Native DOM element
+     */
+    _getNativeElement() {
+        if (!this.element) return null;
+        // v13: Detect and convert jQuery to native DOM if needed
+        if (this.element.jquery || typeof this.element.find === 'function') {
+            return this.element[0] || this.element.get?.(0) || this.element;
+        }
+        return this.element;
     }
 
     static get defaultOptions() {
@@ -190,25 +205,41 @@ class CodexForm extends FormApplication {
     activateListeners(html) {
         super.activateListeners(html);
         
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
         // Handle cancel button click
-        html.find('button.cancel').on('click', () => {
-            this.close();
-        });
+        const cancelButton = nativeHtml.querySelector('button.cancel');
+        if (cancelButton) {
+            const handler = () => {
+                this.close();
+            };
+            cancelButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: cancelButton, event: 'click', handler });
+        }
 
         // Handle form submission manually to ensure it works
-        html.find('form').on('submit', (event) => {
-            event.preventDefault();
-            this._handleFormSubmit(event);
-        });
+        const form = nativeHtml.querySelector('form');
+        if (form) {
+            const handler = (event) => {
+                event.preventDefault();
+                this._handleFormSubmit(event);
+            };
+            form.addEventListener('submit', handler);
+            this._eventHandlers.push({ element: form, event: 'submit', handler });
+        }
 
         // Set up drag and drop zones
-        this._setupDragAndDrop(html);
+        this._setupDragAndDrop(nativeHtml);
         
         // Set up form field interactions
-        this._setupFormInteractions(html);
+        this._setupFormInteractions(nativeHtml);
         
         // Set up image management
-        this._setupImageManagement(html);
+        this._setupImageManagement(nativeHtml);
     }
 
     async _handleFormSubmit(event) {
@@ -237,100 +268,142 @@ class CodexForm extends FormApplication {
 
     _setupFormInteractions(html) {
         // Handle category dropdown changes
-        const categorySelect = html.find('#category');
-        const newCategoryInput = html.find('#new-category');
+        const categorySelect = html.querySelector('#category');
+        const newCategoryInput = html.querySelector('#new-category');
         
-        categorySelect.on('change', function() {
-            if ($(this).val() === 'new') {
-                newCategoryInput.show().focus();
-                newCategoryInput.attr('name', 'category');
-                $(this).attr('name', '');
-            } else {
-                newCategoryInput.hide().attr('name', '');
-                $(this).attr('name', 'category');
-            }
-        });
+        if (categorySelect) {
+            const handler = function() {
+                if (this.value === 'new') {
+                    newCategoryInput.style.display = '';
+                    newCategoryInput.focus();
+                    newCategoryInput.setAttribute('name', 'category');
+                    categorySelect.removeAttribute('name');
+                } else {
+                    newCategoryInput.style.display = 'none';
+                    newCategoryInput.removeAttribute('name');
+                    categorySelect.setAttribute('name', 'category');
+                }
+            };
+            categorySelect.addEventListener('change', handler);
+            this._eventHandlers.push({ element: categorySelect, event: 'change', handler });
+        }
 
         // Handle location dropdown changes
-        const locationSelect = html.find('#location');
-        const newLocationInput = html.find('#new-location');
+        const locationSelect = html.querySelector('#location');
+        const newLocationInput = html.querySelector('#new-location');
         
-        locationSelect.on('change', function() {
-            if ($(this).val() === 'new') {
-                newLocationInput.show().focus();
-                newLocationInput.attr('name', 'location');
-                $(this).attr('name', '');
-            } else {
-                newLocationInput.hide().attr('name', '');
-                $(this).attr('name', 'location');
-            }
-        });
+        if (locationSelect) {
+            const handler = function() {
+                if (this.value === 'new') {
+                    newLocationInput.style.display = '';
+                    newLocationInput.focus();
+                    newLocationInput.setAttribute('name', 'location');
+                    locationSelect.removeAttribute('name');
+                } else {
+                    newLocationInput.style.display = 'none';
+                    newLocationInput.removeAttribute('name');
+                    locationSelect.setAttribute('name', 'location');
+                }
+            };
+            locationSelect.addEventListener('change', handler);
+            this._eventHandlers.push({ element: locationSelect, event: 'change', handler });
+        }
 
         // Handle new category input
-        newCategoryInput.on('input', function() {
-            const value = $(this).val().trim();
-            if (value) {
-                categorySelect.attr('name', '');
-                $(this).attr('name', 'category');
-            }
-        });
+        if (newCategoryInput) {
+            const handler = function() {
+                const value = this.value.trim();
+                if (value) {
+                    categorySelect.removeAttribute('name');
+                    this.setAttribute('name', 'category');
+                }
+            };
+            newCategoryInput.addEventListener('input', handler);
+            this._eventHandlers.push({ element: newCategoryInput, event: 'input', handler });
+        }
 
         // Handle new location input
-        newLocationInput.on('input', function() {
-            const value = $(this).val().trim();
-            if (value) {
-                locationSelect.attr('name', '');
-                $(this).attr('name', 'location');
-            }
-        });
+        if (newLocationInput) {
+            const handler = function() {
+                const value = this.value.trim();
+                if (value) {
+                    locationSelect.removeAttribute('name');
+                    this.setAttribute('name', 'location');
+                }
+            };
+            newLocationInput.addEventListener('input', handler);
+            this._eventHandlers.push({ element: newLocationInput, event: 'input', handler });
+        }
     }
 
     _setupImageManagement(html) {
         // Show image section if we have an image
         if (this.entry.img) {
-            html.find('.codex-image-section').show();
-            html.find('.codex-image-preview').attr('src', this.entry.img);
+            const imgSection = html.querySelector('.codex-image-section');
+            const imgPreview = html.querySelector('.codex-image-preview');
+            if (imgSection) {
+                imgSection.style.display = '';
+            }
+            if (imgPreview) {
+                imgPreview.setAttribute('src', this.entry.img);
+            }
         }
 
         // Handle remove image button
-        html.find('.codex-remove-image').on('click', () => {
-            this.entry.img = null;
-            html.find('.codex-image-section').hide();
-            html.find('.codex-image-preview').attr('src', '');
-        });
+        const removeImageButton = html.querySelector('.codex-remove-image');
+        if (removeImageButton) {
+            const handler = () => {
+                this.entry.img = null;
+                const imgSection = html.querySelector('.codex-image-section');
+                const imgPreview = html.querySelector('.codex-image-preview');
+                if (imgSection) {
+                    imgSection.style.display = 'none';
+                }
+                if (imgPreview) {
+                    imgPreview.setAttribute('src', '');
+                }
+            };
+            removeImageButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: removeImageButton, event: 'click', handler });
+        }
     }
 
     _setupDragAndDrop(html) {
         // Main drag zone for any entity
-        const mainDragZone = html.find('.codex-drag-zone');
+        const mainDragZone = html.querySelector('.codex-drag-zone');
+        if (!mainDragZone) return;
         
-        mainDragZone.off('dragenter.codex dragleave.codex dragover.codex drop.codex');
+        // v13: Remove existing listeners by cloning (or store references for cleanup)
+        // For now, we'll clone to remove old listeners
+        const newDragZone = mainDragZone.cloneNode(true);
+        mainDragZone.parentNode?.replaceChild(newDragZone, mainDragZone);
         
-        mainDragZone.on('dragenter.codex', (e) => {
+        // v13: Use native DOM drag events
+        const dragEnterHandler = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            mainDragZone.addClass('drag-active');
-        });
-
-        mainDragZone.on('dragleave.codex', (e) => {
+            newDragZone.classList.add('drag-active');
+        };
+        
+        const dragLeaveHandler = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            mainDragZone.removeClass('drag-active');
-        });
-
-        mainDragZone.on('dragover.codex', (e) => {
+            newDragZone.classList.remove('drag-active');
+        };
+        
+        const dragOverHandler = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            e.originalEvent.dataTransfer.dropEffect = 'copy';
-        });
-
-        mainDragZone.on('drop.codex', async (e) => {
+            e.dataTransfer.dropEffect = 'copy';
+        };
+        
+        const dropHandler = async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            mainDragZone.removeClass('drag-active');
+            newDragZone.classList.remove('drag-active');
             
             try {
-                const dataTransfer = e.originalEvent.dataTransfer.getData('text/plain');
+                const dataTransfer = e.dataTransfer.getData('text/plain');
                 const data = JSON.parse(dataTransfer);
                 
                 if (data.type === 'Actor') {
@@ -343,7 +416,20 @@ class CodexForm extends FormApplication {
             } catch (error) {
                 console.error('Error processing dropped entity:', error);
             }
-        });
+        };
+        
+        newDragZone.addEventListener('dragenter', dragEnterHandler);
+        newDragZone.addEventListener('dragleave', dragLeaveHandler);
+        newDragZone.addEventListener('dragover', dragOverHandler);
+        newDragZone.addEventListener('drop', dropHandler);
+        
+        // Store handlers for cleanup
+        this._eventHandlers.push(
+            { element: newDragZone, event: 'dragenter', handler: dragEnterHandler },
+            { element: newDragZone, event: 'dragleave', handler: dragLeaveHandler },
+            { element: newDragZone, event: 'dragover', handler: dragOverHandler },
+            { element: newDragZone, event: 'drop', handler: dropHandler }
+        );
     }
 
     async _handleActorDrop(data) {
@@ -417,61 +503,88 @@ class CodexForm extends FormApplication {
     }
 
     _updateFormFields() {
-        // Update form inputs with new data
-        const form = this.element.find('form');
+        // v13: Use native DOM instead of jQuery
+        const element = this._getNativeElement();
+        if (!element) return;
+        
+        const form = element.querySelector('form');
+        if (!form) return;
         
         // Update basic fields
-        form.find('input[name="name"]').val(this.entry.name);
-        form.find('textarea[name="description"]').val(this.entry.description || '');
-        form.find('textarea[name="plotHook"]').val(this.entry.plotHook || '');
-        form.find('input[name="tags"]').val((this.entry.tags || []).join(', '));
-        form.find('input[name="img"]').val(this.entry.img || '');
+        const nameInput = form.querySelector('input[name="name"]');
+        if (nameInput) nameInput.value = this.entry.name || '';
+        
+        const descriptionTextarea = form.querySelector('textarea[name="description"]');
+        if (descriptionTextarea) descriptionTextarea.value = this.entry.description || '';
+        
+        const plotHookTextarea = form.querySelector('textarea[name="plotHook"]');
+        if (plotHookTextarea) plotHookTextarea.value = this.entry.plotHook || '';
+        
+        const tagsInput = form.querySelector('input[name="tags"]');
+        if (tagsInput) tagsInput.value = (this.entry.tags || []).join(', ');
+        
+        const imgInput = form.querySelector('input[name="img"]');
+        if (imgInput) imgInput.value = this.entry.img || '';
         
         // Update category dropdown
         if (this.entry.category) {
-            const categorySelect = form.find('#category');
-            const newCategoryInput = form.find('#new-category');
+            const categorySelect = form.querySelector('#category');
+            const newCategoryInput = form.querySelector('#new-category');
             
-            // Check if category exists in dropdown
-            const existingOption = categorySelect.find(`option[value="${this.entry.category}"]`);
-            if (existingOption.length > 0) {
-                categorySelect.val(this.entry.category);
-                newCategoryInput.hide().attr('name', '');
-                categorySelect.attr('name', 'category');
-            } else {
-                // Set to "new" and populate the new category input
-                categorySelect.val('new');
-                newCategoryInput.show().val(this.entry.category).attr('name', 'category');
-                categorySelect.attr('name', '');
+            if (categorySelect && newCategoryInput) {
+                // Check if category exists in dropdown
+                const existingOption = categorySelect.querySelector(`option[value="${this.entry.category}"]`);
+                if (existingOption) {
+                    categorySelect.value = this.entry.category;
+                    newCategoryInput.style.display = 'none';
+                    newCategoryInput.removeAttribute('name');
+                    categorySelect.setAttribute('name', 'category');
+                } else {
+                    // Set to "new" and populate the new category input
+                    categorySelect.value = 'new';
+                    newCategoryInput.style.display = '';
+                    newCategoryInput.value = this.entry.category;
+                    newCategoryInput.setAttribute('name', 'category');
+                    categorySelect.removeAttribute('name');
+                }
             }
         }
         
         // Update location dropdown
         if (this.entry.location) {
-            const locationSelect = form.find('#location');
-            const newLocationInput = form.find('#new-location');
+            const locationSelect = form.querySelector('#location');
+            const newLocationInput = form.querySelector('#new-location');
             
-            // Check if location exists in dropdown
-            const existingOption = locationSelect.find(`option[value="${this.entry.location}"]`);
-            if (existingOption.length > 0) {
-                locationSelect.val(this.entry.location);
-                newLocationInput.hide().attr('name', '');
-                locationSelect.attr('name', 'location');
-            } else {
-                // Set to "new" and populate the new location input
-                locationSelect.val('new');
-                newLocationInput.show().val(this.entry.location).attr('name', 'location');
-                locationSelect.attr('name', '');
+            if (locationSelect && newLocationInput) {
+                // Check if location exists in dropdown
+                const existingOption = locationSelect.querySelector(`option[value="${this.entry.location}"]`);
+                if (existingOption) {
+                    locationSelect.value = this.entry.location;
+                    newLocationInput.style.display = 'none';
+                    newLocationInput.removeAttribute('name');
+                    locationSelect.setAttribute('name', 'location');
+                } else {
+                    // Set to "new" and populate the new location input
+                    locationSelect.value = 'new';
+                    newLocationInput.style.display = '';
+                    newLocationInput.value = this.entry.location;
+                    newLocationInput.setAttribute('name', 'location');
+                    locationSelect.removeAttribute('name');
+                }
             }
         }
         
         // Update image preview if exists
         if (this.entry.img) {
-            const imgSection = form.find('.codex-image-section');
-            const imgPreview = form.find('.codex-image-preview');
+            const imgSection = form.querySelector('.codex-image-section');
+            const imgPreview = form.querySelector('.codex-image-preview');
             
-            imgSection.show();
-            imgPreview.attr('src', this.entry.img);
+            if (imgSection) {
+                imgSection.style.display = '';
+            }
+            if (imgPreview) {
+                imgPreview.setAttribute('src', this.entry.img);
+            }
         }
     }
 }
@@ -792,7 +905,12 @@ export class CodexPanel {
                 const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
                 for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                     if (collapsed) {
-                        const section = nativeHtml.querySelector(`.codex-section[data-category="${category}"]`);
+                        // v13: Use safer selector approach to handle values with newlines/whitespace
+                        const sections = nativeHtml.querySelectorAll('.codex-section[data-category]');
+                        const section = Array.from(sections).find(s => {
+                            const attrValue = s.getAttribute('data-category');
+                            return attrValue && attrValue.trim() === category.trim();
+                        });
                         if (section) {
                             section.classList.add('collapsed');
                         }
@@ -1606,7 +1724,13 @@ export class CodexPanel {
                     icon: '<i class="fa-solid fa-save"></i>',
                     label: 'Save',
                     callback: async (html) => {
-                        const journalId = html.find('select[name="journal"]').val();
+                        // v13: Use native DOM instead of jQuery
+                        let nativeDialogHtml = html;
+                        if (html && (html.jquery || typeof html.find === 'function')) {
+                            nativeDialogHtml = html[0] || html.get?.(0) || html;
+                        }
+                        const journalSelect = nativeDialogHtml.querySelector('select[name="journal"]');
+                        const journalId = journalSelect ? journalSelect.value : null;
                         await game.settings.set(MODULE.ID, 'codexJournal', journalId);
                         await this._refreshData();
                         this.render(this.element);
@@ -2097,10 +2221,15 @@ export class CodexPanel {
         this._activateListeners(codexContainer);
 
         // Restore collapsed states
-        // v13: Use native DOM methods
+        // v13: Use safer selector approach to handle values with newlines/whitespace
         for (const [category, collapsed] of Object.entries(collapsedCategories)) {
             if (collapsed) {
-                const section = codexContainer.querySelector(`.codex-section[data-category="${category}"]`);
+                // Use querySelectorAll and filter to handle values with special characters
+                const sections = codexContainer.querySelectorAll('.codex-section[data-category]');
+                const section = Array.from(sections).find(s => {
+                    const attrValue = s.getAttribute('data-category');
+                    return attrValue && attrValue.trim() === category.trim();
+                });
                 if (section) {
                     section.classList.add('collapsed');
                 }

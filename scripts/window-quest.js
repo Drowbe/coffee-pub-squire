@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -256,42 +257,57 @@ export class QuestForm extends FormApplication {
     activateListeners(html) {
         super.activateListeners(html);
 
-        // Handle image upload
-        html.find('.quest-image-upload').on('click', async (event) => {
-            event.preventDefault();
-            const file = await new Promise(resolve => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = () => resolve(input.files[0]);
-                input.click();
-            });
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
 
-            if (file) {
-                const formData = new FormData();
-                formData.append('file', file);
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
+        // Handle image upload
+        const imageUpload = nativeHtml.querySelector('.quest-image-upload');
+        if (imageUpload) {
+            imageUpload.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const file = await new Promise(resolve => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = () => resolve(input.files[0]);
+                    input.click();
                 });
-                const result = await response.json();
-                if (result.url) {
-                    this.quest.img = result.url;
-                    this.render();
+
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (result.url) {
+                        this.quest.img = result.url;
+                        this.render();
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Handle task completion toggling
-        html.find('.task-complete').on('click', (event) => {
-            const index = event.currentTarget.dataset.index;
-            this.quest.tasks[index].completed = !this.quest.tasks[index].completed;
-            this.render();
+        const taskCompleteButtons = nativeHtml.querySelectorAll('.task-complete');
+        taskCompleteButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const index = event.currentTarget.dataset.index;
+                this.quest.tasks[index].completed = !this.quest.tasks[index].completed;
+                this.render();
+            });
         });
         
         // Handle cancel button click
-        html.find('button.cancel').on('click', () => {
-            this.close();
-        });
+        const cancelButton = nativeHtml.querySelector('button.cancel');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', () => {
+                this.close();
+            });
+        }
     }
 } 

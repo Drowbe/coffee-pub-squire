@@ -788,8 +788,12 @@ export class QuestPanel {
                     const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
                     for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                         if (collapsed) {
-                            // v13: Use nativeHtml instead of html
-                            const section = nativeHtml.querySelector(`.quest-section[data-status="${category}"]`);
+                            // v13: Use safer selector approach to handle values with newlines/whitespace
+                            const sections = nativeHtml.querySelectorAll('.quest-section[data-status]');
+                            const section = Array.from(sections).find(s => {
+                                const attrValue = s.getAttribute('data-status');
+                                return attrValue && attrValue.trim() === category.trim();
+                            });
                             if (section) {
                                 section.classList.add('collapsed');
                             }
@@ -902,7 +906,12 @@ export class QuestPanel {
                     const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
                     for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                         if (collapsed) {
-                            const section = nativeHtml.querySelector(`.quest-section[data-status="${category}"]`);
+                            // v13: Use safer selector approach to handle values with newlines/whitespace
+                            const sections = nativeHtml.querySelectorAll('.quest-section[data-status]');
+                            const section = Array.from(sections).find(s => {
+                                const attrValue = s.getAttribute('data-status');
+                                return attrValue && attrValue.trim() === category.trim();
+                            });
                             if (section) {
                                 section.classList.add('collapsed');
                             }
@@ -3134,9 +3143,15 @@ export class QuestPanel {
         }
 
         // Apply collapsed states to sections
+        // v13: Use safer selector approach to handle values with newlines/whitespace
         for (const [status, collapsed] of Object.entries(collapsedCategories)) {
             if (collapsed) {
-                const section = questContainer.querySelector(`.quest-section[data-status="${status}"]`);
+                // Use querySelectorAll and filter to handle values with special characters
+                const sections = questContainer.querySelectorAll('.quest-section[data-status]');
+                const section = Array.from(sections).find(s => {
+                    const attrValue = s.getAttribute('data-status');
+                    return attrValue && attrValue.trim() === status.trim();
+                });
                 if (section) section.classList.add('collapsed');
             }
         }

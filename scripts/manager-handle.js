@@ -920,7 +920,7 @@ export class HandleManager {
 
     /**
      * Attach objective click handlers to the handle
-     * @param {jQuery} handle - The handle element
+     * @param {HTMLElement} handle - The handle element (native DOM)
      * @private
      */
     _attachObjectiveClickHandlers(handle) {

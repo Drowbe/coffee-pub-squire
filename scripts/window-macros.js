@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
+import { getNativeElement } from './helpers.js';
 
 export class MacrosWindow extends Application {
     constructor(options = {}) {
@@ -69,43 +70,67 @@ export class MacrosWindow extends Application {
         // First render the template
         const content = await renderTemplate(this.options.template, data);
         // Create the wrapper structure using squire-popout
-        const html = `
-            <div class="squire-popout" data-position="left">
-                <div class="tray-content">
-                    <div class="panel-container" data-panel="macros">
-                        ${content}
-                    </div>
+        // v13: Return native DOM element instead of jQuery
+        const html = document.createElement('div');
+        html.className = 'squire-popout';
+        html.setAttribute('data-position', 'left');
+        html.innerHTML = `
+            <div class="tray-content">
+                <div class="panel-container" data-panel="macros">
+                    ${content}
                 </div>
             </div>
         `;
-
-        return $(html);
+        return html;
     }
 
     activateListeners(html) {
         super.activateListeners(html);
+        
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
         // Find the panel container within the window content
-        const panelContainer = html.find('[data-panel="macros"]').closest('.panel-container');
-        if (this.panel) {
+        const panelContainer = nativeHtml.querySelector('[data-panel="macros"]')?.closest('.panel-container');
+        if (this.panel && panelContainer) {
             // Update the panel's element reference with the panel container
             this.panel.updateElement(panelContainer);
         }
 
-        // Add close button handler
-        html.closest('.app').find('.close').click(ev => {
-            ev.preventDefault();
-            this.close();
-        });
-        // Set up data-panel attribute for CSS targeting
-        html.closest('.window-content').attr('data-panel', 'macros');
+        // Find the app element (parent window)
+        const appElement = nativeHtml.closest('.app') || this.element?.closest('.app');
+        if (appElement) {
+            // Add close button handler
+            const closeButton = appElement.querySelector('.close');
+            if (closeButton) {
+                closeButton.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    this.close();
+                });
+            }
+            
+            // Set up data-panel attribute for CSS targeting
+            const windowContent = appElement.querySelector('.window-content');
+            if (windowContent) {
+                windowContent.setAttribute('data-panel', 'macros');
+            }
+            
+            // Header button is now provided by _getHeaderButtons
+            // Add tooltip to the header button
+            const tooltipHtml = "<div class='squire-data-tooltip-label'>Open Macros Folder</div><div class='squire-data-tooltip-text'>Once open, drag macros to the macro window. Dragging over an existing macro replaces it.</div>";
+            const headerButton = appElement.querySelector('.window-header .open-macro-folder');
+            if (headerButton) {
+                headerButton.setAttribute('data-tooltip', tooltipHtml);
+            }
+        }
+        
         // Add listeners from the panel
         if (this.panel) {
-            this.panel._activateListeners(html);
+            this.panel._activateListeners(nativeHtml);
         }
-        // Header button is now provided by _getHeaderButtons
-        // Add tooltip to the header button
-        const tooltipHtml = "<div class='squire-data-tooltip-label'>Open Macros Folder</div><div class='squire-data-tooltip-text'>Once open, drag macros to the macro window. Dragging over an existing macro replaces it.</div>";
-        html.closest('.app').find('.window-header .open-macro-folder').attr('data-tooltip', tooltipHtml);
     }
 
     _getHeaderButtons() {
@@ -166,7 +191,11 @@ export class MacrosWindow extends Application {
         ev?.preventDefault();
         if (!this.rendered) return;
         this._minimized = !this._minimized;
-        this.element.toggleClass("minimized");
+        // v13: Use native DOM classList instead of jQuery toggleClass
+        const element = getNativeElement(this.element);
+        if (element) {
+            element.classList.toggle("minimized");
+        }
     }
 
     async close(options={}) {

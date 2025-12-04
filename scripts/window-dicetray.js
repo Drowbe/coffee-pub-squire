@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
+import { getNativeElement } from './helpers.js';
 
 export class DiceTrayWindow extends Application {
     constructor(options = {}) {
@@ -58,40 +59,58 @@ export class DiceTrayWindow extends Application {
         const content = await renderTemplate(this.options.template, data);
         
         // Create the wrapper structure using squire-popout instead of squire-tray
-        const html = `
-            <div class="squire-popout" data-position="left">
-                <div class="tray-content">
-                    <div class="panel-container" data-panel="dicetray">
-                        ${content}
-                    </div>
+        // v13: Return native DOM element instead of jQuery
+        const html = document.createElement('div');
+        html.className = 'squire-popout';
+        html.setAttribute('data-position', 'left');
+        html.innerHTML = `
+            <div class="tray-content">
+                <div class="panel-container" data-panel="dicetray">
+                    ${content}
                 </div>
             </div>
         `;
         
-        return $(html);
+        return html;
     }
 
     activateListeners(html) {
         super.activateListeners(html);
         
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        
         // Update the panel's element reference to point to our window content
         if (this.panel) {
             // We need to pass the entire window element so the panel can find its content
-            this.panel.updateElement(html);
+            this.panel.updateElement(nativeHtml);
         }
 
-        // Add handler for the close button
-        html.closest('.app').find('.close').click(ev => {
-            ev.preventDefault();
-            this.close();
-        });
+        // Find the app element (parent window) and add handler for the close button
+        const appElement = nativeHtml.closest('.app') || this.element?.closest('.app');
+        if (appElement) {
+            const closeButton = appElement.querySelector('.close');
+            if (closeButton) {
+                closeButton.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    this.close();
+                });
+            }
+        }
     }
 
     async _onToggleMinimize(ev) {
         ev?.preventDefault();
         if (!this.rendered) return;
         this._minimized = !this._minimized;
-        this.element.toggleClass("minimized");
+        // v13: Use native DOM classList instead of jQuery toggleClass
+        const element = getNativeElement(this.element);
+        if (element) {
+            element.classList.toggle("minimized");
+        }
     }
 
     async close(options={}) {
