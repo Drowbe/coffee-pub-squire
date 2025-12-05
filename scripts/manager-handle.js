@@ -646,12 +646,41 @@ export class HandleManager {
             if (existing) existing.close();
 
             // Get all available conditions from CONFIG.DND5E.conditionTypes
-            const conditions = Object.entries(CONFIG.DND5E.conditionTypes).map(([id, condition]) => ({
-                id,
-                name: condition.label,
-                icon: condition.icon,
-                isActive: this.actor.effects.some(e => e.name === condition.label)
-            }));
+            // v13: Handle condition structure - icon might be in different location or need resolution
+            const conditions = Object.entries(CONFIG.DND5E.conditionTypes).map(([id, condition]) => {
+                // Try to get icon from various possible locations
+                let icon = condition.icon;
+                if (!icon && condition.img) icon = condition.img;
+                if (!icon && condition.image) icon = condition.image;
+                
+                // If no icon found, try to construct a path
+                // D&D 5e conditions are typically in the dnd5e module's icons folder
+                if (!icon) {
+                    // Try common paths for D&D 5e condition icons
+                    const possiblePaths = [
+                        `modules/dnd5e/icons/conditions/${id}.svg`,
+                        `modules/dnd5e/icons/conditions/${id}.png`,
+                        `icons/svg/${id}.svg`,
+                        `icons/svg/unknown.svg`
+                    ];
+                    // Use the first path that might exist (we'll let the browser handle 404s)
+                    icon = possiblePaths[0];
+                }
+                
+                // If icon is a relative path, ensure it's properly formatted
+                // Foundry will resolve paths starting with 'modules/' or 'icons/' automatically
+                if (icon && !icon.startsWith('http') && !icon.startsWith('data:') && !icon.startsWith('/')) {
+                    // Path is already relative, Foundry will resolve it
+                    // No need to modify
+                }
+                
+                return {
+                    id,
+                    name: condition.label || condition.name || id,
+                    icon: icon || 'icons/svg/unknown.svg',
+                    isActive: this.actor.effects.some(e => e.name === (condition.label || condition.name || id))
+                };
+            }).filter(condition => condition.name); // Filter out any invalid conditions
 
             // Create a dialog with condition options
             const content = `
@@ -665,7 +694,7 @@ export class HandleManager {
                         <div class="effect-grid">
                             ${conditions.map(condition => `
                                 <div class="effect-option ${condition.isActive ? 'active' : ''}" data-condition-id="${condition.id}">
-                                    <img src="${condition.icon}" title="${condition.name}"/>
+                                    <img src="${condition.icon}" alt="${condition.name}" title="${condition.name}" onerror="this.src='icons/svg/unknown.svg'; this.onerror=null;"/>
                                     <div class="effect-name">${condition.name}</div>
                                 </div>
                             `).join('')}
