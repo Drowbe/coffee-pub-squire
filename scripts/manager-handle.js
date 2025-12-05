@@ -266,22 +266,10 @@ export class HandleManager {
         const newHandle = handle.cloneNode(true);
         handle.parentNode?.replaceChild(newHandle, handle);
         const handleElement = newHandle;
-        
-        // Handle click on handle (collapse chevron)
-        handleElement.addEventListener('click', (event) => {
-            // Only allow tray toggle on specific elements
-            // v13: Use native DOM methods
-            const target = event.target;
-            const isToggleButton = target.closest('.tray-handle-button-toggle') !== null;
-            const isCharacterPanel = target.closest('[data-clickable="true"]') !== null;
-            
-            // If not clicking on toggle button or character panel, don't toggle
-            if (!isToggleButton && !isCharacterPanel) {
-                return;
-            }
-            
-            event.preventDefault();
-            event.stopPropagation();
+
+        // Helper function to toggle tray expansion
+        const toggleTray = () => {
+            console.debug('Coffee Pub Squire | toggleTray called, isPinned:', PanelManager.isPinned);
             
             // If pinned, don't allow closing
             if (PanelManager.isPinned) {
@@ -289,20 +277,77 @@ export class HandleManager {
                 return false;
             }
             
-            // Play tray open sound when expanding
-            const tray = nativePanelManagerElement.querySelector('.squire-tray');
-            if (tray && !tray.classList.contains('expanded')) {
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-            }
+            // PanelManager.element IS the tray element (.squire-tray), so use it directly
+            const tray = nativePanelManagerElement;
+            console.debug('Coffee Pub Squire | Tray element found:', !!tray, 'classList:', tray?.classList?.toString());
             
             if (tray) {
+                const wasExpanded = tray.classList.contains('expanded');
+                console.debug('Coffee Pub Squire | Tray was expanded:', wasExpanded);
+                
+                if (!wasExpanded) {
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    if (blacksmith) {
+                        const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
+                        blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+                    }
+                }
+                
                 tray.classList.toggle('expanded');
+                const isNowExpanded = tray.classList.contains('expanded');
+                console.debug('Coffee Pub Squire | Tray is now expanded:', isNowExpanded);
+            } else {
+                console.warn('Coffee Pub Squire | Tray element not found!');
             }
             return false;
+        };
+        
+        // Toggle button handling - dedicated handler
+        const toggleButton = handleElement.querySelector('.tray-handle-button-toggle');
+        if (toggleButton) {
+            // Clone to remove existing listeners
+            const newToggleButton = toggleButton.cloneNode(true);
+            toggleButton.parentNode?.replaceChild(newToggleButton, toggleButton);
+            
+            newToggleButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                console.debug('Coffee Pub Squire | Toggle button clicked');
+                const result = toggleTray();
+                console.debug('Coffee Pub Squire | Toggle result:', result);
+                return result;
+            });
+            
+            // Also handle clicks on the icon inside the button
+            const icon = newToggleButton.querySelector('i');
+            if (icon) {
+                icon.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    console.debug('Coffee Pub Squire | Toggle icon clicked');
+                    const result = toggleTray();
+                    console.debug('Coffee Pub Squire | Toggle result:', result);
+                    return result;
+                });
+            }
+        } else {
+            console.warn('Coffee Pub Squire | Toggle button not found!');
+        }
+
+        // Handle click on character panel (for collapsing)
+        handleElement.addEventListener('click', (event) => {
+            // Only allow tray toggle on character panel
+            // v13: Use native DOM methods
+            const isCharacterPanel = event.target.closest('[data-clickable="true"]') !== null;
+            
+            // If not clicking on character panel, don't toggle
+            if (!isCharacterPanel) {
+                return;
+            }
+            
+            event.preventDefault();
+            event.stopPropagation();
+            return toggleTray();
         });
 
         // Pin button handling
@@ -326,8 +371,8 @@ export class HandleManager {
                     blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
                 
-                // v13: Use handleElement or find tray from nativePanelManagerElement
-                const tray = handleElement.closest('.squire-tray') || nativePanelManagerElement.querySelector('.squire-tray');
+                // v13: PanelManager.element IS the tray element, so use it directly
+                const tray = nativePanelManagerElement;
                 
                 if (PanelManager.isPinned) {
                     // When pinning, ensure tray is expanded
