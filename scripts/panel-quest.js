@@ -1683,16 +1683,18 @@ export class QuestPanel {
                 
                 await game.user.setFlag(MODULE.ID, 'hideQuestPins', newVisibility);
                 
-                // Update the icon
-                const icon = event.currentTarget;
-                if (newVisibility) {
-                    icon.classList.remove('fa-location-dot-slash');
-                    icon.classList.add('fa-location-dot');
-                    icon.title = 'Show Quest Pins';
-                } else {
-                    icon.classList.remove('fa-location-dot');
-                    icon.classList.add('fa-location-dot-slash');
-                    icon.title = 'Hide Quest Pins';
+                // Update the icon - use currentTarget or fallback to finding the element
+                const icon = event.currentTarget || newButton;
+                if (icon && icon.classList) {
+                    if (newVisibility) {
+                        icon.classList.remove('fa-location-dot-slash');
+                        icon.classList.add('fa-location-dot');
+                        icon.title = 'Show Quest Pins';
+                    } else {
+                        icon.classList.remove('fa-location-dot');
+                        icon.classList.add('fa-location-dot-slash');
+                        icon.title = 'Hide Quest Pins';
+                    }
                 }
                 
                 // Update pin visibility on canvas
