@@ -290,6 +290,24 @@ export class PanelManager {
     }
 
     async createTray() {
+        // Ensure handle-character-portrait partial is registered before rendering
+        // This prevents race conditions where templates render before partials are loaded
+        if (!Handlebars.partials['handle-character-portrait']) {
+            try {
+                const handleCharacterPortraitPartial = await fetch(`modules/${MODULE.ID}/templates/partials/handle-character-portrait.hbs`).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch handle-character-portrait.hbs: ${response.status} ${response.statusText}`);
+                    }
+                    return response.text();
+                });
+                Handlebars.registerPartial('handle-character-portrait', handleCharacterPortraitPartial);
+            } catch (error) {
+                console.error('Coffee Pub Squire | Error registering handle-character-portrait partial in createTray:', error);
+                // Register a fallback partial to prevent template errors
+                Handlebars.registerPartial('handle-character-portrait', '{{!-- Character portrait partial failed to load --}}');
+            }
+        }
+        
         // Use the current viewMode (which is either default or from settings)
         const viewMode = PanelManager.viewMode;
         
