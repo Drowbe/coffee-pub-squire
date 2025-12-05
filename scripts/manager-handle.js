@@ -326,10 +326,14 @@ export class HandleManager {
                     blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                 }
                 
+                // v13: Use handleElement or find tray from nativePanelManagerElement
+                const tray = handleElement.closest('.squire-tray') || nativePanelManagerElement.querySelector('.squire-tray');
+                
                 if (PanelManager.isPinned) {
                     // When pinning, ensure tray is expanded
-                    const tray = handle.closest('.squire-tray');
-                    tray.classList.add('pinned', 'expanded');
+                    if (tray) {
+                        tray.classList.add('pinned', 'expanded');
+                    }
                     // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
                     const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
                     const uiLeft = document.querySelector('#ui-left');
@@ -338,8 +342,9 @@ export class HandleManager {
                     }
                 } else {
                     // When unpinning, maintain expanded state but remove pinned class
-                    const tray = handle.closest('.squire-tray');
-                    tray.classList.remove('pinned');
+                    if (tray) {
+                        tray.classList.remove('pinned');
+                    }
                     // Reset UI margin when unpinned - need both handle width and offset
                     const uiLeft = document.querySelector('#ui-left');
                     if (uiLeft) {
@@ -352,8 +357,8 @@ export class HandleManager {
         }
 
         // View mode toggle button
-        // v13: handle is native DOM from querySelector, use querySelector and addEventListener
-        const viewCycleButton = handle.querySelector('.tray-handle-button-viewcycle');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const viewCycleButton = handleElement.querySelector('.tray-handle-button-viewcycle');
         if (viewCycleButton) {
             const newButton = viewCycleButton.cloneNode(true);
             viewCycleButton.parentNode?.replaceChild(newButton, viewCycleButton);
@@ -385,8 +390,8 @@ export class HandleManager {
         }
 
         // Handle dice tray icon clicks
-        // v13: Use native DOM
-        const diceTrayButton = handle.querySelector('#dice-tray-button');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const diceTrayButton = handleElement.querySelector('#dice-tray-button');
         if (diceTrayButton) {
             const newButton = diceTrayButton.cloneNode(true);
             diceTrayButton.parentNode?.replaceChild(newButton, diceTrayButton);
@@ -400,8 +405,8 @@ export class HandleManager {
         }
 
         // Handle pinned quest clicks
-        // v13: Use native DOM
-        const pinnedQuestName = handle.querySelector('.handle-pinned-quest-name');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const pinnedQuestName = handleElement.querySelector('.handle-pinned-quest-name');
         if (pinnedQuestName) {
             const newElement = pinnedQuestName.cloneNode(true);
             pinnedQuestName.parentNode?.replaceChild(newElement, pinnedQuestName);
@@ -428,8 +433,8 @@ export class HandleManager {
         }
 
         // Handle health bar clicks
-        // v13: Use native DOM event delegation
-        handle.addEventListener('click', async (event) => {
+        // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
+        handleElement.addEventListener('click', async (event) => {
             const healthBar = event.target.closest('.handle-healthbar');
             if (!healthBar) return;
             
@@ -441,8 +446,8 @@ export class HandleManager {
         });
 
         // Handle health tray icon clicks (GM only)
-        // v13: Use native DOM
-        const healthTrayButton = handle.querySelector('#health-tray-button');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const healthTrayButton = handleElement.querySelector('#health-tray-button');
         if (healthTrayButton) {
             const newButton = healthTrayButton.cloneNode(true);
             healthTrayButton.parentNode?.replaceChild(newButton, healthTrayButton);
@@ -456,8 +461,8 @@ export class HandleManager {
         }
 
         // Handle favorite item clicks
-        // v13: Use native DOM event delegation
-        handle.addEventListener('click', async (event) => {
+        // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
+        handleElement.addEventListener('click', async (event) => {
             const favoriteIcon = event.target.closest('.handle-favorite-icon');
             if (!favoriteIcon) return;
             
@@ -486,8 +491,8 @@ export class HandleManager {
         });
 
         // Handle condition icon clicks
-        // v13: Use native DOM event delegation
-        handle.addEventListener('click', async (event) => {
+        // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
+        handleElement.addEventListener('click', async (event) => {
             const conditionIcon = event.target.closest('.handle-condition-icon');
             if (!conditionIcon) return;
             
@@ -573,7 +578,8 @@ export class HandleManager {
         });
         
         // Handle condition icon right-click (contextmenu) - separate handler
-        handle.addEventListener('contextmenu', async (event) => {
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        handleElement.addEventListener('contextmenu', async (event) => {
             const conditionIcon = event.target.closest('.handle-condition-icon');
             if (!conditionIcon) return;
             
@@ -601,8 +607,8 @@ export class HandleManager {
 
         // Handle conditions button clicks - PRIMARY IMPLEMENTATION
         // (This opens the Add Condition dialog with grid of available conditions)
-        // v13: Use native DOM
-        const conditionsButton = handle.querySelector('#conditions-button');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const conditionsButton = handleElement.querySelector('#conditions-button');
         if (conditionsButton) {
             const newButton = conditionsButton.cloneNode(true);
             conditionsButton.parentNode?.replaceChild(newButton, conditionsButton);
@@ -775,8 +781,8 @@ export class HandleManager {
         }
 
         // Handle macros icon clicks
-        // v13: Use native DOM
-        const macrosButton = handle.querySelector('#macros-button');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const macrosButton = handleElement.querySelector('#macros-button');
         if (macrosButton) {
             const newButton = macrosButton.cloneNode(true);
             macrosButton.parentNode?.replaceChild(newButton, macrosButton);
@@ -790,8 +796,8 @@ export class HandleManager {
         }
 
         // Add click handler for favorite macros in handle
-        // v13: Use native DOM event delegation
-        handle.addEventListener('click', function(e) {
+        // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
+        handleElement.addEventListener('click', function(e) {
             const macroIcon = e.target.closest('.handle-macro-icon');
             if (!macroIcon) return;
             
@@ -818,8 +824,8 @@ export class HandleManager {
         });
 
         // Add click handler for party member health bars in the handle
-        // v13: Use native DOM
-        const partyHealthBars = handle.querySelectorAll('.handle-healthbar.party.clickable');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const partyHealthBars = handleElement.querySelectorAll('.handle-healthbar.party.clickable');
         partyHealthBars.forEach(healthBar => {
             const newHealthBar = healthBar.cloneNode(true);
             healthBar.parentNode?.replaceChild(newHealthBar, healthBar);
@@ -865,8 +871,8 @@ export class HandleManager {
         });
 
         // Handle character portrait click in the handle
-        // v13: Use native DOM
-        const characterIcon = handle.querySelector('.handle-character-icon');
+        // v13: Use handleElement (the cloned handle that's actually in the DOM)
+        const characterIcon = handleElement.querySelector('.handle-character-icon');
         if (characterIcon) {
             const newIcon = characterIcon.cloneNode(true);
             characterIcon.parentNode?.replaceChild(newIcon, characterIcon);
@@ -882,7 +888,8 @@ export class HandleManager {
         }
 
         // Attach objective click handlers
-        this._attachObjectiveClickHandlers(handle);
+        // v13: Pass handleElement (the cloned handle that's actually in the DOM)
+        this._attachObjectiveClickHandlers(handleElement);
     }
 
     /**
