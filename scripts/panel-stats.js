@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate } from './helpers.js';
+import { renderTemplate, getNativeElement } from './helpers.js';
 
 export class StatsPanel {
     constructor(actor) {
@@ -27,34 +27,60 @@ export class StatsPanel {
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_STATS, templateData);
-        this.element.find('[data-panel="stats"]').html(content);
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (nativeElement) {
+            const panel = nativeElement.querySelector('[data-panel="stats"]');
+            if (panel) {
+                panel.innerHTML = content;
+            }
+        }
         
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
-        const panel = this.element.find('[data-panel="stats"]');
-        const isCollapsed = game.settings.get(MODULE.ID, 'isStatsPanelCollapsed');
-        if (isCollapsed) {
-            const statsContent = panel.find('.stats-content');
-            const toggle = panel.find('.stats-toggle');
-            statsContent.addClass('collapsed');
-            toggle.css('transform', 'rotate(-90deg)');
+        const nativeEl = getNativeElement(this.element);
+        if (nativeEl) {
+            const panel = nativeEl.querySelector('[data-panel="stats"]');
+            if (panel) {
+                const isCollapsed = game.settings.get(MODULE.ID, 'isStatsPanelCollapsed');
+                if (isCollapsed) {
+                    const statsContent = panel.querySelector('.stats-content');
+                    const toggle = panel.querySelector('.stats-toggle');
+                    if (statsContent) {
+                        statsContent.classList.add('collapsed');
+                    }
+                    if (toggle) {
+                        toggle.style.transform = 'rotate(-90deg)';
+                    }
+                }
+            }
         }
     }
 
     _activateListeners(html) {
         if (!html) return;
 
-        const panel = html.find('[data-panel="stats"]');
+        // v13: Use native DOM instead of jQuery
+        const nativeHtml = getNativeElement(html);
+        if (!nativeHtml) return;
+
+        const panel = nativeHtml.querySelector('[data-panel="stats"]');
+        if (!panel) return;
 
         // Stats toggle
-        panel.find('.tray-title-small').click(() => {
-            const statsContent = panel.find('.stats-content');
-            const toggle = panel.find('.stats-toggle');
-            statsContent.toggleClass('collapsed');
-            toggle.css('transform', statsContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
-            // Save collapsed state
-            game.settings.set(MODULE.ID, 'isStatsPanelCollapsed', statsContent.hasClass('collapsed'));
-        });
+        const trayTitle = panel.querySelector('.tray-title-small');
+        if (trayTitle) {
+            trayTitle.addEventListener('click', () => {
+                const statsContent = panel.querySelector('.stats-content');
+                const toggle = panel.querySelector('.stats-toggle');
+                if (statsContent && toggle) {
+                    statsContent.classList.toggle('collapsed');
+                    toggle.style.transform = statsContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+                    // Save collapsed state
+                    game.settings.set(MODULE.ID, 'isStatsPanelCollapsed', statsContent.classList.contains('collapsed'));
+                }
+            });
+        }
     }
 } 
