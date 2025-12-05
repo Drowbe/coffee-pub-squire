@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { HealthWindow } from './window-health.js';
 import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName, renderTemplate } from './helpers.js';
+import { getTokenDisplayName, renderTemplate, getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -90,16 +90,21 @@ export class HealthPanel {
     async render(html) {
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
-            const placeholder = $('#health-panel-placeholder');
-            let container = placeholder.find('.panel-container[data-panel="health"]');
-            if (!container.length) {
+            // v13: Use native DOM instead of jQuery
+            const placeholder = document.querySelector('#health-panel-placeholder');
+            if (!placeholder) return;
+            let container = placeholder.querySelector('.panel-container[data-panel="health"]');
+            if (!container) {
                 // Create the panel container if it doesn't exist
-                container = $('<div class="panel-container" data-panel="health"></div>');
-                placeholder.append(container);
+                container = document.createElement('div');
+                container.className = 'panel-container';
+                container.setAttribute('data-panel', 'health');
+                placeholder.appendChild(container);
             }
             this.element = container;
         } else if (html) {
-            this.element = html;
+            // v13: Convert jQuery to native DOM if needed
+            this.element = getNativeElement(html);
         }
         if (!this.element || this.isPoppedOut) {
             return;
@@ -131,61 +136,103 @@ export class HealthPanel {
         // HealthPanel render data logged
 
         const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
-        this.element.html(content);
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        this.element.innerHTML = content;
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
         const panel = this.element;
         const isCollapsed = game.settings.get(MODULE.ID, 'isHealthPanelCollapsed');
         if (isCollapsed) {
-            const healthContent = panel.find('.health-content');
-            const toggle = panel.find('.health-toggle');
-            healthContent.addClass('collapsed');
-            toggle.css('transform', 'rotate(-90deg)');
+            // v13: Use native DOM instead of jQuery
+            const healthContent = panel.querySelector('.health-content');
+            const toggle = panel.querySelector('.health-toggle');
+            if (healthContent) healthContent.classList.add('collapsed');
+            if (toggle) toggle.style.transform = 'rotate(-90deg)';
         }
     }
 
     _activateListeners(html) {
         if (!html) return;
 
-        // Find the panel container - the element itself is the panel
-        const panel = html;
+        // v13: Convert jQuery to native DOM if needed
+        const panel = getNativeElement(html);
+        if (!panel) return;
 
         // Health toggle
-        panel.find('.tray-title-small').click(ev => {
-            ev.preventDefault();
-            const healthContent = panel.find('.health-content');
-            const toggle = panel.find('.health-toggle');
-            healthContent.toggleClass('collapsed');
-            toggle.css('transform', healthContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
-            // Save collapsed state
-            game.settings.set(MODULE.ID, 'isHealthPanelCollapsed', healthContent.hasClass('collapsed'));
-        });
+        // v13: Use native DOM event delegation
+        const trayTitle = panel.querySelector('.tray-title-small');
+        if (trayTitle) {
+            const newTitle = trayTitle.cloneNode(true);
+            trayTitle.parentNode?.replaceChild(newTitle, trayTitle);
+            newTitle.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                const healthContent = panel.querySelector('.health-content');
+                const toggle = panel.querySelector('.health-toggle');
+                if (healthContent && toggle) {
+                    const isCollapsed = healthContent.classList.contains('collapsed');
+                    healthContent.classList.toggle('collapsed');
+                    toggle.style.transform = healthContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+                    // Save collapsed state
+                    game.settings.set(MODULE.ID, 'isHealthPanelCollapsed', healthContent.classList.contains('collapsed'));
+                }
+            });
+        }
 
         // Add pop-out button handler
-        panel.find('.pop-out-button').click(ev => {
-            ev.preventDefault();
-            this._onPopOut();
-        });
+        // v13: Use native DOM event delegation
+        const popOutButton = panel.querySelector('.pop-out-button');
+        if (popOutButton) {
+            const newButton = popOutButton.cloneNode(true);
+            popOutButton.parentNode?.replaceChild(newButton, popOutButton);
+            newButton.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                this._onPopOut();
+            });
+        }
 
         // HP Controls for GM
         if (game.user.isGM) {
-            panel.find('.hp-down').click(ev => {
-                ev.preventDefault();
-                this._onHPChange(-1);
-            });
-            panel.find('.hp-up').click(ev => {
-                ev.preventDefault();
-                this._onHPChange(1);
-            });
-            panel.find('.hp-full').click(ev => {
-                ev.preventDefault();
-                this._onFullHeal();
-            });
-            panel.find('.death-toggle').click(ev => {
-                ev.preventDefault();
-                this._onDeathToggle();
-            });
+            // v13: Use native DOM event delegation
+            const hpDown = panel.querySelector('.hp-down');
+            if (hpDown) {
+                const newButton = hpDown.cloneNode(true);
+                hpDown.parentNode?.replaceChild(newButton, hpDown);
+                newButton.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    this._onHPChange(-1);
+                });
+            }
+            
+            const hpUp = panel.querySelector('.hp-up');
+            if (hpUp) {
+                const newButton = hpUp.cloneNode(true);
+                hpUp.parentNode?.replaceChild(newButton, hpUp);
+                newButton.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    this._onHPChange(1);
+                });
+            }
+            
+            const hpFull = panel.querySelector('.hp-full');
+            if (hpFull) {
+                const newButton = hpFull.cloneNode(true);
+                hpFull.parentNode?.replaceChild(newButton, hpFull);
+                newButton.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    this._onFullHeal();
+                });
+            }
+            
+            const deathToggle = panel.querySelector('.death-toggle');
+            if (deathToggle) {
+                const newButton = deathToggle.cloneNode(true);
+                deathToggle.parentNode?.replaceChild(newButton, deathToggle);
+                newButton.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    this._onDeathToggle();
+                });
+            }
         }
     }
 
@@ -193,9 +240,13 @@ export class HealthPanel {
         if (this.window || this.isPoppedOut) return;
 
         // Remove the panel container from the placeholder
-        const container = $('#health-panel-placeholder .panel-container[data-panel="health"]');
-        if (container.length) {
-            container.remove();
+        // v13: Use native DOM instead of jQuery
+        const placeholder = document.querySelector('#health-panel-placeholder');
+        if (placeholder) {
+            const container = placeholder.querySelector('.panel-container[data-panel="health"]');
+            if (container) {
+                container.remove();
+            }
         }
 
         // Set state before creating window
@@ -224,11 +275,15 @@ export class HealthPanel {
         if (!isHealthEnabled) return;
 
         // (Re)create the panel container inside the placeholder if missing
-        const placeholder = $('#health-panel-placeholder');
-        let container = placeholder.find('.panel-container[data-panel="health"]');
-        if (!container.length) {
-            container = $('<div class="panel-container" data-panel="health"></div>');
-            placeholder.append(container);
+        // v13: Use native DOM instead of jQuery
+        const placeholder = document.querySelector('#health-panel-placeholder');
+        if (!placeholder) return;
+        let container = placeholder.querySelector('.panel-container[data-panel="health"]');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'panel-container';
+            container.setAttribute('data-panel', 'health');
+            placeholder.appendChild(container);
         }
         this.element = container;
         // Re-render into the panel container
@@ -255,7 +310,10 @@ export class HealthPanel {
     }
 
     async _onHPChange(direction) {
-        const amount = parseInt(this.element.find('.hp-amount').val()) || 1;
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        const hpAmountInput = nativeElement?.querySelector('.hp-amount');
+        const amount = parseInt(hpAmountInput?.value || '1') || 1;
         
         // Handle bulk operations if multiple tokens
         if (this.tokens.length > 1) {

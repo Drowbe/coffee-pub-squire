@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { DiceTrayWindow } from './window-dicetray.js';
 import { PanelManager } from './manager-panel.js';
-import { renderTemplate } from './helpers.js';
+import { renderTemplate, getNativeElement } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -70,14 +70,19 @@ export class DiceTrayPanel {
     async render(html) {
         // Always render into the panel container inside the placeholder if not popped out
         if (!this.isPoppedOut) {
-            const placeholder = $('#dicetray-panel-placeholder');
-            let container = placeholder.find('.panel-container[data-panel="dicetray"]');
-            if (!container.length) {
-                // Create the panel container if it doesn't exist
-                container = $('<div class="panel-container" data-panel="dicetray"></div>');
-                placeholder.append(container);
+            // v13: Use native DOM instead of jQuery
+            const placeholder = document.querySelector('#dicetray-panel-placeholder');
+            if (placeholder) {
+                let container = placeholder.querySelector('.panel-container[data-panel="dicetray"]');
+                if (!container) {
+                    // Create the panel container if it doesn't exist
+                    container = document.createElement('div');
+                    container.className = 'panel-container';
+                    container.setAttribute('data-panel', 'dicetray');
+                    placeholder.appendChild(container);
+                }
+                this.element = container;
             }
-            this.element = container;
         } else if (html) {
             this.element = html;
         }
@@ -95,7 +100,11 @@ export class DiceTrayPanel {
         if (this.isPoppedOut) {
             if (this.window?.element) {
                 const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-                this.window.element.find('.window-content').html(content);
+                const nativeElement = getNativeElement(this.window.element);
+                const windowContent = nativeElement?.querySelector('.window-content');
+                if (windowContent) {
+                    windowContent.innerHTML = content;
+                }
                 this._activateListeners(this.window.element);
             }
             return; // Don't render in tray if popped out
@@ -103,103 +112,160 @@ export class DiceTrayPanel {
 
         // Only render in tray if not popped out
         const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-        this.element.html(content);
+        const nativeElement = getNativeElement(this.element);
+        if (nativeElement) {
+            nativeElement.innerHTML = content;
+        }
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
-        const panel = this.element;
-        const isCollapsed = game.settings.get(MODULE.ID, 'isDiceTrayPanelCollapsed');
-        if (isCollapsed) {
-            const dicetrayContent = panel.find('.dicetray-content');
-            const toggle = panel.find('.dicetray-toggle');
-            dicetrayContent.addClass('collapsed');
-            toggle.css('transform', 'rotate(-90deg)');
+        const panel = getNativeElement(this.element);
+        if (panel) {
+            const isCollapsed = game.settings.get(MODULE.ID, 'isDiceTrayPanelCollapsed');
+            if (isCollapsed) {
+                const dicetrayContent = panel.querySelector('.dicetray-content');
+                const toggle = panel.querySelector('.dicetray-toggle');
+                if (dicetrayContent) {
+                    dicetrayContent.classList.add('collapsed');
+                }
+                if (toggle) {
+                    toggle.style.transform = 'rotate(-90deg)';
+                }
+            }
         }
     }
 
     _activateListeners(html) {
         if (!html) return;
 
-        const panel = html;
+        // v13: Convert jQuery to native DOM if needed
+        const panel = getNativeElement(html);
+        if (!panel) return;
 
         // Add dice tray toggle handler
-        panel.find('.tray-title-small').click(() => {
-            const dicetrayContent = panel.find('.dicetray-content');
-            const toggle = panel.find('.dicetray-toggle');
-            dicetrayContent.toggleClass('collapsed');
-            toggle.css('transform', dicetrayContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
-            // Save collapsed state
-            game.settings.set(MODULE.ID, 'isDiceTrayPanelCollapsed', dicetrayContent.hasClass('collapsed'));
-        });
+        const trayTitle = panel.querySelector('.tray-title-small');
+        if (trayTitle) {
+            trayTitle.addEventListener('click', () => {
+                const dicetrayContent = panel.querySelector('.dicetray-content');
+                const toggle = panel.querySelector('.dicetray-toggle');
+                if (dicetrayContent && toggle) {
+                    dicetrayContent.classList.toggle('collapsed');
+                    toggle.style.transform = dicetrayContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+                    // Save collapsed state
+                    game.settings.set(MODULE.ID, 'isDiceTrayPanelCollapsed', dicetrayContent.classList.contains('collapsed'));
+                }
+            });
+        }
 
         // Add pop-out button handler
-        panel.find('.pop-out-button').click(() => this._onPopOut());
+        const popOutButton = panel.querySelector('.pop-out-button');
+        if (popOutButton) {
+            popOutButton.addEventListener('click', () => this._onPopOut());
+        }
 
         // Dice icons with right-click support
-        panel.find('.squire-dice-icon').on('click contextmenu', ev => {
-            ev.preventDefault();
-            this._onDieClick(ev, panel);
+        const diceIcons = panel.querySelectorAll('.squire-dice-icon');
+        diceIcons.forEach(icon => {
+            icon.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                this._onDieClick(ev, panel);
+            });
+            icon.addEventListener('contextmenu', (ev) => {
+                ev.preventDefault();
+                this._onDieClick(ev, panel);
+            });
         });
         
         // Operator icons
-        panel.find('.squire-operator-icon').click(ev => this._onOperatorClick(ev, panel));
+        const operatorIcons = panel.querySelectorAll('.squire-operator-icon');
+        operatorIcons.forEach(icon => {
+            icon.addEventListener('click', (ev) => this._onOperatorClick(ev, panel));
+        });
         
         // Modifier icons with right-click support
-        panel.find('.squire-modifier-icon').on('click contextmenu', ev => {
-            ev.preventDefault();
-            this._onModifierClick(ev, panel);
+        const modifierIcons = panel.querySelectorAll('.squire-modifier-icon');
+        modifierIcons.forEach(icon => {
+            icon.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                this._onModifierClick(ev, panel);
+            });
+            icon.addEventListener('contextmenu', (ev) => {
+                ev.preventDefault();
+                this._onModifierClick(ev, panel);
+            });
         });
         
         // Roll button
-        panel.find('.squire-roll-button').click((ev) => {
-            const button = ev.currentTarget;
-            if (button.classList.contains('advantage')) {
-                this._onAdvantageClick(true, panel);
-            } else if (button.classList.contains('disadvantage')) {
-                this._onAdvantageClick(false, panel);
-            } else {
-                this._onRollClick(panel);
-            }
+        const rollButtons = panel.querySelectorAll('.squire-roll-button');
+        rollButtons.forEach(button => {
+            button.addEventListener('click', (ev) => {
+                if (button.classList.contains('advantage')) {
+                    this._onAdvantageClick(true, panel);
+                } else if (button.classList.contains('disadvantage')) {
+                    this._onAdvantageClick(false, panel);
+                } else {
+                    this._onRollClick(panel);
+                }
+            });
         });
         
         // Clear button
-        panel.find('.squire-clear-button').click(() => {
-            panel.find('.squire-formula-input')[0].value = '';
-            this.currentFormula = '';
-        });
+        const clearButton = panel.querySelector('.squire-clear-button');
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                const input = panel.querySelector('.squire-formula-input');
+                if (input) {
+                    input.value = '';
+                    this.currentFormula = '';
+                }
+            });
+        }
         
         // Formula input
-        panel.find('.squire-formula-input').on('input', (ev) => {
-            this.currentFormula = ev.target.value;
-        });
+        const formulaInput = panel.querySelector('.squire-formula-input');
+        if (formulaInput) {
+            formulaInput.addEventListener('input', (ev) => {
+                this.currentFormula = ev.target.value;
+            });
+        }
 
         // History toggle
-        panel.find('.history-header').click(() => {
-            const historyList = panel.find('.squire-history-list');
-            const toggle = panel.find('.history-toggle');
-            historyList.toggleClass('collapsed');
-            toggle.css('transform', historyList.hasClass('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)');
-        });
+        const historyHeader = panel.querySelector('.history-header');
+        if (historyHeader) {
+            historyHeader.addEventListener('click', () => {
+                const historyList = panel.querySelector('.squire-history-list');
+                const toggle = panel.querySelector('.history-toggle');
+                if (historyList && toggle) {
+                    historyList.classList.toggle('collapsed');
+                    toggle.style.transform = historyList.classList.contains('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)';
+                }
+            });
+        }
 
         // Clear history button
-        panel.find('.history-clear').click((ev) => {
-            ev.stopPropagation(); // Prevent triggering the collapse/expand
-            const historyList = panel.find('.squire-history-list');
-            historyList.empty();
-            
-            // Add the "No recent rolls" message
-            historyList.html('<div class="history-entry empty-message">No recent rolls</div>');
+        const historyClear = panel.querySelector('.history-clear');
+        if (historyClear) {
+            historyClear.addEventListener('click', (ev) => {
+                ev.stopPropagation(); // Prevent triggering the collapse/expand
+                const historyList = panel.querySelector('.squire-history-list');
+                if (historyList) {
+                    historyList.innerHTML = '';
+                    
+                    // Add the "No recent rolls" message
+                    historyList.innerHTML = '<div class="history-entry empty-message">No recent rolls</div>';
 
-            // If we're in a window, trigger a resize
-            if (this.isPoppedOut && this.window) {
-                this.window.setPosition({height: "auto"});
-            }
-        });
+                    // If we're in a window, trigger a resize
+                    if (this.isPoppedOut && this.window) {
+                        this.window.setPosition({height: "auto"});
+                    }
+                }
+            });
+        }
     }
 
     _onDieClick(event, panel) {
         const die = event.currentTarget.dataset.die;
-        const input = panel.find('.squire-formula-input')[0];
+        const input = panel.querySelector('.squire-formula-input');
         const isRightClick = event.type === 'contextmenu';
         
         // Get the current formula
@@ -256,7 +322,8 @@ export class DiceTrayPanel {
 
     _onOperatorClick(event, panel) {
         const op = event.currentTarget.dataset.op;
-        const input = panel.find('.squire-formula-input')[0];
+        const input = panel.querySelector('.squire-formula-input');
+        if (!input) return;
         
         // Add spaces around operators
         input.value += ` ${op} `;
@@ -265,7 +332,8 @@ export class DiceTrayPanel {
 
     _onModifierClick(event, panel) {
         const mod = event.currentTarget.dataset.mod;
-        const input = panel.find('.squire-formula-input')[0];
+        const input = panel.querySelector('.squire-formula-input');
+        if (!input) return;
         const isRightClick = event.type === 'contextmenu';
         
         // Get the current formula
@@ -479,7 +547,10 @@ export class DiceTrayPanel {
             this._addToHistory(displayFormula, roll.total);
 
             // Clear the input
-            panel.find('.squire-formula-input')[0].value = '';
+            const input = panel.querySelector('.squire-formula-input');
+            if (input) {
+                input.value = '';
+            }
             this.currentFormula = '';
 
         } catch (err) {
@@ -489,11 +560,25 @@ export class DiceTrayPanel {
     }
 
     _addToHistory(formula, result) {
-        const panel = this.isPoppedOut ? this.window.element.find('[data-panel="dicetray"]') : this.element.find('[data-panel="dicetray"]');
-        const historyList = panel.find('.squire-history-list');
+        // v13: Use native DOM instead of jQuery
+        let panelElement;
+        if (this.isPoppedOut && this.window?.element) {
+            const nativeWindowElement = getNativeElement(this.window.element);
+            panelElement = nativeWindowElement?.querySelector('[data-panel="dicetray"]');
+        } else if (this.element) {
+            panelElement = getNativeElement(this.element);
+        }
+        
+        if (!panelElement) return;
+        
+        const historyList = panelElement.querySelector('.squire-history-list');
+        if (!historyList) return;
         
         // Remove empty message if it exists
-        historyList.find('.empty-message').remove();
+        const emptyMessage = historyList.querySelector('.empty-message');
+        if (emptyMessage) {
+            emptyMessage.remove();
+        }
         
         const historyEntry = document.createElement('div');
         historyEntry.classList.add('history-entry');
@@ -504,20 +589,25 @@ export class DiceTrayPanel {
 
         // Add click handler for the re-roll button
         const rerollButton = historyEntry.querySelector('.reroll-button');
-        rerollButton.addEventListener('click', (ev) => {
-            ev.stopPropagation(); // Prevent triggering the collapse/expand
-            this.currentFormula = formula;
-            panel.find('.squire-formula-input')[0].value = formula;
-            this._onRollClick(panel);
-        });
+        if (rerollButton) {
+            rerollButton.addEventListener('click', (ev) => {
+                ev.stopPropagation(); // Prevent triggering the collapse/expand
+                this.currentFormula = formula;
+                const input = panelElement.querySelector('.squire-formula-input');
+                if (input) {
+                    input.value = formula;
+                }
+                this._onRollClick(panelElement);
+            });
+        }
         
         // Add to the top of the list
-        historyList.prepend(historyEntry);
+        historyList.insertBefore(historyEntry, historyList.firstChild);
         
         // Keep only last 10 entries
-        const entries = historyList.children();
+        const entries = Array.from(historyList.children);
         if (entries.length > 10) {
-            entries.last().remove();
+            entries[entries.length - 1].remove();
         }
     }
 
@@ -557,7 +647,10 @@ export class DiceTrayPanel {
             const newFormula = transformedParts.join('').trim() + (bonus ? ` ${bonus}` : '');
             
             // Update the input and current formula
-            panel.find('.squire-formula-input')[0].value = newFormula;
+            const input = panel.querySelector('.squire-formula-input');
+            if (input) {
+                input.value = newFormula;
+            }
             this.currentFormula = newFormula;
             
             // Automatically roll
@@ -572,9 +665,13 @@ export class DiceTrayPanel {
         if (this.window || this.isPoppedOut) return;
 
         // Remove the panel container from the placeholder
-        const container = $('#dicetray-panel-placeholder .panel-container[data-panel="dicetray"]');
-        if (container.length) {
-            container.remove();
+        // v13: Use native DOM instead of jQuery
+        const placeholder = document.querySelector('#dicetray-panel-placeholder');
+        if (placeholder) {
+            const container = placeholder.querySelector('.panel-container[data-panel="dicetray"]');
+            if (container) {
+                container.remove();
+            }
         }
 
         // Set state before creating window
@@ -603,13 +700,18 @@ export class DiceTrayPanel {
         if (!isDiceTrayEnabled) return;
 
         // (Re)create the panel container inside the placeholder if missing
-        const placeholder = $('#dicetray-panel-placeholder');
-        let container = placeholder.find('.panel-container[data-panel="dicetray"]');
-        if (!container.length) {
-            container = $('<div class="panel-container" data-panel="dicetray"></div>');
-            placeholder.append(container);
+        // v13: Use native DOM instead of jQuery
+        const placeholder = document.querySelector('#dicetray-panel-placeholder');
+        if (placeholder) {
+            let container = placeholder.querySelector('.panel-container[data-panel="dicetray"]');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'panel-container';
+                container.setAttribute('data-panel', 'dicetray');
+                placeholder.appendChild(container);
+            }
+            this.element = container;
         }
-        this.element = container;
         // Re-render into the panel container
         await this.render();
     }

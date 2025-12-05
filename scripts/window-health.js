@@ -2,6 +2,18 @@ import { MODULE } from './const.js';
 import { renderTemplate } from './helpers.js';
 
 export class HealthWindow extends Application {
+    /**
+     * Override to prevent FoundryVTT core from trying to access form elements we don't have
+     * @override
+     */
+    _activateCoreListeners(html) {
+        // Override FoundryVTT's core _activateCoreListeners to prevent it from
+        // trying to find form elements that don't exist in this simple window.
+        // This prevents the "parentElement" error.
+        // We handle our own listeners in activateListeners.
+        return;
+    }
+
     constructor(options = {}) {
         super(options);
         this.panel = options.panel;
@@ -135,7 +147,16 @@ export class HealthWindow extends Application {
     }
 
     activateListeners(html) {
-        super.activateListeners(html);
+        // v13: Call super first, but wrap in try-catch since our window doesn't have forms
+        // FoundryVTT's _activateCoreListeners expects form elements that we don't have
+        // (We've overridden _activateCoreListeners to prevent this, but keeping try-catch for safety)
+        try {
+            super.activateListeners(html);
+        } catch (error) {
+            // FoundryVTT core may fail if it expects form elements we don't have
+            // This is safe to ignore since we handle all our own listeners below
+            console.debug('HealthWindow: super.activateListeners error (expected for non-form windows):', error);
+        }
         
         // v13: Detect and convert jQuery to native DOM if needed
         let nativeHtml = html;
