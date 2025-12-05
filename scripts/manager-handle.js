@@ -788,33 +788,49 @@ export class HandleManager {
                         option.addEventListener('click', async (e) => {
                             const conditionId = e.currentTarget.dataset.conditionId;
                             const condition = CONFIG.DND5E.conditionTypes[conditionId];
+                            if (!condition) {
+                                console.error('Condition not found:', conditionId);
+                                return;
+                            }
+                            
+                            // v13: Use same fallback logic as when creating conditions array
+                            const conditionName = condition.label || condition.name || conditionId;
+                            const conditionIcon = condition.icon || condition.img || condition.image || 'icons/svg/unknown.svg';
+                            
                             const isActive = e.currentTarget.classList.contains('active');
                             
                             try {
+                                // Store reference to the element before async operations
+                                const targetElement = e.currentTarget;
+                                
                                 if (isActive) {
                                     // Remove the effect
-                                    const effect = this.actor.effects.find(e => e.name === condition.label);
+                                    const effect = this.actor.effects.find(e => e.name === conditionName);
                                     if (effect) {
                                         await effect.delete();
-                                        e.currentTarget.classList.remove('active');
-                                        ui.notifications.info(`Removed ${condition.label} from ${this.actor.name}`);
+                                        if (targetElement && targetElement.classList) {
+                                            targetElement.classList.remove('active');
+                                        }
+                                        ui.notifications.info(`Removed ${conditionName} from ${this.actor.name}`);
                                         await this.updateHandle();
                                     }
                                 } else {
                                     // Add the effect
                                     await this.actor.createEmbeddedDocuments('ActiveEffect', [{
-                                        name: condition.label,
-                                        icon: condition.icon,
+                                        name: conditionName,
+                                        icon: conditionIcon,
                                         origin: this.actor.uuid,
                                         disabled: false
                                     }]);
-                                    e.currentTarget.classList.add('active');
-                                    ui.notifications.info(`Added ${condition.label} to ${this.actor.name}`);
+                                    if (targetElement && targetElement.classList) {
+                                        targetElement.classList.add('active');
+                                    }
+                                    ui.notifications.info(`Added ${conditionName} to ${this.actor.name}`);
                                     await this.updateHandle();
                                 }
                             } catch (error) {
                                 console.error('Error managing condition:', error);
-                                ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${condition.label}`);
+                                ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${conditionName}`);
                             }
                         });
                     });
