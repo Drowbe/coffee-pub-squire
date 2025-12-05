@@ -47,7 +47,7 @@ const DEFAULT_PIN_CONFIG = {
     family: 'Signika',
     size: 32,
     color: 0xFFFFFF,
-    faFamily: 'FontAwesome',
+    faFamily: 'Font Awesome 6 Pro', // v13: Updated from FontAwesome to Font Awesome 6 Pro
     faSize: 30,
     faColor: 0xFFFFFF,
     numberPadding: 8 // Horizontal offset from center for quest/objective numbers
@@ -226,7 +226,8 @@ export class QuestPin extends PIXI.Container {
     
     // General
     const pinFontFamily = "Signika";
-    const pinIconFamily = "FontAwesome";
+    // v13: FoundryVTT uses "Font Awesome 6 Pro" instead of "FontAwesome"
+    const pinIconFamily = "Font Awesome 6 Pro";
     const pinIconTransparency = 0.9;
     const pinDataPadding = 10 * pinScale;
     const pinIconSizeMainQuestAdjustment = 0; // adds a bit more to the size of the icons
