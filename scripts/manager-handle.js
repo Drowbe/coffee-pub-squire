@@ -269,8 +269,6 @@ export class HandleManager {
 
         // Helper function to toggle tray expansion
         const toggleTray = () => {
-            console.debug('Coffee Pub Squire | toggleTray called, isPinned:', PanelManager.isPinned);
-            
             // If pinned, don't allow closing
             if (PanelManager.isPinned) {
                 ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
@@ -279,11 +277,9 @@ export class HandleManager {
             
             // PanelManager.element IS the tray element (.squire-tray), so use it directly
             const tray = nativePanelManagerElement;
-            console.debug('Coffee Pub Squire | Tray element found:', !!tray, 'classList:', tray?.classList?.toString());
             
             if (tray) {
                 const wasExpanded = tray.classList.contains('expanded');
-                console.debug('Coffee Pub Squire | Tray was expanded:', wasExpanded);
                 
                 if (!wasExpanded) {
                     const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
@@ -294,10 +290,6 @@ export class HandleManager {
                 }
                 
                 tray.classList.toggle('expanded');
-                const isNowExpanded = tray.classList.contains('expanded');
-                console.debug('Coffee Pub Squire | Tray is now expanded:', isNowExpanded);
-            } else {
-                console.warn('Coffee Pub Squire | Tray element not found!');
             }
             return false;
         };
@@ -312,26 +304,8 @@ export class HandleManager {
             newToggleButton.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                console.debug('Coffee Pub Squire | Toggle button clicked');
-                const result = toggleTray();
-                console.debug('Coffee Pub Squire | Toggle result:', result);
-                return result;
+                return toggleTray();
             });
-            
-            // Also handle clicks on the icon inside the button
-            const icon = newToggleButton.querySelector('i');
-            if (icon) {
-                icon.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    console.debug('Coffee Pub Squire | Toggle icon clicked');
-                    const result = toggleTray();
-                    console.debug('Coffee Pub Squire | Toggle result:', result);
-                    return result;
-                });
-            }
-        } else {
-            console.warn('Coffee Pub Squire | Toggle button not found!');
         }
 
         // Handle click on character panel (for collapsing)
