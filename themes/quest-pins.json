@@ -1,0 +1,153 @@
+{
+  "inner": {
+    "width": 80,
+    "height": 80,
+    "borderRadius": 4,
+    "color": 0,
+    "alpha": 0.4,
+    "dropShadow": {
+      "color": 0,
+      "alpha": 0.3,
+      "blur": 8,
+      "distance": 0
+    },
+    "dropShadowOffset": 0
+  },
+  "outer": {
+    "ringWidth": 2,
+    "outerRingWidth": 4,
+    "gap": 0,
+    "color": 16777215,
+    "alpha": 0.8,
+    "outerAlpha": 0.8,
+    "lineStyle": {
+      "alignment": 0.5,
+      "native": false
+    }
+  },
+  "font": {
+    "family": "Signika",
+    "size": 32,
+    "color": 16777215,
+    "faFamily": "Font Awesome 6 Pro",
+    "faSize": 30,
+    "faColor": 16777215,
+    "numberPadding": 10
+  },
+  "label": {
+    "fontSize": 16,
+    "fontWeight": "bold",
+    "align": "center",
+    "anchor": 0.5,
+    "alpha": 0.9
+  },
+  "title": {
+    "fontSize": 30,
+    "color": 16777215,
+    "weight": "normal",
+    "stroke": 0,
+    "strokeThickness": 3,
+    "align": "center",
+    "offset": 50,
+    "maxWidth": 200,
+    "wordWrap": true,
+    "dropShadow": {
+      "color": 0,
+      "alpha": 0.8,
+      "blur": 4,
+      "distance": 2,
+      "quality": 3
+    },
+    "anchor": {
+      "top": [0.5, 0],
+      "bottom": [0.5, 1]
+    }
+  },
+  "icons": {
+    "quest": {
+      "main": "\\uf024",
+      "side": "\\uf277"
+    },
+    "status": {
+      "active": "",
+      "completed": "\\uf00c",
+      "failed": "\\uf00d",
+      "hidden": "\\uf06e"
+    },
+    "settings": {
+      "transparency": 0.9,
+      "verticalOffset": 8,
+      "anchor": 0.5,
+      "fontWeight": "900"
+    }
+  },
+  "separator": {
+    "color": 16777215,
+    "thickness": 3,
+    "style": "solid"
+  },
+  "mouseover": {
+    "ringColor": 16755072
+  },
+  "quest": {
+    "shape": "circle",
+    "iconSize": {
+      "main": {
+        "multiplier": 0.5,
+        "offset": 0
+      },
+      "side": {
+        "multiplier": 0.5,
+        "offset": 4
+      }
+    },
+    "labelOffsets": {
+      "main": 24,
+      "side": 28
+    },
+    "colors": {
+      "ring": {
+        "hidden": 0,
+        "inProgress": 16777215,
+        "notStarted": 2293759,
+        "failed": 13893658,
+        "completed": 3963461
+      },
+      "icon": {
+        "hidden": 16777215,
+        "inProgress": 16777215,
+        "notStarted": 16777215,
+        "failed": 16777215,
+        "completed": 16777215
+      }
+    },
+    "secondRing": {
+      "color": 0
+    }
+  },
+  "objective": {
+    "shape": "roundedRect",
+    "iconSize": {
+      "multiplier": 0.666,
+      "offset": -2
+    },
+    "labelOffset": 28,
+    "colors": {
+      "ring": {
+        "failed": 13893658,
+        "hidden": 11184858,
+        "completed": 3963461,
+        "default": 16777215
+      },
+      "icon": {
+        "failed": 16777215,
+        "hidden": 16777215,
+        "completed": 16777215,
+        "default": 16777215
+      }
+    },
+    "secondRing": {
+      "color": 0
+    }
+  }
+}

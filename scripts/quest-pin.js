@@ -10,49 +10,68 @@ function getBlacksmith() {
 }
 
 // === Configurable Pin Appearance ===
-const DEFAULT_PIN_CONFIG = {
-  inner: {
-    width: 300,
-    height: 60,
-    borderRadius: 10,
-    color: 0x000000,
-    alpha: 1.0,
-    dropShadow: { color: 0x000000, alpha: 0.6, blur: 8, distance: 0 }
-  },
-  outer: {
-    ringWidth: 8,
-    gap: 6,
-    color: 0x1E85AD, // overridden by state
-    alpha: 1.0,
-    style: 'solid' // or 'dotted'
-  },
-  separator: {
-    color: 0xFFFFFF,
-    thickness: 3,
-    style: 'solid' // or 'dashed'
-  },
-  icons: {
-    quest: {
-      main: '\uf024', // fas fa-flag (unicode)
-      side: '\uf277'  // fas fa-map-signs (unicode)
-    },
-    status: {
-      active: '',
-      completed: '\uf00c', // fas fa-check
-      failed: '\uf00d',    // fas fa-xmark
-      hidden: '\uf06e'     // fas fa-eye
-    }
-  },
-  font: {
-    family: 'Signika',
-    size: 32,
-    color: 0xFFFFFF,
-    faFamily: 'Font Awesome 6 Pro', // v13: Updated from FontAwesome to Font Awesome 6 Pro
-    faSize: 30,
-    faColor: 0xFFFFFF,
-    numberPadding: 8 // Horizontal offset from center for quest/objective numbers
+// Cache for loaded pin config
+let PIN_CONFIG_CACHE = null;
+
+/**
+ * Load pin configuration from JSON file
+ * @returns {Promise<Object>} The pin configuration object
+ */
+async function loadPinConfig() {
+  if (PIN_CONFIG_CACHE) {
+    return PIN_CONFIG_CACHE;
   }
-};
+  
+  try {
+    const response = await fetch(`modules/${MODULE.ID}/themes/quest-pins.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to load quest-pins.json: ${response.status} ${response.statusText}`);
+    }
+    const config = await response.json();
+    
+    // JSON.parse will convert "\\uf024" to "\uf024" (literal backslash + u + hex)
+    // We need to convert this to the actual unicode character
+    const convertUnicode = (str) => {
+      if (typeof str !== 'string') return str;
+      // Match \uf024 pattern (backslash + u + 4 hex digits) and convert to unicode character
+      return str.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => {
+        return String.fromCharCode(parseInt(hex, 16));
+      });
+    };
+    
+    if (config.icons?.quest?.main) {
+      config.icons.quest.main = convertUnicode(config.icons.quest.main);
+    }
+    if (config.icons?.quest?.side) {
+      config.icons.quest.side = convertUnicode(config.icons.quest.side);
+    }
+    if (config.icons?.status) {
+      Object.keys(config.icons.status).forEach(key => {
+        if (config.icons.status[key]) {
+          config.icons.status[key] = convertUnicode(config.icons.status[key]);
+        }
+      });
+    }
+    
+    PIN_CONFIG_CACHE = config;
+    return config;
+  } catch (error) {
+    console.error('Coffee Pub Squire | Error loading quest-pins.json, using fallback config:', error);
+    // Return a minimal fallback config
+    return {
+      inner: { width: 80, height: 80, borderRadius: 4, color: 0, alpha: 0.4, dropShadow: { color: 0, alpha: 0.3, blur: 8, distance: 0 }, dropShadowOffset: 0 },
+      outer: { ringWidth: 2, outerRingWidth: 4, gap: 0, color: 16777215, alpha: 0.8, outerAlpha: 0.8, lineStyle: { alignment: 0.5, native: false } },
+      font: { family: 'Signika', size: 32, color: 16777215, faFamily: 'Font Awesome 6 Pro', faSize: 30, faColor: 16777215, numberPadding: 10 },
+      label: { fontSize: 16, fontWeight: 'bold', align: 'center', anchor: 0.5, alpha: 0.9 },
+      title: { fontSize: 30, color: 16777215, weight: 'normal', stroke: 0, strokeThickness: 3, align: 'center', offset: 50, maxWidth: 200, wordWrap: true, dropShadow: { color: 0, alpha: 0.8, blur: 4, distance: 2, quality: 3 }, anchor: { top: [0.5, 0], bottom: [0.5, 1] } },
+      icons: { quest: { main: '\uf024', side: '\uf277' }, status: { active: '', completed: '\uf00c', failed: '\uf00d', hidden: '\uf06e' }, settings: { transparency: 0.9, verticalOffset: 8, anchor: 0.5 } },
+      separator: { color: 16777215, thickness: 3, style: 'solid' },
+      mouseover: { ringColor: 16755072 },
+      quest: { shape: 'circle', iconSize: { main: { multiplier: 0.5, offset: 0 }, side: { multiplier: 0.5, offset: 4 } }, labelOffsets: { main: 24, side: 28 }, colors: { ring: { hidden: 0, inProgress: 16777215, notStarted: 2293759, failed: 13893658, completed: 3963461 }, icon: { hidden: 16777215, inProgress: 16777215, notStarted: 16777215, failed: 16777215, completed: 16777215 } }, secondRing: { color: 0 } },
+      objective: { shape: 'roundedRect', iconSize: { multiplier: 0.666, offset: -2 }, labelOffset: 28, colors: { ring: { failed: 13893658, hidden: 11184858, completed: 3963461, default: 16777215 }, icon: { failed: 16777215, hidden: 16777215, completed: 16777215, default: 16777215 } }, secondRing: { color: 0 } }
+    };
+  }
+}
 
 export class QuestPin extends PIXI.Container {
   
@@ -78,18 +97,23 @@ export class QuestPin extends PIXI.Container {
     this.dragData = null;
     this._rightClickTimeout = null;
     this._hasStartedDrag = false;
-    // Merge config
-    this.config = foundry.utils.mergeObject(
-      foundry.utils.deepClone(DEFAULT_PIN_CONFIG),
-      config || {},
-      { inplace: false, insertKeys: true, insertValues: true }
-    );
+    
+    // Load and merge config - use cached config if available, otherwise load it
+    // Note: This is async, but we'll handle it in fetchNames() promise chain
+    this._configPromise = loadPinConfig().then(loadedConfig => {
+      this.config = foundry.utils.mergeObject(
+        foundry.utils.deepClone(loadedConfig),
+        config || {},
+        { inplace: false, insertKeys: true, insertValues: true }
+      );
+      return this.config;
+    });
   
 
 
-    // Fetch names from journal entry
-    this.fetchNames().then(() => {
-      // Draw the pin after names are fetched
+    // Fetch names from journal entry and ensure config is loaded
+    Promise.all([this._configPromise, this.fetchNames()]).then(() => {
+      // Draw the pin after config and names are loaded
       this._updatePinAppearance();
     });
     
@@ -220,90 +244,103 @@ export class QuestPin extends PIXI.Container {
     // Remove previous children
     this.removeChildren();
 
-    // === PIN APPEARANCE VARIABLES (all values set at top for clarity) ===
+    // Ensure config is loaded (should be, but safety check)
+    if (!this.config) {
+      console.warn('Coffee Pub Squire | Pin config not loaded yet, skipping appearance update');
+      return;
+    }
+
+    // === PIN APPEARANCE VARIABLES (from config with game setting overrides) ===
     // Scale Factor - applies to all pin dimensions
     const pinScale = game.settings.get(MODULE.ID, 'questPinScale') || 1.0;
     
-    // General
-    const pinFontFamily = "Signika";
-    // v13: FoundryVTT uses "Font Awesome 6 Pro" instead of "FontAwesome"
-    const pinIconFamily = "Font Awesome 6 Pro";
-    const pinIconTransparency = 0.9;
-    const pinDataPadding = 10 * pinScale;
-    const pinIconSizeMainQuestAdjustment = 0; // adds a bit more to the size of the icons
-    const pinIconSizeSideQuestAdjustment = 4; // adds a bit more to the size of the icons
+    // General - from config.font
+    const pinFontFamily = this.config.font?.family || "Signika";
+    const pinIconFamily = this.config.font?.faFamily || "Font Awesome 6 Pro";
+    const pinIconTransparency = this.config.icons?.settings?.transparency || 0.9;
+    const pinDataPadding = (this.config.font?.numberPadding || 10) * pinScale;
+    const pinIconSizeMainQuestAdjustment = this.config.quest?.iconSize?.main?.offset || 0;
+    const pinIconSizeSideQuestAdjustment = this.config.quest?.iconSize?.side?.offset || 4;
 
+    // Pin Title Text - from config.title with game setting overrides
+    const pinTitleFontSize = (game.settings.get(MODULE.ID, 'questPinTitleSize') || this.config.title?.fontSize || 30) * pinScale;
+    const pinTitleFontColor = this.config.title?.color || 0xFFFFFF;
+    const pinTitleFontWeight = this.config.title?.weight || 'normal';
+    const pinTitleFontStroke = this.config.title?.stroke || 0x000000;
+    const pinTitleFontStrokeThickness = (this.config.title?.strokeThickness || 3) * pinScale;
+    const pinTitleFontAlign = this.config.title?.align || 'center';
+    const pinTitleOffset = game.settings.get(MODULE.ID, 'questPinTitleOffset') || this.config.title?.offset || 50;
+    const pinTitleMaxWidth = (game.settings.get(MODULE.ID, 'questPinTitleMaxWidth') || this.config.title?.maxWidth || 200) * pinScale;
+    const titleDropShadowConfig = this.config.title?.dropShadow || { color: 0x000000, alpha: 0.8, blur: 4, distance: 2, quality: 3 };
+    const pinTitleDropShadow = { 
+      color: titleDropShadowConfig.color || 0x000000, 
+      alpha: titleDropShadowConfig.alpha || 0.8, 
+      blur: (titleDropShadowConfig.blur || 4) * pinScale, 
+      distance: (titleDropShadowConfig.distance || 2) * pinScale, 
+      quality: titleDropShadowConfig.quality || 3 
+    };
 
-    // Pin Title Text
-    const pinTitleFontSize = (game.settings.get(MODULE.ID, 'questPinTitleSize') || 30) * pinScale;
-    const pinTitleFontColor = 0xFFFFFF;
-    const pinTitleFontWeight = 'normal';
-    const pinTitleFontStroke = 0x000000;
-    const pinTitleFontStrokeThickness = 3 * pinScale;
-    const pinTitleFontAlign = 'center';
-    const pinTitleOffset = game.settings.get(MODULE.ID, 'questPinTitleOffset') || 50;
-    const pinTitleMaxWidth = (game.settings.get(MODULE.ID, 'questPinTitleMaxWidth') || 200) * pinScale; // Maximum width before text wraps
-    const pinTitleDropShadow = { color: 0x000000, alpha: 0.8, blur: 4 * pinScale, distance: 2 * pinScale, quality: 3 };
+    // Main Pin - from config.inner
+    const pinInnerWidth = (this.config.inner?.width || 80) * pinScale;
+    const pinInnerHeight = (this.config.inner?.height || 80) * pinScale; 
+    const pinInnerBorderRadius = (this.config.inner?.borderRadius || 4) * pinScale;
+    const pinInnerColor = this.config.inner?.color || 0x000000;
+    const pinInnerTransparency = this.config.inner?.alpha || 0.4;
+    const dropShadowConfig = this.config.inner?.dropShadow || { color: 0x000000, alpha: 0.3, blur: 8, distance: 0 };
+    const pinDropShadowColor = { 
+      color: dropShadowConfig.color || 0x000000, 
+      alpha: dropShadowConfig.alpha || 0.3 
+    };
+    const pinDropShadowOffset = this.config.inner?.dropShadowOffset || 0;
 
+    // Pin Ring - from config.outer
+    const pinRingInnerThickness = (this.config.outer?.ringWidth || 2) * pinScale;
+    const pinRingOutterThickness = (this.config.outer?.outerRingWidth || 4) * pinScale;
+    const pinRingGap = (this.config.outer?.gap || 0) * pinScale;
+    let pinRingColor = this.config.outer?.color || 0xFFFFFF; // Base color, overridden by state
+    const pinRingInnerTransparency = this.config.outer?.alpha || 0.8;
+    const pinRingOutterTransparency = this.config.outer?.outerAlpha || 0.8;
 
+    // OBJECTIVE Ring State Colors - from config.objective.colors.ring
+    const pinRingColorObjectiveFailed = this.config.objective?.colors?.ring?.failed || 0xD41A1A;
+    const pinRingColorOjectiveHidden = this.config.objective?.colors?.ring?.hidden || 0xAAA79A;
+    const pinRingColorObjectiveCompleted = this.config.objective?.colors?.ring?.completed || 0x3C9245;
+    const pinRingColorObjectiveDefault = this.config.objective?.colors?.ring?.default || 0xFFFFFF;
 
-    // Main Pin - Make quest pins round, objectives are now square but same height
-    const pinInnerWidth = 80 * pinScale;
-    const pinInnerHeight = 80 * pinScale; 
-    const pinInnerBorderRadius = 4 * pinScale;
-    const pinInnerColor = 0x000000;
-    const pinInnerTransparency = 0.4;
-    const pinDropShadowColor = { color: 0x000000, alpha: 0.3 };
-    const pinDropShadowOffset = 0;
+    // OBJECTIVE Icon State Colors - from config.objective.colors.icon
+    const pinIconColorObjectiveFailed = this.config.objective?.colors?.icon?.failed || 0xFFFFFF;
+    const pinIconColorOjectiveHidden = this.config.objective?.colors?.icon?.hidden || 0xFFFFFF;
+    const pinIconColorObectiveCompleted = this.config.objective?.colors?.icon?.completed || 0xFFFFFF;
+    const pinIconColorObjectiveDefault = this.config.objective?.colors?.icon?.default || 0xFFFFFF;
 
-    // Pin Ring
-    const pinRingInnerThickness = 2 * pinScale;
-    const pinRingOutterThickness = 4 * pinScale;
-    const pinRingGap = 0; // Gap stays 0, no need to scale
-    let pinRingColor = 0xFFFFFF; // usually same as default below
-    const pinRingInnerTransparency = 0.8;
-    const pinRingOutterTransparency = 0.8;
-
-    // OBJECTIVE Ring State Colors
-    const pinRingColorObjectiveFailed = 0xD41A1A;
-    const pinRingColorOjectiveHidden = 0xAAA79A;
-    const pinRingColorObjectiveCompleted = 0x3C9245;
-    const pinRingColorObjectiveDefault = 0xFFFFFF;
-
-    // OBJECTIVE Icon State Colors
-    const pinIconColorObjectiveFailed = 0xFFFFFF;
-    const pinIconColorOjectiveHidden = 0xFFFFFF;
-    const pinIconColorObectiveCompleted = 0xFFFFFF;
-    const pinIconColorObjectiveDefault = 0xFFFFFF;
-
-
-
-    // QUEST Ring State Colors
-    const pinRingColorQuestHidden = 0x000000;
-    const pinRingColorQuestInProgress = 0xFFFFFF;
-    const pinRingColorQuestNotStarted = 0x3779FF;
-    const pinRingColorQuestFailed = 0xD41A1A;
-    const pinRingColorQuestCompleted = 0x3C9245;
+    // QUEST Ring State Colors - from config.quest.colors.ring
+    const pinRingColorQuestHidden = this.config.quest?.colors?.ring?.hidden || 0x000000;
+    const pinRingColorQuestInProgress = this.config.quest?.colors?.ring?.inProgress || 0xFFFFFF;
+    const pinRingColorQuestNotStarted = this.config.quest?.colors?.ring?.notStarted || 0x3779FF;
+    const pinRingColorQuestFailed = this.config.quest?.colors?.ring?.failed || 0xD41A1A;
+    const pinRingColorQuestCompleted = this.config.quest?.colors?.ring?.completed || 0x3C9245;
     
-    // QUEST Icon State Colors
-    const pinIconColorQuestHidden = 0xFFFFFF;
-    const pinIconColorInProgress = 0xFFFFFF;
-    const pinIconColorNotStarted = 0xFFFFFF;
-    const pinIconColorQuestFailed = 0xFFFFFF;
-    const pinIconColorQuestCompleted = 0xFFFFFF;
+    // QUEST Icon State Colors - from config.quest.colors.icon
+    const pinIconColorQuestHidden = this.config.quest?.colors?.icon?.hidden || 0xFFFFFF;
+    const pinIconColorInProgress = this.config.quest?.colors?.icon?.inProgress || 0xFFFFFF;
+    const pinIconColorNotStarted = this.config.quest?.colors?.icon?.notStarted || 0xFFFFFF;
+    const pinIconColorQuestFailed = this.config.quest?.colors?.icon?.failed || 0xFFFFFF;
+    const pinIconColorQuestCompleted = this.config.quest?.colors?.icon?.completed || 0xFFFFFF;
     
-    // MAIN QUEST Icon - Scale up for quest pins
-    const pinIconMainQuestStyle = "\uf024"; // fas fa-flag (unicode)
-    const pinIconMainQuestSize = pinInnerHeight / 2 + pinIconSizeMainQuestAdjustment;
-    const labelMainQuestVerticleOffset = 24 * pinScale;
+    // MAIN QUEST Icon - from config.icons.quest.main and config.quest.iconSize.main
+    const pinIconMainQuestStyle = this.config.icons?.quest?.main || "\uf024";
+    const mainQuestMultiplier = this.config.quest?.iconSize?.main?.multiplier || 0.5;
+    const pinIconMainQuestSize = (pinInnerHeight * mainQuestMultiplier) + pinIconSizeMainQuestAdjustment;
+    const labelMainQuestVerticleOffset = (this.config.quest?.labelOffsets?.main || 24) * pinScale;
     
-    // SIDE QUEST Icon - Scale up for quest pins
-    const pinIconSideQuestStyle = "\uf277"; // fas fa-map-signs (unicode)
-    const pinIconSideQuestSize = pinInnerHeight / 2 + pinIconSizeSideQuestAdjustment
-    const labelSideQuestVerticleOffset = 28 * pinScale;
+    // SIDE QUEST Icon - from config.icons.quest.side and config.quest.iconSize.side
+    const pinIconSideQuestStyle = this.config.icons?.quest?.side || "\uf277";
+    const sideQuestMultiplier = this.config.quest?.iconSize?.side?.multiplier || 0.5;
+    const pinIconSideQuestSize = (pinInnerHeight * sideQuestMultiplier) + pinIconSizeSideQuestAdjustment;
+    const labelSideQuestVerticleOffset = (this.config.quest?.labelOffsets?.side || 28) * pinScale;
     
-    // Icon positioning offset (gap between center and icon)
-    const pinIconVerticalOffset = 8 * pinScale;
+    // Icon positioning offset - from config.icons.settings.verticalOffset
+    const pinIconVerticalOffset = (this.config.icons?.settings?.verticalOffset || 8) * pinScale;
 
           // === State-based ring color override ===
       if (this.pinType === 'quest') {
@@ -348,12 +385,13 @@ export class QuestPin extends PIXI.Container {
       const outer = new PIXI.Graphics();
       
              // Draw the main ring
+       const questLineStyle = this.config.outer?.lineStyle || { alignment: 0.5, native: false };
        outer.lineStyle({
          width: pinRingInnerThickness,
          color: pinRingColor,
          alpha: pinRingInnerTransparency,
-         alignment: 0.5,
-         native: false
+         alignment: questLineStyle.alignment || 0.5,
+         native: questLineStyle.native !== undefined ? questLineStyle.native : false
        });
        outer.drawCircle(0, 0, outerRadius);
        
@@ -372,13 +410,14 @@ export class QuestPin extends PIXI.Container {
        if (this.questState === 'hidden' && game.user.isGM) {
          const secondRingRadius = outerRadius + pinRingInnerThickness/2 + pinRingGap + pinRingOutterThickness/2;
          const secondRing = new PIXI.Graphics();
-        
+         
+        const questSecondRingLineStyle = this.config.outer?.lineStyle || { alignment: 0.5, native: false };
         secondRing.lineStyle({
           width: pinRingOutterThickness,
-          color: pinRingColorQuestHidden,
+          color: this.config.quest?.secondRing?.color || pinRingColorQuestHidden,
           alpha: pinRingOutterTransparency,
-          alignment: 0.5,
-          native: false
+          alignment: questSecondRingLineStyle.alignment || 0.5,
+          native: questSecondRingLineStyle.native !== undefined ? questSecondRingLineStyle.native : false
         });
         secondRing.drawCircle(0, 0, secondRingRadius);
         this.addChild(secondRing);
@@ -390,12 +429,13 @@ export class QuestPin extends PIXI.Container {
        const outer = new PIXI.Graphics();
       
              // Draw the main ring
+       const objectiveLineStyle = this.config.outer?.lineStyle || { alignment: 0.5, native: false };
        outer.lineStyle({
          width: pinRingInnerThickness,
          color: pinRingColor,
          alpha: pinRingInnerTransparency,
-         alignment: 0.5,
-         native: false
+         alignment: objectiveLineStyle.alignment || 0.5,
+         native: objectiveLineStyle.native !== undefined ? objectiveLineStyle.native : false
        });
        outer.drawRoundedRect(-outerW/2, -outerH/2, outerW, outerH, pinInnerBorderRadius + pinRingInnerThickness + pinRingGap);
        
@@ -418,12 +458,13 @@ export class QuestPin extends PIXI.Container {
          const secondRingH = outerH + 2 * (pinRingGap + pinRingInnerThickness/2 + pinRingOutterThickness/2);
          const secondRing = new PIXI.Graphics();
         
+        const objectiveSecondRingLineStyle = this.config.outer?.lineStyle || { alignment: 0.5, native: false };
         secondRing.lineStyle({
           width: pinRingOutterThickness,
-          color: pinRingColorQuestHidden,
+          color: this.config.objective?.secondRing?.color || pinRingColorQuestHidden,
           alpha: pinRingOutterTransparency,
-          alignment: 0.5,
-          native: false
+          alignment: objectiveSecondRingLineStyle.alignment || 0.5,
+          native: objectiveSecondRingLineStyle.native !== undefined ? objectiveSecondRingLineStyle.native : false
         });
                  secondRing.drawRoundedRect(-secondRingW/2, -secondRingH/2, secondRingW, secondRingH, pinInnerBorderRadius + pinRingGap + pinRingInnerThickness + pinRingOutterThickness/2);
         this.addChild(secondRing);
@@ -484,10 +525,11 @@ export class QuestPin extends PIXI.Container {
       const questIcon = new PIXI.Text(questIconUnicode, {
         fontFamily: pinIconFamily,
         fontSize: questIconSize,
-        fill: questIconColor
+        fill: questIconColor,
+        fontWeight: this.config.icons?.settings?.fontWeight || '900' // Solid icons require font-weight 900
       });
       questIcon.alpha = pinIconTransparency; 
-      questIcon.anchor.set(0.5);
+      questIcon.anchor.set(this.config.icons?.settings?.anchor || 0.5);
       questIcon.position.set(centerX, centerY - pinIconVerticalOffset); // Icon above center, same as objectives
       this.addChild(questIcon);
       
@@ -517,25 +559,24 @@ export class QuestPin extends PIXI.Container {
         const questTitle = new PIXI.Text(this.questName || 'Unknown Quest', {
           fontFamily: pinFontFamily,
           fontSize: pinTitleFontSize,
-          fill: pinTitleFontColor, // White text for better visibility
+          fill: pinTitleFontColor,
           fontWeight: pinTitleFontWeight,
           align: pinTitleFontAlign,
           stroke: pinTitleFontStroke,
           strokeThickness: pinTitleFontStrokeThickness,
-          wordWrap: true,
+          wordWrap: this.config.title?.wordWrap !== undefined ? this.config.title.wordWrap : true,
           wordWrapWidth: pinTitleMaxWidth
         });
         
-        // Position text based on offset direction:
-        // Positive offset: distance from pin center to TOP of text box
-        // Negative offset: distance from pin center to BOTTOM of text box
+        // Position text based on offset direction - from config.title.anchor
+        const anchorConfig = this.config.title?.anchor || { top: [0.5, 0], bottom: [0.5, 1] };
         if (pinTitleOffset >= 0) {
           // Text below pin: position so TOP of text is at offset distance
-          questTitle.anchor.set(0.5, 0); // Anchor at top center
+          questTitle.anchor.set(anchorConfig.top[0], anchorConfig.top[1]);
           questTitle.position.set(centerX, centerY + pinTitleOffset);
         } else {
           // Text above pin: position so BOTTOM of text is at offset distance
-          questTitle.anchor.set(0.5, 1); // Anchor at bottom center
+          questTitle.anchor.set(anchorConfig.bottom[0], anchorConfig.bottom[1]);
           questTitle.position.set(centerX, centerY + pinTitleOffset);
         }
         
@@ -568,7 +609,8 @@ export class QuestPin extends PIXI.Container {
       const questIcon = new PIXI.Text(questIconUnicode, {
         fontFamily: pinIconFamily,
         fontSize: questIconSize,
-        fill: questIconColor
+        fill: questIconColor,
+        fontWeight: this.config.icons?.settings?.fontWeight || '900' // Solid icons require font-weight 900
       });
       questIcon.alpha = pinIconTransparency; 
       questIcon.anchor.set(0.5);
@@ -1434,17 +1476,18 @@ export class QuestPin extends PIXI.Container {
      }
 
      // Change ring color on mouseover - redraw with new color
-     const pinMouseoverRingColor = 0xFF5500;
+     const pinMouseoverRingColor = this.config?.mouseover?.ringColor || 0xFF5500;
      const outerRing = this.children.find(child => child._ringParams !== undefined);
      if (outerRing && outerRing._ringParams) {
        const params = outerRing._ringParams;
        outerRing.clear();
+       const mouseoverLineStyle = this.config?.outer?.lineStyle || { alignment: 0.5, native: false };
        outerRing.lineStyle({
          width: params.width,
          color: pinMouseoverRingColor,
          alpha: params.alpha,
-         alignment: 0.5,
-         native: false
+         alignment: mouseoverLineStyle.alignment || 0.5,
+         native: mouseoverLineStyle.native !== undefined ? mouseoverLineStyle.native : false
        });
        
        if (params.pinType === 'quest') {
