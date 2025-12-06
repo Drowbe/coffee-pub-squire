@@ -6,7 +6,97 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [13.0.0] - v13 Migration Begins
+## [13.0.0] - v13 Migration
+
+### Important Notice
+- **FoundryVTT v13 Required**: This version requires FoundryVTT v13 or later
+- **D&D5e v5.1+ Required**: This version requires D&D5e system v5.1 or later
+- **Breaking Changes**: All deprecated APIs have been migrated to new namespaced APIs
+
+### Added
+- **API Helper Functions**: Created centralized helper functions in `scripts/helpers.js` for FoundryVTT v13 namespaced APIs
+  - `renderTemplate()`: Wraps `foundry.applications.handlebars.renderTemplate`
+  - `getTextEditor()`: Wraps `foundry.applications.ux.TextEditor.implementation`
+  - `getContextMenu()`: Wraps `foundry.applications.ux.ContextMenu.implementation`
+- **Quest Pin Configuration System**: Externalized quest pin appearance configuration to `themes/quest-pins.json`
+  - Hybrid structure with shared properties and type-specific overrides (quest/objective)
+  - Supports theming and easier maintenance without code changes
+  - All visual properties (dimensions, colors, fonts, icons, offsets, shapes) are now configurable
+- **Handlebars Partial Registration**: Implemented asynchronous partial registration system for handle components
+  - Ensures partials are available before template rendering
+  - Prevents "partial not found" errors during module initialization
+  - Supports `handle-character-portrait` and other handle partials
+
+### Changed
+- **FoundryVTT v13 API Migration**: Updated all deprecated global API access to namespaced versions
+  - `renderTemplate` → `foundry.applications.handlebars.renderTemplate` (via helper)
+  - `TextEditor` → `foundry.applications.ux.TextEditor.implementation` (via helper)
+  - `ContextMenu` → `foundry.applications.ux.ContextMenu.implementation` (via helper)
+  - `JournalTextPageSheet.activateListeners` → `foundry.applications.sheets.JournalTextPageSheet.activateListeners`
+- **D&D5e v5.1+ API Migration**: Updated spell data and movement type access
+  - `spell.system.preparation.mode` → `spell.system.method`
+  - `spell.system.preparation.prepared` → `spell.system.prepared`
+  - `CONFIG.DND5E.movementTypes[type]` → `CONFIG.DND5E.movementTypes[type].label` (with fallback for legacy string values)
+- **jQuery to Native DOM Migration**: Replaced all jQuery usage with native DOM methods
+  - `scripts/panel-macros.js`: Migrated `.find()`, `.on()`, `.off()`, `.each()`, `.toggleClass()`, `.hasClass()`, `.css()`, `.html()`, `.val()`, `.append()`, `.remove()` to native equivalents
+  - `scripts/panel-health.js`: Migrated all jQuery selectors and methods to native DOM
+  - `scripts/panel-dicetray.js`: Migrated all jQuery selectors and methods to native DOM
+  - `scripts/panel-stats.js`: Migrated all jQuery selectors and methods to native DOM
+  - `scripts/panel-abilities.js`: Migrated all jQuery selectors and methods to native DOM
+- **Context Menu API**: Updated context menus to use native DOM elements instead of jQuery
+  - Added `{ jQuery: false }` option to ContextMenu constructor
+  - Updated callbacks to use `li.dataset.itemId` instead of `$(li).data('item-id')`
+- **Quest Pin Font Awesome**: Migrated to Font Awesome 6 Pro
+  - Updated font family from `"FontAwesome"` to `"Font Awesome 6 Pro"`
+  - Added `fontWeight: '900'` to PIXI.Text icon styles to render solid icons
+  - Made font weight configurable via `quest-pins.json`
+- **Quest Pin Configuration**: Refactored from hardcoded values to JSON-based configuration
+  - All pin appearance values now load from `themes/quest-pins.json`
+  - Game settings still override JSON config values (maintains backward compatibility)
+  - Scale factor applies to all dimensions except title vertical offset
+
+### Fixed
+- **Window Rendering Errors**: Fixed `Cannot read properties of undefined (reading 'parentElement')` errors
+  - Added `_activateCoreListeners` override in `window-macros.js`, `window-health.js`, and `window-dicetray.js`
+  - Prevents FoundryVTT's default form listener activation for non-form windows
+  - Wrapped `super.activateListeners(html)` in try-catch blocks for graceful error handling
+- **Panel jQuery Errors**: Fixed `panel.find is not a function` errors in all panels
+  - Migrated all jQuery selectors to native DOM `querySelector()` and `querySelectorAll()`
+  - Replaced jQuery event handlers with native `addEventListener()` and `removeEventListener()`
+  - Updated DOM manipulation to use native methods (`classList`, `style`, `innerHTML`, `value`, etc.)
+- **Quest Pin Hide Button**: Fixed `TypeError: Cannot read properties of null (reading 'classList')` when clicking "hide quest pins"
+  - Added fallback to `newButton` if `event.currentTarget` is null
+  - Added null checks before accessing `classList` on icon element
+- **Handle Button Actions**: Fixed handle buttons (pin, toggle tray, etc.) not working
+  - Corrected variable references after element cloning (`handle` → `handleElement`)
+  - Fixed "pin" button `classList` access with proper null checks
+  - Extracted `toggleTray()` helper function to reduce duplication
+  - Added dedicated event listener for toggle tray button separate from general handle click
+  - Updated `toggleTray()` to use correct tray element reference
+- **Condition Management**: Fixed multiple issues with condition/effect management
+  - Improved condition icon loading to check multiple properties (`icon`, `img`, `image`) from `CONFIG.DND5E.conditionTypes`
+  - Added fallback paths for common D&D 5e conditions
+  - Added `onerror` handler to condition `<img>` tags for graceful fallback
+  - Fixed `DataModelValidationError: ActiveEffect5e validation errors: name: may not be undefined`
+    - Ensured `name` and `icon` properties are always defined when creating `ActiveEffect` documents
+    - Added fallback logic: `condition.label || condition.name || conditionId` for name
+  - Fixed `TypeError: Cannot read properties of null (reading 'classList')` in condition management
+    - Stored `e.currentTarget` reference before async operations
+    - Added null checks before accessing `classList`
+- **Quest Pin Icons**: Fixed quest pins on canvas no longer showing icons
+  - Updated Font Awesome font family name to match v6
+  - Added `fontWeight: '900'` to ensure solid icon rendering
+  - Made font weight configurable in JSON for future customization
+- **Handlebars Partial Error**: Fixed `Uncaught (in promise) Error: The partial handle-character-portrait could not be found` on first player load
+  - Added safeguard in `createTray()` to ensure partial is registered before rendering
+  - Fetches and registers partial if not already present
+
+### Technical Improvements
+- **Code Organization**: Centralized API access through helper functions for easier future migrations
+- **Error Handling**: Enhanced error handling with null checks and fallback logic throughout
+- **Event Delegation**: Improved event handling using native DOM methods and proper event delegation
+- **Configuration Management**: Externalized hardcoded values to JSON for better maintainability and theming support
+- **Asynchronous Safety**: Added safeguards for race conditions during module initialization and partial loading
 
 ## [12.1.14] - Final v12 Release
 

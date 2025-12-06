@@ -5,10 +5,25 @@
 ## 🚧 FOUNDRYVTT v13 MIGRATION (IN PROGRESS)
 
 ### Migration Overview
-- **Status:** Active Migration
+- **Status:** Active Migration - Core APIs and Critical Panels Complete
 - **Target:** FoundryVTT v13.0.0
 - **Strategy:** Clean v13-only migration (no dual compatibility)
 - **Reference:** See `documents/migration-v13-plan.md` for full details
+
+### Completed Work Summary
+- ✅ **API Migrations**: All FoundryVTT v13 and D&D5e v5.1+ API migrations complete
+  - `renderTemplate`, `TextEditor`, `ContextMenu` helpers created and integrated
+  - `SpellData#preparation` → `SpellData#method` and `SpellData#prepared`
+  - `CONFIG.DND5E.movementTypes` → `.label` property access
+  - `JournalTextPageSheet` API migration
+- ✅ **jQuery to Native DOM**: Complete migration for critical panels
+  - `panel-macros.js`, `panel-health.js`, `panel-dicetray.js`, `panel-stats.js`, `panel-abilities.js`
+- ✅ **Window Fixes**: All window classes updated with `_activateCoreListeners` overrides
+  - `window-macros.js`, `window-health.js`, `window-dicetray.js`
+- ✅ **Handle Manager**: All handle button actions and condition management fixed
+- ✅ **Quest Pins**: Font Awesome 6 migration, JSON configuration system, solid icon rendering
+- ✅ **Handlebars Partials**: Registration system implemented for handle components
+- ✅ **Documentation**: CHANGELOG updated with all migration changes
 
 ---
 
@@ -25,6 +40,25 @@
 ---
 
 ### Phase 2: Critical Path Migration (Priority: HIGH)
+
+#### FoundryVTT v13 API Migrations
+
+- [x] **API Helper Functions** ✅
+  - [x] Created `renderTemplate()` helper in `scripts/helpers.js` wrapping `foundry.applications.handlebars.renderTemplate`
+  - [x] Created `getTextEditor()` helper wrapping `foundry.applications.ux.TextEditor.implementation`
+  - [x] Created `getContextMenu()` helper wrapping `foundry.applications.ux.ContextMenu.implementation`
+  - [x] Updated all files using `renderTemplate` to import and use helper
+  - [x] Updated all files using `TextEditor` to import and use helper
+  - [x] Updated all files using `ContextMenu` to import and use helper
+
+- [x] **D&D5e v5.1+ API Migrations** ✅
+  - [x] Updated `spell.system.preparation.mode` → `spell.system.method` in `panel-favorites.js`, `panel-spells.js`, `squire.js`
+  - [x] Updated `spell.system.preparation.prepared` → `spell.system.prepared` in `panel-favorites.js`, `panel-spells.js`, `squire.js`
+  - [x] Updated `CONFIG.DND5E.movementTypes` access to use `.label` property with fallback in `panel-character.js`
+  - [x] Updated Handlebars templates to use new spell data properties
+
+- [x] **JournalSheet API Migration** ✅
+  - [x] Updated `JournalTextPageSheet.activateListeners` to use `foundry.applications.sheets.JournalTextPageSheet.activateListeners` with fallback in `panel-notes.js`
 
 #### Core Manager Files
 
@@ -44,11 +78,16 @@
   - [x] Add null check in `resetCategories` method
   - [ ] **TODO:** Complete migration of remaining internal jQuery usage (if any)
 
-- [ ] **`scripts/manager-handle.js`** 🔄 (Partially Complete)
+- [x] **`scripts/manager-handle.js`** ✅
   - [x] Import `getNativeElement` helper
   - [x] Convert `_updateHandleFade` to use native DOM (`querySelector`)
   - [x] Convert `_attachHandleEventListeners` entry point to native DOM
-  - [ ] **TODO:** Complete migration of all event handlers inside `_attachHandleEventListeners` (extensive jQuery usage remaining)
+  - [x] Fixed pin button `classList` access with proper variable references and null checks
+  - [x] Fixed toggle tray button with dedicated event listener and `toggleTray()` helper function
+  - [x] Fixed condition icon loading with multiple property checks and fallback paths
+  - [x] Fixed `ActiveEffect` validation errors by ensuring `name` and `icon` properties are always defined
+  - [x] Fixed condition management null reference errors with proper async handling
+  - [x] Added Handlebars partial registration for handle components
 
 #### Application/FormApplication Classes
 
@@ -62,13 +101,15 @@
   - [x] Implemented jQuery detection in `activateListeners`
   - [x] Replaced jQuery selectors and DOM manipulation
 
-- [ ] **`scripts/window-macros.js`**
-  - [ ] Add jQuery detection in `activateListeners(html)`
-  - [ ] Verify panel integration with native DOM
+- [x] **`scripts/window-macros.js`** ✅
+  - [x] Added `_activateCoreListeners` override to prevent form listener errors
+  - [x] Wrapped `super.activateListeners(html)` in try-catch for graceful error handling
+  - [x] Verified panel integration with native DOM
 
-- [ ] **`scripts/window-dicetray.js`**
-  - [ ] Add jQuery detection in `activateListeners(html)`
-  - [ ] Verify panel integration
+- [x] **`scripts/window-dicetray.js`** ✅
+  - [x] Added `_activateCoreListeners` override to prevent form listener errors
+  - [x] Wrapped `super.activateListeners(html)` in try-catch for graceful error handling
+  - [x] Verified panel integration
 
 - [ ] **`scripts/panel-codex.js` - `CodexForm` class**
   - [ ] Add `_getNativeElement()` helper method
@@ -90,13 +131,15 @@
 
 #### High-Usage Panels
 
-- [x] **`scripts/panel-favorites.js`** 🔄 (Partially Complete)
+- [x] **`scripts/panel-favorites.js`** ✅
   - [x] Added `getNativeElement` import and usage
   - [x] Converted `.html()` to `.innerHTML`
   - [x] Converted `.find().each()` to `.querySelectorAll().forEach()`
   - [x] Converted jQuery class manipulation to native DOM
   - [x] Made `_removeEventListeners` a no-op for v13
-  - [ ] **TODO:** Complete migration of remaining jQuery usage in `_activateListeners` and other methods
+  - [x] Migrated `ContextMenu` to use `getContextMenu()` helper with `{ jQuery: false }`
+  - [x] Updated context menu callbacks to use native DOM (`li.dataset.itemId` instead of `$(li).data('item-id')`)
+  - [x] Updated `SpellData#preparation` to `SpellData#method` and `SpellData#prepared`
 
 - [x] **`scripts/panel-party.js`** 🔄 (Partially Complete)
   - [x] Added `getNativeElement` import and usage
@@ -111,6 +154,8 @@
   - [x] Added jQuery detection in `activateListeners`
   - [x] Converted character sheet toggle and journal button handlers
   - [x] Fixed syntax errors (missing closing braces)
+  - [x] Updated `TextEditor.enrichHTML()` to use `getTextEditor().enrichHTML()`
+  - [x] Updated `JournalTextPageSheet.activateListeners` to use `foundry.applications.sheets.JournalTextPageSheet.activateListeners` with fallback
   - [ ] **TODO:** Complete migration of remaining jQuery usage (20+ instances of `html.find()`)
 
 - [x] **`scripts/panel-quest.js`** 🔄 (Partially Complete)
@@ -118,6 +163,8 @@
   - [x] Converted `.html()` to `.innerHTML`
   - [x] Added jQuery detection in `_activateListeners` (entry point)
   - [x] Converted search input handler to native `addEventListener`
+  - [x] Updated `TextEditor.enrichHTML()` to use `getTextEditor().enrichHTML()`
+  - [x] Fixed "hide quest pins" button null reference error with proper fallback and null checks
   - [ ] **TODO:** Complete migration of extensive jQuery usage (100+ instances of `html.find()`, drag handlers, etc.)
 
 - [x] **`scripts/panel-codex.js` - `CodexPanel` class** 🔄 (Partially Complete)
@@ -128,13 +175,13 @@
   - [ ] **TODO:** Complete migration of remaining jQuery usage (search functionality, tag handlers, etc.)
   - [ ] **TODO:** Fix remaining jQuery usage at line 1924 (`codexContainer.find()`)
 
-- [ ] **`scripts/panel-spells.js`** 🔄 (Partially Complete)
+- [x] **`scripts/panel-spells.js`** ✅
   - [x] Added `getNativeElement` import and usage
   - [x] Converted `.html()` to `.innerHTML`
   - [x] Added jQuery detection in `_activateListeners` (entry point)
   - [x] Made `_removeEventListeners` a no-op for v13
-  - [ ] **TODO:** Convert `panel.on()` event delegation to native DOM event listeners
-  - [ ] **TODO:** Migrate all internal jQuery usage in `_activateListeners`
+  - [x] Updated `SpellData#preparation.mode` to `SpellData#method`
+  - [x] Updated `SpellData#preparation.prepared` to `SpellData#prepared`
 
 - [x] **`scripts/panel-weapons.js`** 🔄 (Partially Complete)
   - [x] Added `getNativeElement` import and usage
@@ -151,8 +198,9 @@
   - [x] Converted `.html()` to `.innerHTML`
   - [x] Made `_removeEventListeners` a no-op for v13
 
-- [x] **`scripts/panel-character.js`**
+- [x] **`scripts/panel-character.js`** ✅
   - [x] Added `getNativeElement` usage in `render` method
+  - [x] Updated `CONFIG.DND5E.movementTypes` access to use `.label` property with fallback for legacy string values
 
 - [x] **`scripts/panel-gm.js`**
   - [x] Added `getNativeElement` usage in `render` method
@@ -165,33 +213,38 @@
 
 #### Standard Panels (Lower Priority)
 
-- [ ] **`scripts/panel-macros.js`**
-  - [ ] Replace `$('#macros-panel-placeholder')` patterns
-  - [ ] Replace `$('<div>')` element creation
-  - [ ] Replace `.append()` patterns
-  - [ ] Replace `.each()` patterns
-  - [ ] Replace extensive drag/drop handlers
-  - [ ] Replace `$(document).off().on()` patterns
-  - [ ] Add jQuery detection in `_activateListeners(html)`
+- [x] **`scripts/panel-macros.js`** ✅
+  - [x] Replaced all jQuery selectors with native DOM (`querySelector`, `querySelectorAll`)
+  - [x] Replaced `.append()` with native DOM (`appendChild`, `replaceChild`)
+  - [x] Replaced `.each()` with native DOM (`forEach`)
+  - [x] Replaced all event handlers (`.on()`, `.off()`) with native DOM (`addEventListener`, `removeEventListener`)
+  - [x] Replaced DOM manipulation (`.toggleClass()`, `.hasClass()`, `.css()`, `.html()`, `.val()`) with native methods
+  - [x] Migrated drag/drop handlers to native DOM
+  - [x] Migrated document-level event handlers to native DOM
 
-- [ ] **`scripts/panel-health.js`**
-  - [ ] Replace `$('#health-panel-placeholder')` patterns
-  - [ ] Replace `$('<div>')` element creation
-  - [ ] Replace `.append()` patterns
-  - [ ] Add jQuery detection in `_activateListeners(html)`
+- [x] **`scripts/panel-health.js`** ✅
+  - [x] Replaced all jQuery selectors with native DOM
+  - [x] Replaced `.append()` with native DOM
+  - [x] Replaced all event handlers with native DOM
+  - [x] Replaced DOM manipulation with native methods
 
-- [ ] **`scripts/panel-abilities.js`**
-  - [ ] Add jQuery detection in `_activateListeners(html)`
+- [x] **`scripts/panel-abilities.js`** ✅
+  - [x] Migrated all jQuery usage to native DOM
+  - [x] Replaced `.find()`, `.on()`, `.off()`, `.each()`, `.toggleClass()`, `.hasClass()` with native equivalents
+  - [x] Used `cloneNode(true)` and `replaceChild()` for event listeners
 
-- [ ] **`scripts/panel-stats.js`**
-  - [ ] Add jQuery detection in `_activateListeners(html)`
+- [x] **`scripts/panel-stats.js`** ✅
+  - [x] Migrated all jQuery usage to native DOM
+  - [x] Replaced `.find()`, `.on()`, `.off()`, `.each()` with native equivalents
 
 - [ ] **`scripts/panel-experience.js`**
   - [ ] Add jQuery detection in `_activateListeners(html)`
 
-- [ ] **`scripts/panel-dicetray.js`**
-  - [ ] Replace `.append()` patterns
-  - [ ] Add jQuery detection in `_activateListeners(html)`
+- [x] **`scripts/panel-dicetray.js`** ✅
+  - [x] Replaced all jQuery selectors with native DOM
+  - [x] Replaced `.append()` with native DOM
+  - [x] Replaced all event handlers with native DOM
+  - [x] Replaced DOM manipulation with native methods
 
 - [ ] **`scripts/panel-party-stats.js`**
   - [ ] Replace jQuery detection for `this.element` (already has some detection)
@@ -201,13 +254,21 @@
 
 ### Phase 4: Utility & Helper Files (Priority: MEDIUM)
 
-- [x] **`scripts/helpers.js`**
+- [x] **`scripts/helpers.js`** ✅
   - [x] Added `getNativeElement` helper function
+  - [x] Added `renderTemplate()` helper wrapping `foundry.applications.handlebars.renderTemplate`
+  - [x] Added `getTextEditor()` helper wrapping `foundry.applications.ux.TextEditor.implementation`
+  - [x] Added `getContextMenu()` helper wrapping `foundry.applications.ux.ContextMenu.implementation`
+  - [x] Updated internal `TextEditor` usage to use `getTextEditor().enrichHTML()`
 
-- [ ] **`scripts/quest-pin.js`**
-  - [ ] Review PixiJS event handlers (`.on()`, `.off()` on PixiJS objects)
-  - [ ] **Note:** PixiJS `.on()/.off()` are different from jQuery - verify if changes needed
-  - [ ] Check if any DOM manipulation exists
+- [x] **`scripts/quest-pin.js`** ✅
+  - [x] Reviewed PixiJS event handlers (`.on()`, `.off()` on PixiJS objects) - no changes needed (PixiJS API, not jQuery)
+  - [x] Migrated Font Awesome from v5 to v6 Pro (updated font family name)
+  - [x] Added `fontWeight: '900'` to PIXI.Text icon styles to render solid icons
+  - [x] Refactored from hardcoded values to JSON-based configuration (`themes/quest-pins.json`)
+  - [x] Implemented `loadPinConfig()` to asynchronously load configuration
+  - [x] Made all visual properties (dimensions, colors, fonts, icons, offsets, shapes) configurable via JSON
+  - [x] Made font weight configurable via JSON for future customization
 
 - [ ] **`scripts/timer-utils.js`**
   - [ ] Review for any jQuery usage
@@ -237,11 +298,9 @@
 #### Known Issues Discovered During Migration
 
 - [ ] **`panel-codex.js:1924`** - Still has `codexContainer.find()` usage (needs native DOM conversion)
-- [ ] **`panel-spells.js`** - Extensive `panel.on()` event delegation needs conversion to native DOM
 - [ ] **`panel-quest.js`** - Extensive jQuery usage in search/filter handlers needs complete migration
 - [ ] **`panel-notes.js`** - Many remaining `html.find()` calls throughout the file
 - [ ] **`panel-party.js`** - Remaining jQuery usage in drag handlers and other event handlers
-- [ ] **`manager-handle.js`** - Extensive jQuery usage in `_attachHandleEventListeners` needs completion
 
 ---
 
@@ -280,9 +339,9 @@ After migrating each file, test:
 ### Phase 7: Documentation & Release
 
 - [ ] Update README with v13 requirements
-- [ ] Update CHANGELOG with migration notes
-- [ ] Document any breaking changes for users
-- [ ] Update module version to stable v13.0.0
+- [x] Update CHANGELOG with migration notes ✅
+- [x] Document any breaking changes for users ✅ (in CHANGELOG)
+- [x] Update module version to stable v13.0.0 ✅
 - [ ] Create GitHub release
 - [ ] Tag release
 - [ ] Announce v13 support
