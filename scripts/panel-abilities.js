@@ -92,23 +92,35 @@ export class AbilitiesPanel {
             
             // Add click handler for ability check
             newButton.addEventListener('click', async (event) => {
-                const ability = event.currentTarget?.dataset?.ability;
-                if (!ability) {
+                const abilityKey = event.currentTarget?.dataset?.ability;
+                if (!abilityKey) {
                     ui.notifications?.warn('Invalid ability button.');
                     return;
                 }
-                await this.actor.rollAbilityCheck(ability);
+                // v13: D&D5e v5.2.2 API - rollAbilityCheck expects an object with 'ability' property
+                try {
+                    await this.actor.rollAbilityCheck({ ability: abilityKey });
+                } catch (error) {
+                    console.error('Error rolling ability check:', error);
+                    ui.notifications?.error('Failed to roll ability check.');
+                }
             });
             
             // Add contextmenu handler for ability save
             newButton.addEventListener('contextmenu', async (event) => {
                 event.preventDefault();
-                const ability = event.currentTarget?.dataset?.ability;
-                if (!ability) {
+                const abilityKey = event.currentTarget?.dataset?.ability;
+                if (!abilityKey) {
                     ui.notifications?.warn('Invalid ability button.');
                     return;
                 }
-                await this.actor.rollAbilitySave(ability);
+                // v13: D&D5e v5.2.2 API - rollAbilitySave expects an object with 'ability' property
+                try {
+                    await this.actor.rollAbilitySave({ ability: abilityKey });
+                } catch (error) {
+                    console.error('Error rolling ability save:', error);
+                    ui.notifications?.error('Failed to roll ability save.');
+                }
             });
         });
     }

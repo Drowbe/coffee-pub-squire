@@ -1081,6 +1081,8 @@ After fixing breaking changes, test:
 - **[ApplicationV2 API](https://foundryvtt.wiki/en/development/api/applicationv2)** - New application framework
 - **[ApplicationV2 Conversion Guide](https://foundryvtt.wiki/en/development/guides/applicationV2-conversion-guide)** - Step-by-step conversion guide
 - **[Canvas API Documentation](https://foundryvtt.wiki/en/development/api/canvas)** - Scene controls and canvas changes
+- **[Font Awesome 6 Migration Guide](https://fontawesome.com/docs/migration/)** - Migration guide for Font Awesome 5 to 6
+- **[D&D5e v5.1+ API Migration Guide](https://github.com/foundryvtt/dnd5e/wiki)** - Migration guide for D&D5e v5.1+
 
 ### Community Support
 

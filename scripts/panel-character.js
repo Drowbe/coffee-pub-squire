@@ -562,14 +562,26 @@ export class CharacterPanel {
         const abilityButtons = nativeHtml.querySelectorAll('.ability-btn');
         abilityButtons.forEach(button => {
             button.addEventListener('click', async (event) => {
-                const ability = event.currentTarget.dataset.ability;
-                await this.actor.rollAbilityTest(ability);
+                const abilityKey = event.currentTarget.dataset.ability;
+                // v13: D&D5e v5.2.2 API - rollAbilityCheck expects an object with 'ability' property
+                try {
+                    await this.actor.rollAbilityCheck({ ability: abilityKey });
+                } catch (error) {
+                    console.error('Error rolling ability check:', error);
+                    ui.notifications?.error('Failed to roll ability check.');
+                }
             });
             
             button.addEventListener('contextmenu', async (event) => {
                 event.preventDefault();
-                const ability = event.currentTarget.dataset.ability;
-                await this.actor.rollAbilitySave(ability);
+                const abilityKey = event.currentTarget.dataset.ability;
+                // v13: D&D5e v5.2.2 API - rollAbilitySave expects an object with 'ability' property
+                try {
+                    await this.actor.rollAbilitySave({ ability: abilityKey });
+                } catch (error) {
+                    console.error('Error rolling ability save:', error);
+                    ui.notifications?.error('Failed to roll ability save.');
+                }
             });
         });
 
