@@ -557,11 +557,15 @@ export class CharacterPanel {
             });
         }
 
-        // Ability Score Buttons
+        // Ability Score Buttons - clone to prevent duplicate listeners
         // v13: Use native DOM querySelectorAll and addEventListener
         const abilityButtons = nativeHtml.querySelectorAll('.ability-btn');
         abilityButtons.forEach(button => {
-            button.addEventListener('click', async (event) => {
+            // Remove any existing listeners by cloning the button (clean slate)
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            newButton.addEventListener('click', async (event) => {
                 const abilityKey = event.currentTarget.dataset.ability;
                 // v13: D&D5e v5.2.2 API - rollAbilityCheck expects an object with 'ability' property
                 try {
@@ -572,12 +576,12 @@ export class CharacterPanel {
                 }
             });
             
-            button.addEventListener('contextmenu', async (event) => {
+            newButton.addEventListener('contextmenu', async (event) => {
                 event.preventDefault();
                 const abilityKey = event.currentTarget.dataset.ability;
-                // v13: D&D5e v5.2.2 API - rollAbilitySave expects an object with 'ability' property
+                // v13: D&D5e v5.2.2 API - rollSavingThrow expects an object with 'ability' property
                 try {
-                    await this.actor.rollAbilitySave({ ability: abilityKey });
+                    await this.actor.rollSavingThrow({ ability: abilityKey });
                 } catch (error) {
                     console.error('Error rolling ability save:', error);
                     ui.notifications?.error('Failed to roll ability save.');

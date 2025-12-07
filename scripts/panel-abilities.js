@@ -68,10 +68,12 @@ export class AbilitiesPanel {
         const panel = nativeHtml.querySelector('[data-panel="abilities"]');
         if (!panel) return;
 
-        // Abilities toggle
+        // Abilities toggle - clone to prevent duplicate listeners
         const trayTitle = panel.querySelector('.tray-title-small');
         if (trayTitle) {
-            trayTitle.addEventListener('click', () => {
+            const newTrayTitle = trayTitle.cloneNode(true);
+            trayTitle.parentNode.replaceChild(newTrayTitle, trayTitle);
+            newTrayTitle.addEventListener('click', () => {
                 const abilitiesContent = panel.querySelector('#abilities-content');
                 const toggle = panel.querySelector('#abilities-toggle');
                 if (abilitiesContent && toggle) {
@@ -114,9 +116,9 @@ export class AbilitiesPanel {
                     ui.notifications?.warn('Invalid ability button.');
                     return;
                 }
-                // v13: D&D5e v5.2.2 API - rollAbilitySave expects an object with 'ability' property
+                // v13: D&D5e v5.2.2 API - rollSavingThrow expects an object with 'ability' property
                 try {
-                    await this.actor.rollAbilitySave({ ability: abilityKey });
+                    await this.actor.rollSavingThrow({ ability: abilityKey });
                 } catch (error) {
                     console.error('Error rolling ability save:', error);
                     ui.notifications?.error('Failed to roll ability save.');
