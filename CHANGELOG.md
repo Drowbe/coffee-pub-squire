@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.2] - Panel Normalization & Bug Fixes
+
+### Changed
+- **Panel CSS Normalization**: Refactored all collapsible panels to use shared CSS classes and IDs
+  - Created normalized `.tray-panel-content` class for all panel content containers
+  - Standardized toggle icons with IDs (`#gm-toggle`, `#abilities-toggle`, `#stats-toggle`, `#macros-toggle`, `#dicetray-toggle`, `#exp-toggle`, `#health-toggle`)
+  - Added centralized CSS rules in `common.css` for consistent panel behavior
+  - Removed duplicate CSS from individual panel stylesheets (abilities, stats, macros, dicetray, experience, health, GM)
+  - Updated all panel templates to use IDs and shared content class
+  - Panels now share consistent expand/collapse animations and styling
+- **Panel Structure Refactoring**: Updated panel templates and JavaScript to use normalized pattern
+  - All panels now use `id="[panel]-content"` and `class="tray-panel-content"` for content areas
+  - All toggle icons use `id="[panel]-toggle"` for consistent targeting
+  - JavaScript updated to query by IDs instead of classes
+  - Health panel refactored to match normalized pattern
+
+### Fixed
+- **Stats Panel Animation**: Fixed expand/collapse animation visual inconsistencies
+  - Corrected chevron positioning and layout to match abilities panel
+  - Fixed CSS `display`, `position`, `width`, and `height` properties for `.stats-toggle`
+  - Chevron now properly positioned and rotates correctly
+- **GM Tools Content Scrolling**: Fixed GM Tools panel content not scrolling when larger than container
+  - Added `overflow-y: auto` and `overflow-x: hidden` to `.tray-panel-content` in GM panel
+  - Content now scrolls properly when exceeding container height
+- **Macro Panel Content Scrolling**: Fixed Macro panel content not scrolling when larger than container
+  - Added `max-height: 200px`, `overflow-y: auto`, and `overflow-x: hidden` to macro panel content
+  - Macros list now scrolls when there are many macros
+- **Panel Collapse/Expand Issues**: Fixed panels not collapsing/expanding after CSS normalization
+  - Fixed GM panel inverted toggle logic (`isCollapsed` assignment corrected)
+  - Fixed dice tray duplicate listeners by cloning `trayTitle` element
+  - Fixed health panel not using normalized CSS (refactored to use IDs and shared class)
+  - All panels now properly collapse and expand with consistent animations
+- **Health Panel Controls Layout**: Fixed health panel controls not filling width and buttons not flexing
+  - Added `width: 100%` to `.hp-controls` container
+  - Added `flex: 1` to `.hp-btn` buttons for equal width distribution
+  - Added `flex: 1` with `min-width: 60px` to `.hp-amount` input
+  - Controls now properly fill tray width and buttons expand correctly
+- **Ability Roll API Errors**: Fixed `Error: One of original or other are not Objects!` when rolling ability checks
+  - Updated `rollAbilityCheck` and `rollSavingThrow` calls to use correct D&D5e v5.2.2 API format
+  - Changed from string parameter to object with `ability` property: `{ ability: abilityKey }`
+  - Applied fix to both `panel-abilities.js` and `panel-character.js`
+- **Ability Save Method**: Fixed `TypeError: this.actor.rollAbilitySave is not a function`
+  - Changed `rollAbilitySave` to `rollSavingThrow` (correct method name in D&D5e v5.2.2)
+  - Updated both ability panel and character panel save handlers
+- **Double-Click Issue**: Fixed ability buttons triggering duplicate roll dialogs
+  - Added button cloning in `panel-character.js` to prevent duplicate event listeners
+  - Cloned toggle button in `panel-abilities.js` to prevent duplicate toggle listeners
+  - Ensures clean event handler setup when `_activateListeners` is called multiple times
+- **Health Panel Update Error**: Fixed `TypeError: this.element?.find is not a function` in `_onActorUpdate`
+  - Migrated remaining jQuery code in `panel-character.js._onActorUpdate()` to native DOM
+  - Replaced `.find()` with `querySelector()` using `getNativeElement()` helper
+  - Replaced `.css()` with direct `style.height` assignment
+  - Replaced `.append()` with `createElement()` and `appendChild()`
+  - Replaced `.remove()` with native `remove()` method
+
 ## [13.0.1] - Quick fix
 
 ### Changed

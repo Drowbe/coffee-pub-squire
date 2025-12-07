@@ -17,7 +17,15 @@
   - `CONFIG.DND5E.movementTypes` → `.label` property access
   - `JournalTextPageSheet` API migration
 - ✅ **jQuery to Native DOM**: Complete migration for critical panels
-  - `panel-macros.js`, `panel-health.js`, `panel-dicetray.js`, `panel-stats.js`, `panel-abilities.js`
+  - `panel-macros.js`, `panel-health.js`, `panel-dicetray.js`, `panel-stats.js`, `panel-abilities.js`, `panel-character.js` (including `_onActorUpdate`)
+- ✅ **Panel CSS Normalization**: Refactored all collapsible panels to use shared CSS classes and IDs
+  - Created normalized `.tray-panel-content` class for all panel content containers
+  - Standardized toggle icons with IDs for consistent targeting
+  - Centralized CSS rules in `common.css` for consistent panel behavior
+  - Removed duplicate CSS from individual panel stylesheets
+  - Fixed panel collapse/expand issues (GM, dice tray, health panels)
+  - Fixed panel scrolling (GM Tools, Macro panel)
+  - Fixed panel animations and layouts (Stats panel chevron, Health panel controls)
 - ✅ **Window Fixes**: All window classes updated with `_activateCoreListeners` overrides
   - `window-macros.js`, `window-health.js`, `window-dicetray.js`
 - ✅ **Handle Manager**: All handle button actions and condition management fixed
@@ -27,15 +35,7 @@
 
 ---
 
-### Phase 1: Pre-Migration Setup
-
-- [x] Verify `module.json` has `"minimum": "13.0.0"` ✅
-- [ ] Create v13 testing FoundryVTT instance
-- [ ] Create feature branch: `v13-migration`
-- [ ] Document baseline functionality (screenshots, feature list)
-- [ ] Backup current working codebase
-- [ ] Update module version in `module.json` to `13.0.0` (or `13.0.0-beta.1` for testing)
-- [ ] Review CHANGELOG structure for v13 entry
+### Phase 1: Pre-Migration Setup COMPLETE
 
 ---
 
@@ -56,6 +56,8 @@
   - [x] Updated `spell.system.preparation.prepared` → `spell.system.prepared` in `panel-favorites.js`, `panel-spells.js`, `squire.js`
   - [x] Updated `CONFIG.DND5E.movementTypes` access to use `.label` property with fallback in `panel-character.js`
   - [x] Updated Handlebars templates to use new spell data properties
+  - [x] Fixed ability roll API calls to use correct v5.2.2 format: `rollAbilityCheck({ ability: key })` and `rollSavingThrow({ ability: key })`
+  - [x] Fixed method name: `rollAbilitySave` → `rollSavingThrow` (correct method in D&D5e v5.2.2)
 
 - [x] **JournalSheet API Migration** ✅
   - [x] Updated `JournalTextPageSheet.activateListeners` to use `foundry.applications.sheets.JournalTextPageSheet.activateListeners` with fallback in `panel-notes.js`
@@ -201,6 +203,10 @@
 - [x] **`scripts/panel-character.js`** ✅
   - [x] Added `getNativeElement` usage in `render` method
   - [x] Updated `CONFIG.DND5E.movementTypes` access to use `.label` property with fallback for legacy string values
+  - [x] Migrated `_onActorUpdate` method from jQuery to native DOM (`.find()`, `.css()`, `.append()`, `.remove()`)
+  - [x] Fixed ability roll API calls to use correct D&D5e v5.2.2 format: `{ ability: abilityKey }`
+  - [x] Fixed ability save method name: `rollAbilitySave` → `rollSavingThrow`
+  - [x] Added button cloning to prevent duplicate event listeners
 
 - [x] **`scripts/panel-gm.js`**
   - [x] Added `getNativeElement` usage in `render` method
@@ -232,6 +238,9 @@
   - [x] Migrated all jQuery usage to native DOM
   - [x] Replaced `.find()`, `.on()`, `.off()`, `.each()`, `.toggleClass()`, `.hasClass()` with native equivalents
   - [x] Used `cloneNode(true)` and `replaceChild()` for event listeners
+  - [x] Fixed ability roll API calls to use correct D&D5e v5.2.2 format: `{ ability: abilityKey }`
+  - [x] Fixed ability save method name: `rollAbilitySave` → `rollSavingThrow`
+  - [x] Added button and toggle cloning to prevent duplicate event listeners
 
 - [x] **`scripts/panel-stats.js`** ✅
   - [x] Migrated all jQuery usage to native DOM
