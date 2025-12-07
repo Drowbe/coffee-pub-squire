@@ -146,8 +146,8 @@ export class MacrosPanel {
         const isCollapsed = game.settings.get(MODULE.ID, 'isMacrosPanelCollapsed');
         if (isCollapsed) {
             // v13: Use native DOM instead of jQuery
-            const macrosContent = panel.querySelector('.macros-content');
-            const toggle = panel.querySelector('.macros-toggle');
+            const macrosContent = panel.querySelector('#macros-content');
+            const toggle = panel.querySelector('#macros-toggle');
             if (macrosContent) macrosContent.classList.add('collapsed');
             if (toggle) toggle.style.transform = 'rotate(-90deg)';
         }
@@ -170,8 +170,8 @@ export class MacrosPanel {
             const newTitle = trayTitle.cloneNode(true);
             trayTitle.parentNode?.replaceChild(newTitle, trayTitle);
             newTitle.addEventListener('click', () => {
-                const macrosContent = panel.querySelector('.macros-content');
-                const toggle = panel.querySelector('.macros-toggle');
+                const macrosContent = panel.querySelector('#macros-content');
+                const toggle = panel.querySelector('#macros-toggle');
                 if (macrosContent && toggle) {
                     const isCollapsed = macrosContent.classList.contains('collapsed');
                     macrosContent.classList.toggle('collapsed');

@@ -42,33 +42,10 @@
     align-items: center;
 }
 
-.squire-tray[data-position="left"] [data-panel="macros"] .macros-toggle,
-.squire-popout[data-position="left"] [data-panel="macros"] .macros-toggle {
-    color: #9f9275;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.squire-tray[data-position="left"] [data-panel="macros"] .macros-toggle:hover,
-.squire-popout[data-position="left"] [data-panel="macros"] .macros-toggle:hover {
-    color: #fff;
-}
-
-/* ----- CONTENT ----- */
-
-/* CONTENT EXPANDED */
-.squire-tray[data-position="left"] [data-panel="macros"] .macros-content,
-.squire-popout[data-position="left"] [data-panel="macros"] .macros-content {
-    max-height: 200px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    transition: max-height 0.3s ease-in-out;
-}
-
-/* CONTENT COLLAPSED */
-.squire-tray[data-position="left"] [data-panel="macros"] .macros-content.collapsed,
-.squire-popout[data-position="left"] [data-panel="macros"] .macros-content.collapsed {
-    max-height: 0;
+/* Toggle and content styles are now normalized in common.css */
+/* Panel-specific overrides for macros content collapsed state */
+.squire-tray[data-position="left"] [data-panel="macros"] #macros-content.collapsed,
+.squire-popout[data-position="left"] [data-panel="macros"] #macros-content.collapsed {
     opacity: 0;
     margin: 0;
     padding: 0;

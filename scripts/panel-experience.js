@@ -35,8 +35,8 @@ export class ExperiencePanel {
         const panel = this.element.find('[data-panel="experience"]');
         const isCollapsed = game.settings.get(MODULE.ID, 'isExperiencePanelCollapsed');
         if (isCollapsed) {
-            const expContent = panel.find('.exp-content');
-            const toggle = panel.find('.exp-toggle');
+            const expContent = panel.find('#exp-content');
+            const toggle = panel.find('#exp-toggle');
             expContent.addClass('collapsed');
             toggle.css('transform', 'rotate(-90deg)');
         }
@@ -49,8 +49,8 @@ export class ExperiencePanel {
 
         // Experience toggle
         panel.find('.tray-title-small').click(() => {
-            const expContent = panel.find('.exp-content');
-            const toggle = panel.find('.exp-toggle');
+            const expContent = panel.find('#exp-content');
+            const toggle = panel.find('#exp-toggle');
             expContent.toggleClass('collapsed');
             toggle.css('transform', expContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
             // Save collapsed state

@@ -4,12 +4,12 @@
     {{#if actor}}Dice Tray: {{default actor.handleDisplayName actor.name}}{{else}}Dice Tray: No Character{{/if}}
     <div class="dicetray-controls">
         <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
-        <i class="fa-solid fa-chevron-down dicetray-toggle" title="Toggle Dice Tray"></i>
+        <i id="dicetray-toggle" class="fa-solid fa-chevron-down" title="Toggle Dice Tray"></i>
     </div>
 </div>
 {{/unless}}
 
-<div class="dicetray-content">
+<div id="dicetray-content">
     <div class="squire-dice-formula">
         <div class="squire-input-wrapper">
             <input type="text" class="squire-formula-input" placeholder="Enter dice formula">

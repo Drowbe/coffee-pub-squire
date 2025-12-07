@@ -36,8 +36,8 @@ export class GmPanel {
 
     _applyCollapsedState(panel, collapsed) {
         // v13: Use native DOM methods
-        const content = panel.querySelector('.gmdetails-content');
-        const toggle = panel.querySelector('.gmdetails-toggle');
+        const content = panel.querySelector('#gm-content');
+        const toggle = panel.querySelector('#gm-toggle');
         if (!content || !toggle) return;
 
         if (collapsed) {
@@ -61,8 +61,8 @@ export class GmPanel {
         title.parentNode?.replaceChild(newTitle, title);
 
         newTitle.addEventListener('click', async () => {
-            const content = panel.querySelector('.gmdetails-content');
-            const toggle = panel.querySelector('.gmdetails-toggle');
+            const content = panel.querySelector('#gm-content');
+            const toggle = panel.querySelector('#gm-toggle');
             if (!content || !toggle) return;
 
             const isCollapsed = !content.classList.contains('collapsed');

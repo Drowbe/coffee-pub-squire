@@ -304,28 +304,11 @@
     align-items: center;
 }
 
-.squire-tray[data-position="left"] [data-panel="dicetray"] .dicetray-toggle,
-.squire-popout[data-position="left"] [data-panel="dicetray"] .dicetray-toggle {
-    color: #9f9275;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-.squire-tray[data-position="left"] [data-panel="dicetray"] .dicetray-toggle:hover,
-.squire-popout[data-position="left"] [data-panel="dicetray"] .dicetray-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] [data-panel="dicetray"] .dicetray-content,
-.squire-popout[data-position="left"] [data-panel="dicetray"] .dicetray-content {
+/* Toggle and content styles are now normalized in common.css */
+/* Panel-specific overrides for dicetray content */
+.squire-tray[data-position="left"] [data-panel="dicetray"] #dicetray-content,
+.squire-popout[data-position="left"] [data-panel="dicetray"] #dicetray-content {
     max-height: 1000px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
-}
-
-.squire-tray[data-position="left"] [data-panel="dicetray"] .dicetray-content.collapsed,
-.squire-popout[data-position="left"] [data-panel="dicetray"] .dicetray-content.collapsed {
-    max-height: 0;
 }
 
 

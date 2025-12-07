@@ -217,3 +217,72 @@
 .tray-selection-button.button-combat:hover {
     background: rgba(105, 7, 8, 0.9) !important;
 }
+
+/* --- NORMALIZED PANEL CONTENT CONTAINERS --- */
+/* All panel content containers with IDs ending in "-content" */
+.squire-tray[data-position="left"] [data-panel] #gm-content,
+.squire-tray[data-position="left"] [data-panel] #abilities-content,
+.squire-tray[data-position="left"] [data-panel] #stats-content,
+.squire-tray[data-position="left"] [data-panel] #macros-content,
+.squire-tray[data-position="left"] [data-panel] #dicetray-content,
+.squire-tray[data-position="left"] [data-panel] #exp-content,
+.squire-popout[data-position="left"] [data-panel] #gm-content,
+.squire-popout[data-position="left"] [data-panel] #abilities-content,
+.squire-popout[data-position="left"] [data-panel] #stats-content,
+.squire-popout[data-position="left"] [data-panel] #macros-content,
+.squire-popout[data-position="left"] [data-panel] #dicetray-content,
+.squire-popout[data-position="left"] [data-panel] #exp-content {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+.squire-tray[data-position="left"] [data-panel] #gm-content.collapsed,
+.squire-tray[data-position="left"] [data-panel] #abilities-content.collapsed,
+.squire-tray[data-position="left"] [data-panel] #stats-content.collapsed,
+.squire-tray[data-position="left"] [data-panel] #macros-content.collapsed,
+.squire-tray[data-position="left"] [data-panel] #dicetray-content.collapsed,
+.squire-tray[data-position="left"] [data-panel] #exp-content.collapsed,
+.squire-popout[data-position="left"] [data-panel] #gm-content.collapsed,
+.squire-popout[data-position="left"] [data-panel] #abilities-content.collapsed,
+.squire-popout[data-position="left"] [data-panel] #stats-content.collapsed,
+.squire-popout[data-position="left"] [data-panel] #macros-content.collapsed,
+.squire-popout[data-position="left"] [data-panel] #dicetray-content.collapsed,
+.squire-popout[data-position="left"] [data-panel] #exp-content.collapsed {
+    max-height: 0;
+}
+
+/* --- NORMALIZED PANEL TOGGLES --- */
+/* All panel toggle icons with IDs ending in "-toggle" */
+.squire-tray[data-position="left"] [data-panel] #gm-toggle,
+.squire-tray[data-position="left"] [data-panel] #abilities-toggle,
+.squire-tray[data-position="left"] [data-panel] #stats-toggle,
+.squire-tray[data-position="left"] [data-panel] #macros-toggle,
+.squire-tray[data-position="left"] [data-panel] #dicetray-toggle,
+.squire-tray[data-position="left"] [data-panel] #exp-toggle,
+.squire-popout[data-position="left"] [data-panel] #gm-toggle,
+.squire-popout[data-position="left"] [data-panel] #abilities-toggle,
+.squire-popout[data-position="left"] [data-panel] #stats-toggle,
+.squire-popout[data-position="left"] [data-panel] #macros-toggle,
+.squire-popout[data-position="left"] [data-panel] #dicetray-toggle,
+.squire-popout[data-position="left"] [data-panel] #exp-toggle {
+    color: #9f9275;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] [data-panel] #gm-toggle:hover,
+.squire-tray[data-position="left"] [data-panel] #abilities-toggle:hover,
+.squire-tray[data-position="left"] [data-panel] #stats-toggle:hover,
+.squire-tray[data-position="left"] [data-panel] #macros-toggle:hover,
+.squire-tray[data-position="left"] [data-panel] #dicetray-toggle:hover,
+.squire-tray[data-position="left"] [data-panel] #exp-toggle:hover,
+.squire-popout[data-position="left"] [data-panel] #gm-toggle:hover,
+.squire-popout[data-position="left"] [data-panel] #abilities-toggle:hover,
+.squire-popout[data-position="left"] [data-panel] #stats-toggle:hover,
+.squire-popout[data-position="left"] [data-panel] #macros-toggle:hover,
+.squire-popout[data-position="left"] [data-panel] #dicetray-toggle:hover,
+.squire-popout[data-position="left"] [data-panel] #exp-toggle:hover {
+    color: #fff;
+}

@@ -22,25 +22,7 @@
     align-items: center;
 }
 
-.squire-tray[data-position="left"] [data-panel="stats"] .stats-toggle {
-    color: #9f9275;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-.squire-tray[data-position="left"] [data-panel="stats"] .stats-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] [data-panel="stats"] .stats-content {
-    max-height: 200px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
-}
-
-.squire-tray[data-position="left"] [data-panel="stats"] .stats-content.collapsed {
-    max-height: 0;
-}
+/* Toggle and content styles are now normalized in common.css */
 
 .squire-tray[data-position="left"] [data-panel="stats"] .stat-boxes {
     display: grid;

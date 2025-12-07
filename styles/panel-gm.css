@@ -14,31 +14,16 @@
     align-items: center;
 }
 
-.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-toggle {
-    color: #9f9275;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-content {
+/* Toggle and content styles are now normalized in common.css */
+/* Panel-specific overrides for GM content */
+.squire-tray[data-position="left"] [data-panel="gm"] #gm-content {
     max-height: 250px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    transition: max-height 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
     gap: 4px;
     font-size: 0.75em;
     text-transform: none;
     padding-right: 4px;
-}
-
-.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-content.collapsed {
-    max-height: 0;
 }
 
 .squire-tray[data-position="left"] [data-panel="gm"] .gm-row {

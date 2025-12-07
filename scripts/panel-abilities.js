@@ -45,8 +45,8 @@ export class AbilitiesPanel {
             if (panel) {
                 const isCollapsed = game.settings.get(MODULE.ID, 'isAbilitiesPanelCollapsed');
                 if (isCollapsed) {
-                    const abilitiesContent = panel.querySelector('.abilities-content');
-                    const toggle = panel.querySelector('.abilities-toggle');
+                    const abilitiesContent = panel.querySelector('#abilities-content');
+                    const toggle = panel.querySelector('#abilities-toggle');
                     if (abilitiesContent) {
                         abilitiesContent.classList.add('collapsed');
                     }
@@ -72,8 +72,8 @@ export class AbilitiesPanel {
         const trayTitle = panel.querySelector('.tray-title-small');
         if (trayTitle) {
             trayTitle.addEventListener('click', () => {
-                const abilitiesContent = panel.querySelector('.abilities-content');
-                const toggle = panel.querySelector('.abilities-toggle');
+                const abilitiesContent = panel.querySelector('#abilities-content');
+                const toggle = panel.querySelector('#abilities-toggle');
                 if (abilitiesContent && toggle) {
                     abilitiesContent.classList.toggle('collapsed');
                     toggle.style.transform = abilitiesContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';

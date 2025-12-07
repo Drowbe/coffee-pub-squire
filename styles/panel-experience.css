@@ -22,24 +22,10 @@
     align-items: center;
 }
 
-.squire-tray[data-position="left"] [data-panel="experience"] .exp-toggle {
-    color: #9f9275;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-.squire-tray[data-position="left"] [data-panel="experience"] .exp-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] [data-panel="experience"] .exp-content {
+/* Toggle and content styles are now normalized in common.css */
+/* Panel-specific overrides for experience content */
+.squire-tray[data-position="left"] [data-panel="experience"] #exp-content {
     max-height: 100px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
-}
-
-.squire-tray[data-position="left"] [data-panel="experience"] .exp-content.collapsed {
-    max-height: 0;
 }
 
 .squire-tray[data-position="left"] [data-panel="experience"] .exp-bar {

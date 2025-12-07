@@ -45,8 +45,8 @@ export class StatsPanel {
             if (panel) {
                 const isCollapsed = game.settings.get(MODULE.ID, 'isStatsPanelCollapsed');
                 if (isCollapsed) {
-                    const statsContent = panel.querySelector('.stats-content');
-                    const toggle = panel.querySelector('.stats-toggle');
+                    const statsContent = panel.querySelector('#stats-content');
+                    const toggle = panel.querySelector('#stats-toggle');
                     if (statsContent) {
                         statsContent.classList.add('collapsed');
                     }
@@ -72,8 +72,8 @@ export class StatsPanel {
         const trayTitle = panel.querySelector('.tray-title-small');
         if (trayTitle) {
             trayTitle.addEventListener('click', () => {
-                const statsContent = panel.querySelector('.stats-content');
-                const toggle = panel.querySelector('.stats-toggle');
+                const statsContent = panel.querySelector('#stats-content');
+                const toggle = panel.querySelector('#stats-toggle');
                 if (statsContent && toggle) {
                     statsContent.classList.toggle('collapsed');
                     toggle.style.transform = statsContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';

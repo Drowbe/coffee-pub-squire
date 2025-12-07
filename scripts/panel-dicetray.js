@@ -123,8 +123,8 @@ export class DiceTrayPanel {
         if (panel) {
             const isCollapsed = game.settings.get(MODULE.ID, 'isDiceTrayPanelCollapsed');
             if (isCollapsed) {
-                const dicetrayContent = panel.querySelector('.dicetray-content');
-                const toggle = panel.querySelector('.dicetray-toggle');
+                const dicetrayContent = panel.querySelector('#dicetray-content');
+                const toggle = panel.querySelector('#dicetray-toggle');
                 if (dicetrayContent) {
                     dicetrayContent.classList.add('collapsed');
                 }
@@ -146,8 +146,8 @@ export class DiceTrayPanel {
         const trayTitle = panel.querySelector('.tray-title-small');
         if (trayTitle) {
             trayTitle.addEventListener('click', () => {
-                const dicetrayContent = panel.querySelector('.dicetray-content');
-                const toggle = panel.querySelector('.dicetray-toggle');
+                const dicetrayContent = panel.querySelector('#dicetray-content');
+                const toggle = panel.querySelector('#dicetray-toggle');
                 if (dicetrayContent && toggle) {
                     dicetrayContent.classList.toggle('collapsed');
                     toggle.style.transform = dicetrayContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
