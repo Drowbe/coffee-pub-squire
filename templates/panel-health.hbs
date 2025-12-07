@@ -5,11 +5,11 @@
         <span>Health: {{#if actors}}{{#if (gt actors.length 1)}}Multiple Selected ({{actors.length}}){{else}}{{actor.system.attributes.hp.value}} OF {{actor.system.attributes.hp.max}}{{/if}}{{else}}No Character Selected{{/if}}</span>
         <div class="health-controls">
             <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
-            <i class="fa-solid fa-chevron-down health-toggle" title="Toggle Health Panel"></i>
+            <i id="health-toggle" class="fa-solid fa-chevron-down" title="Toggle Health Panel"></i>
         </div>
     </div>
     {{/unless}}
-    <div class="health-content">
+    <div id="health-content" class="tray-panel-content">
         <div class="bars">
             {{#if actors}}
                 {{#each actors as |actor|}}

@@ -245,12 +245,14 @@
 .squire-tray[data-position="left"] [data-panel] #macros-toggle,
 .squire-tray[data-position="left"] [data-panel] #dicetray-toggle,
 .squire-tray[data-position="left"] [data-panel] #exp-toggle,
+.squire-tray[data-position="left"] [data-panel] #health-toggle,
 .squire-popout[data-position="left"] [data-panel] #gm-toggle,
 .squire-popout[data-position="left"] [data-panel] #abilities-toggle,
 .squire-popout[data-position="left"] [data-panel] #stats-toggle,
 .squire-popout[data-position="left"] [data-panel] #macros-toggle,
 .squire-popout[data-position="left"] [data-panel] #dicetray-toggle,
-.squire-popout[data-position="left"] [data-panel] #exp-toggle {
+.squire-popout[data-position="left"] [data-panel] #exp-toggle,
+.squire-popout[data-position="left"] [data-panel] #health-toggle {
     color: #9f9275;
     transition: transform 0.3s ease;
     cursor: pointer;
@@ -262,11 +264,13 @@
 .squire-tray[data-position="left"] [data-panel] #macros-toggle:hover,
 .squire-tray[data-position="left"] [data-panel] #dicetray-toggle:hover,
 .squire-tray[data-position="left"] [data-panel] #exp-toggle:hover,
+.squire-tray[data-position="left"] [data-panel] #health-toggle:hover,
 .squire-popout[data-position="left"] [data-panel] #gm-toggle:hover,
 .squire-popout[data-position="left"] [data-panel] #abilities-toggle:hover,
 .squire-popout[data-position="left"] [data-panel] #stats-toggle:hover,
 .squire-popout[data-position="left"] [data-panel] #macros-toggle:hover,
 .squire-popout[data-position="left"] [data-panel] #dicetray-toggle:hover,
-.squire-popout[data-position="left"] [data-panel] #exp-toggle:hover {
+.squire-popout[data-position="left"] [data-panel] #exp-toggle:hover,
+.squire-popout[data-position="left"] [data-panel] #health-toggle:hover {
     color: #fff;
 }

@@ -167,8 +167,8 @@ export class HealthPanel {
             trayTitle.parentNode?.replaceChild(newTitle, trayTitle);
             newTitle.addEventListener('click', (ev) => {
                 ev.preventDefault();
-                const healthContent = panel.querySelector('.health-content');
-                const toggle = panel.querySelector('.health-toggle');
+                const healthContent = panel.querySelector('#health-content');
+                const toggle = panel.querySelector('#health-toggle');
                 if (healthContent && toggle) {
                     const isCollapsed = healthContent.classList.contains('collapsed');
                     healthContent.classList.toggle('collapsed');

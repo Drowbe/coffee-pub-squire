@@ -23,23 +23,15 @@
     align-items: center;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .health-toggle {
-    color: #9f9275;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-.squire-tray[data-position="left"] [data-panel="health"] .health-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] [data-panel="health"] .health-content {
+/* Toggle and content styles are now normalized in common.css */
+/* Panel-specific overrides for health content */
+.squire-tray[data-position="left"] [data-panel="health"] .tray-panel-content {
     overflow: visible;
     transition: none;
 }
 
-.squire-tray[data-position="left"] [data-panel="health"] .health-content.collapsed {
-    max-height: 0;
+/* Collapsed state - override overflow when collapsed */
+.squire-tray[data-position="left"] [data-panel="health"] .tray-panel-content.collapsed {
     overflow: hidden;
 }
 
