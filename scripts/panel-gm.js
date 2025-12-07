@@ -65,15 +65,9 @@ export class GmPanel {
             const toggle = panel.querySelector('#gm-toggle');
             if (!content || !toggle) return;
 
-            const isCollapsed = !content.classList.contains('collapsed');
-            if (isCollapsed) {
-                content.classList.add('collapsed');
-                toggle.style.transform = 'rotate(-90deg)';
-            } else {
-                content.classList.remove('collapsed');
-                toggle.style.transform = 'rotate(0deg)';
-            }
-            await game.settings.set(MODULE.ID, 'isGmPanelCollapsed', isCollapsed);
+            content.classList.toggle('collapsed');
+            toggle.style.transform = content.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+            await game.settings.set(MODULE.ID, 'isGmPanelCollapsed', content.classList.contains('collapsed'));
         });
     }
 

@@ -10,7 +10,7 @@
 </div>
 {{/unless}}
 
-<div id="macros-content">
+<div id="macros-content" class="tray-panel-content">
     <div class="macros-grid">
         {{#each macros as |macro idx|}}
             <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false" {{#if macro.id}}data-tooltip="<div class='squire-data-tooltip-label'>{{macro.name}}</div><div class='squire-data-tooltip-text'>Left-Click: Execute Macro<br>Right-Click: Favorite Macro<br>Middle-Click or Shift-Click: Remove Macro or Empty Slot</div>"{{/if}}>

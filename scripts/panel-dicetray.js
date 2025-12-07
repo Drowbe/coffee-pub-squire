@@ -145,7 +145,10 @@ export class DiceTrayPanel {
         // Add dice tray toggle handler
         const trayTitle = panel.querySelector('.tray-title-small');
         if (trayTitle) {
-            trayTitle.addEventListener('click', () => {
+            // Clone to remove existing listeners
+            const newTitle = trayTitle.cloneNode(true);
+            trayTitle.parentNode?.replaceChild(newTitle, trayTitle);
+            newTitle.addEventListener('click', () => {
                 const dicetrayContent = panel.querySelector('#dicetray-content');
                 const toggle = panel.querySelector('#dicetray-toggle');
                 if (dicetrayContent && toggle) {

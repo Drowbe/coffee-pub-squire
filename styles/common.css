@@ -14,10 +14,12 @@
     letter-spacing: 0.2px;
     font-weight: 800;
     margin: 0px 0px 0px 0px;
+    padding: 0px 0px 0px 0px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
+    line-height: 1;
 }
 
 .new-tag {
@@ -219,38 +221,20 @@
 }
 
 /* --- NORMALIZED PANEL CONTENT CONTAINERS --- */
-/* All panel content containers with IDs ending in "-content" */
-.squire-tray[data-position="left"] [data-panel] #gm-content,
-.squire-tray[data-position="left"] [data-panel] #abilities-content,
-.squire-tray[data-position="left"] [data-panel] #stats-content,
-.squire-tray[data-position="left"] [data-panel] #macros-content,
-.squire-tray[data-position="left"] [data-panel] #dicetray-content,
-.squire-tray[data-position="left"] [data-panel] #exp-content,
-.squire-popout[data-position="left"] [data-panel] #gm-content,
-.squire-popout[data-position="left"] [data-panel] #abilities-content,
-.squire-popout[data-position="left"] [data-panel] #stats-content,
-.squire-popout[data-position="left"] [data-panel] #macros-content,
-.squire-popout[data-position="left"] [data-panel] #dicetray-content,
-.squire-popout[data-position="left"] [data-panel] #exp-content {
+/* All panel content containers use the .tray-panel-content class */
+.squire-tray[data-position="left"] [data-panel] .tray-panel-content,
+.squire-popout[data-position="left"] [data-panel] .tray-panel-content {
     max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
     transition: max-height 0.3s ease-in-out;
+    display: block;
 }
 
-.squire-tray[data-position="left"] [data-panel] #gm-content.collapsed,
-.squire-tray[data-position="left"] [data-panel] #abilities-content.collapsed,
-.squire-tray[data-position="left"] [data-panel] #stats-content.collapsed,
-.squire-tray[data-position="left"] [data-panel] #macros-content.collapsed,
-.squire-tray[data-position="left"] [data-panel] #dicetray-content.collapsed,
-.squire-tray[data-position="left"] [data-panel] #exp-content.collapsed,
-.squire-popout[data-position="left"] [data-panel] #gm-content.collapsed,
-.squire-popout[data-position="left"] [data-panel] #abilities-content.collapsed,
-.squire-popout[data-position="left"] [data-panel] #stats-content.collapsed,
-.squire-popout[data-position="left"] [data-panel] #macros-content.collapsed,
-.squire-popout[data-position="left"] [data-panel] #dicetray-content.collapsed,
-.squire-popout[data-position="left"] [data-panel] #exp-content.collapsed {
+.squire-tray[data-position="left"] [data-panel] .tray-panel-content.collapsed,
+.squire-popout[data-position="left"] [data-panel] .tray-panel-content.collapsed {
     max-height: 0;
+    display: none;
 }
 
 /* --- NORMALIZED PANEL TOGGLES --- */

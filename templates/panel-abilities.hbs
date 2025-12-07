@@ -5,7 +5,7 @@
         <i id="abilities-toggle" class="fa-solid fa-chevron-down" title="Toggle Abilities Panel"></i>
     </div>
 </div>
-<div id="abilities-content">
+<div id="abilities-content" class="tray-panel-content">
     <div class="ability-row">
         {{#each actor.system.abilities as |ability key|}}
         <div class="ability-btn" data-ability="{{toLowerCase key}}" title="Left Click: Ability Check&#10;Right Click: Saving Throw">
