@@ -1,53 +1,58 @@
-.gm-panel {
-    background: rgba(0, 0, 0, 0.35);
-    border: 2px solid #444;
-    border-radius: 4px;
-    margin-top: 6px;
-    padding: 4px;
-    color: #9f9275;
-    font-size: 1.2em;
-}
-
-.gm-panel .gmdetails-header {
+.squire-tray[data-position="left"] [data-panel="gm"] {
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background: #000000;
+    border: 2px solid #444;
+    border-radius: 6px;
+}
+
+.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-controls {
+    display: flex;
+    gap: 8px;
     align-items: center;
-    justify-content: space-between;
+}
+
+.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-toggle {
+    color: #9f9275;
+    transition: transform 0.3s ease;
     cursor: pointer;
-    user-select: none;
 }
 
-.gm-panel .gmdetails-controls i {
-    transition: transform 0.2s ease;
+.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-toggle:hover {
+    color: #fff;
 }
 
-.gm-panel .gmdetails-content {
-    margin-top: 6px;
+.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-content {
+    max-height: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: max-height 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
     gap: 4px;
     font-size: 0.75em;
     text-transform: none;
-    max-height: 250px;
-    overflow-y: auto;
     padding-right: 4px;
 }
 
-.gm-panel .gmdetails-content.collapsed {
-    display: none;
+.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-content.collapsed {
+    max-height: 0;
 }
 
-.gm-panel .gm-row {
+.squire-tray[data-position="left"] [data-panel="gm"] .gm-row {
     border: 0px dotted rgba(155, 142, 114, 0.5);
     padding-top: 4px;
 }
 
-.gm-panel .details-biography {
+.squire-tray[data-position="left"] [data-panel="gm"] .details-biography {
     font-size: inherit;
     line-height: inherit;
     text-transform: inherit;
 }
 
-.gm-panel h1.gm-row-title {
+.squire-tray[data-position="left"] [data-panel="gm"] h1.gm-row-title {
     font-size: 1.2em;
     line-height: 1.4;
     text-transform: uppercase;

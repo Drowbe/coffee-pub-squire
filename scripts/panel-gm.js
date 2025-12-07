@@ -19,6 +19,7 @@ export class GmPanel {
 
         const collapsed = !!game.settings.get(MODULE.ID, 'isGmPanelCollapsed');
         const templateData = {
+            position: game.settings.get(MODULE.ID, 'trayPosition'),
             resistances: details.resistances ?? [],
             immunities: details.immunities ?? [],
             biographyHtmlRaw: details.biographyHtmlRaw ?? '',
@@ -51,8 +52,8 @@ export class GmPanel {
     _activateListeners(panel) {
         if (!panel) return;
 
-        // v13: Use native DOM methods
-        const title = panel.querySelector('.gmdetails-header');
+        // v13: Use native DOM methods - match abilities panel pattern
+        const title = panel.querySelector('.tray-title-small');
         if (!title) return;
 
         // Clone to remove existing listeners
@@ -79,7 +80,7 @@ export class GmPanel {
     destroy() {
         // v13: Use native DOM methods
         const panel = this.element?.querySelector('[data-panel="gm"]');
-        const header = panel?.querySelector('.gmdetails-header');
+        const header = panel?.querySelector('.tray-title-small');
         if (header) {
             // Create a new element to remove listeners
             const newHeader = header.cloneNode(true);
