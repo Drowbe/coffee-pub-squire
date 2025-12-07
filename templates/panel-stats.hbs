@@ -1,33 +1,6 @@
 {{#if (eq position "left")}}
 <div class="tray-title-small">
-    <span>Stats</span>
-    <div class="stats-controls">
-        <i class="fa-solid fa-chevron-down stats-toggle" title="Toggle Stats Panel"></i>
-    </div>
-</div>
-<div class="stats-content">
-    <div class="stat-boxes">
-        <div class="stat-box">
-            <i class="fa-solid fa-helmet-battle"></i>
-            <span class="stat-value">{{actor.system.details.level}}</span>
-        </div>
-        <div class="stat-box">
-            <i class="fa-solid fa-paw"></i>
-            <span class="stat-value">{{actor.system.attributes.movement.walk}}</span>
-        </div>
-        <div class="stat-box">
-            <i class="fa-solid fa-shield"></i>
-            <span class="stat-value">{{actor.system.attributes.ac.value}}</span>
-        </div>
-        <div class="stat-box">
-            <i class="fa-solid fa-plus-circle"></i>
-            <span class="stat-value">+{{actor.system.attributes.prof}}</span>
-        </div>
-    </div>
-</div>
-{{else}}
-<div class="tray-title-small">
-    <span>Stats</span>
+    <span>Attributes</span>
     <div class="stats-controls">
         <i class="fa-solid fa-chevron-down stats-toggle" title="Toggle Stats Panel"></i>
     </div>
