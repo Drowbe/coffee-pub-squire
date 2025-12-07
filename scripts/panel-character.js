@@ -35,21 +35,34 @@ export class CharacterPanel {
         if (document.id !== this.actor.id) return;
         if (!foundry.utils.hasProperty(change, "system.attributes.hp")) return;
 
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (!nativeElement) return;
+
         // Update the health overlay
         const hp = this.actor.system.attributes.hp;
         const percentage = Math.round(100 - ((hp.value / hp.max) * 100));
-        const portraitElement = this.element?.find('.character-portrait');
+        const portraitElement = nativeElement.querySelector('.character-portrait');
+        if (!portraitElement) return;
         
         // Update health overlay height
-        portraitElement?.find('.health-overlay').css('height', `${percentage}%`);
+        const healthOverlay = portraitElement.querySelector('.health-overlay');
+        if (healthOverlay) {
+            healthOverlay.style.height = `${percentage}%`;
+        }
         
         // Update death skull
+        const deathSkull = portraitElement.querySelector('.death-skull');
         if (hp.value <= 0) {
-            if (!portraitElement?.find('.death-skull').length) {
-                portraitElement?.append('<i class="fa-solid fa-skull death-skull"></i>');
+            if (!deathSkull) {
+                const skullIcon = globalThis.document.createElement('i');
+                skullIcon.className = 'fa-solid fa-skull death-skull';
+                portraitElement.appendChild(skullIcon);
             }
         } else {
-            portraitElement?.find('.death-skull').remove();
+            if (deathSkull) {
+                deathSkull.remove();
+            }
         }
     }
 
