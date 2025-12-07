@@ -13,7 +13,6 @@
 
 /* ----- HEADER----- */
 
-.squire-tray[data-position="left"] [data-panel="macros"] .tray-title-small,
 .squire-popout[data-position="left"] [data-panel="macros"] .tray-title-small {
     display: flex;
     justify-content: space-between;

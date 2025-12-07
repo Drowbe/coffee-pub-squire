@@ -9,7 +9,6 @@
     border-radius: 6px;
 }
 
-.squire-tray[data-position="left"] [data-panel="dicetray"] .tray-title-small,
 .squire-popout[data-position="left"] [data-panel="dicetray"] .tray-title-small {
     display: flex;
     justify-content: space-between;

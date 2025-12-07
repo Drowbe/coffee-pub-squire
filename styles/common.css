@@ -11,9 +11,9 @@
     color: #9f9275;
     font-size: 0.85em;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: bold;
-    margin-top: 4px;
+    letter-spacing: 0.2px;
+    font-weight: 800;
+    margin: 0px 0px 0px 0px;
     display: flex;
     justify-content: space-between;
     align-items: center;
