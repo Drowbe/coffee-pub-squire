@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.3] - Event Listener Fixes & Documentation
+
+### Fixed
+- **Duplicate Event Listeners in Weapons Panel**: Fixed item/weapon action buttons triggering multiple times when clicked
+  - Implemented proper event listener management in `panel-weapons.js`
+  - Added `_eventHandlers` array to store handler references for cleanup
+  - Updated `_removeEventListeners()` to explicitly remove stored handlers using `removeEventListener`
+  - Modified `_activateListeners()` to store handler references before adding them
+  - Prevents accumulation of duplicate listeners on panel re-renders
+- **Duplicate Event Listeners in Inventory Panel**: Fixed inventory item action buttons triggering multiple times when clicked
+  - Implemented proper event listener management in `panel-inventory.js`
+  - Added `_eventHandlers` array to store handler references for cleanup
+  - Updated `_removeEventListeners()` to explicitly remove stored handlers using `removeEventListener`
+  - Modified `_activateListeners()` to store handler references before adding them
+  - Prevents accumulation of duplicate listeners on panel re-renders
+  - Action buttons (use, equip, favorite, send) now trigger only once per click
+
+### Added
+- **Quest System Architecture Documentation**: Created comprehensive `overview-quests.md` documentation
+  - Documents the complete quest system architecture for reuse by other modules
+  - Covers core design philosophy (journal-based storage, HTML state markers, scene pin integration)
+  - Details all architecture components (QuestParser, QuestForm, QuestPanel, QuestPin)
+  - Explains data flow for quest creation, display, completion, and pin management
+  - Documents key design patterns (parser-based architecture, state-based tasks, hash-based numbering)
+  - Provides template structure documentation and integration points
+  - Includes best practices, extension points, and migration considerations
+  - Follows the same format as `overview-codex.md` for consistency
+
 ## [13.0.2] - Panel Normalization & Bug Fixes
 
 ### Changed
