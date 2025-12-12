@@ -1,9 +1,11 @@
 {
   "torch": {
     "name": "Torch",
+    "consumable": true,
+    "actionable": false,
     "light": {
-      "dim": 20,
-      "bright": 10,
+      "dim": 40,
+      "bright": 20,
       "angle": 360,
       "color": "#ffa500",
       "alpha": 0.5,
@@ -23,8 +25,65 @@
       "shadows": 0.5
     }
   },
+
+  "candle": {
+    "name": "Candle",
+    "consumable": true,
+    "actionable": false,
+    "light": {
+      "dim": 5,
+      "bright": 2.5,
+      "angle": 360,
+      "color": "#FFE5B4",
+      "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
+      "animation": {
+        "type": "flickering",
+        "speed": 5,
+        "intensity": 3,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.45,
+      "attenuation": 0.9,
+      "saturation": 0.3,
+      "contrast": 0.45,
+      "shadows": 0.55
+    }
+  },
+
+  "lamp": {
+    "name": "Lamp",
+    "consumable": false,
+    "actionable": false,
+    "light": {
+      "dim": 30,
+      "bright": 15,
+      "angle": 360,
+      "color": "#FFD08A",
+      "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
+      "animation": {
+        "type": "flickering",
+        "speed": 6,
+        "intensity": 2,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.5,
+      "attenuation": 0.85,
+      "saturation": 0.3,
+      "contrast": 0.5,
+      "shadows": 0.5
+    }
+  },
+
   "lantern": {
     "name": "Lantern",
+    "consumable": false,
+    "actionable": false,
     "light": {
       "dim": 30,
       "bright": 15,
@@ -47,36 +106,46 @@
       "shadows": 0.5
     }
   },
-  "candle": {
-    "name": "Candle",
+
+  "oil": {
+    "name": "Oil",
+    "consumable": true,
+    "actionable": false,
     "light": {
-      "dim": 5,
-      "bright": 2.5,
+      "dim": 10,
+      "bright": 5,
       "angle": 360,
-      "color": "#FFE5B4",
-      "alpha": 0.5,
+      "color": "#FFB347",
+      "alpha": 0.45,
       "priority": 0,
       "darkness": false,
       "animation": {
         "type": "flickering",
-        "speed": 5,
+        "speed": 7,
         "intensity": 3,
         "reverse": false
       },
       "coloration": 1,
-      "luminosity": 0.5,
-      "attenuation": 0.85,
-      "saturation": 0.35,
-      "contrast": 0.5,
-      "shadows": 0.5
+      "luminosity": 0.45,
+      "attenuation": 0.9,
+      "saturation": 0.3,
+      "contrast": 0.45,
+      "shadows": 0.6
     }
   },
-  "bullseye-lantern": {
-    "name": "Bullseye Lantern",
+  
+  "lantern-bullseye": {
+    "name": "Lantern, Bullseye",
+    "consumable": false,
+    "actionable": false,
+    "aliases": [
+      "Bullseye Lantern",
+      "Lantern, Bullseye"
+    ],
     "light": {
-      "dim": 60,
-      "bright": 30,
-      "angle": 45,
+      "dim": 120,
+      "bright": 60,
+      "angle": 60,
       "color": "#FFD700",
       "alpha": 0.5,
       "priority": 0,
@@ -95,11 +164,18 @@
       "shadows": 0.5
     }
   },
-  "hooded-lantern": {
-    "name": "Hooded Lantern",
+
+  "lantern-hooded": {
+    "name": "Lantern, Hooded",
+    "consumable": false,
+    "actionable": false,
+    "aliases": [
+      "Hooded Lantern",
+      "Lantern, Hooded"
+    ],
     "light": {
-      "dim": 5,
-      "bright": 0,
+      "dim": 60,
+      "bright": 30,
       "angle": 360,
       "color": "#FFD700",
       "alpha": 0.5,
@@ -119,14 +195,164 @@
       "shadows": 0.5
     }
   },
-  "light-cantrip": {
-    "name": "Light Cantrip",
+
+  "driftglobe": {
+    "name": "Driftglobe",
+    "consumable": false,
+    "actionable": false,
+    "light": {
+      "dim": 40,
+      "bright": 20,
+      "angle": 360,
+      "color": "#E6F7FF",
+      "alpha": 0.45,
+      "priority": 0,
+      "darkness": false,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.6,
+      "attenuation": 0.85,
+      "saturation": 0.15,
+      "contrast": 0.5,
+      "shadows": 0.4
+    }
+  },
+
+  "moon-touched-sword": {
+    "name": "Moon-Touched Sword",
+    "consumable": false,
+    "actionable": false,
+    "aliases": [
+      "Moon Touched Sword"
+    ],
+    "light": {
+      "dim": 30,
+      "bright": 15,
+      "angle": 360,
+      "color": "#DDEBFF",
+      "alpha": 0.45,
+      "priority": 0,
+      "darkness": false,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.55,
+      "attenuation": 0.85,
+      "saturation": 0.15,
+      "contrast": 0.5,
+      "shadows": 0.4
+    }
+  },
+
+  "flame-tongue": {
+    "name": "Flame Tongue",
+    "consumable": false,
+    "actionable": false,
+    "aliases": [
+      "Flametongue",
+      "Flametongue Sword"
+    ],
+    "light": {
+      "dim": 80,
+      "bright": 40,
+      "angle": 360,
+      "color": "#FF6A00",
+      "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
+      "animation": {
+        "type": "torch",
+        "speed": 8,
+        "intensity": 4,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.55,
+      "attenuation": 0.8,
+      "saturation": 0.4,
+      "contrast": 0.55,
+      "shadows": 0.55
+    }
+  },
+
+  "sun-blade": {
+    "name": "Sun Blade",
+    "consumable": false,
+    "actionable": false,
+    "aliases": [
+      "Sunblade",
+      "Sun Blade Sword"
+    ],
+    "light": {
+      "dim": 30,
+      "bright": 15,
+      "angle": 360,
+      "color": "#FFF9E6",
+      "alpha": 0.5,
+      "priority": 1,
+      "darkness": false,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.7,
+      "attenuation": 0.8,
+      "saturation": 0.1,
+      "contrast": 0.6,
+      "shadows": 0.35
+    }
+  },
+
+  "holy-avenger": {
+    "name": "Holy Avenger",
+    "consumable": false,
+    "actionable": false,
     "light": {
       "dim": 20,
       "bright": 10,
       "angle": 360,
-      "color": "#FFFFFF",
-      "alpha": 0.5,
+      "color": "#F2FFF2",
+      "alpha": 0.45,
+      "priority": 1,
+      "darkness": false,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.65,
+      "attenuation": 0.85,
+      "saturation": 0.1,
+      "contrast": 0.55,
+      "shadows": 0.35
+    }
+  },
+
+
+  "midnight-oil": {
+    "name": "Midnight Oil",
+    "consumable": false,
+    "actionable": true,
+    "light": {
+      "dim": 10,
+      "bright": 5,
+      "angle": 360,
+      "color": "#FFF2CC",
+      "alpha": 0.45,
       "priority": 0,
       "darkness": false,
       "animation": {
@@ -136,11 +362,70 @@
         "reverse": false
       },
       "coloration": 1,
-      "luminosity": 0.5,
+      "luminosity": 0.45,
+      "attenuation": 0.9,
+      "saturation": 0.2,
+      "contrast": 0.45,
+      "shadows": 0.45
+    }
+  },
+
+  "lightbringer": {
+    "name": "Lightbringer",
+    "consumable": false,
+    "actionable": false,
+    "light": {
+      "dim": 40,
+      "bright": 20,
+      "angle": 360,
+      "color": "#FFFFFF",
+      "alpha": 0.5,
+      "priority": 1,
+      "darkness": false,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.6,
       "attenuation": 0.85,
-      "saturation": 0.35,
-      "contrast": 0.5,
-      "shadows": 0.5
+      "saturation": 0.1,
+      "contrast": 0.55,
+      "shadows": 0.4
+    }
+  },
+
+  "gem-of-brightness": {
+    "name": "Gem of Brightness",
+    "consumable": false,
+    "actionable": true,
+    "aliases": [
+      "Gem of Brightness",
+      "Brightness, Gem of"
+    ],
+    "light": {
+      "dim": 60,
+      "bright": 30,
+      "angle": 360,
+      "color": "#FFFFFF",
+      "alpha": 0.45,
+      "priority": 1,
+      "darkness": false,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3,
+        "reverse": false
+      },
+      "coloration": 1,
+      "luminosity": 0.65,
+      "attenuation": 0.85,
+      "saturation": 0.1,
+      "contrast": 0.55,
+      "shadows": 0.4
     }
   }
+
 }

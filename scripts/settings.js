@@ -1236,7 +1236,63 @@ export const registerSettings = function() {
         default: false,
     });
 
+
+
+
+
+
+    // ---------- TOKEN LIGHTING ----------
+    game.settings.register(MODULE.ID, "headingH3TokenLighting", {
+        name: 'Token Light Settings',
+        hint: '',
+        scope: "world",
+        config: true,
+        default: "",
+        type: String,
+    });
+    // -------------------------------------
+
+
+    // -- Fuzzy Match --
+    game.settings.register(MODULE.ID, 'tokenLightingFuzzyMatch', {
+        name: 'Fuzzy Match',
+        hint: 'If common light source words are in the title and there is no perfect match, will use the closest match.',
+        type: Boolean,
+        config: true,
+        scope: 'world',
+        default: true,
+    });
+
+    // -- Consume Resource --
+    game.settings.register(MODULE.ID, 'tokenLightingConsumeResource', {
+        name: 'Consume Resource',
+        hint: 'When enabled, will consume the resource when the item is used.',
+        type: Boolean,
+        config: true,
+        scope: 'world',
+        default: false,
+    });
+
+    // -- Link to Action --
+    game.settings.register(MODULE.ID, 'tokenLightingLinktoAction', {
+        name: 'Link to Action',
+        hint: 'Will take the item action when the light source is used.',
+        type: Boolean,
+        config: true,
+        scope: 'world',
+        default: false,
+    });
+
+
+
+
+
+
+
+    // --------------------------------------------------------------
     // THESE QUEST SETTINGS ARE INTERNAL AND NOT EXPOSED IN SETTINGS
+    // --------------------------------------------------------------
+
 
     // Quest Journal
     game.settings.register(MODULE.ID, 'questJournal', {

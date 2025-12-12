@@ -31,6 +31,81 @@ export class LightUtility {
     }
 
     /**
+     * Normalize a name for comparison (lowercase, remove punctuation, normalize whitespace)
+     * @param {string} name - The name to normalize
+     * @returns {string} Normalized name
+     */
+    static normalizeName(name) {
+        if (!name) return '';
+        return name
+            .toLowerCase()
+            .replace(/[,\-]/g, ' ') // Replace commas and hyphens with spaces
+            .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+            .trim();
+    }
+
+    /**
+     * Check if an item name matches a light source name or any of its aliases
+     * @param {string} itemName - The item name to check
+     * @param {Object} config - The light source configuration
+     * @returns {boolean} True if the name matches
+     */
+    static matchesLightSourceName(itemName, config) {
+        if (!itemName || !config) return false;
+        
+        const normalizedItemName = this.normalizeName(itemName);
+        
+        // Check main name
+        const normalizedConfigName = this.normalizeName(config.name);
+        if (normalizedItemName === normalizedConfigName) {
+            return true;
+        }
+        
+        // Check aliases if they exist
+        if (config.aliases && Array.isArray(config.aliases)) {
+            for (const alias of config.aliases) {
+                const normalizedAlias = this.normalizeName(alias);
+                if (normalizedItemName === normalizedAlias) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Try to find a base light source using fuzzy matching
+     * @param {string} itemName - The item name to check
+     * @param {Object} lightSources - All light sources
+     * @returns {string|null} Base light source ID or null
+     */
+    static findBaseLightSource(itemName, lightSources) {
+        if (!itemName || !lightSources) return null;
+        
+        const normalizedName = this.normalizeName(itemName);
+        
+        // Base light source keywords and their corresponding IDs
+        const baseKeywords = [
+            { keywords: ['candle'], id: 'candle' },
+            { keywords: ['lantern'], id: 'lantern' },
+            { keywords: ['oil'], id: 'oil' },
+            { keywords: ['lamp'], id: 'lamp' }
+        ];
+        
+        // Check if item name contains any base keyword
+        for (const { keywords, id } of baseKeywords) {
+            for (const keyword of keywords) {
+                if (normalizedName.includes(keyword) && lightSources[id]) {
+                    return id;
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
      * Check if an item can be used as a light source
      * @param {Item} item - The item to check
      * @returns {Promise<boolean>} True if item can be used as light source
@@ -49,11 +124,19 @@ export class LightUtility {
             return true;
         }
 
-        // Check by item name (case-insensitive)
-        const itemName = item.name?.toLowerCase().trim();
+        // Check by item name (with aliases support) - exact match first
+        const itemName = item.name;
         for (const [key, config] of Object.entries(lightSources)) {
-            const configName = config.name?.toLowerCase().trim();
-            if (configName && itemName === configName) {
+            if (this.matchesLightSourceName(itemName, config)) {
+                return true;
+            }
+        }
+
+        // If no exact match and fuzzy match is enabled, try base light sources
+        const fuzzyMatch = game.settings.get(MODULE.ID, 'tokenLightingFuzzyMatch');
+        if (fuzzyMatch) {
+            const baseLightSourceId = this.findBaseLightSource(itemName, lightSources);
+            if (baseLightSourceId) {
                 return true;
             }
         }
@@ -80,16 +163,39 @@ export class LightUtility {
             return lightSourceId;
         }
 
-        // Check by item name (case-insensitive)
-        const itemName = item.name?.toLowerCase().trim();
+        // Check by item name (with aliases support) - exact match first
+        const itemName = item.name;
         for (const [key, config] of Object.entries(lightSources)) {
-            const configName = config.name?.toLowerCase().trim();
-            if (configName && itemName === configName) {
+            if (this.matchesLightSourceName(itemName, config)) {
                 return key;
             }
         }
 
+        // If no exact match and fuzzy match is enabled, try base light sources
+        const fuzzyMatch = game.settings.get(MODULE.ID, 'tokenLightingFuzzyMatch');
+        if (fuzzyMatch) {
+            const baseLightSourceId = this.findBaseLightSource(itemName, lightSources);
+            if (baseLightSourceId) {
+                return baseLightSourceId;
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * Get full light source configuration for an item (including consumable flag)
+     * @param {Item} item - The item to get light source configuration for
+     * @returns {Promise<Object|null>} Full light source configuration or null if not found
+     */
+    static async getLightSourceFullConfig(item) {
+        if (!item) return null;
+
+        const lightSourceId = await this.getLightSourceId(item);
+        if (!lightSourceId) return null;
+
+        const lightSources = await this.loadLightSources();
+        return lightSources[lightSourceId] || null;
     }
 
     /**
@@ -100,11 +206,63 @@ export class LightUtility {
     static async getLightSourceConfig(item) {
         if (!item) return null;
 
-        const lightSourceId = await this.getLightSourceId(item);
-        if (!lightSourceId) return null;
+        const fullConfig = await this.getLightSourceFullConfig(item);
+        return fullConfig?.light || null;
+    }
 
-        const lightSources = await this.loadLightSources();
-        return lightSources[lightSourceId]?.light || null;
+    /**
+     * Check if a light source is consumable
+     * @param {Item} item - The item to check
+     * @returns {Promise<boolean>} True if the light source is consumable
+     */
+    static async isLightSourceConsumable(item) {
+        if (!item) return false;
+
+        const fullConfig = await this.getLightSourceFullConfig(item);
+        return fullConfig?.consumable === true;
+    }
+
+    /**
+     * Check if a light source is actionable
+     * @param {Item} item - The item to check
+     * @returns {Promise<boolean>} True if the light source is actionable
+     */
+    static async isLightSourceActionable(item) {
+        if (!item) return false;
+
+        const fullConfig = await this.getLightSourceFullConfig(item);
+        return fullConfig?.actionable === true;
+    }
+
+    /**
+     * Consume an item (reduce quantity or delete)
+     * @param {Item} item - The item to consume
+     * @returns {Promise<boolean>} True if successful
+     */
+    static async consumeItem(item) {
+        if (!item) return false;
+
+        try {
+            const hasQuantity = item.system.quantity !== undefined && item.system.quantity > 0;
+            
+            if (hasQuantity && item.system.quantity > 1) {
+                // Reduce quantity by 1
+                await item.update({
+                    'system.quantity': item.system.quantity - 1
+                });
+            } else {
+                // Delete the item (quantity is 1 or doesn't have quantity)
+                await item.delete();
+            }
+            
+            const log = (...args) => getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, ...args);
+            log(`Consumed ${item.name}`, '', false, false);
+            return true;
+        } catch (error) {
+            const log = (...args) => getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, ...args);
+            log('Failed to consume item:', error.message, true, false);
+            return false;
+        }
     }
 
     /**
@@ -265,6 +423,33 @@ export class LightUtility {
             // Different light source (or no active light) - switch to new light
             await this.applyLightToToken(token, lightConfig);
             await this.setActiveLightSourceId(token.actor, lightSourceId);
+            
+            // Check if we should link to item action
+            const linkToAction = game.settings.get(MODULE.ID, 'tokenLightingLinktoAction');
+            let actionFired = false;
+            if (linkToAction) {
+                const isActionable = await this.isLightSourceActionable(item);
+                if (isActionable) {
+                    try {
+                        await item.use({}, {});
+                        actionFired = true;
+                    } catch (error) {
+                        const log = (...args) => getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, ...args);
+                        log('Failed to trigger item action:', error.message, true, false);
+                    }
+                }
+            }
+            
+            // Check if we should consume the item
+            // Skip consumption if the item action was fired (let the action handle consumption)
+            const consumeResource = game.settings.get(MODULE.ID, 'tokenLightingConsumeResource');
+            if (consumeResource && !actionFired) {
+                const isConsumable = await this.isLightSourceConsumable(item);
+                if (isConsumable) {
+                    await this.consumeItem(item);
+                }
+            }
+            
             return { applied: true, lightSourceId: lightSourceId };
         }
     }
