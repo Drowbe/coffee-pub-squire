@@ -658,9 +658,17 @@ export class PartyPanel {
                         icon: '<i class="fa-solid fa-exchange-alt"></i>',
                         label: "Transfer",
                         callback: html => {
+                            // v13: Convert jQuery to native DOM if needed
+                            let nativeHtml = html;
+                            if (html && (html.jquery || typeof html.find === 'function')) {
+                                nativeHtml = html[0] || html.get?.(0) || html;
+                            }
+                            
                             if (hasQuantity && maxQuantity > 1) {
+                                // v13: Use native DOM querySelector and value
+                                const input = nativeHtml.querySelector(`input[name="quantity_${timestamp}"]`);
                                 const quantity = Math.clamp(
-                                    parseInt(html.find(`input[name="quantity_${timestamp}"]`).val()),
+                                    parseInt(input?.value || '1'),
                                     1,
                                     maxQuantity
                                 );
@@ -837,24 +845,37 @@ export class PartyPanel {
     _handleTransferButtons(message, html) {
         if (!message.flags?.[MODULE.ID]?.type) return;
 
+        // v13: Convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        if (!nativeHtml) return;
+
         // Only handle transfer request buttons
         if (message.flags[MODULE.ID].type === 'transferRequest') {
             // Handle GM approval buttons
-            if (html.find('.gm-approval-button').length > 0) {
-                if (html.find('.gm-approval-button').data('handlers-attached')) return;
-                const gmButtons = html.find('.gm-approval-button');
-                gmButtons.data('handlers-attached', true);
-                gmButtons.click(async (event) => {
-                    await this._handleGMApprovalClick(event, message, html);
+            const gmButtons = nativeHtml.querySelectorAll('.gm-approval-button');
+            if (gmButtons.length > 0) {
+                // Check if handlers already attached
+                if (gmButtons[0].dataset.handlersAttached === 'true') return;
+                
+                gmButtons.forEach(button => {
+                    button.dataset.handlersAttached = 'true';
+                    button.addEventListener('click', async (event) => {
+                        await this._handleGMApprovalClick(event, message, nativeHtml);
+                    });
                 });
                 return;
             }
             
             // Handle receiver accept/reject buttons
-            if (html.find('.transfer-request-button').data('handlers-attached')) return;
-            const buttons = html.find('.transfer-request-button');
-            buttons.data('handlers-attached', true);
-            buttons.click(async (event) => {
+            const buttons = nativeHtml.querySelectorAll('.transfer-request-button');
+            if (buttons.length > 0 && buttons[0].dataset.handlersAttached === 'true') return;
+            
+            buttons.forEach(button => {
+                button.dataset.handlersAttached = 'true';
+                button.addEventListener('click', async (event) => {
                 const button = event.currentTarget;
                 const transferId = button.dataset.transferId;
                 const isAccept = button.classList.contains('accept');
@@ -961,8 +982,11 @@ export class PartyPanel {
                 const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
 
                 // Disable the buttons immediately to prevent double-clicking
-                html.find('.transfer-request-button').prop('disabled', true);
-                html.find('.transfer-request-button').addClass('disabled');
+                // v13: Use nativeHtml (available via closure) instead of html
+                nativeHtml.querySelectorAll('.transfer-request-button').forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('disabled');
+                });
 
                 if (isAccept) {
                     // Execute the transfer
@@ -1180,6 +1204,7 @@ export class PartyPanel {
                         }
                     }
                 }
+                });
             });
         }
     }
@@ -1191,6 +1216,13 @@ export class PartyPanel {
      * @param {jQuery} html - The message HTML
      */
     async _handleGMApprovalClick(event, message, html) {
+        // v13: Convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        if (!nativeHtml) return;
+        
         const button = event.currentTarget;
         const transferId = button.dataset.transferId;
         const isApprove = button.classList.contains('approve');
@@ -1285,9 +1317,21 @@ export class PartyPanel {
         const senderUser = game.users.get(transferData.sourceUserId);
         
         // Disable buttons immediately
-        html.find('.gm-approval-button').prop('disabled', true);
-        html.find('.gm-approval-button').addClass('disabled');
-        html.find('.transfer-request-buttons').append('<div class="processing-message" style="margin-top: 5px; text-align: center; font-style: italic;">Processing...</div>');
+        // v13: Use native DOM methods
+        nativeHtml.querySelectorAll('.gm-approval-button').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('disabled');
+        });
+        
+        // Add processing message
+        const buttonsContainer = nativeHtml.querySelector('.transfer-request-buttons');
+        if (buttonsContainer) {
+            const processingMsg = document.createElement('div');
+            processingMsg.className = 'processing-message';
+            processingMsg.style.cssText = 'margin-top: 5px; text-align: center; font-style: italic;';
+            processingMsg.textContent = 'Processing...';
+            buttonsContainer.appendChild(processingMsg);
+        }
         
         // Delete the GM approval message
         try {

@@ -22,18 +22,8 @@
 
 ### Phase 3: Core Panel Migration (Priority: HIGH)
 
-#### High-Usage Panels
-
-- [ ] **`scripts/panel-party.js`** 🔄 (Partially Complete)
-  - [ ] **TODO:** Complete migration of remaining jQuery usage
-    - [ ] Line 663: `html.find()` in transfer quantity dialog callback
-    - [ ] Lines 843-855: `html.find()` for GM approval buttons
-    - [ ] Lines 854-855: `html.find()` for transfer request buttons
-    - [ ] Lines 964-965: `html.find()` for disabled button state
-    - [ ] Lines 1288-1290: `html.find()` for processing message
 
 #### Standard Panels (Lower Priority)
-
 
 - [ ] **`scripts/panel-experience.js`**
   - [ ] Add `getNativeElement` import and usage
@@ -70,46 +60,8 @@
 
 #### Known Issues Discovered During Migration
 
-- [ ] **`panel-party.js`** - Remaining jQuery usage in transfer request handlers (lines 663, 843-855, 964-965, 1288-1290)
 - [ ] **`panel-experience.js`** - Extensive jQuery usage throughout entire file
 - [ ] **`panel-party-stats.js`** - jQuery usage in render method (lines 102-106)
-
----
-
-### Phase 6: Testing & Validation
-
-#### Per-File Testing Checklist
-After migrating each file, test:
-- [ ] All remaining files - File loads without console errors
-- [ ] All files - Functionality works as expected
-- [ ] All files - No deprecation warnings
-- [ ] All files - Event handlers fire correctly
-- [ ] All files - DOM manipulation works correctly
-
-#### Integration Testing
-- [ ] Test all panels render correctly
-- [ ] Test all windows open and close correctly
-- [ ] Test drag and drop functionality
-- [ ] Test search/filter functionality
-- [ ] Test form submissions
-- [ ] Test with popout windows
-- [ ] Test with different user permissions (GM vs Player)
-
-#### Edge Case Testing
-- [ ] Test with empty data
-- [ ] Test with large datasets
-- [ ] Test error handling
-- [ ] Test with other v13 modules
-- [ ] Test module compatibility (Blacksmith, etc.)
-
----
-
-### Phase 7: Documentation & Release
-
-- [ ] Update README with v13 requirements
-- [ ] Create GitHub release
-- [ ] Tag release
-- [ ] Announce v13 support
 
 ---
 

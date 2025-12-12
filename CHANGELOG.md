@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.0.3] - Event Listener Fixes & Documentation
+## [13.0.3] - Event Listener Fixes & jQuery Migration
 
 ### Fixed
 - **Duplicate Event Listeners in Weapons Panel**: Fixed item/weapon action buttons triggering multiple times when clicked
@@ -25,6 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simplified to use actor flag as single source of truth (matching favorites pattern)
   - Removed token state checking that caused timing issues
   - Icons now reliably reflect active light source state
+- **Quest Entry Expand/Collapse Button**: Fixed quest entry expand/collapse button not working
+  - Updated `_activateListeners()` in `panel-quest.js` to use `getNativeElement()` helper for consistency
+  - Fixed event handler to properly stop propagation and prevent header click handler interference
+  - Quest entries now properly expand and collapse when clicking the chevron icon
+- **Party Panel jQuery Migration**: Completed jQuery to native DOM migration in `panel-party.js`
+  - Fixed Dialog callback (line 663) to use native DOM `querySelector()` instead of `html.find()`
+  - Migrated GM approval buttons (lines 843-855) to use `querySelectorAll()` and `addEventListener()`
+  - Migrated transfer request buttons to native DOM with proper handler attachment tracking
+  - Fixed disabled button state (lines 964-965) to use native DOM `disabled` property and `classList`
+  - Fixed processing message (lines 1288-1290) to use `createElement()` and `appendChild()` instead of jQuery `append()`
+  - All jQuery patterns replaced with native DOM methods for FoundryVTT v13 compatibility
+- **Party Panel Syntax Error**: Fixed missing closing parenthesis in `panel-party.js` forEach loop
+  - Corrected event handler closure structure for transfer request button handlers
+  - File now loads without syntax errors
 
 ### Changed
 - **Inventory Panel**: Added light icon support with state management
@@ -37,6 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Favorites Panel**: Added light icon support for favorited light sources
   - Consistent behavior across all panels
   - Light state synchronized with actor flags
+- **Quest Panel**: Improved event handler consistency
+  - Updated to use `getNativeElement()` helper method for jQuery detection
+  - Standardized with other migrated panels for better maintainability
+- **Party Panel**: Complete jQuery to native DOM migration
+  - All Dialog callbacks now use native DOM methods
+  - Event handlers use `addEventListener()` with proper cleanup tracking
+  - Button state management uses native DOM properties (`disabled`, `classList`)
+  - Message creation uses `createElement()` and `appendChild()` instead of jQuery
 
 ### Added
 - **Token Lighting System**: Comprehensive light source management for items and weapons
@@ -75,6 +97,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides template structure documentation and integration points
   - Includes best practices, extension points, and migration considerations
   - Follows the same format as `overview-codex.md` for consistency
+
+### Technical Improvements
+- **jQuery Migration Progress**: Continued migration from jQuery to native DOM methods
+  - `panel-party.js`: Fully migrated all remaining jQuery usage (Dialog callbacks, button handlers, DOM manipulation)
+  - `panel-quest.js`: Standardized jQuery detection using `getNativeElement()` helper
+  - All migrated files now use consistent patterns for jQuery detection and native DOM operations
+  - Improved code consistency and maintainability across panel files
 
 ## [13.0.2] - Panel Normalization & Bug Fixes
 
