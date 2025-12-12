@@ -109,21 +109,26 @@ export class LightUtility {
             // Get the token document
             const tokenDocument = token.document || token;
             
-            // Prepare light update data
+            // Prepare light update data with all fields from the configuration
             const lightUpdate = {
                 light: {
-                    dim: lightConfig.dim || 0,
-                    bright: lightConfig.bright || 0,
-                    angle: lightConfig.angle || 360,
+                    dim: lightConfig.dim !== undefined ? lightConfig.dim : 0,
+                    bright: lightConfig.bright !== undefined ? lightConfig.bright : 0,
+                    angle: lightConfig.angle !== undefined ? lightConfig.angle : 360,
                     color: lightConfig.color || '#FFFFFF',
                     alpha: lightConfig.alpha !== undefined ? lightConfig.alpha : 0.5,
-                    animation: lightConfig.animation || {
-                        type: 'none',
-                        speed: 5,
-                        intensity: 3
+                    priority: lightConfig.priority !== undefined ? lightConfig.priority : 0,
+                    darkness: lightConfig.darkness !== undefined ? lightConfig.darkness : false,
+                    animation: {
+                        type: lightConfig.animation?.type || 'none',
+                        speed: lightConfig.animation?.speed !== undefined ? lightConfig.animation.speed : 5,
+                        intensity: lightConfig.animation?.intensity !== undefined ? lightConfig.animation.intensity : 3,
+                        reverse: lightConfig.animation?.reverse !== undefined ? lightConfig.animation.reverse : false
                     },
+                    coloration: lightConfig.coloration !== undefined ? lightConfig.coloration : 1,
                     luminosity: lightConfig.luminosity !== undefined ? lightConfig.luminosity : 0.5,
-                    saturation: lightConfig.saturation !== undefined ? lightConfig.saturation : 0.5,
+                    attenuation: lightConfig.attenuation !== undefined ? lightConfig.attenuation : 0.85,
+                    saturation: lightConfig.saturation !== undefined ? lightConfig.saturation : 0.35,
                     contrast: lightConfig.contrast !== undefined ? lightConfig.contrast : 0.5,
                     shadows: lightConfig.shadows !== undefined ? lightConfig.shadows : 0.5
                 }
@@ -162,13 +167,18 @@ export class LightUtility {
                     angle: 360,
                     color: '#000000',
                     alpha: 0.5,
+                    priority: 0,
+                    darkness: false,
                     animation: {
                         type: 'none',
                         speed: 5,
-                        intensity: 3
+                        intensity: 3,
+                        reverse: false
                     },
+                    coloration: 1,
                     luminosity: 0.5,
-                    saturation: 0.5,
+                    attenuation: 0.85,
+                    saturation: 0.35,
                     contrast: 0.5,
                     shadows: 0.5
                 }

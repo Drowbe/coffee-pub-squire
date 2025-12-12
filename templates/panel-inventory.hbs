@@ -22,15 +22,15 @@
             {{/if}}
         </div>
         <div class="tray-buttons">
+            {{#if isLightSource}}
+            <i class="fa-solid fa-lightbulb faded" title="Toggle Light"></i>
+            {{/if}}
             {{#if (or (eq type "weapon") (eq type "equipment") (eq type "tool") (eq type "consumable"))}}
                 {{#if system.equipped}}
                 <i class="fa-solid fa-shield-alt" title="Toggle Equipped"></i>
                 {{else}}
                 <i class="fa-solid fa-shield-alt faded" title="Toggle Equipped"></i>
                 {{/if}}
-            {{/if}}
-            {{#if isLightSource}}
-            <i class="fa-solid fa-lightbulb faded" title="Toggle Light"></i>
             {{/if}}
             <i class="fa-solid fa-share inventory-send-item" title="Send Item" data-item-id="{{id}}"></i>
             {{#if isFavorite}}

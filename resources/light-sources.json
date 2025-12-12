@@ -5,15 +5,20 @@
       "dim": 20,
       "bright": 10,
       "angle": 360,
-      "color": "#FFA500",
+      "color": "#ffa500",
       "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
       "animation": {
-        "type": "torch",
-        "speed": 5,
-        "intensity": 3
+        "type": "flickering",
+        "speed": 9,
+        "intensity": 3,
+        "reverse": false
       },
+      "coloration": 1,
       "luminosity": 0.5,
-      "saturation": 0.5,
+      "attenuation": 0.85,
+      "saturation": 0.35,
       "contrast": 0.5,
       "shadows": 0.5
     }
@@ -26,13 +31,18 @@
       "angle": 360,
       "color": "#FFD700",
       "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
       "animation": {
         "type": "none",
         "speed": 5,
-        "intensity": 3
+        "intensity": 3,
+        "reverse": false
       },
+      "coloration": 1,
       "luminosity": 0.5,
-      "saturation": 0.5,
+      "attenuation": 0.85,
+      "saturation": 0.35,
       "contrast": 0.5,
       "shadows": 0.5
     }
@@ -45,13 +55,18 @@
       "angle": 360,
       "color": "#FFE5B4",
       "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
       "animation": {
-        "type": "flicker",
+        "type": "flickering",
         "speed": 5,
-        "intensity": 3
+        "intensity": 3,
+        "reverse": false
       },
+      "coloration": 1,
       "luminosity": 0.5,
-      "saturation": 0.5,
+      "attenuation": 0.85,
+      "saturation": 0.35,
       "contrast": 0.5,
       "shadows": 0.5
     }
@@ -64,13 +79,18 @@
       "angle": 45,
       "color": "#FFD700",
       "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
       "animation": {
         "type": "none",
         "speed": 5,
-        "intensity": 3
+        "intensity": 3,
+        "reverse": false
       },
+      "coloration": 1,
       "luminosity": 0.5,
-      "saturation": 0.5,
+      "attenuation": 0.85,
+      "saturation": 0.35,
       "contrast": 0.5,
       "shadows": 0.5
     }
@@ -83,13 +103,18 @@
       "angle": 360,
       "color": "#FFD700",
       "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
       "animation": {
         "type": "none",
         "speed": 5,
-        "intensity": 3
+        "intensity": 3,
+        "reverse": false
       },
+      "coloration": 1,
       "luminosity": 0.5,
-      "saturation": 0.5,
+      "attenuation": 0.85,
+      "saturation": 0.35,
       "contrast": 0.5,
       "shadows": 0.5
     }
@@ -102,16 +127,20 @@
       "angle": 360,
       "color": "#FFFFFF",
       "alpha": 0.5,
+      "priority": 0,
+      "darkness": false,
       "animation": {
         "type": "none",
         "speed": 5,
-        "intensity": 3
+        "intensity": 3,
+        "reverse": false
       },
+      "coloration": 1,
       "luminosity": 0.5,
-      "saturation": 0.5,
+      "attenuation": 0.85,
+      "saturation": 0.35,
       "contrast": 0.5,
       "shadows": 0.5
     }
   }
 }
-
