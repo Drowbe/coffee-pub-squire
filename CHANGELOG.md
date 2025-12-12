@@ -21,8 +21,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Modified `_activateListeners()` to store handler references before adding them
   - Prevents accumulation of duplicate listeners on panel re-renders
   - Action buttons (use, equip, favorite, send) now trigger only once per click
+- **Light Icon State Synchronization**: Fixed light icons sometimes showing incorrect state
+  - Simplified to use actor flag as single source of truth (matching favorites pattern)
+  - Removed token state checking that caused timing issues
+  - Icons now reliably reflect active light source state
+
+### Changed
+- **Inventory Panel**: Added light icon support with state management
+  - Light icons appear before shield icon in item buttons
+  - Icons update automatically when light state changes
+  - Integrated with existing favorite and equipped state management
+- **Weapons Panel**: Added light icon support matching inventory panel functionality
+  - Light icons for weapons that are light sources (e.g., Flame Tongue, Sun Blade)
+  - Same visual feedback and toggle behavior as inventory panel
+- **Favorites Panel**: Added light icon support for favorited light sources
+  - Consistent behavior across all panels
+  - Light state synchronized with actor flags
 
 ### Added
+- **Token Lighting System**: Comprehensive light source management for items and weapons
+  - New light icon in inventory, weapons, and favorites panels for items that can be used as light sources
+  - Light icon appears orange/yellow when light is active, faded when inactive
+  - Clicking light icon toggles light on/off for player's token
+  - Switching between different light sources automatically replaces the previous light
+  - Light state persists across sessions using actor flags
+- **Light Sources Configuration**: New `resources/light-sources.json` file defining all available light sources
+  - Supports all FoundryVTT light configuration fields (dim, bright, angle, color, alpha, animation, etc.)
+  - Includes base light sources: torch, candle, lamp, lantern, oil
+  - Includes magical light sources: driftglobe, moon-touched sword, flame tongue, sun blade, holy avenger, lightbringer, gem of brightness, midnight oil
+  - Each light source can have aliases for name variations (e.g., "Hooded Lantern" vs "Lantern, Hooded")
+  - `consumable` field (boolean) to mark items that should be consumed when used
+  - `actionable` field (boolean) to mark items that should trigger their action when light is activated
+- **Fuzzy Matching**: Base light source fallback system
+  - When `tokenLightingFuzzyMatch` setting is enabled, items with light-related keywords automatically match base light sources
+  - Supports fuzzy matching for: candle, lantern, oil, lamp
+  - Only activates when no exact match is found (last resort)
+- **Light Utility Module**: New `scripts/utility-lights.js` with comprehensive light management
+  - `LightUtility` class for all light-related operations
+  - Name normalization for case-insensitive, punctuation-agnostic matching
+  - Alias support for handling item name variations
+  - Actor flag-based persistence for active light source tracking
+  - Token light application and removal with full configuration support
+- **Settings Integration**: Three new world settings for light system
+  - `tokenLightingFuzzyMatch`: Enable fuzzy matching for base light sources (default: true)
+  - `tokenLightingConsumeResource`: Consume items when light is used (default: false)
+  - `tokenLightingLinktoAction`: Trigger item action when light is activated (default: false)
 - **Quest System Architecture Documentation**: Created comprehensive `overview-quests.md` documentation
   - Documents the complete quest system architecture for reuse by other modules
   - Covers core design philosophy (journal-based storage, HTML state markers, scene pin integration)
