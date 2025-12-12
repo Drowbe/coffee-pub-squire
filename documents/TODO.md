@@ -16,12 +16,7 @@
 
 ---
 
-### Phase 2: Critical Path Migration (Priority: HIGH)
-
-#### Application/FormApplication Classes
-
-- [ ] **`scripts/window-quest.js` - `QuestForm` class**
-  - [ ] Add `_getNativeElement()` helper method (jQuery detection exists inline, but helper method needed for consistency)
+### Phase 2: Critical Path Migration COMPLETE
 
 ---
 

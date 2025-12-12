@@ -12,6 +12,19 @@ export class QuestForm extends FormApplication {
         this.quest = quest || this._getDefaultQuest();
     }
 
+    /**
+     * Get native DOM element from this.element (handles jQuery conversion)
+     * @returns {HTMLElement|null} Native DOM element
+     */
+    _getNativeElement() {
+        if (!this.element) return null;
+        // v13: Detect and convert jQuery to native DOM if needed
+        if (this.element.jquery || typeof this.element.find === 'function') {
+            return this.element[0] || this.element.get?.(0) || this.element;
+        }
+        return this.element;
+    }
+
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
             id: 'quest-form',
@@ -257,11 +270,9 @@ export class QuestForm extends FormApplication {
     activateListeners(html) {
         super.activateListeners(html);
 
-        // v13: Detect and convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
+        // v13: Use helper method for consistency
+        const nativeHtml = getNativeElement(html);
+        if (!nativeHtml) return;
 
         // Handle image upload
         const imageUpload = nativeHtml.querySelector('.quest-image-upload');

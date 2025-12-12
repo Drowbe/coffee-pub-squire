@@ -708,11 +708,9 @@ export class QuestPanel {
      * @private
      */
     _activateListeners(html) {
-        // v13: Detect and convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
+        // v13: Use helper method for consistency
+        const nativeHtml = getNativeElement(html);
+        if (!nativeHtml) return;
         
         // Search input - live DOM filtering
         const questSearchContainer = nativeHtml.querySelector('.quest-search');
@@ -1416,8 +1414,12 @@ export class QuestPanel {
         // v13: Use native DOM event delegation
         // Toggle collapse on chevron click
         nativeHtml.addEventListener('click', async function(e) {
+            // Check if the clicked element is the toggle or is inside the toggle
             const toggle = e.target.closest('.quest-entry-toggle');
             if (!toggle) return;
+            
+            // Prevent the header click handler from also firing
+            e.stopPropagation();
             
             const card = toggle.closest('.quest-entry');
             if (!card) return;
@@ -1430,7 +1432,6 @@ export class QuestPanel {
                 flag[uuid] = collapsed;
                 await game.user.setFlag(MODULE.ID, 'questCardCollapsed', flag);
             }
-            e.stopPropagation();
         });
         // Toggle collapse on header click (but not controls)
         nativeHtml.addEventListener('click', async function(e) {
