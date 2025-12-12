@@ -4,11 +4,12 @@ import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
 import { CharactersWindow } from './window-characters.js';
+import { LightUtility } from './utility-lights.js';
 
 export class WeaponsPanel {
     constructor(actor) {
         this.actor = actor;
-        this.weapons = this._getWeapons();
+        this.weapons = { all: [], byType: {} }; // Initialize empty, will be populated in render
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
         // Don't set panelManager in constructor
         this._transferDialogOpen = false; // Guard to prevent multiple dialogs
@@ -16,8 +17,8 @@ export class WeaponsPanel {
         this._eventHandlers = [];
     }
 
-    _getWeapons() {
-        if (!this.actor) return [];
+    async _getWeapons() {
+        if (!this.actor) return { all: [], byType: {} };
         
         // Get current favorites
         const favorites = FavoritesPanel.getPanelFavorites(this.actor);
@@ -25,9 +26,20 @@ export class WeaponsPanel {
         // Get weapons
         const weapons = this.actor.items.filter(item => item.type === 'weapon');
         
+        // Get active light source ID for this actor (from actor flag - most reliable)
+        const effectiveActiveLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
+        
         // Map weapons with favorite state and additional data
-        const mappedWeapons = weapons.map(weapon => {
+        const mappedWeapons = await Promise.all(weapons.map(async weapon => {
             const weaponType = this._getWeaponType(weapon);
+            const isLightSource = await LightUtility.isLightSource(weapon);
+            let isLightActive = false;
+            
+            if (isLightSource && effectiveActiveLightSourceId) {
+                const weaponLightSourceId = await LightUtility.getLightSourceId(weapon);
+                isLightActive = weaponLightSourceId === effectiveActiveLightSourceId;
+            }
+            
             return {
                 id: weapon.id,
                 name: weapon.name,
@@ -36,9 +48,11 @@ export class WeaponsPanel {
                 weaponType: weaponType,
                 actionType: this._getActionType(weapon),
                 isFavorite: favorites.includes(weapon.id),
-                categoryId: `category-weapon-${weaponType}`
+                categoryId: `category-weapon-${weaponType}`,
+                isLightSource: isLightSource,
+                isLightActive: isLightActive
             };
-        });
+        }));
 
         // Group weapons by type and sort each group alphabetically
         const weaponsByType = {
@@ -107,7 +121,7 @@ export class WeaponsPanel {
         this.panelManager = PanelManager.instance;
 
         // Refresh weapons data
-        this.weapons = this._getWeapons();
+        this.weapons = await this._getWeapons();
 
         const weaponData = {
             weapons: this.weapons.all,
@@ -134,6 +148,7 @@ export class WeaponsPanel {
         
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
+        this._updateLightIcons(this.element);
     }
 
     _updateVisibility(html) {
@@ -180,6 +195,34 @@ export class WeaponsPanel {
                     heartIcon.classList.remove('faded');
                 } else {
                     heartIcon.classList.add('faded');
+                }
+            }
+        });
+    }
+
+    /**
+     * Update light icon states to reflect current light status
+     */
+    _updateLightIcons(html) {
+        if (!html) {
+            html = this.element;
+        }
+        
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(html);
+        if (!nativeElement) return;
+        
+        this.weapons.all.forEach(weapon => {
+            if (!weapon.isLightSource) return;
+            
+            const lightIcon = nativeElement.querySelector(`[data-weapon-id="${weapon.id}"] .fa-lightbulb`);
+            if (lightIcon) {
+                if (weapon.isLightActive) {
+                    lightIcon.classList.remove('faded');
+                    lightIcon.classList.add('light-active');
+                } else {
+                    lightIcon.classList.add('faded');
+                    lightIcon.classList.remove('light-active');
                 }
             }
         });
@@ -269,11 +312,42 @@ export class WeaponsPanel {
             const weaponId = weaponItem.dataset.weaponId;
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
             // Refresh the panel data to update heart icon states
-            this.weapons = this._getWeapons();
+            this.weapons = await this._getWeapons();
             this._updateHeartIcons();
         };
         panel.addEventListener('click', heartIconHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: heartIconHandler });
+
+        // Light source click (light icon)
+        // v13: Use native DOM event delegation
+        const lightIconHandler = async (event) => {
+            const lightIcon = event.target.closest('.tray-buttons .fa-lightbulb');
+            if (!lightIcon) return;
+            
+            const weaponItem = lightIcon.closest('.weapon-item');
+            if (!weaponItem) return;
+            const weaponId = weaponItem.dataset.weaponId;
+            const item = this.actor.items.get(weaponId);
+            if (!item) return;
+
+            // Get the player's token
+            const token = LightUtility.getPlayerToken(this.actor);
+            if (!token) {
+                ui.notifications.warn('No token selected. Please select a token on the canvas.');
+                return;
+            }
+
+            // Toggle light on/off
+            const result = await LightUtility.toggleLightForToken(token, item);
+            
+            // Refresh weapons to update all light icon states
+            this.weapons = await this._getWeapons();
+            
+            // Update all light icons in the panel
+            this._updateLightIcons(nativeHtml);
+        };
+        panel.addEventListener('click', lightIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: lightIconHandler });
 
         // Weapon use click (image overlay)
         // v13: Use native DOM event delegation

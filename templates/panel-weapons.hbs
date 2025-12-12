@@ -17,6 +17,9 @@
             {{/if}}
         </div>
         <div class="tray-buttons">
+            {{#if isLightSource}}
+            <i class="fa-solid fa-lightbulb {{#unless isLightActive}}faded{{/unless}} {{#if isLightActive}}light-active{{/if}}" title="Toggle Light" data-item-id="{{id}}"></i>
+            {{/if}}
             <i class="fa-solid fa-shield-alt {{#unless system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
             <i class="fa-solid fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
             <i class="fa-solid fa-share weapons-send-item" title="Send Weapon" data-item-id="{{id}}"></i>
@@ -55,6 +58,8 @@
                 actionType=weapon.actionType 
                 system=weapon.system 
                 isFavorite=weapon.isFavorite 
+                isLightSource=weapon.isLightSource
+                isLightActive=weapon.isLightActive
                 categoryId="category-weapon-simple-melee"}}
             {{/each}}
             {{/if}}
@@ -70,6 +75,8 @@
                 actionType=weapon.actionType 
                 system=weapon.system 
                 isFavorite=weapon.isFavorite 
+                isLightSource=weapon.isLightSource
+                isLightActive=weapon.isLightActive
                 categoryId="category-weapon-martial-melee"}}
             {{/each}}
             {{/if}}
@@ -85,6 +92,8 @@
                 actionType=weapon.actionType 
                 system=weapon.system 
                 isFavorite=weapon.isFavorite 
+                isLightSource=weapon.isLightSource
+                isLightActive=weapon.isLightActive
                 categoryId="category-weapon-simple-ranged"}}
             {{/each}}
             {{/if}}
@@ -100,6 +109,8 @@
                 actionType=weapon.actionType 
                 system=weapon.system 
                 isFavorite=weapon.isFavorite 
+                isLightSource=weapon.isLightSource
+                isLightActive=weapon.isLightActive
                 categoryId="category-weapon-martial-ranged"}}
             {{/each}}
             {{/if}}
@@ -115,6 +126,8 @@
                 actionType=weapon.actionType 
                 system=weapon.system 
                 isFavorite=weapon.isFavorite 
+                isLightSource=weapon.isLightSource
+                isLightActive=weapon.isLightActive
                 categoryId="category-weapon-natural"}}
             {{/each}}
             {{/if}}
