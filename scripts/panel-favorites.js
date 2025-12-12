@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, getContextMenu } from './helpers.js';
+import { LightUtility } from './utility-lights.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -329,7 +330,7 @@ export class FavoritesPanel {
 
     constructor(actor) {
         this.actor = actor;
-        this.favorites = this._getFavorites();
+        this.favorites = []; // Initialize empty, will be populated in render
         // Initialize filter states
         this.showSpells = game.settings.get(MODULE.ID, 'showSpellFavorites');
         this.showWeapons = game.settings.get(MODULE.ID, 'showWeaponFavorites');
@@ -420,7 +421,7 @@ export class FavoritesPanel {
 
     }
 
-    _getFavorites() {
+    async _getFavorites() {
         if (!this.actor) return [];
         
         // Get our module's panel favorites from flags and filter out null values
@@ -429,12 +430,28 @@ export class FavoritesPanel {
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(this.actor.items.map(item => [item.id, item]));
         
+        // Get active light source ID for this actor
+        const activeLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
+        
+        // Get token to check actual light state
+        const token = LightUtility.getPlayerToken(this.actor);
+        const tokenActiveLightSourceId = token ? await LightUtility.getTokenActiveLightSourceId(token, this.actor) : null;
+        const effectiveActiveLightSourceId = tokenActiveLightSourceId || activeLightSourceId;
+        
         // Map panel favorites in their original order
-        const favoritedItems = panelFavorites
+        const favoritedItems = await Promise.all(panelFavorites
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items (in case an item was deleted)
-            .map(item => {
+            .map(async item => {
                 const isHandleFavorite = FavoritesPanel.isHandleFavorite(this.actor, item.id);
+                const isLightSource = await LightUtility.isLightSource(item);
+                let isLightActive = false;
+                
+                if (isLightSource && effectiveActiveLightSourceId) {
+                    const itemLightSourceId = await LightUtility.getLightSourceId(item);
+                    isLightActive = itemLightSourceId === effectiveActiveLightSourceId;
+                }
+                
                 return {
                     id: item.id,
                     name: item.name,
@@ -445,9 +462,11 @@ export class FavoritesPanel {
                     hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                     showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                     showStarIcon: item.type === 'feat',
-                    isHandleFavorite: isHandleFavorite
+                    isHandleFavorite: isHandleFavorite,
+                    isLightSource: isLightSource,
+                    isLightActive: isLightActive
                 };
-            });
+            }));
             
         return favoritedItems;
     }
@@ -461,7 +480,7 @@ export class FavoritesPanel {
         this.element = nativeHtml;
         
         // Refresh favorites data
-        this.favorites = this._getFavorites();
+        this.favorites = await this._getFavorites();
         
         const favoritesData = {
             favorites: this.favorites,
@@ -509,6 +528,18 @@ export class FavoritesPanel {
                         shieldIcon.style.display = 'none';
                     }
                 }
+                
+                // Handle light icon visibility and state
+                const lightIcon = item.querySelector('.fa-lightbulb');
+                if (lightIcon) {
+                    if (favoriteItem.isLightSource) {
+                        lightIcon.style.display = '';
+                        lightIcon.classList.toggle('faded', !favoriteItem.isLightActive);
+                        lightIcon.classList.toggle('light-active', favoriteItem.isLightActive);
+                    } else {
+                        lightIcon.style.display = 'none';
+                    }
+                }
             }
         });
         
@@ -517,6 +548,9 @@ export class FavoritesPanel {
         
         // Update visibility
         this._updateVisibility(html);
+        
+        // Update light icons
+        this._updateLightIcons(html);
     }
 
     _removeEventListeners(panel) {
@@ -793,11 +827,12 @@ export class FavoritesPanel {
 
                 // Update the handle to reflect the new equipped state
                 if (PanelManager.instance) {
-                    // Update panel data without full re-renders
-                    if (PanelManager.instance.inventoryPanel) {
-                        PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
-                        PanelManager.instance.inventoryPanel._updateHeartIcons();
-                    }
+                // Update panel data without full re-renders
+                if (PanelManager.instance.inventoryPanel) {
+                    PanelManager.instance.inventoryPanel.items = await PanelManager.instance.inventoryPanel._getItems();
+                    PanelManager.instance.inventoryPanel._updateHeartIcons();
+                    PanelManager.instance.inventoryPanel._updateLightIcons(PanelManager.instance.inventoryPanel.element);
+                }
                     if (PanelManager.instance.weaponsPanel) {
                         PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
                         PanelManager.instance.weaponsPanel._updateHeartIcons();
@@ -842,11 +877,46 @@ export class FavoritesPanel {
             }
             
             // Refresh the favorites data to update isHandleFavorite properties
-            this.favorites = this._getFavorites();
+            this.favorites = await this._getFavorites();
             
             // Update the visual state of the dagger icon immediately
             const newState = FavoritesPanel.isHandleFavorite(this.actor, itemId);
             daggerButton.classList.toggle('faded', !newState);
+        });
+
+        // Light source click (light icon)
+        // v13: Use native DOM event delegation
+        panel.addEventListener('click', async (event) => {
+            const lightIcon = event.target.closest('.tray-buttons .fa-lightbulb');
+            if (!lightIcon) return;
+            
+            const favoriteItem = lightIcon.closest('.favorite-item');
+            if (!favoriteItem) return;
+            const itemId = favoriteItem.dataset.itemId;
+            const item = this.actor.items.get(itemId);
+            if (!item) return;
+
+            // Get the player's token
+            const token = LightUtility.getPlayerToken(this.actor);
+            if (!token) {
+                ui.notifications.warn('No token selected. Please select a token on the canvas.');
+                return;
+            }
+
+            // Toggle light on/off
+            const result = await LightUtility.toggleLightForToken(token, item);
+            
+            // Refresh favorites to update all light icon states
+            this.favorites = await this._getFavorites();
+            
+            // Update all light icons in the panel
+            this._updateLightIcons(nativeHtml);
+            
+            // Also update inventory panel if it exists
+            if (PanelManager.instance?.inventoryPanel) {
+                PanelManager.instance.inventoryPanel.items = await PanelManager.instance.inventoryPanel._getItems();
+                PanelManager.instance.inventoryPanel._updateLightIcons(PanelManager.instance.inventoryPanel.element);
+            }
         });
 
         // Add clear all button listener
@@ -946,5 +1016,33 @@ export class FavoritesPanel {
         } catch (error) {
             console.error('Error reordering favorites:', error);
         }
+    }
+
+    /**
+     * Update light icon states to reflect current light status
+     */
+    _updateLightIcons(html) {
+        if (!html) {
+            html = this.element;
+        }
+        
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(html);
+        if (!nativeElement) return;
+        
+        this.favorites.forEach(item => {
+            if (!item.isLightSource) return;
+            
+            const lightIcon = nativeElement.querySelector(`[data-item-id="${item.id}"] .fa-lightbulb`);
+            if (lightIcon) {
+                if (item.isLightActive) {
+                    lightIcon.classList.remove('faded');
+                    lightIcon.classList.add('light-active');
+                } else {
+                    lightIcon.classList.add('faded');
+                    lightIcon.classList.remove('light-active');
+                }
+            }
+        });
     }
 } 

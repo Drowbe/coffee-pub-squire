@@ -49,20 +49,39 @@ export class InventoryPanel {
             ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
         );
         
+        // Get active light source ID for this actor
+        const activeLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
+        
+        // Get token to check actual light state
+        const token = LightUtility.getPlayerToken(this.actor);
+        const tokenActiveLightSourceId = token ? await LightUtility.getTokenActiveLightSourceId(token, this.actor) : null;
+        const effectiveActiveLightSourceId = tokenActiveLightSourceId || activeLightSourceId;
+
         // Map items with favorite state and action type
-        const mappedItems = await Promise.all(items.map(async item => ({
-            id: item.id,
-            name: item.name,
-            img: item.img || 'icons/svg/item-bag.svg',
-            type: item.type,
-            system: item.system,
-            isFavorite: favorites.includes(item.id),
-            categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
-            actionType: this._getActionType(item),
-            flags: item.flags || {},
-            isNew: item.getFlag(MODULE.ID, 'isNew') || false,
-            isLightSource: await LightUtility.isLightSource(item)
-        })));
+        const mappedItems = await Promise.all(items.map(async item => {
+            const isLightSource = await LightUtility.isLightSource(item);
+            let isLightActive = false;
+            
+            if (isLightSource && effectiveActiveLightSourceId) {
+                const itemLightSourceId = await LightUtility.getLightSourceId(item);
+                isLightActive = itemLightSourceId === effectiveActiveLightSourceId;
+            }
+            
+            return {
+                id: item.id,
+                name: item.name,
+                img: item.img || 'icons/svg/item-bag.svg',
+                type: item.type,
+                system: item.system,
+                isFavorite: favorites.includes(item.id),
+                categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
+                actionType: this._getActionType(item),
+                flags: item.flags || {},
+                isNew: item.getFlag(MODULE.ID, 'isNew') || false,
+                isLightSource: isLightSource,
+                isLightActive: isLightActive
+            };
+        }));
 
         // Group items by type and sort alphabetically within each type
         const itemsByType = {};
@@ -130,6 +149,7 @@ export class InventoryPanel {
         
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
+        this._updateLightIcons(this.element);
     }
 
     _updateVisibility(html) {
@@ -176,6 +196,34 @@ export class InventoryPanel {
                     heartIcon.classList.remove('faded');
                 } else {
                     heartIcon.classList.add('faded');
+                }
+            }
+        });
+    }
+
+    /**
+     * Update light icon states to reflect current light status
+     */
+    _updateLightIcons(html) {
+        if (!html) {
+            html = this.element;
+        }
+        
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(html);
+        if (!nativeElement) return;
+        
+        this.items.all.forEach(item => {
+            if (!item.isLightSource) return;
+            
+            const lightIcon = nativeElement.querySelector(`[data-item-id="${item.id}"] .fa-lightbulb`);
+            if (lightIcon) {
+                if (item.isLightActive) {
+                    lightIcon.classList.remove('faded');
+                    lightIcon.classList.add('light-active');
+                } else {
+                    lightIcon.classList.add('faded');
+                    lightIcon.classList.remove('light-active');
                 }
             }
         });
@@ -338,7 +386,7 @@ export class InventoryPanel {
         // Light source click (light icon)
         // v13: Use native DOM event delegation
         const lightIconHandler = async (event) => {
-            const lightIcon = event.target.closest('.tray-buttons .fa-lightbulb, .tray-buttons .fa-lightbulb-on');
+            const lightIcon = event.target.closest('.tray-buttons .fa-lightbulb');
             if (!lightIcon) return;
             
             const inventoryItem = lightIcon.closest('.inventory-item');
@@ -355,21 +403,13 @@ export class InventoryPanel {
             }
 
             // Toggle light on/off
-            const lightApplied = await LightUtility.toggleLightForToken(token, item);
+            const result = await LightUtility.toggleLightForToken(token, item);
             
-            // Update icon state to reflect light status
-            const currentLight = token.document?.light || token.light;
-            const hasLight = currentLight && (currentLight.dim > 0 || currentLight.bright > 0);
+            // Refresh items to update all light icon states
+            this.items = await this._getItems();
             
-            if (hasLight) {
-                lightIcon.classList.remove('faded');
-                lightIcon.classList.add('fa-lightbulb-on');
-                lightIcon.classList.remove('fa-lightbulb');
-            } else {
-                lightIcon.classList.add('faded');
-                lightIcon.classList.remove('fa-lightbulb-on');
-                lightIcon.classList.add('fa-lightbulb');
-            }
+            // Update all light icons in the panel
+            this._updateLightIcons(nativeHtml);
         };
         panel.addEventListener('click', lightIconHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: lightIconHandler });

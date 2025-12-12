@@ -107,3 +107,14 @@
     padding-top: 4px;
     padding-bottom: 4px;
 }
+
+/* Light icon active state */
+.tray-buttons .fa-lightbulb.light-active {
+    color: #ffa500 !important;
+    text-shadow: 0 0 4px #ffa500;
+}
+
+.tray-buttons .fa-lightbulb.light-active:hover {
+    color: #ffd700 !important;
+    text-shadow: 0 0 6px #ffd700;
+}

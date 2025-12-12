@@ -62,11 +62,11 @@ export class LightUtility {
     }
 
     /**
-     * Get light source configuration for an item
-     * @param {Item} item - The item to get light configuration for
-     * @returns {Promise<Object|null>} Light configuration or null if not found
+     * Get light source ID for an item
+     * @param {Item} item - The item to get light source ID for
+     * @returns {Promise<string|null>} Light source ID or null if not found
      */
-    static async getLightSourceConfig(item) {
+    static async getLightSourceId(item) {
         if (!item) return null;
 
         const lightSources = await this.loadLightSources();
@@ -77,7 +77,7 @@ export class LightUtility {
         // Check if item has a light source flag
         const lightSourceId = item.getFlag(MODULE.ID, 'lightSourceId');
         if (lightSourceId && lightSources[lightSourceId]) {
-            return lightSources[lightSourceId].light;
+            return lightSourceId;
         }
 
         // Check by item name (case-insensitive)
@@ -85,11 +85,26 @@ export class LightUtility {
         for (const [key, config] of Object.entries(lightSources)) {
             const configName = config.name?.toLowerCase().trim();
             if (configName && itemName === configName) {
-                return config.light;
+                return key;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Get light source configuration for an item
+     * @param {Item} item - The item to get light configuration for
+     * @returns {Promise<Object|null>} Light configuration or null if not found
+     */
+    static async getLightSourceConfig(item) {
+        if (!item) return null;
+
+        const lightSourceId = await this.getLightSourceId(item);
+        if (!lightSourceId) return null;
+
+        const lightSources = await this.loadLightSources();
+        return lightSources[lightSourceId]?.light || null;
     }
 
     /**
@@ -197,34 +212,88 @@ export class LightUtility {
     }
 
     /**
+     * Get the active light source ID for an actor
+     * @param {Actor} actor - The actor to get active light source for
+     * @returns {string|null} Active light source ID or null
+     */
+    static getActiveLightSourceId(actor) {
+        if (!actor) return null;
+        return actor.getFlag(MODULE.ID, 'activeLightSourceId') || null;
+    }
+
+    /**
+     * Set the active light source ID for an actor
+     * @param {Actor} actor - The actor to set active light source for
+     * @param {string|null} lightSourceId - The light source ID to set, or null to clear
+     */
+    static async setActiveLightSourceId(actor, lightSourceId) {
+        if (!actor) return;
+        if (lightSourceId) {
+            await actor.setFlag(MODULE.ID, 'activeLightSourceId', lightSourceId);
+        } else {
+            await actor.unsetFlag(MODULE.ID, 'activeLightSourceId');
+        }
+    }
+
+    /**
      * Toggle light on/off for a token based on an item
      * @param {Token} token - The token to toggle light for
      * @param {Item} item - The item to use as light source
-     * @returns {Promise<boolean>} True if light was applied, false if removed
+     * @returns {Promise<{applied: boolean, lightSourceId: string|null}>} Result object
      */
     static async toggleLightForToken(token, item) {
-        if (!token || !item) {
-            return false;
+        if (!token || !item || !token.actor) {
+            return { applied: false, lightSourceId: null };
         }
 
         const lightConfig = await this.getLightSourceConfig(item);
-        if (!lightConfig) {
-            return false;
+        const lightSourceId = await this.getLightSourceId(item);
+        if (!lightConfig || !lightSourceId) {
+            return { applied: false, lightSourceId: null };
         }
 
-        // Check if token already has this light configuration
-        const currentLight = token.document?.light || token.light;
-        const hasLight = currentLight && (currentLight.dim > 0 || currentLight.bright > 0);
+        // Get current active light source from actor flags
+        const currentActiveLightSourceId = this.getActiveLightSourceId(token.actor);
         
-        if (hasLight) {
-            // Remove light
+        // Check if this is the same light source that's currently active
+        if (currentActiveLightSourceId === lightSourceId) {
+            // Same light source - toggle off
             await this.removeLightFromToken(token);
-            return false;
+            await this.setActiveLightSourceId(token.actor, null);
+            return { applied: false, lightSourceId: null };
         } else {
-            // Apply light
+            // Different light source (or no active light) - switch to new light
             await this.applyLightToToken(token, lightConfig);
-            return true;
+            await this.setActiveLightSourceId(token.actor, lightSourceId);
+            return { applied: true, lightSourceId: lightSourceId };
         }
+    }
+
+    /**
+     * Check if a token has an active light and get its source ID
+     * @param {Token} token - The token to check
+     * @param {Actor} actor - The actor associated with the token
+     * @returns {Promise<string|null>} Active light source ID or null
+     */
+    static async getTokenActiveLightSourceId(token, actor) {
+        if (!token || !actor) return null;
+
+        // First check actor flags
+        const activeLightSourceId = this.getActiveLightSourceId(actor);
+        if (activeLightSourceId) {
+            // Verify token actually has light
+            const currentLight = token.document?.light || token.light;
+            const hasLight = currentLight && (currentLight.dim > 0 || currentLight.bright > 0);
+            if (hasLight) {
+                return activeLightSourceId;
+            } else {
+                // Light was removed but flag wasn't cleared - clear it
+                await this.setActiveLightSourceId(actor, null);
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /**

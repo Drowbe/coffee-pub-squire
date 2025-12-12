@@ -23,7 +23,7 @@
         </div>
         <div class="tray-buttons">
             {{#if isLightSource}}
-            <i class="fa-solid fa-lightbulb faded" title="Toggle Light"></i>
+            <i class="fa-solid fa-lightbulb {{#unless isLightActive}}faded{{/unless}} {{#if isLightActive}}light-active{{/if}}" title="Toggle Light"></i>
             {{/if}}
             {{#if (or (eq type "weapon") (eq type "equipment") (eq type "tool") (eq type "consumable"))}}
                 {{#if system.equipped}}
@@ -76,7 +76,8 @@
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-equipment"
                 type=item.type
-                isLightSource=item.isLightSource}}
+                isLightSource=item.isLightSource
+                isLightActive=item.isLightActive}}
             {{/each}}
             {{/if}}
 
