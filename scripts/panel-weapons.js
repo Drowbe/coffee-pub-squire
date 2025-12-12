@@ -12,6 +12,8 @@ export class WeaponsPanel {
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
         // Don't set panelManager in constructor
         this._transferDialogOpen = false; // Guard to prevent multiple dialogs
+        // Store event handler references for cleanup
+        this._eventHandlers = [];
     }
 
     _getWeapons() {
@@ -185,9 +187,14 @@ export class WeaponsPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
-        // v13: Native DOM doesn't support jQuery's .off() method
-        // Event listeners will be removed when elements are cloned in _activateListeners
-        // This method is kept for compatibility but does nothing in v13
+        // Remove all stored event listeners
+        this._eventHandlers.forEach(({ element, event, handler }) => {
+            if (element && handler) {
+                element.removeEventListener(event, handler);
+            }
+        });
+        // Clear the handlers array
+        this._eventHandlers = [];
     }
 
     _activateListeners(html) {
@@ -208,18 +215,20 @@ export class WeaponsPanel {
 
         // Category filter toggles
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', (event) => {
+        const categoryFilterHandler = (event) => {
             const filter = event.target.closest('.weapons-category-filter');
             if (!filter) return;
             const categoryId = filter.dataset.filterId;
             if (categoryId) {
                 this.panelManager.toggleCategory(categoryId, panel);
             }
-        });
+        };
+        panel.addEventListener('click', categoryFilterHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: categoryFilterHandler });
 
         // Add filter toggle handler
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const filterToggleHandler = async (event) => {
             const filterToggle = event.target.closest('.weapon-filter-toggle');
             if (!filterToggle) return;
             
@@ -228,11 +237,13 @@ export class WeaponsPanel {
             filterToggle.classList.toggle('active', this.showOnlyEquipped);
             filterToggle.classList.toggle('faded', !this.showOnlyEquipped);
             this._updateVisibility(nativeHtml);
-        });
+        };
+        panel.addEventListener('click', filterToggleHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: filterToggleHandler });
 
         // Weapon info click (feather icon)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const featherIconHandler = async (event) => {
             const featherIcon = event.target.closest('.tray-buttons .fa-feather');
             if (!featherIcon) return;
             
@@ -243,11 +254,13 @@ export class WeaponsPanel {
             if (weapon) {
                 weapon.sheet.render(true);
             }
-        });
+        };
+        panel.addEventListener('click', featherIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: featherIconHandler });
 
         // Toggle favorite
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const heartIconHandler = async (event) => {
             const heartIcon = event.target.closest('.tray-buttons .fa-heart');
             if (!heartIcon) return;
             
@@ -258,11 +271,13 @@ export class WeaponsPanel {
             // Refresh the panel data to update heart icon states
             this.weapons = this._getWeapons();
             this._updateHeartIcons();
-        });
+        };
+        panel.addEventListener('click', heartIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: heartIconHandler });
 
         // Weapon use click (image overlay)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const rollOverlayHandler = async (event) => {
             const rollOverlay = event.target.closest('.weapon-image-container .weapon-roll-overlay');
             if (!rollOverlay) return;
             
@@ -273,11 +288,13 @@ export class WeaponsPanel {
             if (weapon) {
                 await weapon.use({}, { event });
             }
-        });
+        };
+        panel.addEventListener('click', rollOverlayHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: rollOverlayHandler });
 
         // Toggle equip state (shield icon)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const shieldIconHandler = async (event) => {
             const shieldIcon = event.target.closest('.tray-buttons .fa-shield-alt');
             if (!shieldIcon) return;
             
@@ -296,11 +313,13 @@ export class WeaponsPanel {
                 // Update visibility in case we're filtering by equipped
                 this._updateVisibility(nativeHtml);
             }
-        });
+        };
+        panel.addEventListener('click', shieldIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: shieldIconHandler });
 
         // Send weapon (share icon)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const sendButtonHandler = async (event) => {
             const sendButton = event.target.closest('.weapons-send-item');
             if (!sendButton) return;
             
@@ -316,7 +335,9 @@ export class WeaponsPanel {
                 // Open character selection window
                 await this._openCharacterSelection(item);
             }
-        });
+        };
+        panel.addEventListener('click', sendButtonHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: sendButtonHandler });
     }
 
     _toggleCategory(categoryId) {

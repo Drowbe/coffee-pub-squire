@@ -12,6 +12,8 @@ export class InventoryPanel {
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedInventory');
         // Don't set panelManager in constructor
         this._transferDialogOpen = false; // Guard to prevent multiple dialogs
+        // Store event handler references for cleanup
+        this._eventHandlers = [];
     }
 
     _getActionType(item) {
@@ -179,9 +181,14 @@ export class InventoryPanel {
 
     _removeEventListeners(panel) {
         if (!panel) return;
-        // v13: Native DOM doesn't support jQuery's .off() method
-        // Event listeners will be removed when elements are cloned in _activateListeners
-        // This method is kept for compatibility but does nothing in v13
+        // Remove all stored event listeners
+        this._eventHandlers.forEach(({ element, event, handler }) => {
+            if (element && handler) {
+                element.removeEventListener(event, handler);
+            }
+        });
+        // Clear the handlers array
+        this._eventHandlers = [];
     }
 
     _activateListeners(html) {
@@ -202,18 +209,20 @@ export class InventoryPanel {
 
         // Category filter toggles
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', (event) => {
+        const categoryFilterHandler = (event) => {
             const filter = event.target.closest('.inventory-category-filter');
             if (!filter) return;
             const categoryId = filter.dataset.filterId;
             if (categoryId) {
                 this.panelManager.toggleCategory(categoryId, panel);
             }
-        });
+        };
+        panel.addEventListener('click', categoryFilterHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: categoryFilterHandler });
 
         // Add filter toggle handler
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const filterToggleHandler = async (event) => {
             const filterToggle = event.target.closest('.inventory-filter-toggle');
             if (!filterToggle) return;
             
@@ -222,11 +231,13 @@ export class InventoryPanel {
             filterToggle.classList.toggle('active', this.showOnlyEquipped);
             filterToggle.classList.toggle('faded', !this.showOnlyEquipped);
             this._updateVisibility(nativeHtml);
-        });
+        };
+        panel.addEventListener('click', filterToggleHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: filterToggleHandler });
 
         // Item info click (feather icon)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const featherIconHandler = async (event) => {
             const featherIcon = event.target.closest('.tray-buttons .fa-feather');
             if (!featherIcon) return;
             
@@ -237,11 +248,13 @@ export class InventoryPanel {
             if (item) {
                 item.sheet.render(true);
             }
-        });
+        };
+        panel.addEventListener('click', featherIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: featherIconHandler });
 
         // Toggle favorite
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const heartIconHandler = async (event) => {
             const heartIcon = event.target.closest('.tray-buttons .fa-heart');
             if (!heartIcon) return;
             
@@ -252,11 +265,13 @@ export class InventoryPanel {
             // Refresh the panel data to update heart icon states
             this.items = this._getItems();
             this._updateHeartIcons();
-        });
+        };
+        panel.addEventListener('click', heartIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: heartIconHandler });
 
         // Item use click (image overlay)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const rollOverlayHandler = async (event) => {
             const rollOverlay = event.target.closest('.inventory-image-container .inventory-roll-overlay');
             if (!rollOverlay) return;
             
@@ -267,11 +282,13 @@ export class InventoryPanel {
             if (item) {
                 await item.use({}, { event });
             }
-        });
+        };
+        panel.addEventListener('click', rollOverlayHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: rollOverlayHandler });
 
         // Toggle equip state (shield icon)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const shieldIconHandler = async (event) => {
             const shieldIcon = event.target.closest('.tray-buttons .fa-shield-alt');
             if (!shieldIcon) return;
             
@@ -290,11 +307,13 @@ export class InventoryPanel {
                 // Update visibility in case we're filtering by equipped
                 this._updateVisibility(nativeHtml);
             }
-        });
+        };
+        panel.addEventListener('click', shieldIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: shieldIconHandler });
 
         // Send item (share icon)
         // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
+        const sendButtonHandler = async (event) => {
             const sendButton = event.target.closest('.inventory-send-item');
             if (!sendButton) return;
             
@@ -310,7 +329,9 @@ export class InventoryPanel {
                 // Open character selection window
                 await this._openCharacterSelection(item);
             }
-        });
+        };
+        panel.addEventListener('click', sendButtonHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: sendButtonHandler });
     }
 
     async _openCharacterSelection(item) {
