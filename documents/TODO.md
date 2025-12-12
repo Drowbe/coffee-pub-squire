@@ -20,21 +20,8 @@
 
 #### Application/FormApplication Classes
 
-
-
-- [ ] **`scripts/panel-codex.js` - `CodexForm` class**
-  - [ ] Add `_getNativeElement()` helper method
-  - [ ] Add jQuery detection in `activateListeners(html)`
-  - [ ] Replace ALL `html.find()` patterns (extensive usage)
-  - [ ] Replace `.on()`, `.off()` event handlers
-  - [ ] Replace `.val()`, `.attr()`, form manipulation
-  - [ ] Replace `.append()` with native DOM
-  - [ ] Convert `.each()` to `.forEach()`
-
 - [ ] **`scripts/window-quest.js` - `QuestForm` class**
-  - [ ] Add `_getNativeElement()` helper method
-  - [ ] Add jQuery detection in `activateListeners(html)`
-  - [ ] Replace jQuery patterns in form handling
+  - [ ] Add `_getNativeElement()` helper method (jQuery detection exists inline, but helper method needed for consistency)
 
 ---
 
@@ -42,90 +29,37 @@
 
 #### High-Usage Panels
 
-- [x] **`scripts/panel-party.js`** 🔄 (Partially Complete)
-  - [x] Added `getNativeElement` import and usage
-  - [x] Converted `.html()` to `.innerHTML`
-  - [x] Added jQuery detection in `activateListeners`
-  - [x] Converted character card click handlers to native DOM
-  - [ ] **TODO:** Complete migration of remaining jQuery usage (drag handlers, etc.)
-
-- [x] **`scripts/panel-notes.js`** 🔄 (Partially Complete)
-  - [x] Added `getNativeElement` import and usage
-  - [x] Converted `.html()` to `.innerHTML`
-  - [x] Added jQuery detection in `activateListeners`
-  - [x] Converted character sheet toggle and journal button handlers
-  - [x] Fixed syntax errors (missing closing braces)
-  - [x] Updated `TextEditor.enrichHTML()` to use `getTextEditor().enrichHTML()`
-  - [x] Updated `JournalTextPageSheet.activateListeners` to use `foundry.applications.sheets.JournalTextPageSheet.activateListeners` with fallback
-  - [ ] **TODO:** Complete migration of remaining jQuery usage (20+ instances of `html.find()`)
-
-- [x] **`scripts/panel-quest.js`** 🔄 (Partially Complete)
-  - [x] Added `getNativeElement` import and usage
-  - [x] Converted `.html()` to `.innerHTML`
-  - [x] Added jQuery detection in `_activateListeners` (entry point)
-  - [x] Converted search input handler to native `addEventListener`
-  - [x] Updated `TextEditor.enrichHTML()` to use `getTextEditor().enrichHTML()`
-  - [x] Fixed "hide quest pins" button null reference error with proper fallback and null checks
-  - [ ] **TODO:** Complete migration of extensive jQuery usage (100+ instances of `html.find()`, drag handlers, etc.)
-
-- [x] **`scripts/panel-codex.js` - `CodexPanel` class** 🔄 (Partially Complete)
-  - [x] Removed unnecessary jQuery detection (element guaranteed native from `querySelector`)
-  - [x] Converted `.html()` to `.innerHTML`
-  - [x] Added jQuery detection in `_activateListeners` entry point
-  - [x] Converted search input handler to native `addEventListener`
-  - [ ] **TODO:** Complete migration of remaining jQuery usage (search functionality, tag handlers, etc.)
-  - [ ] **TODO:** Fix remaining jQuery usage at line 1924 (`codexContainer.find()`)
-
-- [x] **`scripts/panel-weapons.js`** 🔄 (Partially Complete)
-  - [x] Added `getNativeElement` import and usage
-  - [x] Converted `.html()` to `.innerHTML`
-  - [x] Made `_removeEventListeners` a no-op for v13
-
-- [x] **`scripts/panel-inventory.js`** 🔄 (Partially Complete)
-  - [x] Added `getNativeElement` import and usage
-  - [x] Converted `.html()` to `.innerHTML`
-  - [x] Made `_removeEventListeners` a no-op for v13
-
-- [x] **`scripts/panel-features.js`** 🔄 (Partially Complete)
-  - [x] Added `getNativeElement` import and usage
-  - [x] Converted `.html()` to `.innerHTML`
-  - [x] Made `_removeEventListeners` a no-op for v13
-
-- [x] **`scripts/panel-gm.js`**
-  - [x] Added `getNativeElement` usage in `render` method
-  - [x] Migrated all jQuery usage to native DOM
-
-- [x] **`scripts/panel-control.js`** 🔄 (Partially Complete)
-  - [x] Added `getNativeElement` usage
-  - [x] Converted `_updateVisibility` to native DOM methods
-  - [x] Converted `_activateListeners` entry points to native DOM
+- [ ] **`scripts/panel-party.js`** 🔄 (Partially Complete)
+  - [ ] **TODO:** Complete migration of remaining jQuery usage
+    - [ ] Line 663: `html.find()` in transfer quantity dialog callback
+    - [ ] Lines 843-855: `html.find()` for GM approval buttons
+    - [ ] Lines 854-855: `html.find()` for transfer request buttons
+    - [ ] Lines 964-965: `html.find()` for disabled button state
+    - [ ] Lines 1288-1290: `html.find()` for processing message
 
 #### Standard Panels (Lower Priority)
 
 
 - [ ] **`scripts/panel-experience.js`**
+  - [ ] Add `getNativeElement` import and usage
   - [ ] Add jQuery detection in `_activateListeners(html)`
+  - [ ] Replace ALL jQuery usage (lines 30, 35, 38-39, 48, 51-53)
+    - [ ] Convert `.find()` to `querySelector()`/`querySelectorAll()`
+    - [ ] Convert `.html()` to `.innerHTML`
+    - [ ] Convert `.click()` to `addEventListener()`
+    - [ ] Convert `.addClass()`/`.toggleClass()`/`.hasClass()` to `classList`
+    - [ ] Convert `.css()` to `style` properties
 
 - [ ] **`scripts/panel-party-stats.js`**
-  - [ ] Replace jQuery detection for `this.element` (already has some detection)
-  - [ ] Verify native DOM usage
+  - [ ] Replace jQuery usage (lines 102-106)
+    - [ ] Remove `jQuery` check and `$()` wrapper
+    - [ ] Convert `.find()` to `querySelector()`
+    - [ ] Convert `.html()` to `.innerHTML`
+    - [ ] Convert `.length` check to native DOM check
 
 ---
 
-### Phase 4: Utility & Helper Files (Priority: MEDIUM)
-
-- [ ] **`scripts/timer-utils.js`**
-  - [ ] Review for any jQuery usage
-  - [ ] Update if needed
-
-- [ ] **`scripts/transfer-utils.js`**
-  - [ ] Review for any jQuery usage
-  - [ ] Update if needed
-
-- [ ] **`scripts/utility-*.js` files**
-  - [ ] `utility-codex-parser.js` - Review for jQuery usage
-  - [ ] `utility-print-character.js` - Review for jQuery usage
-  - [ ] `utility-quest-parser.js` - Review for jQuery usage
+### Phase 4: Utility & Helper Files COMPLETE
 
 ---
 
@@ -141,10 +75,9 @@
 
 #### Known Issues Discovered During Migration
 
-- [ ] **`panel-codex.js:1924`** - Still has `codexContainer.find()` usage (needs native DOM conversion)
-- [ ] **`panel-quest.js`** - Extensive jQuery usage in search/filter handlers needs complete migration
-- [ ] **`panel-notes.js`** - Many remaining `html.find()` calls throughout the file
-- [ ] **`panel-party.js`** - Remaining jQuery usage in drag handlers and other event handlers
+- [ ] **`panel-party.js`** - Remaining jQuery usage in transfer request handlers (lines 663, 843-855, 964-965, 1288-1290)
+- [ ] **`panel-experience.js`** - Extensive jQuery usage throughout entire file
+- [ ] **`panel-party-stats.js`** - jQuery usage in render method (lines 102-106)
 
 ---
 
@@ -152,10 +85,6 @@
 
 #### Per-File Testing Checklist
 After migrating each file, test:
-- [x] `scripts/squire.js` - File loads without errors ✅
-- [x] `scripts/manager-panel.js` - File loads, core functionality works ✅
-- [x] `scripts/window-characters.js` - File loads without errors ✅
-- [x] `scripts/window-health.js` - File loads without errors ✅
 - [ ] All remaining files - File loads without console errors
 - [ ] All files - Functionality works as expected
 - [ ] All files - No deprecation warnings
@@ -183,9 +112,6 @@ After migrating each file, test:
 ### Phase 7: Documentation & Release
 
 - [ ] Update README with v13 requirements
-- [x] Update CHANGELOG with migration notes ✅
-- [x] Document any breaking changes for users ✅ (in CHANGELOG)
-- [x] Update module version to stable v13.0.0 ✅
 - [ ] Create GitHub release
 - [ ] Tag release
 - [ ] Announce v13 support
