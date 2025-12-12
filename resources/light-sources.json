@@ -1,0 +1,117 @@
+{
+  "torch": {
+    "name": "Torch",
+    "light": {
+      "dim": 20,
+      "bright": 10,
+      "angle": 360,
+      "color": "#FFA500",
+      "alpha": 0.5,
+      "animation": {
+        "type": "torch",
+        "speed": 5,
+        "intensity": 3
+      },
+      "luminosity": 0.5,
+      "saturation": 0.5,
+      "contrast": 0.5,
+      "shadows": 0.5
+    }
+  },
+  "lantern": {
+    "name": "Lantern",
+    "light": {
+      "dim": 30,
+      "bright": 15,
+      "angle": 360,
+      "color": "#FFD700",
+      "alpha": 0.5,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3
+      },
+      "luminosity": 0.5,
+      "saturation": 0.5,
+      "contrast": 0.5,
+      "shadows": 0.5
+    }
+  },
+  "candle": {
+    "name": "Candle",
+    "light": {
+      "dim": 5,
+      "bright": 2.5,
+      "angle": 360,
+      "color": "#FFE5B4",
+      "alpha": 0.5,
+      "animation": {
+        "type": "flicker",
+        "speed": 5,
+        "intensity": 3
+      },
+      "luminosity": 0.5,
+      "saturation": 0.5,
+      "contrast": 0.5,
+      "shadows": 0.5
+    }
+  },
+  "bullseye-lantern": {
+    "name": "Bullseye Lantern",
+    "light": {
+      "dim": 60,
+      "bright": 30,
+      "angle": 45,
+      "color": "#FFD700",
+      "alpha": 0.5,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3
+      },
+      "luminosity": 0.5,
+      "saturation": 0.5,
+      "contrast": 0.5,
+      "shadows": 0.5
+    }
+  },
+  "hooded-lantern": {
+    "name": "Hooded Lantern",
+    "light": {
+      "dim": 5,
+      "bright": 0,
+      "angle": 360,
+      "color": "#FFD700",
+      "alpha": 0.5,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3
+      },
+      "luminosity": 0.5,
+      "saturation": 0.5,
+      "contrast": 0.5,
+      "shadows": 0.5
+    }
+  },
+  "light-cantrip": {
+    "name": "Light Cantrip",
+    "light": {
+      "dim": 20,
+      "bright": 10,
+      "angle": 360,
+      "color": "#FFFFFF",
+      "alpha": 0.5,
+      "animation": {
+        "type": "none",
+        "speed": 5,
+        "intensity": 3
+      },
+      "luminosity": 0.5,
+      "saturation": 0.5,
+      "contrast": 0.5,
+      "shadows": 0.5
+    }
+  }
+}
+

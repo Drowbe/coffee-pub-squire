@@ -71,7 +71,8 @@
     "scripts/panel-abilities.js",
     "scripts/panel-party.js",
     "scripts/panel-party-stats.js",
-    "scripts/quest-pin.js"
+    "scripts/quest-pin.js",
+    "scripts/utility-lights.js"
   ],
   "packs": [],
 

@@ -29,6 +29,9 @@
                 <i class="fa-solid fa-shield-alt faded" title="Toggle Equipped"></i>
                 {{/if}}
             {{/if}}
+            {{#if isLightSource}}
+            <i class="fa-solid fa-lightbulb faded" title="Toggle Light"></i>
+            {{/if}}
             <i class="fa-solid fa-share inventory-send-item" title="Send Item" data-item-id="{{id}}"></i>
             {{#if isFavorite}}
             <i class="fa-solid fa-heart" title="Toggle Favorite"></i>
@@ -72,7 +75,8 @@
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-equipment"
-                type=item.type}}
+                type=item.type
+                isLightSource=item.isLightSource}}
             {{/each}}
             {{/if}}
 
@@ -89,7 +93,8 @@
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-consumable"
-                type=item.type}}
+                type=item.type
+                isLightSource=item.isLightSource}}
             {{/each}}
             {{/if}}
 
@@ -106,7 +111,8 @@
                 quantity=item.system.quantity
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-tool"
-                type=item.type}}
+                type=item.type
+                isLightSource=item.isLightSource}}
             {{/each}}
             {{/if}}
 
@@ -123,7 +129,8 @@
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-loot"
-                type=item.type}}
+                type=item.type
+                isLightSource=item.isLightSource}}
             {{/each}}
             {{/if}}
 
@@ -140,7 +147,8 @@
                 quantity=item.system.quantity 
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-container"
-                type=item.type}}
+                type=item.type
+                isLightSource=item.isLightSource}}
             {{/each}}
             {{/if}}
 

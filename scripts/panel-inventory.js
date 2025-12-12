@@ -4,11 +4,12 @@ import { FavoritesPanel } from './panel-favorites.js';
 import { CharactersWindow } from './window-characters.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
+import { LightUtility } from './utility-lights.js';
 
 export class InventoryPanel {
     constructor(actor) {
         this.actor = actor;
-        this.items = this._getItems();
+        this.items = { all: [], byType: {} }; // Initialize empty, will be populated in render
         this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedInventory');
         // Don't set panelManager in constructor
         this._transferDialogOpen = false; // Guard to prevent multiple dialogs
@@ -37,7 +38,7 @@ export class InventoryPanel {
         }
     }
 
-    _getItems() {
+    async _getItems() {
         if (!this.actor) return [];
         
         // Get current favorites
@@ -49,7 +50,7 @@ export class InventoryPanel {
         );
         
         // Map items with favorite state and action type
-        const mappedItems = items.map(item => ({
+        const mappedItems = await Promise.all(items.map(async item => ({
             id: item.id,
             name: item.name,
             img: item.img || 'icons/svg/item-bag.svg',
@@ -59,8 +60,9 @@ export class InventoryPanel {
             categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
             actionType: this._getActionType(item),
             flags: item.flags || {},
-            isNew: item.getFlag(MODULE.ID, 'isNew') || false
-        }));
+            isNew: item.getFlag(MODULE.ID, 'isNew') || false,
+            isLightSource: await LightUtility.isLightSource(item)
+        })));
 
         // Group items by type and sort alphabetically within each type
         const itemsByType = {};
@@ -97,7 +99,7 @@ export class InventoryPanel {
         this.panelManager = PanelManager.instance;
 
         // Refresh items data
-        this.items = this._getItems();
+        this.items = await this._getItems();
 
         const itemData = {
             items: this.items.all,
@@ -263,7 +265,7 @@ export class InventoryPanel {
             const itemId = inventoryItem.dataset.itemId;
             await FavoritesPanel.manageFavorite(this.actor, itemId);
             // Refresh the panel data to update heart icon states
-            this.items = this._getItems();
+            this.items = await this._getItems();
             this._updateHeartIcons();
         };
         panel.addEventListener('click', heartIconHandler);
@@ -332,6 +334,45 @@ export class InventoryPanel {
         };
         panel.addEventListener('click', sendButtonHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: sendButtonHandler });
+
+        // Light source click (light icon)
+        // v13: Use native DOM event delegation
+        const lightIconHandler = async (event) => {
+            const lightIcon = event.target.closest('.tray-buttons .fa-lightbulb, .tray-buttons .fa-lightbulb-on');
+            if (!lightIcon) return;
+            
+            const inventoryItem = lightIcon.closest('.inventory-item');
+            if (!inventoryItem) return;
+            const itemId = inventoryItem.dataset.itemId;
+            const item = this.actor.items.get(itemId);
+            if (!item) return;
+
+            // Get the player's token
+            const token = LightUtility.getPlayerToken(this.actor);
+            if (!token) {
+                ui.notifications.warn('No token selected. Please select a token on the canvas.');
+                return;
+            }
+
+            // Toggle light on/off
+            const lightApplied = await LightUtility.toggleLightForToken(token, item);
+            
+            // Update icon state to reflect light status
+            const currentLight = token.document?.light || token.light;
+            const hasLight = currentLight && (currentLight.dim > 0 || currentLight.bright > 0);
+            
+            if (hasLight) {
+                lightIcon.classList.remove('faded');
+                lightIcon.classList.add('fa-lightbulb-on');
+                lightIcon.classList.remove('fa-lightbulb');
+            } else {
+                lightIcon.classList.add('faded');
+                lightIcon.classList.remove('fa-lightbulb-on');
+                lightIcon.classList.add('fa-lightbulb');
+            }
+        };
+        panel.addEventListener('click', lightIconHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: lightIconHandler });
     }
 
     async _openCharacterSelection(item) {
