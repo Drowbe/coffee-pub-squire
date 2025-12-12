@@ -49,13 +49,9 @@ export class InventoryPanel {
             ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
         );
         
-        // Get active light source ID for this actor
-        const activeLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
-        
-        // Get token to check actual light state
-        const token = LightUtility.getPlayerToken(this.actor);
-        const tokenActiveLightSourceId = token ? await LightUtility.getTokenActiveLightSourceId(token, this.actor) : null;
-        const effectiveActiveLightSourceId = tokenActiveLightSourceId || activeLightSourceId;
+        // Get active light source ID for this actor (from actor flag - most reliable)
+        // This is similar to how favorites work - direct flag check
+        const effectiveActiveLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
 
         // Map items with favorite state and action type
         const mappedItems = await Promise.all(items.map(async item => {
