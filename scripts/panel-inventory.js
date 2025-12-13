@@ -39,7 +39,7 @@ export class InventoryPanel {
     }
 
     async _getItems() {
-        if (!this.actor) return [];
+        if (!this.actor) return { all: [], byType: {} };
         
         // Get current favorites
         const favorites = FavoritesPanel.getPanelFavorites(this.actor);

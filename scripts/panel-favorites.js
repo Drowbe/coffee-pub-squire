@@ -140,19 +140,19 @@ export class FavoritesPanel {
             
             // Update other panels' data
             if (PanelManager.instance.inventoryPanel) {
-                PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
+                PanelManager.instance.inventoryPanel.items = await PanelManager.instance.inventoryPanel._getItems();
                 PanelManager.instance.inventoryPanel._updateHeartIcons();
             }
             if (PanelManager.instance.weaponsPanel) {
-                PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+                PanelManager.instance.weaponsPanel.weapons = await PanelManager.instance.weaponsPanel._getWeapons();
                 PanelManager.instance.weaponsPanel._updateHeartIcons();
             }
             if (PanelManager.instance.spellsPanel) {
-                PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                PanelManager.instance.spellsPanel.spells = await PanelManager.instance.spellsPanel._getSpells();
                 PanelManager.instance.spellsPanel._updateHeartIcons();
             }
             if (PanelManager.instance.featuresPanel) {
-                PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
+                PanelManager.instance.featuresPanel.features = await PanelManager.instance.featuresPanel._getFeatures();
                 PanelManager.instance.featuresPanel._updateHeartIcons();
             }
         }
@@ -215,19 +215,19 @@ export class FavoritesPanel {
                 
                 // Update other panels' data without full re-render
                 if (panelManager.inventoryPanel) {
-                    panelManager.inventoryPanel.items = panelManager.inventoryPanel._getItems();
+                    panelManager.inventoryPanel.items = await panelManager.inventoryPanel._getItems();
                     panelManager.inventoryPanel._updateHeartIcons();
                 }
                 if (panelManager.weaponsPanel) {
-                    panelManager.weaponsPanel.weapons = panelManager.weaponsPanel._getWeapons();
+                    panelManager.weaponsPanel.weapons = await panelManager.weaponsPanel._getWeapons();
                     panelManager.weaponsPanel._updateHeartIcons();
                 }
                 if (panelManager.spellsPanel) {
-                    panelManager.spellsPanel.spells = panelManager.spellsPanel._getSpells();
+                    panelManager.spellsPanel.spells = await panelManager.spellsPanel._getSpells();
                     panelManager.spellsPanel._updateHeartIcons();
                 }
                 if (panelManager.featuresPanel) {
-                    panelManager.featuresPanel.features = panelManager.featuresPanel._getFeatures();
+                    panelManager.featuresPanel.features = await panelManager.featuresPanel._getFeatures();
                     panelManager.featuresPanel._updateHeartIcons();
                 }
             }
@@ -793,7 +793,7 @@ export class FavoritesPanel {
                 if (PanelManager.instance) {
                     // Update panel data without full re-renders
                     if (PanelManager.instance.spellsPanel) {
-                        PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                        PanelManager.instance.spellsPanel.spells = await PanelManager.instance.spellsPanel._getSpells();
                         PanelManager.instance.spellsPanel._updateHeartIcons();
                     }
                     // Handle favorites are now completely manual - no auto-syncing
@@ -830,15 +830,15 @@ export class FavoritesPanel {
                     PanelManager.instance.inventoryPanel._updateLightIcons(PanelManager.instance.inventoryPanel.element);
                 }
                     if (PanelManager.instance.weaponsPanel) {
-                        PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+                        PanelManager.instance.weaponsPanel.weapons = await PanelManager.instance.weaponsPanel._getWeapons();
                         PanelManager.instance.weaponsPanel._updateHeartIcons();
                     }
                     if (PanelManager.instance.spellsPanel) {
-                        PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                        PanelManager.instance.spellsPanel.spells = await PanelManager.instance.spellsPanel._getSpells();
                         PanelManager.instance.spellsPanel._updateHeartIcons();
                     }
                     if (PanelManager.instance.featuresPanel) {
-                        PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
+                        PanelManager.instance.featuresPanel.features = await PanelManager.instance.featuresPanel._getFeatures();
                         PanelManager.instance.featuresPanel._updateHeartIcons();
                     }
                 }
@@ -991,19 +991,19 @@ export class FavoritesPanel {
                 
                 // Update other panels' data
                 if (PanelManager.instance.inventoryPanel) {
-                    PanelManager.instance.inventoryPanel.items = PanelManager.instance.inventoryPanel._getItems();
+                    PanelManager.instance.inventoryPanel.items = await PanelManager.instance.inventoryPanel._getItems();
                     PanelManager.instance.inventoryPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.weaponsPanel) {
-                    PanelManager.instance.weaponsPanel.weapons = PanelManager.instance.weaponsPanel._getWeapons();
+                    PanelManager.instance.weaponsPanel.weapons = await PanelManager.instance.weaponsPanel._getWeapons();
                     PanelManager.instance.weaponsPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.spellsPanel) {
-                    PanelManager.instance.spellsPanel.spells = PanelManager.instance.spellsPanel._getSpells();
+                    PanelManager.instance.spellsPanel.spells = await PanelManager.instance.spellsPanel._getSpells();
                     PanelManager.instance.spellsPanel._updateHeartIcons();
                 }
                 if (PanelManager.instance.featuresPanel) {
-                    PanelManager.instance.featuresPanel.features = PanelManager.instance.featuresPanel._getFeatures();
+                    PanelManager.instance.featuresPanel.features = await PanelManager.instance.featuresPanel._getFeatures();
                     PanelManager.instance.featuresPanel._updateHeartIcons();
                 }
 
