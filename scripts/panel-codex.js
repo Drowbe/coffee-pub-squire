@@ -267,6 +267,7 @@ class CodexForm extends FormApplication {
     }
 
     _setupFormInteractions(html) {
+        // html is guaranteed native DOM (already converted in activateListeners)
         // Handle category dropdown changes
         const categorySelect = html.querySelector('#category');
         const newCategoryInput = html.querySelector('#new-category');
@@ -337,6 +338,7 @@ class CodexForm extends FormApplication {
     }
 
     _setupImageManagement(html) {
+        // html is guaranteed native DOM (already converted in activateListeners)
         // Show image section if we have an image
         if (this.entry.img) {
             const imgSection = html.querySelector('.codex-image-section');
@@ -369,6 +371,7 @@ class CodexForm extends FormApplication {
     }
 
     _setupDragAndDrop(html) {
+        // html is guaranteed native DOM (already converted in activateListeners)
         // Main drag zone for any entity
         const mainDragZone = html.querySelector('.codex-drag-zone');
         if (!mainDragZone) return;
@@ -2131,6 +2134,7 @@ export class CodexPanel {
         // v13: Convert jQuery to native DOM if needed
         this.element = getNativeElement(element);
 
+        // codexContainer is guaranteed native DOM (from querySelector on already-converted element)
         const codexContainer = this.element?.querySelector('[data-panel="panel-codex"]');
         if (!codexContainer) return;
 

@@ -52,11 +52,15 @@
 
 #### jQuery Detection Pattern Audit
 
-- [ ] **Audit and remove unnecessary jQuery detection patterns**
-  - [x] Removed unnecessary detection in `panel-codex.js` `_activateListeners` (element guaranteed native from `querySelector`)
-  - [ ] Review all files for similar cases where elements come from `querySelector()` (guaranteed native DOM)
+- [x] **Audit and remove unnecessary jQuery detection patterns** ✅ (IN PROGRESS)
+  - [x] Created `jquery-detection-audit.md` documenting necessary vs. unnecessary patterns ✅
+  - [x] Removed unnecessary detection in `CodexForm._setupFormInteractions()` - receives already-converted `nativeHtml` ✅
+  - [x] Removed unnecessary detection in `CodexForm._setupImageManagement()` - receives already-converted `nativeHtml` ✅
+  - [x] Removed unnecessary detection in `CodexForm._setupDragAndDrop()` - receives already-converted `nativeHtml` ✅
+  - [x] Added documentation comments in `CodexPanel.render()` for `codexContainer` (guaranteed native from `querySelector`) ✅
+  - [ ] Review remaining files for similar cases where elements come from `querySelector()` (guaranteed native DOM)
   - [ ] Remove jQuery detection where source is guaranteed to be native DOM
-  - [ ] Document which detection patterns are truly necessary vs. transitional
+  - [ ] Document remaining necessary patterns (FormApplication `_getNativeElement()`, `activateListeners(html)`, Dialog callbacks)
 
 #### Known Issues Discovered During Migration
 
