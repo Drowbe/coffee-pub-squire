@@ -31,7 +31,7 @@ class CodexForm extends FormApplication {
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             id: 'codex-entry-window',
             classes: ['codex-entry-window'],
             title: 'Add Codex Entry',

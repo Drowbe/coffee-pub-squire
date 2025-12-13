@@ -26,7 +26,7 @@ export class QuestForm extends FormApplication {
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             id: 'quest-form',
             title: 'Add Quest',
             template: 'modules/coffee-pub-squire/templates/quest-form.hbs',
