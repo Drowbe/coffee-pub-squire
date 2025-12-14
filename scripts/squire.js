@@ -486,13 +486,30 @@ Hooks.once('ready', () => {
                     return;
                 }
                 
-                // Only refresh weapons and inventory panels for item deletions
+                const actor = item.parent;
+                const itemId = item.id;
+                
+                // Remove item from favorites if it's favorited
+                const panelFavorites = FavoritesPanel.getPanelFavorites(actor);
+                if (panelFavorites.includes(itemId)) {
+                    // Remove from panel favorites
+                    const newPanelFavorites = panelFavorites.filter(id => id !== itemId);
+                    await actor.setFlag(MODULE.ID, 'favoritePanel', newPanelFavorites);
+                    
+                    // Also remove from handle favorites if present
+                    await FavoritesPanel.removeHandleFavorite(actor, itemId);
+                }
+                
+                // Refresh all panels for item deletions
                 if (panelManager?.instance) {
                     if (panelManager.instance.weaponsPanel?.element) {
                         await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
                     }
                     if (panelManager.instance.inventoryPanel?.element) {
                         await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
+                    }
+                    if (panelManager.instance.favoritesPanel?.element) {
+                        await panelManager.instance.favoritesPanel.render(panelManager.instance.favoritesPanel.element);
                     }
                     await panelManager.instance.updateHandle();
                 }
