@@ -719,6 +719,8 @@ export class FavoritesPanel {
             container.parentNode?.replaceChild(newContainer, container);
             newContainer.addEventListener('click', async (event) => {
                 if (event.target.classList.contains('favorite-roll-overlay')) {
+                    event.preventDefault();
+                    event.stopPropagation();
                     const favoriteItem = event.currentTarget.closest('.favorite-item');
                     if (!favoriteItem) return;
                     const itemId = favoriteItem.dataset.itemId;
@@ -736,6 +738,8 @@ export class FavoritesPanel {
             const newIcon = icon.cloneNode(true);
             icon.parentNode?.replaceChild(newIcon, icon);
             newIcon.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 const favoriteItem = event.currentTarget.closest('.favorite-item');
                 if (!favoriteItem) return;
                 const itemId = favoriteItem.dataset.itemId;
@@ -776,6 +780,9 @@ export class FavoritesPanel {
             const sunButton = event.target.closest('.tray-buttons .fa-sun');
             if (!sunButton) return;
             
+            event.preventDefault();
+            event.stopPropagation();
+            
             const favoriteItem = sunButton.closest('.favorite-item');
             if (!favoriteItem) return;
             const itemId = favoriteItem.dataset.itemId;
@@ -807,6 +814,9 @@ export class FavoritesPanel {
         panel.addEventListener('click', async (event) => {
             const shieldButton = event.target.closest('.tray-buttons .fa-shield-alt');
             if (!shieldButton) return;
+            
+            event.preventDefault();
+            event.stopPropagation();
             
             const favoriteItem = shieldButton.closest('.favorite-item');
             if (!favoriteItem) return;
@@ -886,32 +896,46 @@ export class FavoritesPanel {
             const lightIcon = event.target.closest('.tray-buttons .fa-lightbulb');
             if (!lightIcon) return;
             
-            const favoriteItem = lightIcon.closest('.favorite-item');
-            if (!favoriteItem) return;
-            const itemId = favoriteItem.dataset.itemId;
-            const item = this.actor.items.get(itemId);
-            if (!item) return;
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Prevent multiple rapid clicks
+            if (lightIcon.dataset.processing === 'true') return;
+            lightIcon.dataset.processing = 'true';
+            
+            try {
+                const favoriteItem = lightIcon.closest('.favorite-item');
+                if (!favoriteItem) return;
+                const itemId = favoriteItem.dataset.itemId;
+                const item = this.actor.items.get(itemId);
+                if (!item) return;
 
-            // Get the player's token
-            const token = LightUtility.getPlayerToken(this.actor);
-            if (!token) {
-                ui.notifications.warn('No token selected. Please select a token on the canvas.');
-                return;
-            }
+                // Get the player's token
+                const token = LightUtility.getPlayerToken(this.actor);
+                if (!token) {
+                    ui.notifications.warn('No token selected. Please select a token on the canvas.');
+                    return;
+                }
 
-            // Toggle light on/off
-            const result = await LightUtility.toggleLightForToken(token, item);
-            
-            // Refresh favorites to update all light icon states
-            this.favorites = await this._getFavorites();
-            
-            // Update all light icons in the panel
-            this._updateLightIcons(nativeHtml);
-            
-            // Also update inventory panel if it exists
-            if (PanelManager.instance?.inventoryPanel) {
-                PanelManager.instance.inventoryPanel.items = await PanelManager.instance.inventoryPanel._getItems();
-                PanelManager.instance.inventoryPanel._updateLightIcons(PanelManager.instance.inventoryPanel.element);
+                // Toggle light on/off
+                const result = await LightUtility.toggleLightForToken(token, item);
+                
+                // Refresh favorites to update all light icon states
+                this.favorites = await this._getFavorites();
+                
+                // Update all light icons in the panel
+                this._updateLightIcons(nativeHtml);
+                
+                // Also update inventory panel if it exists
+                if (PanelManager.instance?.inventoryPanel) {
+                    PanelManager.instance.inventoryPanel.items = await PanelManager.instance.inventoryPanel._getItems();
+                    PanelManager.instance.inventoryPanel._updateLightIcons(PanelManager.instance.inventoryPanel.element);
+                }
+            } finally {
+                // Remove processing flag after a short delay to allow for async operations
+                setTimeout(() => {
+                    lightIcon.dataset.processing = 'false';
+                }, 500);
             }
         });
 

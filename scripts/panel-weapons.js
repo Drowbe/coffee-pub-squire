@@ -322,27 +322,41 @@ export class WeaponsPanel {
             const lightIcon = event.target.closest('.tray-buttons .fa-lightbulb');
             if (!lightIcon) return;
             
-            const weaponItem = lightIcon.closest('.weapon-item');
-            if (!weaponItem) return;
-            const weaponId = weaponItem.dataset.weaponId;
-            const item = this.actor.items.get(weaponId);
-            if (!item) return;
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Prevent multiple rapid clicks
+            if (lightIcon.dataset.processing === 'true') return;
+            lightIcon.dataset.processing = 'true';
+            
+            try {
+                const weaponItem = lightIcon.closest('.weapon-item');
+                if (!weaponItem) return;
+                const weaponId = weaponItem.dataset.weaponId;
+                const item = this.actor.items.get(weaponId);
+                if (!item) return;
 
-            // Get the player's token
-            const token = LightUtility.getPlayerToken(this.actor);
-            if (!token) {
-                ui.notifications.warn('No token selected. Please select a token on the canvas.');
-                return;
+                // Get the player's token
+                const token = LightUtility.getPlayerToken(this.actor);
+                if (!token) {
+                    ui.notifications.warn('No token selected. Please select a token on the canvas.');
+                    return;
+                }
+
+                // Toggle light on/off
+                const result = await LightUtility.toggleLightForToken(token, item);
+                
+                // Refresh weapons to update all light icon states
+                this.weapons = await this._getWeapons();
+                
+                // Update all light icons in the panel
+                this._updateLightIcons(nativeHtml);
+            } finally {
+                // Remove processing flag after a short delay to allow for async operations
+                setTimeout(() => {
+                    lightIcon.dataset.processing = 'false';
+                }, 500);
             }
-
-            // Toggle light on/off
-            const result = await LightUtility.toggleLightForToken(token, item);
-            
-            // Refresh weapons to update all light icon states
-            this.weapons = await this._getWeapons();
-            
-            // Update all light icons in the panel
-            this._updateLightIcons(nativeHtml);
         };
         panel.addEventListener('click', lightIconHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: lightIconHandler });
