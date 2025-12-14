@@ -141,6 +141,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All migrated files now use consistent patterns for jQuery detection and native DOM operations
   - Improved code consistency and maintainability across panel files
   - **All standard panels now fully migrated** - jQuery usage eliminated from all panel files
+- **jQuery Detection Pattern Audit**: Completed comprehensive audit of all jQuery detection patterns
+  - Reviewed all files for unnecessary detection patterns on `querySelector()` results
+  - Verified all remaining jQuery detection patterns are necessary and correctly placed
+  - Updated JSDoc comments for accuracy (`panel-codex.js`)
+  - **Result:** All detection patterns are necessary for FoundryVTT v13 compatibility
+  - No unnecessary patterns found - codebase follows best practices
 - **Event Handler Optimization**: Improved event handling across all panels
   - Removed duplicate data fetching calls that were causing performance issues
   - Added proper event propagation control to prevent multiple click events

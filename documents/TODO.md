@@ -1,48 +1,11 @@
 # Squire Tray TODO List
 
----
 
-## 🚧 FOUNDRYVTT v13 MIGRATION (IN PROGRESS)
-
-### Migration Overview
-- **Status:** Active Migration - Core APIs and Critical Panels Complete
-- **Target:** FoundryVTT v13.0.0
-- **Strategy:** Clean v13-only migration (no dual compatibility)
-- **Reference:** See `documents/migration-v13-plan.md` for full details
-
----
-
-### Phase 1: Pre-Migration Setup COMPLETE
-
----
-
-### Phase 2: Critical Path Migration COMPLETE
-
----
-
-### Phase 3: Core Panel Migration COMPLETE
-
----
-
-### Phase 4: Utility & Helper Files COMPLETE
-
----
-
-### Phase 5: Post-Migration Cleanup & Technical Debt
-
-#### jQuery Detection Pattern Audit
-
--  [x] **Audit and remove unnecessary jQuery detection patterns** ✅ (COMPLETE)
-  - [x] Review remaining files for similar cases where elements come from `querySelector()` (guaranteed native DOM)
-  - [x] Remove jQuery detection where source is guaranteed to be native DOM
-  - **Result:** All jQuery detection patterns are necessary and correctly placed. No unnecessary patterns found. See `documents/jquery-detection-risk-assessment.md` for full analysis.
-
----
-
-## Current Issues (Fix First)
+## CURRENT ISSUES (Fix First)
+- Nothing critical
 
 ## HIGH PRIORITY
-- NONE
+- None
 
 ## MEDIUM PRIORITY
 
@@ -58,7 +21,7 @@
 - [ ] **BUG** Ensure quest-pin drag listeners on `document` are always removed (`quest-pin.js`); call `_endDrag` when pins are destroyed/scene changes so pointermove/up handlers don't leak.
 
 
-### LOW PRIORITY ISSUES
+## LOW PRIORITY
 
 ### Biography Tab - Add Details Section
 - **Issue**: Add a "details" section to the biography tab (similar to the details section in the narrative template)
@@ -77,8 +40,6 @@
   - Character worksheet JavaScript (if needed for functionality)
 - **Notes**: This would provide a dedicated space for character-specific details separate from the main biography content
 
-
-
 ## Architecture & Code Quality
 
 ### Code Cleanup
@@ -94,5 +55,4 @@
 - [ ] **OPTIMIZE** Phase 4: Optimize async work in `CharacterPanel.render()` - Move expensive async operations (TextEditor.enrichHTML, renderTemplate) after element validation, or cache template results if element becomes invalid to avoid wasted computation
 
 ## Investigation Needed
-
 - [ ] Investigate why expand animation changed from sliding to fading
