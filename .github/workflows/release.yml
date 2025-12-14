@@ -29,13 +29,12 @@ jobs:
             CHANGELOG.md \
             LICENSE \
             README.md \
+            resources/ \
             scripts/ \
             styles/ \
             templates/ \
             lang/ \
             images/ \
-            transfers/ \
-            product/ \
             prompts/ \
             themes/ \
             -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
