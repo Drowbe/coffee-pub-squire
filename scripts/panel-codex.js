@@ -2127,7 +2127,7 @@ export class CodexPanel {
 
     /**
      * Render the codex panel
-     * @param {jQuery} element - The element to render into
+     * @param {HTMLElement|jQuery} element - The element to render into (may be jQuery, will be converted)
      */
     async render(element) {
         if (!element) return;
