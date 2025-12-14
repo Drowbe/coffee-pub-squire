@@ -311,9 +311,7 @@ export class WeaponsPanel {
             if (!weaponItem) return;
             const weaponId = weaponItem.dataset.weaponId;
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
-            // Refresh the panel data to update heart icon states
-            this.weapons = await this._getWeapons();
-            this._updateHeartIcons();
+            // manageFavorite() already updates all panels, including this one
         };
         panel.addEventListener('click', heartIconHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: heartIconHandler });

@@ -318,9 +318,7 @@ export class SpellsPanel {
             if (!spellItem) return;
             const spellId = spellItem.dataset.spellId;
             await FavoritesPanel.manageFavorite(this.actor, spellId);
-            // Refresh the panel data to update heart icon states
-            this.spells = this._getSpells();
-            this._updateHeartIcons();
+            // manageFavorite() already updates all panels, including this one
         });
 
         // Cast spell (roll overlay)

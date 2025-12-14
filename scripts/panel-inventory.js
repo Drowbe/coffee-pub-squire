@@ -308,9 +308,7 @@ export class InventoryPanel {
             if (!inventoryItem) return;
             const itemId = inventoryItem.dataset.itemId;
             await FavoritesPanel.manageFavorite(this.actor, itemId);
-            // Refresh the panel data to update heart icon states
-            this.items = await this._getItems();
-            this._updateHeartIcons();
+            // manageFavorite() already updates all panels, including this one
         };
         panel.addEventListener('click', heartIconHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: heartIconHandler });

@@ -242,9 +242,7 @@ export class FeaturesPanel {
             if (!featureItem) return;
             const featureId = featureItem.dataset.featureId;
             await FavoritesPanel.manageFavorite(this.actor, featureId);
-            // Refresh the panel data to update heart icon states
-            this.features = this._getFeatures();
-            this._updateHeartIcons();
+            // manageFavorite() already updates all panels, including this one
         });
 
         // Feature use click (image overlay)
