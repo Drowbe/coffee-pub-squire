@@ -20,6 +20,7 @@ export class CharactersWindow extends Application {
         this.selectedQuantity = options.selectedQuantity || 1;
         this.hasQuantity = options.hasQuantity || false;
         this.onCharacterSelected = options.onCharacterSelected;
+        this.onClose = options.onClose;
     }
 
     static get defaultOptions() {
@@ -204,6 +205,14 @@ export class CharactersWindow extends Application {
                 }
             });
         });
+    }
+
+    async close(options={}) {
+        // Call onClose callback if provided
+        if (this.onClose) {
+            this.onClose();
+        }
+        return super.close(options);
     }
 
     setPosition(options={}) {

@@ -446,17 +446,15 @@ export class InventoryPanel {
             onCharacterSelected: async (...args) => {
                 this._transferDialogOpen = false;
                 await this._handleCharacterSelected(...args);
-            }
+            },
+            // Reset flag when character window closes (if quantity dialog wasn't shown)
+            onClose: (!hasQuantity || maxQuantity <= 1) ? () => {
+                this._transferDialogOpen = false;
+            } : undefined
         });
         
         // Render the window
         await characterWindow.render(true);
-        // Reset flag when character window closes (if quantity dialog wasn't shown)
-        if (!hasQuantity || maxQuantity <= 1) {
-            characterWindow.app.onClose = () => {
-                this._transferDialogOpen = false;
-            };
-        }
     }
 
     async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId, selectedQuantity, hasQuantity) {
