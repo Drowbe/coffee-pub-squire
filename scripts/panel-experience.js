@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate } from './helpers.js';
+import { renderTemplate, getNativeElement } from './helpers.js';
 
 export class ExperiencePanel {
     constructor(actor) {
@@ -27,34 +27,60 @@ export class ExperiencePanel {
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_EXPERIENCE, templateData);
-        this.element.find('[data-panel="experience"]').html(content);
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (nativeElement) {
+            const panel = nativeElement.querySelector('[data-panel="experience"]');
+            if (panel) {
+                panel.innerHTML = content;
+            }
+        }
         
         this._activateListeners(this.element);
 
         // Apply saved collapsed state
-        const panel = this.element.find('[data-panel="experience"]');
-        const isCollapsed = game.settings.get(MODULE.ID, 'isExperiencePanelCollapsed');
-        if (isCollapsed) {
-            const expContent = panel.find('#exp-content');
-            const toggle = panel.find('#exp-toggle');
-            expContent.addClass('collapsed');
-            toggle.css('transform', 'rotate(-90deg)');
+        const nativeEl = getNativeElement(this.element);
+        if (nativeEl) {
+            const panel = nativeEl.querySelector('[data-panel="experience"]');
+            if (panel) {
+                const isCollapsed = game.settings.get(MODULE.ID, 'isExperiencePanelCollapsed');
+                if (isCollapsed) {
+                    const expContent = panel.querySelector('#exp-content');
+                    const toggle = panel.querySelector('#exp-toggle');
+                    if (expContent) {
+                        expContent.classList.add('collapsed');
+                    }
+                    if (toggle) {
+                        toggle.style.transform = 'rotate(-90deg)';
+                    }
+                }
+            }
         }
     }
 
     _activateListeners(html) {
         if (!html) return;
 
-        const panel = html.find('[data-panel="experience"]');
+        // v13: Use native DOM instead of jQuery
+        const nativeHtml = getNativeElement(html);
+        if (!nativeHtml) return;
+
+        const panel = nativeHtml.querySelector('[data-panel="experience"]');
+        if (!panel) return;
 
         // Experience toggle
-        panel.find('.tray-title-small').click(() => {
-            const expContent = panel.find('#exp-content');
-            const toggle = panel.find('#exp-toggle');
-            expContent.toggleClass('collapsed');
-            toggle.css('transform', expContent.hasClass('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)');
-            // Save collapsed state
-            game.settings.set(MODULE.ID, 'isExperiencePanelCollapsed', expContent.hasClass('collapsed'));
-        });
+        const trayTitle = panel.querySelector('.tray-title-small');
+        if (trayTitle) {
+            trayTitle.addEventListener('click', () => {
+                const expContent = panel.querySelector('#exp-content');
+                const toggle = panel.querySelector('#exp-toggle');
+                if (expContent && toggle) {
+                    expContent.classList.toggle('collapsed');
+                    toggle.style.transform = expContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+                    // Save collapsed state
+                    game.settings.set(MODULE.ID, 'isExperiencePanelCollapsed', expContent.classList.contains('collapsed'));
+                }
+            });
+        }
     }
 } 

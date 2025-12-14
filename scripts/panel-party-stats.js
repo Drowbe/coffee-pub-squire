@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate } from './helpers.js';
+import { renderTemplate, getNativeElement } from './helpers.js';
 
 function getBlacksmith() {
     return game.modules.get('coffee-pub-blacksmith')?.api;
@@ -99,10 +99,13 @@ export class PartyStatsPanel {
         const data = await this.getData();
         const content = await renderTemplate(TEMPLATES.PANEL_PARTY_STATS, data);
 
-        const $element = this.element instanceof jQuery ? this.element : $(this.element);
-        const panel = $element.find('[data-panel="party-stats"]');
-        if (panel.length) {
-            panel.html(content);
+        // v13: Use native DOM instead of jQuery
+        const nativeElement = getNativeElement(this.element);
+        if (nativeElement) {
+            const panel = nativeElement.querySelector('[data-panel="party-stats"]');
+            if (panel) {
+                panel.innerHTML = content;
+            }
         }
     }
 

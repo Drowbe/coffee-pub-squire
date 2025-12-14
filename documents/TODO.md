@@ -20,27 +20,7 @@
 
 ---
 
-### Phase 3: Core Panel Migration (Priority: HIGH)
-
-
-#### Standard Panels (Lower Priority)
-
-- [ ] **`scripts/panel-experience.js`**
-  - [ ] Add `getNativeElement` import and usage
-  - [ ] Add jQuery detection in `_activateListeners(html)`
-  - [ ] Replace ALL jQuery usage (lines 30, 35, 38-39, 48, 51-53)
-    - [ ] Convert `.find()` to `querySelector()`/`querySelectorAll()`
-    - [ ] Convert `.html()` to `.innerHTML`
-    - [ ] Convert `.click()` to `addEventListener()`
-    - [ ] Convert `.addClass()`/`.toggleClass()`/`.hasClass()` to `classList`
-    - [ ] Convert `.css()` to `style` properties
-
-- [ ] **`scripts/panel-party-stats.js`**
-  - [ ] Replace jQuery usage (lines 102-106)
-    - [ ] Remove `jQuery` check and `$()` wrapper
-    - [ ] Convert `.find()` to `querySelector()`
-    - [ ] Convert `.html()` to `.innerHTML`
-    - [ ] Convert `.length` check to native DOM check
+### Phase 3: Core Panel Migration COMPLETE
 
 ---
 
@@ -53,19 +33,9 @@
 #### jQuery Detection Pattern Audit
 
 - [x] **Audit and remove unnecessary jQuery detection patterns** ✅ (IN PROGRESS)
-  - [x] Created `jquery-detection-audit.md` documenting necessary vs. unnecessary patterns ✅
-  - [x] Removed unnecessary detection in `CodexForm._setupFormInteractions()` - receives already-converted `nativeHtml` ✅
-  - [x] Removed unnecessary detection in `CodexForm._setupImageManagement()` - receives already-converted `nativeHtml` ✅
-  - [x] Removed unnecessary detection in `CodexForm._setupDragAndDrop()` - receives already-converted `nativeHtml` ✅
-  - [x] Added documentation comments in `CodexPanel.render()` for `codexContainer` (guaranteed native from `querySelector`) ✅
   - [ ] Review remaining files for similar cases where elements come from `querySelector()` (guaranteed native DOM)
   - [ ] Remove jQuery detection where source is guaranteed to be native DOM
   - [ ] Document remaining necessary patterns (FormApplication `_getNativeElement()`, `activateListeners(html)`, Dialog callbacks)
-
-#### Known Issues Discovered During Migration
-
-- [ ] **`panel-experience.js`** - Extensive jQuery usage throughout entire file
-- [ ] **`panel-party-stats.js`** - jQuery usage in render method (lines 102-106)
 
 ---
 

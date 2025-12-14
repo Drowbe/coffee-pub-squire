@@ -39,6 +39,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Party Panel Syntax Error**: Fixed missing closing parenthesis in `panel-party.js` forEach loop
   - Corrected event handler closure structure for transfer request button handlers
   - File now loads without syntax errors
+- **Favorites Panel Async/Await Issues**: Fixed "Cannot read properties of undefined (reading 'forEach')" errors
+  - Added missing `await` keywords to all async method calls in `panel-favorites.js`
+  - Fixed `_getItems()`, `_getWeapons()`, `_getSpells()`, and `_getFeatures()` calls to properly await results
+  - Updated `panel-inventory.js` and `panel-features.js` to return proper object structure when actor is missing
+  - Prevents panels from trying to iterate over Promise objects instead of data arrays
+- **Favorites Not Removed on Item Deletion**: Fixed favorited items remaining in favorites panel after deletion
+  - Updated `deleteItem` hook in `squire.js` to remove deleted items from both panel and handle favorites
+  - Added favorites panel refresh when items are deleted
+  - Ensures favorites list stays synchronized with actual actor items
+- **Favoriting Performance**: Fixed favoriting operations taking 3-10 seconds to update icons
+  - Removed duplicate `_getItems()`, `_getWeapons()`, `_getSpells()`, and `_getFeatures()` calls from heart icon handlers
+  - `manageFavorite()` already refreshes all panels, making duplicate calls redundant
+  - Favoriting is now near-instant instead of taking several seconds
+- **Event Propagation Issues**: Fixed multiple click events firing when clicking icons in favorites panel
+  - Added `event.preventDefault()` and `event.stopPropagation()` to all icon handlers in favorites panel
+  - Added processing guards to light icon handlers to prevent multiple rapid clicks
+  - Applied fixes to light, heart, shield, sun, feather, and roll overlay handlers
+  - Prevents "Item does not exist" errors from multiple consumption attempts
+  - Applied same fixes to inventory and weapons panels for consistency
+- **CharactersWindow onClose Callback**: Fixed "Cannot set properties of undefined (setting 'onClose')" error
+  - Added `onClose` callback support to `CharactersWindow` constructor
+  - Overrode `close()` method to call `onClose` callback if provided
+  - Updated `panel-inventory.js` to pass `onClose` through constructor instead of accessing non-existent `app` property
+- **mergeObject Deprecation Warnings**: Fixed deprecation warnings for global `mergeObject` access
+  - Updated `panel-codex.js` and `window-quest.js` to use `foundry.utils.mergeObject` instead of global `mergeObject`
+  - All files now use namespaced FoundryVTT v13 API
 
 ### Changed
 - **Inventory Panel**: Added light icon support with state management
@@ -102,8 +128,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **jQuery Migration Progress**: Continued migration from jQuery to native DOM methods
   - `panel-party.js`: Fully migrated all remaining jQuery usage (Dialog callbacks, button handlers, DOM manipulation)
   - `panel-quest.js`: Standardized jQuery detection using `getNativeElement()` helper
+  - `panel-experience.js`: Complete jQuery to native DOM migration
+    - Replaced all jQuery methods (`.find()`, `.html()`, `.click()`, `.addClass()`, `.toggleClass()`, `.hasClass()`, `.css()`)
+    - Added `getNativeElement()` helper usage for consistent jQuery detection
+    - Converted event handlers to use `addEventListener()` with proper null checks
+    - Matches migration pattern used in `panel-stats.js` for consistency
+  - `panel-party-stats.js`: Complete jQuery to native DOM migration
+    - Removed jQuery detection pattern (`instanceof jQuery`)
+    - Replaced `.find()` and `.html()` with native DOM equivalents
+    - Converted `.length` check to native DOM null check
+    - Simplified code by removing jQuery dependency
   - All migrated files now use consistent patterns for jQuery detection and native DOM operations
   - Improved code consistency and maintainability across panel files
+  - **All standard panels now fully migrated** - jQuery usage eliminated from all panel files
+- **Event Handler Optimization**: Improved event handling across all panels
+  - Removed duplicate data fetching calls that were causing performance issues
+  - Added proper event propagation control to prevent multiple click events
+  - Implemented processing guards to prevent rapid-fire clicks on async operations
+  - Enhanced error handling for deleted items and missing actors
 
 ## [13.0.2] - Panel Normalization & Bug Fixes
 
