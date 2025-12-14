@@ -32,10 +32,9 @@
 
 #### jQuery Detection Pattern Audit
 
-- [x] **Audit and remove unnecessary jQuery detection patterns** ✅ (IN PROGRESS)
+-  [ ] **Audit and remove unnecessary jQuery detection patterns** ✅ (IN PROGRESS)
   - [ ] Review remaining files for similar cases where elements come from `querySelector()` (guaranteed native DOM)
   - [ ] Remove jQuery detection where source is guaranteed to be native DOM
-  - [ ] Document remaining necessary patterns (FormApplication `_getNativeElement()`, `activateListeners(html)`, Dialog callbacks)
 
 ---
 
