@@ -1712,12 +1712,21 @@ Hooks.once('ready', async function() {
             name: "squire-dice-tray",
             title: "Dice Tray",
             zone: "middle",
-            order: 5,
-            moduleId: MODULE.ID,
+            tooltip: "Open the Macros window",
+            onClick: openDiceTray,
+            zone: "middle",
+            group: "utility",
+            groupOrder: null,
+            order: 1,
+            moduleId: MODULE.ID,  
             gmOnly: false,
             leaderOnly: false,
             visible: true,
-            onClick: openDiceTray
+            toggleable: false,
+            active: false,
+            iconColor: null,
+            buttonNormalTint: null,
+            buttonSelectedTint: null
         });
 
         if (success) {
@@ -1737,13 +1746,21 @@ Hooks.once('ready', async function() {
             icon: "fa-solid fa-sun",
             name: "squire-macros",
             title: "Macros",
+            tooltip: "Open the Macros window",
+            onClick: openMacros,
             zone: "middle",
-            order: 6,
-            moduleId: MODULE.ID,
+            group: "utility",
+            groupOrder: null,
+            order: 2,
+            moduleId: MODULE.ID,  
             gmOnly: false,
             leaderOnly: false,
             visible: true,
-            onClick: openMacros
+            toggleable: false,
+            active: false,
+            iconColor: null,
+            buttonNormalTint: null,
+            buttonSelectedTint: null
         });
 
         if (success) {
