@@ -2175,7 +2175,7 @@ export async function _updateHealthPanelFromSelection() {
         }
         
         // Restore expanded state
-        PanelManager.element.addClass('expanded');
+        PanelManager.element.classList.add('expanded');
     }
 
 
