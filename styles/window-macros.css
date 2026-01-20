@@ -32,7 +32,7 @@
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
-  height: auto !important; /* <-- only grow based on content/window */
+  height: 100% !important;
   padding: 0px !important;
   width: 100% !important;
   overflow: visible !important;
@@ -41,7 +41,7 @@
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
-  height: auto !important; /* <-- only grow based on content/window */
+  height: 100% !important;
   padding: 0px !important;
   width: 100% !important;
   overflow: visible !important;
@@ -119,13 +119,42 @@
   display: flex !important;
 }
 
-/* Ensure the tray-content and macros-content stretch fully */
-#squire-macros-window .tray-content,
-#squire-macros-window .macros-content {
+/* Ensure the tray-content and panel-container stretch fully */
+#squire-macros-window .tray-content {
   flex: 1 1 auto !important;
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+}
+
+#squire-macros-window .tray-content .panel-container {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Make macros-content fill the panel-container */
+#squire-macros-window .panel-container #macros-content {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Make the macros grid expand to fill available space */
+#squire-macros-window .macros-content .macros-grid {
+  flex: 1 1 auto !important;
+  align-content: flex-start !important;
+  align-items: flex-start !important;
 }
 
 
