@@ -147,6 +147,55 @@
   min-height: 60px !important;
 }
 
+/* ----- DROP TARGET VISUAL FEEDBACK ----- */
+
+/* Window drop target - green dotted border overlay when dragging external macro */
+#squire-macros-window.macro-drop-target {
+  position: relative !important;
+}
+
+#squire-macros-window.macro-drop-target::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border: 3px dashed #48a000 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 15px rgba(72, 160, 0, 0.6) !important;
+  pointer-events: none !important;
+  z-index: 1000 !important;
+}
+
+/* Panel container drop target for tray view */
+[data-panel="macros"].macro-drop-target {
+  position: relative !important;
+}
+
+[data-panel="macros"].macro-drop-target::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border: 3px dashed #48a000 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 15px rgba(72, 160, 0, 0.6) !important;
+  pointer-events: none !important;
+  z-index: 1000 !important;
+}
+
+/* Last slot highlight when dragging external macro - green glow */
+.macro-slot.drop-target-slot {
+  border: 3px solid #48a000 !important;
+  box-shadow: 0 0 15px rgba(72, 160, 0, 0.9) !important;
+  background: rgba(72, 160, 0, 0.25) !important;
+  transform: scale(1.1) !important;
+  z-index: 10 !important;
+}
+
 
 
 
