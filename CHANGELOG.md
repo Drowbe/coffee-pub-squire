@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.7] - Macro Drag & Drop Improvements
+
+### Fixed
+- **Macro Window Layout**: Fixed macros window content not filling the entire container
+  - Updated CSS in `window-macros.css` to ensure `macros-content` expands to fill `panel-container`
+  - Changed height from `auto` to `100%` for proper flexbox expansion
+  - Content now properly fills the window without empty space at the bottom
+- **Internal Drag Detection**: Fixed drop target showing during internal macro reordering
+  - Added `isInternalDrag` flag tracking to distinguish internal vs external drags
+  - Drop target (green border and last slot highlight) now only appears for external macro drags
+  - Internal reordering no longer triggers the drop target visual feedback
+
+### Changed
+- **Simplified Macro Drop System**: Completely refactored macro drag-and-drop for better reliability
+  - Removed complex `showAddSlot` logic with timeouts and multiple state management paths
+  - Simplified to window-wide drop target approach: drag anywhere over window shows drop target
+  - External macros always add to the last slot regardless of where dropped
+  - Internal reordering still works per-slot (drag from one slot to another)
+- **Drop Target Visual Feedback**: Improved visual feedback for external macro drops
+  - Added green dotted border overlay (`::before` pseudo-element) on window/panel when dragging external macros
+  - Added green glow highlight on last slot to indicate where macro will be added
+  - Visual feedback uses overlay approach to prevent content shifting
+  - Drop target only appears for external macro drags, not internal reordering
+
+### Technical
+- **Code Cleanup**: Removed unused `showAddSlot` state management and related cleanup handlers
+- **Event Handling**: Improved drag event handlers with better state tracking and cleanup
+- **CSS Organization**: Identified duplicate CSS definitions between `panel-macros.css` and `window-macros.css` (documented in TODO.md for future cleanup)
+
 ## [13.0.6] 
 
 ### Fixed
