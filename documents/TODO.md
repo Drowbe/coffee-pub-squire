@@ -9,6 +9,14 @@
 
 ## MEDIUM PRIORITY
 
+### MACROS CSS DUPLICATION
+- [ ] **CLEANUP** Remove duplicate CSS definitions for drop target styles between `panel-macros.css` and `window-macros.css`:
+  - `.macro-slot.drop-target-slot` is duplicated identically in both files (should be in `panel-macros.css` only)
+  - `[data-panel="macros"].macro-drop-target` in `window-macros.css` is too general and conflicts with specific selectors in `panel-macros.css`
+  - Keep window-specific `#squire-macros-window.macro-drop-target` in `window-macros.css`
+  - Keep tray/popout specific selectors in `panel-macros.css`
+  - Consolidate shared styles to avoid conflicts and maintenance issues
+
 ### NOTES TAB
 - [ ] **ENHANCEMENT** Expand and optimize this section. It needs to have a shared note, character note, and scratchpad
 

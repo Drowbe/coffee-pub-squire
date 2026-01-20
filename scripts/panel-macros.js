@@ -211,6 +211,9 @@ export class MacrosPanel {
         const panelContainer = panel.closest('[data-panel="macros"]') || panel.closest('.panel-container');
         const macrosGrid = panel.querySelector('.macros-grid');
         
+        // Track if we're currently dragging internally (from a macro slot)
+        let isInternalDrag = false;
+        
         // Find the panel container and window for visual feedback
         let windowElement = null;
         if (this.isPoppedOut && this.window && this.window.element) {
@@ -324,19 +327,31 @@ export class MacrosPanel {
             return false;
         };
         
+        // Helper function to check if drag is external macro (not internal reorder)
+        const isExternalMacroDrag = () => {
+            // Use the tracked flag to determine if it's an internal drag
+            return !isInternalDrag;
+        };
+        
         // Add drag handlers to panel container (so dragging anywhere shows drop target)
         if (panelContainer) {
             panelContainer.addEventListener('dragenter', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                showDropTarget();
+                // Only show drop target for external macro drags
+                if (isExternalMacroDrag(e)) {
+                    showDropTarget();
+                }
             });
             
             panelContainer.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 e.dataTransfer.dropEffect = 'move';
-                showDropTarget();
+                // Only show drop target for external macro drags
+                if (isExternalMacroDrag(e)) {
+                    showDropTarget();
+                }
             });
             
             panelContainer.addEventListener('dragleave', (e) => {
@@ -353,7 +368,15 @@ export class MacrosPanel {
             panelContainer.addEventListener('drop', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // Reset internal drag flag
+                isInternalDrag = false;
                 await handleExternalMacroDrop(e);
+            });
+            
+            // Reset internal drag flag on dragend (in case drag ends outside)
+            panelContainer.addEventListener('dragend', (e) => {
+                isInternalDrag = false;
+                hideDropTarget();
             });
         }
         
@@ -385,6 +408,8 @@ export class MacrosPanel {
             // Drag & drop events
             slot.addEventListener('dragstart', function(e) {
                 if (!slot.classList.contains('empty')) {
+                    // Mark as internal drag
+                    isInternalDrag = true;
                     e.dataTransfer.setData('text/plain', JSON.stringify({
                         type: 'internal-macro',
                         fromIndex: idx
@@ -393,6 +418,11 @@ export class MacrosPanel {
                     const img = slot.querySelector('img');
                     if (img) e.dataTransfer.setDragImage(img, 16, 16);
                 }
+            });
+            
+            // Reset internal drag flag when drag ends
+            slot.addEventListener('dragend', function(e) {
+                isInternalDrag = false;
             });
             slot.setAttribute('draggable', !slot.classList.contains('empty'));
 
