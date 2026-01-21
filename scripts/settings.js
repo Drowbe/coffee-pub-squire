@@ -38,7 +38,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'viewDefaultMode', {
         name: 'Default Tab',
         hint: 'Set the default tab for when foundry loads.',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: String,
         choices: {
@@ -57,7 +57,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showTabParty', {
         name: 'Show Party Tab',
         hint: 'Show the Party tab on the tray (recommended)',
-        scope: 'client',
+        scope: 'user',
         requiresReload: true,
         config: true,
         type: Boolean,
@@ -70,7 +70,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showTabNotes', {
         name: 'Show Notes Tab',
         hint: 'Show the Notes tab on the tray (recommended)',
-        scope: 'client',
+        scope: 'user',
         requiresReload: true,
         config: true,
         type: Boolean,
@@ -83,7 +83,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showTabCodex', {
         name: 'Show Codex Tab',
         hint: 'Show the Codex tab on the tray (recommended)',
-        scope: 'client',
+        scope: 'user',
         requiresReload: true,
         config: true,   
         type: Boolean,
@@ -96,7 +96,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showTabQuests', {
         name: 'Show Quests Tab',
         hint: 'Show the Quests tab on the tray (recommended)',
-        scope: 'client',
+        scope: 'user',
         requiresReload: true,
         config: true,
         type: Boolean,
@@ -309,7 +309,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showExperiencePanel', {
         name: 'Show Experience Panel',
         hint: 'Display experience and level progress panel',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false,
@@ -321,7 +321,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showPartyStatsPanel', {
         name: 'Show Party Stats Panel',
         hint: 'Display party statistics and achievements panel',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false,
@@ -333,7 +333,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHealthPanel', {
         name: 'Show Health Panel',
         hint: 'Display health tracking panel',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false,
@@ -345,7 +345,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showAbilitiesPanel', {
         name: 'Show Abilities Panel',
         hint: 'Display ability scores and modifiers panel',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false,
@@ -357,7 +357,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showStatsPanel', {
         name: 'Show Stats Panel',
         hint: 'Display character stats panel',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false,
@@ -369,7 +369,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showDiceTrayPanel', {
         name: 'Show Dice Tray Panel',
         hint: 'Display dice rolling panel',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false,
@@ -381,7 +381,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showMacrosPanel', {
         name: 'Show Macros Panel',
         hint: 'Display macros panel for quick access to macros',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false,
@@ -410,7 +410,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleConditions', {
         name: 'Show Conditions in Handle',
         hint: 'Display condition icons in the handle',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: true
@@ -420,7 +420,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleStatsPrimary', {
         name: 'Show Primary Stats in Handle',
         hint: 'Display primary stats (HP, AC, Move) in the handle',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false
@@ -429,7 +429,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleStatsSecondary', {
         name: 'Show Secondary Stats in Handle',
         hint: 'Display secondary stats (Initiative, Proficiency) in the handle',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: false
@@ -438,7 +438,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleFavorites', {
         name: 'Show Favorites in Handle',
         hint: 'Display favorite actions and items in the handle',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: true
@@ -447,7 +447,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleHealthBar', {
         name: 'Show Health Bar in Handle',
         hint: 'Display health bar visualization in the handle',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: true
@@ -457,7 +457,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleDiceTray', {
         name: 'Show Dice Tray Icon in Handle',
         hint: 'Display a dice icon in the handle to quickly access the dice tray',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: true
@@ -466,7 +466,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showHandleMacros', {
         name: 'Show Macros Icon in Handle',
         hint: 'Display a macros icon in the handle to quickly access the macros panel',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: true
@@ -475,7 +475,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'hideFoundryHotbar', {
         name: 'Hide the default Foundry hotbar.',
         hint: 'Get some screen real estate back by hiding the default Foundry hotbar.',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: true,
@@ -721,35 +721,35 @@ export const registerSettings = function() {
     // Panel Visibility Settings
 
     game.settings.register(MODULE.ID, 'showFavoritesPanel', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
     });
 
     game.settings.register(MODULE.ID, 'showWeaponsPanel', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
     });
 
     game.settings.register(MODULE.ID, 'showSpellsPanel', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
     });
 
     game.settings.register(MODULE.ID, 'showInventoryPanel', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
     });
 
     game.settings.register(MODULE.ID, 'showFeaturesPanel', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
@@ -760,7 +760,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showOnlyPreparedSpells', {
         name: 'Remember Prepared Spells Filter',
         hint: 'Remember if the prepared spells filter was enabled',
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: false
@@ -769,7 +769,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showOnlyEquippedWeapons', {
         name: 'Remember Equipped Weapons Filter',
         hint: 'Remember if the equipped weapons filter was enabled',
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: false
@@ -778,7 +778,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showOnlyEquippedInventory', {
         name: 'Remember Equipped Inventory Filter',
         hint: 'Remember if the equipped inventory filter was enabled',
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: false
@@ -786,28 +786,28 @@ export const registerSettings = function() {
 
     // Favorites Filter States
     game.settings.register(MODULE.ID, 'showSpellFavorites', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
     });
 
     game.settings.register(MODULE.ID, 'showFeaturesFavorites', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
     });
 
     game.settings.register(MODULE.ID, 'showWeaponFavorites', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
     });
 
     game.settings.register(MODULE.ID, 'showInventoryFavorites', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Boolean,
         default: true
@@ -885,7 +885,7 @@ export const registerSettings = function() {
 
     // Macros Panel
     game.settings.register(MODULE.ID, 'userMacros', {
-        scope: 'client',
+        scope: 'user',
         config: false,
         type: Array,
         default: []
@@ -1058,7 +1058,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, 'showQuestPinText', {
         name: 'Show Quest Pin Titles',
         hint: 'Display quest and objective names as title text below the pins. When disabled, only the quest numbers (Q85, Q85.03) and icons are shown.',
-        scope: 'client',
+        scope: 'user',
         config: true,
         type: Boolean,
         default: true,

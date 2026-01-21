@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.8] - Settings Scope Migration
+
+### Changed
+- **Settings Scope Migration**: Converted 36 user preference settings from `client` scope to `user` scope for cross-device synchronization
+  - User preferences now sync across devices when logging in from different browsers or computers
+  - Settings affected include:
+    - Tab visibility settings (Party, Notes, Codex, Quests)
+    - Panel visibility settings (Experience, Party Stats, Health, Abilities, Stats, Dice Tray, Macros)
+    - Handle display settings (Conditions, Primary/Secondary Stats, Favorites, Health Bar, Dice Tray Icon, Macros Icon)
+    - Panel visibility preferences (Favorites, Weapons, Spells, Inventory, Features)
+    - Filter states (Prepared Spells, Equipped Weapons/Inventory, Favorites filters)
+    - View modes (Default Tab, View Mode)
+    - User macros and favorite macros
+    - Quest pin text display preference
+    - Hide Foundry hotbar preference
+  - Device-specific settings remain as `client` scope (window positions, sizes, offsets, collapsed states, sound paths)
+  - This change ensures user preferences follow them across all devices while maintaining device-specific UI state
+
 ## [13.0.7] - Macro Drag & Drop Improvements
 
 ### Fixed
