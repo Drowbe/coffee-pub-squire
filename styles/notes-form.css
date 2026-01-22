@@ -332,6 +332,32 @@
     font-style: italic;
 }
 
+.tag-suggestions .common-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.tag-suggestions .common-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(145, 133, 107, 0.6);
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(235, 233, 225, 1);
+    font-size: 0.75em;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.tag-suggestions .common-tag:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    color: #fff;
+}
+
 /* Visibility Toggle */
 /* Scene Info */
 .scene-info {

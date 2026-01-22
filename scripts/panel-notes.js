@@ -977,12 +977,28 @@ export class NotesForm extends FormApplication {
         // Show tag suggestions (simple - could be enhanced later)
         const suggestionsDiv = html.querySelector('.tag-suggestions');
         if (suggestionsDiv && existingTags.size > 0) {
-            const hasHelper = (suggestionsDiv.textContent || '').trim().length > 0;
-            if (hasHelper) {
-                return;
-            }
-            const tagsArray = Array.from(existingTags).sort();
-            suggestionsDiv.innerHTML = `<small>Existing tags: ${tagsArray.slice(0, 10).join(', ')}${tagsArray.length > 10 ? '...' : ''}</small>`;
+            const tagsArray = Array.from(existingTags).sort().slice(0, 20);
+            const tagChips = tagsArray.map(tag => `<span class="common-tag" data-tag="${tag}">${tag}</span>`).join('');
+            suggestionsDiv.innerHTML = `<small>Common Tags:</small><div class="common-tags">${tagChips}</div>`;
+
+            suggestionsDiv.querySelectorAll('.common-tag').forEach(tagEl => {
+                const handler = () => {
+                    const tag = tagEl.dataset.tag;
+                    if (!tag) return;
+                    const current = (tagsInput.value || '')
+                        .split(',')
+                        .map(t => t.trim())
+                        .filter(t => t);
+                    const exists = current.some(t => t.toLowerCase() === tag.toLowerCase());
+                    if (!exists) {
+                        current.push(tag);
+                        tagsInput.value = current.join(', ');
+                        tagsInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                };
+                tagEl.addEventListener('click', handler);
+                this._eventHandlers.push({ element: tagEl, event: 'click', handler });
+            });
         }
     }
 }
