@@ -143,6 +143,11 @@ export const registerHelpers = function() {
         return a === b;
     });
 
+    // Helper for checking if value is an array
+    Handlebars.registerHelper('isArray', function(value) {
+        return Array.isArray(value);
+    });
+
     // Helper for less than or equal comparison
     Handlebars.registerHelper('lte', function(a, b) {
         return a <= b;

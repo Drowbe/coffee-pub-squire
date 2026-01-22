@@ -6,8 +6,11 @@ import {
     userCanAccessPage,
     showJournalPicker,
     showPagePicker,
-    renderJournalContent
+    renderJournalContent,
+    getJournalPageContent,
+    enrichJournalContent
 } from './utility-journal.js';
+import { NotesParser } from './utility-notes-parser.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -17,6 +20,15 @@ function getBlacksmith() {
 export class NotesPanel {
     constructor() {
         this.element = null;
+        this.notes = [];
+        this.filters = {
+            search: '',
+            tags: [],
+            scene: 'all',
+            visibility: 'all' // all, private, party
+        };
+        this.allTags = new Set();
+        this.scenes = new Set();
         // Hooks are now managed centrally by HookManager
     }
 
@@ -41,77 +53,13 @@ export class NotesPanel {
         const notesContainer = this.element?.querySelector('[data-panel="panel-notes"]');
         if (!notesContainer) return;
 
-        // Get the selected journal ID - now using notesJournal (new system)
+        // Refresh data (load notes)
+        await this._refreshData();
+
+        // Get the selected journal ID
         const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-        
         const journal = journalId !== 'none' ? game.journal.get(journalId) : null;
-
-        // Get the selected page ID (defaulting to the first page if not set)
-        const globalPageId = game.settings.get(MODULE.ID, 'notesSharedJournalPage');
-        
-        // Check for user-specific page preference (for non-GM users)
-        const userPageId = !game.user.isGM ? game.user.getFlag(MODULE.ID, 'userSelectedJournalPage') : null;
-        
-        // Use user-specific page if available, otherwise fall back to global
-        const pageId = userPageId || globalPageId;
-        
-        let page = null;
-        let pages = [];
-        let canViewJournal = false;
-        
-        if (journal) {
-            // Check if the user can at least observe the journal
-            canViewJournal = game.user.isGM || journal.testUserPermission(game.user, PERMISSION_LEVELS.OBSERVER);
-
-            if (canViewJournal && journal.pages.size > 0) {
-                // Filter pages based on user permissions
-                const accessiblePages = journal.pages.contents.filter(p => {
-                    // GMs can see all pages
-                    if (game.user.isGM) return true;
-                    
-                    // Get the effective permission for this page for this user
-                    return userCanAccessPage(p, game.user, PERMISSION_LEVELS);
-                });
-                
-                // Get all accessible pages for the dropdown
-                pages = accessiblePages.map(p => ({
-                    id: p.id,
-                    name: p.name
-                }));
-                
-                // Check if selected page is accessible, otherwise try to find first accessible page
-                if (pageId && pageId !== 'none' && journal.pages.has(pageId)) {
-                    const selectedPage = journal.pages.get(pageId);
-                    
-                    // Check if user can access this page
-                    const canAccess = game.user.isGM || userCanAccessPage(selectedPage, game.user, PERMISSION_LEVELS);
-                                    
-                    if (canAccess) {
-                        page = selectedPage;
-                    } else if (accessiblePages.length > 0) {
-                        // Selected page is not accessible, use first accessible page
-                        page = accessiblePages[0];
-                        // Update the setting if user is GM
-                        if (game.user.isGM) {
-                            await game.settings.set(MODULE.ID, 'notesSharedJournalPage', page.id);
-                        } else {
-                            // Update user flag for non-GM users
-                            await game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', page.id);
-                        }
-                    }
-                } else if (accessiblePages.length > 0) {
-                    // No page selected or invalid page ID, use first accessible page
-                    page = accessiblePages[0];
-                    // Save this as the selected page if GM
-                    if (game.user.isGM && (!pageId || !journal.pages.has(pageId))) {
-                        await game.settings.set(MODULE.ID, 'notesSharedJournalPage', page.id);
-                    } else if (!game.user.isGM) {
-                        // For non-GM users, update their flag
-                        await game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', page.id);
-                    }
-                }
-            }
-        }
+        const canViewJournal = journal ? (game.user.isGM || journal.testUserPermission(game.user, PERMISSION_LEVELS.OBSERVER)) : false;
 
         // If journal ID exists but journal doesn't, reset to 'none'
         if (journalId !== 'none' && !journal && game.user.isGM) {
@@ -119,142 +67,127 @@ export class NotesPanel {
             ui.notifications.warn("The previously selected notes journal no longer exists. Please select a new one.");
         }
 
-
-
+        // Render template with notes data
         const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
             hasJournal: !!journal && canViewJournal,
             journal: journal,
             journalName: journal?.name || 'No Journal Selected',
-            page: page,
-            pages: pages,
-            pageName: page?.name || '',
-            hasPages: pages.length > 1, // Only show selector if more than one page
-            hasPermissionIssue: !!journal && !canViewJournal,
-            canEditPage: page ? (game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER)) : false,
+            notes: this.notes.map(note => ({
+                ...note,
+                tags: note.tags || [] // Ensure tags is always an array
+            })),
+            allTags: Array.from(this.allTags).sort(),
+            scenes: Array.from(this.scenes).sort(),
+            filters: this.filters,
             isGM: game.user.isGM,
-            position: "left" // Hard-code position for now as it's always left in current implementation
+            position: "left"
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
         notesContainer.innerHTML = html;
 
-        this.activateListeners(notesContainer, journal, page);
+        this.activateListeners(notesContainer);
     }
 
-    activateListeners(html, journal, page) {
+    /**
+     * Refresh data from the journal - load all notes using NotesParser
+     * @private
+     */
+    async _refreshData() {
+        // Clear existing data
+        this.notes = [];
+        this.allTags.clear();
+        this.scenes.clear();
+
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        const journal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
+
+        if (!journal) return;
+
+        // Check if user can view this journal
+        const canViewJournal = game.user.isGM || journal.testUserPermission(game.user, PERMISSION_LEVELS.OBSERVER);
+        if (!canViewJournal) return;
+
+        // Process all pages in the journal
+        for (const page of journal.pages.contents) {
+            try {
+                // Check if this is a note (has noteType flag)
+                const noteType = page.getFlag(MODULE.ID, 'noteType');
+                if (noteType !== 'sticky') {
+                    // Not a note, skip it
+                    continue;
+                }
+
+                // Check visibility - filter private notes
+                const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
+                if (visibility === 'private' && !game.user.isGM) {
+                    // Private notes: only show to author or GM
+                    const authorId = page.getFlag(MODULE.ID, 'authorId');
+                    if (authorId !== game.user.id) {
+                        continue; // Skip this note
+                    }
+                }
+
+                // Get page content
+                const content = await getJournalPageContent(page);
+                
+                // Enrich content
+                const enriched = await enrichJournalContent(content, {
+                    secrets: game.user.isGM,
+                    documents: true,
+                    links: true,
+                    rolls: true
+                });
+
+                // Parse the note
+                const note = await NotesParser.parseSinglePage(page, enriched);
+                
+                if (note) {
+                    this.notes.push(note);
+                    
+                    // Collect tags
+                    if (note.tags && Array.isArray(note.tags)) {
+                        note.tags.forEach(tag => this.allTags.add(tag));
+                    }
+                    
+                    // Collect scenes
+                    if (note.sceneId && note.sceneName) {
+                        this.scenes.add(note.sceneName);
+                    }
+                }
+            } catch (error) {
+                console.error(`Error processing note page ${page.id}:`, error);
+                // Continue processing other notes
+            }
+        }
+
+        // Sort notes by timestamp (newest first)
+        this.notes.sort((a, b) => {
+            if (!a.timestamp && !b.timestamp) return 0;
+            if (!a.timestamp) return 1;
+            if (!b.timestamp) return -1;
+            return new Date(b.timestamp) - new Date(a.timestamp);
+        });
+    }
+
+    activateListeners(html) {
         // v13: Detect and convert jQuery to native DOM if needed
         let nativeHtml = html;
         if (html && (html.jquery || typeof html.find === 'function')) {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
-        
-        // Add event listeners for notes panel here
-        const characterSheetToggle = nativeHtml.querySelector('.character-sheet-toggle');
-        if (characterSheetToggle) {
-            // Clone to remove existing listeners
-            const newToggle = characterSheetToggle.cloneNode(true);
-            characterSheetToggle.parentNode?.replaceChild(newToggle, characterSheetToggle);
-            
-            newToggle.addEventListener('click', async (event) => {
-                event.preventDefault();
-                
-                // Open the current actor's character sheet when the toggle is clicked
-                const actor = game.user.character || canvas.tokens?.controlled[0]?.actor;
-                if (actor) {
-                    actor.sheet.render(true);
-                } else {
-                    ui.notifications.warn("No character selected. Please select a token first.");
-                }
-            });
-        }
 
-        // Open journal button
-        const openJournalButton = nativeHtml.querySelector('.open-journal-button');
-        if (openJournalButton) {
-            // Clone to remove existing listeners
-            const newButton = openJournalButton.cloneNode(true);
-            openJournalButton.parentNode?.replaceChild(newButton, openJournalButton);
-            
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                
-                if (journal) {
-                    if (page) {
-                        // Open directly to the selected page if we have one
-                        journal.sheet.render(true, {pageId: page.id});
-                    } else {
-                        journal.sheet.render(true);
-                    }
-                } else {
-                    ui.notifications.warn("No journal selected. Please select a journal in the module settings.");
-                }
-            });
-        }
-
-        // Edit page button (for owners)
-        const editPageButton = nativeHtml.querySelector('.edit-page-button');
-        if (editPageButton) {
-            // Clone to remove existing listeners
-            const newButton = editPageButton.cloneNode(true);
-            editPageButton.parentNode?.replaceChild(newButton, editPageButton);
-            
-            newButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-
-            if (journal && page) {
-                // Check if user can edit this page
-                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-
-                if (canEdit) {
-                    // Use our helper method to embed the editor
-                    await this._embedEditor(html, journal, page);
-                } else {
-                    ui.notifications.warn("You don't have permission to edit this page.");
-                }
-            }
-            });
-        }
-        
-        // Toggle edit mode button
-        const toggleEditModeButton = nativeHtml.querySelector('.toggle-edit-mode-button');
-        if (toggleEditModeButton) {
-            // Clone to remove existing listeners
-            const newButton = toggleEditModeButton.cloneNode(true);
-            toggleEditModeButton.parentNode?.replaceChild(newButton, toggleEditModeButton);
-            
-            newButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            
-            if (journal && page) {
-                // Check if user can edit this page
-                const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-                
-                if (canEdit) {
-                    // Use our helper method to embed the editor
-                    await this._embedEditor(html, journal, page);
-                } else {
-                    ui.notifications.warn("You don't have permission to edit this page.");
-                }
-            }
-            });
-        }
-        
-        // Set journal button (GM only) - Now sets notesJournal for new Notes system
-        // v13: Use nativeHtml instead of html
+        // Set journal button (GM only)
         nativeHtml.querySelectorAll('.set-journal-button, .set-journal-button-large').forEach(button => {
             const newButton = button.cloneNode(true);
             button.parentNode?.replaceChild(newButton, button);
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
-                
-                // Show journal picker dialog for GMs
                 if (game.user.isGM) {
                     showJournalPicker({
                         title: 'Select Journal for Notes',
                         getCurrentId: () => game.settings.get(MODULE.ID, 'notesJournal'),
                         onSelect: async (journalId) => {
                             await game.settings.set(MODULE.ID, 'notesJournal', journalId);
-                            
-                            // Verify journal ownership
                             if (journalId && journalId !== 'none') {
                                 const journal = game.journal.get(journalId);
                                 if (journal) {
@@ -277,136 +210,209 @@ export class NotesPanel {
             });
         });
 
-        // Toggle persistent journal button removed - now using notesJournal setting directly
-        // (Old functionality removed as part of replacing old system)
-
-        // Page selection dropdown
-        // v13: Use nativeHtml instead of html
-        const pageSelect = nativeHtml.querySelector('.page-select');
-        if (pageSelect) {
-            const newSelect = pageSelect.cloneNode(true);
-            pageSelect.parentNode?.replaceChild(newSelect, pageSelect);
-            newSelect.addEventListener('change', async (event) => {
-                const pageId = event.currentTarget.value;
-                
-                if (pageId === 'browse-pages') {
-                    if (game.user.isGM) {
-                        showPagePicker(journal, {
-                            onSelect: async (pid) => {
-                                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pid);
-                            },
-                            reRender: () => this.render(this.element)
-                        });
-                    }
-                    return;
-                }
-                
-                // If we have an active editor, ask if they want to close it
-                if (this.journalSheet) {
-                    // Ask the user if they want to switch away from editing
-                    let confirmSwitch = await Dialog.confirm({
-                        title: "Switch Page While Editing?",
-                        content: "<p>You're currently editing a page. Switching to another page will close the editor.</p><p>Any changes you've made will be saved automatically.</p>",
-                        yes: () => true,
-                        no: () => false,
-                        defaultYes: true
-                    });
-                    
-                    if (!confirmSwitch) {
-                        // Reset the dropdown to current page
-                        newSelect.value = page.id;
-                        return;
-                    }
-                    
-                    // Close the editor
-                    this.journalSheet.close();
-                    this.journalSheet = null;
-                }
-            
-                if (game.user.isGM) {
-                // Save the selected page globally for all users if GM
-                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
-            } else {
-                // For players, just update locally
-                game.user.setFlag(MODULE.ID, 'userSelectedJournalPage', pageId);
-            }
-            
-            // Re-render the notes panel
-            this.render(this.element);
-            });
-        }
-
-        // If we have a journal and a page, render the page content
-        if (journal && page) {
-            renderJournalContent(nativeHtml, page, { journal, permLevels: PERMISSION_LEVELS });
-        }
-
-        // Inline edit toggle (for text pages)
-        // v13: Use nativeHtml instead of html
-        const inlineEditToggle = nativeHtml.querySelector('.inline-edit-toggle');
-        if (inlineEditToggle) {
-            const newToggle = inlineEditToggle.cloneNode(true);
-            inlineEditToggle.parentNode?.replaceChild(newToggle, inlineEditToggle);
-            newToggle.addEventListener('click', async (event) => {
-                event.preventDefault();
-
-                if (journal && page && page.type === 'text') {
-                    const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-
-                    if (canEdit) {
-                        // Use our helper method to embed the editor
-                        await this._embedEditor(nativeHtml, journal, page);
-                    } else {
-                        ui.notifications.warn("You don't have permission to edit this page.");
-                    }
-                }
-            });
-        }
-
-        // Save edit button - now just triggers the done button 
-        // v13: Use nativeHtml instead of html
-        const saveEditButton = nativeHtml.querySelector('.save-edit-button');
-        if (saveEditButton) {
-            const newButton = saveEditButton.cloneNode(true);
-            saveEditButton.parentNode?.replaceChild(newButton, saveEditButton);
+        // New Note button
+        nativeHtml.querySelectorAll('.new-note-button, .new-note-button-large').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
-                
-                // If we have an active editor, trigger the done button
-                if (this.journalSheet) {
-                    const doneButton = nativeHtml.querySelector('.done-embedded-edit');
-                    if (doneButton) doneButton.click();
-                } else if (journal && page) {
-                    const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-                    if (canEdit) {
-                        await this._embedEditor(nativeHtml, journal, page);
+                const form = new NotesForm();
+                form.render(true);
+            });
+        });
+
+        // Refresh button
+        const refreshButton = nativeHtml.querySelector('.refresh-notes-button');
+        if (refreshButton) {
+            const newButton = refreshButton.cloneNode(true);
+            refreshButton.parentNode?.replaceChild(newButton, refreshButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                await this._refreshData();
+                this.render(this.element);
+            });
+        }
+
+        // Search filter
+        const searchInput = nativeHtml.querySelector('.notes-search-input');
+        if (searchInput) {
+            const newInput = searchInput.cloneNode(true);
+            searchInput.parentNode?.replaceChild(newInput, searchInput);
+            newInput.addEventListener('input', (event) => {
+                this.filters.search = event.target.value;
+                this._applyFilters(nativeHtml);
+            });
+        }
+
+            // Tag filter
+            nativeHtml.querySelectorAll('.tag-item').forEach(tag => {
+                const newTag = tag.cloneNode(true);
+                tag.parentNode?.replaceChild(newTag, tag);
+                newTag.addEventListener('click', (event) => {
+                    const tagName = event.currentTarget.dataset.tag;
+                    if (!this.filters.tags) {
+                        this.filters.tags = [];
                     }
+                    const index = this.filters.tags.indexOf(tagName);
+                    if (index > -1) {
+                        this.filters.tags.splice(index, 1);
+                    } else {
+                        this.filters.tags.push(tagName);
+                    }
+                    this._applyFilters(nativeHtml);
+                });
+            });
+
+        // Tag cloud toggle
+        const tagToggle = nativeHtml.querySelector('.tag-filter-toggle');
+        if (tagToggle) {
+            const newToggle = tagToggle.cloneNode(true);
+            tagToggle.parentNode?.replaceChild(newToggle, tagToggle);
+            newToggle.addEventListener('click', (event) => {
+                const tagCloud = nativeHtml.querySelector('.tag-cloud');
+                if (tagCloud) {
+                    tagCloud.classList.toggle('collapsed');
+                    newToggle.classList.toggle('fa-chevron-down');
+                    newToggle.classList.toggle('fa-chevron-up');
                 }
             });
         }
 
-        // Cancel edit button 
-        // v13: Use nativeHtml instead of html
-        const cancelEditButton = nativeHtml.querySelector('.cancel-edit-button');
-        if (cancelEditButton) {
-            const newButton = cancelEditButton.cloneNode(true);
-            cancelEditButton.parentNode?.replaceChild(newButton, cancelEditButton);
-            newButton.addEventListener('click', (event) => {
+        // Scene filter
+        const sceneFilter = nativeHtml.querySelector('.scene-filter-select');
+        if (sceneFilter) {
+            const newSelect = sceneFilter.cloneNode(true);
+            sceneFilter.parentNode?.replaceChild(newSelect, sceneFilter);
+            newSelect.addEventListener('change', (event) => {
+                this.filters.scene = event.target.value;
+                this._applyFilters(nativeHtml);
+            });
+        }
+
+        // Visibility filter
+        const visibilityFilter = nativeHtml.querySelector('.visibility-filter-select');
+        if (visibilityFilter) {
+            const newSelect = visibilityFilter.cloneNode(true);
+            visibilityFilter.parentNode?.replaceChild(newSelect, visibilityFilter);
+            newSelect.addEventListener('change', (event) => {
+                this.filters.visibility = event.target.value;
+                this._applyFilters(nativeHtml);
+            });
+        }
+
+        // Note actions
+        nativeHtml.querySelectorAll('.note-edit').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
-                
-                // If we have an active editor sheet, close it
-                if (this.journalSheet) {
-                    this.journalSheet.close();
-                    this.journalSheet = null;
-                    this.render(this.element);
-                } else if (journal && page) {
-                    const canEdit = game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER);
-                    if (canEdit) {
-                        this._embedEditor(nativeHtml, journal, page);
+                const uuid = event.currentTarget.dataset.uuid;
+                const page = await foundry.utils.fromUuid(uuid);
+                if (page) {
+                    page.sheet.render(true);
+                }
+            });
+        });
+
+        nativeHtml.querySelectorAll('.note-delete').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const uuid = event.currentTarget.dataset.uuid;
+                const confirmed = await Dialog.confirm({
+                    title: 'Delete Note',
+                    content: '<p>Are you sure you want to delete this note?</p>',
+                    yes: () => true,
+                    no: () => false,
+                    defaultYes: false
+                });
+                if (confirmed) {
+                    const page = await foundry.utils.fromUuid(uuid);
+                    if (page) {
+                        await page.delete();
+                        await this._refreshData();
+                        this.render(this.element);
                     }
                 }
             });
-        }
+        });
+
+        nativeHtml.querySelectorAll('.note-pin, .note-unpin').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const uuid = event.currentTarget.dataset.uuid;
+                // Pin/unpin functionality will be implemented in Phase 5 (Blacksmith Pin API)
+                ui.notifications.info('Pin functionality coming in Phase 5');
+            });
+        });
+
+        // Apply initial filters
+        this._applyFilters(nativeHtml);
+    }
+
+    /**
+     * Apply filters to note cards (DOM-based filtering)
+     * @private
+     */
+    _applyFilters(html) {
+        const search = (this.filters.search || '').trim().toLowerCase();
+        const selectedTags = this.filters.tags || [];
+        const selectedScene = this.filters.scene || 'all';
+        const selectedVisibility = this.filters.visibility || 'all';
+
+        html.querySelectorAll('.note-card').forEach(card => {
+            let visible = true;
+
+            // Search filter
+            if (search) {
+                const text = card.textContent.toLowerCase();
+                if (!text.includes(search)) {
+                    visible = false;
+                }
+            }
+
+            // Tag filter
+            if (selectedTags.length > 0) {
+                const cardTagsStr = card.dataset.tags || '';
+                const cardTags = cardTagsStr ? cardTagsStr.split(',').map(t => t.trim()) : [];
+                const hasTag = selectedTags.some(tag => cardTags.includes(tag));
+                if (!hasTag) {
+                    visible = false;
+                }
+            }
+
+            // Scene filter
+            if (selectedScene !== 'all') {
+                const cardScene = card.dataset.scene || 'none';
+                if (cardScene !== selectedScene) {
+                    visible = false;
+                }
+            }
+
+            // Visibility filter
+            if (selectedVisibility !== 'all') {
+                const cardVisibility = card.dataset.visibility || 'private';
+                if (cardVisibility !== selectedVisibility) {
+                    visible = false;
+                }
+            }
+
+            // Show/hide card
+            card.style.display = visible ? '' : 'none';
+        });
+
+        // Update tag active states
+        html.querySelectorAll('.tag-item').forEach(tag => {
+            const tagName = tag.dataset.tag;
+            if (selectedTags.includes(tagName)) {
+                tag.classList.add('active');
+            } else {
+                tag.classList.remove('active');
+            }
+        });
     }
 
     

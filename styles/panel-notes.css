@@ -199,4 +199,264 @@
     color: #800000 !important;
 }
 
+/* === New Notes Card System Styles === */
+
+/* Filters */
+.squire-tray[data-position="left"] .notes-filters {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.squire-tray[data-position="left"] .notes-search {
+    position: relative;
+}
+
+.squire-tray[data-position="left"] .notes-search-input {
+    width: 100%;
+    padding: 6px 30px 6px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    color: var(--color-text-light-highlight);
+    font-size: 0.9em;
+}
+
+.squire-tray[data-position="left"] .notes-search i {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.squire-tray[data-position="left"] .notes-tag-filter {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 10px;
+}
+
+.squire-tray[data-position="left"] .tag-filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 5px;
+    font-size: 0.85em;
+    color: var(--color-text-light-highlight);
+}
+
+.squire-tray[data-position="left"] .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-height: 100px;
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
+}
+
+.squire-tray[data-position="left"] .tag-cloud.collapsed {
+    max-height: 0;
+    overflow: hidden;
+}
+
+.squire-tray[data-position="left"] .tag-item {
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .tag-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--color-border-highlight, #ff6400);
+}
+
+.squire-tray[data-position="left"] .tag-item.active {
+    background: var(--color-border-highlight, #ff6400);
+    border-color: var(--color-border-highlight, #ff6400);
+    color: white;
+}
+
+.squire-tray[data-position="left"] .notes-scene-filter,
+.squire-tray[data-position="left"] .notes-visibility-filter {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.squire-tray[data-position="left"] .scene-filter-select,
+.squire-tray[data-position="left"] .visibility-filter-select {
+    flex: 1;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    color: var(--color-text-light-highlight);
+    font-size: 0.85em;
+}
+
+/* Note Cards */
+.squire-tray[data-position="left"] .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+}
+
+.squire-tray[data-position="left"] .note-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .note-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+.squire-tray[data-position="left"] .note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.squire-tray[data-position="left"] .note-title {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #333;
+    flex: 1;
+}
+
+.squire-tray[data-position="left"] .note-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.8em;
+    color: #666;
+}
+
+.squire-tray[data-position="left"] .note-meta i {
+    margin-right: 3px;
+}
+
+.squire-tray[data-position="left"] .note-image {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.squire-tray[data-position="left"] .note-image img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.squire-tray[data-position="left"] .note-content {
+    margin: 10px 0;
+    color: #444;
+    line-height: 1.5;
+    font-size: 0.9em;
+}
+
+.squire-tray[data-position="left"] .note-content p {
+    margin: 5px 0;
+}
+
+.squire-tray[data-position="left"] .note-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 10px 0;
+}
+
+.squire-tray[data-position="left"] .note-tag {
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    font-size: 0.75em;
+    color: #555;
+}
+
+.squire-tray[data-position="left"] .note-location {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85em;
+    color: #666;
+    margin: 8px 0;
+}
+
+.squire-tray[data-position="left"] .note-actions {
+    display: flex;
+    gap: 5px;
+    justify-content: flex-end;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.squire-tray[data-position="left"] .note-actions button {
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .note-actions button:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--color-border-highlight, #ff6400);
+}
+
+.squire-tray[data-position="left"] .note-actions .note-delete:hover {
+    background: rgba(255, 0, 0, 0.1);
+    border-color: #ff0000;
+    color: #ff0000;
+}
+
+.squire-tray[data-position="left"] .no-notes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+}
+
+.squire-tray[data-position="left"] .new-note-button-large {
+    background: var(--color-border-highlight, #ff6400);
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    margin-top: 15px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.squire-tray[data-position="left"] .new-note-button-large:hover {
+    background: var(--color-border-highlight-hover, #ff8533);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 

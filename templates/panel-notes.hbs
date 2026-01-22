@@ -1,57 +1,156 @@
 {{#if (eq position "left")}}
     <div class="tray-title-small">
-        <span>
-            {{#if hasJournal}}
-            {{journalName}}
-            {{else}}
-            Shared Notes
-            {{/if}}
-        </span>
+        <span>{{journalName}}</span>
         <div class="notes-controls">
             {{#if isGM}}
             <i class="fa-solid fa-cog set-journal-button" title="Set Journal"></i>
-            <i class="fas {{#if isPersistent}}fa-thumbtack{{else}}fa-thumbtack unpinned{{/if}} toggle-persistent-button" title="{{#if isPersistent}}Journal is pinned for players{{else}}Pin this journal for players{{/if}}"></i>
             {{/if}}
+            <i class="fa-solid fa-plus new-note-button" title="New Note"></i>
+            <i class="fa-solid fa-sync-alt refresh-notes-button" title="Refresh"></i>
         </div>
     </div>
+
     {{#if hasJournal}}
-        {{#if page}}
-            <div class="notes-toolbar">
-                {{#if hasPages}}
-                <div class="notes-toolbar-left">
-                    <select class="page-select">
-                        {{#if page}}
-                            <option value="{{page.id}}" selected>{{pageName}}</option>
-                        {{/if}}
-                        {{#each pages}}
-                            {{#unless (eq id ../page.id)}}
-                                <option value="{{id}}">{{name}}</option>
-                            {{/unless}}
-                        {{/each}}
-                        {{#if isGM}}
-                            <option value="browse-pages">Browse pages...</option>
-                        {{/if}}
-                    </select>
-                </div>
-                <div class="notes-controls">
-                    {{#if canEditPage}}
-                        <i class="fa-solid fa-edit toggle-edit-mode-button" title="Edit with Foundry's Collaborative Editor"></i>
-                    {{/if}}
-                    <i class="fa-solid fa-book-open open-journal-button" title="Open in Journal Viewer"></i>
-                </div>
-                {{/if}}
+        <!-- Filters -->
+        <div class="notes-filters">
+            <!-- Search -->
+            <div class="notes-search">
+                <input type="text" class="notes-search-input" placeholder="Search notes..." value="{{filters.search}}">
+                <i class="fa-solid fa-search"></i>
             </div>
-        {{/if}}
-    {{/if}}
-    <div class="notes-content">
-        {{#if hasPermissionIssue}}
-        <div class="permission-error">
-            <i class="fa-solid fa-lock"></i>
-            <p>You don't have permission to view this journal.</p>
+
+            <!-- Tag Cloud -->
+            {{#if allTags.length}}
+            <div class="notes-tag-filter">
+                <div class="tag-filter-header">
+                    <span>Tags</span>
+                    <i class="fa-solid fa-chevron-down tag-filter-toggle"></i>
+                </div>
+                <div class="tag-cloud">
+                    {{#each allTags}}
+                    <span class="tag-item" data-tag="{{this}}">
+                        {{this}}
+                    </span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+
+            <!-- Scene Filter -->
+            {{#if scenes.length}}
+            <div class="notes-scene-filter">
+                <select class="scene-filter-select">
+                    <option value="all" {{#if (eq filters.scene 'all')}}selected{{/if}}>All Scenes</option>
+                    {{#each scenes}}
+                    <option value="{{this}}" {{#if (eq ../filters.scene this)}}selected{{/if}}>{{this}}</option>
+                    {{/each}}
+                </select>
+            </div>
+            {{/if}}
+
+            <!-- Visibility Filter -->
+            <div class="notes-visibility-filter">
+                <select class="visibility-filter-select">
+                    <option value="all" {{#if (eq filters.visibility 'all')}}selected{{/if}}>All Notes</option>
+                    <option value="private" {{#if (eq filters.visibility 'private')}}selected{{/if}}>Private</option>
+                    <option value="party" {{#if (eq filters.visibility 'party')}}selected{{/if}}>Party</option>
+                </select>
+            </div>
         </div>
-        {{else if hasJournal}}
-        <div class="prose journal-content journal-entry-content journal-entry-pages single-page journal-entry-page text level1 dnd5e2-journal journal-page-content"></div>
-        {{else}}
+
+        <!-- Notes Container -->
+        <div class="notes-content">
+            {{#if notes.length}}
+                <div class="notes-list">
+                    {{#each notes}}
+                    <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{#if tags}}{{tags.join ','}}{{/if}}">
+                        <!-- Note Header -->
+                        <div class="note-header">
+                            <div class="note-title">{{name}}</div>
+                            <div class="note-meta">
+                                {{#if authorName}}
+                                <span class="note-author"><i class="fa-solid fa-user"></i> {{authorName}}</span>
+                                {{/if}}
+                                {{#if timestamp}}
+                                <span class="note-date"><i class="fa-solid fa-clock"></i> {{timestamp}}</span>
+                                {{/if}}
+                                <span class="note-visibility">
+                                    {{#if (eq visibility 'party')}}
+                                    <i class="fa-solid fa-users" title="Party Note"></i>
+                                    {{else}}
+                                    <i class="fa-solid fa-lock" title="Private Note"></i>
+                                    {{/if}}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Note Image -->
+                        {{#if img}}
+                        <div class="note-image">
+                            <img src="{{img}}" alt="{{name}}">
+                        </div>
+                        {{/if}}
+
+                        <!-- Note Content -->
+                        <div class="note-content">
+                            {{{content}}}
+                        </div>
+
+                        <!-- Note Tags -->
+                        {{#if tags}}
+                        {{#if (isArray tags)}}
+                        {{#if tags.length}}
+                        <div class="note-tags">
+                            {{#each tags}}
+                            <span class="note-tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                        {{else}}
+                        <div class="note-tags">
+                            <span class="note-tag">{{tags}}</span>
+                        </div>
+                        {{/if}}
+                        {{/if}}
+
+                        <!-- Note Location -->
+                        {{#if sceneName}}
+                        <div class="note-location">
+                            <i class="fa-solid fa-map-pin"></i> {{sceneName}}
+                        </div>
+                        {{/if}}
+
+                        <!-- Note Actions -->
+                        <div class="note-actions">
+                            <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
+                                <i class="fa-solid fa-edit"></i>
+                            </button>
+                            {{#if sceneId}}
+                            <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
+                                <i class="fa-solid fa-thumbtack"></i>
+                            </button>
+                            {{else}}
+                            <button class="note-pin" data-uuid="{{uuid}}" title="Pin to Canvas">
+                                <i class="fa-solid fa-thumbtack"></i>
+                            </button>
+                            {{/if}}
+                            <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="no-notes">
+                    <p>No notes found.</p>
+                    <button class="new-note-button-large">
+                        <i class="fa-solid fa-plus"></i> Create Your First Note
+                    </button>
+                </div>
+            {{/if}}
+        </div>
+    {{else}}
         <div class="no-journal-selected">
             {{#if isGM}}
             <p>No journal has been selected for notes.</p>
@@ -63,6 +162,5 @@
             <p>No journal has been selected by the GM yet.</p>
             {{/if}}
         </div>
-        {{/if}}
-    </div>
-{{/if}} 
+    {{/if}}
+{{/if}}
