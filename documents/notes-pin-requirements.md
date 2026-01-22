@@ -35,13 +35,13 @@ The Notes system needs to create optional canvas markers (pins) for spatially-pi
 **Scenario**: User drags a pin to a new location
 - Pin should be draggable (handled by Blacksmith)
 - Pin position should be saved to scene flags
-- Notes system needs to update note's location metadata
+- Notes system needs to update note location flags
 
 ### 5. Pin Deletion
 **Scenario**: User deletes a note or unpins it
 - Pin should be removable via API call
 - Pin should be cleaned up from scene flags
-- Notes system needs to update note's location metadata
+- Notes system needs to update note location flags
 
 ### 6. Scene Persistence
 **Scenario**: User switches scenes
@@ -109,7 +109,7 @@ if (blacksmith?.PinAPI) {
             notesPanel.showNote(noteUuid);
         },
         onDragEnd: (newX, newY) => {
-            // Update note location metadata
+            // Update note location flags
             updateNoteLocation(noteUuid, newX, newY);
         },
         metadata: {
@@ -259,7 +259,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 
 **Drag End**:
 - Should trigger `onDragEnd` callback with new coordinates
-- Notes system will update note location metadata
+- Notes system will update note location flags
 - Pin position should be saved to scene flags
 
 ### Selection Behavior
@@ -307,7 +307,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 **Flow**:
 1. User clicks "Unpin" on a note
 2. Notes system calls `blacksmith.PinAPI.deletePinByUuid(noteUuid)`
-3. Pin is removed, note location metadata is cleared
+3. Pin is removed, note location flags are cleared
 
 ### 5. Scene Activation
 
@@ -317,7 +317,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 1. Scene is activated
 2. Blacksmith loads pins for the scene (handled by Blacksmith)
 3. Notes system queries pins via `blacksmith.PinAPI.getPinsByType('note', sceneId)`
-4. Notes system updates note location metadata if needed
+4. Notes system updates note location flags if needed
 
 ## Error Handling
 
@@ -449,3 +449,4 @@ if (!blacksmith?.PinAPI) {
 - [ ] Pins are cleaned up when notes are deleted
 - [ ] No performance issues with 100+ pins
 - [ ] Graceful degradation if Blacksmith is not available
+

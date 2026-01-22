@@ -105,29 +105,31 @@ export class BasePanel {
 **Based on**: `utility-codex-parser.js` patterns
 
 **Key methods**:
-- `parseSinglePage(page, enrichedHtml)` - Parse note page
-- `extractMetadata(html)` - Extract tags, scene, location, visibility
-- `extractContent(html)` - Extract markdown content
-- `extractImage(html)` - Extract image if present
+- `parseSinglePage(page, enrichedHtml)` - Parse note page (combines flags metadata with content)
+- `extractContent(html)` - Extract markdown content from HTML
+- `extractImage(html)` - Extract image if present from HTML
+- Note: Metadata (tags, scene, location, visibility, author, timestamp) comes from flags, not HTML parsing
 
 **Data structure**:
 ```javascript
 {
-    name: string,
-    content: string,
-    img: string|null,
-    tags: string[],
-    sceneId: string|null,
-    sceneName: string|null,
-    x: number|null,
-    y: number|null,
-    authorId: string,
-    authorName: string,
-    visibility: 'private'|'party',
-    timestamp: string,
-    uuid: string
+    name: string,              // From page.name
+    content: string,           // From page.text.content (enriched)
+    img: string|null,          // Extracted from HTML
+    tags: string[],            // From flags[MODULE.ID].tags
+    sceneId: string|null,      // From flags[MODULE.ID].sceneId
+    sceneName: string|null,    // Looked up from sceneId
+    x: number|null,            // From flags[MODULE.ID].x
+    y: number|null,            // From flags[MODULE.ID].y
+    authorId: string,          // From flags[MODULE.ID].authorId
+    authorName: string,        // Looked up from authorId
+    visibility: 'private'|'party', // From flags[MODULE.ID].visibility
+    timestamp: string,         // From flags[MODULE.ID].timestamp
+    uuid: string               // From page.uuid
 }
 ```
+
+**Note**: Parser reads metadata from flags, only extracts content and images from HTML.
 
 **Files to create**:
 - `scripts/utility-notes-parser.js`
@@ -151,8 +153,9 @@ export class BasePanel {
 - Quick save button
 
 **Methods**:
-- `_updateObject(event, formData)` - Save note to journal
-- `_generateNoteContent(formData)` - Generate HTML with metadata
+- `_updateObject(event, formData)` - Save note to journal (sets flags and content)
+- `_generateNoteContent(formData)` - Generate HTML content only (no metadata in HTML)
+- `_generateNoteFlags(formData)` - Generate flags object with all metadata
 - `_setupImagePaste(html)` - Handle image paste/drag
 - `_setupTagAutocomplete(html)` - Tag suggestions
 
@@ -193,12 +196,13 @@ export class BasePanel {
 - Add note actions (edit, delete, pin/unpin)
 
 **Methods to add/modify**:
-- `_refreshData()` - Load and parse note pages
+- `_refreshData()` - Load note pages, read flags for metadata, parse content
 - `render(element)` - Render note cards
 - `_activateListeners(html)` - Set up filtering and actions
 - `_setupSearchFilter(html)` - Live search filtering
 - `_setupTagFilter(html)` - Tag cloud filtering
 - `_createNoteCard(note)` - Generate card HTML
+- `_readNoteMetadata(page)` - Read metadata from flags (not from HTML)
 
 **Files to update**:
 - `scripts/panel-notes.js` - Major refactor
@@ -298,7 +302,7 @@ if (blacksmith?.PinAPI) {
 ### 6.1 Add Notes Settings (`scripts/settings.js`)
 
 **Settings to add**:
-- `notesJournal` - World setting for notes journal
+- `notesJournal` - World setting for notes journal (config true, set via Settings UI)
 - `notesViewMode` - User flag (list, grid, timeline)
 - `notesCollapsedScenes` - User flag for collapsed scene groups
 

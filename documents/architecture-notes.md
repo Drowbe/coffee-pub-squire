@@ -16,7 +16,7 @@ This is **not** a replacement for Journals (GM-authored lore) or Codex (structur
 ## Core Design Philosophy
 
 ### 1. **Journal as System of Record (Option A)**
-Each note is a JournalEntry page with:
+Each note is a JournalEntryPage with:
 - `flags[MODULE.ID].noteType = 'sticky'`
 - Flags for: tags, visibility (private/party), sceneId, authorId, timestamp
 - **Pros**: Native permissions, ownership, export, compendium support
@@ -24,25 +24,38 @@ Each note is a JournalEntry page with:
 
 **Decision**: Start with Option A (Journal-backed) for v1, evaluate Option B (Custom Document) for v2 if performance becomes an issue.
 
-### 2. **Structured HTML Content**
-Notes use markdown/HTML with semantic structure:
-```html
-<p><strong>Tags:</strong> npc, phlan, informant</p>
-<p><strong>Scene:</strong> Phlan Market</p>
-<p><strong>Location:</strong> x: 1200, y: 800</p>
-<p><strong>Created:</strong> 2024-01-15 by PlayerName</p>
-<p><strong>Visibility:</strong> party</p>
+### 2. **Content and Metadata Separation**
+Notes separate content from metadata:
+- **Content**: Markdown/HTML stored in journal page text (note body only)
+- **Metadata**: Stored in flags (tags, scene, location, visibility, author, timestamp)
 
+**Content Structure** (HTML):
+```html
 [Image if present]
 
 Note content in markdown...
 ```
 
+**Metadata Structure** (Flags):
+```javascript
+flags[MODULE.ID] = {
+    noteType: 'sticky',
+    tags: ['npc', 'phlan', 'informant'],
+    visibility: 'party',
+    sceneId: 'scene-uuid',
+    x: 1200,
+    y: 800,
+    authorId: 'user-id',
+    timestamp: '2024-01-15T10:30:00Z'
+}
+```
+
 This approach:
-- **Human-readable**: Can be edited directly in journal sheets
-- **Parser-friendly**: Easy to extract metadata via DOM parsing
-- **Flexible**: Can add new fields without schema changes
-- **Enrichable**: Works with FoundryVTT's TextEditor enrichment
+- **Human-readable**: Content can be edited directly in journal sheets
+- **Single source of truth**: Flags are authoritative, no parsing needed
+- **Flexible**: Can add new metadata fields without HTML changes
+- **Enrichable**: Content works with FoundryVTT's TextEditor enrichment
+- **No drift**: Metadata in flags can't get out of sync with HTML
 
 ### 3. **Separation of Concerns**
 - **Parser**: Extracts structured data from HTML (reuse CodexParser patterns)
@@ -59,26 +72,28 @@ Extracts structured data from note journal pages. **Reuses patterns from CodexPa
 
 **Key Methods**:
 - `parseSinglePage(page, enrichedHtml)` - Parses a note page into structured object
-- `extractMetadata(content)` - Extracts tags, scene, location, visibility, etc.
+- Note: Metadata comes from flags, not HTML parsing. Parser only handles content rendering.
 
 **Data Structure**:
 ```javascript
 {
-    name: string,              // Note title
-    content: string,           // Markdown/HTML content
-    img: string|null,          // Image path if present
-    tags: string[],            // Array of tags
-    sceneId: string|null,      // Scene UUID if pinned
-    sceneName: string|null,    // Scene name for display
-    x: number|null,            // Canvas X coordinate
-    y: number|null,            // Canvas Y coordinate
-    authorId: string,           // User ID who created it
-    authorName: string,        // Display name
-    visibility: 'private'|'party', // Ownership level
-    timestamp: string,           // ISO timestamp
-    uuid: string                // Journal page UUID
+    name: string,              // Note title (from page.name)
+    content: string,           // Markdown/HTML content (from page.text.content, enriched)
+    img: string|null,          // Image path if present (extracted from HTML)
+    tags: string[],            // Array of tags (from flags[MODULE.ID].tags)
+    sceneId: string|null,      // Scene UUID if pinned (from flags[MODULE.ID].sceneId)
+    sceneName: string|null,    // Scene name for display (looked up from sceneId)
+    x: number|null,            // Canvas X coordinate (from flags[MODULE.ID].x)
+    y: number|null,            // Canvas Y coordinate (from flags[MODULE.ID].y)
+    authorId: string,          // User ID who created it (from flags[MODULE.ID].authorId)
+    authorName: string,        // Display name (looked up from authorId)
+    visibility: 'private'|'party', // Ownership level (from flags[MODULE.ID].visibility)
+    timestamp: string,         // ISO timestamp (from flags[MODULE.ID].timestamp)
+    uuid: string               // Journal page UUID (from page.uuid)
 }
 ```
+
+**Note**: Metadata comes from flags, not HTML parsing. Parser only extracts content and images from HTML.
 
 **Shared Code Opportunity**: Extract common parsing logic from CodexParser into a base parser utility.
 
@@ -113,21 +128,21 @@ class NotesForm extends Application {
         const journalId = game.settings.get(MODULE.ID, 'notesJournal');
         const journal = game.journal.get(journalId);
         
-        // Generate HTML content with metadata
+        // Generate HTML content (note body only, no metadata)
         const pageData = {
             name: formData.title,
             type: 'text',
             text: {
-                content: this._generateNoteContent(formData)
+                content: this._generateNoteContent(formData) // Only note body + images
             },
             flags: {
                 [MODULE.ID]: {
                     noteType: 'sticky',
-                    tags: formData.tags.split(','),
+                    tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
                     visibility: formData.visibility,
-                    sceneId: formData.sceneId,
-                    x: formData.x,
-                    y: formData.y,
+                    sceneId: formData.sceneId || null,
+                    x: formData.x || null,
+                    y: formData.y || null,
                     authorId: game.user.id,
                     timestamp: new Date().toISOString()
                 }
@@ -222,7 +237,7 @@ game.settings.register(MODULE.ID, 'notesJournal', {
     name: "Notes Journal",
     hint: "The journal to use for player notes...",
     scope: "world",
-    config: false,
+    config: true,
     type: String,
     default: "none"
 });
@@ -247,7 +262,7 @@ game.user.setFlag(MODULE.ID, 'notesCollapsedScenes', {});
    ↓
 4. User selects Party/Private visibility
    ↓
-5. Form generates HTML content with metadata
+5. Form generates HTML content (note body only)
    ↓
 6. Form creates JournalEntryPage with flags
    ↓
@@ -271,10 +286,12 @@ game.user.setFlag(MODULE.ID, 'notesCollapsedScenes', {});
    ↓
 3. For each page:
    a. Check noteType flag (must be 'sticky')
-   b. Enrich HTML content (TextEditor.enrichHTML)
-   c. Parse with NotesParser.parseSinglePage()
-   d. Filter by visibility (private notes only for creator)
-   e. Group by scene or date
+   b. Read metadata from flags (tags, scene, location, visibility, author, timestamp)
+   c. Enrich HTML content (TextEditor.enrichHTML) for display
+   d. Parse content with NotesParser.parseSinglePage() (extracts content and images only)
+   e. Combine flags metadata with parsed content
+   f. Filter by visibility (private notes only for creator)
+   g. Group by scene or date
    ↓
 4. Render template with organized data
    ↓
@@ -393,12 +410,14 @@ The system listens to journal updates:
 
 ## Key Design Patterns
 
-### 1. **Parser-Based Architecture**
+### 1. **Flags-Based Architecture**
 
-Stores HTML, parses on-demand (same as Codex):
-- **Flexibility**: Add fields without migration
-- **Human-editable**: GMs can edit in journals
-- **Version-tolerant**: Parser handles missing fields
+Metadata stored in flags, content in HTML:
+- **Single source of truth**: Flags are authoritative for metadata
+- **No parsing needed**: Metadata read directly from flags
+- **Human-editable**: Content can be edited in journals
+- **Version-tolerant**: Missing flags have sensible defaults
+- **No drift**: Metadata can't get out of sync with HTML
 
 ### 2. **Tag-Based Filtering**
 
@@ -569,3 +588,4 @@ if (noteType === 'sticky') {
 5. **Note sharing**: Share individual notes between players
 6. **Note reactions**: Emoji reactions to party notes
 7. **Note mentions**: @mention players in notes
+
