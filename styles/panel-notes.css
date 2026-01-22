@@ -6,16 +6,18 @@
     position: relative;
 }
 
+/* CONTENT - match codex-content / quest-content */
 .squire-tray[data-position="left"] .notes-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    background: rgba(240, 233, 230, 0.7);
-    border-radius: 4px;
+    background: transparent;
+    border-radius: 6px;
     margin-top: 10px;
     padding: 8px;
     border: 2px solid rgba(255, 255, 255, 0.2);
-    position: relative;
+    color: #cccccc;
+    font-weight: 400;
 }
 
 /* === Common Title & Toolbar Styles === */
@@ -122,6 +124,7 @@
     justify-content: center;
     padding: 20px 10px;
     text-align: center;
+    color: #cccccc;
 }
 
 .squire-tray[data-position="left"] .no-journal-selected p {
@@ -130,17 +133,17 @@
 
 .squire-tray[data-position="left"] .no-journal-selected i {
     margin: 0 3px;
-    color: var(--color-text-hyperlink);
+    color: var(--color-border-highlight, #ff6400);
 }
 
 /* === Button Styles === */
 .squire-tray[data-position="left"] .set-journal-button-large {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(48, 24, 29, 1);
+    border: 1px solid rgba(86, 43, 52, 1);
     border-radius: 4px;
     padding: 8px 16px;
     margin-top: 15px;
-    color: #f0f0f0;
+    color: rgba(186, 168, 137, 0.9);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -150,8 +153,9 @@
 }
 
 .squire-tray[data-position="left"] .set-journal-button-large:hover {
-    background: rgba(255, 255, 255, 0.25);
+    color: var(--color-border-highlight, #ff6400);
     border-color: var(--color-border-highlight, #ff6400);
+    box-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 /* === Error States === */
@@ -201,11 +205,12 @@
 
 /* === New Notes Card System Styles === */
 
-/* Filters */
+/* Filters - match codex-filters / quest-filters */
 .squire-tray[data-position="left"] .notes-filters {
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 8px 6px 8px;
+    background: rgba(0, 0, 0, 0.6);
+    border-bottom: 0px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0px 0px 6px 6px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -213,15 +218,20 @@
 
 .squire-tray[data-position="left"] .notes-search {
     position: relative;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .squire-tray[data-position="left"] .notes-search-input {
-    width: 100%;
-    padding: 6px 30px 6px 10px;
-    background: rgba(0, 0, 0, 0.4);
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 3px;
-    color: var(--color-text-light-highlight);
+    color: #fff;
+    padding: 4px 30px 4px 8px;
+    height: 28px;
     font-size: 0.9em;
 }
 
@@ -232,6 +242,7 @@
     transform: translateY(-50%);
     opacity: 0.5;
     pointer-events: none;
+    color: #fff;
 }
 
 .squire-tray[data-position="left"] .notes-tag-filter {
@@ -246,42 +257,55 @@
     cursor: pointer;
     margin-bottom: 5px;
     font-size: 0.85em;
-    color: var(--color-text-light-highlight);
+    color: rgba(159, 146, 117, 0.9);
 }
 
 .squire-tray[data-position="left"] .tag-cloud {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 2px;
     max-height: 100px;
     overflow-y: auto;
-    transition: max-height 0.3s ease;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 8px 0;
+    margin-bottom: 6px;
+    transition: all 0.2s ease-out;
 }
 
 .squire-tray[data-position="left"] .tag-cloud.collapsed {
     max-height: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
     overflow: hidden;
 }
 
 .squire-tray[data-position="left"] .tag-item {
-    padding: 3px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
+    padding: 2px 8px;
+    background: rgba(255, 47, 47, 0.2);
+    border: 1px solid rgba(255, 47, 47, 0.4);
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 0.8em;
+    font-size: 0.9em;
+    color: #ddd;
     transition: all 0.2s ease;
 }
 
 .squire-tray[data-position="left"] .tag-item:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: var(--color-border-highlight, #ff6400);
+    background: rgba(255, 47, 47, 0.4);
+    border-color: rgba(255, 47, 47, 0.6);
 }
 
 .squire-tray[data-position="left"] .tag-item.active {
-    background: var(--color-border-highlight, #ff6400);
-    border-color: var(--color-border-highlight, #ff6400);
-    color: white;
+    background: rgba(50, 100, 150, 0.4);
+    border-color: rgba(50, 100, 150, 0.6);
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .tag-item.active:hover {
+    background: rgba(50, 100, 150, 0.7);
+    border-color: rgba(100, 150, 200, 0.8);
 }
 
 .squire-tray[data-position="left"] .notes-scene-filter,
@@ -293,68 +317,76 @@
 
 .squire-tray[data-position="left"] .scene-filter-select,
 .squire-tray[data-position="left"] .visibility-filter-select {
-    flex: 1;
-    padding: 4px 8px;
-    background: rgba(0, 0, 0, 0.4);
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 3px;
-    color: var(--color-text-light-highlight);
+    color: #fff;
+    padding: 4px;
     font-size: 0.85em;
 }
 
-/* Note Cards */
+/* Note Cards - match codex-entries / quest-entries + codex-entry / quest-entry */
 .squire-tray[data-position="left"] .notes-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 10px;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 0;
 }
 
 .squire-tray[data-position="left"] .note-card {
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 6px;
-    padding: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 8px;
+    transition: border-color 0.2s ease;
 }
 
 .squire-tray[data-position="left"] .note-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transform: translateY(-1px);
+    border-color: rgba(183, 169, 136, 0.35);
+    box-shadow: 0 0 5px rgba(200, 100, 121, 0.2);
 }
 
 .squire-tray[data-position="left"] .note-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    gap: 8px;
     margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 4px 2px 4px 0;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.2);
+    background: rgba(96, 54, 51, 0);
+    border-radius: 4px;
 }
 
 .squire-tray[data-position="left"] .note-title {
-    font-weight: bold;
-    font-size: 1.1em;
-    color: #333;
-    flex: 1;
+    flex: 1 1 auto;
+    text-align: left;
+    font-weight: 500;
+    color: rgba(159, 146, 117, 0.9);
+    font-size: 1.2em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .squire-tray[data-position="left"] .note-meta {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
     font-size: 0.8em;
-    color: #666;
+    color: rgba(159, 146, 117, 0.8);
     flex-wrap: wrap;
 }
 
 .squire-tray[data-position="left"] .note-meta i {
     margin-right: 3px;
+    color: rgba(186, 168, 137, 0.9);
 }
 
 .squire-tray[data-position="left"] .note-visibility-badge {
-    padding: 3px 8px;
+    padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.75em;
     font-weight: bold;
@@ -365,32 +397,38 @@
 }
 
 .squire-tray[data-position="left"] .note-visibility-badge.party {
-    background: rgba(0, 150, 0, 0.2);
-    color: #006600;
-    border: 1px solid rgba(0, 150, 0, 0.4);
+    background: rgba(2, 136, 20, 0.3);
+    color: rgba(120, 220, 130, 0.95);
+    border: 1px solid rgba(2, 136, 20, 0.5);
 }
 
 .squire-tray[data-position="left"] .note-visibility-badge.private {
-    background: rgba(150, 0, 0, 0.2);
-    color: #990000;
-    border: 1px solid rgba(150, 0, 0, 0.4);
+    background: rgba(86, 43, 52, 0.5);
+    color: rgba(220, 180, 180, 0.95);
+    border: 1px solid rgba(120, 60, 70, 0.5);
 }
 
 .squire-tray[data-position="left"] .note-image {
-    margin: 10px 0;
-    text-align: center;
+    float: left;
+    margin: 0 8px 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .squire-tray[data-position="left"] .note-image img {
-    max-width: 100%;
-    max-height: 200px;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
     border-radius: 4px;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .squire-tray[data-position="left"] .note-content {
-    margin: 10px 0;
-    color: #444;
+    margin: 8px 0;
+    clear: right;
+    color: #aaa;
     line-height: 1.5;
     font-size: 0.9em;
 }
@@ -399,17 +437,27 @@
     margin: 5px 0;
 }
 
+.squire-tray[data-position="left"] .note-content a {
+    color: rgba(241, 71, 20, 0.86);
+    text-decoration: none;
+}
+
+.squire-tray[data-position="left"] .note-content a:hover {
+    text-decoration: underline;
+}
+
 .squire-tray[data-position="left"] .note-tags-section {
-    margin: 12px 0 8px 0;
-    padding-top: 10px;
-    border-top: 1px solid rgba(0, 0, 0, 0.15);
+    margin: 8px 0 0 0;
+    padding-top: 8px;
+    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    clear: both;
 }
 
 .squire-tray[data-position="left"] .note-tags-label {
     font-size: 0.7em;
     font-weight: bold;
-    color: #666;
-    margin-bottom: 8px;
+    color: rgba(159, 146, 117, 0.9);
+    margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-family: "Signika", sans-serif;
@@ -418,27 +466,23 @@
 .squire-tray[data-position="left"] .note-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
 }
 
 .squire-tray[data-position="left"] .note-tag {
-    padding: 4px 10px;
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(0, 0, 0, 0.3);
+    padding: 2px 8px;
+    background: rgba(255, 47, 47, 0.2);
+    border: 1px solid rgba(255, 47, 47, 0.4);
     border-radius: 4px;
-    font-size: 0.8em;
-    color: #666;
-    font-weight: 600;
-    font-family: "Signika", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    font-size: 0.9em;
+    color: #ddd;
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .squire-tray[data-position="left"] .note-tag:hover {
-    background: rgba(0, 0, 0, 0.25);
-    border-color: rgba(0, 0, 0, 0.4);
-    color: #888;
+    background: rgba(255, 47, 47, 0.4);
+    border-color: rgba(255, 47, 47, 0.6);
 }
 
 .squire-tray[data-position="left"] .note-location {
@@ -446,38 +490,47 @@
     align-items: center;
     gap: 5px;
     font-size: 0.85em;
-    color: #666;
-    margin: 8px 0;
+    color: #aaa;
+    margin: 6px 0;
+    clear: both;
+}
+
+.squire-tray[data-position="left"] .note-location i {
+    color: rgba(186, 168, 137, 0.9);
 }
 
 .squire-tray[data-position="left"] .note-actions {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     justify-content: flex-end;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    align-items: center;
 }
 
 .squire-tray[data-position="left"] .note-actions button {
-    padding: 4px 8px;
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 4px;
+    background: transparent;
+    border: none;
     border-radius: 3px;
     cursor: pointer;
-    font-size: 0.85em;
-    transition: all 0.2s ease;
+    font-size: 1em;
+    color: rgba(159, 146, 117, 0.9);
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, opacity 0.2s, box-shadow 0.2s;
 }
 
 .squire-tray[data-position="left"] .note-actions button:hover {
-    background: rgba(0, 0, 0, 0.1);
-    border-color: var(--color-border-highlight, #ff6400);
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 .squire-tray[data-position="left"] .note-actions .note-delete:hover {
-    background: rgba(255, 0, 0, 0.1);
-    border-color: #ff0000;
-    color: #ff0000;
+    color: #ff4444;
 }
 
 .squire-tray[data-position="left"] .no-notes {
@@ -487,16 +540,16 @@
     justify-content: center;
     padding: 40px 20px;
     text-align: center;
-    color: #666;
+    color: #cccccc;
 }
 
 .squire-tray[data-position="left"] .new-note-button-large {
-    background: var(--color-border-highlight, #ff6400);
-    border: none;
+    background: rgba(48, 24, 29, 1);
+    border: 1px solid rgba(86, 43, 52, 1);
     border-radius: 4px;
     padding: 10px 20px;
     margin-top: 15px;
-    color: white;
+    color: rgba(186, 168, 137, 0.9);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -505,9 +558,9 @@
 }
 
 .squire-tray[data-position="left"] .new-note-button-large:hover {
-    background: var(--color-border-highlight-hover, #ff8533);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    color: var(--color-border-highlight, #ff6400);
+    border-color: var(--color-border-highlight, #ff6400);
+    box-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 
