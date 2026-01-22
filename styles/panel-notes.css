@@ -402,32 +402,43 @@
 .squire-tray[data-position="left"] .note-tags-section {
     margin: 12px 0 8px 0;
     padding-top: 10px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 .squire-tray[data-position="left"] .note-tags-label {
-    font-size: 0.75em;
+    font-size: 0.7em;
     font-weight: bold;
     color: #666;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-family: "Signika", sans-serif;
 }
 
 .squire-tray[data-position="left"] .note-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
 }
 
 .squire-tray[data-position="left"] .note-tag {
-    padding: 3px 8px;
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 3px;
-    font-size: 0.75em;
-    color: #555;
-    font-weight: 500;
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-size: 0.8em;
+    color: #666;
+    font-weight: 600;
+    font-family: "Signika", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .note-tag:hover {
+    background: rgba(0, 0, 0, 0.25);
+    border-color: rgba(0, 0, 0, 0.4);
+    color: #888;
 }
 
 .squire-tray[data-position="left"] .note-location {

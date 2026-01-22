@@ -232,76 +232,14 @@ export class NotesPanel {
             });
         });
 
-        // New Note button
+        // New Note button - opens NotesForm window
         nativeHtml.querySelectorAll('.new-note-button, .new-note-button-large').forEach(button => {
             const newButton = button.cloneNode(true);
             button.parentNode?.replaceChild(newButton, button);
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
-                
-                const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-                if (!journalId || journalId === 'none') {
-                    ui.notifications.warn('No notes journal selected. Please select a journal first.');
-                    return;
-                }
-                
-                const journal = game.journal.get(journalId);
-                if (!journal) {
-                    ui.notifications.error('Selected notes journal not found.');
-                    return;
-                }
-                
-                // Create a new page in the journal
-                const pageData = {
-                    name: 'New Note',
-                    type: 'text',
-                    text: { content: '' },
-                    flags: {
-                        [MODULE.ID]: {
-                            noteType: 'sticky',
-                            tags: [],
-                            visibility: 'private',
-                            authorId: game.user.id,
-                            timestamp: new Date().toISOString()
-                        }
-                    }
-                };
-                
-                try {
-                    const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-                    console.log('New note page created:', { 
-                        pageId: newPage.id, 
-                        flags: newPage.getFlag(MODULE.ID),
-                        pageDataFlags: pageData.flags
-                    });
-                    
-                    // Verify flags were set - if not, set them explicitly
-                    const savedFlags = newPage.getFlag(MODULE.ID);
-                    const savedNoteType = newPage.getFlag(MODULE.ID, 'noteType');
-                    if (!savedFlags || !savedNoteType) {
-                        console.warn('Flags not set on creation, setting them now...', { savedFlags, savedNoteType });
-                        // Set flags individually to ensure they're saved
-                        await newPage.setFlag(MODULE.ID, 'noteType', 'sticky');
-                        await newPage.setFlag(MODULE.ID, 'tags', []);
-                        await newPage.setFlag(MODULE.ID, 'visibility', 'private');
-                        await newPage.setFlag(MODULE.ID, 'authorId', game.user.id);
-                        await newPage.setFlag(MODULE.ID, 'timestamp', new Date().toISOString());
-                        console.log('Flags set individually:', { 
-                            noteType: newPage.getFlag(MODULE.ID, 'noteType'),
-                            tags: newPage.getFlag(MODULE.ID, 'tags'),
-                            visibility: newPage.getFlag(MODULE.ID, 'visibility')
-                        });
-                    }
-                    
-                    // Open the journal sheet to the new page - meta box will be embedded via hook
-                    // Use a small delay to ensure the page is fully created
-                    setTimeout(() => {
-                        journal.sheet.render(true, { pageId: newPage.id });
-                    }, 100);
-                } catch (error) {
-                    console.error('Error creating note:', error);
-                    ui.notifications.error(`Failed to create note: ${error.message}`);
-                }
+                const form = new NotesForm();
+                form.render(true);
             });
         });
 
@@ -566,15 +504,16 @@ export class NotesForm extends FormApplication {
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: 'notes-quick-form',
-            classes: ['notes-form'],
+            classes: ['notes-form-window', 'squire-window'],
             title: 'New Note',
             template: 'modules/coffee-pub-squire/templates/notes-form.hbs',
-            width: 500,
+            width: 550,
             height: 'auto',
             resizable: true,
             closeOnSubmit: true,
             submitOnClose: false,
-            submitOnChange: false
+            submitOnChange: false,
+            minimizable: true
         });
     }
 
