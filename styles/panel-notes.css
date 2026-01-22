@@ -385,20 +385,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.squire-tray[data-position="left"] .note-meta {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    font-size: 0.8em;
-    color: rgba(159, 146, 117, 0.8);
-    flex-wrap: wrap;
-}
-
-.squire-tray[data-position="left"] .note-meta i {
-    margin-right: 3px;
-    color: rgba(186, 168, 137, 0.9);
+    min-width: 0;
 }
 
 
@@ -505,13 +492,11 @@
     color: rgba(186, 168, 137, 0.9);
 }
 
-.squire-tray[data-position="left"] .note-actions {
+/* Actions in header (right-aligned) */
+.squire-tray[data-position="left"] .note-header .note-actions {
     display: flex;
     gap: 8px;
-    justify-content: flex-end;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
     align-items: center;
 }
 
@@ -537,6 +522,30 @@
 
 .squire-tray[data-position="left"] .note-actions .note-delete:hover {
     color: #ff4444;
+}
+
+/* Footer: author (left) | timestamp (right) */
+.squire-tray[data-position="left"] .note-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    font-size: 0.8em;
+    color: rgba(159, 146, 117, 0.8);
+}
+
+.squire-tray[data-position="left"] .note-footer .note-author,
+.squire-tray[data-position="left"] .note-footer .note-date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.squire-tray[data-position="left"] .note-footer i {
+    color: rgba(186, 168, 137, 0.9);
 }
 
 .squire-tray[data-position="left"] .no-notes {

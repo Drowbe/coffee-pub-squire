@@ -64,7 +64,7 @@
                 <div class="notes-list">
                     {{#each notes}}
                     <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{#if tags}}{{tags.join ','}}{{/if}}">
-                        <!-- Note Header -->
+                        <!-- Note Header: badge | title | actions -->
                         <div class="note-header">
                             <span class="note-visibility-badge {{visibility}}">
                                 {{#if (eq visibility 'party')}}
@@ -74,11 +74,22 @@
                                 {{/if}}
                             </span>
                             <div class="note-title">{{name}}</div>
-                            <div class="note-meta">
-                                <span class="note-author"><i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}</span>
-                                {{#if timestamp}}
-                                <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
+                            <div class="note-actions">
+                                <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
+                                {{#if sceneId}}
+                                <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </button>
+                                {{else}}
+                                <button class="note-pin" data-uuid="{{uuid}}" title="Pin to Canvas">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </button>
                                 {{/if}}
+                                <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -101,7 +112,7 @@
                         </div>
                         {{/if}}
 
-                        <!-- Note Tags Section (at bottom like Codex) -->
+                        <!-- Note Tags Section -->
                         {{#if tags}}
                         {{#if (isArray tags)}}
                         {{#if tags.length}}
@@ -124,23 +135,12 @@
                         {{/if}}
                         {{/if}}
 
-                        <!-- Note Actions -->
-                        <div class="note-actions">
-                            <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
-                                <i class="fa-solid fa-edit"></i>
-                            </button>
-                            {{#if sceneId}}
-                            <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
-                                <i class="fa-solid fa-thumbtack"></i>
-                            </button>
-                            {{else}}
-                            <button class="note-pin" data-uuid="{{uuid}}" title="Pin to Canvas">
-                                <i class="fa-solid fa-thumbtack"></i>
-                            </button>
+                        <!-- Note Footer: author (left) | timestamp (right) -->
+                        <div class="note-footer">
+                            <span class="note-author"><i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}</span>
+                            {{#if timestamp}}
+                            <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
                             {{/if}}
-                            <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
                         </div>
                     </div>
                     {{/each}}
