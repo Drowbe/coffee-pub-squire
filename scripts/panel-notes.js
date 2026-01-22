@@ -343,6 +343,10 @@ export class NotesPanel {
                     const sceneId = page.getFlag(MODULE.ID, 'sceneId');
                     const x = page.getFlag(MODULE.ID, 'x');
                     const y = page.getFlag(MODULE.ID, 'y');
+                    const timestamp = page.getFlag(MODULE.ID, 'timestamp') || null;
+                    const authorName = authorId
+                        ? (game.users.get(authorId)?.name || game.users.find(u => u.id === authorId)?.name || authorId)
+                        : 'Unknown';
                     
                     // Get page content
                     const content = page.text?.content || '';
@@ -353,13 +357,14 @@ export class NotesPanel {
                         pageUuid: page.uuid,
                         title: page.name || 'Untitled Note',
                         content: content,
+                        authorName: authorName,
+                        timestamp: timestamp,
                         tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
                         visibility: visibility,
                         sceneId: sceneId,
                         x: x,
                         y: y,
-                        authorId: authorId,
-                        timestamp: page.getFlag(MODULE.ID, 'timestamp')
+                        authorId: authorId
                     };
                     
                     // Open NotesForm with existing note data
@@ -542,13 +547,26 @@ export class NotesForm extends FormApplication {
     }
 
     static get defaultOptions() {
+        let saved = {};
+        try {
+            saved = game.settings.get(MODULE.ID, 'notesWindowPosition') || {};
+        } catch (e) {
+            saved = {};
+        }
+        const width = saved.width ?? 600;
+        const height = saved.height ?? 560;
+        const top = (typeof saved.top === 'number') ? saved.top : Math.max(0, (window.innerHeight - height) / 2);
+        const left = (typeof saved.left === 'number') ? saved.left : Math.max(0, (window.innerWidth - width) / 2);
+
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: 'notes-quick-form',
             classes: ['notes-form-window', 'squire-window'],
             title: 'New Note', // Will be updated in getData if editing
             template: 'modules/coffee-pub-squire/templates/notes-form.hbs',
-            width: 550,
-            height: 'auto',
+            width,
+            height,
+            top,
+            left,
             resizable: true,
             closeOnSubmit: true,
             submitOnClose: false,
@@ -568,9 +586,16 @@ export class NotesForm extends FormApplication {
         } else {
             this.options.title = 'New Note';
         }
-        
+
+        const tagsText = Array.isArray(this.note.tags)
+            ? this.note.tags.join(', ')
+            : (typeof this.note.tags === 'string' ? this.note.tags : '');
+
         return {
-            note: this.note,
+            note: {
+                ...this.note,
+                tagsText
+            },
             isGM: game.user.isGM,
             isEditing: this.isEditing,
             sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
@@ -581,12 +606,42 @@ export class NotesForm extends FormApplication {
         return {
             title: '',
             content: '',
+            authorName: game.user?.name || 'Unknown',
+            timestamp: null,
             tags: [],
             visibility: 'private',
             sceneId: null,
             x: null,
             y: null
         };
+    }
+
+    setPosition(options={}) {
+        const minWidth = 420;
+        const minHeight = 420;
+        if (options.width && options.width < minWidth) options.width = minWidth;
+        if (options.height && options.height < minHeight) options.height = minHeight;
+
+        if (options.top !== undefined || options.left !== undefined) {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const windowWidth = options.width || this.position.width || 600;
+            const windowHeight = options.height || this.position.height || 560;
+
+            if (options.left !== undefined) {
+                options.left = Math.max(0, Math.min(options.left, viewportWidth - windowWidth));
+            }
+            if (options.top !== undefined) {
+                options.top = Math.max(0, Math.min(options.top, viewportHeight - windowHeight));
+            }
+        }
+
+        const pos = super.setPosition(options);
+        if (this.rendered) {
+            const { top, left, width, height } = this.position;
+            game.settings.set(MODULE.ID, 'notesWindowPosition', { top, left, width, height });
+        }
+        return pos;
     }
 
     async _updateObject(event, formData) {
@@ -613,15 +668,21 @@ export class NotesForm extends FormApplication {
         let visibility = formData.visibility;
         if (!visibility || (visibility !== 'party' && visibility !== 'private')) {
             // Try to get it from the form element directly
-            const form = this.element?.querySelector('form');
+            const form = getNativeElement(this.element)?.querySelector('form');
             if (form) {
-                const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
-                if (visibilityRadio) {
-                    visibility = visibilityRadio.value;
-                    console.log('NotesForm._updateObject: Got visibility from form radio:', visibility);
+                const visibilityToggle = form.querySelector('#notes-visibility-private');
+                if (visibilityToggle) {
+                    visibility = visibilityToggle.checked ? 'private' : 'party';
+                    console.log('NotesForm._updateObject: Got visibility from toggle:', visibility);
                 } else {
-                    console.warn('NotesForm._updateObject: No checked radio found, defaulting to private');
-                    visibility = 'private';
+                    const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
+                    if (visibilityRadio) {
+                        visibility = visibilityRadio.value;
+                        console.log('NotesForm._updateObject: Got visibility from form radio:', visibility);
+                    } else {
+                        console.warn('NotesForm._updateObject: No checked visibility input found, defaulting to private');
+                        visibility = 'private';
+                    }
                 }
             } else {
                 console.warn('NotesForm._updateObject: No form found, defaulting to private');
@@ -871,18 +932,19 @@ export class NotesForm extends FormApplication {
             data[key] = value;
         }
 
-        // Explicitly get the checked visibility radio button value
-        // FormData should include it, but let's be explicit to ensure it's captured
-        const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
-        if (visibilityRadio) {
-            data.visibility = visibilityRadio.value;
-            console.log('NotesForm._handleFormSubmit: Found checked radio:', visibilityRadio.value);
+        const visibilityToggle = form.querySelector('#notes-visibility-private');
+        if (visibilityToggle) {
+            data.visibility = visibilityToggle.checked ? 'private' : 'party';
         } else {
-            // Check all visibility radios to see what's available
-            const allRadios = form.querySelectorAll('input[name="visibility"]');
-            console.warn('NotesForm._handleFormSubmit: No checked radio found! Available radios:', Array.from(allRadios).map(r => ({ value: r.value, checked: r.checked })));
-            // Default to private if no radio is checked (shouldn't happen, but safety)
-            data.visibility = 'private';
+            const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
+            if (visibilityRadio) {
+                data.visibility = visibilityRadio.value;
+                console.log('NotesForm._handleFormSubmit: Found checked radio:', visibilityRadio.value);
+            } else {
+                const allRadios = form.querySelectorAll('input[name="visibility"]');
+                console.warn('NotesForm._handleFormSubmit: No checked radio found! Available radios:', Array.from(allRadios).map(r => ({ value: r.value, checked: r.checked })));
+                data.visibility = 'private';
+            }
         }
 
         // Debug: Log visibility value to help diagnose issues
@@ -915,6 +977,10 @@ export class NotesForm extends FormApplication {
         // Show tag suggestions (simple - could be enhanced later)
         const suggestionsDiv = html.querySelector('.tag-suggestions');
         if (suggestionsDiv && existingTags.size > 0) {
+            const hasHelper = (suggestionsDiv.textContent || '').trim().length > 0;
+            if (hasHelper) {
+                return;
+            }
             const tagsArray = Array.from(existingTags).sort();
             suggestionsDiv.innerHTML = `<small>Existing tags: ${tagsArray.slice(0, 10).join(', ')}${tagsArray.length > 10 ? '...' : ''}</small>`;
         }

@@ -365,11 +365,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 2px 6px;
+    padding: 3px 4px;
     border-radius: 4px;
-    font-size: 0.75em;
+    font-size: 0.8em;
     font-weight: bold;
-    margin-right: 8px;
+    margin-right: 0px;
 }
 
 .squire-tray[data-position="left"] .note-visibility-badge i {
@@ -462,16 +462,22 @@
     gap: 4px;
 }
 
+
 .squire-tray[data-position="left"] .note-tag {
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
     background: rgba(255, 47, 47, 0.2);
     border: 1px solid rgba(255, 47, 47, 0.4);
-    border-radius: 4px;
-    font-size: 0.9em;
+    border-radius: 3px;
+    font-size: 0.65em;
     color: #ddd;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
+
 
 .squire-tray[data-position="left"] .note-tag:hover {
     background: rgba(255, 47, 47, 0.4);

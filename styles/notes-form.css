@@ -102,21 +102,111 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
+    min-width: 0;
 }
 
-.notes-form-maintitle {
-    font-size: 1.05em;
-    font-weight: 700;
+.notes-form-title-input {
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
     color: rgba(255, 255, 255, 0.95);
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    padding: 6px 10px;
+    font-size: 1em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
-.notes-form-subtitle {
-    font-size: 0.72em;
-    font-weight: 500;
+.notes-form-title-input:focus {
+    outline: none;
+    border-color: rgba(255, 100, 0, 0.8);
+    box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.15);
+}
+
+.notes-form-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 0.75em;
     color: rgba(172, 159, 129, 0.9);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+.notes-form-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.notes-visibility-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notes-visibility-toggle-label {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.notes-visibility-toggle {
+    position: relative;
+    display: inline-block;
+    width: 35px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.notes-visibility-toggle input[type="checkbox"] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.notes-visibility-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.notes-visibility-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 10px;
+    width: 10px;
+    left: 2px;
+    bottom: 1px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.notes-visibility-toggle input:checked + .notes-visibility-toggle-slider {
+    background-color: rgba(128, 118, 96, 0.8);
+    border-color: rgba(128, 118, 96, 0.6);
+}
+
+.notes-visibility-toggle input:checked + .notes-visibility-toggle-slider:before {
+    transform: translateX(14px);
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.notes-visibility-toggle input:hover + .notes-visibility-toggle-slider {
+    border-color: rgba(255, 100, 0, 0.6);
+    box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.3);
 }
 
 .notes-form-body {
@@ -129,45 +219,60 @@
     overflow-y: auto;
 }
 
-.notes-form .form-group {
+.notes-section {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
+}
+
+.notes-section-header {
+    font-size: 0.9em;
+    font-weight: 800;
+    color: rgba(145, 133, 107, 1.0);
+    background: #18181c;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    border-bottom: 1px solid #444;
+    border-radius: 5px;
+    padding: 6px 10px;
+    text-transform: uppercase;
+}
+
+.notes-section-body {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.notes-form .form-group label {
-    color: var(--accent-color) !important;
-    font-weight: 600;
-    font-size: 0.8em;
-    text-transform: uppercase;
-    text-shadow: 1px 1px 0px #000;
+.notes-section-editor {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
-.notes-form .form-group input[type="text"],
-.notes-form .form-group textarea {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 4px !important;
-    color: #e0e0e0 !important;
-    padding: 6px 8px !important;
-    font-size: 0.9em !important;
+.notes-section-editor .notes-section-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0;
 }
 
-.notes-form .form-group input[type="text"]:focus,
-.notes-form .form-group textarea:focus {
-    outline: none !important;
-    border-color: rgba(255, 100, 0, 0.8) !important;
-    box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.15) !important;
+.notes-input {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #e0e0e0;
+    padding: 6px 8px;
+    font-size: 0.9em;
 }
 
-.notes-form .form-group textarea {
-    min-height: 120px;
-    resize: vertical;
-    font-family: inherit;
+.notes-input:focus {
+    outline: none;
+    border-color: rgba(255, 100, 0, 0.8);
+    box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.15);
 }
 
 /* Editor (ProseMirror) */
@@ -176,6 +281,10 @@
     border: 1px solid var(--border-color);
     border-radius: 4px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .notes-form .editor .editor-menu,
@@ -203,6 +312,7 @@
     color: #e0e0e0;
     padding: 8px 10px;
     min-height: 140px;
+    flex: 1 1 auto;
 }
 
 .notes-form .editor .editor-content:focus,
@@ -223,81 +333,20 @@
 }
 
 /* Visibility Toggle */
-.visibility-toggle {
-    display: flex;
-    gap: 10px;
-    margin-top: 5px;
-}
-
-.visibility-toggle .toggle-option {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.visibility-toggle .toggle-option:hover {
-    background: rgba(0, 0, 0, 0.55);
-    border-color: rgba(255, 100, 0, 0.5);
-}
-
-.visibility-toggle .toggle-option input[type="radio"] {
-    margin: 0;
-    cursor: pointer;
-}
-
-.visibility-toggle .toggle-option input[type="radio"]:checked + span {
-    color: var(--accent-color);
-    font-weight: bold;
-}
-
-.visibility-toggle .toggle-option span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #e0e0e0;
-    font-size: 0.95em;
-}
-
-.visibility-toggle .toggle-option span i {
-    color: var(--accent-color);
-}
-
-.visibility-toggle .toggle-option small {
-    color: #888;
-    font-size: 0.75em;
-    margin-top: 2px;
-}
-
 /* Scene Info */
 .scene-info {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 10px;
-}
-
-.scene-info label {
-    margin-bottom: 5px;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 
 .scene-info p {
     margin: 0;
-    color: #bbb;
+    color: #e0e0e0;
     font-size: 0.9em;
     display: flex;
     align-items: center;
     gap: 6px;
-}
-
-.scene-info p i {
-    color: var(--accent-color);
 }
 
 /* Form Actions */

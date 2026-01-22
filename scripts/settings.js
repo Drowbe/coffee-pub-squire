@@ -1431,6 +1431,13 @@ export const registerSettings = function() {
         default: {}
     });
 
+    game.settings.register(MODULE.ID, 'notesWindowPosition', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {}
+    });
+
 };
 
 // ***************************
