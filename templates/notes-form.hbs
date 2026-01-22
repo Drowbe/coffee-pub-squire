@@ -1,6 +1,18 @@
 <form class="notes-form" method="post">
+    <div class="notes-form-header">
+        <div class="notes-form-header-content">
+            <div class="notes-form-header-icon">
+                <i class="fa-solid fa-note-sticky"></i>
+            </div>
+            <div class="notes-form-header-title">
+                <div class="notes-form-maintitle">{{#if isEditing}}Edit Note{{else}}New Note{{/if}}</div>
+                <div class="notes-form-subtitle">Quick capture for party notes and reminders</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notes-form-body">
     <!-- Hidden fields -->
-    <input type="hidden" name="img" value="{{#if note.img}}{{note.img}}{{/if}}">
     <input type="hidden" name="sceneId" value="{{#if note.sceneId}}{{note.sceneId}}{{/if}}">
     <input type="hidden" name="x" value="{{#if note.x}}{{note.x}}{{/if}}">
     <input type="hidden" name="y" value="{{#if note.y}}{{note.y}}{{/if}}">
@@ -11,33 +23,10 @@
         <input type="text" id="title" name="title" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required>
     </div>
 
-    <!-- Image Section -->
-    <div class="notes-image-section" style="{{#unless note.img}}display: none;{{/unless}}">
-        <label>Image</label>
-        <div class="notes-image-preview-wrapper">
-            <img class="notes-image-preview" src="{{#if note.img}}{{note.img}}{{/if}}" alt="Preview">
-            <button type="button" class="notes-remove-image">
-                <i class="fa-solid fa-times"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Image Drop Zone -->
-    <div class="notes-image-drop-zone">
-        <div class="drop-zone-content">
-            <i class="fa-solid fa-image"></i>
-            <p>Drag image here or paste from clipboard</p>
-            <input type="file" accept="image/*" style="display: none;" id="image-file-input">
-            <button type="button" class="btn-small" onclick="document.getElementById('image-file-input').click()">
-                <i class="fa-solid fa-folder-open"></i> Browse
-            </button>
-        </div>
-    </div>
-
     <!-- Content -->
     <div class="form-group">
         <label for="content">Content</label>
-        <textarea id="content" name="content" rows="6" placeholder="Type your note here... Markdown supported.">{{#if note.content}}{{note.content}}{{/if}}</textarea>
+        {{editor note.content target="content" button=false owner=true editable=true engine="prosemirror"}}
     </div>
 
     <!-- Tags -->
@@ -73,6 +62,8 @@
         <p><i class="fa-solid fa-map-pin"></i> {{sceneName}}</p>
     </div>
     {{/if}}
+
+    </div>
 
     <!-- Action Buttons -->
     <div class="form-actions">

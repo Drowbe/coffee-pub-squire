@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
+import { getNativeElement, renderTemplate } from './helpers.js';
 import {
     PERMISSION_LEVELS,
     userCanAccessPage,
@@ -337,7 +337,6 @@ export class NotesPanel {
                     }
                     
                     // Load note data from the page
-                    const noteFlags = page.getFlag(MODULE.ID) || {};
                     const tags = page.getFlag(MODULE.ID, 'tags') || [];
                     const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
                     const authorId = page.getFlag(MODULE.ID, 'authorId');
@@ -348,33 +347,12 @@ export class NotesPanel {
                     // Get page content
                     const content = page.text?.content || '';
                     
-                    // Extract image from content if present
-                    let img = null;
-                    const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
-                    if (imgMatch) {
-                        img = imgMatch[1];
-                    }
-                    
-                    // Extract text content - remove image tags but keep other HTML
-                    // Use DOMParser to properly extract text while preserving formatting
-                    let textContent = content;
-                    if (img) {
-                        // Remove the image tag but keep the rest
-                        textContent = content.replace(/<img[^>]*>/gi, '').trim();
-                    }
-                    
-                    // If content is empty after removing image, set to empty string
-                    if (!textContent || textContent === '') {
-                        textContent = '';
-                    }
-                    
                     // Create note object for form
                     const noteData = {
                         pageId: page.id,
                         pageUuid: page.uuid,
                         title: page.name || 'Untitled Note',
-                        content: textContent,
-                        img: img,
+                        content: content,
                         tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
                         visibility: visibility,
                         sceneId: sceneId,
@@ -603,7 +581,6 @@ export class NotesForm extends FormApplication {
         return {
             title: '',
             content: '',
-            img: null,
             tags: [],
             visibility: 'private',
             sceneId: null,
@@ -839,19 +816,7 @@ export class NotesForm extends FormApplication {
     }
 
     _generateNoteContent(formData) {
-        let content = '';
-
-        // Add image if present
-        if (formData.img) {
-            content += `<img src="${formData.img}" alt="${formData.title || 'Note image'}">\n\n`;
-        }
-
-        // Add note content (markdown/HTML)
-        if (formData.content) {
-            content += formData.content;
-        }
-
-        return content;
+        return formData.content || '';
     }
 
     activateListeners(html) {
@@ -874,34 +839,15 @@ export class NotesForm extends FormApplication {
         // Handle form submission - prevent default FormApplication behavior
         const form = nativeHtml.querySelector('form');
         if (form) {
-            // Remove any existing submit handlers first
-            const newForm = form.cloneNode(true);
-            form.parentNode?.replaceChild(newForm, form);
-            
             const handler = (event) => {
                 event.preventDefault();
                 event.stopPropagation();
                 this._handleFormSubmit(event);
             };
-            newForm.addEventListener('submit', handler);
-            this._eventHandlers.push({ element: newForm, event: 'submit', handler });
-            
-            // Also prevent FormApplication's default submit handler
-            const submitButton = newForm.querySelector('button[type="submit"]');
-            if (submitButton) {
-                const submitHandler = (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    newForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-                };
-                submitButton.addEventListener('click', submitHandler);
-                this._eventHandlers.push({ element: submitButton, event: 'click', handler: submitHandler });
-            }
+            form.addEventListener('submit', handler);
+            this._eventHandlers.push({ element: form, event: 'submit', handler });
         }
 
-        // Set up image paste/drag
-        this._setupImagePaste(nativeHtml);
-        
         // Set up tag autocomplete (simple - just show existing tags)
         this._setupTagAutocomplete(nativeHtml);
     }
@@ -910,6 +856,13 @@ export class NotesForm extends FormApplication {
         event.preventDefault();
         
         const form = event.target.closest('form') || event.target;
+        if (this._saveEditor) {
+            await this._saveEditor('content');
+        } else if (this._saveEditors) {
+            await this._saveEditors();
+        } else if (this.editors?.content?.save) {
+            await this.editors.content.save();
+        }
         const formData = new FormData(form);
         
         // Convert FormData to object
@@ -937,177 +890,6 @@ export class NotesForm extends FormApplication {
 
         // Call _updateObject
         await this._updateObject(event, data);
-    }
-
-    _setupImagePaste(html) {
-        // Image drop zone
-        const imageDropZone = html.querySelector('.notes-image-drop-zone');
-        if (imageDropZone) {
-            const newDropZone = imageDropZone.cloneNode(true);
-            imageDropZone.parentNode?.replaceChild(newDropZone, imageDropZone);
-
-            // Drag handlers
-            const dragEnter = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                newDropZone.classList.add('drag-active');
-            };
-
-            const dragLeave = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                newDropZone.classList.remove('drag-active');
-            };
-
-            const dragOver = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.dataTransfer.dropEffect = 'copy';
-            };
-
-            const drop = async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                newDropZone.classList.remove('drag-active');
-
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    await this._handleImageFile(files[0], html);
-                }
-            };
-
-            newDropZone.addEventListener('dragenter', dragEnter);
-            newDropZone.addEventListener('dragleave', dragLeave);
-            newDropZone.addEventListener('dragover', dragOver);
-            newDropZone.addEventListener('drop', drop);
-
-            this._eventHandlers.push(
-                { element: newDropZone, event: 'dragenter', handler: dragEnter },
-                { element: newDropZone, event: 'dragleave', handler: dragLeave },
-                { element: newDropZone, event: 'dragover', handler: dragOver },
-                { element: newDropZone, event: 'drop', handler: drop }
-            );
-        }
-
-        // Paste handler on content textarea
-        const contentTextarea = html.querySelector('textarea[name="content"]');
-        if (contentTextarea) {
-            const pasteHandler = async (e) => {
-                const items = e.clipboardData?.items;
-                if (!items) return;
-
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].type.indexOf('image') !== -1) {
-                        e.preventDefault();
-                        const file = items[i].getAsFile();
-                        await this._handleImageFile(file, html);
-                        break;
-                    }
-                }
-            };
-
-            contentTextarea.addEventListener('paste', pasteHandler);
-            this._eventHandlers.push({ element: contentTextarea, event: 'paste', handler: pasteHandler });
-        }
-
-        // File input for manual image selection
-        const fileInput = html.querySelector('input[type="file"]');
-        const browseButton = html.querySelector('button[onclick*="image-file-input"]');
-        
-        if (browseButton && fileInput) {
-            // Remove inline onclick and set up proper handler
-            browseButton.removeAttribute('onclick');
-            const handler = () => {
-                fileInput.click();
-            };
-            browseButton.addEventListener('click', handler);
-            this._eventHandlers.push({ element: browseButton, event: 'click', handler });
-        }
-        
-        if (fileInput) {
-            const changeHandler = async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                    await this._handleImageFile(file, html);
-                    // Reset input so same file can be selected again
-                    e.target.value = '';
-                }
-            };
-            fileInput.addEventListener('change', changeHandler);
-            this._eventHandlers.push({ element: fileInput, event: 'change', handler: changeHandler });
-        }
-
-        // Remove image button
-        const removeImageButton = html.querySelector('.notes-remove-image');
-        if (removeImageButton) {
-            const handler = () => {
-                this.note.img = null;
-                const imgInput = html.querySelector('input[name="img"]');
-                const imgPreview = html.querySelector('.notes-image-preview');
-                const imgSection = html.querySelector('.notes-image-section');
-                if (imgInput) {
-                    imgInput.value = '';
-                }
-                if (imgPreview) {
-                    imgPreview.src = '';
-                }
-                if (imgSection) {
-                    imgSection.style.display = 'none';
-                }
-            };
-            removeImageButton.addEventListener('click', handler);
-            this._eventHandlers.push({ element: removeImageButton, event: 'click', handler });
-        }
-    }
-
-    async _handleImageFile(file, html) {
-        if (!file.type.startsWith('image/')) {
-            ui.notifications.warn('Please select an image file.');
-            return;
-        }
-
-        try {
-            // Use FoundryVTT's /upload endpoint
-            // Files are stored in: FoundryVTT/Data/uploads/ (server uploads directory)
-            // The path returned is relative to the FoundryVTT data root
-            const formData = new FormData();
-            formData.append('file', file);
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Upload failed');
-            }
-
-            const result = await response.json();
-            // Result contains: { url: string, path: string }
-            // Path is typically: "uploads/filename.jpg" (relative to Data directory)
-            const imagePath = result.url || result.path;
-
-            // Update hidden img input
-            const imgInput = html.querySelector('input[name="img"]');
-            if (imgInput) {
-                imgInput.value = imagePath;
-            }
-
-            // Show image preview
-            const imgPreview = html.querySelector('.notes-image-preview');
-            const imgSection = html.querySelector('.notes-image-section');
-            if (imgPreview) {
-                imgPreview.src = imagePath;
-            }
-            if (imgSection) {
-                imgSection.style.display = '';
-            }
-
-            this.note.img = imagePath;
-            ui.notifications.info('Image uploaded successfully.');
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            ui.notifications.error('Failed to upload image: ' + error.message);
-        }
     }
 
     _setupTagAutocomplete(html) {

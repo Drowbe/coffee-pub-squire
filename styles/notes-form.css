@@ -1,10 +1,11 @@
 /* ----- VARIABLES ----- */
 :root {
     --border-color: #444;
-    --accent-color: #9f9275;
-    --background-color: rgba(0, 0, 0, 0.95);
-    --header-background: rgba(0, 0, 0, 0.9);
-    --content-background: rgba(50, 50, 50, 0.8);
+    --accent-color: #ac9f81;
+    --background-color: #232323;
+    --header-background: #18181c;
+    --content-background: #232323;
+    --banner-image: url('../images/banner-character-dark.webp');
 }
 
 /* ----- WINDOW STRUCTURE ----- */
@@ -12,15 +13,15 @@
 /* Window Container */
 #notes-quick-form {
     background: var(--background-color) !important;
-    border: 2px solid var(--border-color) !important;
-    border-radius: 6px !important;
-    box-shadow: 0 0 20px #000 !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Window header */
 #notes-quick-form .window-header {
     background: var(--header-background) !important;
-    border-bottom: 2px solid var(--border-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     color: var(--accent-color) !important;
     font-family: "Signika", sans-serif !important;
     padding: 0 8px !important;
@@ -50,7 +51,7 @@
 /* Window content */
 #notes-quick-form .window-content {
     background: var(--content-background) !important;
-    padding: 15px !important;
+    padding: 0 !important;
     color: #e0e0e0 !important;
 }
 
@@ -59,28 +60,98 @@
 .notes-form {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    height: 100%;
+    font-family: "Signika", sans-serif;
+}
+
+.notes-form-header {
+    background: var(--header-background);
+    background-image: var(--banner-image);
+    background-blend-mode: multiply;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 14px;
+}
+
+.notes-form-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notes-form-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(172, 159, 129, 0.9);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.notes-form-header-icon i {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.2em;
+}
+
+.notes-form-header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.notes-form-maintitle {
+    font-size: 1.05em;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.notes-form-subtitle {
+    font-size: 0.72em;
+    font-weight: 500;
+    color: rgba(172, 159, 129, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.notes-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .notes-form .form-group {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 12px;
 }
 
 .notes-form .form-group label {
     color: var(--accent-color) !important;
-    font-weight: bold;
-    font-size: 0.9em;
+    font-weight: 600;
+    font-size: 0.8em;
     text-transform: uppercase;
     text-shadow: 1px 1px 0px #000;
 }
 
 .notes-form .form-group input[type="text"],
 .notes-form .form-group textarea {
-    background: rgba(0, 0, 0, 0.6) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 3px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
     color: #e0e0e0 !important;
     padding: 6px 8px !important;
     font-size: 0.9em !important;
@@ -89,8 +160,8 @@
 .notes-form .form-group input[type="text"]:focus,
 .notes-form .form-group textarea:focus {
     outline: none !important;
-    border-color: var(--accent-color) !important;
-    box-shadow: 0 0 5px rgba(159, 146, 117, 0.3) !important;
+    border-color: rgba(255, 100, 0, 0.8) !important;
+    box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.15) !important;
 }
 
 .notes-form .form-group textarea {
@@ -99,97 +170,45 @@
     font-family: inherit;
 }
 
-/* Image Section */
-.notes-image-section {
-    margin: 10px 0;
-}
-
-.notes-image-preview-wrapper {
-    position: relative;
-    display: inline-block;
-    margin-top: 5px;
-}
-
-.notes-image-preview {
-    max-width: 200px;
-    max-height: 200px;
+/* Editor (ProseMirror) */
+.notes-form .editor {
+    background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.3);
+    overflow: hidden;
 }
 
-.notes-remove-image {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: rgba(200, 0, 0, 0.9) !important;
-    border: 1px solid #a00 !important;
-    border-radius: 50% !important;
-    width: 24px !important;
-    height: 24px !important;
-    color: white !important;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
+.notes-form .editor .editor-menu,
+.notes-form .editor .editor-toolbar {
+    background: var(--header-background);
+    border-bottom: 1px solid var(--border-color);
+    padding: 4px;
 }
 
-.notes-remove-image:hover {
-    background: rgba(255, 0, 0, 1) !important;
-    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5) !important;
-}
-
-/* Image Drop Zone */
-.notes-image-drop-zone {
-    border: 2px dashed var(--border-color);
+.notes-form .editor .editor-menu button,
+.notes-form .editor .editor-toolbar button {
+    color: #e0e0e0;
+    border: 1px solid transparent;
     border-radius: 4px;
-    padding: 20px;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-    margin: 10px 0;
 }
 
-.notes-image-drop-zone:hover,
-.notes-image-drop-zone.drag-active {
+.notes-form .editor .editor-menu button:hover,
+.notes-form .editor .editor-toolbar button:hover {
     border-color: var(--accent-color);
-    background: rgba(159, 146, 117, 0.1);
 }
 
-.notes-image-drop-zone .drop-zone-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    color: #bbb;
+.notes-form .editor .editor-content,
+.notes-form .editor .ProseMirror,
+.notes-form .editor .prosemirror {
+    color: #e0e0e0;
+    padding: 8px 10px;
+    min-height: 140px;
 }
 
-.notes-image-drop-zone .drop-zone-content i {
-    font-size: 2em;
-    color: var(--accent-color);
-}
-
-.notes-image-drop-zone .drop-zone-content p {
-    margin: 0;
-    font-size: 0.9em;
-}
-
-.notes-image-drop-zone .btn-small {
-    background: rgba(50, 50, 50, 0.8) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 3px !important;
-    color: #e0e0e0 !important;
-    padding: 6px 12px !important;
-    cursor: pointer;
-    font-size: 0.85em;
-    transition: all 0.2s ease;
-}
-
-.notes-image-drop-zone .btn-small:hover {
-    background: rgba(70, 70, 70, 0.9) !important;
-    border-color: var(--accent-color) !important;
-    color: #fff !important;
+.notes-form .editor .editor-content:focus,
+.notes-form .editor .ProseMirror:focus,
+.notes-form .editor .prosemirror:focus {
+    outline: none;
 }
 
 /* Tag Suggestions */
@@ -198,7 +217,7 @@
 }
 
 .tag-suggestions small {
-    color: #888;
+    color: rgba(145, 133, 107, 0.9);
     font-size: 0.75em;
     font-style: italic;
 }
@@ -215,17 +234,17 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.4);
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.35);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .visibility-toggle .toggle-option:hover {
-    background: rgba(0, 0, 0, 0.6);
-    border-color: var(--accent-color);
+    background: rgba(0, 0, 0, 0.55);
+    border-color: rgba(255, 100, 0, 0.5);
 }
 
 .visibility-toggle .toggle-option input[type="radio"] {
@@ -260,7 +279,7 @@
 .scene-info {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 10px;
 }
 
@@ -286,34 +305,36 @@
     display: flex;
     gap: 10px;
     justify-content: flex-end;
-    margin-top: 10px;
-    padding-top: 15px;
+    padding: 10px 14px;
     border-top: 1px solid var(--border-color);
+    background: var(--header-background);
 }
 
 .form-actions button {
     padding: 8px 16px;
-    border-radius: 3px;
+    border-radius: 4px;
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid var(--border-color);
     text-shadow: 1px 1px 0px #000;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .form-actions .btn-primary {
-    background: rgba(40, 100, 60, 0.8) !important;
-    border-color: #4a6 !important;
-    color: #fff !important;
+    background: rgba(90, 90, 90, 0.9) !important;
+    border-color: rgba(52, 52, 52, 1.0) !important;
+    color: rgba(235, 233, 225, 1.0) !important;
 }
 
 .form-actions .btn-primary:hover {
-    background: rgba(60, 140, 80, 0.9) !important;
-    box-shadow: 0 0 5px rgba(40, 160, 60, 0.5) !important;
+    background: rgba(55, 138, 63, 0.8) !important;
+    border-color: rgba(55, 138, 63, 1.0) !important;
 }
 
 .form-actions .btn-secondary {
-    background: rgba(50, 50, 50, 0.8) !important;
+    background: #232323 !important;
     border-color: var(--border-color) !important;
     color: #e0e0e0 !important;
 }
