@@ -5,7 +5,7 @@
             {{#if isGM}}
             <i class="fa-solid fa-cog set-journal-button" title="Set Journal"></i>
             {{/if}}
-            <i class="fa-solid fa-plus new-note-button" title="New Note"></i>
+            <i class="fa-solid fa-circle-plus new-note-button" title="New Note"></i>
             <i class="fa-solid fa-sync-alt refresh-notes-button" title="Refresh"></i>
         </div>
     </div>
@@ -84,7 +84,7 @@
                                 </button>
                                 {{else}}
                                 <button class="note-pin" data-uuid="{{uuid}}" title="Pin to Canvas">
-                                    <i class="fa-solid fa-thumbtack"></i>
+                                    <i class="fa-solid fa-location-dot"></i>
                                 </button>
                                 {{/if}}
                                 <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">
@@ -92,13 +92,6 @@
                                 </button>
                             </div>
                         </div>
-
-                        <!-- Note Image -->
-                        {{#if img}}
-                        <div class="note-image">
-                            <img src="{{img}}" alt="{{name}}">
-                        </div>
-                        {{/if}}
 
                         <!-- Note Content -->
                         <div class="note-content">
@@ -137,7 +130,17 @@
 
                         <!-- Note Footer: author (left) | timestamp (right) -->
                         <div class="note-footer">
-                            <span class="note-author"><i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}</span>
+                            <span class="note-author">
+                                {{#if editorAvatars.length}}
+                                <span class="note-editor-avatars">
+                                    {{#each editorAvatars}}
+                                    <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
+                                    {{/each}}
+                                </span>
+                                {{else}}
+                                <i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}
+                                {{/if}}
+                            </span>
                             {{#if timestamp}}
                             <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
                             {{/if}}

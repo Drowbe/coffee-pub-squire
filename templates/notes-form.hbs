@@ -2,7 +2,11 @@
     <div class="notes-form-header">
         <div class="notes-form-header-content">
             <div class="notes-form-header-icon">
-                <i class="fa-solid fa-note-sticky"></i>
+                {{#if note.headerImage}}
+                    <img src="{{note.headerImage}}" alt="Note image" class="notes-form-header-image">
+                {{else}}
+                    <i class="fa-solid fa-note-sticky"></i>
+                {{/if}}
             </div>
             <div class="notes-form-header-title">
                 <input type="text" id="title" name="title" class="notes-form-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required>

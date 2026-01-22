@@ -31,6 +31,7 @@ export class NotesParser extends BaseParser {
         const visibility = page.getFlag(MODULE.ID, 'visibility') || noteFlags.visibility || 'private';
         const tags = page.getFlag(MODULE.ID, 'tags') || noteFlags.tags || [];
         const authorId = page.getFlag(MODULE.ID, 'authorId') || noteFlags.authorId;
+        const editorIds = page.getFlag(MODULE.ID, 'editorIds') || noteFlags.editorIds || [];
         const sceneId = page.getFlag(MODULE.ID, 'sceneId') || noteFlags.sceneId;
         const x = page.getFlag(MODULE.ID, 'x') ?? noteFlags.x;
         const y = page.getFlag(MODULE.ID, 'y') ?? noteFlags.y;
@@ -114,6 +115,7 @@ export class NotesParser extends BaseParser {
             y: typeof y === 'number' ? y : null,
             authorId: authorId || null,
             authorName: authorName,
+            editorIds: Array.isArray(editorIds) ? editorIds : [],
             visibility: parsedVisibility,
             timestamp: timestamp || null,
             uuid: page.uuid

@@ -146,6 +146,20 @@ export class NotesPanel {
                     if (!note.authorName && note.authorId) {
                         note.authorName = note.authorId;
                     }
+
+                    if (!Array.isArray(note.editorIds)) {
+                        note.editorIds = [];
+                    }
+
+                    const editorIds = [...new Set(note.editorIds.length ? note.editorIds : (note.authorId ? [note.authorId] : []))];
+                    note.editorAvatars = editorIds.map(id => {
+                        const user = game.users.get(id) || game.users.find(u => u.id === id);
+                        return {
+                            id,
+                            name: user?.name || id || 'Unknown',
+                            img: user?.avatar || user?.img || 'icons/svg/mystery-man.svg'
+                        };
+                    });
                     
                     // Debug: Log visibility to verify it's being read correctly
                     const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
@@ -590,11 +604,14 @@ export class NotesForm extends FormApplication {
         const tagsText = Array.isArray(this.note.tags)
             ? this.note.tags.join(', ')
             : (typeof this.note.tags === 'string' ? this.note.tags : '');
+        const headerImageMatch = (this.note.content || '').match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+        const headerImage = headerImageMatch ? headerImageMatch[1] : null;
 
         return {
             note: {
                 ...this.note,
-                tagsText
+                tagsText,
+                headerImage
             },
             isGM: game.user.isGM,
             isEditing: this.isEditing,
@@ -609,11 +626,50 @@ export class NotesForm extends FormApplication {
             authorName: game.user?.name || 'Unknown',
             timestamp: null,
             tags: [],
-            visibility: 'private',
+            visibility: 'party',
             sceneId: null,
             x: null,
             y: null
         };
+    }
+
+    _buildNoteOwnership(visibility, authorId) {
+        const ownership = {
+            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
+        };
+        if (visibility === 'party') {
+            game.users.forEach(user => {
+                if (!user.isGM) {
+                    ownership[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                }
+            });
+            if (authorId && !ownership[authorId]) {
+                ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+            }
+        } else if (authorId) {
+            ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+        }
+        return ownership;
+    }
+
+    async _syncNoteOwnership(page, visibility, authorId) {
+        if (!page) return;
+        if (game.user.isGM) {
+            const ownership = this._buildNoteOwnership(visibility, authorId);
+            await page.update({ ownership });
+            return;
+        }
+
+        const blacksmith = getBlacksmith();
+        if (blacksmith?.sockets?.emit) {
+            await blacksmith.sockets.emit('squire:updateNoteOwnership', {
+                pageUuid: page.uuid,
+                visibility,
+                authorId
+            });
+        } else {
+            ui.notifications.warn('Socket manager is not ready. Ownership sync will occur when a GM saves.');
+        }
     }
 
     setPosition(options={}) {
@@ -724,35 +780,18 @@ export class NotesForm extends FormApplication {
                     // Update flags
                     await page.setFlag(MODULE.ID, 'tags', tags);
                     await page.setFlag(MODULE.ID, 'visibility', visibility);
+                    const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
+                    const editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
+                    await page.setFlag(MODULE.ID, 'editorIds', editorIds);
                     if (formData.sceneId) {
                         await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
                         await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
                         await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
                     }
                     
-                    // Update ownership if GM and visibility changed
-                    if (game.user.isGM) {
-                        const ownership = {};
-                        const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
-                        ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                        ownership.default = visibility === 'party' 
-                            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
-                            : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
-                        await page.update({ ownership });
-                    }
-                    
                     console.log('NotesForm: Updated existing note', { pageId: page.id, flags: page.getFlag(MODULE.ID) });
-                    
-                    // Update ownership if GM and visibility changed
-                    if (game.user.isGM) {
-                        const ownership = {};
-                        const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
-                        ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                        ownership.default = visibility === 'party' 
-                            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
-                            : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
-                        await page.update({ ownership });
-                    }
+                    const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                    await this._syncNoteOwnership(page, visibility, authorId);
                 } catch (error) {
                     console.error('Error updating note:', error);
                     ui.notifications.error(`Failed to update note: ${error.message}`);
@@ -779,6 +818,7 @@ export class NotesForm extends FormApplication {
                             noteType: 'sticky',
                             tags: tags,
                             visibility: visibility,
+                            editorIds: [game.user.id],
                             sceneId: formData.sceneId || null,
                             x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
                             y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
@@ -796,27 +836,8 @@ export class NotesForm extends FormApplication {
                 const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
                 console.log('NotesForm: Page created, saved visibility flag:', savedVisibility, 'expected:', visibility);
 
-                // Set ownership based on visibility (only GMs can modify ownership programmatically)
-                // For non-GM users, the page will inherit the journal's permissions
-                if (game.user.isGM) {
-                    const ownership = {};
-                    if (visibility === 'party') {
-                        // Party note: author = Owner, all players = Observer
-                        ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                        ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-                    } else {
-                        // Private note: author = Owner, others = None (GM can see via journal ownership)
-                        ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                        ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
-                    }
-                    await page.update({ ownership });
-                    console.log('NotesForm: Ownership set for GM:', ownership);
-                } else {
-                    // For non-GM users, we can't set ownership programmatically
-                    // The page will inherit the journal's default permissions
-                    // The visibility flag is still set correctly, which we use for filtering
-                    console.log('NotesForm: Non-GM user - page ownership will inherit from journal permissions. Visibility flag:', savedVisibility);
-                }
+                const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                await this._syncNoteOwnership(page, visibility, authorId);
             }
 
             // If canvas location provided, register pin with Blacksmith (if available)

@@ -2017,6 +2017,48 @@ Hooks.once('ready', async function() {
     // Register module settings
     registerSettings();
 
+    // Register socket handler for GM ownership sync on notes
+    try {
+        await blacksmith.sockets?.register('squire:updateNoteOwnership', async (data) => {
+            if (!game.user.isGM) return;
+            if (!data?.pageUuid) return;
+            const page = await foundry.utils.fromUuid(data.pageUuid);
+            if (!page) return;
+            const visibility = data.visibility === 'party' ? 'party' : 'private';
+            const authorId = data.authorId || page.getFlag(MODULE.ID, 'authorId') || null;
+
+            const ownership = {
+                default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
+            };
+            if (visibility === 'party') {
+                game.users.forEach(user => {
+                    if (!user.isGM) {
+                        ownership[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                    }
+                });
+                if (authorId && !ownership[authorId]) {
+                    ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                }
+            } else if (authorId) {
+                ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+            }
+
+            await page.setFlag(MODULE.ID, 'visibility', visibility);
+            if (authorId) {
+                await page.setFlag(MODULE.ID, 'authorId', authorId);
+            }
+            await page.update({ ownership });
+        });
+    } catch (error) {
+        blacksmith.utils?.postConsoleAndNotification?.(
+            MODULE.NAME,
+            'Failed to register notes ownership socket handler',
+            { error },
+            true,
+            false
+        );
+    }
+
     // Register dice tray with Blacksmith menubar
     try {
         const { openDiceTray } = await import('./panel-dicetray.js');

@@ -1,28 +1,29 @@
 /* ----- VARIABLES ----- */
 :root {
-    --border-color: #444;
-    --accent-color: #ac9f81;
-    --background-color: #232323;
-    --header-background: #18181c;
-    --content-background: #232323;
-    --banner-image: url('../images/banner-character-dark.webp');
+    --notes-border-color: #444;
+    --notes-accent-color: #ac9f81;
+    --notes-background-color: #232323;
+    --notes-header-background: #18181c;
+    --notes-content-background: #232323;
+    --notes-banner-image: url('../images/backgrounds/background-skull-red.webp');
+
 }
 
 /* ----- WINDOW STRUCTURE ----- */
 
 /* Window Container */
 #notes-quick-form {
-    background: var(--background-color) !important;
-    border: 1px solid var(--border-color) !important;
+    background: var(--notes-background-color) !important;
+    border: 1px solid var(--notes-border-color) !important;
     border-radius: 8px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Window header */
 #notes-quick-form .window-header {
-    background: var(--header-background) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    color: var(--accent-color) !important;
+    background: var(--notes-header-background) !important;
+    border-bottom: 1px solid var(--notes-border-color) !important;
+    color: var(--notes-accent-color) !important;
     font-family: "Signika", sans-serif !important;
     padding: 0 8px !important;
     height: 30px !important;
@@ -30,7 +31,7 @@
 }
 
 #notes-quick-form .window-header .window-title {
-    color: var(--accent-color) !important;
+    color: var(--notes-accent-color) !important;
     text-transform: uppercase !important;
     font-weight: bold !important;
     font-size: 1.2em !important;
@@ -38,19 +39,19 @@
 }
 
 #notes-quick-form .window-header .header-button {
-    color: var(--accent-color) !important;
+    color: var(--notes-accent-color) !important;
     border: none !important;
     background: none !important;
 }
 
 #notes-quick-form .window-header .header-button:hover {
     color: #fff !important;
-    text-shadow: 0 0 8px var(--accent-color) !important;
+    text-shadow: 0 0 8px var(--notes-accent-color) !important;
 }
 
 /* Window content */
 #notes-quick-form .window-content {
-    background: var(--content-background) !important;
+    background: var(--notes-content-background) !important;
     padding: 0 !important;
     color: #e0e0e0 !important;
 }
@@ -64,15 +65,24 @@
     font-family: "Signika", sans-serif;
 }
 
+
+
+
+
+/* Window Header - Sticky Top */
+
+
 .notes-form-header {
-    background: var(--header-background);
-    background-image: var(--banner-image);
+    background: var(--notes-header-background);
+    background-image: var(--notes-banner-image);
+    flex-shrink: 0; /* Don't shrink */
     background-blend-mode: multiply;
     background-position: top center;
     background-repeat: no-repeat;
     background-size: cover;
-    border-bottom: 1px solid var(--border-color);
-    padding: 12px 14px;
+    padding: 1em;
+    padding: 1em;
+    border-bottom: 1px solid var(--notes-border-color);
 }
 
 .notes-form-header-content {
@@ -96,6 +106,13 @@
 .notes-form-header-icon i {
     color: rgba(255, 255, 255, 0.9);
     font-size: 1.2em;
+}
+
+.notes-form-header-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .notes-form-header-title {
@@ -241,7 +258,7 @@
 
 .notes-section-body {
     background: rgba(0, 0, 0, 0.25);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--notes-border-color);
     border-radius: 6px;
     padding: 10px 12px;
     display: flex;
@@ -278,7 +295,7 @@
 /* Editor (ProseMirror) */
 .notes-form .editor {
     background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--notes-border-color);
     border-radius: 4px;
     overflow: hidden;
     display: flex;
@@ -289,8 +306,8 @@
 
 .notes-form .editor .editor-menu,
 .notes-form .editor .editor-toolbar {
-    background: var(--header-background);
-    border-bottom: 1px solid var(--border-color);
+    background: var(--notes-header-background);
+    border-bottom: 1px solid var(--notes-border-color);
     padding: 4px;
 }
 
@@ -303,7 +320,7 @@
 
 .notes-form .editor .editor-menu button:hover,
 .notes-form .editor .editor-toolbar button:hover {
-    border-color: var(--accent-color);
+    border-color: var(--notes-accent-color);
 }
 
 .notes-form .editor .editor-content,
@@ -381,8 +398,8 @@
     gap: 10px;
     justify-content: flex-end;
     padding: 10px 14px;
-    border-top: 1px solid var(--border-color);
-    background: var(--header-background);
+    border-top: 1px solid var(--notes-border-color);
+    background: var(--notes-header-background);
 }
 
 .form-actions button {
@@ -391,7 +408,7 @@
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--notes-border-color);
     text-shadow: 1px 1px 0px #000;
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -410,13 +427,13 @@
 
 .form-actions .btn-secondary {
     background: #232323 !important;
-    border-color: var(--border-color) !important;
+    border-color: var(--notes-border-color) !important;
     color: #e0e0e0 !important;
 }
 
 .form-actions .btn-secondary:hover {
     background: rgba(70, 70, 70, 0.9) !important;
-    border-color: var(--accent-color) !important;
+    border-color: var(--notes-accent-color) !important;
     color: #fff !important;
 }
 

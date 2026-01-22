@@ -554,6 +554,23 @@
     color: rgba(186, 168, 137, 0.9);
 }
 
+
+/* === Editor Avatars === */
+.squire-tray[data-position="left"] .note-editor-avatars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.squire-tray[data-position="left"] .note-editor-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 3px;
+    border: 1px solid rgba(186, 168, 137, 0.2);
+    object-fit: cover;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
 .squire-tray[data-position="left"] .no-notes {
     display: flex;
     flex-direction: column;
