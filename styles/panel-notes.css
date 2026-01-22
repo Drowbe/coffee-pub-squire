@@ -245,6 +245,17 @@
     color: #fff;
 }
 
+.squire-tray[data-position="left"] .notes-search .toggle-notes-filters-button {
+    right: 30px;
+    opacity: 0.8;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .notes-filter-section.collapsed {
+    display: none;
+}
+
 .squire-tray[data-position="left"] .notes-tag-filter {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 10px;

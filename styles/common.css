@@ -9,12 +9,12 @@
 
 .tray-title-small {
     color: #9f9275;
-    font-size: 0.85em;
+    font-size: 1.0em;
     text-transform: uppercase;
     letter-spacing: 0.2px;
     font-weight: 800;
-    margin: 0px 0px 0px 0px;
-    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 6px 0px;
+    padding: 3px 3px 3px 3px;
     display: flex;
     justify-content: space-between;
     align-items: center;

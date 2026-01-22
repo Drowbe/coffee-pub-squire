@@ -17,44 +17,47 @@
             <div class="notes-search">
                 <input type="text" class="notes-search-input" placeholder="Search notes..." value="{{filters.search}}">
                 <i class="fa-solid fa-search"></i>
+                <i class="fa-solid fa-filter toggle-notes-filters-button" title="Toggle filters"></i>
             </div>
 
-            <!-- Tag Cloud -->
-            {{#if allTags.length}}
-            <div class="notes-tag-filter">
-                <div class="tag-filter-header">
-                    <span>Tags</span>
-                    <i class="fa-solid fa-chevron-down tag-filter-toggle"></i>
+            <div class="notes-filter-section {{#unless filtersOpen}}collapsed{{/unless}}">
+                <!-- Tag Cloud -->
+                {{#if allTags.length}}
+                <div class="notes-tag-filter">
+                    <div class="tag-filter-header">
+                        <span>Tags</span>
+                        <i class="fa-solid fa-chevron-down tag-filter-toggle"></i>
+                    </div>
+                    <div class="tag-cloud">
+                        {{#each allTags}}
+                        <span class="tag-item" data-tag="{{this}}">
+                            {{toUpperCase this}}
+                        </span>
+                        {{/each}}
+                    </div>
                 </div>
-                <div class="tag-cloud">
-                    {{#each allTags}}
-                    <span class="tag-item" data-tag="{{this}}">
-                        {{this}}
-                    </span>
-                    {{/each}}
+                {{/if}}
+
+                <!-- Scene Filter -->
+                {{#if scenes.length}}
+                <div class="notes-scene-filter">
+                    <select class="scene-filter-select">
+                        <option value="all" {{#if (eq filters.scene 'all')}}selected{{/if}}>All Scenes</option>
+                        {{#each scenes}}
+                        <option value="{{this}}" {{#if (eq ../filters.scene this)}}selected{{/if}}>{{this}}</option>
+                        {{/each}}
+                    </select>
                 </div>
-            </div>
-            {{/if}}
+                {{/if}}
 
-            <!-- Scene Filter -->
-            {{#if scenes.length}}
-            <div class="notes-scene-filter">
-                <select class="scene-filter-select">
-                    <option value="all" {{#if (eq filters.scene 'all')}}selected{{/if}}>All Scenes</option>
-                    {{#each scenes}}
-                    <option value="{{this}}" {{#if (eq ../filters.scene this)}}selected{{/if}}>{{this}}</option>
-                    {{/each}}
-                </select>
-            </div>
-            {{/if}}
-
-            <!-- Visibility Filter -->
-            <div class="notes-visibility-filter">
-                <select class="visibility-filter-select">
-                    <option value="all" {{#if (eq filters.visibility 'all')}}selected{{/if}}>All Notes</option>
-                    <option value="private" {{#if (eq filters.visibility 'private')}}selected{{/if}}>Private</option>
-                    <option value="party" {{#if (eq filters.visibility 'party')}}selected{{/if}}>Party</option>
-                </select>
+                <!-- Visibility Filter -->
+                <div class="notes-visibility-filter">
+                    <select class="visibility-filter-select">
+                        <option value="all" {{#if (eq filters.visibility 'all')}}selected{{/if}}>All Notes</option>
+                        <option value="private" {{#if (eq filters.visibility 'private')}}selected{{/if}}>Private</option>
+                        <option value="party" {{#if (eq filters.visibility 'party')}}selected{{/if}}>Party</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -63,7 +66,7 @@
             {{#if notes.length}}
                 <div class="notes-list">
                     {{#each notes}}
-                    <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{#if tags}}{{tags.join ','}}{{/if}}">
+                    <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}">
                         <!-- Note Header: badge | title | actions -->
                         <div class="note-header">
                             <span class="note-visibility-badge {{visibility}}">
@@ -113,7 +116,7 @@
                             <div class="note-tags-label">Tags:</div>
                             <div class="note-tags">
                                 {{#each tags}}
-                                <span class="note-tag">{{this}}</span>
+                                <span class="note-tag">{{toUpperCase this}}</span>
                                 {{/each}}
                             </div>
                         </div>

@@ -3,9 +3,9 @@
     --notes-border-color: #444;
     --notes-accent-color: #ac9f81;
     --notes-background-color: #232323;
-    --notes-header-background: #18181c;
+    --notes-header-background: rgba(0, 0, 0, 0.7);
     --notes-content-background: #232323;
-    --notes-banner-image: url('../images/backgrounds/background-skull-red.webp');
+    --notes-banner-image: url('../images/banner-character-dark.webp');
 
 }
 
@@ -81,7 +81,7 @@
     background-repeat: no-repeat;
     background-size: cover;
     padding: 1em;
-    padding: 1em;
+    min-height: 72px;
     border-bottom: 1px solid var(--notes-border-color);
 }
 
@@ -91,12 +91,13 @@
     gap: 12px;
 }
 
+
 .notes-form-header-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     background: rgba(0, 0, 0, 0.8);
     border: 2px solid rgba(172, 159, 129, 0.9);
     border-radius: 50%;
@@ -105,7 +106,7 @@
 
 .notes-form-header-icon i {
     color: rgba(255, 255, 255, 0.9);
-    font-size: 1.2em;
+    font-size: 2.5em;
 }
 
 .notes-form-header-image {

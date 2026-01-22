@@ -27,6 +27,7 @@ export class NotesPanel {
             scene: 'all',
             visibility: 'all' // all, private, party
         };
+        this.filtersOpen = false;
         this.allTags = new Set();
         this.scenes = new Set();
         // Hooks are now managed centrally by HookManager
@@ -74,11 +75,13 @@ export class NotesPanel {
             journalName: journal?.name || 'No Journal Selected',
             notes: this.notes.map(note => ({
                 ...note,
-                tags: note.tags || [] // Ensure tags is always an array
+                tags: note.tags || [], // Ensure tags is always an array
+                tagsCsv: (note.tags || []).map(tag => String(tag).toUpperCase()).join(',')
             })),
             allTags: Array.from(this.allTags).sort(),
             scenes: Array.from(this.scenes).sort(),
             filters: this.filters,
+            filtersOpen: this.filtersOpen,
             isGM: game.user.isGM,
             position: "left"
         });
@@ -178,6 +181,7 @@ export class NotesPanel {
                     if (!Array.isArray(note.tags)) {
                         note.tags = [];
                     }
+                    note.tags = note.tags.map(tag => String(tag).toUpperCase());
                     this.notes.push(note);
                     
                     // Collect tags
@@ -285,7 +289,7 @@ export class NotesPanel {
                 const newTag = tag.cloneNode(true);
                 tag.parentNode?.replaceChild(newTag, tag);
                 newTag.addEventListener('click', (event) => {
-                    const tagName = event.currentTarget.dataset.tag;
+                    const tagName = event.currentTarget.dataset.tag?.toUpperCase();
                     if (!this.filters.tags) {
                         this.filters.tags = [];
                     }
@@ -311,6 +315,17 @@ export class NotesPanel {
                     newToggle.classList.toggle('fa-chevron-down');
                     newToggle.classList.toggle('fa-chevron-up');
                 }
+            });
+        }
+
+        const toggleFiltersButton = nativeHtml.querySelector('.toggle-notes-filters-button');
+        if (toggleFiltersButton) {
+            const newToggle = toggleFiltersButton.cloneNode(true);
+            toggleFiltersButton.parentNode?.replaceChild(newToggle, toggleFiltersButton);
+            newToggle.addEventListener('click', (event) => {
+                event.preventDefault();
+                this.filtersOpen = !this.filtersOpen;
+                this.render(this.element);
             });
         }
 
@@ -440,7 +455,7 @@ export class NotesPanel {
      */
     _applyFilters(html) {
         const search = (this.filters.search || '').trim().toLowerCase();
-        const selectedTags = this.filters.tags || [];
+        const selectedTags = (this.filters.tags || []).map(tag => tag.toUpperCase());
         const selectedScene = this.filters.scene || 'all';
         const selectedVisibility = this.filters.visibility || 'all';
 
@@ -458,7 +473,7 @@ export class NotesPanel {
             // Tag filter
             if (selectedTags.length > 0) {
                 const cardTagsStr = card.dataset.tags || '';
-                const cardTags = cardTagsStr ? cardTagsStr.split(',').map(t => t.trim()) : [];
+                const cardTags = cardTagsStr ? cardTagsStr.split(',').map(t => t.trim().toUpperCase()) : [];
                 const hasTag = selectedTags.some(tag => cardTags.includes(tag));
                 if (!hasTag) {
                     visible = false;
@@ -487,8 +502,8 @@ export class NotesPanel {
 
         // Update tag active states
         html.querySelectorAll('.tag-item').forEach(tag => {
-            const tagName = tag.dataset.tag;
-            if (selectedTags.includes(tagName)) {
+            const tagName = tag.dataset.tag?.toUpperCase();
+            if (tagName && selectedTags.includes(tagName)) {
                 tag.classList.add('active');
             } else {
                 tag.classList.remove('active');
@@ -717,7 +732,10 @@ export class NotesForm extends FormApplication {
         // Convert tags to array
         let tags = [];
         if (formData.tags) {
-            tags = formData.tags.split(',').map(t => t.trim()).filter(t => t);
+            tags = formData.tags.split(',')
+                .map(t => t.trim())
+                .filter(t => t)
+                .map(t => t.toUpperCase());
         }
 
         // Ensure visibility is set - check form directly if not in formData
