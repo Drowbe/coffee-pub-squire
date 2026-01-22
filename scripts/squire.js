@@ -221,6 +221,34 @@ Hooks.once('ready', () => {
             }
         });
 
+        // Hook to embed note metadata box in journal entry page sheet
+        // Try multiple hook names for compatibility
+        const renderJournalPageSheetHookId = BlacksmithHookManager.registerHook({
+            name: "renderJournalPageSheet",
+            description: "Coffee Pub Squire: Embed note metadata box in journal entry page sheet",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (sheet, html, data) => {
+                console.log('renderJournalPageSheet hook called', { sheet, hasObject: !!sheet?.object });
+                await _embedNoteMetadataBox(sheet, html, data);
+            }
+        });
+        
+        // Also try renderApplication hook with filter
+        const renderApplicationHookId = BlacksmithHookManager.registerHook({
+            name: "renderApplication",
+            description: "Coffee Pub Squire: Embed note metadata box in journal entry page sheet (via renderApplication)",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (app, html, data) => {
+                // Check if this is a JournalPageSheet
+                if (app?.constructor?.name === 'JournalPageSheet' || app?.object?.constructor?.name === 'JournalEntryPage') {
+                    console.log('renderApplication hook called for JournalPageSheet', { app, hasObject: !!app?.object });
+                    await _embedNoteMetadataBox(app, html, data);
+                }
+            }
+        });
+
         
         // Character Panel Hooks
         const characterActorHookId = BlacksmithHookManager.registerHook({
@@ -1112,6 +1140,253 @@ async function _routeToNotesPanel(page, changes, options, userId) {
     }
 }
 
+/**
+ * Embed note metadata box in journal entry page sheet
+ * @private
+ */
+async function _embedNoteMetadataBox(sheet, html, data) {
+    try {
+        console.log('_embedNoteMetadataBox called', { 
+            sheet, 
+            sheetClassName: sheet?.constructor?.name,
+            hasObject: !!sheet?.object, 
+            objectClassName: sheet?.object?.constructor?.name,
+            html: !!html 
+        });
+        
+        // Only show for notes journal
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') {
+            console.log('_embedNoteMetadataBox: No notes journal set');
+            return;
+        }
+        
+        // For JournalEntrySheet, we need to get the current page being viewed
+        let page = sheet?.object;
+        if (!page && sheet?.pages) {
+            // This is a JournalEntrySheet, get the active page
+            const activePageId = sheet.pages?.active;
+            if (activePageId) {
+                page = sheet.pages?.get(activePageId);
+            }
+        }
+        
+        if (!page) {
+            console.log('_embedNoteMetadataBox: No page object found', { 
+                hasObject: !!sheet?.object,
+                hasPages: !!sheet?.pages,
+                activePageId: sheet?.pages?.active
+            });
+            return;
+        }
+        
+        if (!page.parent) {
+            console.log('_embedNoteMetadataBox: Page has no parent');
+            return;
+        }
+        
+        // Check if this page belongs to the notes journal
+        if (page.parent.id !== journalId) {
+            console.log('_embedNoteMetadataBox: Page does not belong to notes journal', { pageParentId: page.parent.id, notesJournalId: journalId });
+            return;
+        }
+        
+        console.log('_embedNoteMetadataBox: Page belongs to notes journal, proceeding', { pageId: page.id, pageName: page.name });
+        
+        // Check if this is a note (has noteType flag) or if we're creating a new page
+        const noteType = page.getFlag(MODULE.ID, 'noteType');
+        const isNote = noteType === 'sticky';
+        
+        // If it's a new page without noteType, set it
+        if (!isNote && page.id) {
+            console.log('_embedNoteMetadataBox: New page detected, setting noteType flag');
+            try {
+                await page.setFlag(MODULE.ID, 'noteType', 'sticky');
+                if (!page.getFlag(MODULE.ID, 'authorId')) {
+                    await page.setFlag(MODULE.ID, 'authorId', game.user.id);
+                }
+                if (!page.getFlag(MODULE.ID, 'timestamp')) {
+                    await page.setFlag(MODULE.ID, 'timestamp', new Date().toISOString());
+                }
+                if (!page.getFlag(MODULE.ID, 'visibility')) {
+                    await page.setFlag(MODULE.ID, 'visibility', 'private');
+                }
+                if (!page.getFlag(MODULE.ID, 'tags')) {
+                    await page.setFlag(MODULE.ID, 'tags', []);
+                }
+            } catch (error) {
+                console.error('_embedNoteMetadataBox: Error setting flags:', error);
+            }
+        }
+        
+        // Get note metadata from flags - read directly for reliability
+        const tags = page.getFlag(MODULE.ID, 'tags') || [];
+        const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
+        const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+        
+        // Ensure tags is an array
+        const tagsArray = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []);
+        
+        // Look up author name
+        let authorName = 'Unknown';
+        if (authorId) {
+            try {
+                let user = game.users.get(authorId);
+                if (!user) user = game.users.find(u => u.id === authorId);
+                authorName = user?.name || authorId;
+            } catch (e) {
+                authorName = authorId;
+            }
+        }
+        
+        // Convert jQuery/html to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        if (!nativeHtml || !nativeHtml.querySelector) {
+            // Try getting native element from jQuery
+            if (html && html.length) nativeHtml = html[0];
+            if (!nativeHtml) return;
+        }
+        
+        console.log('_embedNoteMetadataBox: Looking for insertion point in HTML');
+        
+        // Find where to insert the meta box (after title, before content)
+        // Try multiple selectors for different Foundry versions
+        const titleElement = nativeHtml.querySelector('.journal-entry-page-title, .journal-page-title, .page-title, h1.page-title, h1');
+        const contentArea = nativeHtml.querySelector('.journal-entry-content, .editor-content, .editor, .editor-edit, textarea[name="text.content"]');
+        
+        console.log('_embedNoteMetadataBox: Found elements', { 
+            titleElement: !!titleElement, 
+            contentArea: !!contentArea,
+            titleClass: titleElement?.className,
+            contentClass: contentArea?.className
+        });
+        
+        // Escape HTML in values
+        const escapeHtml = (str) => {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        };
+        
+        // Create meta box HTML
+        const metaBoxHtml = `
+            <div class="squire-note-metadata-box" data-page-id="${page.id}">
+                <div class="squire-note-meta-header">
+                    <i class="fa-solid fa-sticky-note"></i> Note Metadata
+                </div>
+                <div class="squire-note-meta-fields">
+                    <div class="squire-note-meta-field">
+                        <label>Tags:</label>
+                        <input type="text" class="squire-note-tags-input" 
+                               value="${escapeHtml(tagsArray.join(', '))}" 
+                               placeholder="npc, phlan, informant">
+                        <small>Comma-separated tags</small>
+                    </div>
+                    <div class="squire-note-meta-field">
+                        <label>Visibility:</label>
+                        <div class="squire-note-visibility-options">
+                            <label>
+                                <input type="radio" name="squire-note-visibility-${page.id}" value="private" ${visibility === 'private' ? 'checked' : ''}>
+                                <i class="fa-solid fa-lock"></i> Private
+                            </label>
+                            <label>
+                                <input type="radio" name="squire-note-visibility-${page.id}" value="party" ${visibility === 'party' ? 'checked' : ''}>
+                                <i class="fa-solid fa-users"></i> Party
+                            </label>
+                        </div>
+                    </div>
+                    <div class="squire-note-meta-field">
+                        <label>Author:</label>
+                        <span class="squire-note-author">${escapeHtml(authorName)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Create DOM element from HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = metaBoxHtml;
+        const metaBoxElement = tempDiv.firstElementChild;
+        
+        // Insert meta box
+        let inserted = false;
+        if (titleElement && titleElement.parentNode) {
+            titleElement.parentNode.insertBefore(metaBoxElement, titleElement.nextSibling);
+            inserted = true;
+            console.log('_embedNoteMetadataBox: Inserted after title element');
+        } else if (contentArea && contentArea.parentNode) {
+            contentArea.parentNode.insertBefore(metaBoxElement, contentArea);
+            inserted = true;
+            console.log('_embedNoteMetadataBox: Inserted before content area');
+        } else {
+            // Fallback: insert at top of sheet content
+            const sheetContent = nativeHtml.querySelector('.sheet-content, .window-content, form');
+            if (sheetContent) {
+                sheetContent.insertBefore(metaBoxElement, sheetContent.firstChild);
+                inserted = true;
+                console.log('_embedNoteMetadataBox: Inserted at top of sheet content');
+            } else {
+                console.warn('_embedNoteMetadataBox: Could not find insertion point!', {
+                    htmlStructure: nativeHtml.innerHTML.substring(0, 500)
+                });
+            }
+        }
+        
+        if (!inserted) {
+            console.error('_embedNoteMetadataBox: Failed to insert meta box!');
+            return;
+        }
+        
+        // Set up event listeners for meta box
+        const metaBox = nativeHtml.querySelector('.squire-note-metadata-box');
+        console.log('_embedNoteMetadataBox: Meta box inserted', { found: !!metaBox });
+        if (metaBox) {
+            // Handle tags input
+            const tagsInput = metaBox.querySelector('.squire-note-tags-input');
+            if (tagsInput) {
+                const handleTagsChange = async function() {
+                    const tagsValue = this.value;
+                    const tagsArray = tagsValue.split(',').map(t => t.trim()).filter(t => t);
+                    await page.setFlag(MODULE.ID, 'tags', tagsArray);
+                    // Ensure noteType is set
+                    if (!isNote) {
+                        await page.setFlag(MODULE.ID, 'noteType', 'sticky');
+                    }
+                };
+                tagsInput.addEventListener('change', handleTagsChange);
+                tagsInput.addEventListener('blur', handleTagsChange);
+            }
+            
+            // Handle visibility radio buttons
+            const visibilityRadios = metaBox.querySelectorAll('input[name^="squire-note-visibility"]');
+            visibilityRadios.forEach(radio => {
+                radio.addEventListener('change', async function() {
+                    const newVisibility = this.value;
+                    await page.setFlag(MODULE.ID, 'visibility', newVisibility);
+                    // Ensure noteType is set
+                    if (!isNote) {
+                        await page.setFlag(MODULE.ID, 'noteType', 'sticky');
+                    }
+                    // Update ownership if GM
+                    if (game.user.isGM) {
+                        const ownership = {};
+                        ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                        ownership.default = newVisibility === 'party' 
+                            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
+                            : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+                        await page.update({ ownership });
+                    }
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error embedding note metadata box:', error);
+    }
+}
+
 async function _routeToQuestPins(page, changes, options, userId) {
     try {
         // Handle quest-specific updates (visibility, pin updates, etc.)
@@ -1616,7 +1891,8 @@ Hooks.once('init', async function() {
     // Load CSS
     const cssFiles = [
         `modules/${MODULE.ID}/styles/window-transfer.css`,
-        `modules/${MODULE.ID}/styles/panel-notes.css`
+        `modules/${MODULE.ID}/styles/panel-notes.css`,
+        `modules/${MODULE.ID}/styles/notes-metadata-box.css`
     ];
     
     // Add CSS files to head
@@ -1880,6 +2156,35 @@ Hooks.once('ready', async function() {
     trackModuleTimeout(async () => {
         // Hook management is now handled by Blacksmith HookManager
         // No need to initialize local HookManager
+        
+        // Fallback: Direct hook registration for journal page sheet (in case Blacksmith doesn't support it)
+        // Try multiple hook names for FoundryVTT v12/v13 compatibility
+        Hooks.on('renderJournalPageSheet', async (sheet, html, data) => {
+            console.log('Direct Hooks.on renderJournalPageSheet called', { sheet, hasObject: !!sheet?.object, className: sheet?.constructor?.name });
+            await _embedNoteMetadataBox(sheet, html, data);
+        });
+        
+        // Also try renderApplication with filter
+        Hooks.on('renderApplication', async (app, html, data) => {
+            const className = app?.constructor?.name;
+            const objectName = app?.object?.constructor?.name;
+            if (className === 'JournalPageSheet' || className === 'JournalTextPageSheet' || objectName === 'JournalEntryPage') {
+                console.log('Direct Hooks.on renderApplication for JournalPageSheet called', { 
+                    app, 
+                    hasObject: !!app?.object,
+                    className,
+                    objectName
+                });
+                await _embedNoteMetadataBox(app, html, data);
+            }
+        });
+        
+        // Also try the JournalEntrySheet hook (for the parent journal)
+        Hooks.on('renderJournalEntrySheet', async (sheet, html, data) => {
+            console.log('Direct Hooks.on renderJournalEntrySheet called', { sheet, hasObject: !!sheet?.object });
+            // This is for the journal itself, but we can check if a page is being viewed
+            // The meta box hook should handle individual pages
+        });
         
         // Load quest pins first
         loadPersistedPinsOnCanvasReady();

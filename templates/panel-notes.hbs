@@ -68,19 +68,17 @@
                         <div class="note-header">
                             <div class="note-title">{{name}}</div>
                             <div class="note-meta">
-                                {{#if authorName}}
-                                <span class="note-author"><i class="fa-solid fa-user"></i> {{authorName}}</span>
-                                {{/if}}
-                                {{#if timestamp}}
-                                <span class="note-date"><i class="fa-solid fa-clock"></i> {{timestamp}}</span>
-                                {{/if}}
-                                <span class="note-visibility">
+                                <span class="note-visibility-badge {{visibility}}">
                                     {{#if (eq visibility 'party')}}
-                                    <i class="fa-solid fa-users" title="Party Note"></i>
+                                    <i class="fa-solid fa-users"></i> Party
                                     {{else}}
-                                    <i class="fa-solid fa-lock" title="Private Note"></i>
+                                    <i class="fa-solid fa-lock"></i> Private
                                     {{/if}}
                                 </span>
+                                <span class="note-author"><i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}</span>
+                                {{#if timestamp}}
+                                <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
+                                {{/if}}
                             </div>
                         </div>
 
@@ -96,28 +94,34 @@
                             {{{content}}}
                         </div>
 
-                        <!-- Note Tags -->
-                        {{#if tags}}
-                        {{#if (isArray tags)}}
-                        {{#if tags.length}}
-                        <div class="note-tags">
-                            {{#each tags}}
-                            <span class="note-tag">{{this}}</span>
-                            {{/each}}
-                        </div>
-                        {{/if}}
-                        {{else}}
-                        <div class="note-tags">
-                            <span class="note-tag">{{tags}}</span>
-                        </div>
-                        {{/if}}
-                        {{/if}}
-
                         <!-- Note Location -->
                         {{#if sceneName}}
                         <div class="note-location">
                             <i class="fa-solid fa-map-pin"></i> {{sceneName}}
                         </div>
+                        {{/if}}
+
+                        <!-- Note Tags Section (at bottom like Codex) -->
+                        {{#if tags}}
+                        {{#if (isArray tags)}}
+                        {{#if tags.length}}
+                        <div class="note-tags-section">
+                            <div class="note-tags-label">Tags:</div>
+                            <div class="note-tags">
+                                {{#each tags}}
+                                <span class="note-tag">{{this}}</span>
+                                {{/each}}
+                            </div>
+                        </div>
+                        {{/if}}
+                        {{else}}
+                        <div class="note-tags-section">
+                            <div class="note-tags-label">Tags:</div>
+                            <div class="note-tags">
+                                <span class="note-tag">{{tags}}</span>
+                            </div>
+                        </div>
+                        {{/if}}
                         {{/if}}
 
                         <!-- Note Actions -->

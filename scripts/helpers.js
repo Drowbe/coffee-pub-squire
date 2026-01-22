@@ -308,7 +308,26 @@ export const registerHelpers = function() {
     });
 
     // Helper function to copy text to clipboard with fallbacks
-    Handlebars.registerHelper('copyToClipboard', function(text) {
+    Handlebars.registerHelper('formatTimestamp', function(timestamp) {
+    if (!timestamp) return '';
+    try {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return timestamp; // Return as-is if invalid
+        // Format as: "Dec 19, 2024 3:45 PM"
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    } catch (e) {
+        return timestamp; // Return as-is on error
+    }
+});
+
+Handlebars.registerHelper('copyToClipboard', function(text) {
         return copyToClipboard(text);
     });
 

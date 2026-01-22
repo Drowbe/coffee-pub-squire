@@ -142,6 +142,28 @@ export class NotesPanel {
                 const note = await NotesParser.parseSinglePage(page, enriched);
                 
                 if (note) {
+                    // Ensure authorName is always set (fallback to user ID if name lookup failed)
+                    if (!note.authorName && note.authorId) {
+                        note.authorName = note.authorId;
+                    }
+                    
+                    // Debug: Log visibility to verify it's being read correctly
+                    const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
+                    const allFlags = page.getFlag(MODULE.ID) || {};
+                    console.log('NotesPanel._refreshData: Note parsed:', {
+                        name: note.name,
+                        parsedVisibility: note.visibility,
+                        savedVisibilityFlag: savedVisibility,
+                        allFlags: allFlags,
+                        tags: note.tags,
+                        authorName: note.authorName,
+                        authorId: note.authorId
+                    });
+                    
+                    // Ensure tags is always an array (even if empty)
+                    if (!Array.isArray(note.tags)) {
+                        note.tags = [];
+                    }
                     this.notes.push(note);
                     
                     // Collect tags
@@ -216,8 +238,70 @@ export class NotesPanel {
             button.parentNode?.replaceChild(newButton, button);
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
-                const form = new NotesForm();
-                form.render(true);
+                
+                const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+                if (!journalId || journalId === 'none') {
+                    ui.notifications.warn('No notes journal selected. Please select a journal first.');
+                    return;
+                }
+                
+                const journal = game.journal.get(journalId);
+                if (!journal) {
+                    ui.notifications.error('Selected notes journal not found.');
+                    return;
+                }
+                
+                // Create a new page in the journal
+                const pageData = {
+                    name: 'New Note',
+                    type: 'text',
+                    text: { content: '' },
+                    flags: {
+                        [MODULE.ID]: {
+                            noteType: 'sticky',
+                            tags: [],
+                            visibility: 'private',
+                            authorId: game.user.id,
+                            timestamp: new Date().toISOString()
+                        }
+                    }
+                };
+                
+                try {
+                    const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                    console.log('New note page created:', { 
+                        pageId: newPage.id, 
+                        flags: newPage.getFlag(MODULE.ID),
+                        pageDataFlags: pageData.flags
+                    });
+                    
+                    // Verify flags were set - if not, set them explicitly
+                    const savedFlags = newPage.getFlag(MODULE.ID);
+                    const savedNoteType = newPage.getFlag(MODULE.ID, 'noteType');
+                    if (!savedFlags || !savedNoteType) {
+                        console.warn('Flags not set on creation, setting them now...', { savedFlags, savedNoteType });
+                        // Set flags individually to ensure they're saved
+                        await newPage.setFlag(MODULE.ID, 'noteType', 'sticky');
+                        await newPage.setFlag(MODULE.ID, 'tags', []);
+                        await newPage.setFlag(MODULE.ID, 'visibility', 'private');
+                        await newPage.setFlag(MODULE.ID, 'authorId', game.user.id);
+                        await newPage.setFlag(MODULE.ID, 'timestamp', new Date().toISOString());
+                        console.log('Flags set individually:', { 
+                            noteType: newPage.getFlag(MODULE.ID, 'noteType'),
+                            tags: newPage.getFlag(MODULE.ID, 'tags'),
+                            visibility: newPage.getFlag(MODULE.ID, 'visibility')
+                        });
+                    }
+                    
+                    // Open the journal sheet to the new page - meta box will be embedded via hook
+                    // Use a small delay to ensure the page is fully created
+                    setTimeout(() => {
+                        journal.sheet.render(true, { pageId: newPage.id });
+                    }, 100);
+                } catch (error) {
+                    console.error('Error creating note:', error);
+                    ui.notifications.error(`Failed to create note: ${error.message}`);
+                }
             });
         });
 
@@ -535,6 +619,30 @@ export class NotesForm extends FormApplication {
             tags = formData.tags.split(',').map(t => t.trim()).filter(t => t);
         }
 
+        // Ensure visibility is set - check form directly if not in formData
+        let visibility = formData.visibility;
+        if (!visibility || (visibility !== 'party' && visibility !== 'private')) {
+            // Try to get it from the form element directly
+            const form = this.element?.querySelector('form');
+            if (form) {
+                const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
+                if (visibilityRadio) {
+                    visibility = visibilityRadio.value;
+                    console.log('NotesForm._updateObject: Got visibility from form radio:', visibility);
+                } else {
+                    console.warn('NotesForm._updateObject: No checked radio found, defaulting to private');
+                    visibility = 'private';
+                }
+            } else {
+                console.warn('NotesForm._updateObject: No form found, defaulting to private');
+                visibility = 'private';
+            }
+        }
+        
+        // Final check - ensure it's either 'party' or 'private'
+        visibility = visibility === 'party' ? 'party' : 'private';
+        console.log('NotesForm._updateObject: Final visibility =', visibility, 'formData.visibility =', formData.visibility, 'formData keys:', Object.keys(formData));
+
         // Generate HTML content (note body only, no metadata)
         const content = this._generateNoteContent(formData);
 
@@ -549,7 +657,7 @@ export class NotesForm extends FormApplication {
                 [MODULE.ID]: {
                     noteType: 'sticky',
                     tags: tags,
-                    visibility: formData.visibility || 'private',
+                    visibility: visibility,
                     sceneId: formData.sceneId || null,
                     x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
                     y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
@@ -560,21 +668,41 @@ export class NotesForm extends FormApplication {
         };
 
         try {
+            // Check if user has permission to create pages in this journal
+            // Users need at least OBSERVER permission to create embedded documents
+            if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {
+                ui.notifications.error('You do not have permission to create notes in this journal. Please contact your GM.');
+                return false;
+            }
+
             // Create journal page
             const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
 
-            // Set ownership based on visibility
-            const ownership = {};
-            if (formData.visibility === 'party') {
-                // Party note: author = Owner, all players = Observer
-                ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+            // Verify the flag was saved correctly
+            const savedVisibility = newPage.getFlag(MODULE.ID, 'visibility');
+            console.log('NotesForm: Page created, saved visibility flag:', savedVisibility, 'expected:', visibility);
+
+            // Set ownership based on visibility (only GMs can modify ownership programmatically)
+            // For non-GM users, the page will inherit the journal's permissions
+            if (game.user.isGM) {
+                const ownership = {};
+                if (visibility === 'party') {
+                    // Party note: author = Owner, all players = Observer
+                    ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                    ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+                } else {
+                    // Private note: author = Owner, others = None (GM can see via journal ownership)
+                    ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                    ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+                }
+                await newPage.update({ ownership });
+                console.log('NotesForm: Ownership set for GM:', ownership);
             } else {
-                // Private note: author = Owner, others = None (GM can see via journal ownership)
-                ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+                // For non-GM users, we can't set ownership programmatically
+                // The page will inherit the journal's default permissions
+                // The visibility flag is still set correctly, which we use for filtering
+                console.log('NotesForm: Non-GM user - page ownership will inherit from journal permissions. Visibility flag:', savedVisibility);
             }
-            await newPage.update({ ownership });
 
             // If canvas location provided, register pin with Blacksmith (if available)
             if (formData.sceneId && formData.x !== null && formData.y !== null) {
@@ -655,15 +783,32 @@ export class NotesForm extends FormApplication {
             this._eventHandlers.push({ element: cancelButton, event: 'click', handler });
         }
 
-        // Handle form submission
+        // Handle form submission - prevent default FormApplication behavior
         const form = nativeHtml.querySelector('form');
         if (form) {
+            // Remove any existing submit handlers first
+            const newForm = form.cloneNode(true);
+            form.parentNode?.replaceChild(newForm, form);
+            
             const handler = (event) => {
                 event.preventDefault();
+                event.stopPropagation();
                 this._handleFormSubmit(event);
             };
-            form.addEventListener('submit', handler);
-            this._eventHandlers.push({ element: form, event: 'submit', handler });
+            newForm.addEventListener('submit', handler);
+            this._eventHandlers.push({ element: newForm, event: 'submit', handler });
+            
+            // Also prevent FormApplication's default submit handler
+            const submitButton = newForm.querySelector('button[type="submit"]');
+            if (submitButton) {
+                const submitHandler = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    newForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                };
+                submitButton.addEventListener('click', submitHandler);
+                this._eventHandlers.push({ element: submitButton, event: 'click', handler: submitHandler });
+            }
         }
 
         // Set up image paste/drag
@@ -690,10 +835,17 @@ export class NotesForm extends FormApplication {
         const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
         if (visibilityRadio) {
             data.visibility = visibilityRadio.value;
+            console.log('NotesForm._handleFormSubmit: Found checked radio:', visibilityRadio.value);
         } else {
+            // Check all visibility radios to see what's available
+            const allRadios = form.querySelectorAll('input[name="visibility"]');
+            console.warn('NotesForm._handleFormSubmit: No checked radio found! Available radios:', Array.from(allRadios).map(r => ({ value: r.value, checked: r.checked })));
             // Default to private if no radio is checked (shouldn't happen, but safety)
             data.visibility = 'private';
         }
+
+        // Debug: Log visibility value to help diagnose issues
+        console.log('NotesForm._handleFormSubmit: Final visibility value:', data.visibility, 'All formData:', data);
 
         // Call _updateObject
         await this._updateObject(event, data);

@@ -24,31 +24,82 @@ export class NotesParser extends BaseParser {
         }
         
         // Read metadata from flags (authoritative source)
+        // Flags can be stored as nested object or flat - read both ways
         const noteFlags = page.getFlag(MODULE.ID) || {};
+        
+        // Read individual flag values directly (more reliable)
+        const visibility = page.getFlag(MODULE.ID, 'visibility') || noteFlags.visibility || 'private';
+        const tags = page.getFlag(MODULE.ID, 'tags') || noteFlags.tags || [];
+        const authorId = page.getFlag(MODULE.ID, 'authorId') || noteFlags.authorId;
+        const sceneId = page.getFlag(MODULE.ID, 'sceneId') || noteFlags.sceneId;
+        const x = page.getFlag(MODULE.ID, 'x') ?? noteFlags.x;
+        const y = page.getFlag(MODULE.ID, 'y') ?? noteFlags.y;
+        const timestamp = page.getFlag(MODULE.ID, 'timestamp') || noteFlags.timestamp;
+        
+        // Debug: Log what we're reading
+        console.log('NotesParser.parseSinglePage: Reading flags', {
+            pageName: page.name,
+            noteFlags,
+            directVisibility: page.getFlag(MODULE.ID, 'visibility'),
+            directTags: page.getFlag(MODULE.ID, 'tags'),
+            parsedVisibility: visibility,
+            parsedTags: tags
+        });
         
         // Extract content and images from HTML only
         const img = BaseParser.extractImage(enrichedHtml);
         
         // Look up scene name if sceneId exists
         let sceneName = null;
-        if (noteFlags.sceneId) {
+        if (sceneId) {
             try {
-                const scene = game.scenes.get(noteFlags.sceneId);
+                const scene = game.scenes.get(sceneId);
                 sceneName = scene?.name || null;
             } catch (e) {
-                console.warn(`NotesParser: Could not find scene ${noteFlags.sceneId}`, e);
+                console.warn(`NotesParser: Could not find scene ${sceneId}`, e);
             }
         }
         
         // Look up author name if authorId exists
         let authorName = null;
-        if (noteFlags.authorId) {
+        if (authorId) {
             try {
-                const user = game.users.get(noteFlags.authorId);
-                authorName = user?.name || null;
+                // Try multiple methods to find user (they might have left the game)
+                let user = game.users.get(authorId);
+                if (!user) {
+                    // Try finding in all users (including inactive)
+                    user = game.users.find(u => u.id === authorId);
+                }
+                if (!user) {
+                    // Try finding by name if ID doesn't work
+                    const userIdStr = String(authorId);
+                    user = game.users.find(u => String(u.id) === userIdStr);
+                }
+                authorName = user?.name || authorId || 'Unknown';
+                console.log('NotesParser: Author lookup:', { authorId, found: !!user, name: authorName });
             } catch (e) {
-                console.warn(`NotesParser: Could not find user ${noteFlags.authorId}`, e);
+                console.warn(`NotesParser: Could not find user ${authorId}`, e);
+                authorName = authorId || 'Unknown';
             }
+        } else {
+            authorName = 'Unknown';
+        }
+        
+        // Parse visibility - normalize the value
+        let parsedVisibility = 'private';
+        if (visibility === 'party' || visibility === 'Party' || visibility === 'PARTY') {
+            parsedVisibility = 'party';
+        } else {
+            parsedVisibility = 'private';
+        }
+        
+        // Parse tags - ensure it's always an array
+        let parsedTags = [];
+        if (Array.isArray(tags)) {
+            parsedTags = tags;
+        } else if (tags && typeof tags === 'string') {
+            // If tags is a string, split it
+            parsedTags = tags.split(',').map(t => t.trim()).filter(t => t);
         }
         
         // Build note object
@@ -56,17 +107,27 @@ export class NotesParser extends BaseParser {
             name: page.name || 'Untitled Note',
             content: enrichedHtml, // Already enriched HTML content
             img: img || null,
-            tags: Array.isArray(noteFlags.tags) ? noteFlags.tags : [],
-            sceneId: noteFlags.sceneId || null,
+            tags: parsedTags,
+            sceneId: sceneId || null,
             sceneName: sceneName,
-            x: typeof noteFlags.x === 'number' ? noteFlags.x : null,
-            y: typeof noteFlags.y === 'number' ? noteFlags.y : null,
-            authorId: noteFlags.authorId || null,
+            x: typeof x === 'number' ? x : null,
+            y: typeof y === 'number' ? y : null,
+            authorId: authorId || null,
             authorName: authorName,
-            visibility: noteFlags.visibility === 'party' ? 'party' : 'private', // Default to private if not set
-            timestamp: noteFlags.timestamp || null,
+            visibility: parsedVisibility,
+            timestamp: timestamp || null,
             uuid: page.uuid
         };
+        
+        console.log('NotesParser.parseSinglePage: Parsed note', {
+            name: note.name,
+            visibility: note.visibility,
+            rawVisibility: visibility,
+            tags: note.tags,
+            rawTags: tags,
+            authorName: note.authorName,
+            authorId: note.authorId
+        });
         
         return note;
     }
