@@ -66,15 +66,15 @@
                     <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{#if tags}}{{tags.join ','}}{{/if}}">
                         <!-- Note Header -->
                         <div class="note-header">
+                            <span class="note-visibility-badge {{visibility}}">
+                                {{#if (eq visibility 'party')}}
+                                <i class="fa-solid fa-users"></i>
+                                {{else}}
+                                <i class="fa-solid fa-lock"></i>
+                                {{/if}}
+                            </span>
                             <div class="note-title">{{name}}</div>
                             <div class="note-meta">
-                                <span class="note-visibility-badge {{visibility}}">
-                                    {{#if (eq visibility 'party')}}
-                                    <i class="fa-solid fa-users"></i> Party
-                                    {{else}}
-                                    <i class="fa-solid fa-lock"></i> Private
-                                    {{/if}}
-                                </span>
                                 <span class="note-author"><i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}</span>
                                 {{#if timestamp}}
                                 <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
