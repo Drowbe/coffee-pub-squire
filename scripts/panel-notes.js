@@ -329,9 +329,67 @@ export class NotesPanel {
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
                 const uuid = event.currentTarget.dataset.uuid;
-                const page = await foundry.utils.fromUuid(uuid);
-                if (page) {
-                    page.sheet.render(true);
+                try {
+                    const page = await foundry.utils.fromUuid(uuid);
+                    if (!page) {
+                        ui.notifications.error('Note not found.');
+                        return;
+                    }
+                    
+                    // Load note data from the page
+                    const noteFlags = page.getFlag(MODULE.ID) || {};
+                    const tags = page.getFlag(MODULE.ID, 'tags') || [];
+                    const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
+                    const authorId = page.getFlag(MODULE.ID, 'authorId');
+                    const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+                    const x = page.getFlag(MODULE.ID, 'x');
+                    const y = page.getFlag(MODULE.ID, 'y');
+                    
+                    // Get page content
+                    const content = page.text?.content || '';
+                    
+                    // Extract image from content if present
+                    let img = null;
+                    const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+                    if (imgMatch) {
+                        img = imgMatch[1];
+                    }
+                    
+                    // Extract text content - remove image tags but keep other HTML
+                    // Use DOMParser to properly extract text while preserving formatting
+                    let textContent = content;
+                    if (img) {
+                        // Remove the image tag but keep the rest
+                        textContent = content.replace(/<img[^>]*>/gi, '').trim();
+                    }
+                    
+                    // If content is empty after removing image, set to empty string
+                    if (!textContent || textContent === '') {
+                        textContent = '';
+                    }
+                    
+                    // Create note object for form
+                    const noteData = {
+                        pageId: page.id,
+                        pageUuid: page.uuid,
+                        title: page.name || 'Untitled Note',
+                        content: textContent,
+                        img: img,
+                        tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
+                        visibility: visibility,
+                        sceneId: sceneId,
+                        x: x,
+                        y: y,
+                        authorId: authorId,
+                        timestamp: page.getFlag(MODULE.ID, 'timestamp')
+                    };
+                    
+                    // Open NotesForm with existing note data
+                    const form = new NotesForm(noteData);
+                    form.render(true);
+                } catch (error) {
+                    console.error('Error opening note for editing:', error);
+                    ui.notifications.error(`Failed to open note: ${error.message}`);
                 }
             });
         });
@@ -489,6 +547,10 @@ export class NotesPanel {
 export class NotesForm extends FormApplication {
     constructor(note = null, options = {}) {
         super(note, options);
+        // If note has pageId/pageUuid, it's an existing note being edited
+        this.isEditing = !!(note?.pageId || note?.pageUuid);
+        this.pageId = note?.pageId || null;
+        this.pageUuid = note?.pageUuid || null;
         this.note = note || this._getDefaultNote();
         this.dragActive = false;
         this._eventHandlers = [];
@@ -505,7 +567,7 @@ export class NotesForm extends FormApplication {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: 'notes-quick-form',
             classes: ['notes-form-window', 'squire-window'],
-            title: 'New Note',
+            title: 'New Note', // Will be updated in getData if editing
             template: 'modules/coffee-pub-squire/templates/notes-form.hbs',
             width: 550,
             height: 'auto',
@@ -516,11 +578,23 @@ export class NotesForm extends FormApplication {
             minimizable: true
         });
     }
+    
+    get title() {
+        return this.isEditing ? `Edit Note: ${this.note.title || 'Untitled'}` : 'New Note';
+    }
 
     getData() {
+        // Update window title
+        if (this.isEditing) {
+            this.options.title = `Edit Note: ${this.note.title || 'Untitled'}`;
+        } else {
+            this.options.title = 'New Note';
+        }
+        
         return {
             note: this.note,
             isGM: game.user.isGM,
+            isEditing: this.isEditing,
             sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
         };
     }
@@ -585,72 +659,137 @@ export class NotesForm extends FormApplication {
         // Generate HTML content (note body only, no metadata)
         const content = this._generateNoteContent(formData);
 
-        // Create journal page with flags
-        const pageData = {
-            name: formData.title || 'Untitled Note',
-            type: 'text',
-            text: {
-                content: content
-            },
-            flags: {
-                [MODULE.ID]: {
-                    noteType: 'sticky',
-                    tags: tags,
-                    visibility: visibility,
-                    sceneId: formData.sceneId || null,
-                    x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
-                    y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
-                    authorId: game.user.id,
-                    timestamp: new Date().toISOString()
-                }
-            }
-        };
-
         try {
-            // Check if user has permission to create pages in this journal
-            // Users need at least OBSERVER permission to create embedded documents
-            if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {
-                ui.notifications.error('You do not have permission to create notes in this journal. Please contact your GM.');
-                return false;
-            }
-
-            // Create journal page
-            const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-
-            // Verify the flag was saved correctly
-            const savedVisibility = newPage.getFlag(MODULE.ID, 'visibility');
-            console.log('NotesForm: Page created, saved visibility flag:', savedVisibility, 'expected:', visibility);
-
-            // Set ownership based on visibility (only GMs can modify ownership programmatically)
-            // For non-GM users, the page will inherit the journal's permissions
-            if (game.user.isGM) {
-                const ownership = {};
-                if (visibility === 'party') {
-                    // Party note: author = Owner, all players = Observer
-                    ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                    ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-                } else {
-                    // Private note: author = Owner, others = None (GM can see via journal ownership)
-                    ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                    ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+            let page;
+            
+            if (this.isEditing && this.pageUuid) {
+                // Editing existing note - update it
+                try {
+                    page = await foundry.utils.fromUuid(this.pageUuid);
+                    if (!page) {
+                        ui.notifications.error('Note not found.');
+                        return false;
+                    }
+                    
+                    // Check permissions
+                    if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                        ui.notifications.error('You do not have permission to edit this note.');
+                        return false;
+                    }
+                    
+                    // Update the page
+                    await page.update({
+                        name: formData.title || 'Untitled Note',
+                        text: { content: content }
+                    });
+                    
+                    // Update flags
+                    await page.setFlag(MODULE.ID, 'tags', tags);
+                    await page.setFlag(MODULE.ID, 'visibility', visibility);
+                    if (formData.sceneId) {
+                        await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
+                        await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
+                        await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
+                    }
+                    
+                    // Update ownership if GM and visibility changed
+                    if (game.user.isGM) {
+                        const ownership = {};
+                        const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                        ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                        ownership.default = visibility === 'party' 
+                            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
+                            : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+                        await page.update({ ownership });
+                    }
+                    
+                    console.log('NotesForm: Updated existing note', { pageId: page.id, flags: page.getFlag(MODULE.ID) });
+                    
+                    // Update ownership if GM and visibility changed
+                    if (game.user.isGM) {
+                        const ownership = {};
+                        const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                        ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                        ownership.default = visibility === 'party' 
+                            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
+                            : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+                        await page.update({ ownership });
+                    }
+                } catch (error) {
+                    console.error('Error updating note:', error);
+                    ui.notifications.error(`Failed to update note: ${error.message}`);
+                    return false;
                 }
-                await newPage.update({ ownership });
-                console.log('NotesForm: Ownership set for GM:', ownership);
             } else {
-                // For non-GM users, we can't set ownership programmatically
-                // The page will inherit the journal's default permissions
-                // The visibility flag is still set correctly, which we use for filtering
-                console.log('NotesForm: Non-GM user - page ownership will inherit from journal permissions. Visibility flag:', savedVisibility);
+                // Creating new note
+                // Check if user has permission to create pages in this journal
+                // Users need at least OBSERVER permission to create embedded documents
+                if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {
+                    ui.notifications.error('You do not have permission to create notes in this journal. Please contact your GM.');
+                    return false;
+                }
+
+                // Create journal page with flags
+                const pageData = {
+                    name: formData.title || 'Untitled Note',
+                    type: 'text',
+                    text: {
+                        content: content
+                    },
+                    flags: {
+                        [MODULE.ID]: {
+                            noteType: 'sticky',
+                            tags: tags,
+                            visibility: visibility,
+                            sceneId: formData.sceneId || null,
+                            x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
+                            y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
+                            authorId: game.user.id,
+                            timestamp: new Date().toISOString()
+                        }
+                    }
+                };
+
+                // Create journal page
+                const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                page = newPage;
+
+                // Verify the flag was saved correctly
+                const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
+                console.log('NotesForm: Page created, saved visibility flag:', savedVisibility, 'expected:', visibility);
+
+                // Set ownership based on visibility (only GMs can modify ownership programmatically)
+                // For non-GM users, the page will inherit the journal's permissions
+                if (game.user.isGM) {
+                    const ownership = {};
+                    if (visibility === 'party') {
+                        // Party note: author = Owner, all players = Observer
+                        ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                        ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+                    } else {
+                        // Private note: author = Owner, others = None (GM can see via journal ownership)
+                        ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                        ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+                    }
+                    await page.update({ ownership });
+                    console.log('NotesForm: Ownership set for GM:', ownership);
+                } else {
+                    // For non-GM users, we can't set ownership programmatically
+                    // The page will inherit the journal's default permissions
+                    // The visibility flag is still set correctly, which we use for filtering
+                    console.log('NotesForm: Non-GM user - page ownership will inherit from journal permissions. Visibility flag:', savedVisibility);
+                }
             }
 
             // If canvas location provided, register pin with Blacksmith (if available)
-            if (formData.sceneId && formData.x !== null && formData.y !== null) {
+            // Only for new notes (editing doesn't change pin location)
+            if (!this.isEditing && formData.sceneId && formData.x !== null && formData.y !== null) {
                 const blacksmith = getBlacksmith();
                 if (blacksmith?.PinAPI) {
                     try {
                         blacksmith.PinAPI.createPin({
                             type: 'note',
-                            uuid: newPage.uuid,
+                            uuid: page.uuid,
                             x: parseFloat(formData.x),
                             y: parseFloat(formData.y),
                             sceneId: formData.sceneId,
@@ -659,9 +798,19 @@ export class NotesForm extends FormApplication {
                                 color: 0xFFFF00
                             },
                             onClick: () => {
-                                // Open note in panel (will be implemented in Phase 4)
-                                // For now, just open the journal
-                                journal.sheet.render(true, { pageId: newPage.id });
+                                // Open note form for editing
+                                const form = new NotesForm({
+                                    pageId: page.id,
+                                    pageUuid: page.uuid,
+                                    title: page.name,
+                                    content: page.text?.content || '',
+                                    tags: page.getFlag(MODULE.ID, 'tags') || [],
+                                    visibility: page.getFlag(MODULE.ID, 'visibility') || 'private',
+                                    sceneId: formData.sceneId,
+                                    x: formData.x,
+                                    y: formData.y
+                                });
+                                form.render(true);
                             }
                         });
                     } catch (error) {
@@ -671,7 +820,7 @@ export class NotesForm extends FormApplication {
                 }
             }
 
-            ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" saved successfully.`);
+            ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
             this.close();
             
             // Refresh notes panel if it exists
