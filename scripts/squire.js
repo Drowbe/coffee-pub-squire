@@ -197,6 +197,30 @@ Hooks.once('ready', () => {
             }
         });
 
+        // Hook for creating journal pages (for notes)
+        const createJournalPageHookId = BlacksmithHookManager.registerHook({
+            name: "createJournalEntryPage",
+            description: "Coffee Pub Squire: Handle journal entry page creation for notes panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (page, options, userId) => {
+                // Route to notes panel when a new page is created
+                await _routeToNotesPanel(page, {}, options, userId);
+            }
+        });
+
+        // Hook for deleting journal pages (for notes)
+        const deleteJournalPageHookId = BlacksmithHookManager.registerHook({
+            name: "deleteJournalEntryPage",
+            description: "Coffee Pub Squire: Handle journal entry page deletion for notes panel",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (page, options, userId) => {
+                // Route to notes panel when a page is deleted
+                await _routeToNotesPanel(page, {}, options, userId);
+            }
+        });
+
         
         // Character Panel Hooks
         const characterActorHookId = BlacksmithHookManager.registerHook({
@@ -1061,23 +1085,27 @@ async function _routeToNotesPanel(page, changes, options, userId) {
     if (!notesPanel) return;
     
     try {
-        // Check if this is the currently displayed page in notes panel
-        if (notesPanel.element) {
-            // v13: Detect and convert jQuery to native DOM if needed
-            let nativeElement = notesPanel.element;
-            if (notesPanel.element.jquery || typeof notesPanel.element.find === 'function') {
-                nativeElement = notesPanel.element[0] || notesPanel.element.get?.(0) || notesPanel.element;
-            }
-            
-            const journalContent = nativeElement.querySelector?.('.journal-content');
-            const currentPageId = journalContent?.getAttribute('data-page-id');
-            if (currentPageId === page.id) {
-                // Trigger a refresh through the PanelManager if it's available
-                if (panelManager?.instance && panelManager.element) {
-                    // Re-render the notes panel specifically
-                    notesPanel.render(panelManager.element);
-                }
-            }
+        // Check if this is a note (has noteType flag)
+        const noteType = page.getFlag(MODULE.ID, 'noteType');
+        if (noteType !== 'sticky') {
+            // Not a note, ignore it
+            return;
+        }
+        
+        // Check if this page belongs to the notes journal
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') return;
+        
+        const journal = game.journal.get(journalId);
+        if (!journal || page.parent.id !== journal.id) {
+            // Page doesn't belong to notes journal
+            return;
+        }
+        
+        // Refresh the notes panel
+        if (panelManager?.instance && panelManager.element) {
+            await notesPanel._refreshData();
+            notesPanel.render(panelManager.element);
         }
     } catch (error) {
         console.error('Error routing to notes panel:', error);

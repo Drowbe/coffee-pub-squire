@@ -603,8 +603,12 @@ export class NotesForm extends FormApplication {
             ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" saved successfully.`);
             this.close();
             
-            // Refresh notes panel if it exists (will be implemented in Phase 4)
-            // For now, just close the form
+            // Refresh notes panel if it exists
+            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+            if (panelManager?.notesPanel && panelManager.element) {
+                await panelManager.notesPanel._refreshData();
+                panelManager.notesPanel.render(panelManager.element);
+            }
             
             return true;
         } catch (error) {
