@@ -283,6 +283,21 @@ export class NotesPanel {
                 this._applyFilters(nativeHtml);
             });
         }
+        const clearSearchButton = nativeHtml.querySelector('.clear-notes-search');
+        if (clearSearchButton) {
+            const newClear = clearSearchButton.cloneNode(true);
+            clearSearchButton.parentNode?.replaceChild(newClear, clearSearchButton);
+            newClear.addEventListener('click', (event) => {
+                event.preventDefault();
+                this.filters.search = '';
+                this.filters.tags = [];
+                const input = nativeHtml.querySelector('.notes-search-input');
+                if (input) {
+                    input.value = '';
+                }
+                this.render(this.element);
+            });
+        }
 
             // Tag filter
             nativeHtml.querySelectorAll('.tag-item').forEach(tag => {

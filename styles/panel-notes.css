@@ -230,26 +230,57 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 3px;
     color: #fff;
-    padding: 4px 30px 4px 8px;
+    padding: 4px 28px 4px 8px;
     height: 28px;
     font-size: 0.9em;
 }
 
-.squire-tray[data-position="left"] .notes-search i {
+.squire-tray[data-position="left"] .notes-search .clear-notes-search {
     position: absolute;
-    right: 10px;
+    right: 36px;
     top: 50%;
     transform: translateY(-50%);
-    opacity: 0.5;
-    pointer-events: none;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s ease;
     color: #fff;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 50%;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
 }
 
 .squire-tray[data-position="left"] .notes-search .toggle-notes-filters-button {
-    right: 30px;
-    opacity: 0.8;
-    pointer-events: auto;
     cursor: pointer;
+    transition: opacity 0.2s;
+    color: rgba(159, 146, 117, 0.9);
+    opacity: 0.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.squire-tray[data-position="left"] .notes-search .toggle-notes-filters-button:hover,
+.squire-tray[data-position="left"] .notes-search .clear-notes-search:hover {
+    opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
+}
+
+.squire-tray[data-position="left"] .notes-search .toggle-notes-filters-button.active {
+    color: rgba(159, 146, 117, 0.9);
+    opacity: 1;
+}
+
+.squire-tray[data-position="left"] .notes-search .clear-notes-search.disabled {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
 }
 
 .squire-tray[data-position="left"] .notes-filter-section.collapsed {
@@ -259,16 +290,6 @@
 .squire-tray[data-position="left"] .notes-tag-filter {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 10px;
-}
-
-.squire-tray[data-position="left"] .tag-filter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    margin-bottom: 5px;
-    font-size: 0.85em;
-    color: rgba(159, 146, 117, 0.9);
 }
 
 .squire-tray[data-position="left"] .tag-cloud {

@@ -16,18 +16,14 @@
             <!-- Search -->
             <div class="notes-search">
                 <input type="text" class="notes-search-input" placeholder="Search notes..." value="{{filters.search}}">
-                <i class="fa-solid fa-search"></i>
-                <i class="fa-solid fa-filter toggle-notes-filters-button" title="Toggle filters"></i>
+                <i class="fa-solid fa-times clear-notes-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+                <i class="fa-solid fa-filter toggle-notes-filters-button {{#if filtersOpen}}active{{/if}}" title="Toggle filters"></i>
             </div>
 
             <div class="notes-filter-section {{#unless filtersOpen}}collapsed{{/unless}}">
                 <!-- Tag Cloud -->
                 {{#if allTags.length}}
                 <div class="notes-tag-filter">
-                    <div class="tag-filter-header">
-                        <span>Tags</span>
-                        <i class="fa-solid fa-chevron-down tag-filter-toggle"></i>
-                    </div>
                     <div class="tag-cloud">
                         {{#each allTags}}
                         <span class="tag-item" data-tag="{{this}}">
