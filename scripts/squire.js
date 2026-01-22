@@ -8,6 +8,7 @@ import { QuestForm } from './window-quest.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { NotesForm } from './panel-notes.js';
 import { trackModuleTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
@@ -1667,9 +1668,15 @@ Hooks.once('init', async function() {
         Handlebars.registerPartial('handle-character-portrait', '{{!-- Character portrait partial failed to load --}}');
     }
     
-    // Set up API to expose PanelManager to other modules
+    // Set up API to expose PanelManager and NotesForm to other modules
     game.modules.get(MODULE.ID).api = {
-        PanelManager
+        PanelManager,
+        NotesForm,
+        openNotesForm: (options = {}) => {
+            const form = new NotesForm(null, options);
+            form.render(true);
+            return form;
+        }
     };
     
     // Create and store PartyPanel instance
@@ -1691,6 +1698,9 @@ Hooks.once('init', async function() {
 
     // Add quest form to Hooks
     window.QuestForm = QuestForm;
+    
+    // Add NotesForm to window for console access
+    window.NotesForm = NotesForm;
 });
 
 Hooks.once('ready', async function() {

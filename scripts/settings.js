@@ -1002,6 +1002,74 @@ export const registerSettings = function() {
 
 
     // --------------------------------
+    // ---      NOTES Settings     ---
+    // --------------------------------
+
+    // ---------- Notes Heading ----------
+    game.settings.register(MODULE.ID, "headingH3NotesConfiguration", {
+        name: 'Notes Configuration',
+        hint: 'Settings for the notes system that allows players to quickly capture and organize memories.',
+        scope: "world",
+        config: true,
+        default: "",
+        type: String,
+    });
+
+    // Notes Journal
+    game.settings.register(MODULE.ID, 'notesJournal', {
+        name: 'Notes Journal',
+        hint: 'The journal to use for player notes. Journal must have "All Players = Observer" ownership to allow players to create notes.',
+        scope: 'world',
+        config: true,
+        type: String,
+        default: 'none',
+        choices: () => {
+            const choices = { 'none': '- Select Journal -' };
+            game.journal.contents.forEach(j => {
+                choices[j.id] = j.name;
+            });
+            return choices;
+        },
+        onChange: async (journalId) => {
+            // Verify journal ownership when selected
+            if (journalId && journalId !== 'none') {
+                const journal = game.journal.get(journalId);
+                if (journal) {
+                    const defaultPerm = journal.ownership.default;
+                    if (defaultPerm < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+                        ui.notifications.warn(`Warning: Notes journal "${journal.name}" should have "All Players = Observer" ownership to allow players to create notes.`);
+                    }
+                }
+            }
+        }
+    });
+
+    // Codex Journal
+    game.settings.register(MODULE.ID, 'codexJournal', {
+        name: "Codex Journal",
+        hint: "The journal to use for codex entries. Each entry will be a separate page in this journal.",
+        scope: "world",
+        config: false,
+        type: String,
+        choices: () => {
+            const choices = {
+                'none': '- Select Journal -'
+            };
+            game.journal.contents.forEach(j => {
+                choices[j.id] = j.name;
+            });
+            return choices;
+        },
+        default: "none",
+        onChange: () => {
+            // Update the codex panel if it exists
+            if (PanelManager.instance?.codexPanel) {
+                PanelManager.instance.codexPanel.render(PanelManager.element);
+            }
+        }
+    });
+
+    // --------------------------------
     // ---      CODEX Settings     ---
     // --------------------------------
 

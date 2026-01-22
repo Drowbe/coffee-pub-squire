@@ -41,16 +41,8 @@ export class NotesPanel {
         const notesContainer = this.element?.querySelector('[data-panel="panel-notes"]');
         if (!notesContainer) return;
 
-        // Get the selected journal ID
-        const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');
-        
-        // For GMs, they can view a different journal than the persistent one
-        const gmJournalId = game.user.isGM ? game.settings.get(MODULE.ID, 'notesGMJournal') : null;
-        
-        // Determine which journal to display
-        // - If user is GM and has a selected journal, use that
-        // - Otherwise use the persistent journal
-        const journalId = (game.user.isGM && gmJournalId !== 'none') ? gmJournalId : persistentJournalId;
+        // Get the selected journal ID - now using notesJournal (new system)
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
         
         const journal = journalId !== 'none' ? game.journal.get(journalId) : null;
 
@@ -123,9 +115,8 @@ export class NotesPanel {
 
         // If journal ID exists but journal doesn't, reset to 'none'
         if (journalId !== 'none' && !journal && game.user.isGM) {
-            await game.settings.set(MODULE.ID, 'notesSharedJournal', 'none');
-            await game.settings.set(MODULE.ID, 'notesSharedJournalPage', 'none');
-            ui.notifications.warn("The previously selected journal no longer exists. Please select a new one.");
+            await game.settings.set(MODULE.ID, 'notesJournal', 'none');
+            ui.notifications.warn("The previously selected notes journal no longer exists. Please select a new one.");
         }
 
 
@@ -141,7 +132,6 @@ export class NotesPanel {
             hasPermissionIssue: !!journal && !canViewJournal,
             canEditPage: page ? (game.user.isGM || page.testUserPermission(game.user, PERMISSION_LEVELS.OWNER)) : false,
             isGM: game.user.isGM,
-            isPersistent: game.user.isGM && persistentJournalId === journalId && journalId !== 'none',
             position: "left" // Hard-code position for now as it's always left in current implementation
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
@@ -248,7 +238,7 @@ export class NotesPanel {
             });
         }
         
-        // Set journal button (GM only)
+        // Set journal button (GM only) - Now sets notesJournal for new Notes system
         // v13: Use nativeHtml instead of html
         nativeHtml.querySelectorAll('.set-journal-button, .set-journal-button-large').forEach(button => {
             const newButton = button.cloneNode(true);
@@ -260,63 +250,35 @@ export class NotesPanel {
                 if (game.user.isGM) {
                     showJournalPicker({
                         title: 'Select Journal for Notes',
-                        getCurrentId: () => game.settings.get(MODULE.ID, 'notesPersistentJournal'),
+                        getCurrentId: () => game.settings.get(MODULE.ID, 'notesJournal'),
                         onSelect: async (journalId) => {
-                            await game.settings.set(MODULE.ID, 'notesGMJournal', journalId);
-                            ui.notifications.info(`Journal ${journalId === 'none' ? 'selection cleared' : 'selected'}.`);
+                            await game.settings.set(MODULE.ID, 'notesJournal', journalId);
+                            
+                            // Verify journal ownership
+                            if (journalId && journalId !== 'none') {
+                                const journal = game.journal.get(journalId);
+                                if (journal) {
+                                    const defaultPerm = journal.ownership.default;
+                                    if (defaultPerm < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+                                        ui.notifications.warn(`Warning: Notes journal "${journal.name}" should have "All Players = Observer" ownership to allow players to create notes.`);
+                                    } else {
+                                        ui.notifications.info(`Notes journal "${journal.name}" selected.`);
+                                    }
+                                }
+                            } else {
+                                ui.notifications.info('Notes journal selection cleared.');
+                            }
                         },
                         reRender: () => this.render(this.element),
-                        afterSelect: (journalId, j) => showPagePicker(j, {
-                            onSelect: async (pageId) => {
-                                await game.settings.set(MODULE.ID, 'notesSharedJournalPage', pageId);
-                            },
-                            reRender: () => this.render(this.element)
-                        }),
-                        infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> As GM, you can select a journal for your own viewing without changing what players see.</p><p style="color: #ddd;">Use the <i class="fa-solid fa-thumbtack" style="color: gold;"></i> button to set what journal players will see.</p>',
+                        infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> This journal will be used for all player notes. Players can create notes if they have Observer access or better.</p><p style="color: #ddd;">Make sure the journal has "All Players = Observer" ownership to allow players to create notes.</p>',
                         showRefreshButton: true
                     });
                 }
             });
         });
 
-        // Toggle persistent journal (GM only)
-        // v13: Use nativeHtml instead of html
-        const togglePersistentButton = nativeHtml.querySelector('.toggle-persistent-button');
-        if (togglePersistentButton) {
-            const newButton = togglePersistentButton.cloneNode(true);
-            togglePersistentButton.parentNode?.replaceChild(newButton, togglePersistentButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                
-                if (!game.user.isGM) return;
-                
-                if (!journal) {
-                    ui.notifications.warn("No journal selected. Please select a journal first.");
-                    return;
-                }
-                
-                // Get current persistent and GM journal IDs
-                const persistentJournalId = game.settings.get(MODULE.ID, 'notesPersistentJournal');
-                const gmJournalId = game.settings.get(MODULE.ID, 'notesGMJournal');
-                
-                if (persistentJournalId === journal.id) {
-                    // Journal is already persistent, unpin it
-                    await game.settings.set(MODULE.ID, 'notesPersistentJournal', 'none');
-                    ui.notifications.info(`Journal "${journal.name}" unpinned from players view.`);
-                } else {
-                    // Make this journal persistent
-                    await game.settings.set(MODULE.ID, 'notesPersistentJournal', journal.id);
-                    
-                    // Also update the GM journal to match
-                    await game.settings.set(MODULE.ID, 'notesGMJournal', journal.id);
-                    
-                    ui.notifications.info(`Journal "${journal.name}" pinned for all players.`);
-                }
-                
-                // Re-render the notes panel
-                this.render(this.element);
-            });
-        }
+        // Toggle persistent journal button removed - now using notesJournal setting directly
+        // (Old functionality removed as part of replacing old system)
 
         // Page selection dropdown
         // v13: Use nativeHtml instead of html
@@ -484,6 +446,431 @@ export class NotesPanel {
             console.error('Error opening journal page:', error);
             ui.notifications.error("Error opening journal page: " + error.message);
             return null;
+        }
+    }
+}
+
+/**
+ * NotesForm - Lightweight form for quick note capture
+ * Uses FormApplication for simplicity (like CodexForm)
+ */
+export class NotesForm extends FormApplication {
+    constructor(note = null, options = {}) {
+        super(note, options);
+        this.note = note || this._getDefaultNote();
+        this.dragActive = false;
+        this._eventHandlers = [];
+        
+        // If options contain canvas location, pre-fill it
+        if (options.sceneId) {
+            this.note.sceneId = options.sceneId;
+            this.note.x = options.x || null;
+            this.note.y = options.y || null;
+        }
+    }
+
+    static get defaultOptions() {
+        return foundry.utils.mergeObject(super.defaultOptions, {
+            id: 'notes-quick-form',
+            classes: ['notes-form'],
+            title: 'New Note',
+            template: 'modules/coffee-pub-squire/templates/notes-form.hbs',
+            width: 500,
+            height: 'auto',
+            resizable: true,
+            closeOnSubmit: true,
+            submitOnClose: false,
+            submitOnChange: false
+        });
+    }
+
+    getData() {
+        return {
+            note: this.note,
+            isGM: game.user.isGM,
+            sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
+        };
+    }
+
+    _getDefaultNote() {
+        return {
+            title: '',
+            content: '',
+            img: null,
+            tags: [],
+            visibility: 'private',
+            sceneId: null,
+            x: null,
+            y: null
+        };
+    }
+
+    async _updateObject(event, formData) {
+        // Get selected journal from settings
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') {
+            ui.notifications.error('No notes journal selected. Please select a journal in module settings.');
+            return;
+        }
+
+        const journal = game.journal.get(journalId);
+        if (!journal) {
+            ui.notifications.error('Selected notes journal not found.');
+            return;
+        }
+
+        // Convert tags to array
+        let tags = [];
+        if (formData.tags) {
+            tags = formData.tags.split(',').map(t => t.trim()).filter(t => t);
+        }
+
+        // Generate HTML content (note body only, no metadata)
+        const content = this._generateNoteContent(formData);
+
+        // Create journal page with flags
+        const pageData = {
+            name: formData.title || 'Untitled Note',
+            type: 'text',
+            text: {
+                content: content
+            },
+            flags: {
+                [MODULE.ID]: {
+                    noteType: 'sticky',
+                    tags: tags,
+                    visibility: formData.visibility || 'private',
+                    sceneId: formData.sceneId || null,
+                    x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
+                    y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
+                    authorId: game.user.id,
+                    timestamp: new Date().toISOString()
+                }
+            }
+        };
+
+        try {
+            // Create journal page
+            const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+
+            // Set ownership based on visibility
+            const ownership = {};
+            if (formData.visibility === 'party') {
+                // Party note: author = Owner, all players = Observer
+                ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+            } else {
+                // Private note: author = Owner, others = None (GM can see via journal ownership)
+                ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+                ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+            }
+            await newPage.update({ ownership });
+
+            // If canvas location provided, register pin with Blacksmith (if available)
+            if (formData.sceneId && formData.x !== null && formData.y !== null) {
+                const blacksmith = getBlacksmith();
+                if (blacksmith?.PinAPI) {
+                    try {
+                        blacksmith.PinAPI.createPin({
+                            type: 'note',
+                            uuid: newPage.uuid,
+                            x: parseFloat(formData.x),
+                            y: parseFloat(formData.y),
+                            sceneId: formData.sceneId,
+                            config: {
+                                icon: 'fa-sticky-note',
+                                color: 0xFFFF00
+                            },
+                            onClick: () => {
+                                // Open note in panel (will be implemented in Phase 4)
+                                // For now, just open the journal
+                                journal.sheet.render(true, { pageId: newPage.id });
+                            }
+                        });
+                    } catch (error) {
+                        console.warn('Could not create Blacksmith pin:', error);
+                        // Continue - pin is optional
+                    }
+                }
+            }
+
+            ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" saved successfully.`);
+            this.close();
+            
+            // Refresh notes panel if it exists (will be implemented in Phase 4)
+            // For now, just close the form
+            
+            return true;
+        } catch (error) {
+            console.error('Error saving note:', error);
+            ui.notifications.error(`Failed to save note: ${error.message}`);
+            return false;
+        }
+    }
+
+    _generateNoteContent(formData) {
+        let content = '';
+
+        // Add image if present
+        if (formData.img) {
+            content += `<img src="${formData.img}" alt="${formData.title || 'Note image'}">\n\n`;
+        }
+
+        // Add note content (markdown/HTML)
+        if (formData.content) {
+            content += formData.content;
+        }
+
+        return content;
+    }
+
+    activateListeners(html) {
+        super.activateListeners(html);
+        
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+
+        // Handle cancel button
+        const cancelButton = nativeHtml.querySelector('button.cancel');
+        if (cancelButton) {
+            const handler = () => this.close();
+            cancelButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: cancelButton, event: 'click', handler });
+        }
+
+        // Handle form submission
+        const form = nativeHtml.querySelector('form');
+        if (form) {
+            const handler = (event) => {
+                event.preventDefault();
+                this._handleFormSubmit(event);
+            };
+            form.addEventListener('submit', handler);
+            this._eventHandlers.push({ element: form, event: 'submit', handler });
+        }
+
+        // Set up image paste/drag
+        this._setupImagePaste(nativeHtml);
+        
+        // Set up tag autocomplete (simple - just show existing tags)
+        this._setupTagAutocomplete(nativeHtml);
+    }
+
+    async _handleFormSubmit(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        // Convert FormData to object
+        const data = {};
+        for (const [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+
+        // Call _updateObject
+        await this._updateObject(event, data);
+    }
+
+    _setupImagePaste(html) {
+        // Image drop zone
+        const imageDropZone = html.querySelector('.notes-image-drop-zone');
+        if (imageDropZone) {
+            const newDropZone = imageDropZone.cloneNode(true);
+            imageDropZone.parentNode?.replaceChild(newDropZone, imageDropZone);
+
+            // Drag handlers
+            const dragEnter = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                newDropZone.classList.add('drag-active');
+            };
+
+            const dragLeave = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                newDropZone.classList.remove('drag-active');
+            };
+
+            const dragOver = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'copy';
+            };
+
+            const drop = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                newDropZone.classList.remove('drag-active');
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    await this._handleImageFile(files[0], html);
+                }
+            };
+
+            newDropZone.addEventListener('dragenter', dragEnter);
+            newDropZone.addEventListener('dragleave', dragLeave);
+            newDropZone.addEventListener('dragover', dragOver);
+            newDropZone.addEventListener('drop', drop);
+
+            this._eventHandlers.push(
+                { element: newDropZone, event: 'dragenter', handler: dragEnter },
+                { element: newDropZone, event: 'dragleave', handler: dragLeave },
+                { element: newDropZone, event: 'dragover', handler: dragOver },
+                { element: newDropZone, event: 'drop', handler: drop }
+            );
+        }
+
+        // Paste handler on content textarea
+        const contentTextarea = html.querySelector('textarea[name="content"]');
+        if (contentTextarea) {
+            const pasteHandler = async (e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const file = items[i].getAsFile();
+                        await this._handleImageFile(file, html);
+                        break;
+                    }
+                }
+            };
+
+            contentTextarea.addEventListener('paste', pasteHandler);
+            this._eventHandlers.push({ element: contentTextarea, event: 'paste', handler: pasteHandler });
+        }
+
+        // File input for manual image selection
+        const fileInput = html.querySelector('input[type="file"]');
+        const browseButton = html.querySelector('button[onclick*="image-file-input"]');
+        
+        if (browseButton && fileInput) {
+            // Remove inline onclick and set up proper handler
+            browseButton.removeAttribute('onclick');
+            const handler = () => {
+                fileInput.click();
+            };
+            browseButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: browseButton, event: 'click', handler });
+        }
+        
+        if (fileInput) {
+            const changeHandler = async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                    await this._handleImageFile(file, html);
+                    // Reset input so same file can be selected again
+                    e.target.value = '';
+                }
+            };
+            fileInput.addEventListener('change', changeHandler);
+            this._eventHandlers.push({ element: fileInput, event: 'change', handler: changeHandler });
+        }
+
+        // Remove image button
+        const removeImageButton = html.querySelector('.notes-remove-image');
+        if (removeImageButton) {
+            const handler = () => {
+                this.note.img = null;
+                const imgInput = html.querySelector('input[name="img"]');
+                const imgPreview = html.querySelector('.notes-image-preview');
+                const imgSection = html.querySelector('.notes-image-section');
+                if (imgInput) {
+                    imgInput.value = '';
+                }
+                if (imgPreview) {
+                    imgPreview.src = '';
+                }
+                if (imgSection) {
+                    imgSection.style.display = 'none';
+                }
+            };
+            removeImageButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: removeImageButton, event: 'click', handler });
+        }
+    }
+
+    async _handleImageFile(file, html) {
+        if (!file.type.startsWith('image/')) {
+            ui.notifications.warn('Please select an image file.');
+            return;
+        }
+
+        try {
+            // Use FoundryVTT's /upload endpoint
+            // Files are stored in: FoundryVTT/Data/uploads/ (server uploads directory)
+            // The path returned is relative to the FoundryVTT data root
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
+
+            const result = await response.json();
+            // Result contains: { url: string, path: string }
+            // Path is typically: "uploads/filename.jpg" (relative to Data directory)
+            const imagePath = result.url || result.path;
+
+            // Update hidden img input
+            const imgInput = html.querySelector('input[name="img"]');
+            if (imgInput) {
+                imgInput.value = imagePath;
+            }
+
+            // Show image preview
+            const imgPreview = html.querySelector('.notes-image-preview');
+            const imgSection = html.querySelector('.notes-image-section');
+            if (imgPreview) {
+                imgPreview.src = imagePath;
+            }
+            if (imgSection) {
+                imgSection.style.display = '';
+            }
+
+            this.note.img = imagePath;
+            ui.notifications.info('Image uploaded successfully.');
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            ui.notifications.error('Failed to upload image: ' + error.message);
+        }
+    }
+
+    _setupTagAutocomplete(html) {
+        // Simple tag autocomplete - just show existing tags from notes journal
+        const tagsInput = html.querySelector('input[name="tags"]');
+        if (!tagsInput) return;
+
+        // Get existing tags from notes journal
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') return;
+
+        const journal = game.journal.get(journalId);
+        if (!journal) return;
+
+        const existingTags = new Set();
+        for (const page of journal.pages.contents) {
+            const flags = page.getFlag(MODULE.ID, 'tags');
+            if (Array.isArray(flags)) {
+                flags.forEach(tag => existingTags.add(tag));
+            }
+        }
+
+        // Show tag suggestions (simple - could be enhanced later)
+        const suggestionsDiv = html.querySelector('.tag-suggestions');
+        if (suggestionsDiv && existingTags.size > 0) {
+            const tagsArray = Array.from(existingTags).sort();
+            suggestionsDiv.innerHTML = `<small>Existing tags: ${tagsArray.slice(0, 10).join(', ')}${tagsArray.length > 10 ? '...' : ''}</small>`;
         }
     }
 }
