@@ -319,20 +319,6 @@ export class NotesPanel {
             });
 
         // Tag cloud toggle
-        const tagToggle = nativeHtml.querySelector('.tag-filter-toggle');
-        if (tagToggle) {
-            const newToggle = tagToggle.cloneNode(true);
-            tagToggle.parentNode?.replaceChild(newToggle, tagToggle);
-            newToggle.addEventListener('click', (event) => {
-                const tagCloud = nativeHtml.querySelector('.tag-cloud');
-                if (tagCloud) {
-                    tagCloud.classList.toggle('collapsed');
-                    newToggle.classList.toggle('fa-chevron-down');
-                    newToggle.classList.toggle('fa-chevron-up');
-                }
-            });
-        }
-
         const toggleFiltersButton = nativeHtml.querySelector('.toggle-notes-filters-button');
         if (toggleFiltersButton) {
             const newToggle = toggleFiltersButton.cloneNode(true);
@@ -355,16 +341,19 @@ export class NotesPanel {
             });
         }
 
-        // Visibility filter
-        const visibilityFilter = nativeHtml.querySelector('.visibility-filter-select');
-        if (visibilityFilter) {
-            const newSelect = visibilityFilter.cloneNode(true);
-            visibilityFilter.parentNode?.replaceChild(newSelect, visibilityFilter);
-            newSelect.addEventListener('change', (event) => {
-                this.filters.visibility = event.target.value;
+        nativeHtml.querySelectorAll('.notes-visibility-button').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            newButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                const visibility = event.currentTarget.dataset.visibility || 'all';
+                this.filters.visibility = visibility;
                 this._applyFilters(nativeHtml);
+                nativeHtml.querySelectorAll('.notes-visibility-button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.visibility === visibility);
+                });
             });
-        }
+        });
 
         // Note actions
         nativeHtml.querySelectorAll('.note-edit').forEach(button => {

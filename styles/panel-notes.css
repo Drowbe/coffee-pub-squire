@@ -287,6 +287,46 @@
     display: none;
 }
 
+.squire-tray[data-position="left"] .notes-visibility-section {
+    display: flex;
+    justify-content: center;
+    padding: 6px 0 8px;
+}
+
+.squire-tray[data-position="left"] .notes-visibility-buttons {
+    display: flex;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 6px;
+}
+
+.squire-tray[data-position="left"] .notes-visibility-button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(235, 233, 225, 1);
+    cursor: pointer;
+    height: 26px;
+    width: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .notes-visibility-button:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .notes-visibility-button.active {
+    background: rgba(145, 133, 107, 0.4);
+    border-color: rgba(145, 133, 107, 0.9);
+    color: #fff;
+}
+
 .squire-tray[data-position="left"] .notes-tag-filter {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 10px;

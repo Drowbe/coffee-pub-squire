@@ -46,14 +46,20 @@
                 </div>
                 {{/if}}
 
-                <!-- Visibility Filter -->
-                <div class="notes-visibility-filter">
-                    <select class="visibility-filter-select">
-                        <option value="all" {{#if (eq filters.visibility 'all')}}selected{{/if}}>All Notes</option>
-                        <option value="private" {{#if (eq filters.visibility 'private')}}selected{{/if}}>Private</option>
-                        <option value="party" {{#if (eq filters.visibility 'party')}}selected{{/if}}>Party</option>
-                    </select>
-                </div>
+            </div>
+        </div>
+
+        <div class="notes-visibility-section">
+            <div class="notes-visibility-buttons">
+                <button class="notes-visibility-button {{#if (eq filters.visibility 'all')}}active{{/if}}" data-visibility="all" type="button">
+                    <i class="fa-solid fa-layer-group"></i>
+                </button>
+                <button class="notes-visibility-button {{#if (eq filters.visibility 'party')}}active{{/if}}" data-visibility="party" type="button">
+                    <i class="fa-solid fa-users"></i>
+                </button>
+                <button class="notes-visibility-button {{#if (eq filters.visibility 'private')}}active{{/if}}" data-visibility="private" type="button">
+                    <i class="fa-solid fa-lock"></i>
+                </button>
             </div>
         </div>
 
