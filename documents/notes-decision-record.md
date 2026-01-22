@@ -99,12 +99,15 @@ Rationale:
 - If unset, note creation prompts the GM to select/create a journal.
 - Players can create notes only if they have access to that journal (Observer or better).
 - If the selected journal is deleted, GM is prompted to select a new one.
-- Journal selection is handled via settings UI (config true).
+- Journal selection is handled via settings UI (`config: true`).
+- Journal ownership must be set to "All Players = Observer" to allow players to create pages.
+- If journal ownership is incorrect, GM is warned when selecting journal.
 
 Rationale:
 - Ensures a reliable container and avoids silent failures.
 - Clear user experience for journal management.
 - Prevents orphaned notes.
+- Ensures players can create notes if they have journal access.
 
 ## Decision 9: Note Identification
 Notes are identified by `flags[MODULE.ID].noteType === 'sticky'`.

@@ -150,7 +150,43 @@ class NotesForm extends Application {
         };
         
         // Create journal page
-        await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+        const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+        
+        // Set ownership based on visibility
+        const ownership = {};
+        if (formData.visibility === 'party') {
+            // Party note: author = Owner, all players = Observer
+            ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+            ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+        } else {
+            // Private note: author = Owner, others = None (GM can see via journal ownership)
+            ownership[game.user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+            ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+        }
+        
+        await newPage.update({ ownership });
+        
+        // If canvas location provided, register pin with Blacksmith
+        if (formData.sceneId && formData.x !== null && formData.y !== null) {
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith?.PinAPI) {
+                blacksmith.PinAPI.createPin({
+                    type: 'note',
+                    uuid: newPage.uuid,
+                    x: formData.x,
+                    y: formData.y,
+                    sceneId: formData.sceneId,
+                    config: {
+                        icon: 'fa-sticky-note',
+                        color: 0xFFFF00
+                    },
+                    onClick: () => {
+                        // Open note in panel
+                        notesPanel.showNote(newPage.uuid);
+                    }
+                });
+            }
+        }
     }
 }
 ```
@@ -235,11 +271,19 @@ Uses FoundryVTT settings for configuration:
 // Notes journal selection
 game.settings.register(MODULE.ID, 'notesJournal', {
     name: "Notes Journal",
-    hint: "The journal to use for player notes...",
+    hint: "The journal to use for player notes. Journal must have 'All Players = Observer' ownership to allow players to create notes.",
     scope: "world",
-    config: true,
+    config: true,  // Visible in settings UI for GM to select
     type: String,
-    default: "none"
+    default: "none",
+    choices: () => {
+        // Dynamic choices based on available journals
+        const choices = { 'none': '- Select Journal -' };
+        game.journal.contents.forEach(j => {
+            choices[j.id] = j.name;
+        });
+        return choices;
+    }
 });
 
 // User preferences
@@ -266,15 +310,17 @@ game.user.setFlag(MODULE.ID, 'notesCollapsedScenes', {});
    ↓
 6. Form creates JournalEntryPage with flags
    ↓
-7. If canvas location provided, registers pin with Blacksmith Pin API
+7. Form sets page ownership based on visibility (party vs private)
    ↓
-8. Form closes, triggers panel refresh
+8. If canvas location provided, registers pin with Blacksmith Pin API
    ↓
-9. NotesPanel._refreshData() loads new note
+9. Form closes, triggers panel refresh
    ↓
-10. NotesParser.parseSinglePage() extracts data
+10. NotesPanel._refreshData() loads new note
    ↓
-11. Panel renders updated note card
+11. NotesParser.parseSinglePage() combines flags metadata with content
+   ↓
+12. Panel renders updated note card
 ```
 
 ### Note Display Flow
