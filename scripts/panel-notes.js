@@ -331,8 +331,12 @@ export class NotesPanel {
                     const page = await foundry.utils.fromUuid(uuid);
                     if (page) {
                         await page.delete();
-                        await this._refreshData();
-                        this.render(this.element);
+                        // Refresh the panel using panel manager's element
+                        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                        if (panelManager && panelManager.element) {
+                            await this._refreshData();
+                            this.render(panelManager.element);
+                        }
                     }
                 }
             });
@@ -672,13 +676,23 @@ export class NotesForm extends FormApplication {
     async _handleFormSubmit(event) {
         event.preventDefault();
         
-        const form = event.target;
+        const form = event.target.closest('form') || event.target;
         const formData = new FormData(form);
         
         // Convert FormData to object
         const data = {};
         for (const [key, value] of formData.entries()) {
             data[key] = value;
+        }
+
+        // Explicitly get the checked visibility radio button value
+        // FormData should include it, but let's be explicit to ensure it's captured
+        const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
+        if (visibilityRadio) {
+            data.visibility = visibilityRadio.value;
+        } else {
+            // Default to private if no radio is checked (shouldn't happen, but safety)
+            data.visibility = 'private';
         }
 
         // Call _updateObject
