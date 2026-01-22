@@ -8,6 +8,8 @@ This document outlines the step-by-step plan for implementing the new Notes syst
 
 ### 1.1 Create Journal Utilities (`scripts/utility-journal.js`)
 
+**Status**: ✅ **COMPLETE** (utility created, panel-notes updated)
+
 **Extract from**:
 - `panel-notes.js`: `_userCanAccessPage()`, `_showJournalPicker()`, `_showPagePicker()`, `_renderJournalContent()`, `_getPageContent()`
 - `panel-codex.js`: Journal selection patterns, content enrichment
@@ -29,14 +31,19 @@ export async function renderJournalContent(container, page, options)
 ```
 
 **Files to update**:
-- `scripts/panel-notes.js` - Replace methods with utility calls
-- `scripts/panel-codex.js` - Replace journal selection with utility calls
-- `scripts/panel-quest.js` - Replace journal selection with utility calls
-- `scripts/helpers.js` - Add exports if needed
+- ✅ `scripts/utility-journal.js` - **CREATED** (all functions implemented)
+- ✅ `scripts/panel-notes.js` - **COMPLETE** (replaced all methods with utility calls, removed ~973 lines)
+- ✅ `scripts/panel-codex.js` - **COMPLETE** (replaced `_showJournalPicker()` with `showJournalPicker()` using 'select' mode)
+- ✅ `scripts/panel-quest.js` - **COMPLETE** (replaced `_showJournalPicker()` with `showJournalPicker()` using 'grid' mode)
+- ✅ `scripts/helpers.js` - **NO CHANGES NEEDED** (utility imports from helpers)
 
 **Estimated effort**: 4-6 hours
+**Actual effort**: ~3 hours (utility created, all three panels updated)
+**Status**: ✅ **PHASE 1.1 COMPLETE**
 
 ### 1.2 Create Base Parser Class (`scripts/utility-base-parser.js`)
+
+**Status**: ✅ **COMPLETE** (base class created, CodexParser refactored)
 
 **Extract from**:
 - `utility-codex-parser.js`: Common parsing patterns
@@ -45,24 +52,27 @@ export async function renderJournalContent(container, page, options)
 **Create base class**:
 ```javascript
 export class BaseParser {
-    static async parseSinglePage(page, enrichedHtml)
-    static extractFieldFromHTML(html, label)
+    static extractFieldFromHTML(html, label, containerSelector = 'p')
     static extractImage(html)
-    static extractTags(html)
-    static extractLink(html)
+    static extractTags(html, containerSelector = 'p')
+    static extractLink(html, contextElement = null)
+    static async parseSinglePage(page, enrichedHtml) // Abstract - must be implemented by subclass
 }
 ```
 
 **Refactor**:
-- `CodexParser extends BaseParser`
-- Create `NotesParser extends BaseParser`
+- ✅ `CodexParser extends BaseParser` - **COMPLETE** (uses BaseParser utilities, legacy methods updated)
+- ⏳ Create `NotesParser extends BaseParser` - **PENDING** (Phase 2)
 - Future: `QuestParser extends BaseParser`
 
 **Files to update**:
-- `scripts/utility-codex-parser.js` - Refactor to extend BaseParser
-- `scripts/utility-notes-parser.js` - Create new, extend BaseParser
+- ✅ `scripts/utility-base-parser.js` - **CREATED** (all common parsing methods implemented)
+- ✅ `scripts/utility-codex-parser.js` - **COMPLETE** (refactored to extend BaseParser, uses BaseParser utilities)
+- ⏳ `scripts/utility-notes-parser.js` - **PENDING** (Phase 2)
 
 **Estimated effort**: 3-4 hours
+**Actual effort**: ~2 hours (base class created, CodexParser refactored)
+**Status**: ✅ **PHASE 1.2 COMPLETE** (NotesParser will be created in Phase 2)
 
 ### 1.3 ~~Create Base Pin Class~~ (Deferred - Not Needed for Notes)
 
@@ -98,16 +108,19 @@ export class BasePanel {
 
 ## Phase 2: Notes Parser Implementation
 
+**Status**: ✅ **COMPLETE** (parser created)
+
 **Goal**: Create parser to extract structured data from note journal pages.
 
 ### 2.1 Create NotesParser (`scripts/utility-notes-parser.js`)
+
+**Status**: ✅ **COMPLETE** (parser created, extends BaseParser)
 
 **Based on**: `utility-codex-parser.js` patterns
 
 **Key methods**:
 - `parseSinglePage(page, enrichedHtml)` - Parse note page (combines flags metadata with content)
-- `extractContent(html)` - Extract markdown content from HTML
-- `extractImage(html)` - Extract image if present from HTML
+- Uses `BaseParser.extractImage()` for image extraction
 - Note: Metadata (tags, scene, location, visibility, author, timestamp) comes from flags, not HTML parsing
 
 **Data structure**:
@@ -132,9 +145,38 @@ export class BasePanel {
 **Note**: Parser reads metadata from flags, only extracts content and images from HTML.
 
 **Files to create**:
-- `scripts/utility-notes-parser.js`
+- ✅ `scripts/utility-notes-parser.js` - **CREATED** (extends BaseParser, reads flags for metadata, extracts images from HTML)
 
 **Estimated effort**: 2-3 hours
+**Actual effort**: ~1 hour (parser created, follows BaseParser pattern)
+**Status**: ✅ **PHASE 2 COMPLETE**
+
+**How to Test Phase 2**:
+
+Since NotesParser requires notes with flags (which we'll create in Phase 3), testing is limited now. You can:
+
+1. **Verify Parser Loads** (No errors):
+   - Load FoundryVTT with the module
+   - Open browser console (F12)
+   - Check for errors — should be none
+   - Verify file loads: Check Network tab → look for `utility-notes-parser.js` → should load successfully
+
+2. **Test Parser Structure** (Console - using dynamic import):
+   ```javascript
+   // In browser console (FoundryVTT)
+   (async () => {
+       const { NotesParser } = await import('modules/coffee-pub-squire/scripts/utility-notes-parser.js');
+       console.log('NotesParser loaded:', NotesParser);
+       console.log('Extends BaseParser (has extractImage):', typeof NotesParser.extractImage === 'function');
+       console.log('Has parseSinglePage:', typeof NotesParser.parseSinglePage === 'function');
+   })();
+   ```
+
+3. **Full Testing** (After Phase 3):
+   - Once we create the NotesForm in Phase 3, you can create test notes with flags
+   - Then use NotesParser to parse them and verify all fields are extracted correctly
+
+**Note**: Full functional testing will happen in Phase 3 when we can create notes with the proper flag structure.
 
 ## Phase 3: Notes Form Implementation
 

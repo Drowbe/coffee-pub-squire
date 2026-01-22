@@ -3,6 +3,7 @@ import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPins } from './quest-pin.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
+import { showJournalPicker } from './utility-journal.js';
 
 // Helper function to get quest number from UUID
 function getQuestNumber(questUuid) {
@@ -1004,7 +1005,16 @@ export class QuestPanel {
             const newButton = setQuestButton.cloneNode(true);
             setQuestButton.parentNode?.replaceChild(newButton, setQuestButton);
             newButton.addEventListener('click', () => {
-                this._showJournalPicker();
+                showJournalPicker({
+                    title: 'Select Journal for Quests',
+                    getCurrentId: () => game.settings.get(MODULE.ID, 'questJournal'),
+                    onSelect: async (journalId) => {
+                        await game.settings.set(MODULE.ID, 'questJournal', journalId);
+                        ui.notifications.info(`Journal for Quests ${journalId === 'none' ? 'cleared' : 'selected'}.`);
+                    },
+                    reRender: () => this.render(this.element),
+                    infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate quest.</p>'
+                });
             });
         }
 
@@ -2820,80 +2830,6 @@ export class QuestPanel {
         });
     }
 
-    /**
-     * Show journal picker dialog
-     * @private
-     */
-    _showJournalPicker() {
-        const journals = game.journal.contents.map(j => ({
-            id: j.id,
-            name: j.name,
-            img: j.thumbnail || j.img || 'icons/svg/book.svg',
-            pages: j.pages.size
-        }));
-        journals.sort((a, b) => a.name.localeCompare(b.name));
-        const content = `
-        <h2 style="text-align: center; margin-bottom: 15px;">Select a Journal for Quests</h2>
-        ${journals.length === 0 ? 
-            `<div class="no-journals-message" style="text-align: center; padding: 20px;">
-                <i class="fa-solid fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
-                <p>No journals found in your world.</p>
-                <p>You need to create at least one journal in the Journals tab first.</p>
-            </div>` :
-            `<div class="journal-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;">
-                <div class="journal-item" data-id="none" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
-                    <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fa-solid fa-times-circle" style="font-size: 3em; color: #aa0000;"></i>
-                    </div>
-                    <div class="journal-name" style="margin-top: 5px; font-weight: bold;">None</div>
-                </div>
-                ${journals.map(j => `
-                <div class="journal-item" data-id="${j.id}" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
-                    <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center; background-size: contain; background-position: center; background-repeat: no-repeat; background-image: url('${j.img}');">
-                        ${!j.img ? `<i class="fa-solid fa-book" style="font-size: 3em; color: #666;"></i>` : ''}
-                    </div>
-                    <div class="journal-name" style="margin-top: 5px; font-weight: bold;">${j.name}</div>
-                    <div class="journal-pages" style="font-size: 0.8em; color: #999;">${j.pages} page${j.pages !== 1 ? 's' : ''}</div>
-                </div>
-                `).join('')}
-            </div>`
-        }
-        <div style="margin-bottom: 10px; padding: 10px; background: rgba(50, 50, 80, 0.3); border-radius: 5px;">
-            <p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate quest.</p>
-        </div>
-        <div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;">
-            <button class="cancel-button" style="flex: 1; margin-right: 5px;">Cancel</button>
-        </div>
-        `;
-        const dialog = new Dialog({
-            title: `Select Journal for Quests`,
-            content: content,
-            buttons: {},
-            render: html => {
-                // v13: Detect and convert jQuery to native DOM if needed
-                let nativeDlgHtml = html;
-                if (html && (html.jquery || typeof html.find === 'function')) {
-                    nativeDlgHtml = html[0] || html.get?.(0) || html;
-                }
-                nativeDlgHtml.querySelectorAll('.journal-item').forEach(item => {
-                    item.addEventListener('click', async event => {
-                        const journalId = event.currentTarget.dataset.id;
-                        await game.settings.set(MODULE.ID, 'questJournal', journalId);
-                        ui.notifications.info(`Journal for Quests ${journalId === 'none' ? 'cleared' : 'selected'}.`);
-                        dialog.close();
-                        this.render(this.element);
-                    });
-                });
-                const cancelButton = nativeDlgHtml.querySelector('.cancel-button');
-                if (cancelButton) {
-                    cancelButton.addEventListener('click', () => dialog.close());
-                }
-            },
-            default: '',
-            close: () => {}
-        });
-        dialog.render(true);
-    }
 
     /**
      * Render the quest panel

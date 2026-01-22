@@ -1,11 +1,12 @@
 import { MODULE } from './const.js';
+import { BaseParser } from './utility-base-parser.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
-export class CodexParser {
+export class CodexParser extends BaseParser {
     /**
      * Parse HTML content from a journal page into structured codex entries
      * @param {string} html - HTML content from page.renderContent()
@@ -123,7 +124,7 @@ export class CodexParser {
      * @returns {Object|null} Codex entry object or null if not valid
      */
     static async parseSinglePage(page, enrichedHtml) {
-        // Parse the enriched HTML
+        // Parse the enriched HTML once for link extraction
         const parser = new DOMParser();
         const doc = parser.parseFromString(enrichedHtml, 'text/html');
         
@@ -140,63 +141,27 @@ export class CodexParser {
         };
 
         // Get image if present
-        const imgTag = doc.querySelector('img');
-        if (imgTag) entry.img = imgTag.src;
+        const img = BaseParser.extractImage(enrichedHtml);
+        if (img) entry.img = img;
 
-        // Parse all <p> fields with <strong> labels
-        const pTags = Array.from(doc.querySelectorAll('p'));
-        for (const p of pTags) {
+        // Extract fields using BaseParser utilities
+        entry.category = BaseParser.extractFieldFromHTML(enrichedHtml, 'Category', 'p');
+        if (entry.category.length > 0) {
+            entry.category = entry.category.charAt(0).toUpperCase() + entry.category.slice(1).toLowerCase();
+        }
+        
+        entry.description = BaseParser.extractFieldFromHTML(enrichedHtml, 'Description', 'p');
+        entry.plotHook = BaseParser.extractFieldFromHTML(enrichedHtml, 'Plot Hook', 'p');
+        entry.location = BaseParser.extractFieldFromHTML(enrichedHtml, 'Location', 'p');
+        entry.tags = BaseParser.extractTags(enrichedHtml, 'p');
+        
+        // Extract link - search in paragraph containing "Link" field
+        const linkP = Array.from(doc.querySelectorAll('p')).find(p => {
             const strong = p.querySelector('strong');
-            if (!strong) continue;
-
-            // Robustly extract label: remove colon if inside <strong> or just after
-            let label = strong.textContent.trim();
-            if (label.endsWith(':')) label = label.slice(0, -1);
-            let afterStrong = p.innerHTML.split(strong.outerHTML)[1] || '';
-            afterStrong = afterStrong.trim();
-            if (afterStrong.startsWith(':')) afterStrong = afterStrong.slice(1);
-            let value = afterStrong.replace(/^\s*/, '').replace(/<[^>]+>/g, '').trim();
-
-            label = label.toUpperCase();
-
-            switch (label) {
-                case 'CATEGORY':
-                    entry.category = value.trim();
-                    // Capitalize first letter, lower the rest
-                    if (entry.category.length > 0) {
-                        entry.category = entry.category.charAt(0).toUpperCase() + entry.category.slice(1).toLowerCase();
-                    }
-                    break;
-                case 'DESCRIPTION':
-                    entry.description = value;
-                    break;
-                case 'PLOT HOOK':
-                    entry.plotHook = value;
-                    break;
-                case 'LOCATION':
-                    entry.location = value;
-                    break;
-                case 'LINK':
-                    const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
-                    if (uuidMatch) {
-                        entry.link = {
-                            uuid: uuidMatch[1],
-                            label: uuidMatch[2]
-                        };
-                    } else {
-                        const aTag = p.querySelector('a[data-uuid]');
-                        if (aTag) {
-                            entry.link = {
-                                uuid: aTag.getAttribute('data-uuid'),
-                                label: aTag.textContent.trim()
-                            };
-                        }
-                    }
-                    break;
-                case 'TAGS':
-                    entry.tags = value.split(',').map(t => t.trim()).filter(t => t);
-                    break;
-            }
+            return strong && strong.textContent.trim().replace(/:$/, '').toUpperCase() === 'LINK';
+        });
+        if (linkP) {
+            entry.link = BaseParser.extractLink(enrichedHtml, linkP) || null;
         }
 
         // No longer require mandatory fields - we'll handle missing categories gracefully
@@ -204,37 +169,24 @@ export class CodexParser {
         return entry;
     }
 
+    // Legacy extract methods - now use BaseParser utilities
     static extractDescription(content) {
-        const match = content.match(/<strong>Description:<\/strong>\s*([^<]+)/i);
-        return match ? match[1].trim() : '';
+        return BaseParser.extractFieldFromHTML(content, 'Description');
     }
 
     static extractPlotHook(content) {
-        const match = content.match(/<strong>Plot Hook:<\/strong>\s*([^<]+)/i);
-        return match ? match[1].trim() : '';
+        return BaseParser.extractFieldFromHTML(content, 'Plot Hook');
     }
 
     static extractLocation(content) {
-        const match = content.match(/<strong>Location:<\/strong>\s*([^<]+)/i);
-        return match ? match[1].trim() : '';
+        return BaseParser.extractFieldFromHTML(content, 'Location');
     }
 
     static extractLink(content) {
-        const match = content.match(/@UUID\[(.*?)\]{(.*?)}/);
-        if (match) {
-            return {
-                uuid: match[1],
-                label: match[2]
-            };
-        }
-        return null;
+        return BaseParser.extractLink(content);
     }
 
     static extractTags(content) {
-        const match = content.match(/<strong>Tags:<\/strong>\s*([^<]+)/i);
-        if (match) {
-            return match[1].split(',').map(tag => tag.trim()).filter(tag => tag);
-        }
-        return [];
+        return BaseParser.extractTags(content);
     }
 } 

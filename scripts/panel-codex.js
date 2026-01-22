@@ -2,6 +2,7 @@ import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
+import { showJournalPicker } from './utility-journal.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -1056,7 +1057,25 @@ export class CodexPanel {
             const newButton = setJournalButton.cloneNode(true);
             setJournalButton.parentNode?.replaceChild(newButton, setJournalButton);
             newButton.addEventListener('click', () => {
-                this._showJournalPicker();
+                showJournalPicker({
+                    title: 'Select Codex Journal',
+                    mode: 'select',
+                    choices: (() => {
+                        const choices = { 'none': '- Select Journal -' };
+                        game.journal.contents.forEach(j => {
+                            choices[j.id] = j.name;
+                        });
+                        return choices;
+                    })(),
+                    selectedId: game.settings.get(MODULE.ID, 'codexJournal'),
+                    onSelect: async (journalId) => {
+                        await game.settings.set(MODULE.ID, 'codexJournal', journalId);
+                    },
+                    reRender: async () => {
+                        await this._refreshData();
+                        this.render(this.element);
+                    }
+                });
             });
         }
 
@@ -1707,59 +1726,6 @@ export class CodexPanel {
         }, 0);
     }
 
-    /**
-     * Show journal picker dialog
-     * @private
-     */
-    async _showJournalPicker() {
-        const journals = game.journal.contents;
-        const choices = {
-            'none': '- Select Journal -'
-        };
-        journals.forEach(j => {
-            choices[j.id] = j.name;
-        });
-
-        new Dialog({
-            title: 'Select Codex Journal',
-            width: 600,
-            content: `
-                <form>
-                    <div class="form-group">
-                        <label>Journal:</label>
-                        <select name="journal">
-                            ${Object.entries(choices).map(([id, name]) => 
-                                `<option value="${id}" ${id === game.settings.get(MODULE.ID, 'codexJournal') ? 'selected' : ''}>${name}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                </form>
-            `,
-            buttons: {
-                save: {
-                    icon: '<i class="fa-solid fa-save"></i>',
-                    label: 'Save',
-                    callback: async (html) => {
-                        // v13: Use native DOM instead of jQuery
-                        let nativeDialogHtml = html;
-                        if (html && (html.jquery || typeof html.find === 'function')) {
-                            nativeDialogHtml = html[0] || html.get?.(0) || html;
-                        }
-                        const journalSelect = nativeDialogHtml.querySelector('select[name="journal"]');
-                        const journalId = journalSelect ? journalSelect.value : null;
-                        await game.settings.set(MODULE.ID, 'codexJournal', journalId);
-                        await this._refreshData();
-                        this.render(this.element);
-                    }
-                },
-                cancel: {
-                    icon: '<i class="fa-solid fa-times"></i>',
-                    label: 'Cancel'
-                }
-            },
-            default: 'save'
-        }).render(true);
-    }
 
     /**
      * Auto-discover codex entries from party inventories
