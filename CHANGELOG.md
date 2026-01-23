@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [13.1.0] - Sticky Notes
+
+### Added
+- **Complete Notes System Redesign**: New card-based notes panel matching Codex and Quest styling
+  - Dark theme with transparent content container and bordered cards
+  - Header layout: visibility badge (icon-only) | title | action buttons (edit, pin, delete)
+  - Footer layout: editor avatars (left) | timestamp (right)
+  - Tags displayed at bottom of cards with Codex-style formatting
+- **NotesForm Class**: New FormApplication for creating and editing notes
+  - Supports both create and edit modes with proper data loading
+  - Window title updates dynamically ("New Note" vs "Edit Note: [Title]")
+  - Form remembers window size and position
+- **Notes Ownership Sync**: GM-mediated ownership updates via Blacksmith sockets with owner/none model
+  - Non-GM users can create notes; GM syncs ownership based on visibility
+  - Socket handler `squire:updateNoteOwnership` for cross-client synchronization
+- **Notes Window Persistence**: Notes form now remembers size and position
+- **Notes Footer Avatars**: Note cards display editor avatars instead of author icon
+  - Shows multiple editor avatars when note has been edited by multiple users
+  - Falls back to author name with icon if no avatars available
+- **Notes Filter Toggle**: Collapsible filter section with toggle button
+  - Filters can be hidden/shown via filter icon in search bar
+  - Matches Codex/Quest filter UX patterns
+
+### Changed
+- **Notes Panel Styling**: Complete visual overhaul to match Codex and Quest panels
+  - Content container: transparent background, 6px border radius, 2px white border
+  - Note cards: dark charcoal background (rgba(0,0,0,0.3)), light borders, golden-brown text
+  - Filters: dark background (rgba(0,0,0,0.6)), matching Codex/Quest filter styling
+  - Search input: white text on dark background, clear button, filter toggle
+  - Tags: red-tinted styling matching Codex/Quest tag appearance
+- **Notes Editor**: Switched to Foundry ProseMirror editor for note content
+  - Rich text editing with full FoundryVTT editor capabilities
+  - Native image handling through editor (drag/drop, paste from clipboard)
+- **Notes Form Layout**: Complete redesign matching XP window patterns
+  - Header section with banner image background and circular portrait/icon
+  - Title input in header with meta information
+  - Visibility toggle switch in header controls
+  - Sectioned body with collapsible headers (CONTENT, TAGS, etc.)
+  - Styled form actions footer with Save/Cancel buttons
+- **Notes Visibility UI**: Replaced dropdown with full-width icon+label button group
+  - Three buttons: All, Party, Private with icons
+  - Active state highlighting with golden-brown accent
+  - Matches modern UI patterns from other Blacksmith modules
+- **Notes Filters**: Codex/Quest-style filter UX with clear button and tag cloud toggle
+  - Clear search button (X icon) that resets search and filters
+  - Filter toggle button to show/hide filter section
+  - Tag cloud with clickable tags for filtering
+  - Scene filter dropdown (when scenes available)
+- **Tags Normalization**: Notes tags forced to uppercase for consistent filtering
+  - Tags displayed in uppercase on cards and in filter cloud
+  - Tag matching is case-insensitive but display is normalized
+- **Note Header Image**: Uses first note image as header portrait when available
+  - Circular portrait in form header shows note's first image
+  - Falls back to icon if no image present
+- **Image Handling**: Removed custom image upload UI in favor of editor-native behavior
+  - Images handled directly through ProseMirror editor
+  - Drag-and-drop and clipboard paste supported
+  - No separate image upload section in form
+- **Note Card Layout**: Reorganized card structure for better information hierarchy
+  - Actions moved to header (right side) for quick access
+  - Footer moved after tags for better visual flow
+  - Visibility badge icon-only (no text) positioned before title
+  - Removed separate image display section (images in content only)
+
+### Fixed
+- **Notes Filters**: Tag filtering now uses precomputed tag CSV and additive matching
+  - Tags stored as comma-separated string in data attribute for efficient filtering
+  - Multiple tag selection works correctly with additive logic
+- **Notes Clear Search**: Clear button now resets search and filters
+  - Properly clears search input and resets all filter states
+  - Button disabled state when search is empty
+- **Notes Tag Interactions**: Clicking a note tag filters by that tag
+  - Tag clicks in cards and filter cloud properly update filter state
+  - Active tag highlighting shows selected filters
+- **Notes Panel Refresh**: Panel now refreshes automatically on note create/update/delete
+  - Hooks registered for `createJournalEntryPage` and `deleteJournalEntryPage`
+  - Panel refreshes when notes are modified via form or journal
+- **Notes Form Editing**: Edit mode properly loads existing note data
+  - Title, content, tags, visibility, and location correctly populated
+  - Image extraction from content works for editing
+  - Ownership updates correctly when visibility changes (GM only)
+
+
 ## [13.0.8] - Settings Scope Migration
 
 ### Changed
