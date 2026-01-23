@@ -672,6 +672,7 @@ export class NotesPanel {
 
         ui.notifications.info('Click on the map to place the note pin. Press Esc to cancel.');
         document.body.classList.add(NOTE_PIN_CURSOR_CLASS);
+        document.documentElement.classList.add(NOTE_PIN_CURSOR_CLASS);
         document.body.style.cursor = 'crosshair';
 
         const view = canvas.app.view;
@@ -733,6 +734,7 @@ export class NotesPanel {
         view?.removeEventListener('contextmenu', onContextMenu, true);
         window.removeEventListener('keydown', onKeyDown);
         document.body.classList.remove(NOTE_PIN_CURSOR_CLASS);
+        document.documentElement.classList.remove(NOTE_PIN_CURSOR_CLASS);
         document.body.style.cursor = '';
         view?.classList.remove(NOTE_PIN_CANVAS_CURSOR_CLASS);
         this._pinPlacement = null;
