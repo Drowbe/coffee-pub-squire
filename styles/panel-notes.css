@@ -296,6 +296,7 @@
 .squire-tray[data-position="left"] .notes-visibility-buttons {
     display: flex;
     gap: 6px;
+    width: 100%;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
@@ -303,17 +304,21 @@
 }
 
 .squire-tray[data-position="left"] .notes-visibility-button {
+    flex: 1;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     color: rgba(235, 233, 225, 1);
     cursor: pointer;
-    height: 26px;
-    width: 34px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     transition: all 0.2s ease;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .squire-tray[data-position="left"] .notes-visibility-button:hover {

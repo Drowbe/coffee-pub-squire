@@ -51,14 +51,17 @@
 
         <div class="notes-visibility-section">
             <div class="notes-visibility-buttons">
-                <button class="notes-visibility-button {{#if (eq filters.visibility 'all')}}active{{/if}}" data-visibility="all" type="button">
+                <button class="notes-visibility-button {{#if (eq filters.visibility 'all')}}active{{/if}}" data-visibility="all" type="button" title="All Notes">
                     <i class="fa-solid fa-layer-group"></i>
+                    <span>All</span>
                 </button>
-                <button class="notes-visibility-button {{#if (eq filters.visibility 'party')}}active{{/if}}" data-visibility="party" type="button">
+                <button class="notes-visibility-button {{#if (eq filters.visibility 'party')}}active{{/if}}" data-visibility="party" type="button" title="Party Notes">
                     <i class="fa-solid fa-users"></i>
+                    <span>Party</span>
                 </button>
-                <button class="notes-visibility-button {{#if (eq filters.visibility 'private')}}active{{/if}}" data-visibility="private" type="button">
+                <button class="notes-visibility-button {{#if (eq filters.visibility 'private')}}active{{/if}}" data-visibility="private" type="button" title="Private Notes">
                     <i class="fa-solid fa-lock"></i>
+                    <span>Private</span>
                 </button>
             </div>
         </div>
