@@ -308,24 +308,20 @@ Since NotesParser requires notes with flags (which we'll create in Phase 3), tes
 **Integration pattern**:
 ```javascript
 // When creating note from canvas
-const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-if (blacksmith?.PinAPI) {
-    blacksmith.PinAPI.createPin({
-        type: 'note',
-        uuid: noteUuid,
+const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+if (pins?.isAvailable()) {
+    await pins.whenReady();
+    await pins.create({
+        id: crypto.randomUUID(),
         x: dropX,
         y: dropY,
-        sceneId: canvas.scene.id,
-        config: {
-            icon: 'fa-sticky-note',
-            color: 0xFFFF00,
-            // ... other visual config
-        },
-        onClick: () => {
-            // Open note in panel
-            notesPanel.showNote(noteUuid);
-        }
-    });
+        moduleId: 'coffee-pub-squire',
+        image: '<i class="fa-solid fa-location-dot"></i>',
+        size: { w: 48, h: 48 },
+        style: { fill: '#000000', stroke: '#ffff00', strokeWidth: 2, alpha: 0.9 },
+        config: { noteUuid }
+    }, { sceneId: canvas.scene.id });
+    await pins.reload({ sceneId: canvas.scene.id });
 }
 ```
 

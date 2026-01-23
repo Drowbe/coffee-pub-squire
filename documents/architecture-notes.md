@@ -168,23 +168,20 @@ class NotesForm extends Application {
         
         // If canvas location provided, register pin with Blacksmith
         if (formData.sceneId && formData.x !== null && formData.y !== null) {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (blacksmith?.PinAPI) {
-                blacksmith.PinAPI.createPin({
-                    type: 'note',
-                    uuid: newPage.uuid,
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                await pins.whenReady();
+                await pins.create({
+                    id: crypto.randomUUID(),
                     x: formData.x,
                     y: formData.y,
-                    sceneId: formData.sceneId,
-                    config: {
-                        icon: 'fa-sticky-note',
-                        color: 0xFFFF00
-                    },
-                    onClick: () => {
-                        // Open note in panel
-                        notesPanel.showNote(newPage.uuid);
-                    }
-                });
+                    moduleId: MODULE.ID,
+                    image: '<i class="fa-solid fa-location-dot"></i>',
+                    size: { w: 48, h: 48 },
+                    style: { fill: '#000000', stroke: '#ffff00', strokeWidth: 2, alpha: 0.9 },
+                    config: { noteUuid: newPage.uuid }
+                }, { sceneId: formData.sceneId });
+                await pins.reload({ sceneId: formData.sceneId });
             }
         }
     }
@@ -241,23 +238,20 @@ Optional canvas markers for spatially-pinned notes. **Uses Blacksmith Pin API** 
 **Integration Pattern**:
 ```javascript
 // Register note pins with Blacksmith
-const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-if (blacksmith?.PinAPI) {
-    blacksmith.PinAPI.createPin({
-        type: 'note',
-        uuid: noteUuid,
+const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+if (pins?.isAvailable()) {
+    await pins.whenReady();
+    await pins.create({
+        id: crypto.randomUUID(),
         x: x,
         y: y,
-        sceneId: sceneId,
-        config: {
-            icon: 'fa-sticky-note',
-            color: 0xFFFF00,
-            // ... other visual config
-        },
-        onClick: () => {
-            // Open note in panel
-        }
-    });
+        moduleId: MODULE.ID,
+        image: '<i class="fa-solid fa-location-dot"></i>',
+        size: { w: 48, h: 48 },
+        style: { fill: '#000000', stroke: '#ffff00', strokeWidth: 2, alpha: 0.9 },
+        config: { noteUuid }
+    }, { sceneId });
+    await pins.reload({ sceneId });
 }
 ```
 

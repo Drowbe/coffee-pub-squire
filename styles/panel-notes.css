@@ -6,6 +6,18 @@
     position: relative;
 }
 
+body.squire-notes-pin-placement {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 64 64'><path fill='%23ac9f81' d='M32 2C20.95 2 12 10.95 12 22c0 14.25 20 40 20 40s20-25.75 20-40C52 10.95 43.05 2 32 2zm0 28a8 8 0 1 1 0-16 8 8 0 0 1 0 16z'/></svg>") 16 32, crosshair;
+}
+
+body.squire-notes-pin-placement .squire-notes-pin-placement-canvas {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 64 64'><path fill='%23ac9f81' d='M32 2C20.95 2 12 10.95 12 22c0 14.25 20 40 20 40s20-25.75 20-40C52 10.95 43.05 2 32 2zm0 28a8 8 0 1 1 0-16 8 8 0 0 1 0 16z'/></svg>") 16 32, crosshair;
+}
+
+body.squire-notes-pin-placement * {
+    cursor: inherit;
+}
+
 /* CONTENT - match codex-content / quest-content */
 .squire-tray[data-position="left"] .notes-content {
     flex: 1;
@@ -424,6 +436,11 @@
     border-radius: 4px;
     padding: 8px;
     transition: border-color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .note-card.note-card-highlight {
+    border-color: rgba(172, 159, 129, 0.9);
+    box-shadow: 0 0 10px rgba(172, 159, 129, 0.5);
 }
 
 .squire-tray[data-position="left"] .note-card:hover {

@@ -53,88 +53,71 @@ The Notes system needs to create optional canvas markers (pins) for spatially-pi
 
 ### Pin Creation
 
-**Method**: `createPin(options)`
+**Method**: `pins.create(pinData, options?)`
 
-**Options Object**:
+**PinData Object**:
 ```javascript
 {
-    // Required
-    type: string,              // 'note' - identifies this as a note pin
-    uuid: string,              // Journal page UUID of the note
-    x: number,                 // Canvas X coordinate
-    y: number,                 // Canvas Y coordinate
-    sceneId: string,           // Scene UUID where pin is placed
-    
-    // Optional
-    config: {
-        icon: string,          // Font Awesome icon class (e.g., 'fa-sticky-note')
-        color: number,          // Hex color (e.g., 0xFFFF00 for yellow)
-        size: number,          // Pin size multiplier (default: 1.0)
-        // ... other visual config options
+    id: string,               // Required: UUID for the pin
+    x: number,                // Canvas X coordinate
+    y: number,                // Canvas Y coordinate
+    moduleId: string,         // Required: 'coffee-pub-squire'
+    image: string,            // Font Awesome HTML, e.g. '<i class="fa-solid fa-location-dot"></i>'
+    size: { w: number, h: number }, // Optional: defaults to { w: 32, h: 32 }
+    style: {                  // Optional visual styling
+        fill: string,         // Hex color string
+        stroke: string,       // Hex color string
+        strokeWidth: number,
+        alpha: number
     },
-    
-    // Callbacks
-    onClick: function,         // Called when pin is clicked
-    onDragEnd: function,      // Called when pin drag ends (optional)
-    onRightClick: function,    // Called when pin is right-clicked (optional)
-    
-    // Metadata (stored but not used by Blacksmith)
-    metadata: {
-        authorId: string,      // User ID who created the note
-        timestamp: string,      // ISO timestamp
-        // ... other note-specific metadata
+    config: {
+        noteUuid: string      // Journal page UUID for lookup
     }
 }
 ```
 
-**Returns**: Pin object or ID that can be used for updates/deletion
+**Options**:
+- `sceneId` (string, optional): target scene; defaults to active scene
+- `silent` (boolean, optional): skip event emission
+
+**Returns**: PinData (created pin)
 
 **Example**:
 ```javascript
-const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-if (blacksmith?.PinAPI) {
-    const pin = blacksmith.PinAPI.createPin({
-        type: 'note',
-        uuid: noteUuid,
+const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+if (pins?.isAvailable()) {
+    await pins.whenReady();
+    const pin = await pins.create({
+        id: crypto.randomUUID(),
         x: dropX,
         y: dropY,
-        sceneId: canvas.scene.id,
-        config: {
-            icon: 'fa-sticky-note',
-            color: 0xFFFF00,
-            size: 1.0
-        },
-        onClick: () => {
-            // Open note in panel
-            notesPanel.showNote(noteUuid);
-        },
-        onDragEnd: (newX, newY) => {
-            // Update note location flags
-            updateNoteLocation(noteUuid, newX, newY);
-        },
-        metadata: {
-            authorId: game.user.id,
-            timestamp: new Date().toISOString()
-        }
-    });
+        moduleId: 'coffee-pub-squire',
+        image: '<i class="fa-solid fa-location-dot"></i>',
+        size: { w: 48, h: 48 },
+        style: { fill: '#000000', stroke: '#ffff00', strokeWidth: 2, alpha: 0.9 },
+        config: { noteUuid }
+    }, { sceneId: canvas.scene.id });
+    await pins.reload({ sceneId: canvas.scene.id });
 }
 ```
 
 ### Pin Update
 
-**Method**: `updatePin(pinId, options)`
+**Method**: `pins.update(pinId, patch, options?)`
 
-**Options Object**:
+**Patch Object**:
 ```javascript
 {
     x: number,                 // New X coordinate (optional)
     y: number,                 // New Y coordinate (optional)
-    config: {                  // Updated visual config (optional)
-        icon: string,
-        color: number,
-        size: number
+    image: string,             // Updated Font Awesome HTML (optional)
+    style: {                   // Updated visual style (optional)
+        fill: string,
+        stroke: string,
+        strokeWidth: number,
+        alpha: number
     },
-    metadata: object           // Updated metadata (optional)
+    config: object             // Updated config (optional)
 }
 ```
 
@@ -145,7 +128,7 @@ if (blacksmith?.PinAPI) {
 
 ### Pin Deletion
 
-**Method**: `deletePin(pinId)` or `deletePinByUuid(uuid)`
+**Method**: `pins.delete(pinId, options?)`
 
 **Use Cases**:
 - Delete pin when note is deleted
@@ -154,16 +137,12 @@ if (blacksmith?.PinAPI) {
 
 **Example**:
 ```javascript
-// Delete by pin ID
-blacksmith.PinAPI.deletePin(pinId);
-
-// Or delete by note UUID (preferred for Notes)
-blacksmith.PinAPI.deletePinByUuid(noteUuid);
+await pins.delete(pinId, { sceneId: canvas.scene.id });
 ```
 
 ### Pin Query
 
-**Method**: `getPinByUuid(uuid)` or `getPinsByType(type, sceneId)`
+**Method**: `pins.get(pinId)` or `pins.list(options?)`
 
 **Use Cases**:
 - Check if note already has a pin
@@ -172,11 +151,11 @@ blacksmith.PinAPI.deletePinByUuid(noteUuid);
 
 **Example**:
 ```javascript
-// Get pin for specific note
-const pin = blacksmith.PinAPI.getPinByUuid(noteUuid);
+// Get pin for specific note if you stored pinId
+const pin = pins.get(pinId);
 
 // Get all note pins for current scene
-const notePins = blacksmith.PinAPI.getPinsByType('note', canvas.scene.id);
+const notePins = pins.list({ moduleId: 'coffee-pub-squire', sceneId: canvas.scene.id });
 ```
 
 ### Pin Persistence
@@ -188,13 +167,13 @@ const notePins = blacksmith.PinAPI.getPinsByType('note', canvas.scene.id);
 scene.setFlag('coffee-pub-blacksmith', 'pins', [
     {
         id: string,            // Unique pin ID
-        type: string,          // 'note', 'quest', etc.
-        uuid: string,          // Associated document UUID
         x: number,
         y: number,
-        sceneId: string,
-        config: object,
-        metadata: object
+        size: { w: number, h: number },
+        style: object,
+        image: string,
+        moduleId: string,
+        config: { noteUuid: string }
     },
     // ... more pins
 ]);
@@ -278,7 +257,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 **Flow**:
 1. User drags note from panel to canvas
 2. Notes system creates note journal page
-3. Notes system calls `blacksmith.PinAPI.createPin()` with drop coordinates
+3. Notes system calls `pins.create()` with drop coordinates
 4. Pin is created and persisted
 
 ### 2. Note Creation from Form
@@ -288,7 +267,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 **Flow**:
 1. User creates note via form with optional canvas coordinates
 2. Notes system creates note journal page
-3. If coordinates provided, Notes system calls `blacksmith.PinAPI.createPin()`
+3. If coordinates provided, Notes system calls `pins.create()`
 4. Pin is created and persisted
 
 ### 3. Note Deletion
@@ -297,7 +276,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 
 **Flow**:
 1. User deletes note
-2. Notes system calls `blacksmith.PinAPI.deletePinByUuid(noteUuid)`
+2. Notes system calls `pins.delete(pinId)` or deletes by list+config.noteUuid lookup
 3. Pin is removed from canvas and scene flags
 
 ### 4. Note Unpin
@@ -306,7 +285,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 
 **Flow**:
 1. User clicks "Unpin" on a note
-2. Notes system calls `blacksmith.PinAPI.deletePinByUuid(noteUuid)`
+2. Notes system calls `pins.delete(pinId)` or deletes by list+config.noteUuid lookup
 3. Pin is removed, note location flags are cleared
 
 ### 5. Scene Activation
@@ -316,7 +295,7 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 **Flow**:
 1. Scene is activated
 2. Blacksmith loads pins for the scene (handled by Blacksmith)
-3. Notes system queries pins via `blacksmith.PinAPI.getPinsByType('note', sceneId)`
+3. Notes system queries pins via `pins.list({ moduleId, sceneId })`
 4. Notes system updates note location flags if needed
 
 ## Error Handling
@@ -327,10 +306,10 @@ scene.setFlag('coffee-pub-blacksmith', 'pins', [
 
 **Handling**:
 ```javascript
-const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-if (!blacksmith?.PinAPI) {
+const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+if (!pins?.isAvailable()) {
     // Graceful degradation: Notes work without pins
-    console.warn('Blacksmith Pin API not available. Canvas pinning disabled.');
+    console.warn('Blacksmith Pins API not available. Canvas pinning disabled.');
     return;
 }
 ```

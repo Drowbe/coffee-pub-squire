@@ -17,6 +17,152 @@ function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+function logNotePins(message, data = null) {
+    const blacksmith = getBlacksmith();
+    const detail = data ? (typeof data === 'string' ? data : JSON.stringify(data)) : '';
+    blacksmith?.utils?.postConsoleAndNotification(
+        MODULE.NAME,
+        `NOTE | PINS ${message}`,
+        detail,
+        true,
+        false
+    );
+}
+
+function getPinsApi() {
+    const blacksmith = getBlacksmith();
+    return blacksmith?.pins || null;
+}
+
+function isPinsApiAvailable(pins) {
+    if (!pins) return false;
+    if (typeof pins.isAvailable === 'function') {
+        return pins.isAvailable();
+    }
+    return true;
+}
+
+const NOTE_PIN_ICON = 'fa-map-pin';
+const NOTE_PIN_COLOR = 0xFFFF00;
+const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
+const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
+const NOTE_PIN_SIZE = { w: 48, h: 48 };
+
+let notePinClickDisposer = null;
+let notePinHandlerController = null;
+
+function toHexColor(color) {
+    if (typeof color === 'number') {
+        return `#${color.toString(16).padStart(6, '0')}`;
+    }
+    return color;
+}
+
+function getNotePinImage() {
+    return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
+}
+
+function getNotePinStyle() {
+    return {
+        fill: '#000000',
+        stroke: '#ffffff',
+        strokeWidth: 2,
+        alpha: 0.9
+    };
+}
+
+function getNotePinOwnership() {
+    return {
+        default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+        users: {
+            [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+        }
+    };
+}
+
+function generateNotePinId() {
+    return globalThis.crypto?.randomUUID?.() || foundry.utils.randomID();
+}
+
+function registerNotePinHandlers() {
+    if (notePinClickDisposer) return;
+    const pins = getPinsApi();
+    if (!pins?.on || !isPinsApiAvailable(pins)) {
+        logNotePins('Pins handler registration skipped (API not available).');
+        return;
+    }
+
+    notePinHandlerController = new AbortController();
+    notePinClickDisposer = pins.on('click', (evt) => {
+        const noteUuid = evt?.pin?.config?.noteUuid;
+        if (!noteUuid) return;
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        panelManager?.notesPanel?.showNote(noteUuid);
+        logNotePins('Pin click routed to note.', { noteUuid });
+    }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
+    logNotePins('Pins handler registered.');
+}
+
+async function createNotePinForPage(page, sceneId, x, y) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) {
+        throw new Error('Pins API not available.');
+    }
+
+    if (pins.create) {
+        if (typeof pins.whenReady === 'function') {
+            await pins.whenReady();
+        }
+
+        logNotePins('Creating pin via pins.create.', { noteUuid: page.uuid, sceneId, x, y });
+        const pinData = await pins.create({
+            id: generateNotePinId(),
+            x,
+            y,
+            moduleId: MODULE.ID,
+            image: getNotePinImage(),
+            size: NOTE_PIN_SIZE,
+            style: getNotePinStyle(),
+            ownership: getNotePinOwnership(),
+            config: {
+                noteUuid: page.uuid
+            }
+        }, { sceneId });
+
+        if (typeof pins.reload === 'function') {
+            await pins.reload({ sceneId });
+        }
+
+        return pinData?.id || null;
+    }
+
+    throw new Error('Pins API does not support create.');
+}
+
+async function deleteNotePinForPage(page) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+
+    const pinId = page.getFlag(MODULE.ID, 'pinId');
+    if (pins.delete) {
+        logNotePins('Deleting pin via pins.delete.', { noteUuid: page.uuid, pinId });
+        if (pinId) {
+            await pins.delete(pinId, { sceneId: page.getFlag(MODULE.ID, 'sceneId') });
+        } else if (pins.list) {
+            const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id;
+            const matches = pins.list({ moduleId: MODULE.ID, sceneId })
+                .filter(pin => pin?.config?.noteUuid === page.uuid);
+            logNotePins('Deleting pins by note UUID lookup.', { noteUuid: page.uuid, count: matches.length });
+            for (const pin of matches) {
+                await pins.delete(pin.id, { sceneId });
+            }
+        }
+        return;
+    }
+
+    return;
+}
+
 export class NotesPanel {
     constructor() {
         this.element = null;
@@ -30,6 +176,8 @@ export class NotesPanel {
         this.filtersOpen = false;
         this.allTags = new Set();
         this.scenes = new Set();
+        this._pinPlacement = null;
+        registerNotePinHandlers();
         // Hooks are now managed centrally by HookManager
     }
 
@@ -42,6 +190,7 @@ export class NotesPanel {
      * @public
      */
     destroy() {
+        this._clearNotePinPlacement();
         this.element = null;
     }
 
@@ -429,20 +578,24 @@ export class NotesPanel {
                     no: () => false,
                     defaultYes: false
                 });
-                if (confirmed) {
-                    const page = await foundry.utils.fromUuid(uuid);
-                    if (page) {
-                        await page.delete();
-                        // Refresh the panel using panel manager's element
-                        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                        if (panelManager && panelManager.element) {
-                            await this._refreshData();
-                            this.render(panelManager.element);
+                    if (confirmed) {
+                        const page = await foundry.utils.fromUuid(uuid);
+                        if (page) {
+                            const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+                            if (sceneId) {
+                                await this._unpinNote(page);
+                            }
+                            await page.delete();
+                            // Refresh the panel using panel manager's element
+                            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                            if (panelManager && panelManager.element) {
+                                await this._refreshData();
+                                this.render(panelManager.element);
+                            }
                         }
                     }
-                }
+                });
             });
-        });
 
         nativeHtml.querySelectorAll('.note-pin, .note-unpin').forEach(button => {
             const newButton = button.cloneNode(true);
@@ -450,8 +603,27 @@ export class NotesPanel {
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
                 const uuid = event.currentTarget.dataset.uuid;
-                // Pin/unpin functionality will be implemented in Phase 5 (Blacksmith Pin API)
-                ui.notifications.info('Pin functionality coming in Phase 5');
+                const isUnpin = event.currentTarget.classList.contains('note-unpin');
+                if (!uuid) return;
+
+                const page = await foundry.utils.fromUuid(uuid);
+                if (!page) {
+                    ui.notifications.error('Note not found.');
+                    return;
+                }
+
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                    ui.notifications.warn('You do not have permission to pin this note.');
+                    return;
+                }
+
+                if (isUnpin) {
+                    await this._unpinNote(page);
+                    return;
+                }
+
+                logNotePins('Pin placement requested.', { noteUuid: page.uuid });
+                await this._beginNotePinPlacement(page);
             });
         });
 
@@ -471,6 +643,174 @@ export class NotesPanel {
         // Apply initial filters
         this._applyFilters(nativeHtml);
         this._updateClearSearchState(nativeHtml);
+    }
+
+    async _beginNotePinPlacement(page) {
+        if (!canvas?.scene || !canvas?.app?.view) {
+            ui.notifications.warn('Canvas is not ready. Open a scene to place a note pin.');
+            logNotePins('Pin placement aborted: canvas not ready.');
+            return;
+        }
+
+        const existingSceneId = page.getFlag(MODULE.ID, 'sceneId');
+        if (existingSceneId) {
+            ui.notifications.warn('This note is already pinned. Unpin it first to place a new pin.');
+            logNotePins('Pin placement aborted: note already pinned.', { noteUuid: page.uuid });
+            return;
+        }
+
+        const pins = getPinsApi();
+        if (!isPinsApiAvailable(pins)) {
+            ui.notifications.warn('Blacksmith Pins API not available. Install or enable Coffee Pub Blacksmith.');
+            logNotePins('Pin placement aborted: pins API unavailable.');
+            return;
+        }
+
+        if (this._pinPlacement) {
+            this._clearNotePinPlacement();
+        }
+
+        ui.notifications.info('Click on the map to place the note pin. Press Esc to cancel.');
+        document.body.classList.add(NOTE_PIN_CURSOR_CLASS);
+        document.body.style.cursor = 'crosshair';
+
+        const view = canvas.app.view;
+        view.classList.add(NOTE_PIN_CANVAS_CURSOR_CLASS);
+        const onPointerDown = async (event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const rect = view.getBoundingClientRect();
+            const globalX = event.clientX - rect.left;
+            const globalY = event.clientY - rect.top;
+            const localPos = canvas.squirePins?.toLocal({ x: globalX, y: globalY }) ||
+                canvas.stage?.toLocal({ x: globalX, y: globalY });
+
+            if (!localPos) {
+                ui.notifications.warn('Unable to place pin: canvas position unavailable.');
+                logNotePins('Pin placement failed: local position unavailable.');
+                this._clearNotePinPlacement();
+                return;
+            }
+
+            logNotePins('Canvas click captured for pin placement.', { x: localPos.x, y: localPos.y });
+            await this._createNotePin(page, canvas.scene.id, localPos.x, localPos.y);
+            this._clearNotePinPlacement();
+        };
+
+        const onContextMenu = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this._clearNotePinPlacement();
+        };
+
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                this._clearNotePinPlacement();
+            }
+        };
+
+        view.addEventListener('pointerdown', onPointerDown, true);
+        view.addEventListener('contextmenu', onContextMenu, true);
+        window.addEventListener('keydown', onKeyDown);
+
+        this._pinPlacement = {
+            pageUuid: page.uuid,
+            view,
+            onPointerDown,
+            onContextMenu,
+            onKeyDown
+        };
+        logNotePins('Pin placement armed.', { noteUuid: page.uuid });
+    }
+
+    _clearNotePinPlacement() {
+        if (!this._pinPlacement) return;
+        const { view, onPointerDown, onContextMenu, onKeyDown } = this._pinPlacement;
+        view?.removeEventListener('pointerdown', onPointerDown, true);
+        view?.removeEventListener('contextmenu', onContextMenu, true);
+        window.removeEventListener('keydown', onKeyDown);
+        document.body.classList.remove(NOTE_PIN_CURSOR_CLASS);
+        document.body.style.cursor = '';
+        view?.classList.remove(NOTE_PIN_CANVAS_CURSOR_CLASS);
+        this._pinPlacement = null;
+        logNotePins('Pin placement cleared.');
+    }
+
+    async _createNotePin(page, sceneId, x, y) {
+        try {
+            logNotePins('Creating note pin.', { noteUuid: page.uuid, sceneId, x, y });
+            const pinId = await createNotePinForPage(page, sceneId, x, y);
+            if (pinId) {
+                await page.setFlag(MODULE.ID, 'pinId', pinId);
+            }
+            await page.setFlag(MODULE.ID, 'sceneId', sceneId);
+            await page.setFlag(MODULE.ID, 'x', x);
+            await page.setFlag(MODULE.ID, 'y', y);
+            logNotePins('Note pin created and flags updated.', { noteUuid: page.uuid, pinId });
+        } catch (error) {
+            const message = String(error?.message || error || '');
+            if (message.toLowerCase().includes('permission denied')) {
+                ui.notifications.error('Blacksmith pins are GM-only unless "Allow player writes" is enabled in Blacksmith settings.');
+            } else {
+                ui.notifications.error(`Failed to create pin: ${message}`);
+            }
+            logNotePins('Failed to create note pin.', { noteUuid: page.uuid, error: message });
+            return;
+        }
+
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.notesPanel && panelManager.element) {
+            await panelManager.notesPanel._refreshData();
+            panelManager.notesPanel.render(panelManager.element);
+        }
+    }
+
+    async _unpinNote(page) {
+        try {
+            logNotePins('Unpinning note.', { noteUuid: page.uuid });
+            await deleteNotePinForPage(page);
+        } catch (error) {
+            logNotePins('Failed to delete note pin.', { noteUuid: page.uuid, error });
+        }
+
+        await page.setFlag(MODULE.ID, 'sceneId', null);
+        await page.setFlag(MODULE.ID, 'x', null);
+        await page.setFlag(MODULE.ID, 'y', null);
+        await page.setFlag(MODULE.ID, 'pinId', null);
+        logNotePins('Note pin flags cleared.', { noteUuid: page.uuid });
+
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.notesPanel && panelManager.element) {
+            await panelManager.notesPanel._refreshData();
+            panelManager.notesPanel.render(panelManager.element);
+        }
+    }
+
+    async showNote(noteUuid) {
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.setViewMode) {
+            await panelManager.setViewMode('notes');
+        }
+        if (panelManager?.notesPanel && panelManager.element) {
+            await panelManager.notesPanel._refreshData();
+            panelManager.notesPanel.render(panelManager.element);
+            panelManager.notesPanel.scrollToNote?.(noteUuid);
+        }
+    }
+
+    scrollToNote(noteUuid) {
+        const notesContainer = this.element?.querySelector('[data-panel="panel-notes"]');
+        if (!notesContainer) return;
+        const card = notesContainer.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
+        if (!card) return;
+        card.classList.add('note-card-highlight');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        trackModuleTimeout(() => {
+            card.classList.remove('note-card-highlight');
+        }, 2000);
     }
 
     /**
@@ -896,38 +1236,22 @@ export class NotesForm extends FormApplication {
             // If canvas location provided, register pin with Blacksmith (if available)
             // Only for new notes (editing doesn't change pin location)
             if (!this.isEditing && formData.sceneId && formData.x !== null && formData.y !== null) {
-                const blacksmith = getBlacksmith();
-                if (blacksmith?.PinAPI) {
-                    try {
-                        blacksmith.PinAPI.createPin({
-                            type: 'note',
-                            uuid: page.uuid,
-                            x: parseFloat(formData.x),
-                            y: parseFloat(formData.y),
-                            sceneId: formData.sceneId,
-                            config: {
-                                icon: 'fa-sticky-note',
-                                color: 0xFFFF00
-                            },
-                            onClick: () => {
-                                // Open note form for editing
-                                const form = new NotesForm({
-                                    pageId: page.id,
-                                    pageUuid: page.uuid,
-                                    title: page.name,
-                                    content: page.text?.content || '',
-                                    tags: page.getFlag(MODULE.ID, 'tags') || [],
-                                    visibility: page.getFlag(MODULE.ID, 'visibility') || 'private',
-                                    sceneId: formData.sceneId,
-                                    x: formData.x,
-                                    y: formData.y
-                                });
-                                form.render(true);
-                            }
-                        });
-                    } catch (error) {
-                        console.warn('Could not create Blacksmith pin:', error);
-                        // Continue - pin is optional
+                try {
+                    const pinId = await createNotePinForPage(
+                        page,
+                        formData.sceneId,
+                        parseFloat(formData.x),
+                        parseFloat(formData.y)
+                    );
+                    if (pinId) {
+                        await page.setFlag(MODULE.ID, 'pinId', pinId);
+                    }
+                } catch (error) {
+                    const message = String(error?.message || error || '');
+                    if (message.toLowerCase().includes('permission denied')) {
+                        ui.notifications.error('Blacksmith pins are GM-only unless "Allow player writes" is enabled in Blacksmith settings.');
+                    } else {
+                        ui.notifications.warn('Could not create Blacksmith pin for this note.');
                     }
                 }
             }
