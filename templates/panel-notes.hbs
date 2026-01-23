@@ -113,28 +113,6 @@
                         </div>
                         {{/if}}
 
-                        <!-- Note Tags Section -->
-                        {{#if tags}}
-                        {{#if (isArray tags)}}
-                        {{#if tags.length}}
-                        <div class="note-tags-section">
-                            <div class="note-tags-label">Tags:</div>
-                            <div class="note-tags">
-                                {{#each tags}}
-                                <span class="note-tag">{{toUpperCase this}}</span>
-                                {{/each}}
-                            </div>
-                        </div>
-                        {{/if}}
-                        {{else}}
-                        <div class="note-tags-section">
-                            <div class="note-tags-label">Tags:</div>
-                            <div class="note-tags">
-                                <span class="note-tag">{{tags}}</span>
-                            </div>
-                        </div>
-                        {{/if}}
-                        {{/if}}
 
                         <!-- Note Footer: author (left) | timestamp (right) -->
                         <div class="note-footer">
@@ -153,6 +131,31 @@
                             <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
                             {{/if}}
                         </div>
+
+
+                        <!-- Note Tags Section -->
+                        {{#if tags}}
+                        {{#if (isArray tags)}}
+                        {{#if tags.length}}
+                        <div class="note-tags-section">
+                            <div class="note-tags">
+                                {{#each tags}}
+                                <span class="note-tag">{{toUpperCase this}}</span>
+                                {{/each}}
+                            </div>
+                        </div>
+                        {{/if}}
+                        {{else}}
+                        <div class="note-tags-section">
+                            <div class="note-tags">
+                                <span class="note-tag">{{tags}}</span>
+                            </div>
+                        </div>
+                        {{/if}}
+                        {{/if}}
+
+
+
                     </div>
                     {{/each}}
                 </div>

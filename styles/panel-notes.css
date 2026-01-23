@@ -205,15 +205,16 @@
 
 /* === New Notes Card System Styles === */
 
+
 /* Filters - match codex-filters / quest-filters */
 .squire-tray[data-position="left"] .notes-filters {
-    padding: 10px 8px 6px 8px;
+    padding: 10px 8px 0px 8px;
     background: rgba(0, 0, 0, 0.6);
     border-bottom: 0px solid rgba(255, 255, 255, 0.1);
     border-radius: 0px 0px 6px 6px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 4px;
 }
 
 .squire-tray[data-position="left"] .notes-search {
@@ -334,7 +335,7 @@
 
 .squire-tray[data-position="left"] .notes-tag-filter {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 10px;
+    padding: 0px;
 }
 
 .squire-tray[data-position="left"] .tag-cloud {
@@ -358,15 +359,20 @@
     overflow: hidden;
 }
 
+
 .squire-tray[data-position="left"] .tag-item {
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 3px 0px 3px;
     background: rgba(255, 47, 47, 0.2);
-    border: 1px solid rgba(255, 47, 47, 0.4);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
+    border: 1px solid rgba(255, 47, 47, 0.1);
+    border-radius: 3px;
+    font-size: 0.65em;
     color: #ddd;
+    cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .squire-tray[data-position="left"] .tag-item:hover {
@@ -543,9 +549,9 @@
 .squire-tray[data-position="left"] .note-tag {
     display: inline-flex;
     align-items: center;
-    padding: 2px 6px;
+    padding: 1px 3px 0px 3px;
     background: rgba(255, 47, 47, 0.2);
-    border: 1px solid rgba(255, 47, 47, 0.4);
+    border: 1px solid rgba(255, 47, 47, 0.1);
     border-radius: 3px;
     font-size: 0.65em;
     color: #ddd;
@@ -554,7 +560,6 @@
     text-transform: uppercase;
     white-space: nowrap;
 }
-
 
 .squire-tray[data-position="left"] .note-tag:hover {
     background: rgba(255, 47, 47, 0.4);
