@@ -281,6 +281,7 @@ export class NotesPanel {
             newInput.addEventListener('input', (event) => {
                 this.filters.search = event.target.value;
                 this._applyFilters(nativeHtml);
+                this._updateClearSearchState(nativeHtml);
             });
         }
         const clearSearchButton = nativeHtml.querySelector('.clear-notes-search');
@@ -291,6 +292,8 @@ export class NotesPanel {
                 event.preventDefault();
                 this.filters.search = '';
                 this.filters.tags = [];
+                this.filters.scene = 'all';
+                this.filters.visibility = 'all';
                 const input = nativeHtml.querySelector('.notes-search-input');
                 if (input) {
                     input.value = '';
@@ -309,14 +312,15 @@ export class NotesPanel {
                         this.filters.tags = [];
                     }
                     const index = this.filters.tags.indexOf(tagName);
-                    if (index > -1) {
-                        this.filters.tags.splice(index, 1);
-                    } else {
-                        this.filters.tags.push(tagName);
-                    }
-                    this._applyFilters(nativeHtml);
-                });
+                if (index > -1) {
+                    this.filters.tags.splice(index, 1);
+                } else {
+                    this.filters.tags.push(tagName);
+                }
+                this._applyFilters(nativeHtml);
+                this._updateClearSearchState(nativeHtml);
             });
+        });
 
         // Tag cloud toggle
         const toggleFiltersButton = nativeHtml.querySelector('.toggle-notes-filters-button');
@@ -338,6 +342,7 @@ export class NotesPanel {
             newSelect.addEventListener('change', (event) => {
                 this.filters.scene = event.target.value;
                 this._applyFilters(nativeHtml);
+                this._updateClearSearchState(nativeHtml);
             });
         }
 
@@ -352,6 +357,7 @@ export class NotesPanel {
                 nativeHtml.querySelectorAll('.notes-visibility-button').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.visibility === visibility);
                 });
+                this._updateClearSearchState(nativeHtml);
             });
         });
 
@@ -449,8 +455,22 @@ export class NotesPanel {
             });
         });
 
+        nativeHtml.querySelectorAll('.note-tag').forEach(tag => {
+            const newTag = tag.cloneNode(true);
+            tag.parentNode?.replaceChild(newTag, tag);
+            newTag.addEventListener('click', (event) => {
+                event.preventDefault();
+                const tagName = event.currentTarget.dataset.tag?.toUpperCase();
+                if (!tagName) return;
+                this.filters.tags = [tagName];
+                this._applyFilters(nativeHtml);
+                this._updateClearSearchState(nativeHtml);
+            });
+        });
+
         // Apply initial filters
         this._applyFilters(nativeHtml);
+        this._updateClearSearchState(nativeHtml);
     }
 
     /**
@@ -513,6 +533,17 @@ export class NotesPanel {
                 tag.classList.remove('active');
             }
         });
+    }
+
+    _updateClearSearchState(html) {
+        const clearButton = html.querySelector('.clear-notes-search');
+        if (!clearButton) return;
+        const hasSearch = !!(this.filters.search && this.filters.search.trim().length > 0);
+        const hasTags = (this.filters.tags || []).length > 0;
+        const hasScene = this.filters.scene && this.filters.scene !== 'all';
+        const hasVisibility = this.filters.visibility && this.filters.visibility !== 'all';
+        const shouldEnable = hasSearch || hasTags || hasScene || hasVisibility;
+        clearButton.classList.toggle('disabled', !shouldEnable);
     }
 
     
