@@ -1,0 +1,49 @@
+<div class="notes-icon-picker">
+    <div class="notes-form-header">
+        <div class="notes-form-header-content">
+            <div class="notes-form-header-icon">
+                {{{previewHtml}}}
+            </div>
+            <div class="notes-form-header-title">
+                <div class="notes-form-title-input">Choose Note Icon</div>
+                <div class="notes-form-meta">
+                    <span class="notes-form-meta-item">Shown in tray, editor header, and pins</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notes-form-body">
+        <div class="notes-section">
+            <div class="notes-section-header"><i class="fa-solid fa-icons"></i> Icon Library</div>
+            <div class="notes-section-body">
+                <div class="notes-icon-grid">
+                    {{#each icons}}
+                    <button type="button" class="notes-icon-option {{#if this.isSelected}}selected{{/if}}" data-type="fa" data-value="{{this.value}}" title="{{this.label}}">
+                        <i class="fa-solid {{this.value}}"></i>
+                    </button>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-section">
+            <div class="notes-section-header"><i class="fa-solid fa-image"></i> Image URL</div>
+            <div class="notes-section-body">
+                <div class="notes-icon-image-row">
+                    <input type="text" class="notes-input notes-icon-image-input" placeholder="Paste image URL..." value="{{imageValue}}">
+                    <button type="button" class="btn-secondary notes-icon-browse"><i class="fa-solid fa-folder-open"></i> Browse</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="button" class="btn-secondary cancel">
+            <i class="fa-solid fa-times"></i> Cancel
+        </button>
+        <button type="button" class="btn-primary notes-icon-use">
+            <i class="fa-solid fa-check"></i> Use Icon
+        </button>
+    </div>
+</div>

@@ -110,6 +110,120 @@ function resolveNoteIconHtmlFromContent(content, imgClass = '') {
     return buildNoteIconHtml(null, imgClass);
 }
 
+class NoteIconPicker extends Application {
+    constructor(noteIcon, { onSelect } = {}) {
+        super();
+        this.onSelect = onSelect;
+        this.selected = noteIcon;
+        this.icons = [
+            { label: 'Sticky Note', value: 'fa-note-sticky' },
+            { label: 'Map Pin', value: 'fa-map-pin' },
+            { label: 'Location Dot', value: 'fa-location-dot' },
+            { label: 'Book', value: 'fa-book' },
+            { label: 'Scroll', value: 'fa-scroll' },
+            { label: 'Feather', value: 'fa-feather' },
+            { label: 'Star', value: 'fa-star' },
+            { label: 'Gem', value: 'fa-gem' },
+            { label: 'Flag', value: 'fa-flag' },
+            { label: 'Compass', value: 'fa-compass' },
+            { label: 'Skull', value: 'fa-skull' },
+            { label: 'Question', value: 'fa-circle-question' }
+        ];
+    }
+
+    static get defaultOptions() {
+        return foundry.utils.mergeObject(super.defaultOptions, {
+            id: 'notes-icon-picker',
+            title: 'Note Icon',
+            template: TEMPLATES.NOTES_ICON_PICKER,
+            width: 520,
+            height: 560,
+            resizable: false,
+            classes: ['squire-window', 'notes-icon-picker-window']
+        });
+    }
+
+    getData() {
+        const selected = this.selected || null;
+        const previewHtml = buildNoteIconHtml(selected, 'notes-form-header-image');
+        const imageValue = selected?.type === 'img' ? selected.value : '';
+        const icons = this.icons.map(icon => ({
+            ...icon,
+            isSelected: selected?.type === 'fa' && selected.value === icon.value
+        }));
+        return {
+            previewHtml,
+            imageValue,
+            icons
+        };
+    }
+
+    activateListeners(html) {
+        super.activateListeners(html);
+        const nativeHtml = html?.[0] || html;
+
+        const preview = nativeHtml.querySelector('.notes-form-header-icon');
+        const imageInput = nativeHtml.querySelector('.notes-icon-image-input');
+        const imageRow = nativeHtml.querySelector('.notes-icon-image-row');
+
+        const updatePreview = () => {
+            if (!preview) return;
+            preview.innerHTML = buildNoteIconHtml(this.selected, 'notes-form-header-image');
+            if (imageRow) {
+                imageRow.classList.toggle('selected', this.selected?.type === 'img');
+            }
+        };
+
+        nativeHtml.querySelectorAll('.notes-icon-option').forEach(button => {
+            button.addEventListener('click', () => {
+                const value = button.dataset.value;
+                this.selected = { type: 'fa', value };
+                nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+                if (imageInput) {
+                    imageInput.value = '';
+                }
+                updatePreview();
+            });
+        });
+
+        imageInput?.addEventListener('input', () => {
+            const value = imageInput.value.trim();
+            if (value) {
+                this.selected = { type: 'img', value };
+                nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
+                updatePreview();
+            }
+        });
+
+        nativeHtml.querySelector('.notes-icon-browse')?.addEventListener('click', async () => {
+            const picker = new FilePicker({
+                type: 'image',
+                callback: (path) => {
+                    if (!imageInput) return;
+                    imageInput.value = path;
+                    this.selected = { type: 'img', value: path };
+                    nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
+                    updatePreview();
+                }
+            });
+            picker.browse();
+        });
+
+        nativeHtml.querySelector('button.cancel')?.addEventListener('click', () => this.close());
+
+        nativeHtml.querySelector('.notes-icon-use')?.addEventListener('click', () => {
+            const finalSelection = this.selected || { type: 'fa', value: NOTE_PIN_ICON };
+            if (this.onSelect) {
+                this.onSelect(finalSelection);
+            }
+            this.close();
+        });
+
+        updatePreview();
+    }
+}
+
 function getNotePinStyle() {
     return {
         fill: '#000000',
@@ -1050,7 +1164,9 @@ export class NotesForm extends FormApplication {
         const tagsText = Array.isArray(this.note.tags)
             ? this.note.tags.join(', ')
             : (typeof this.note.tags === 'string' ? this.note.tags : '');
-        const iconHtml = this.note.iconHtml || resolveNoteIconHtmlFromContent(this.note.content, 'notes-form-header-image');
+        const iconHtml = this.note.iconHtml ||
+            (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'notes-form-header-image') : null) ||
+            resolveNoteIconHtmlFromContent(this.note.content, 'notes-form-header-image');
 
         return {
             note: {
@@ -1074,7 +1190,8 @@ export class NotesForm extends FormApplication {
             visibility: 'party',
             sceneId: null,
             x: null,
-            y: null
+            y: null,
+            noteIcon: null
         };
     }
 
@@ -1228,6 +1345,7 @@ export class NotesForm extends FormApplication {
                     // Update flags
                     await page.setFlag(MODULE.ID, 'tags', tags);
                     await page.setFlag(MODULE.ID, 'visibility', visibility);
+                    await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
                     const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
                     const editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
                     await page.setFlag(MODULE.ID, 'editorIds', editorIds);
@@ -1270,6 +1388,7 @@ export class NotesForm extends FormApplication {
                             sceneId: formData.sceneId || null,
                             x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
                             y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
+                            noteIcon: this.note.noteIcon || null,
                             authorId: game.user.id,
                             timestamp: new Date().toISOString()
                         }
@@ -1340,6 +1459,29 @@ export class NotesForm extends FormApplication {
         let nativeHtml = html;
         if (html && (html.jquery || typeof html.find === 'function')) {
             nativeHtml = html[0] || html.get?.(0) || html;
+        }
+
+        const headerIcon = nativeHtml.querySelector('.notes-form-header-icon');
+        if (headerIcon) {
+            const handler = () => {
+                let currentIcon = normalizeNoteIconFlag(this.note.noteIcon);
+                if (!currentIcon) {
+                    const imageSrc = extractFirstImageSrc(this.note.content);
+                    if (imageSrc) {
+                        currentIcon = { type: 'img', value: imageSrc };
+                    }
+                }
+                const picker = new NoteIconPicker(currentIcon, {
+                    onSelect: (selection) => {
+                        this.note.noteIcon = selection;
+                        this.note.iconHtml = buildNoteIconHtml(selection, 'notes-form-header-image');
+                        headerIcon.innerHTML = this.note.iconHtml;
+                    }
+                });
+                picker.render(true);
+            };
+            headerIcon.addEventListener('click', handler);
+            this._eventHandlers.push({ element: headerIcon, event: 'click', handler });
         }
 
         // Handle cancel button

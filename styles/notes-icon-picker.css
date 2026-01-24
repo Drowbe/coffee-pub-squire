@@ -1,0 +1,53 @@
+.notes-icon-picker {
+    height: 100%;
+}
+
+.notes-icon-picker .notes-form-body {
+    overflow: auto;
+    padding-bottom: 12px;
+}
+
+.notes-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 8px;
+}
+
+.notes-icon-option {
+    height: 44px;
+    width: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    color: #f2f0e6;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notes-icon-option.selected,
+.notes-icon-option:hover {
+    border-color: rgba(201, 185, 147, 0.8);
+    box-shadow: 0 0 8px rgba(201, 185, 147, 0.35);
+}
+
+.notes-icon-option i {
+    font-size: 1.2em;
+}
+
+.notes-icon-image-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.notes-icon-image-row .notes-icon-browse {
+    white-space: nowrap;
+}
+
+.notes-icon-picker .form-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+}
