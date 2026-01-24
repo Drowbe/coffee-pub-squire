@@ -46,7 +46,7 @@ const NOTE_PIN_ICON = 'fa-note-sticky';
 const NOTE_PIN_COLOR = 0xFFFF00;
 const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
 const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
-const NOTE_PIN_SIZE = { w: 48, h: 48 };
+const NOTE_PIN_SIZE = { w: 60, h: 60 };
 
 let notePinClickDisposer = null;
 let notePinHandlerController = null;
@@ -326,6 +326,26 @@ async function deleteNotePinForPage(page) {
     }
 
     return;
+}
+
+async function updateNotePinForPage(page) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+    if (!pins.update) return;
+
+    const pinId = page.getFlag(MODULE.ID, 'pinId');
+    const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+    if (!pinId || !sceneId) return;
+
+    const patch = {
+        image: resolveNoteIconHtmlFromPage(page),
+        size: NOTE_PIN_SIZE,
+        style: getNotePinStyle(),
+        config: { noteUuid: page.uuid }
+    };
+
+    logNotePins('Updating pin via pins.update.', { noteUuid: page.uuid, pinId });
+    await pins.update(pinId, patch, { sceneId });
 }
 
 export class NotesPanel {
@@ -1354,10 +1374,11 @@ export class NotesForm extends FormApplication {
                         await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
                         await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
                     }
-                    
+
                     console.log('NotesForm: Updated existing note', { pageId: page.id, flags: page.getFlag(MODULE.ID) });
                     const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
                     await this._syncNoteOwnership(page, visibility, authorId);
+                    await updateNotePinForPage(page);
                 } catch (error) {
                     console.error('Error updating note:', error);
                     ui.notifications.error(`Failed to update note: ${error.message}`);
