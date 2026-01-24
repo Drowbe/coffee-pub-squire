@@ -272,13 +272,9 @@ function registerNotePinHandlers() {
     notePinClickDisposer = pins.on('click', async (evt) => {
         const noteUuid = evt?.pin?.config?.noteUuid;
         if (!noteUuid) return;
-        const pinId = evt?.pin?.id;
-        if (pinId && pins.panTo) {
-            await pins.panTo(pinId, { sceneId: evt?.sceneId });
-        }
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         panelManager?.notesPanel?.showNote(noteUuid);
-        logNotePins('Pin click routed to note.', { noteUuid, pinId });
+        logNotePins('Pin click routed to note.', { noteUuid });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
 
     pins.on('doubleClick', async (evt) => {
@@ -573,6 +569,7 @@ export class NotesPanel {
                         note.tags = [];
                     }
                     note.tags = note.tags.map(tag => String(tag).toUpperCase());
+                    note.pinId = page.getFlag(MODULE.ID, 'pinId') || null;
                     note.iconHtml = resolveNoteIconHtmlFromPage(page, 'note-icon-image');
                     this.notes.push(note);
                     
@@ -885,6 +882,26 @@ export class NotesPanel {
             });
         });
 
+        nativeHtml.querySelectorAll('.note-location-section').forEach(location => {
+            const newLocation = location.cloneNode(true);
+            location.parentNode?.replaceChild(newLocation, location);
+            newLocation.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const pinId = event.currentTarget.dataset.pinId;
+                if (!pinId) {
+                    logNotePins('Pin pan skipped: no pinId on note location.');
+                    return;
+                }
+                const pins = getPinsApi();
+                if (!pins?.panTo) {
+                    logNotePins('Pin pan skipped: pins.panTo not available.');
+                    return;
+                }
+                const success = await pins.panTo(pinId);
+                logNotePins('Pin pan requested from note location.', { pinId, success });
+            });
+        });
+
         // Apply initial filters
         this._applyFilters(nativeHtml);
         this._updateClearSearchState(nativeHtml);
@@ -1051,6 +1068,10 @@ export class NotesPanel {
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (panelManager?.setViewMode) {
             await panelManager.setViewMode('notes');
+        }
+        if (panelManager?.element && !panelManager.element.classList.contains('expanded')) {
+            panelManager.element.classList.add('expanded');
+            logNotePins('Tray expanded for note focus.');
         }
         if (panelManager?.notesPanel && panelManager.element) {
             await panelManager.notesPanel._refreshData();
