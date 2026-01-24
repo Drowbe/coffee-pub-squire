@@ -163,7 +163,7 @@ async function createNotePinForPage(page, sceneId, x, y) {
         }
 
         logNotePins('Creating pin via pins.create.', { noteUuid: page.uuid, sceneId, x, y });
-        const pinData = await pins.create({
+        const pinPayload = {
             id: generateNotePinId(),
             x,
             y,
@@ -175,7 +175,10 @@ async function createNotePinForPage(page, sceneId, x, y) {
             config: {
                 noteUuid: page.uuid
             }
-        }, { sceneId });
+        };
+
+        logNotePins('Pin payload', pinPayload);
+        const pinData = await pins.create(pinPayload, { sceneId });
 
         if (typeof pins.reload === 'function') {
             await pins.reload({ sceneId });
