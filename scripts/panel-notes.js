@@ -1029,6 +1029,19 @@ export class NotesPanel {
             });
         });
 
+        nativeHtml.querySelectorAll('.note-open-title').forEach(title => {
+            const newTitle = title.cloneNode(true);
+            title.parentNode?.replaceChild(newTitle, title);
+            newTitle.addEventListener('click', (event) => {
+                event.preventDefault();
+                const row = event.currentTarget.closest('.note-card');
+                const editButton = row?.querySelector('.note-edit');
+                if (editButton) {
+                    editButton.click();
+                }
+            });
+        });
+
         nativeHtml.querySelectorAll('.note-give').forEach(giveButton => {
             const newButton = giveButton.cloneNode(true);
             giveButton.parentNode?.replaceChild(newButton, giveButton);

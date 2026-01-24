@@ -467,8 +467,10 @@ body.squire-notes-pin-placement * {
 .squire-tray[data-position="left"] .notes-view-list .note-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 }
+
+
 
 .squire-tray[data-position="left"] .notes-view-list .note-row-icon,
 .squire-tray[data-position="left"] .notes-view-list .note-row-icon img,
@@ -476,6 +478,15 @@ body.squire-notes-pin-placement * {
     width: 20px;
     height: 20px;
     font-size: 0.8em;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.25);
 }
 
 .squire-tray[data-position="left"] .notes-view-list .note-row-icon img {
@@ -503,15 +514,53 @@ body.squire-notes-pin-placement * {
     text-overflow: ellipsis;
 }
 
+
+
+/* list view actions */
+
+
 .squire-tray[data-position="left"] .notes-view-list .note-row-actions {
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-actions button {
+    padding: 0px;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 1.0em;
+    color: rgba(159, 146, 117, 0.9);
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-actions button:hover {
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 .squire-tray[data-position="left"] .notes-view-list .note-row-actions i {
     font-size: 0.8em;
+}
+
+
+
+
+
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-title {
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-title:hover {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .squire-tray[data-position="left"] .notes-cards-dark .note-card {
@@ -814,21 +863,30 @@ body.squire-notes-pin-placement * {
     transition: color 0.15s ease, border-color 0.15s ease;
 }
 
+
+
+
+
+
+
+/* note actions */
+
+
 /* Actions in header (right-aligned) */
 .squire-tray[data-position="left"] .note-header .note-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
     align-items: center;
 }
 
 .squire-tray[data-position="left"] .note-actions button {
-    padding: 4px;
+    padding: 0px;
     background: transparent;
     border: none;
     border-radius: 3px;
     cursor: pointer;
-    font-size: 1em;
+    font-size: 0.85em;
     color: rgba(159, 146, 117, 0.9);
     opacity: 1;
     display: flex;
@@ -837,8 +895,9 @@ body.squire-notes-pin-placement * {
     transition: color 0.2s, opacity 0.2s, box-shadow 0.2s;
 }
 
+
 .squire-tray[data-position="left"] .note-pin-icon.note-pin-dim {
-    opacity: 0.45;
+    opacity: 0.40;
 }
 
 .squire-tray[data-position="left"] .note-pin-icon.note-pin-active {
@@ -853,6 +912,10 @@ body.squire-notes-pin-placement * {
 .squire-tray[data-position="left"] .note-actions .note-delete:hover {
     color: #ff4444;
 }
+
+
+
+
 
 /* Footer: author (left) | timestamp (right) */
 .squire-tray[data-position="left"] .note-footer {

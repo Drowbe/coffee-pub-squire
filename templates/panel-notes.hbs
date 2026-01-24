@@ -89,11 +89,8 @@
                             <i class="fa-solid fa-lock"></i>
                             {{/if}}
                         </span>
-                        <span class="note-row-title">{{name}}</span>
+                        <span class="note-row-title note-open-title" data-uuid="{{uuid}}">{{name}}</span>
                         <div class="note-row-actions">
-                            <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
-                                <i class="fa-solid fa-edit"></i>
-                            </button>
                             {{#if (eq visibility 'private')}}
                             {{#if ../isGM}}
                             <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
@@ -107,6 +104,9 @@
                             {{/if}}
                             {{/if}}
                             {{/if}}
+                            <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
+                                <i class="fa-solid fa-edit"></i>
+                            </button>
                             {{#if sceneId}}
                             <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
                                 <i class="fa-solid fa-location-dot note-pin-icon note-pin-active"></i>
@@ -132,18 +132,8 @@
                                     <i class="fa-solid fa-note-sticky"></i>
                                 {{/if}}
                             </span>
-                            <span class="note-visibility-inline {{visibility}}">
-                                {{#if (eq visibility 'party')}}
-                                <i class="fa-solid fa-users"></i>
-                                {{else}}
-                                <i class="fa-solid fa-lock"></i>
-                                {{/if}}
-                            </span>
                             <div class="note-title">{{name}}</div>
                             <div class="note-actions">
-                                <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
-                                    <i class="fa-solid fa-edit"></i>
-                                </button>
                                 {{#if (eq visibility 'private')}}
                                 {{#if ../isGM}}
                                 <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
@@ -157,6 +147,9 @@
                                 {{/if}}
                                 {{/if}}
                                 {{/if}}
+                                <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
                                 {{#if sceneId}}
                                 <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
                                     <i class="fa-solid fa-location-dot note-pin-icon note-pin-active"></i>
