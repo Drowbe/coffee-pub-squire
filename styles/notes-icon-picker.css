@@ -1,10 +1,32 @@
 .notes-icon-picker {
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .notes-icon-picker .notes-form-body {
+    flex: 1;
     overflow: auto;
     padding-bottom: 12px;
+}
+
+.notes-icon-picker .notes-form-header {
+    flex-shrink: 0;
+}
+
+.notes-icon-picker-title {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #c9b993;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notes-icon-picker-title i {
+    color: #c9b993;
 }
 
 .notes-icon-grid {
@@ -50,4 +72,6 @@
 .notes-icon-picker .form-actions {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 12px;
+    margin-top: auto;
+    flex-shrink: 0;
 }

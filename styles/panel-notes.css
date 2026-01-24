@@ -450,6 +450,35 @@ body.squire-notes-pin-placement * {
     box-shadow: 0 0 10px rgba(172, 159, 129, 0.5);
 }
 
+.notes-pin-preview {
+    position: fixed;
+    z-index: 10000;
+    width: var(--pin-size, 48px);
+    height: var(--pin-size, 48px);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border-radius: 50%;
+    background: var(--pin-fill, #000000);
+    border: 2px solid var(--pin-stroke, #ffffff);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.notes-pin-preview i {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.2em;
+}
+
+.notes-pin-preview .notes-pin-preview-image,
+.notes-pin-preview img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .squire-tray[data-position="left"] .note-card:hover {
     border-color: rgba(183, 169, 136, 0.35);
     box-shadow: 0 0 5px rgba(200, 100, 121, 0.2);
@@ -494,6 +523,8 @@ body.squire-notes-pin-placement * {
 .squire-tray[data-position="left"] .note-visibility-badge {
     flex-shrink: 0;
     display: inline-flex;
+    width: 26px;
+    height: 26px;
     align-items: center;
     justify-content: center;
     padding: 3px 4px;
@@ -502,7 +533,6 @@ body.squire-notes-pin-placement * {
     font-weight: bold;
     margin-right: 0px;
 }
-
 .squire-tray[data-position="left"] .note-visibility-badge i {
     margin: 0;
 }
@@ -570,11 +600,14 @@ body.squire-notes-pin-placement * {
     text-decoration: underline;
 }
 
+
 .squire-tray[data-position="left"] .note-tags-section {
     margin: 8px 0 0 0;
-    padding-top: 8px;
-    border-top: 1px dotted rgba(255, 255, 255, 0.2);
+    padding:  4px 4px 4px 4px;
+    border-top: 0px dotted rgba(255, 255, 255, 0.2);
     clear: both;
+    background: rgba(186, 168, 137, 0.08);
+    border-radius: 4px;
 }
 
 .squire-tray[data-position="left"] .note-tags-label {
@@ -614,18 +647,44 @@ body.squire-notes-pin-placement * {
     border-color: rgba(255, 47, 47, 0.6);
 }
 
-.squire-tray[data-position="left"] .note-location {
+.squire-tray[data-position="left"] .note-location-section {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 0.85em;
-    color: #aaa;
-    margin: 6px 0;
+    font-size: 0.9em;
+    color: rgba(186, 168, 137, 0.9);
+    margin: 8px 0 0 0;
+    padding:  4px 4px 4px 4px;
+    border-top: 0px dotted rgba(255, 255, 255, 0.1);
     clear: both;
+    background: rgba(186, 168, 137, 0.08);
+    border-radius: 4px;
 }
 
-.squire-tray[data-position="left"] .note-location i {
-    color: rgba(186, 168, 137, 0.9);
+.squire-tray[data-position="left"] .note-location-section i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    font-size: 0.8em;
+    width: 1.6em;
+    height: 1.6em;
+    color: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(186, 168, 137, 0.2);
+    background: rgba(186, 168, 137, 0.9);
+    border-radius: 50%;
+}
+
+.squire-tray[data-position="left"] .note-location-section:hover {
+    color: rgba(255, 100, 0, 0.9);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.squire-tray[data-position="left"] .note-location-section:hover i {
+    border: 1px solid rgba(255, 100, 0, 0.9);
+    background: rgba(255, 100, 0, 0.9);
+    transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 /* Actions in header (right-aligned) */

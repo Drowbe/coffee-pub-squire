@@ -110,6 +110,20 @@ function resolveNoteIconHtmlFromContent(content, imgClass = '') {
     return buildNoteIconHtml(null, imgClass);
 }
 
+function createPinPreviewElement(iconHtml) {
+    const preview = document.createElement('div');
+    preview.className = 'notes-pin-preview';
+    preview.style.setProperty('--pin-size', `${NOTE_PIN_SIZE.w}px`);
+    preview.style.setProperty('--pin-fill', getNotePinStyle().fill);
+    preview.style.setProperty('--pin-stroke', getNotePinStyle().stroke);
+    preview.innerHTML = `
+        <div class="notes-pin-preview-inner">
+            ${iconHtml}
+        </div>
+    `;
+    return preview;
+}
+
 class NoteIconPicker extends Application {
     constructor(noteIcon, { onSelect } = {}) {
         super();
@@ -134,7 +148,7 @@ class NoteIconPicker extends Application {
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: 'notes-icon-picker',
-            title: 'Note Icon',
+            title: ' ',
             template: TEMPLATES.NOTES_ICON_PICKER,
             width: 520,
             height: 560,
@@ -865,6 +879,12 @@ export class NotesPanel {
 
         const view = canvas.app.view;
         view.classList.add(NOTE_PIN_CANVAS_CURSOR_CLASS);
+        const previewEl = createPinPreviewElement(resolveNoteIconHtmlFromPage(page, 'notes-pin-preview-image'));
+        document.body.appendChild(previewEl);
+        const onPointerMove = (event) => {
+            previewEl.style.left = `${event.clientX}px`;
+            previewEl.style.top = `${event.clientY}px`;
+        };
         const onPointerDown = async (event) => {
             if (event.button !== 0) return;
             event.preventDefault();
@@ -904,27 +924,32 @@ export class NotesPanel {
         view.addEventListener('pointerdown', onPointerDown, true);
         view.addEventListener('contextmenu', onContextMenu, true);
         window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('pointermove', onPointerMove);
 
         this._pinPlacement = {
             pageUuid: page.uuid,
             view,
             onPointerDown,
             onContextMenu,
-            onKeyDown
+            onKeyDown,
+            onPointerMove,
+            previewEl
         };
         logNotePins('Pin placement armed.', { noteUuid: page.uuid });
     }
 
     _clearNotePinPlacement() {
         if (!this._pinPlacement) return;
-        const { view, onPointerDown, onContextMenu, onKeyDown } = this._pinPlacement;
+        const { view, onPointerDown, onContextMenu, onKeyDown, onPointerMove, previewEl } = this._pinPlacement;
         view?.removeEventListener('pointerdown', onPointerDown, true);
         view?.removeEventListener('contextmenu', onContextMenu, true);
         window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('pointermove', onPointerMove);
         document.body.classList.remove(NOTE_PIN_CURSOR_CLASS);
         document.documentElement.classList.remove(NOTE_PIN_CURSOR_CLASS);
         document.body.style.cursor = '';
         view?.classList.remove(NOTE_PIN_CANVAS_CURSOR_CLASS);
+        previewEl?.remove();
         this._pinPlacement = null;
         logNotePins('Pin placement cleared.');
     }

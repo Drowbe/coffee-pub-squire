@@ -106,12 +106,7 @@
                             {{{content}}}
                         </div>
 
-                        <!-- Note Location -->
-                        {{#if sceneName}}
-                        <div class="note-location">
-                            <i class="fa-solid fa-map-pin"></i> {{sceneName}}
-                        </div>
-                        {{/if}}
+
 
 
                         <!-- Note Footer: author (left) | timestamp (right) -->
@@ -141,6 +136,12 @@
                             {{/if}}
                         </div>
 
+                        <!-- Note Location -->
+                        {{#if sceneName}}
+                        <div class="note-location-section">
+                            <i class="fa-solid fa-location-dot"></i> {{sceneName}}
+                        </div>
+                        {{/if}}
 
                         <!-- Note Tags Section -->
                         {{#if tags}}

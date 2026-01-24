@@ -87,8 +87,8 @@
     background-position: top center;
     background-repeat: no-repeat;
     background-size: cover;
-    padding: 1em;
-    min-height: 72px;
+    padding: 8px 12px 8px 12px;
+    min-height: 30px;
     border-bottom: 1px solid var(--notes-border-color);
 }
 
