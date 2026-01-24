@@ -1,0 +1,181 @@
+/* ------------------------------------ */
+/* -- USERS WINDOW         ---------- */
+/* ------------------------------------ */
+
+:root {
+  --users-min-width: 80px;
+  --container-padding: 8px;
+  --border-color: #444;
+  --accent-color: #9f9275;
+  --background-color: rgba(0, 0, 0, 0.95);
+  --window-user-token-size: 120px;
+}
+
+#squire-users-window {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 2px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 20px #000 !important;
+  min-width: var(--users-min-width) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#squire-users-window .window-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  height: auto !important;
+  padding: 0px !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+#squire-users-window .window-content [data-panel="users"] {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  height: auto !important;
+  padding: 0px !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+#squire-users-window .window-content [data-panel="users"] > * {
+  width: 100% !important;
+  min-width: 100% !important;
+}
+
+#squire-users-window .window-content > * {
+  width: 100% !important;
+  min-width: 100% !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  padding: 0px;
+}
+
+#squire-users-window .window-header {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border-bottom: 0px solid var(--border-color) !important;
+  color: var(--accent-color) !important;
+  font-family: "Signika", sans-serif !important;
+}
+
+#squire-users-window .window-header .window-title {
+  color: var(--accent-color) !important;
+  text-transform: uppercase !important;
+  font-weight: bold !important;
+  font-size: 1.1em !important;
+}
+
+#squire-users-window .window-header .header-button {
+  color: var(--accent-color) !important;
+  border: none !important;
+  background: none !important;
+}
+
+#squire-users-window .window-header .header-button:hover {
+  color: #fff !important;
+  text-shadow: 0 0 8px var(--accent-color) !important;
+}
+
+#squire-users-window .window-content .panel-container {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+#squire-users-window .window-content [data-panel="users"] {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: var(--container-padding) !important;
+  padding: var(--container-padding) !important;
+}
+
+#squire-users-window .tray-content,
+#squire-users-window .users-content {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+#squire-users-window .window-resizable-handle {
+  background: var(--border-color) !important;
+  border-radius: 0 0 3px 0 !important;
+  opacity: 0.5 !important;
+}
+
+#squire-users-window .window-resizable-handle:hover {
+  background: var(--accent-color) !important;
+  opacity: 1 !important;
+}
+
+#squire-users-window.collapsed {
+  min-height: 60px !important;
+}
+
+.users-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 4px 0 4px 0;
+}
+
+.user-slot {
+  width: var(--window-user-token-size);
+  height: var(--window-user-token-size);
+  border: 1px solid rgba(184,194,200,0.4);
+  border-radius: 4px;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.user-slot:hover {
+  border: 3px solid rgba(255, 173, 33, 0.9);
+  box-shadow: 0 0 8px rgba(255, 100, 0, 0.5);
+}
+
+.user-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.user-slot:hover img {
+  -webkit-filter: blur(2px);
+  filter: blur(1px);
+}
+
+.user-slot.current-user {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(184,194,200,0.2);
+  background: rgba(0,0,0,0.1);
+}
+
+.user-slot.current-user:hover {
+  border: 1px solid rgba(184,194,200,0.2);
+  box-shadow: none;
+  transform: none;
+}

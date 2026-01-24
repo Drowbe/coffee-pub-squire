@@ -11,6 +11,7 @@ import {
     enrichJournalContent
 } from './utility-journal.js';
 import { NotesParser } from './utility-notes-parser.js';
+import { UsersWindow } from './window-users.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -108,6 +109,21 @@ function resolveNoteIconHtmlFromContent(content, imgClass = '') {
         return buildNoteIconHtml({ type: 'img', value: imageSrc }, imgClass);
     }
     return buildNoteIconHtml(null, imgClass);
+}
+
+function focusNoteCardInDom(noteUuid) {
+    const card = document.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
+    if (!card) {
+        logNotePins('Note focus: card not found in DOM (direct).', { noteUuid });
+        return false;
+    }
+    card.classList.add('note-card-highlight');
+    logNotePins('Note focus: highlight applied (direct).', { noteUuid });
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    trackModuleTimeout(() => {
+        card.classList.remove('note-card-highlight');
+    }, 3200);
+    return true;
 }
 
 function createPinPreviewElement(iconHtml) {
@@ -247,13 +263,70 @@ function getNotePinStyle() {
     };
 }
 
-function getNotePinOwnership() {
-    return {
-        default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
-        users: {
-            [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+function getNotePinOwnershipForPage(page) {
+    const visibility = page?.getFlag(MODULE.ID, 'visibility') || 'private';
+    const authorId = page?.getFlag(MODULE.ID, 'authorId') || game.user.id;
+    const users = {};
+
+    users[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+    game.users?.forEach(user => {
+        if (user.isGM) {
+            users[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
         }
+    });
+
+    return {
+        default: visibility === 'party'
+            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+            : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+        users
     };
+}
+
+function buildNoteOwnership(visibility, authorId) {
+    const ownership = {
+        default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
+    };
+
+    if (visibility === 'party') {
+        game.users.forEach(user => {
+            if (!user.isGM) {
+                ownership[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+            }
+        });
+        if (authorId && !ownership[authorId]) {
+            ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+        }
+    } else if (authorId) {
+        ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+    }
+    game.users.forEach(user => {
+        if (user.isGM) {
+            ownership[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+        }
+    });
+
+    return ownership;
+}
+
+async function syncNoteOwnership(page, visibility, authorId) {
+    if (!page) return;
+    if (game.user.isGM) {
+        const ownership = buildNoteOwnership(visibility, authorId);
+        await page.update({ ownership });
+        return;
+    }
+
+    const blacksmith = getBlacksmith();
+    if (blacksmith?.sockets?.emit) {
+        await blacksmith.sockets.emit('squire:updateNoteOwnership', {
+            pageUuid: page.uuid,
+            visibility,
+            authorId
+        });
+    } else {
+        ui.notifications.warn('Socket manager is not ready. Ownership sync will occur when a GM saves.');
+    }
 }
 
 function generateNotePinId() {
@@ -273,7 +346,28 @@ function registerNotePinHandlers() {
         const noteUuid = evt?.pin?.config?.noteUuid;
         if (!noteUuid) return;
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        panelManager?.notesPanel?.showNote(noteUuid);
+        if (!panelManager) {
+            logNotePins('Pin click: PanelManager not available.', { noteUuid });
+            return;
+        }
+        panelManager?.notesPanel?.showNote?.(noteUuid);
+        if (!panelManager?.notesPanel?.showNote) {
+            if (panelManager?.setViewMode) {
+                await panelManager.setViewMode('notes');
+            }
+            if (panelManager?.element && !panelManager.element.classList.contains('expanded')) {
+                panelManager.element.classList.add('expanded');
+            }
+            if (panelManager?.notesPanel?.render && panelManager.element) {
+                await panelManager.notesPanel.render(panelManager.element);
+            }
+        }
+
+        const tryFocus = () => focusNoteCardInDom(noteUuid);
+        tryFocus();
+        trackModuleTimeout(tryFocus, 200);
+        trackModuleTimeout(tryFocus, 500);
+        trackModuleTimeout(tryFocus, 1000);
         logNotePins('Pin click routed to note.', { noteUuid });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
 
@@ -338,7 +432,7 @@ async function createNotePinForPage(page, sceneId, x, y) {
             image: resolveNoteIconHtmlFromPage(page),
             size: NOTE_PIN_SIZE,
             style: getNotePinStyle(),
-            ownership: getNotePinOwnership(),
+            ownership: getNotePinOwnershipForPage(page),
             config: {
                 noteUuid: page.uuid
             }
@@ -394,6 +488,7 @@ async function updateNotePinForPage(page) {
         image: resolveNoteIconHtmlFromPage(page),
         size: NOTE_PIN_SIZE,
         style: getNotePinStyle(),
+        ownership: getNotePinOwnershipForPage(page),
         config: { noteUuid: page.uuid }
     };
 
@@ -456,6 +551,7 @@ export class NotesPanel {
         }
 
         // Render template with notes data
+        const cardTheme = (await game.user?.getFlag(MODULE.ID, 'notesCardTheme')) || 'dark';
         const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
             hasJournal: !!journal && canViewJournal,
             journal: journal,
@@ -470,6 +566,8 @@ export class NotesPanel {
             filters: this.filters,
             filtersOpen: this.filtersOpen,
             isGM: game.user.isGM,
+            currentUserId: game.user.id,
+            cardTheme,
             position: "left"
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
@@ -658,6 +756,19 @@ export class NotesPanel {
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
                 await this._refreshData();
+                this.render(this.element);
+            });
+        }
+
+        const themeToggle = nativeHtml.querySelector('.notes-card-theme-toggle');
+        if (themeToggle) {
+            const newToggle = themeToggle.cloneNode(true);
+            themeToggle.parentNode?.replaceChild(newToggle, themeToggle);
+            newToggle.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const current = newToggle.dataset.theme || 'dark';
+                const next = current === 'light' ? 'dark' : 'light';
+                await game.user?.setFlag(MODULE.ID, 'notesCardTheme', next);
                 this.render(this.element);
             });
         }
@@ -869,6 +980,45 @@ export class NotesPanel {
             });
         });
 
+        nativeHtml.querySelectorAll('.note-give').forEach(giveButton => {
+            const newButton = giveButton.cloneNode(true);
+            giveButton.parentNode?.replaceChild(newButton, giveButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const noteUuid = newButton.dataset.uuid;
+                if (!noteUuid) return;
+
+                const page = await foundry.utils.fromUuid(noteUuid);
+                if (!page) {
+                    ui.notifications.error('Note not found.');
+                    return;
+                }
+
+                const authorId = page.getFlag(MODULE.ID, 'authorId');
+                if (!game.user.isGM && authorId !== game.user.id) {
+                    ui.notifications.warn('You do not own this note.');
+                    return;
+                }
+                const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
+                if (visibility !== 'private') {
+                    ui.notifications.warn('Only private notes can be given to another player.');
+                    return;
+                }
+
+                    const picker = new UsersWindow({
+                        onUserSelected: async (user) => {
+                            if (!user) return;
+                            await page.setFlag(MODULE.ID, 'authorId', user.id);
+                            await page.setFlag(MODULE.ID, 'editorIds', [user.id]);
+                            await syncNoteOwnership(page, visibility, user.id);
+                            await updateNotePinForPage(page);
+                            this.render(this.element);
+                        }
+                    });
+                picker.render(true);
+            });
+        });
+
         nativeHtml.querySelectorAll('.note-tag').forEach(tag => {
             const newTag = tag.cloneNode(true);
             tag.parentNode?.replaceChild(newTag, tag);
@@ -1073,23 +1223,51 @@ export class NotesPanel {
             panelManager.element.classList.add('expanded');
             logNotePins('Tray expanded for note focus.');
         }
+
+        let focused = false;
+        const tryFocus = () => {
+            if (focused) return true;
+            focused = panelManager?.notesPanel?.scrollToNote?.(noteUuid, panelManager?.element) === true;
+            return focused;
+        };
+
         if (panelManager?.notesPanel && panelManager.element) {
-            await panelManager.notesPanel._refreshData();
-            panelManager.notesPanel.render(panelManager.element);
-            panelManager.notesPanel.scrollToNote?.(noteUuid);
+            await panelManager.notesPanel.render(panelManager.element);
+            tryFocus();
+            trackModuleTimeout(tryFocus, 200);
+            trackModuleTimeout(tryFocus, 500);
+            trackModuleTimeout(tryFocus, 1000);
+            trackModuleTimeout(() => {
+                if (!focused) {
+                    logNotePins('Note focus failed after retries.', { noteUuid });
+                } else {
+                    logNotePins('Note focus succeeded.', { noteUuid });
+                }
+            }, 1200);
         }
     }
 
-    scrollToNote(noteUuid) {
-        const notesContainer = this.element?.querySelector('[data-panel="panel-notes"]');
-        if (!notesContainer) return;
-        const card = notesContainer.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
-        if (!card) return;
+    scrollToNote(noteUuid, panelElement = null) {
+        const root = panelElement ? getNativeElement(panelElement) : this.element;
+        const notesContainer = root?.querySelector('[data-panel="panel-notes"]');
+        let card = notesContainer?.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`) || null;
+
+        if (!card) {
+            card = document.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
+        }
+
+        if (!card) {
+            logNotePins('Note focus: card not found in DOM.', { noteUuid });
+            return false;
+        }
+
         card.classList.add('note-card-highlight');
+        logNotePins('Note focus: highlight applied.', { noteUuid });
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         trackModuleTimeout(() => {
             card.classList.remove('note-card-highlight');
         }, 2000);
+        return true;
     }
 
     /**
@@ -1305,42 +1483,11 @@ export class NotesForm extends FormApplication {
     }
 
     _buildNoteOwnership(visibility, authorId) {
-        const ownership = {
-            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
-        };
-        if (visibility === 'party') {
-            game.users.forEach(user => {
-                if (!user.isGM) {
-                    ownership[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                }
-            });
-            if (authorId && !ownership[authorId]) {
-                ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-            }
-        } else if (authorId) {
-            ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-        }
-        return ownership;
+        return buildNoteOwnership(visibility, authorId);
     }
 
     async _syncNoteOwnership(page, visibility, authorId) {
-        if (!page) return;
-        if (game.user.isGM) {
-            const ownership = this._buildNoteOwnership(visibility, authorId);
-            await page.update({ ownership });
-            return;
-        }
-
-        const blacksmith = getBlacksmith();
-        if (blacksmith?.sockets?.emit) {
-            await blacksmith.sockets.emit('squire:updateNoteOwnership', {
-                pageUuid: page.uuid,
-                visibility,
-                authorId
-            });
-        } else {
-            ui.notifications.warn('Socket manager is not ready. Ownership sync will occur when a GM saves.');
-        }
+        await syncNoteOwnership(page, visibility, authorId);
     }
 
     setPosition(options={}) {
@@ -1456,7 +1603,10 @@ export class NotesForm extends FormApplication {
                     await page.setFlag(MODULE.ID, 'visibility', visibility);
                     await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
                     const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
-                    const editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
+                    let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
+                    if (visibility === 'private') {
+                        editorIds = [game.user.id];
+                    }
                     await page.setFlag(MODULE.ID, 'editorIds', editorIds);
                     if (formData.sceneId) {
                         await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
@@ -1465,7 +1615,11 @@ export class NotesForm extends FormApplication {
                     }
 
                     console.log('NotesForm: Updated existing note', { pageId: page.id, flags: page.getFlag(MODULE.ID) });
-                    const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                    let authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                    if (visibility === 'private' && authorId !== game.user.id) {
+                        authorId = game.user.id;
+                        await page.setFlag(MODULE.ID, 'authorId', authorId);
+                    }
                     await this._syncNoteOwnership(page, visibility, authorId);
                     await updateNotePinForPage(page);
                 } catch (error) {

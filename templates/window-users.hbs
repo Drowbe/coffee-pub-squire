@@ -1,0 +1,12 @@
+<div class="users-content">
+    <div class="users-grid">
+        {{#each users as |user|}}
+            <div class="user-slot {{#unless user.clickable}}current-user{{/unless}}"
+                 data-user-id="{{user.id}}"
+                 data-clickable="{{user.clickable}}"
+                 {{#if user.clickable}}data-tooltip="{{user.name}}"{{else}}data-tooltip="Cannot give to yourself"{{/if}}>
+                <img src="{{user.img}}" alt="{{user.name}}" />
+            </div>
+        {{/each}}
+    </div>
+</div>
