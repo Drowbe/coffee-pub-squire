@@ -8,6 +8,7 @@
             <i class="fa-solid fa-circle-plus new-note-button" title="New Note"></i>
             <i class="fa-solid fa-sync-alt refresh-notes-button" title="Refresh"></i>
             <i class="fa-solid {{#if (eq cardTheme 'light')}}fa-moon{{else}}fa-sun{{/if}} notes-card-theme-toggle {{#if (eq cardTheme 'light')}}light{{else}}dark{{/if}}" data-theme="{{cardTheme}}" title="Toggle card theme"></i>
+            <i class="fa-solid {{#if (eq viewMode 'list')}}fa-table-cells-large{{else}}fa-list{{/if}} notes-view-toggle {{#if (eq viewMode 'list')}}list{{else}}cards{{/if}}" data-view="{{viewMode}}" title="Toggle card/list view"></i>
         </div>
     </div>
 
@@ -70,9 +71,58 @@
         <!-- Notes Container -->
         <div class="notes-content">
             {{#if notes.length}}
-                <div class="notes-list {{#if (eq cardTheme 'light')}}notes-cards-light{{else}}notes-cards-dark{{/if}}">
+                <div class="notes-list {{#if (eq cardTheme 'light')}}notes-cards-light{{else}}notes-cards-dark{{/if}} {{#if (eq viewMode 'list')}}notes-view-list{{else}}notes-view-cards{{/if}}">
                     {{#each notes}}
-                    <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}">
+                    {{#if (eq ../viewMode 'list')}}
+                    <div class="note-card note-row" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}" data-search="{{searchText}}">
+                        <span class="note-row-icon">
+                            {{#if iconHtml}}
+                                {{{iconHtml}}}
+                            {{else}}
+                                <i class="fa-solid fa-note-sticky"></i>
+                            {{/if}}
+                        </span>
+                        <span class="note-row-visibility {{visibility}}">
+                            {{#if (eq visibility 'party')}}
+                            <i class="fa-solid fa-users"></i>
+                            {{else}}
+                            <i class="fa-solid fa-lock"></i>
+                            {{/if}}
+                        </span>
+                        <span class="note-row-title">{{name}}</span>
+                        <div class="note-row-actions">
+                            <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
+                                <i class="fa-solid fa-edit"></i>
+                            </button>
+                            {{#if (eq visibility 'private')}}
+                            {{#if ../isGM}}
+                            <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
+                                <i class="fa-solid fa-share"></i>
+                            </button>
+                            {{else}}
+                            {{#if (eq authorId ../currentUserId)}}
+                            <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
+                                <i class="fa-solid fa-share"></i>
+                            </button>
+                            {{/if}}
+                            {{/if}}
+                            {{/if}}
+                            {{#if sceneId}}
+                            <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
+                                <i class="fa-solid fa-location-dot note-pin-icon note-pin-active"></i>
+                            </button>
+                            {{else}}
+                            <button class="note-pin" data-uuid="{{uuid}}" title="Pin to Canvas">
+                                <i class="fa-solid fa-location-dot note-pin-icon note-pin-dim"></i>
+                            </button>
+                            {{/if}}
+                            <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {{else}}
+                    <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}" data-search="{{searchText}}">
                         <!-- Note Header: badge | title | actions -->
                         <div class="note-header">
                             <span class="note-icon">
@@ -82,20 +132,27 @@
                                     <i class="fa-solid fa-note-sticky"></i>
                                 {{/if}}
                             </span>
+                            <span class="note-visibility-inline {{visibility}}">
+                                {{#if (eq visibility 'party')}}
+                                <i class="fa-solid fa-users"></i>
+                                {{else}}
+                                <i class="fa-solid fa-lock"></i>
+                                {{/if}}
+                            </span>
                             <div class="note-title">{{name}}</div>
                             <div class="note-actions">
                                 <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
                                     <i class="fa-solid fa-edit"></i>
                                 </button>
                                 {{#if (eq visibility 'private')}}
-                                {{#if isGM}}
+                                {{#if ../isGM}}
                                 <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
-                                    <i class="fa-solid fa-handshake"></i>
+                                    <i class="fa-solid fa-share"></i>
                                 </button>
                                 {{else}}
                                 {{#if (eq authorId ../currentUserId)}}
                                 <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
-                                    <i class="fa-solid fa-handshake"></i>
+                                    <i class="fa-solid fa-share"></i>
                                 </button>
                                 {{/if}}
                                 {{/if}}
@@ -119,9 +176,6 @@
                         <div class="note-content">
                             {{{content}}}
                         </div>
-
-
-
 
                         <!-- Note Footer: author (left) | timestamp (right) -->
                         <div class="note-footer">
@@ -177,10 +231,8 @@
                         </div>
                         {{/if}}
                         {{/if}}
-
-
-
                     </div>
+                    {{/if}}
                     {{/each}}
                 </div>
             {{else}}

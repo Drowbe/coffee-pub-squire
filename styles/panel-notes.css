@@ -73,6 +73,11 @@ body.squire-notes-pin-placement * {
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
+.squire-tray[data-position="left"] .notes-view-toggle.list {
+    color: #ffe9ad;
+    opacity: 0.95;
+}
+
 .squire-tray[data-position="left"] .notes-card-theme-toggle.light {
     color: #ffe9ad;
     opacity: 0.95;
@@ -448,6 +453,65 @@ body.squire-notes-pin-placement * {
     border-radius: 4px;
     padding: 8px;
     transition: border-color 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-card {
+    padding: 0 4px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #444;
+    border-radius: 3px;
+    margin-bottom: 4px;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-icon,
+.squire-tray[data-position="left"] .notes-view-list .note-row-icon img,
+.squire-tray[data-position="left"] .notes-view-list .note-row-icon i {
+    width: 20px;
+    height: 20px;
+    font-size: 0.8em;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-icon img {
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-visibility {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    color: #d8c9a3;
+    font-size: 0.65em;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-title {
+    font-size: 0.8em;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.squire-tray[data-position="left"] .notes-view-list .note-row-actions i {
+    font-size: 0.8em;
 }
 
 .squire-tray[data-position="left"] .notes-cards-dark .note-card {

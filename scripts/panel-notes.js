@@ -552,6 +552,8 @@ export class NotesPanel {
 
         // Render template with notes data
         const cardTheme = (await game.user?.getFlag(MODULE.ID, 'notesCardTheme')) || 'dark';
+        const viewMode = (await game.user?.getFlag(MODULE.ID, 'notesViewMode')) || 'cards';
+        const stripHtml = (value) => String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
         const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
             hasJournal: !!journal && canViewJournal,
             journal: journal,
@@ -559,7 +561,12 @@ export class NotesPanel {
             notes: this.notes.map(note => ({
                 ...note,
                 tags: note.tags || [], // Ensure tags is always an array
-                tagsCsv: (note.tags || []).map(tag => String(tag).toUpperCase()).join(',')
+                tagsCsv: (note.tags || []).map(tag => String(tag).toUpperCase()).join(','),
+                searchText: [
+                    note.name,
+                    stripHtml(note.content),
+                    (note.tags || []).join(' ')
+                ].filter(Boolean).join(' ')
             })),
             allTags: Array.from(this.allTags).sort(),
             scenes: Array.from(this.scenes).sort(),
@@ -568,6 +575,7 @@ export class NotesPanel {
             isGM: game.user.isGM,
             currentUserId: game.user.id,
             cardTheme,
+            viewMode,
             position: "left"
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
@@ -694,6 +702,34 @@ export class NotesPanel {
             if (!b.timestamp) return -1;
             return new Date(b.timestamp) - new Date(a.timestamp);
         });
+
+        if (game.user.isGM) {
+            await this._syncPinnedNotesOwnership();
+        }
+    }
+
+    async _syncPinnedNotesOwnership() {
+        const pins = getPinsApi();
+        if (!isPinsApiAvailable(pins) || !pins?.update) return;
+        if (typeof pins.whenReady === 'function') {
+            await pins.whenReady();
+        }
+
+        let updated = 0;
+        for (const note of this.notes) {
+            if (!note?.uuid) continue;
+            const page = await foundry.utils.fromUuid(note.uuid);
+            if (!page) continue;
+            const pinId = page.getFlag(MODULE.ID, 'pinId');
+            const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+            if (!pinId || !sceneId) continue;
+            await updateNotePinForPage(page);
+            updated += 1;
+        }
+
+        if (updated > 0) {
+            logNotePins('Pinned note ownership refreshed from notes.', { updated });
+        }
     }
 
     activateListeners(html) {
@@ -769,6 +805,19 @@ export class NotesPanel {
                 const current = newToggle.dataset.theme || 'dark';
                 const next = current === 'light' ? 'dark' : 'light';
                 await game.user?.setFlag(MODULE.ID, 'notesCardTheme', next);
+                this.render(this.element);
+            });
+        }
+
+        const viewToggle = nativeHtml.querySelector('.notes-view-toggle');
+        if (viewToggle) {
+            const newToggle = viewToggle.cloneNode(true);
+            viewToggle.parentNode?.replaceChild(newToggle, viewToggle);
+            newToggle.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const current = newToggle.dataset.view || 'cards';
+                const next = current === 'list' ? 'cards' : 'list';
+                await game.user?.setFlag(MODULE.ID, 'notesViewMode', next);
                 this.render(this.element);
             });
         }
@@ -1290,7 +1339,7 @@ export class NotesPanel {
 
             // Search filter
             if (search) {
-                const text = card.textContent.toLowerCase();
+                const text = (card.dataset.search || card.textContent || '').toLowerCase();
                 if (!text.includes(search)) {
                     visible = false;
                 }
