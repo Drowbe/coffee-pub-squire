@@ -88,11 +88,11 @@
                                 </button>
                                 {{#if sceneId}}
                                 <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
-                                    <i class="fa-solid fa-thumbtack"></i>
+                                    <i class="fa-solid fa-location-dot note-pin-icon note-pin-active"></i>
                                 </button>
                                 {{else}}
                                 <button class="note-pin" data-uuid="{{uuid}}" title="Pin to Canvas">
-                                    <i class="fa-solid fa-location-dot"></i>
+                                    <i class="fa-solid fa-location-dot note-pin-icon note-pin-dim"></i>
                                 </button>
                                 {{/if}}
                                 <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">

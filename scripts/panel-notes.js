@@ -269,12 +269,55 @@ function registerNotePinHandlers() {
     }
 
     notePinHandlerController = new AbortController();
-    notePinClickDisposer = pins.on('click', (evt) => {
+    notePinClickDisposer = pins.on('click', async (evt) => {
         const noteUuid = evt?.pin?.config?.noteUuid;
         if (!noteUuid) return;
+        const pinId = evt?.pin?.id;
+        if (pinId && pins.panTo) {
+            await pins.panTo(pinId, { sceneId: evt?.sceneId });
+        }
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         panelManager?.notesPanel?.showNote(noteUuid);
-        logNotePins('Pin click routed to note.', { noteUuid });
+        logNotePins('Pin click routed to note.', { noteUuid, pinId });
+    }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
+
+    pins.on('doubleClick', async (evt) => {
+        const noteUuid = evt?.pin?.config?.noteUuid;
+        if (!noteUuid) return;
+        const page = await foundry.utils.fromUuid(noteUuid);
+        if (!page) return;
+
+        const tags = page.getFlag(MODULE.ID, 'tags') || [];
+        const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
+        const authorId = page.getFlag(MODULE.ID, 'authorId');
+        const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+        const x = page.getFlag(MODULE.ID, 'x');
+        const y = page.getFlag(MODULE.ID, 'y');
+        const timestamp = page.getFlag(MODULE.ID, 'timestamp') || null;
+        const authorName = authorId
+            ? (game.users.get(authorId)?.name || game.users.find(u => u.id === authorId)?.name || authorId)
+            : 'Unknown';
+
+        const noteData = {
+            pageId: page.id,
+            pageUuid: page.uuid,
+            title: page.name || 'Untitled Note',
+            content: page.text?.content || '',
+            noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
+            iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
+            authorName: authorName,
+            timestamp: timestamp,
+            tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
+            visibility: visibility,
+            sceneId: sceneId,
+            x: x,
+            y: y,
+            authorId: authorId
+        };
+
+        const form = new NotesForm(noteData);
+        form.render(true);
+        logNotePins('Pin double-click opened notes form.', { noteUuid });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
     logNotePins('Pins handler registered.');
 }
