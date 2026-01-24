@@ -74,11 +74,11 @@
                     <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}">
                         <!-- Note Header: badge | title | actions -->
                         <div class="note-header">
-                            <span class="note-visibility-badge {{visibility}}">
-                                {{#if (eq visibility 'party')}}
-                                <i class="fa-solid fa-users"></i>
+                            <span class="note-icon">
+                                {{#if iconHtml}}
+                                    {{{iconHtml}}}
                                 {{else}}
-                                <i class="fa-solid fa-lock"></i>
+                                    <i class="fa-solid fa-note-sticky"></i>
                                 {{/if}}
                             </span>
                             <div class="note-title">{{name}}</div>
@@ -116,16 +116,25 @@
 
                         <!-- Note Footer: author (left) | timestamp (right) -->
                         <div class="note-footer">
-                            <span class="note-author">
-                                {{#if editorAvatars.length}}
-                                <span class="note-editor-avatars">
-                                    {{#each editorAvatars}}
-                                    <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
-                                    {{/each}}
+                            <span class="note-footer-left">
+                                <span class="note-visibility-badge {{visibility}}">
+                                    {{#if (eq visibility 'party')}}
+                                    <i class="fa-solid fa-users"></i>
+                                    {{else}}
+                                    <i class="fa-solid fa-lock"></i>
+                                    {{/if}}
                                 </span>
-                                {{else}}
-                                <i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}
-                                {{/if}}
+                                <span class="note-author">
+                                    {{#if editorAvatars.length}}
+                                    <span class="note-editor-avatars">
+                                        {{#each editorAvatars}}
+                                        <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
+                                        {{/each}}
+                                    </span>
+                                    {{else}}
+                                    <i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}
+                                    {{/if}}
+                                </span>
                             </span>
                             {{#if timestamp}}
                             <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>

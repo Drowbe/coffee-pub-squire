@@ -42,7 +42,7 @@ function isPinsApiAvailable(pins) {
     return true;
 }
 
-const NOTE_PIN_ICON = 'fa-map-pin';
+const NOTE_PIN_ICON = 'fa-note-sticky';
 const NOTE_PIN_COLOR = 0xFFFF00;
 const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
 const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
@@ -58,8 +58,56 @@ function toHexColor(color) {
     return color;
 }
 
-function getNotePinImage() {
-    return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
+function extractFirstImageSrc(content) {
+    if (!content) return null;
+    const match = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+    return match?.[1] || null;
+}
+
+function normalizeNoteIconFlag(iconFlag) {
+    if (!iconFlag) return null;
+    if (typeof iconFlag === 'string') {
+        const type = iconFlag.includes('fa-') ? 'fa' : 'img';
+        return { type, value: iconFlag };
+    }
+    if (typeof iconFlag === 'object') {
+        const type = iconFlag.type || iconFlag.kind;
+        const value = iconFlag.value || iconFlag.icon || iconFlag.src;
+        if (type && value) {
+            return { type, value };
+        }
+    }
+    return null;
+}
+
+function buildNoteIconHtml(iconData, imgClass = '') {
+    if (!iconData) return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
+    if (iconData.type === 'fa') {
+        return `<i class="fa-solid ${iconData.value}"></i>`;
+    }
+    const classAttr = imgClass ? ` class="${imgClass}"` : '';
+    return `<img src="${iconData.value}"${classAttr}>`;
+}
+
+function resolveNoteIconHtmlFromPage(page, imgClass = '') {
+    const iconFlag = normalizeNoteIconFlag(page?.getFlag(MODULE.ID, 'noteIcon'));
+    if (iconFlag) {
+        return buildNoteIconHtml(iconFlag, imgClass);
+    }
+    const content = page?.text?.content || '';
+    const imageSrc = extractFirstImageSrc(content);
+    if (imageSrc) {
+        return buildNoteIconHtml({ type: 'img', value: imageSrc }, imgClass);
+    }
+    return buildNoteIconHtml(null, imgClass);
+}
+
+function resolveNoteIconHtmlFromContent(content, imgClass = '') {
+    const imageSrc = extractFirstImageSrc(content);
+    if (imageSrc) {
+        return buildNoteIconHtml({ type: 'img', value: imageSrc }, imgClass);
+    }
+    return buildNoteIconHtml(null, imgClass);
 }
 
 function getNotePinStyle() {
@@ -120,7 +168,7 @@ async function createNotePinForPage(page, sceneId, x, y) {
             x,
             y,
             moduleId: MODULE.ID,
-            image: getNotePinImage(),
+            image: resolveNoteIconHtmlFromPage(page),
             size: NOTE_PIN_SIZE,
             style: getNotePinStyle(),
             ownership: getNotePinOwnership(),
@@ -331,6 +379,7 @@ export class NotesPanel {
                         note.tags = [];
                     }
                     note.tags = note.tags.map(tag => String(tag).toUpperCase());
+                    note.iconHtml = resolveNoteIconHtmlFromPage(page, 'note-icon-image');
                     this.notes.push(note);
                     
                     // Collect tags
@@ -545,6 +594,8 @@ export class NotesPanel {
                         pageUuid: page.uuid,
                         title: page.name || 'Untitled Note',
                         content: content,
+                        noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
+                        iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
                         authorName: authorName,
                         timestamp: timestamp,
                         tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
@@ -996,14 +1047,13 @@ export class NotesForm extends FormApplication {
         const tagsText = Array.isArray(this.note.tags)
             ? this.note.tags.join(', ')
             : (typeof this.note.tags === 'string' ? this.note.tags : '');
-        const headerImageMatch = (this.note.content || '').match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
-        const headerImage = headerImageMatch ? headerImageMatch[1] : null;
+        const iconHtml = this.note.iconHtml || resolveNoteIconHtmlFromContent(this.note.content, 'notes-form-header-image');
 
         return {
             note: {
                 ...this.note,
                 tagsText,
-                headerImage
+                iconHtml
             },
             isGM: game.user.isGM,
             isEditing: this.isEditing,

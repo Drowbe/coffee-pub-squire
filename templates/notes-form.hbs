@@ -2,8 +2,8 @@
     <div class="notes-form-header">
         <div class="notes-form-header-content">
             <div class="notes-form-header-icon">
-                {{#if note.headerImage}}
-                    <img src="{{note.headerImage}}" alt="Note image" class="notes-form-header-image">
+                {{#if note.iconHtml}}
+                    {{{note.iconHtml}}}
                 {{else}}
                     <i class="fa-solid fa-note-sticky"></i>
                 {{/if}}

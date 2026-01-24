@@ -62,7 +62,7 @@ The Notes system needs to create optional canvas markers (pins) for spatially-pi
     x: number,                // Canvas X coordinate
     y: number,                // Canvas Y coordinate
     moduleId: string,         // Required: 'coffee-pub-squire'
-    image: string,            // Font Awesome HTML, e.g. '<i class="fa-solid fa-location-dot"></i>'
+    image: string,            // Note header icon/image HTML (image if present, else '<i class="fa-solid fa-note-sticky"></i>')
     size: { w: number, h: number }, // Optional: defaults to { w: 32, h: 32 }
     style: {                  // Optional visual styling
         fill: string,         // Hex color string
@@ -92,7 +92,7 @@ if (pins?.isAvailable()) {
         x: dropX,
         y: dropY,
         moduleId: 'coffee-pub-squire',
-        image: '<i class="fa-solid fa-location-dot"></i>',
+        image: '<i class="fa-solid fa-note-sticky"></i>',
         size: { w: 48, h: 48 },
         style: { fill: '#000000', stroke: '#ffff00', strokeWidth: 2, alpha: 0.9 },
         config: { noteUuid }
