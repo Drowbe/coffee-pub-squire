@@ -1047,7 +1047,12 @@ export class NotesPanel {
                     logNotePins('Pin pan skipped: pins.panTo not available.');
                     return;
                 }
-                const success = await pins.panTo(pinId);
+                const success = await pins.panTo(pinId, {
+                    ping: {
+                        animation: 'ping',
+                        sound: 'interface-ping-01'
+                    }
+                });
                 logNotePins('Pin pan requested from note location.', { pinId, success });
             });
         });
