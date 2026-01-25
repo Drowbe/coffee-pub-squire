@@ -9,7 +9,11 @@
                 {{/if}}
             </div>
             <div class="notes-form-header-title">
-                <input type="text" id="title" name="title" class="notes-form-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required {{#unless isEditMode}}readonly disabled{{/unless}}>
+                {{#if isEditMode}}
+                    <input type="text" id="title" name="title" class="notes-form-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required>
+                {{else}}
+                    <div class="notes-form-title-text">{{#if note.title}}{{note.title}}{{else}}Untitled Note{{/if}}</div>
+                {{/if}}
                 <div class="notes-form-meta">
                     <span class="notes-form-meta-item notes-form-authors">
                         {{#if note.editorAvatars.length}}
