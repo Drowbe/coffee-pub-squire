@@ -618,7 +618,13 @@ export const registerSettings = function() {
         type: Object,
         default: {
             size: { w: 60, h: 60 },
-            lockProportions: true
+            lockProportions: true,
+            shape: 'circle',
+            style: {
+                stroke: '#ffffff',
+                strokeWidth: 2
+            },
+            dropShadow: true
         }
     });
 

@@ -25,6 +25,27 @@
                     <input type="checkbox" class="notes-pin-lock" {{#if lockProportions}}checked{{/if}}>
                     Constrain proportions
                 </label>
+                <div class="notes-pin-design-row">
+                    <label class="notes-pin-design-field">
+                        <span>Shape</span>
+                        <select class="notes-input notes-pin-shape">
+                            <option value="circle" {{#if (eq pinShape "circle")}}selected{{/if}}>Circle</option>
+                            <option value="square" {{#if (eq pinShape "square")}}selected{{/if}}>Square</option>
+                            <option value="none" {{#if (eq pinShape "none")}}selected{{/if}}>None</option>
+                        </select>
+                    </label>
+                    <label class="notes-pin-design-field">
+                        <span>Border</span>
+                        <div class="notes-pin-border-row">
+                            <input type="text" class="notes-input notes-pin-stroke" value="{{pinStroke}}">
+                            <input type="number" class="notes-input notes-pin-stroke-width" min="0" step="1" value="{{pinStrokeWidth}}">
+                        </div>
+                    </label>
+                </div>
+                <label class="notes-pin-design-toggle">
+                    <input type="checkbox" class="notes-pin-shadow" {{#if pinDropShadow}}checked{{/if}}>
+                    Drop shadow
+                </label>
                 <label class="notes-pin-design-toggle">
                     <input type="checkbox" class="notes-pin-default">
                     Make this default

@@ -45,6 +45,23 @@ function normalizePinSize(size) {
     return { w: Math.round(w), h: Math.round(h) };
 }
 
+function normalizePinShape(shape) {
+    if (shape === 'circle' || shape === 'square' || shape === 'none') return shape;
+    return null;
+}
+
+function normalizePinStyle(style) {
+    if (!style || typeof style !== 'object') return null;
+    const stroke = typeof style.stroke === 'string' ? style.stroke : null;
+    const strokeWidth = Number(style.strokeWidth);
+    const normalized = {};
+    if (stroke) normalized.stroke = stroke;
+    if (Number.isFinite(strokeWidth) && strokeWidth >= 0) {
+        normalized.strokeWidth = Math.round(strokeWidth);
+    }
+    return Object.keys(normalized).length ? normalized : null;
+}
+
 function getDefaultNotePinDesign() {
     let stored = null;
     try {
@@ -56,7 +73,10 @@ function getDefaultNotePinDesign() {
     const lockProportions = typeof stored?.lockProportions === 'boolean' ? stored.lockProportions : true;
     return {
         size: normalized || { ...NOTE_PIN_SIZE },
-        lockProportions
+        lockProportions,
+        shape: normalizePinShape(stored?.shape) || 'circle',
+        style: normalizePinStyle(stored?.style) || { stroke: '#ffffff', strokeWidth: 2 },
+        dropShadow: typeof stored?.dropShadow === 'boolean' ? stored.dropShadow : true
     };
 }
 
@@ -66,6 +86,32 @@ function getNotePinSizeForPage(page) {
 
 function getNotePinSizeForNote(note) {
     return normalizePinSize(note?.notePinSize) || getDefaultNotePinDesign().size;
+}
+
+function getNotePinShapeForPage(page) {
+    return normalizePinShape(page?.getFlag(MODULE.ID, 'notePinShape')) || getDefaultNotePinDesign().shape;
+}
+
+function getNotePinShapeForNote(note) {
+    return normalizePinShape(note?.notePinShape) || getDefaultNotePinDesign().shape;
+}
+
+function getNotePinStyleForPage(page) {
+    return mergeNotePinStyle(page?.getFlag(MODULE.ID, 'notePinStyle'));
+}
+
+function getNotePinStyleForNote(note) {
+    return mergeNotePinStyle(note?.notePinStyle);
+}
+
+function getNotePinDropShadowForPage(page) {
+    const stored = page?.getFlag(MODULE.ID, 'notePinDropShadow');
+    return typeof stored === 'boolean' ? stored : getDefaultNotePinDesign().dropShadow;
+}
+
+function getNotePinDropShadowForNote(note) {
+    const stored = note?.notePinDropShadow;
+    return typeof stored === 'boolean' ? stored : getDefaultNotePinDesign().dropShadow;
 }
 
 let notePinClickDisposer = null;
@@ -145,14 +191,20 @@ function focusNoteCardInDom(noteUuid) {
     return true;
 }
 
-function createPinPreviewElement(iconHtml, pinSize) {
+function createPinPreviewElement(iconHtml, pinSize, pinStyle, pinShape, dropShadow) {
     const size = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
+    const style = mergeNotePinStyle(pinStyle);
+    const shape = normalizePinShape(pinShape) || getDefaultNotePinDesign().shape;
+    const shadow = typeof dropShadow === 'boolean' ? dropShadow : getDefaultNotePinDesign().dropShadow;
     const preview = document.createElement('div');
     preview.className = 'notes-pin-preview';
+    preview.dataset.shape = shape;
     preview.style.setProperty('--pin-width', `${size.w}px`);
     preview.style.setProperty('--pin-height', `${size.h}px`);
-    preview.style.setProperty('--pin-fill', getNotePinStyle().fill);
-    preview.style.setProperty('--pin-stroke', getNotePinStyle().stroke);
+    preview.style.setProperty('--pin-fill', style.fill);
+    preview.style.setProperty('--pin-stroke', style.stroke);
+    preview.style.setProperty('--pin-stroke-width', `${style.strokeWidth}px`);
+    preview.style.setProperty('--pin-drop-shadow', shadow ? '0 0 10px rgba(0, 0, 0, 0.4)' : 'none');
     preview.innerHTML = `
         <div class="notes-pin-preview-inner">
             ${iconHtml}
@@ -162,13 +214,16 @@ function createPinPreviewElement(iconHtml, pinSize) {
 }
 
 class NoteIconPicker extends Application {
-    constructor(noteIcon, { onSelect, pinSize } = {}) {
+    constructor(noteIcon, { onSelect, pinSize, pinStyle, pinShape, pinDropShadow } = {}) {
         super();
         this.onSelect = onSelect;
         this.selected = noteIcon;
         const defaultDesign = getDefaultNotePinDesign();
         this.pinSize = normalizePinSize(pinSize) || defaultDesign.size;
         this.lockProportions = defaultDesign.lockProportions;
+        this.pinShape = normalizePinShape(pinShape) || defaultDesign.shape;
+        this.pinStyle = mergeNotePinStyle(pinStyle);
+        this.dropShadow = typeof pinDropShadow === 'boolean' ? pinDropShadow : defaultDesign.dropShadow;
         this._pinRatio = this.pinSize.h ? this.pinSize.w / this.pinSize.h : 1;
         this.icons = [
             { label: 'Sticky Note', value: 'fa-note-sticky' },
@@ -212,7 +267,11 @@ class NoteIconPicker extends Application {
             icons,
             pinWidth: this.pinSize?.w ?? NOTE_PIN_SIZE.w,
             pinHeight: this.pinSize?.h ?? NOTE_PIN_SIZE.h,
-            lockProportions: this.lockProportions
+            lockProportions: this.lockProportions,
+            pinShape: this.pinShape,
+            pinStroke: this.pinStyle.stroke,
+            pinStrokeWidth: this.pinStyle.strokeWidth,
+            pinDropShadow: this.dropShadow
         };
     }
 
@@ -226,6 +285,10 @@ class NoteIconPicker extends Application {
         const widthInput = nativeHtml.querySelector('.notes-pin-width');
         const heightInput = nativeHtml.querySelector('.notes-pin-height');
         const lockInput = nativeHtml.querySelector('.notes-pin-lock');
+        const shapeInput = nativeHtml.querySelector('.notes-pin-shape');
+        const strokeInput = nativeHtml.querySelector('.notes-pin-stroke');
+        const strokeWidthInput = nativeHtml.querySelector('.notes-pin-stroke-width');
+        const shadowInput = nativeHtml.querySelector('.notes-pin-shadow');
         const defaultInput = nativeHtml.querySelector('.notes-pin-default');
 
         const updatePreview = () => {
@@ -236,23 +299,29 @@ class NoteIconPicker extends Application {
             }
         };
 
-        const clampSize = (value, fallback) => {
+        const clampDimension = (value, fallback) => {
             const parsed = Number(value);
             if (!Number.isFinite(parsed)) return fallback;
             return Math.max(8, Math.round(parsed));
         };
 
+        const clampStrokeWidth = (value, fallback) => {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.max(0, Math.round(parsed));
+        };
+
         const syncPinSize = (source) => {
             if (!widthInput || !heightInput) return;
-            let width = clampSize(widthInput.value, this.pinSize.w);
-            let height = clampSize(heightInput.value, this.pinSize.h);
+            let width = clampDimension(widthInput.value, this.pinSize.w);
+            let height = clampDimension(heightInput.value, this.pinSize.h);
 
             if (lockInput?.checked) {
                 if (source === 'width') {
-                    height = clampSize(Math.round(width / (this._pinRatio || 1)), height);
+                    height = clampDimension(Math.round(width / (this._pinRatio || 1)), height);
                     heightInput.value = height;
                 } else if (source === 'height') {
-                    width = clampSize(Math.round(height * (this._pinRatio || 1)), width);
+                    width = clampDimension(Math.round(height * (this._pinRatio || 1)), width);
                     widthInput.value = width;
                 }
             } else {
@@ -288,12 +357,28 @@ class NoteIconPicker extends Application {
         heightInput?.addEventListener('input', () => syncPinSize('height'));
         lockInput?.addEventListener('change', () => {
             if (widthInput && heightInput) {
-                const width = clampSize(widthInput.value, this.pinSize.w);
-                const height = clampSize(heightInput.value, this.pinSize.h);
+                const width = clampDimension(widthInput.value, this.pinSize.w);
+                const height = clampDimension(heightInput.value, this.pinSize.h);
                 this._pinRatio = height ? width / height : this._pinRatio;
             }
             this.lockProportions = !!lockInput.checked;
             syncPinSize('width');
+        });
+        shapeInput?.addEventListener('change', () => {
+            this.pinShape = normalizePinShape(shapeInput.value) || this.pinShape;
+        });
+        strokeInput?.addEventListener('input', () => {
+            const value = strokeInput.value.trim();
+            if (value) {
+                this.pinStyle.stroke = value;
+            }
+        });
+        strokeWidthInput?.addEventListener('input', () => {
+            const width = clampStrokeWidth(strokeWidthInput.value, this.pinStyle.strokeWidth);
+            this.pinStyle.strokeWidth = width;
+        });
+        shadowInput?.addEventListener('change', () => {
+            this.dropShadow = !!shadowInput.checked;
         });
 
         nativeHtml.querySelector('.notes-icon-browse')?.addEventListener('click', async () => {
@@ -316,16 +401,24 @@ class NoteIconPicker extends Application {
             const finalSelection = this.selected || { type: 'fa', value: NOTE_PIN_ICON };
             const makeDefault = !!defaultInput?.checked;
             const pinSize = normalizePinSize(this.pinSize) || { ...NOTE_PIN_SIZE };
+            const pinShape = normalizePinShape(this.pinShape) || 'circle';
+            const pinStyle = normalizePinStyle(this.pinStyle) || { stroke: '#ffffff', strokeWidth: 2 };
             if (makeDefault) {
                 await game.settings.set(MODULE.ID, NOTE_PIN_DEFAULT_SETTING, {
                     size: pinSize,
-                    lockProportions: !!lockInput?.checked
+                    lockProportions: !!lockInput?.checked,
+                    shape: pinShape,
+                    style: pinStyle,
+                    dropShadow: !!shadowInput?.checked
                 });
             }
             if (this.onSelect) {
                 this.onSelect({
                     icon: finalSelection,
-                    pinSize
+                    pinSize,
+                    pinShape,
+                    pinStyle,
+                    pinDropShadow: !!shadowInput?.checked
                 });
             }
             this.close();
@@ -341,6 +434,16 @@ function getNotePinStyle() {
         stroke: '#ffffff',
         strokeWidth: 2,
         alpha: 0.9
+    };
+}
+
+function mergeNotePinStyle(override) {
+    const base = getNotePinStyle();
+    const normalized = normalizePinStyle(override);
+    if (!normalized) return base;
+    return {
+        ...base,
+        ...normalized
     };
 }
 
@@ -435,6 +538,9 @@ function buildNoteDataFromPage(page) {
         content: page.text?.content || '',
         noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
         notePinSize: getNotePinSizeForPage(page),
+        notePinShape: getNotePinShapeForPage(page),
+        notePinStyle: page.getFlag(MODULE.ID, 'notePinStyle') || null,
+        notePinDropShadow: getNotePinDropShadowForPage(page),
         iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
         authorName: authorName,
         timestamp: timestamp,
@@ -469,6 +575,59 @@ function registerNotePinContextMenuItems(pins) {
         if (!noteData) return;
         const form = new NotesForm(noteData, { viewMode });
         form.render(true);
+    };
+
+    const configureHandler = async (pinData) => {
+        const noteUuid = pinData?.config?.noteUuid;
+        if (!noteUuid) return;
+        const page = await foundry.utils.fromUuid(noteUuid);
+        if (!page) {
+            ui.notifications.error('Note not found.');
+            return;
+        }
+        const pinSceneId = pinData?.sceneId || pinData?.scene || null;
+        if (pinSceneId && page.getFlag(MODULE.ID, 'sceneId') !== pinSceneId) {
+            await page.setFlag(MODULE.ID, 'sceneId', pinSceneId);
+        }
+        if (pinData?.id && page.getFlag(MODULE.ID, 'pinId') !== pinData.id) {
+            await page.setFlag(MODULE.ID, 'pinId', pinData.id);
+        }
+
+        if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+            ui.notifications.warn('You do not have permission to configure this note.');
+            return;
+        }
+
+        let currentIcon = normalizeNoteIconFlag(page.getFlag(MODULE.ID, 'noteIcon'));
+        if (!currentIcon) {
+            const imageSrc = extractFirstImageSrc(page.text?.content || '');
+            if (imageSrc) {
+                currentIcon = { type: 'img', value: imageSrc };
+            }
+        }
+
+        const picker = new NoteIconPicker(currentIcon, {
+            pinSize: getNotePinSizeForPage(page),
+            pinStyle: page.getFlag(MODULE.ID, 'notePinStyle'),
+            pinShape: getNotePinShapeForPage(page),
+            pinDropShadow: getNotePinDropShadowForPage(page),
+            onSelect: async ({ icon, pinSize, pinShape, pinStyle, pinDropShadow }) => {
+                await page.setFlag(MODULE.ID, 'noteIcon', icon || null);
+                await page.setFlag(MODULE.ID, 'notePinSize', normalizePinSize(pinSize) || getDefaultNotePinDesign().size);
+                await page.setFlag(MODULE.ID, 'notePinShape', normalizePinShape(pinShape) || getDefaultNotePinDesign().shape);
+                await page.setFlag(MODULE.ID, 'notePinStyle', normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style);
+                await page.setFlag(MODULE.ID, 'notePinDropShadow', typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow);
+
+                await updateNotePinForPage(page);
+
+                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                if (panelManager?.notesPanel && panelManager.element) {
+                    await panelManager.notesPanel._refreshData();
+                    panelManager.notesPanel.render(panelManager.element);
+                }
+            }
+        });
+        picker.render(true);
     };
 
     const deleteHandler = async (pinData) => {
@@ -511,6 +670,13 @@ function registerNotePinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 10,
             onClick: makeOpenHandler(true)
+        }),
+        pins.registerContextMenuItem(`${MODULE.ID}-configure-token`, {
+            name: 'Configure Token',
+            icon: '<i class="fa-solid fa-gear"></i>',
+            moduleId: MODULE.ID,
+            order: 20,
+            onClick: configureHandler
         }),
         pins.registerContextMenuItem(`${MODULE.ID}-edit-note`, {
             name: 'Edit Note',
@@ -598,7 +764,9 @@ async function createNotePinForPage(page, sceneId, x, y) {
             moduleId: MODULE.ID,
             image: resolveNoteIconHtmlFromPage(page),
             size: getNotePinSizeForPage(page),
-            style: getNotePinStyle(),
+            shape: getNotePinShapeForPage(page),
+            dropShadow: getNotePinDropShadowForPage(page),
+            style: getNotePinStyleForPage(page),
             ownership: getNotePinOwnershipForPage(page),
             config: {
                 noteUuid: page.uuid
@@ -645,18 +813,38 @@ async function updateNotePinForPage(page) {
     if (!pins.update) return;
 
     const pinId = page.getFlag(MODULE.ID, 'pinId');
-    const sceneId = page.getFlag(MODULE.ID, 'sceneId');
-    if (!pinId || !sceneId) return;
+    if (!pinId) return;
+
+    let sceneId = page.getFlag(MODULE.ID, 'sceneId');
+    if (!sceneId && typeof pins.findScene === 'function') {
+        sceneId = pins.findScene(pinId);
+    }
+    if (!sceneId) {
+        sceneId = canvas?.scene?.id || null;
+    }
+    if (!sceneId) return;
 
     const patch = {
         image: resolveNoteIconHtmlFromPage(page),
         size: getNotePinSizeForPage(page),
-        style: getNotePinStyle(),
+        shape: getNotePinShapeForPage(page),
+        dropShadow: getNotePinDropShadowForPage(page),
+        style: getNotePinStyleForPage(page),
         ownership: getNotePinOwnershipForPage(page),
         config: { noteUuid: page.uuid }
     };
 
-    await pins.update(pinId, patch, { sceneId });
+    try {
+        const updated = await pins.update(pinId, patch, { sceneId });
+        if (!updated && typeof pins.reload === 'function') {
+            await pins.reload({ sceneId });
+        }
+    } catch (error) {
+        if (typeof pins.reload === 'function') {
+            await pins.reload({ sceneId });
+        }
+        throw error;
+    }
 }
 
 export class NotesPanel {
@@ -1284,7 +1472,10 @@ export class NotesPanel {
         view.classList.add(NOTE_PIN_CANVAS_CURSOR_CLASS);
         const previewEl = createPinPreviewElement(
             resolveNoteIconHtmlFromPage(page, 'notes-pin-preview-image'),
-            getNotePinSizeForPage(page)
+            getNotePinSizeForPage(page),
+            getNotePinStyleForPage(page),
+            getNotePinShapeForPage(page),
+            getNotePinDropShadowForPage(page)
         );
         document.body.appendChild(previewEl);
         const onPointerMove = (event) => {
@@ -1683,6 +1874,9 @@ export class NotesForm extends FormApplication {
             y: null,
             noteIcon: null,
             notePinSize: getDefaultNotePinDesign().size,
+            notePinShape: getDefaultNotePinDesign().shape,
+            notePinStyle: getDefaultNotePinDesign().style,
+            notePinDropShadow: getDefaultNotePinDesign().dropShadow,
             editorIds: []
         };
     }
@@ -1803,6 +1997,9 @@ export class NotesForm extends FormApplication {
                     await page.setFlag(MODULE.ID, 'visibility', visibility);
                     await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
                     await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
                     const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
                     let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
                     if (visibility === 'private') {
@@ -1854,6 +2051,9 @@ export class NotesForm extends FormApplication {
                             y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
                             noteIcon: this.note.noteIcon || null,
                             notePinSize: getNotePinSizeForNote(this.note),
+                            notePinShape: getNotePinShapeForNote(this.note),
+                            notePinStyle: getNotePinStyleForNote(this.note),
+                            notePinDropShadow: getNotePinDropShadowForNote(this.note),
                             authorId: game.user.id,
                             timestamp: new Date().toISOString()
                         }
@@ -1937,11 +2137,35 @@ export class NotesForm extends FormApplication {
                 }
                 const picker = new NoteIconPicker(currentIcon, {
                     pinSize: this.note.notePinSize,
-                    onSelect: ({ icon, pinSize }) => {
+                    pinStyle: this.note.notePinStyle,
+                    pinShape: this.note.notePinShape,
+                    pinDropShadow: this.note.notePinDropShadow,
+                    onSelect: ({ icon, pinSize, pinStyle, pinShape, pinDropShadow }) => {
                         this.note.noteIcon = icon;
                         this.note.notePinSize = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
+                        this.note.notePinStyle = normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style;
+                        this.note.notePinShape = normalizePinShape(pinShape) || getDefaultNotePinDesign().shape;
+                        this.note.notePinDropShadow = typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow;
                         this.note.iconHtml = buildNoteIconHtml(icon, 'notes-form-header-image');
                         headerIcon.innerHTML = this.note.iconHtml;
+
+                        if (this.isEditing && this.pageUuid) {
+                            foundry.utils.fromUuid(this.pageUuid).then(async (page) => {
+                                if (!page) return;
+                                await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
+                                await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+                                await updateNotePinForPage(page);
+
+                                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                                if (panelManager?.notesPanel && panelManager.element) {
+                                    await panelManager.notesPanel._refreshData();
+                                    panelManager.notesPanel.render(panelManager.element);
+                                }
+                            });
+                        }
                     }
                 });
                 picker.render(true);

@@ -49,6 +49,12 @@
     font-weight: 600;
 }
 
+.notes-pin-border-row {
+    display: grid;
+    grid-template-columns: 1fr 70px;
+    gap: 8px;
+}
+
 .notes-pin-design-toggle {
     display: inline-flex;
     align-items: center;

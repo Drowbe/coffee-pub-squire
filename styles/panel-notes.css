@@ -1143,12 +1143,22 @@ body.squire-notes-pin-placement * {
     pointer-events: none;
     border-radius: 50%;
     background: var(--pin-fill, #000000);
-    border: 2px solid var(--pin-stroke, #ffffff);
+    border: var(--pin-stroke-width, 2px) solid var(--pin-stroke, #ffffff);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--pin-drop-shadow, 0 0 10px rgba(0, 0, 0, 0.4));
     overflow: hidden;
+}
+
+.notes-pin-preview[data-shape="square"] {
+    border-radius: 15%;
+}
+
+.notes-pin-preview[data-shape="none"] {
+    border: none;
+    background: transparent;
+    box-shadow: none;
 }
 
 .notes-pin-preview i {
