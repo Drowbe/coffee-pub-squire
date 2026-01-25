@@ -71,10 +71,10 @@
         <!-- Notes Container -->
         <div class="notes-content">
             {{#if notes.length}}
-                <div class="notes-list {{#if (eq cardTheme 'light')}}notes-cards-light{{else}}notes-cards-dark{{/if}} {{#if (eq viewMode 'list')}}notes-view-list{{else}}notes-view-cards{{/if}}">
+                <div class="notes-list {{#if (eq cardTheme 'light')}}notes-theme--light{{else}}notes-theme--dark{{/if}} {{#if (eq viewMode 'list')}}notes-view--list{{else}}notes-view--cards{{/if}}">
                     {{#each notes}}
                     {{#if (eq ../viewMode 'list')}}
-                    <div class="note-card note-row" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}" data-search="{{searchText}}">
+                    <div class="note-row" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}" data-search="{{searchText}}">
                         <span class="note-row-icon">
                             {{#if iconHtml}}
                                 {{{iconHtml}}}

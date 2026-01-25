@@ -1034,7 +1034,7 @@ export class NotesPanel {
             title.parentNode?.replaceChild(newTitle, title);
             newTitle.addEventListener('click', (event) => {
                 event.preventDefault();
-                const row = event.currentTarget.closest('.note-card');
+                const row = event.currentTarget.closest('[data-note-uuid]');
                 const editButton = row?.querySelector('.note-edit');
                 if (editButton) {
                     editButton.click();
@@ -1347,7 +1347,7 @@ export class NotesPanel {
         const selectedScene = this.filters.scene || 'all';
         const selectedVisibility = this.filters.visibility || 'all';
 
-        html.querySelectorAll('.note-card').forEach(card => {
+        html.querySelectorAll('.note-card, .note-row').forEach(card => {
             let visible = true;
 
             // Search filter
