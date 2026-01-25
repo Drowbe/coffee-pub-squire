@@ -1,4 +1,4 @@
-<form class="notes-form" method="post">
+<form class="notes-form {{#unless isEditMode}}notes-form-view{{/unless}}" method="post">
     <div class="notes-form-header">
         <div class="notes-form-header-content">
             <div class="notes-form-header-icon">
@@ -9,21 +9,54 @@
                 {{/if}}
             </div>
             <div class="notes-form-header-title">
-                <input type="text" id="title" name="title" class="notes-form-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required>
+                <input type="text" id="title" name="title" class="notes-form-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required {{#unless isEditMode}}readonly disabled{{/unless}}>
                 <div class="notes-form-meta">
-                    <span class="notes-form-meta-item">Author: {{#if note.authorName}}{{note.authorName}}{{else}}Unknown{{/if}}</span>
-                    {{#if note.timestamp}}
-                        <span class="notes-form-meta-item">Created: {{formatTimestamp note.timestamp}}</span>
+                    <span class="notes-form-meta-item notes-form-authors">
+                        {{#if note.editorAvatars.length}}
+                        <span class="note-editor-avatars">
+                            {{#each note.editorAvatars}}
+                            <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
+                            {{/each}}
+                        </span>
+                        {{else}}
+                        <i class="fa-solid fa-user"></i> {{#if note.authorName}}{{note.authorName}}{{else}}Unknown{{/if}}
+                        {{/if}}
+                    </span>
+                    {{#if note.sceneName}}
+                        <span class="notes-form-meta-block">
+                            <span class="notes-form-meta-location">
+                                <i class="fa-solid fa-location-dot notes-form-meta-icon"></i>
+                                {{note.sceneName}}
+                            </span>
+                            {{#if note.timestamp}}
+                                <span class="notes-form-meta-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
+                            {{else}}
+                                <span class="notes-form-meta-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
+                            {{/if}}
+                        </span>
                     {{else}}
-                        <span class="notes-form-meta-item">Created: Not saved yet</span>
+                        {{#if note.timestamp}}
+                            <span class="notes-form-meta-item notes-form-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
+                        {{else}}
+                            <span class="notes-form-meta-item notes-form-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
+                        {{/if}}
                     {{/if}}
                 </div>
             </div>
             <div class="notes-form-header-controls">
+                {{#if isEditing}}
+                <div class="notes-edit-toggle-container">
+                    <span class="notes-edit-toggle-label">Edit</span>
+                    <div class="notes-edit-toggle">
+                        <input type="checkbox" id="notes-edit-toggle" {{#if isEditMode}}checked{{/if}}>
+                        <label for="notes-edit-toggle" class="notes-edit-toggle-slider"></label>
+                    </div>
+                </div>
+                {{/if}}
                 <div class="notes-visibility-toggle-container">
                     <span class="notes-visibility-toggle-label">Private</span>
                     <div class="notes-visibility-toggle">
-                        <input type="checkbox" name="visibilityPrivate" id="notes-visibility-private" {{#if (eq note.visibility 'private')}}checked{{/if}}>
+                        <input type="checkbox" name="visibilityPrivate" id="notes-visibility-private" {{#if (eq note.visibility 'private')}}checked{{/if}} {{#unless isEditMode}}disabled{{/unless}}>
                         <label for="notes-visibility-private" class="notes-visibility-toggle-slider"></label>
                     </div>
                 </div>
@@ -39,44 +72,50 @@
 
     <!-- Content -->
     <div class="notes-section notes-section-editor">
-        <div class="notes-section-header"><i class="fa-solid fa-align-left"></i> Content</div>
         <div class="notes-section-body">
-            {{editor note.content target="content" button=false owner=true editable=true engine="prosemirror"}}
+            {{#if isEditMode}}
+                {{editor note.content target="content" button=false owner=true editable=true engine="prosemirror"}}
+            {{else}}
+                <div class="notes-view-content">{{{note.content}}}</div>
+            {{/if}}
         </div>
     </div>
 
     <!-- Tags -->
     <div class="notes-section">
-        <div class="notes-section-header"><i class="fa-solid fa-tags"></i> Tags</div>
         <div class="notes-section-body">
-            <input type="text" id="tags" name="tags" class="notes-input" value="{{note.tagsText}}" placeholder="npc, phlan, informant">
-            <div class="tag-suggestions">
-                {{#unless note.tagsText}}
-                    <small>Enter tags separated by commas...</small>
-                {{/unless}}
-            </div>
+            {{#if isEditMode}}
+                <input type="text" id="tags" name="tags" class="notes-input" value="{{note.tagsText}}" placeholder="npc, phlan, informant">
+                <div class="tag-suggestions">
+                    {{#unless note.tagsText}}
+                        <small>Enter tags separated by commas...</small>
+                    {{/unless}}
+                </div>
+            {{else}}
+                <div class="notes-view-tags">
+                    {{#if note.tags.length}}
+                        {{#each note.tags}}
+                            <span class="notes-view-tag">{{this}}</span>
+                        {{/each}}
+                    {{else}}
+                        <span class="notes-view-empty">No tags</span>
+                    {{/if}}
+                </div>
+            {{/if}}
         </div>
     </div>
-
-    <!-- Scene Info (if from canvas) -->
-    {{#if sceneName}}
-    <div class="notes-section">
-        <div class="notes-section-header"><i class="fa-solid fa-map-pin"></i> Location</div>
-        <div class="notes-section-body scene-info">
-            <p>{{sceneName}}</p>
-        </div>
-    </div>
-    {{/if}}
 
     </div>
 
     <!-- Action Buttons -->
     <div class="form-actions">
         <button type="button" class="btn-secondary cancel">
-            <i class="fa-solid fa-times"></i> Cancel
+            <i class="fa-solid fa-times"></i> {{#if isEditMode}}Cancel{{else}}Close{{/if}}
         </button>
+        {{#if isEditMode}}
         <button type="submit" class="btn-primary">
             <i class="fa-solid fa-save"></i> Save Note
         </button>
+        {{/if}}
     </div>
 </form>

@@ -333,6 +333,39 @@ function generateNotePinId() {
     return globalThis.crypto?.randomUUID?.() || foundry.utils.randomID();
 }
 
+function buildNoteDataFromPage(page) {
+    if (!page) return null;
+
+    const tags = page.getFlag(MODULE.ID, 'tags') || [];
+    const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
+    const authorId = page.getFlag(MODULE.ID, 'authorId');
+    const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+    const x = page.getFlag(MODULE.ID, 'x');
+    const y = page.getFlag(MODULE.ID, 'y');
+    const timestamp = page.getFlag(MODULE.ID, 'timestamp') || null;
+    const authorName = authorId
+        ? (game.users.get(authorId)?.name || game.users.find(u => u.id === authorId)?.name || authorId)
+        : 'Unknown';
+
+    return {
+        pageId: page.id,
+        pageUuid: page.uuid,
+        title: page.name || 'Untitled Note',
+        content: page.text?.content || '',
+        noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
+        iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
+        authorName: authorName,
+        timestamp: timestamp,
+        tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
+        visibility: visibility,
+        sceneId: sceneId,
+        x: x,
+        y: y,
+        authorId: authorId,
+        editorIds: page.getFlag(MODULE.ID, 'editorIds') || []
+    };
+}
+
 function registerNotePinHandlers() {
     if (notePinClickDisposer) return;
     const pins = getPinsApi();
@@ -377,35 +410,10 @@ function registerNotePinHandlers() {
         const page = await foundry.utils.fromUuid(noteUuid);
         if (!page) return;
 
-        const tags = page.getFlag(MODULE.ID, 'tags') || [];
-        const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
-        const authorId = page.getFlag(MODULE.ID, 'authorId');
-        const sceneId = page.getFlag(MODULE.ID, 'sceneId');
-        const x = page.getFlag(MODULE.ID, 'x');
-        const y = page.getFlag(MODULE.ID, 'y');
-        const timestamp = page.getFlag(MODULE.ID, 'timestamp') || null;
-        const authorName = authorId
-            ? (game.users.get(authorId)?.name || game.users.find(u => u.id === authorId)?.name || authorId)
-            : 'Unknown';
+        const noteData = buildNoteDataFromPage(page);
+        if (!noteData) return;
 
-        const noteData = {
-            pageId: page.id,
-            pageUuid: page.uuid,
-            title: page.name || 'Untitled Note',
-            content: page.text?.content || '',
-            noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
-            iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
-            authorName: authorName,
-            timestamp: timestamp,
-            tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
-            visibility: visibility,
-            sceneId: sceneId,
-            x: x,
-            y: y,
-            authorId: authorId
-        };
-
-        const form = new NotesForm(noteData);
+        const form = new NotesForm(noteData, { viewMode: true });
         form.render(true);
         logNotePins('Pin double-click opened notes form.', { noteUuid });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
@@ -924,41 +932,10 @@ export class NotesPanel {
                         return;
                     }
                     
-                    // Load note data from the page
-                    const tags = page.getFlag(MODULE.ID, 'tags') || [];
-                    const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
-                    const authorId = page.getFlag(MODULE.ID, 'authorId');
-                    const sceneId = page.getFlag(MODULE.ID, 'sceneId');
-                    const x = page.getFlag(MODULE.ID, 'x');
-                    const y = page.getFlag(MODULE.ID, 'y');
-                    const timestamp = page.getFlag(MODULE.ID, 'timestamp') || null;
-                    const authorName = authorId
-                        ? (game.users.get(authorId)?.name || game.users.find(u => u.id === authorId)?.name || authorId)
-                        : 'Unknown';
-                    
-                    // Get page content
-                    const content = page.text?.content || '';
-                    
-                    // Create note object for form
-                    const noteData = {
-                        pageId: page.id,
-                        pageUuid: page.uuid,
-                        title: page.name || 'Untitled Note',
-                        content: content,
-                        noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
-                        iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
-                        authorName: authorName,
-                        timestamp: timestamp,
-                        tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
-                        visibility: visibility,
-                        sceneId: sceneId,
-                        x: x,
-                        y: y,
-                        authorId: authorId
-                    };
-                    
-                    // Open NotesForm with existing note data
-                    const form = new NotesForm(noteData);
+                    const noteData = buildNoteDataFromPage(page);
+                    if (!noteData) return;
+
+                    const form = new NotesForm(noteData, { viewMode: false });
                     form.render(true);
                 } catch (error) {
                     console.error('Error opening note for editing:', error);
@@ -1032,13 +1009,23 @@ export class NotesPanel {
         nativeHtml.querySelectorAll('.note-open-title').forEach(title => {
             const newTitle = title.cloneNode(true);
             title.parentNode?.replaceChild(newTitle, title);
-            newTitle.addEventListener('click', (event) => {
+            newTitle.addEventListener('click', async (event) => {
                 event.preventDefault();
                 const row = event.currentTarget.closest('[data-note-uuid]');
-                const editButton = row?.querySelector('.note-edit');
-                if (editButton) {
-                    editButton.click();
+                const noteUuid = row?.dataset?.noteUuid;
+                if (!noteUuid) return;
+
+                const page = await foundry.utils.fromUuid(noteUuid);
+                if (!page) {
+                    ui.notifications.error('Note not found.');
+                    return;
                 }
+
+                const noteData = buildNoteDataFromPage(page);
+                if (!noteData) return;
+
+                const form = new NotesForm(noteData, { viewMode: true });
+                form.render(true);
             });
         });
 
@@ -1463,6 +1450,11 @@ export class NotesForm extends FormApplication {
         this.pageId = note?.pageId || null;
         this.pageUuid = note?.pageUuid || null;
         this.note = note || this._getDefaultNote();
+        this.isViewMode = !!options.viewMode && this.isEditing;
+        if (!this.isEditing) {
+            this.isViewMode = false;
+        }
+        this.isEditMode = !this.isViewMode;
         this.dragActive = false;
         this._eventHandlers = [];
         
@@ -1504,13 +1496,14 @@ export class NotesForm extends FormApplication {
     }
     
     get title() {
-        return this.isEditing ? `Edit Note: ${this.note.title || 'Untitled'}` : 'New Note';
+        if (!this.isEditing) return 'New Note';
+        return this.isEditMode ? 'Edit Note' : 'View Note';
     }
 
     getData() {
         // Update window title
         if (this.isEditing) {
-            this.options.title = `Edit Note: ${this.note.title || 'Untitled'}`;
+            this.options.title = this.isEditMode ? 'Edit Note' : 'View Note';
         } else {
             this.options.title = 'New Note';
         }
@@ -1521,15 +1514,31 @@ export class NotesForm extends FormApplication {
         const iconHtml = this.note.iconHtml ||
             (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'notes-form-header-image') : null) ||
             resolveNoteIconHtmlFromContent(this.note.content, 'notes-form-header-image');
+        const editorIds = Array.isArray(this.note.editorIds) && this.note.editorIds.length
+            ? this.note.editorIds
+            : (this.note.authorId ? [this.note.authorId] : []);
+        const uniqueEditorIds = [...new Set(editorIds)];
+        const editorAvatars = uniqueEditorIds.map(id => {
+            const user = game.users.get(id) || game.users.find(u => u.id === id);
+            return {
+                id,
+                name: user?.name || id || 'Unknown',
+                img: user?.avatar || user?.img || 'icons/svg/mystery-man.svg'
+            };
+        });
 
         return {
             note: {
                 ...this.note,
                 tagsText,
-                iconHtml
+                iconHtml,
+                editorAvatars,
+                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
             },
             isGM: game.user.isGM,
             isEditing: this.isEditing,
+            isEditMode: this.isEditMode,
+            isViewMode: this.isViewMode,
             sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
         };
     }
@@ -1545,7 +1554,8 @@ export class NotesForm extends FormApplication {
             sceneId: null,
             x: null,
             y: null,
-            noteIcon: null
+            noteIcon: null,
+            editorIds: []
         };
     }
 
@@ -1558,8 +1568,8 @@ export class NotesForm extends FormApplication {
     }
 
     setPosition(options={}) {
-        const minWidth = 420;
-        const minHeight = 420;
+        const minWidth = 550;
+        const minHeight = 650;
         if (options.width && options.width < minWidth) options.width = minWidth;
         if (options.height && options.height < minHeight) options.height = minHeight;
 
@@ -1793,7 +1803,7 @@ export class NotesForm extends FormApplication {
         }
 
         const headerIcon = nativeHtml.querySelector('.notes-form-header-icon');
-        if (headerIcon) {
+        if (headerIcon && this.isEditMode) {
             const handler = () => {
                 let currentIcon = normalizeNoteIconFlag(this.note.noteIcon);
                 if (!currentIcon) {
@@ -1813,6 +1823,21 @@ export class NotesForm extends FormApplication {
             };
             headerIcon.addEventListener('click', handler);
             this._eventHandlers.push({ element: headerIcon, event: 'click', handler });
+        }
+
+        const editToggle = nativeHtml.querySelector('#notes-edit-toggle');
+        if (editToggle) {
+            const handler = async (event) => {
+                event.preventDefault();
+                if (this.isEditMode) {
+                    await this._captureFormState();
+                }
+                this.isEditMode = !!event.currentTarget.checked;
+                this.isViewMode = !this.isEditMode;
+                this.render(true);
+            };
+            editToggle.addEventListener('change', handler);
+            this._eventHandlers.push({ element: editToggle, event: 'change', handler });
         }
 
         // Handle cancel button
@@ -1839,8 +1864,45 @@ export class NotesForm extends FormApplication {
         this._setupTagAutocomplete(nativeHtml);
     }
 
+    async _captureFormState() {
+        const nativeHtml = getNativeElement(this.element);
+        const form = nativeHtml?.querySelector('form');
+        if (!form) return;
+
+        if (this._saveEditor) {
+            await this._saveEditor('content');
+        } else if (this._saveEditors) {
+            await this._saveEditors();
+        } else if (this.editors?.content?.save) {
+            await this.editors.content.save();
+        }
+
+        const data = new FormData(form);
+        const title = data.get('title');
+        const content = data.get('content');
+        const tagsText = data.get('tags');
+        const visibilityToggle = form.querySelector('#notes-visibility-private');
+
+        if (typeof title === 'string') {
+            this.note.title = title;
+        }
+        if (typeof content === 'string') {
+            this.note.content = content;
+        }
+        if (typeof tagsText === 'string') {
+            this.note.tags = tagsText
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t);
+        }
+        if (visibilityToggle) {
+            this.note.visibility = visibilityToggle.checked ? 'private' : 'party';
+        }
+    }
+
     async _handleFormSubmit(event) {
         event.preventDefault();
+        if (!this.isEditMode) return;
         
         const form = event.target.closest('form') || event.target;
         if (this._saveEditor) {

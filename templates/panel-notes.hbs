@@ -132,7 +132,7 @@
                                     <i class="fa-solid fa-note-sticky"></i>
                                 {{/if}}
                             </span>
-                            <div class="note-title">{{name}}</div>
+                            <div class="note-title note-open-title" data-uuid="{{uuid}}">{{name}}</div>
                             <div class="note-actions">
                                 {{#if (eq visibility 'private')}}
                                 {{#if ../isGM}}

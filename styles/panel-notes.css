@@ -522,6 +522,14 @@ body.squire-notes-pin-placement * {
     min-width: 0;
 }
 
+.squire-tray[data-position="left"] .notes-list .note-open-title {
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .notes-list .note-open-title:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 
 
 
@@ -652,7 +660,8 @@ body.squire-notes-pin-placement * {
     border: 1px solid rgba(255, 47, 47, 0.1);
     border-radius: 3px;
     font-size: 0.65em;
-    color: #ddd;
+    color: rgba(235, 233, 225, 1);
+    background: rgba(70, 21, 21, 0.9);
     cursor: pointer;
     transition: all 0.2s ease;
     text-transform: uppercase;
@@ -663,6 +672,7 @@ body.squire-notes-pin-placement * {
     background: rgba(255, 47, 47, 0.4);
     border-color: rgba(255, 47, 47, 0.6);
 }
+
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-location-section {
     display: flex;
@@ -1120,7 +1130,11 @@ body.squire-notes-pin-placement * {
     color: #2a231c;
 }
 
+/* NOTE ROW ACTIONS - LIGHT */
 
+.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-actions button {
+    color: rgba(95, 88, 71, 0.8);
+ }
 
 
 
@@ -1206,4 +1220,3 @@ body.squire-notes-pin-placement * {
     border-color: var(--color-border-highlight, #ff6400);
     box-shadow: 0 0 8px var(--color-shadow-primary);
 }
-
