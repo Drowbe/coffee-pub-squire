@@ -1888,21 +1888,7 @@ Hooks.once('init', async function() {
     // Register module settings
     //registerSettings();
 
-    // Load CSS
-    const cssFiles = [
-        `modules/${MODULE.ID}/styles/window-transfer.css`,
-        `modules/${MODULE.ID}/styles/panel-notes.css`,
-        `modules/${MODULE.ID}/styles/notes-metadata-box.css`
-    ];
-    
-    // Add CSS files to head
-    cssFiles.forEach(cssPath => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        link.href = cssPath;
-        document.head.appendChild(link);
-    });
+    // CSS is loaded via styles/default.css imports.
 
     // Register handle-player template
     const handlePlayerTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-player.hbs`).then(response => response.text());

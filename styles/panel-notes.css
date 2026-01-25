@@ -439,12 +439,18 @@ body.squire-notes-pin-placement * {
     opacity: 1;
 }
 
-/* ============================ */
-/* ======== CARD VIEW ========= */
-/* ============================ */
 
 
-/* *********** COMMON *********** */
+
+
+
+/* ================================================ */
+/* === CARD VIEW                                 == */
+/* ================================================ */
+
+
+/* -- COMMON -------------------------------------- */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards {
     display: flex;
     flex-direction: column;
@@ -476,6 +482,10 @@ body.squire-notes-pin-placement * {
     background: rgba(96, 54, 51, 0);
     border-radius: 4px;
 }
+
+
+/* NOTE HEADER ICON */
+
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-icon {
     width: 28px;
@@ -512,6 +522,13 @@ body.squire-notes-pin-placement * {
     min-width: 0;
 }
 
+
+
+
+
+
+/* NOTE HEADER ACTIONS */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-actions {
     display: flex;
     gap: 6px;
@@ -542,6 +559,13 @@ body.squire-notes-pin-placement * {
     color: #ff4444;
 }
 
+
+
+
+
+/* NOTE CONTENT */
+
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-content {
     margin: 8px 0;
     clear: right;
@@ -562,6 +586,12 @@ body.squire-notes-pin-placement * {
     text-decoration: underline;
 }
 
+
+
+
+/* NOTE IMAGE */
+
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-image {
     float: left;
     margin: 0 8px 8px 0;
@@ -579,12 +609,25 @@ body.squire-notes-pin-placement * {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+
+
+
+
+
+
+
+
+/* NOTE TAGS */
+
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-tags-section {
     margin: 8px 0 0 0;
     padding: 4px;
     border-top: 0 dotted rgba(255, 255, 255, 0.2);
     clear: both;
     border-radius: 4px;
+    background: rgba(186, 168, 137, 0.08);
+    color: rgba(186, 168, 137, 0.9);
 }
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-tags-label {
@@ -633,6 +676,14 @@ body.squire-notes-pin-placement * {
     border-radius: 4px;
 }
 
+
+
+
+
+
+/* NOTE LOCATION */
+
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-location-section i {
     display: inline-flex;
     align-items: center;
@@ -655,6 +706,11 @@ body.squire-notes-pin-placement * {
     background: rgba(255, 100, 0, 0.9);
     transition: color 0.15s ease, border-color 0.15s ease;
 }
+
+
+
+
+/* NOTE FOOTER */
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-footer {
     display: flex;
@@ -685,6 +741,26 @@ body.squire-notes-pin-placement * {
     color: rgba(186, 168, 137, 0.9);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* NOTE AUTOHOR AVATARS */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-editor-avatars {
     display: flex;
     align-items: center;
@@ -699,6 +775,11 @@ body.squire-notes-pin-placement * {
     object-fit: cover;
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
 }
+
+
+
+
+/* NOTE VISIBILITY BADGE */
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-visibility-badge {
     flex-shrink: 0;
@@ -717,6 +798,10 @@ body.squire-notes-pin-placement * {
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-visibility-badge i {
     margin: 0;
 }
+
+
+
+/* NOTE HIGHLIGHT BOX */
 
 .squire-tray[data-position="left"] .note-card.note-card-highlight {
     border: 1px solid rgba(244, 221, 104, 0.2);
@@ -741,7 +826,15 @@ body.squire-notes-pin-placement * {
     }
 }
 
-/* *********** DARK MODE *********** */
+
+
+
+/* ------------------------------------------------ */
+/* -- DARK MODE                                 -- */
+/* ------------------------------------------------ */
+
+
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-card {
     background: rgba(0, 0, 0, 0.3);
     border-color: rgba(255, 255, 255, 0.1);
@@ -753,10 +846,8 @@ body.squire-notes-pin-placement * {
     color: rgba(159, 146, 117, 0.9);
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-tags-section,
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-location-section {
     background: rgba(186, 168, 137, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
     color: rgba(186, 168, 137, 0.9);
 }
 
@@ -768,10 +859,6 @@ body.squire-notes-pin-placement * {
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-actions button {
     color: rgba(159, 146, 117, 0.9);
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-tag {
-    background: rgba(255, 47, 47, 0.2);
 }
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-visibility-badge.party {
@@ -786,7 +873,13 @@ body.squire-notes-pin-placement * {
     border: 1px solid rgba(120, 60, 70, 0.5);
 }
 
-/* *********** LIGHT MODE *********** */
+
+
+/* ------------------------------------------------ */
+/* -- LIGHT MODE                                 -- */
+/* ------------------------------------------------ */
+
+
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-card {
     background: rgba(241, 234, 218, 0.92);
     border-color: rgba(122, 101, 72, 0.35);
@@ -799,10 +892,8 @@ body.squire-notes-pin-placement * {
     color: #1e1a14;
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-tags-section,
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-location-section {
     background: rgba(255, 255, 255, 0.55);
-    border-color: rgba(122, 101, 72, 0.2);
     color: #1e1a14;
 }
 
@@ -814,12 +905,6 @@ body.squire-notes-pin-placement * {
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-actions button {
     color: #3b2f22;
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-tag {
-    background: rgba(255, 255, 255, 0.8);
-    color: #3b2f22;
-    border-color: rgba(122, 101, 72, 0.25);
 }
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-visibility-badge.party {
@@ -834,10 +919,35 @@ body.squire-notes-pin-placement * {
     border: 1px solid rgba(120, 60, 70, 0.3);
 }
 
-/* ============================ */
-/* ======== LIST VIEW ========= */
-/* ============================ */
-/* *********** COMMON *********** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ================================================ */
+/* === LIST VIEW                                 == */
+/* ================================================ */
+
+/* ------------------------------------------------ */
+/* -- COMMON                                     -- */
+/* ------------------------------------------------ */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--list {
     display: flex;
     flex-direction: column;
@@ -856,27 +966,41 @@ body.squire-notes-pin-placement * {
     gap: 4px;
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-icon,
-.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-icon img,
-.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-icon i {
-    width: 20px;
-    height: 20px;
-    font-size: 0.8em;
-}
 
+/* NOTE ROW ICON */
 .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-icon {
+    width: 18px;
+    height: 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.25);
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-icon img {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+    overflow: hidden; /* important for circle mask */
+  }
+  
+  .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-icon i {
+    display: block;     /* kills baseline alignment */
+    line-height: 1;     /* kills font box extra height */
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;    /* more predictable than 1em */
+  
+  }
+  
+  .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-icon img {
+    display: block;     /* kills baseline alignment */
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 4px;
-}
+  }
+  
+  
+
+
+
+/* NOTE ROW VISIBILITY BADGE */
 
 .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-visibility {
     display: inline-flex;
@@ -887,6 +1011,9 @@ body.squire-notes-pin-placement * {
     border-radius: 4px;
     font-size: 0.65em;
 }
+
+
+/* NOTE ROW TITLE */
 
 .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-title {
     font-size: 0.8em;
@@ -900,6 +1027,9 @@ body.squire-notes-pin-placement * {
 .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-title:hover {
     color: rgba(255, 255, 255, 0.9);
 }
+
+
+/* NOTE ROW ACTIONS */
 
 .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-actions {
     margin-left: auto;
@@ -941,44 +1071,82 @@ body.squire-notes-pin-placement * {
     line-height: 1;
 }
 
-/* *********** DARK MODE *********** */
+
+/* ------------------------------------------------ */
+/* -- LIST VIEW DARK MODE                                 -- */
+/* ------------------------------------------------ */
+
+/* NOTE ROW - DARK */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row {
     background: rgba(0, 0, 0, 0.1);
     border-color: rgba(255, 255, 255, 0.12);
 }
 
+/* NOTE ROW TITLE - DARK */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row-title {
     color: rgba(180, 169, 144, 0.95);
 }
+
+/* NOTE ROW VISIBILITY BADGE - DARK */
 
 .squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row-visibility {
     background: rgba(0, 0, 0, 0.35);
     color: #d8c9a3;
 }
 
-/* *********** LIGHT MODE *********** */
+/* ------------------------------------------------ */
+/* -- LIST VIEWLIGHT MODE                                 -- */
+/* ------------------------------------------------ */
+
+/* NOTE ROW - LIGHT */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row {
     background: rgba(245, 240, 230, 0.9);
     border-color: rgba(122, 101, 72, 0.35);
 }
 
+/* NOTE ROW TITLE - LIGHT */
+
 .squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-title {
     color: #2a231c;
 }
+
+/* NOTE ROW VISIBILITY BADGE - LIGHT */
 
 .squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-visibility {
     background: rgba(220, 208, 186, 0.8);
     color: #2a231c;
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-icon {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: rgba(122, 101, 72, 0.35);
-}
 
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-actions button {
-    color: #3b2f22;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* === Pin Placement Preview === */
 .notes-pin-preview {
@@ -1038,7 +1206,4 @@ body.squire-notes-pin-placement * {
     border-color: var(--color-border-highlight, #ff6400);
     box-shadow: 0 0 8px var(--color-shadow-primary);
 }
-
-
-
 
