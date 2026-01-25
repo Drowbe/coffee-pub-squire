@@ -36,6 +36,37 @@ const NOTE_PIN_COLOR = 0xFFFF00;
 const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
 const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
 const NOTE_PIN_SIZE = { w: 60, h: 60 };
+const NOTE_PIN_DEFAULT_SETTING = 'notesPinDefaultDesign';
+
+function normalizePinSize(size) {
+    const w = Number(size?.w);
+    const h = Number(size?.h);
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
+    return { w: Math.round(w), h: Math.round(h) };
+}
+
+function getDefaultNotePinDesign() {
+    let stored = null;
+    try {
+        stored = game.settings.get(MODULE.ID, NOTE_PIN_DEFAULT_SETTING);
+    } catch (error) {
+        stored = null;
+    }
+    const normalized = normalizePinSize(stored?.size);
+    const lockProportions = typeof stored?.lockProportions === 'boolean' ? stored.lockProportions : true;
+    return {
+        size: normalized || { ...NOTE_PIN_SIZE },
+        lockProportions
+    };
+}
+
+function getNotePinSizeForPage(page) {
+    return normalizePinSize(page?.getFlag(MODULE.ID, 'notePinSize')) || getDefaultNotePinDesign().size;
+}
+
+function getNotePinSizeForNote(note) {
+    return normalizePinSize(note?.notePinSize) || getDefaultNotePinDesign().size;
+}
 
 let notePinClickDisposer = null;
 let notePinHandlerController = null;
@@ -114,10 +145,12 @@ function focusNoteCardInDom(noteUuid) {
     return true;
 }
 
-function createPinPreviewElement(iconHtml) {
+function createPinPreviewElement(iconHtml, pinSize) {
+    const size = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
     const preview = document.createElement('div');
     preview.className = 'notes-pin-preview';
-    preview.style.setProperty('--pin-size', `${NOTE_PIN_SIZE.w}px`);
+    preview.style.setProperty('--pin-width', `${size.w}px`);
+    preview.style.setProperty('--pin-height', `${size.h}px`);
     preview.style.setProperty('--pin-fill', getNotePinStyle().fill);
     preview.style.setProperty('--pin-stroke', getNotePinStyle().stroke);
     preview.innerHTML = `
@@ -129,10 +162,14 @@ function createPinPreviewElement(iconHtml) {
 }
 
 class NoteIconPicker extends Application {
-    constructor(noteIcon, { onSelect } = {}) {
+    constructor(noteIcon, { onSelect, pinSize } = {}) {
         super();
         this.onSelect = onSelect;
         this.selected = noteIcon;
+        const defaultDesign = getDefaultNotePinDesign();
+        this.pinSize = normalizePinSize(pinSize) || defaultDesign.size;
+        this.lockProportions = defaultDesign.lockProportions;
+        this._pinRatio = this.pinSize.h ? this.pinSize.w / this.pinSize.h : 1;
         this.icons = [
             { label: 'Sticky Note', value: 'fa-note-sticky' },
             { label: 'Map Pin', value: 'fa-map-pin' },
@@ -172,7 +209,10 @@ class NoteIconPicker extends Application {
         return {
             previewHtml,
             imageValue,
-            icons
+            icons,
+            pinWidth: this.pinSize?.w ?? NOTE_PIN_SIZE.w,
+            pinHeight: this.pinSize?.h ?? NOTE_PIN_SIZE.h,
+            lockProportions: this.lockProportions
         };
     }
 
@@ -183,6 +223,10 @@ class NoteIconPicker extends Application {
         const preview = nativeHtml.querySelector('.notes-form-header-icon');
         const imageInput = nativeHtml.querySelector('.notes-icon-image-input');
         const imageRow = nativeHtml.querySelector('.notes-icon-image-row');
+        const widthInput = nativeHtml.querySelector('.notes-pin-width');
+        const heightInput = nativeHtml.querySelector('.notes-pin-height');
+        const lockInput = nativeHtml.querySelector('.notes-pin-lock');
+        const defaultInput = nativeHtml.querySelector('.notes-pin-default');
 
         const updatePreview = () => {
             if (!preview) return;
@@ -190,6 +234,32 @@ class NoteIconPicker extends Application {
             if (imageRow) {
                 imageRow.classList.toggle('selected', this.selected?.type === 'img');
             }
+        };
+
+        const clampSize = (value, fallback) => {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.max(8, Math.round(parsed));
+        };
+
+        const syncPinSize = (source) => {
+            if (!widthInput || !heightInput) return;
+            let width = clampSize(widthInput.value, this.pinSize.w);
+            let height = clampSize(heightInput.value, this.pinSize.h);
+
+            if (lockInput?.checked) {
+                if (source === 'width') {
+                    height = clampSize(Math.round(width / (this._pinRatio || 1)), height);
+                    heightInput.value = height;
+                } else if (source === 'height') {
+                    width = clampSize(Math.round(height * (this._pinRatio || 1)), width);
+                    widthInput.value = width;
+                }
+            } else {
+                this._pinRatio = height ? width / height : this._pinRatio;
+            }
+
+            this.pinSize = { w: width, h: height };
         };
 
         nativeHtml.querySelectorAll('.notes-icon-option').forEach(button => {
@@ -214,6 +284,18 @@ class NoteIconPicker extends Application {
             }
         });
 
+        widthInput?.addEventListener('input', () => syncPinSize('width'));
+        heightInput?.addEventListener('input', () => syncPinSize('height'));
+        lockInput?.addEventListener('change', () => {
+            if (widthInput && heightInput) {
+                const width = clampSize(widthInput.value, this.pinSize.w);
+                const height = clampSize(heightInput.value, this.pinSize.h);
+                this._pinRatio = height ? width / height : this._pinRatio;
+            }
+            this.lockProportions = !!lockInput.checked;
+            syncPinSize('width');
+        });
+
         nativeHtml.querySelector('.notes-icon-browse')?.addEventListener('click', async () => {
             const picker = new FilePicker({
                 type: 'image',
@@ -230,10 +312,21 @@ class NoteIconPicker extends Application {
 
         nativeHtml.querySelector('button.cancel')?.addEventListener('click', () => this.close());
 
-        nativeHtml.querySelector('.notes-icon-use')?.addEventListener('click', () => {
+        nativeHtml.querySelector('.notes-icon-use')?.addEventListener('click', async () => {
             const finalSelection = this.selected || { type: 'fa', value: NOTE_PIN_ICON };
+            const makeDefault = !!defaultInput?.checked;
+            const pinSize = normalizePinSize(this.pinSize) || { ...NOTE_PIN_SIZE };
+            if (makeDefault) {
+                await game.settings.set(MODULE.ID, NOTE_PIN_DEFAULT_SETTING, {
+                    size: pinSize,
+                    lockProportions: !!lockInput?.checked
+                });
+            }
             if (this.onSelect) {
-                this.onSelect(finalSelection);
+                this.onSelect({
+                    icon: finalSelection,
+                    pinSize
+                });
             }
             this.close();
         });
@@ -341,6 +434,7 @@ function buildNoteDataFromPage(page) {
         title: page.name || 'Untitled Note',
         content: page.text?.content || '',
         noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
+        notePinSize: getNotePinSizeForPage(page),
         iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
         authorName: authorName,
         timestamp: timestamp,
@@ -503,7 +597,7 @@ async function createNotePinForPage(page, sceneId, x, y) {
             y,
             moduleId: MODULE.ID,
             image: resolveNoteIconHtmlFromPage(page),
-            size: NOTE_PIN_SIZE,
+            size: getNotePinSizeForPage(page),
             style: getNotePinStyle(),
             ownership: getNotePinOwnershipForPage(page),
             config: {
@@ -556,7 +650,7 @@ async function updateNotePinForPage(page) {
 
     const patch = {
         image: resolveNoteIconHtmlFromPage(page),
-        size: NOTE_PIN_SIZE,
+        size: getNotePinSizeForPage(page),
         style: getNotePinStyle(),
         ownership: getNotePinOwnershipForPage(page),
         config: { noteUuid: page.uuid }
@@ -1188,7 +1282,10 @@ export class NotesPanel {
 
         const view = canvas.app.view;
         view.classList.add(NOTE_PIN_CANVAS_CURSOR_CLASS);
-        const previewEl = createPinPreviewElement(resolveNoteIconHtmlFromPage(page, 'notes-pin-preview-image'));
+        const previewEl = createPinPreviewElement(
+            resolveNoteIconHtmlFromPage(page, 'notes-pin-preview-image'),
+            getNotePinSizeForPage(page)
+        );
         document.body.appendChild(previewEl);
         const onPointerMove = (event) => {
             previewEl.style.left = `${event.clientX}px`;
@@ -1585,6 +1682,7 @@ export class NotesForm extends FormApplication {
             x: null,
             y: null,
             noteIcon: null,
+            notePinSize: getDefaultNotePinDesign().size,
             editorIds: []
         };
     }
@@ -1704,6 +1802,7 @@ export class NotesForm extends FormApplication {
                     await page.setFlag(MODULE.ID, 'tags', tags);
                     await page.setFlag(MODULE.ID, 'visibility', visibility);
                     await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
+                    await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
                     const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
                     let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
                     if (visibility === 'private') {
@@ -1754,6 +1853,7 @@ export class NotesForm extends FormApplication {
                             x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
                             y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
                             noteIcon: this.note.noteIcon || null,
+                            notePinSize: getNotePinSizeForNote(this.note),
                             authorId: game.user.id,
                             timestamp: new Date().toISOString()
                         }
@@ -1836,9 +1936,11 @@ export class NotesForm extends FormApplication {
                     }
                 }
                 const picker = new NoteIconPicker(currentIcon, {
-                    onSelect: (selection) => {
-                        this.note.noteIcon = selection;
-                        this.note.iconHtml = buildNoteIconHtml(selection, 'notes-form-header-image');
+                    pinSize: this.note.notePinSize,
+                    onSelect: ({ icon, pinSize }) => {
+                        this.note.noteIcon = icon;
+                        this.note.notePinSize = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
+                        this.note.iconHtml = buildNoteIconHtml(icon, 'notes-form-header-image');
                         headerIcon.innerHTML = this.note.iconHtml;
                     }
                 });

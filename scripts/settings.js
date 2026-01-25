@@ -612,6 +612,16 @@ export const registerSettings = function() {
         default: 'none'
     });
 
+    game.settings.register(MODULE.ID, 'notesPinDefaultDesign', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {
+            size: { w: 60, h: 60 },
+            lockProportions: true
+        }
+    });
+
     // --------------------------------
     // --- Transfer Settings ---
     // --------------------------------

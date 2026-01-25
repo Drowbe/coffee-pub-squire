@@ -2,12 +2,36 @@
     <div class="notes-form-header">
         <div class="notes-form-header-content">
             <div class="notes-form-header-title">
-                <div class="notes-icon-picker-title"><i class="fa-solid fa-location-dot"></i> Select Note Icon</div>
+                <div class="notes-icon-picker-title"><i class="fa-solid fa-location-dot"></i> Token Design</div>
             </div>
         </div>
     </div>
 
     <div class="notes-form-body">
+        <div class="notes-section notes-pin-design-section">
+            <div class="notes-section-header"><i class="fa-solid fa-ruler-combined"></i> Pin Design</div>
+            <div class="notes-section-body">
+                <div class="notes-pin-design-row">
+                    <label class="notes-pin-design-field">
+                        <span>Width</span>
+                        <input type="number" class="notes-input notes-pin-width" min="8" step="1" value="{{pinWidth}}">
+                    </label>
+                    <label class="notes-pin-design-field">
+                        <span>Height</span>
+                        <input type="number" class="notes-input notes-pin-height" min="8" step="1" value="{{pinHeight}}">
+                    </label>
+                </div>
+                <label class="notes-pin-design-toggle">
+                    <input type="checkbox" class="notes-pin-lock" {{#if lockProportions}}checked{{/if}}>
+                    Constrain proportions
+                </label>
+                <label class="notes-pin-design-toggle">
+                    <input type="checkbox" class="notes-pin-default">
+                    Make this default
+                </label>
+            </div>
+        </div>
+
         <div class="notes-section">
             <div class="notes-section-header"><i class="fa-solid fa-image"></i> Image URL</div>
             <div class="notes-section-body">

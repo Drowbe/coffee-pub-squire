@@ -29,6 +29,39 @@
     color: #c9b993;
 }
 
+.notes-pin-design-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.notes-pin-design-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85em;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: rgba(201, 185, 147, 0.9);
+}
+
+.notes-pin-design-field span {
+    font-weight: 600;
+}
+
+.notes-pin-design-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    color: rgba(230, 223, 204, 0.9);
+    font-size: 0.9em;
+}
+
+.notes-pin-design-toggle input {
+    margin: 0;
+}
+
 .notes-icon-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));

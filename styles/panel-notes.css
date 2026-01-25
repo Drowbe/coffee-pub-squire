@@ -1137,8 +1137,8 @@ body.squire-notes-pin-placement * {
 .notes-pin-preview {
     position: fixed;
     z-index: 10000;
-    width: var(--pin-size, 48px);
-    height: var(--pin-size, 48px);
+    width: var(--pin-width, var(--pin-size, 48px));
+    height: var(--pin-height, var(--pin-size, 48px));
     transform: translate(-50%, -50%);
     pointer-events: none;
     border-radius: 50%;
