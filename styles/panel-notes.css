@@ -1148,6 +1148,7 @@ body.squire-notes-pin-placement * {
     align-items: center;
     justify-content: center;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
 }
 
 .notes-pin-preview i {
@@ -1159,7 +1160,7 @@ body.squire-notes-pin-placement * {
 .notes-pin-preview img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .squire-tray[data-position="left"] .no-notes {
