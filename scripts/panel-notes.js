@@ -604,6 +604,7 @@ export class NotesPanel {
         this.element = getNativeElement(element);
         const notesContainer = this.element?.querySelector('[data-panel="panel-notes"]');
         if (!notesContainer) return;
+        const previousScrollTop = notesContainer.querySelector('.notes-content')?.scrollTop;
 
         // Refresh data (load notes)
         await this._refreshData();
@@ -649,6 +650,10 @@ export class NotesPanel {
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
         notesContainer.innerHTML = html;
+        const newContent = notesContainer.querySelector('.notes-content');
+        if (newContent && typeof previousScrollTop === 'number') {
+            newContent.scrollTop = previousScrollTop;
+        }
 
         this.activateListeners(notesContainer);
     }
