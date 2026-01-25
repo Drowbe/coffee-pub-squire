@@ -229,7 +229,6 @@ Hooks.once('ready', () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (sheet, html, data) => {
-                console.log('renderJournalPageSheet hook called', { sheet, hasObject: !!sheet?.object });
                 await _embedNoteMetadataBox(sheet, html, data);
             }
         });
@@ -243,7 +242,6 @@ Hooks.once('ready', () => {
             callback: async (app, html, data) => {
                 // Check if this is a JournalPageSheet
                 if (app?.constructor?.name === 'JournalPageSheet' || app?.object?.constructor?.name === 'JournalEntryPage') {
-                    console.log('renderApplication hook called for JournalPageSheet', { app, hasObject: !!app?.object });
                     await _embedNoteMetadataBox(app, html, data);
                 }
             }
@@ -1146,18 +1144,10 @@ async function _routeToNotesPanel(page, changes, options, userId) {
  */
 async function _embedNoteMetadataBox(sheet, html, data) {
     try {
-        console.log('_embedNoteMetadataBox called', { 
-            sheet, 
-            sheetClassName: sheet?.constructor?.name,
-            hasObject: !!sheet?.object, 
-            objectClassName: sheet?.object?.constructor?.name,
-            html: !!html 
-        });
         
         // Only show for notes journal
         const journalId = game.settings.get(MODULE.ID, 'notesJournal');
         if (!journalId || journalId === 'none') {
-            console.log('_embedNoteMetadataBox: No notes journal set');
             return;
         }
         
@@ -1172,26 +1162,18 @@ async function _embedNoteMetadataBox(sheet, html, data) {
         }
         
         if (!page) {
-            console.log('_embedNoteMetadataBox: No page object found', { 
-                hasObject: !!sheet?.object,
-                hasPages: !!sheet?.pages,
-                activePageId: sheet?.pages?.active
-            });
             return;
         }
         
         if (!page.parent) {
-            console.log('_embedNoteMetadataBox: Page has no parent');
             return;
         }
         
         // Check if this page belongs to the notes journal
         if (page.parent.id !== journalId) {
-            console.log('_embedNoteMetadataBox: Page does not belong to notes journal', { pageParentId: page.parent.id, notesJournalId: journalId });
             return;
         }
         
-        console.log('_embedNoteMetadataBox: Page belongs to notes journal, proceeding', { pageId: page.id, pageName: page.name });
         
         // Check if this is a note (has noteType flag) or if we're creating a new page
         const noteType = page.getFlag(MODULE.ID, 'noteType');
@@ -1199,7 +1181,6 @@ async function _embedNoteMetadataBox(sheet, html, data) {
         
         // If it's a new page without noteType, set it
         if (!isNote && page.id) {
-            console.log('_embedNoteMetadataBox: New page detected, setting noteType flag');
             try {
                 await page.setFlag(MODULE.ID, 'noteType', 'sticky');
                 if (!page.getFlag(MODULE.ID, 'authorId')) {
@@ -1250,19 +1231,11 @@ async function _embedNoteMetadataBox(sheet, html, data) {
             if (!nativeHtml) return;
         }
         
-        console.log('_embedNoteMetadataBox: Looking for insertion point in HTML');
         
         // Find where to insert the meta box (after title, before content)
         // Try multiple selectors for different Foundry versions
         const titleElement = nativeHtml.querySelector('.journal-entry-page-title, .journal-page-title, .page-title, h1.page-title, h1');
         const contentArea = nativeHtml.querySelector('.journal-entry-content, .editor-content, .editor, .editor-edit, textarea[name="text.content"]');
-        
-        console.log('_embedNoteMetadataBox: Found elements', { 
-            titleElement: !!titleElement, 
-            contentArea: !!contentArea,
-            titleClass: titleElement?.className,
-            contentClass: contentArea?.className
-        });
         
         // Escape HTML in values
         const escapeHtml = (str) => {
@@ -1316,22 +1289,16 @@ async function _embedNoteMetadataBox(sheet, html, data) {
         if (titleElement && titleElement.parentNode) {
             titleElement.parentNode.insertBefore(metaBoxElement, titleElement.nextSibling);
             inserted = true;
-            console.log('_embedNoteMetadataBox: Inserted after title element');
         } else if (contentArea && contentArea.parentNode) {
             contentArea.parentNode.insertBefore(metaBoxElement, contentArea);
             inserted = true;
-            console.log('_embedNoteMetadataBox: Inserted before content area');
         } else {
             // Fallback: insert at top of sheet content
             const sheetContent = nativeHtml.querySelector('.sheet-content, .window-content, form');
             if (sheetContent) {
                 sheetContent.insertBefore(metaBoxElement, sheetContent.firstChild);
                 inserted = true;
-                console.log('_embedNoteMetadataBox: Inserted at top of sheet content');
             } else {
-                console.warn('_embedNoteMetadataBox: Could not find insertion point!', {
-                    htmlStructure: nativeHtml.innerHTML.substring(0, 500)
-                });
             }
         }
         
@@ -1342,7 +1309,6 @@ async function _embedNoteMetadataBox(sheet, html, data) {
         
         // Set up event listeners for meta box
         const metaBox = nativeHtml.querySelector('.squire-note-metadata-box');
-        console.log('_embedNoteMetadataBox: Meta box inserted', { found: !!metaBox });
         if (metaBox) {
             // Handle tags input
             const tagsInput = metaBox.querySelector('.squire-note-tags-input');
@@ -2188,7 +2154,6 @@ Hooks.once('ready', async function() {
         // Fallback: Direct hook registration for journal page sheet (in case Blacksmith doesn't support it)
         // Try multiple hook names for FoundryVTT v12/v13 compatibility
         Hooks.on('renderJournalPageSheet', async (sheet, html, data) => {
-            console.log('Direct Hooks.on renderJournalPageSheet called', { sheet, hasObject: !!sheet?.object, className: sheet?.constructor?.name });
             await _embedNoteMetadataBox(sheet, html, data);
         });
         
@@ -2197,19 +2162,12 @@ Hooks.once('ready', async function() {
             const className = app?.constructor?.name;
             const objectName = app?.object?.constructor?.name;
             if (className === 'JournalPageSheet' || className === 'JournalTextPageSheet' || objectName === 'JournalEntryPage') {
-                console.log('Direct Hooks.on renderApplication for JournalPageSheet called', { 
-                    app, 
-                    hasObject: !!app?.object,
-                    className,
-                    objectName
-                });
                 await _embedNoteMetadataBox(app, html, data);
             }
         });
         
         // Also try the JournalEntrySheet hook (for the parent journal)
         Hooks.on('renderJournalEntrySheet', async (sheet, html, data) => {
-            console.log('Direct Hooks.on renderJournalEntrySheet called', { sheet, hasObject: !!sheet?.object });
             // This is for the journal itself, but we can check if a page is being viewed
             // The meta box hook should handle individual pages
         });

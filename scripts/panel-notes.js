@@ -18,18 +18,6 @@ function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
-function logNotePins(message, data = null) {
-    const blacksmith = getBlacksmith();
-    const detail = data ? (typeof data === 'string' ? data : JSON.stringify(data)) : '';
-    blacksmith?.utils?.postConsoleAndNotification(
-        MODULE.NAME,
-        `NOTE | PINS ${message}`,
-        detail,
-        true,
-        false
-    );
-}
-
 function getPinsApi() {
     const blacksmith = getBlacksmith();
     return blacksmith?.pins || null;
@@ -51,6 +39,8 @@ const NOTE_PIN_SIZE = { w: 60, h: 60 };
 
 let notePinClickDisposer = null;
 let notePinHandlerController = null;
+let notePinContextMenuRegistered = false;
+let notePinContextMenuDisposers = [];
 
 function toHexColor(color) {
     if (typeof color === 'number') {
@@ -114,11 +104,9 @@ function resolveNoteIconHtmlFromContent(content, imgClass = '') {
 function focusNoteCardInDom(noteUuid) {
     const card = document.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
     if (!card) {
-        logNotePins('Note focus: card not found in DOM (direct).', { noteUuid });
         return false;
     }
     card.classList.add('note-card-highlight');
-    logNotePins('Note focus: highlight applied (direct).', { noteUuid });
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     trackModuleTimeout(() => {
         card.classList.remove('note-card-highlight');
@@ -366,13 +354,95 @@ function buildNoteDataFromPage(page) {
     };
 }
 
+function registerNotePinContextMenuItems(pins) {
+    if (notePinContextMenuRegistered || !pins?.registerContextMenuItem) return;
+
+    const makeOpenHandler = (viewMode) => async (pinData) => {
+        const noteUuid = pinData?.config?.noteUuid;
+        if (!noteUuid) return;
+        const page = await foundry.utils.fromUuid(noteUuid);
+        if (!page) {
+            ui.notifications.error('Note not found.');
+            return;
+        }
+
+        if (!viewMode && !page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+            ui.notifications.warn('You do not have permission to edit this note.');
+            return;
+        }
+
+        const noteData = buildNoteDataFromPage(page);
+        if (!noteData) return;
+        const form = new NotesForm(noteData, { viewMode });
+        form.render(true);
+    };
+
+    const deleteHandler = async (pinData) => {
+        const noteUuid = pinData?.config?.noteUuid;
+        if (!noteUuid) return;
+        const page = await foundry.utils.fromUuid(noteUuid);
+        if (!page) {
+            ui.notifications.error('Note not found.');
+            return;
+        }
+
+        if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+            ui.notifications.warn('You do not have permission to delete this note.');
+            return;
+        }
+
+        const confirmed = await Dialog.confirm({
+            title: 'Delete Note',
+            content: '<p>Delete this note and its pin?</p>',
+            yes: () => true,
+            no: () => false,
+            defaultYes: false
+        });
+        if (!confirmed) return;
+
+        await deleteNotePinForPage(page);
+        await page.delete();
+
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.notesPanel && panelManager.element) {
+            await panelManager.notesPanel._refreshData();
+            panelManager.notesPanel.render(panelManager.element);
+        }
+    };
+
+    notePinContextMenuDisposers = [
+        pins.registerContextMenuItem(`${MODULE.ID}-view-note`, {
+            name: 'View Note',
+            icon: '<i class="fa-solid fa-eye"></i>',
+            moduleId: MODULE.ID,
+            order: 10,
+            onClick: makeOpenHandler(true)
+        }),
+        pins.registerContextMenuItem(`${MODULE.ID}-edit-note`, {
+            name: 'Edit Note',
+            icon: '<i class="fa-solid fa-pen"></i>',
+            moduleId: MODULE.ID,
+            order: 20,
+            onClick: makeOpenHandler(false)
+        }),
+        pins.registerContextMenuItem(`${MODULE.ID}-delete-note`, {
+            name: 'Delete Pin and Note',
+            icon: '<i class="fa-solid fa-trash"></i>',
+            moduleId: MODULE.ID,
+            order: 30,
+            onClick: deleteHandler
+        })
+    ];
+    notePinContextMenuRegistered = true;
+}
+
 function registerNotePinHandlers() {
-    if (notePinClickDisposer) return;
     const pins = getPinsApi();
     if (!pins?.on || !isPinsApiAvailable(pins)) {
-        logNotePins('Pins handler registration skipped (API not available).');
         return;
     }
+    registerNotePinContextMenuItems(pins);
+    if (notePinClickDisposer) return;
 
     notePinHandlerController = new AbortController();
     notePinClickDisposer = pins.on('click', async (evt) => {
@@ -380,7 +450,6 @@ function registerNotePinHandlers() {
         if (!noteUuid) return;
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (!panelManager) {
-            logNotePins('Pin click: PanelManager not available.', { noteUuid });
             return;
         }
         panelManager?.notesPanel?.showNote?.(noteUuid);
@@ -401,7 +470,6 @@ function registerNotePinHandlers() {
         trackModuleTimeout(tryFocus, 200);
         trackModuleTimeout(tryFocus, 500);
         trackModuleTimeout(tryFocus, 1000);
-        logNotePins('Pin click routed to note.', { noteUuid });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
 
     pins.on('doubleClick', async (evt) => {
@@ -415,9 +483,7 @@ function registerNotePinHandlers() {
 
         const form = new NotesForm(noteData, { viewMode: true });
         form.render(true);
-        logNotePins('Pin double-click opened notes form.', { noteUuid });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
-    logNotePins('Pins handler registered.');
 }
 
 async function createNotePinForPage(page, sceneId, x, y) {
@@ -431,7 +497,6 @@ async function createNotePinForPage(page, sceneId, x, y) {
             await pins.whenReady();
         }
 
-        logNotePins('Creating pin via pins.create.', { noteUuid: page.uuid, sceneId, x, y });
         const pinPayload = {
             id: generateNotePinId(),
             x,
@@ -446,7 +511,6 @@ async function createNotePinForPage(page, sceneId, x, y) {
             }
         };
 
-        logNotePins('Pin payload', pinPayload);
         const pinData = await pins.create(pinPayload, { sceneId });
 
         if (typeof pins.reload === 'function') {
@@ -465,14 +529,12 @@ async function deleteNotePinForPage(page) {
 
     const pinId = page.getFlag(MODULE.ID, 'pinId');
     if (pins.delete) {
-        logNotePins('Deleting pin via pins.delete.', { noteUuid: page.uuid, pinId });
         if (pinId) {
             await pins.delete(pinId, { sceneId: page.getFlag(MODULE.ID, 'sceneId') });
         } else if (pins.list) {
             const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id;
             const matches = pins.list({ moduleId: MODULE.ID, sceneId })
                 .filter(pin => pin?.config?.noteUuid === page.uuid);
-            logNotePins('Deleting pins by note UUID lookup.', { noteUuid: page.uuid, count: matches.length });
             for (const pin of matches) {
                 await pins.delete(pin.id, { sceneId });
             }
@@ -500,7 +562,6 @@ async function updateNotePinForPage(page) {
         config: { noteUuid: page.uuid }
     };
 
-    logNotePins('Updating pin via pins.update.', { noteUuid: page.uuid, pinId });
     await pins.update(pinId, patch, { sceneId });
 }
 
@@ -665,19 +726,6 @@ export class NotesPanel {
                         };
                     });
                     
-                    // Debug: Log visibility to verify it's being read correctly
-                    const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
-                    const allFlags = page.getFlag(MODULE.ID) || {};
-                    console.log('NotesPanel._refreshData: Note parsed:', {
-                        name: note.name,
-                        parsedVisibility: note.visibility,
-                        savedVisibilityFlag: savedVisibility,
-                        allFlags: allFlags,
-                        tags: note.tags,
-                        authorName: note.authorName,
-                        authorId: note.authorId
-                    });
-                    
                     // Ensure tags is always an array (even if empty)
                     if (!Array.isArray(note.tags)) {
                         note.tags = [];
@@ -736,7 +784,6 @@ export class NotesPanel {
         }
 
         if (updated > 0) {
-            logNotePins('Pinned note ownership refreshed from notes.', { updated });
         }
     }
 
@@ -1001,7 +1048,6 @@ export class NotesPanel {
                     return;
                 }
 
-                logNotePins('Pin placement requested.', { noteUuid: page.uuid });
                 await this._beginNotePinPlacement(page);
             });
         });
@@ -1088,12 +1134,10 @@ export class NotesPanel {
                 event.preventDefault();
                 const pinId = event.currentTarget.dataset.pinId;
                 if (!pinId) {
-                    logNotePins('Pin pan skipped: no pinId on note location.');
                     return;
                 }
                 const pins = getPinsApi();
                 if (!pins?.panTo) {
-                    logNotePins('Pin pan skipped: pins.panTo not available.');
                     return;
                 }
                 const success = await pins.panTo(pinId, {
@@ -1102,7 +1146,6 @@ export class NotesPanel {
                         sound: 'interface-ping-01'
                     }
                 });
-                logNotePins('Pin pan requested from note location.', { pinId, success });
             });
         });
 
@@ -1114,21 +1157,18 @@ export class NotesPanel {
     async _beginNotePinPlacement(page) {
         if (!canvas?.scene || !canvas?.app?.view) {
             ui.notifications.warn('Canvas is not ready. Open a scene to place a note pin.');
-            logNotePins('Pin placement aborted: canvas not ready.');
             return;
         }
 
         const existingSceneId = page.getFlag(MODULE.ID, 'sceneId');
         if (existingSceneId) {
             ui.notifications.warn('This note is already pinned. Unpin it first to place a new pin.');
-            logNotePins('Pin placement aborted: note already pinned.', { noteUuid: page.uuid });
             return;
         }
 
         const pins = getPinsApi();
         if (!isPinsApiAvailable(pins)) {
             ui.notifications.warn('Blacksmith Pins API not available. Install or enable Coffee Pub Blacksmith.');
-            logNotePins('Pin placement aborted: pins API unavailable.');
             return;
         }
 
@@ -1162,12 +1202,10 @@ export class NotesPanel {
 
             if (!localPos) {
                 ui.notifications.warn('Unable to place pin: canvas position unavailable.');
-                logNotePins('Pin placement failed: local position unavailable.');
                 this._clearNotePinPlacement();
                 return;
             }
 
-            logNotePins('Canvas click captured for pin placement.', { x: localPos.x, y: localPos.y });
             await this._createNotePin(page, canvas.scene.id, localPos.x, localPos.y);
             this._clearNotePinPlacement();
         };
@@ -1199,7 +1237,6 @@ export class NotesPanel {
             onPointerMove,
             previewEl
         };
-        logNotePins('Pin placement armed.', { noteUuid: page.uuid });
     }
 
     _clearNotePinPlacement() {
@@ -1215,12 +1252,10 @@ export class NotesPanel {
         view?.classList.remove(NOTE_PIN_CANVAS_CURSOR_CLASS);
         previewEl?.remove();
         this._pinPlacement = null;
-        logNotePins('Pin placement cleared.');
     }
 
     async _createNotePin(page, sceneId, x, y) {
         try {
-            logNotePins('Creating note pin.', { noteUuid: page.uuid, sceneId, x, y });
             const pinId = await createNotePinForPage(page, sceneId, x, y);
             if (pinId) {
                 await page.setFlag(MODULE.ID, 'pinId', pinId);
@@ -1228,7 +1263,6 @@ export class NotesPanel {
             await page.setFlag(MODULE.ID, 'sceneId', sceneId);
             await page.setFlag(MODULE.ID, 'x', x);
             await page.setFlag(MODULE.ID, 'y', y);
-            logNotePins('Note pin created and flags updated.', { noteUuid: page.uuid, pinId });
         } catch (error) {
             const message = String(error?.message || error || '');
             if (message.toLowerCase().includes('permission denied')) {
@@ -1236,7 +1270,6 @@ export class NotesPanel {
             } else {
                 ui.notifications.error(`Failed to create pin: ${message}`);
             }
-            logNotePins('Failed to create note pin.', { noteUuid: page.uuid, error: message });
             return;
         }
 
@@ -1249,17 +1282,14 @@ export class NotesPanel {
 
     async _unpinNote(page) {
         try {
-            logNotePins('Unpinning note.', { noteUuid: page.uuid });
             await deleteNotePinForPage(page);
         } catch (error) {
-            logNotePins('Failed to delete note pin.', { noteUuid: page.uuid, error });
         }
 
         await page.setFlag(MODULE.ID, 'sceneId', null);
         await page.setFlag(MODULE.ID, 'x', null);
         await page.setFlag(MODULE.ID, 'y', null);
         await page.setFlag(MODULE.ID, 'pinId', null);
-        logNotePins('Note pin flags cleared.', { noteUuid: page.uuid });
 
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (panelManager?.notesPanel && panelManager.element) {
@@ -1275,7 +1305,6 @@ export class NotesPanel {
         }
         if (panelManager?.element && !panelManager.element.classList.contains('expanded')) {
             panelManager.element.classList.add('expanded');
-            logNotePins('Tray expanded for note focus.');
         }
 
         let focused = false;
@@ -1293,9 +1322,7 @@ export class NotesPanel {
             trackModuleTimeout(tryFocus, 1000);
             trackModuleTimeout(() => {
                 if (!focused) {
-                    logNotePins('Note focus failed after retries.', { noteUuid });
                 } else {
-                    logNotePins('Note focus succeeded.', { noteUuid });
                 }
             }, 1200);
         }
@@ -1311,12 +1338,10 @@ export class NotesPanel {
         }
 
         if (!card) {
-            logNotePins('Note focus: card not found in DOM.', { noteUuid });
             return false;
         }
 
         card.classList.add('note-card-highlight');
-        logNotePins('Note focus: highlight applied.', { noteUuid });
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         trackModuleTimeout(() => {
             card.classList.remove('note-card-highlight');
@@ -1627,26 +1652,21 @@ export class NotesForm extends FormApplication {
                 const visibilityToggle = form.querySelector('#notes-visibility-private');
                 if (visibilityToggle) {
                     visibility = visibilityToggle.checked ? 'private' : 'party';
-                    console.log('NotesForm._updateObject: Got visibility from toggle:', visibility);
                 } else {
                     const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
                     if (visibilityRadio) {
                         visibility = visibilityRadio.value;
-                        console.log('NotesForm._updateObject: Got visibility from form radio:', visibility);
                     } else {
-                        console.warn('NotesForm._updateObject: No checked visibility input found, defaulting to private');
                         visibility = 'private';
                     }
                 }
             } else {
-                console.warn('NotesForm._updateObject: No form found, defaulting to private');
                 visibility = 'private';
             }
         }
         
         // Final check - ensure it's either 'party' or 'private'
         visibility = visibility === 'party' ? 'party' : 'private';
-        console.log('NotesForm._updateObject: Final visibility =', visibility, 'formData.visibility =', formData.visibility, 'formData keys:', Object.keys(formData));
 
         // Generate HTML content (note body only, no metadata)
         const content = this._generateNoteContent(formData);
@@ -1691,7 +1711,6 @@ export class NotesForm extends FormApplication {
                         await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
                     }
 
-                    console.log('NotesForm: Updated existing note', { pageId: page.id, flags: page.getFlag(MODULE.ID) });
                     let authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
                     if (visibility === 'private' && authorId !== game.user.id) {
                         authorId = game.user.id;
@@ -1742,7 +1761,6 @@ export class NotesForm extends FormApplication {
 
                 // Verify the flag was saved correctly
                 const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
-                console.log('NotesForm: Page created, saved visibility flag:', savedVisibility, 'expected:', visibility);
 
                 const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
                 await this._syncNoteOwnership(page, visibility, authorId);
@@ -1927,16 +1945,13 @@ export class NotesForm extends FormApplication {
             const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
             if (visibilityRadio) {
                 data.visibility = visibilityRadio.value;
-                console.log('NotesForm._handleFormSubmit: Found checked radio:', visibilityRadio.value);
             } else {
                 const allRadios = form.querySelectorAll('input[name="visibility"]');
-                console.warn('NotesForm._handleFormSubmit: No checked radio found! Available radios:', Array.from(allRadios).map(r => ({ value: r.value, checked: r.checked })));
                 data.visibility = 'private';
             }
         }
 
         // Debug: Log visibility value to help diagnose issues
-        console.log('NotesForm._handleFormSubmit: Final visibility value:', data.visibility, 'All formData:', data);
 
         // Call _updateObject
         await this._updateObject(event, data);

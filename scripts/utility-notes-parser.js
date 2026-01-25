@@ -37,16 +37,6 @@ export class NotesParser extends BaseParser {
         const y = page.getFlag(MODULE.ID, 'y') ?? noteFlags.y;
         const timestamp = page.getFlag(MODULE.ID, 'timestamp') || noteFlags.timestamp;
         
-        // Debug: Log what we're reading
-        console.log('NotesParser.parseSinglePage: Reading flags', {
-            pageName: page.name,
-            noteFlags,
-            directVisibility: page.getFlag(MODULE.ID, 'visibility'),
-            directTags: page.getFlag(MODULE.ID, 'tags'),
-            parsedVisibility: visibility,
-            parsedTags: tags
-        });
-        
         // Extract content and images from HTML only
         const img = BaseParser.extractImage(enrichedHtml);
         
@@ -57,7 +47,6 @@ export class NotesParser extends BaseParser {
                 const scene = game.scenes.get(sceneId);
                 sceneName = scene?.name || null;
             } catch (e) {
-                console.warn(`NotesParser: Could not find scene ${sceneId}`, e);
             }
         }
         
@@ -77,9 +66,7 @@ export class NotesParser extends BaseParser {
                     user = game.users.find(u => String(u.id) === userIdStr);
                 }
                 authorName = user?.name || authorId || 'Unknown';
-                console.log('NotesParser: Author lookup:', { authorId, found: !!user, name: authorName });
             } catch (e) {
-                console.warn(`NotesParser: Could not find user ${authorId}`, e);
                 authorName = authorId || 'Unknown';
             }
         } else {
@@ -120,17 +107,6 @@ export class NotesParser extends BaseParser {
             timestamp: timestamp || null,
             uuid: page.uuid
         };
-        
-        console.log('NotesParser.parseSinglePage: Parsed note', {
-            name: note.name,
-            visibility: note.visibility,
-            rawVisibility: visibility,
-            tags: note.tags,
-            rawTags: tags,
-            authorName: note.authorName,
-            authorId: note.authorId
-        });
-        
         return note;
     }
 }

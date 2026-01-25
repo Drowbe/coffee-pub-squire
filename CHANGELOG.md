@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.1.1] 
+### Added
+- Notes view mode with Edit toggle in the header (view/read-only vs edit).
+- Notes list view with dedicated template/layout and view toggle.
+- Pin context menu items: View Note, Edit Note, Delete Pin and Note.
+- Note form header meta now shows editor avatars, location, and formatted date.
+
+### Changed
+- Notes window title now shows "Edit Note" / "View Note" (title shown in header body).
+- Notes pin creation sends size, icon, style, ownership consistently; note updates sync pin data.
+- Notes styling reorganized with clear Card/List sections and theme-specific blocks.
+- Notes CSS loading moved to `styles/default.css` imports (removed runtime injection).
+
+### Fixed
+- Note pin placement cursor behavior and pin preview alignment.
+- Notes view mode layout to keep content scrollable above tags.
 
 ## [13.1.0] - Sticky Notes
 
