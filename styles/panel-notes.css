@@ -799,7 +799,7 @@ body.squire-notes-pin-placement * {
     align-items: center;
     justify-content: center;
     padding: 3px 4px;
-    border-radius: 4px;
+    border-radius: 3px;
     font-size: 0.8em;
     font-weight: bold;
     margin-right: 0;
@@ -807,6 +807,20 @@ body.squire-notes-pin-placement * {
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-visibility-badge i {
     margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+
+.squire-tray[data-position="left"] .notes-list.notes-view--cards .note-visibility-badge.party {
+    background: rgba(27, 63, 31, 0.9);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(27, 63, 31, 0.6);
+}
+
+.squire-tray[data-position="left"] .notes-list.notes-view--cards .note-visibility-badge.private {
+    background: rgba(70, 21, 21, 0.9);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(70, 21, 21, 0.6);
 }
 
 
@@ -871,19 +885,6 @@ body.squire-notes-pin-placement * {
     color: rgba(159, 146, 117, 0.9);
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-visibility-badge.party {
-    background: rgba(2, 136, 20, 0.3);
-    color: rgba(120, 220, 130, 0.95);
-    border: 1px solid rgba(2, 136, 20, 0.5);
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-visibility-badge.private {
-    background: rgba(86, 43, 52, 0.5);
-    color: rgba(220, 180, 180, 0.95);
-    border: 1px solid rgba(120, 60, 70, 0.5);
-}
-
-
 
 /* ------------------------------------------------ */
 /* -- LIGHT MODE                                 -- */
@@ -916,36 +917,6 @@ body.squire-notes-pin-placement * {
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-actions button {
     color: #3b2f22;
 }
-
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-visibility-badge.party {
-    background: rgba(2, 136, 20, 0.25);
-    color: rgba(40, 110, 50, 0.95);
-    border: 1px solid rgba(2, 136, 20, 0.35);
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--light .note-visibility-badge.private {
-    background: rgba(120, 60, 70, 0.2);
-    color: rgba(90, 50, 55, 0.95);
-    border: 1px solid rgba(120, 60, 70, 0.3);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
