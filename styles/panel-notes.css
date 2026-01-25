@@ -73,15 +73,7 @@ body.squire-notes-pin-placement * {
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
-.squire-tray[data-position="left"] .notes-view-toggle.list {
-    color: #ffe9ad;
-    opacity: 0.95;
-}
 
-.squire-tray[data-position="left"] .notes-card-theme-toggle.light {
-    color: #ffe9ad;
-    opacity: 0.95;
-}
 
 /* === Notes Panel Specific Styles === */
 .squire-tray[data-position="left"] .notes-toolbar .notes-toolbar-left {
