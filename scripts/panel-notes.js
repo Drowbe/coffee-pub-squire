@@ -62,6 +62,43 @@ function normalizePinStyle(style) {
     return Object.keys(normalized).length ? normalized : null;
 }
 
+function normalizePinText(value) {
+    if (typeof value === 'string') return value;
+    return '';
+}
+
+function normalizePinTextLayout(layout) {
+    if (layout === 'under' || layout === 'around') return layout;
+    return null;
+}
+
+function normalizePinTextDisplay(display) {
+    if (display === 'always' || display === 'hover' || display === 'never' || display === 'gm') return display;
+    return null;
+}
+
+function normalizePinTextColor(color) {
+    if (typeof color === 'string' && color.trim()) return color.trim();
+    return null;
+}
+
+function normalizePinTextSize(size) {
+    const parsed = Number(size);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return Math.round(parsed);
+}
+
+function normalizePinTextMaxLength(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) return null;
+    return Math.round(parsed);
+}
+
+function normalizePinTextScaleWithPin(value) {
+    if (typeof value === 'boolean') return value;
+    return null;
+}
+
 function getDefaultNotePinDesign() {
     let stored = null;
     try {
@@ -76,7 +113,14 @@ function getDefaultNotePinDesign() {
         lockProportions,
         shape: normalizePinShape(stored?.shape) || 'circle',
         style: normalizePinStyle(stored?.style) || { stroke: '#ffffff', strokeWidth: 2 },
-        dropShadow: typeof stored?.dropShadow === 'boolean' ? stored.dropShadow : true
+        dropShadow: typeof stored?.dropShadow === 'boolean' ? stored.dropShadow : true,
+        text: normalizePinText(stored?.text),
+        textLayout: normalizePinTextLayout(stored?.textLayout) || 'under',
+        textDisplay: normalizePinTextDisplay(stored?.textDisplay) || 'always',
+        textColor: normalizePinTextColor(stored?.textColor) || '#ffffff',
+        textSize: normalizePinTextSize(stored?.textSize) || 12,
+        textMaxLength: normalizePinTextMaxLength(stored?.textMaxLength) ?? 0,
+        textScaleWithPin: normalizePinTextScaleWithPin(stored?.textScaleWithPin) ?? true
     };
 }
 
@@ -114,10 +158,127 @@ function getNotePinDropShadowForNote(note) {
     return typeof stored === 'boolean' ? stored : getDefaultNotePinDesign().dropShadow;
 }
 
+function getNotePinTextForPage(page) {
+    return normalizePinText(page?.name);
+}
+
+function getNotePinTextForNote(note) {
+    return normalizePinText(note?.title);
+}
+
+function getNotePinTextLayoutForPage(page) {
+    return normalizePinTextLayout(page?.getFlag(MODULE.ID, 'notePinTextLayout')) || getDefaultNotePinDesign().textLayout;
+}
+
+function getNotePinTextLayoutForNote(note) {
+    return normalizePinTextLayout(note?.notePinTextLayout) || getDefaultNotePinDesign().textLayout;
+}
+
+function getNotePinTextDisplayForPage(page) {
+    return normalizePinTextDisplay(page?.getFlag(MODULE.ID, 'notePinTextDisplay')) || getDefaultNotePinDesign().textDisplay;
+}
+
+function getNotePinTextDisplayForNote(note) {
+    return normalizePinTextDisplay(note?.notePinTextDisplay) || getDefaultNotePinDesign().textDisplay;
+}
+
+function getNotePinTextColorForPage(page) {
+    return normalizePinTextColor(page?.getFlag(MODULE.ID, 'notePinTextColor')) || getDefaultNotePinDesign().textColor;
+}
+
+function getNotePinTextColorForNote(note) {
+    return normalizePinTextColor(note?.notePinTextColor) || getDefaultNotePinDesign().textColor;
+}
+
+function getNotePinTextSizeForPage(page) {
+    return normalizePinTextSize(page?.getFlag(MODULE.ID, 'notePinTextSize')) || getDefaultNotePinDesign().textSize;
+}
+
+function getNotePinTextSizeForNote(note) {
+    return normalizePinTextSize(note?.notePinTextSize) || getDefaultNotePinDesign().textSize;
+}
+
+function getNotePinTextMaxLengthForPage(page) {
+    const stored = normalizePinTextMaxLength(page?.getFlag(MODULE.ID, 'notePinTextMaxLength'));
+    return stored ?? getDefaultNotePinDesign().textMaxLength;
+}
+
+function getNotePinTextMaxLengthForNote(note) {
+    const stored = normalizePinTextMaxLength(note?.notePinTextMaxLength);
+    return stored ?? getDefaultNotePinDesign().textMaxLength;
+}
+
+function getNotePinTextScaleWithPinForPage(page) {
+    const stored = normalizePinTextScaleWithPin(page?.getFlag(MODULE.ID, 'notePinTextScaleWithPin'));
+    return stored ?? getDefaultNotePinDesign().textScaleWithPin;
+}
+
+function getNotePinTextScaleWithPinForNote(note) {
+    const stored = normalizePinTextScaleWithPin(note?.notePinTextScaleWithPin);
+    return stored ?? getDefaultNotePinDesign().textScaleWithPin;
+}
+
+function logPinPackage(label, payload) {
+    const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
+    if (typeof logger !== 'function') return;
+    let serialized = payload;
+    try {
+        serialized = JSON.stringify(payload);
+    } catch (error) {
+        serialized = String(payload);
+    }
+    logger(`NOTE | PINS PIN PACKAGE ${label}`, serialized);
+}
+
 let notePinClickDisposer = null;
 let notePinHandlerController = null;
 let notePinContextMenuRegistered = false;
 let notePinContextMenuDisposers = [];
+let notePinSceneSyncHookId = null;
+
+async function syncNotesForDeletedPins(sceneId) {
+    const pins = getPinsApi();
+    if (!pins?.list || !sceneId) return;
+
+    const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+    if (!journalId || journalId === 'none') return;
+
+    const journal = game.journal.get(journalId);
+    if (!journal?.pages) return;
+
+    const pages = journal.pages.contents || journal.pages;
+    if (!pages?.length) return;
+
+    const pinIds = new Set(
+        (pins.list({ moduleId: MODULE.ID, sceneId }) || [])
+            .map(pin => pin?.id)
+            .filter(Boolean)
+    );
+
+    let changed = false;
+    for (const page of pages) {
+        const pinId = page.getFlag(MODULE.ID, 'pinId');
+        if (!pinId) continue;
+        const pageSceneId = page.getFlag(MODULE.ID, 'sceneId');
+        if (pageSceneId && pageSceneId !== sceneId) continue;
+
+        if (!pinIds.has(pinId)) {
+            await page.setFlag(MODULE.ID, 'pinId', null);
+            await page.setFlag(MODULE.ID, 'sceneId', null);
+            await page.setFlag(MODULE.ID, 'x', null);
+            await page.setFlag(MODULE.ID, 'y', null);
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.notesPanel && panelManager.element) {
+            await panelManager.notesPanel._refreshData();
+            panelManager.notesPanel.render(panelManager.element);
+        }
+    }
+}
 
 function toHexColor(color) {
     if (typeof color === 'number') {
@@ -214,7 +375,7 @@ function createPinPreviewElement(iconHtml, pinSize, pinStyle, pinShape, dropShad
 }
 
 class NoteIconPicker extends Application {
-    constructor(noteIcon, { onSelect, pinSize, pinStyle, pinShape, pinDropShadow } = {}) {
+    constructor(noteIcon, { onSelect, pinSize, pinStyle, pinShape, pinDropShadow, pinTextConfig } = {}) {
         super();
         this.onSelect = onSelect;
         this.selected = noteIcon;
@@ -224,6 +385,13 @@ class NoteIconPicker extends Application {
         this.pinShape = normalizePinShape(pinShape) || defaultDesign.shape;
         this.pinStyle = mergeNotePinStyle(pinStyle);
         this.dropShadow = typeof pinDropShadow === 'boolean' ? pinDropShadow : defaultDesign.dropShadow;
+        this.pinTextLayout = normalizePinTextLayout(pinTextConfig?.textLayout) || defaultDesign.textLayout;
+        this.pinTextDisplay = normalizePinTextDisplay(pinTextConfig?.textDisplay) || defaultDesign.textDisplay;
+        this.pinTextColor = normalizePinTextColor(pinTextConfig?.textColor) || defaultDesign.textColor;
+        this.pinTextSize = normalizePinTextSize(pinTextConfig?.textSize) || defaultDesign.textSize;
+        const maxLength = normalizePinTextMaxLength(pinTextConfig?.textMaxLength);
+        this.pinTextMaxLength = maxLength ?? defaultDesign.textMaxLength;
+        this.pinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? defaultDesign.textScaleWithPin;
         this._pinRatio = this.pinSize.h ? this.pinSize.w / this.pinSize.h : 1;
         this.icons = [
             { label: 'Sticky Note', value: 'fa-note-sticky' },
@@ -271,7 +439,13 @@ class NoteIconPicker extends Application {
             pinShape: this.pinShape,
             pinStroke: this.pinStyle.stroke,
             pinStrokeWidth: this.pinStyle.strokeWidth,
-            pinDropShadow: this.dropShadow
+            pinDropShadow: this.dropShadow,
+            pinTextLayout: this.pinTextLayout,
+            pinTextDisplay: this.pinTextDisplay,
+            pinTextColor: this.pinTextColor,
+            pinTextSize: this.pinTextSize,
+            pinTextMaxLength: this.pinTextMaxLength,
+            pinTextScaleWithPin: this.pinTextScaleWithPin
         };
     }
 
@@ -289,6 +463,12 @@ class NoteIconPicker extends Application {
         const strokeInput = nativeHtml.querySelector('.notes-pin-stroke');
         const strokeWidthInput = nativeHtml.querySelector('.notes-pin-stroke-width');
         const shadowInput = nativeHtml.querySelector('.notes-pin-shadow');
+        const textLayoutInput = nativeHtml.querySelector('.notes-pin-text-layout');
+        const textDisplayInput = nativeHtml.querySelector('.notes-pin-text-display');
+        const textColorInput = nativeHtml.querySelector('.notes-pin-text-color');
+        const textSizeInput = nativeHtml.querySelector('.notes-pin-text-size');
+        const textMaxLengthInput = nativeHtml.querySelector('.notes-pin-text-max-length');
+        const textScaleInput = nativeHtml.querySelector('.notes-pin-text-scale');
         const defaultInput = nativeHtml.querySelector('.notes-pin-default');
 
         const updatePreview = () => {
@@ -306,6 +486,16 @@ class NoteIconPicker extends Application {
         };
 
         const clampStrokeWidth = (value, fallback) => {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.max(0, Math.round(parsed));
+        };
+        const clampTextSize = (value, fallback) => {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.max(6, Math.round(parsed));
+        };
+        const clampTextMaxLength = (value, fallback) => {
             const parsed = Number(value);
             if (!Number.isFinite(parsed)) return fallback;
             return Math.max(0, Math.round(parsed));
@@ -380,6 +570,24 @@ class NoteIconPicker extends Application {
         shadowInput?.addEventListener('change', () => {
             this.dropShadow = !!shadowInput.checked;
         });
+        textLayoutInput?.addEventListener('change', () => {
+            this.pinTextLayout = normalizePinTextLayout(textLayoutInput.value) || this.pinTextLayout;
+        });
+        textDisplayInput?.addEventListener('change', () => {
+            this.pinTextDisplay = normalizePinTextDisplay(textDisplayInput.value) || this.pinTextDisplay;
+        });
+        textColorInput?.addEventListener('input', () => {
+            this.pinTextColor = normalizePinTextColor(textColorInput.value) || this.pinTextColor;
+        });
+        textSizeInput?.addEventListener('input', () => {
+            this.pinTextSize = clampTextSize(textSizeInput.value, this.pinTextSize);
+        });
+        textMaxLengthInput?.addEventListener('input', () => {
+            this.pinTextMaxLength = clampTextMaxLength(textMaxLengthInput.value, this.pinTextMaxLength);
+        });
+        textScaleInput?.addEventListener('change', () => {
+            this.pinTextScaleWithPin = !!textScaleInput.checked;
+        });
 
         nativeHtml.querySelector('.notes-icon-browse')?.addEventListener('click', async () => {
             const picker = new FilePicker({
@@ -403,13 +611,22 @@ class NoteIconPicker extends Application {
             const pinSize = normalizePinSize(this.pinSize) || { ...NOTE_PIN_SIZE };
             const pinShape = normalizePinShape(this.pinShape) || 'circle';
             const pinStyle = normalizePinStyle(this.pinStyle) || { stroke: '#ffffff', strokeWidth: 2 };
+            const pinTextConfig = {
+                textLayout: normalizePinTextLayout(this.pinTextLayout) || 'under',
+                textDisplay: normalizePinTextDisplay(this.pinTextDisplay) || 'always',
+                textColor: normalizePinTextColor(this.pinTextColor) || '#ffffff',
+                textSize: normalizePinTextSize(this.pinTextSize) || 12,
+                textMaxLength: normalizePinTextMaxLength(this.pinTextMaxLength) ?? 0,
+                textScaleWithPin: normalizePinTextScaleWithPin(this.pinTextScaleWithPin) ?? true
+            };
             if (makeDefault) {
                 await game.settings.set(MODULE.ID, NOTE_PIN_DEFAULT_SETTING, {
                     size: pinSize,
                     lockProportions: !!lockInput?.checked,
                     shape: pinShape,
                     style: pinStyle,
-                    dropShadow: !!shadowInput?.checked
+                    dropShadow: !!shadowInput?.checked,
+                    ...pinTextConfig
                 });
             }
             if (this.onSelect) {
@@ -418,7 +635,8 @@ class NoteIconPicker extends Application {
                     pinSize,
                     pinShape,
                     pinStyle,
-                    pinDropShadow: !!shadowInput?.checked
+                    pinDropShadow: !!shadowInput?.checked,
+                    pinTextConfig
                 });
             }
             this.close();
@@ -541,6 +759,12 @@ function buildNoteDataFromPage(page) {
         notePinShape: getNotePinShapeForPage(page),
         notePinStyle: page.getFlag(MODULE.ID, 'notePinStyle') || null,
         notePinDropShadow: getNotePinDropShadowForPage(page),
+        notePinTextLayout: getNotePinTextLayoutForPage(page),
+        notePinTextDisplay: getNotePinTextDisplayForPage(page),
+        notePinTextColor: getNotePinTextColorForPage(page),
+        notePinTextSize: getNotePinTextSizeForPage(page),
+        notePinTextMaxLength: getNotePinTextMaxLengthForPage(page),
+        notePinTextScaleWithPin: getNotePinTextScaleWithPinForPage(page),
         iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
         authorName: authorName,
         timestamp: timestamp,
@@ -611,12 +835,27 @@ function registerNotePinContextMenuItems(pins) {
             pinStyle: page.getFlag(MODULE.ID, 'notePinStyle'),
             pinShape: getNotePinShapeForPage(page),
             pinDropShadow: getNotePinDropShadowForPage(page),
-            onSelect: async ({ icon, pinSize, pinShape, pinStyle, pinDropShadow }) => {
+            pinTextConfig: {
+                textLayout: getNotePinTextLayoutForPage(page),
+                textDisplay: getNotePinTextDisplayForPage(page),
+                textColor: getNotePinTextColorForPage(page),
+                textSize: getNotePinTextSizeForPage(page),
+                textMaxLength: getNotePinTextMaxLengthForPage(page),
+                textScaleWithPin: getNotePinTextScaleWithPinForPage(page)
+            },
+            onSelect: async ({ icon, pinSize, pinShape, pinStyle, pinDropShadow, pinTextConfig }) => {
                 await page.setFlag(MODULE.ID, 'noteIcon', icon || null);
                 await page.setFlag(MODULE.ID, 'notePinSize', normalizePinSize(pinSize) || getDefaultNotePinDesign().size);
                 await page.setFlag(MODULE.ID, 'notePinShape', normalizePinShape(pinShape) || getDefaultNotePinDesign().shape);
                 await page.setFlag(MODULE.ID, 'notePinStyle', normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style);
                 await page.setFlag(MODULE.ID, 'notePinDropShadow', typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow);
+                await page.setFlag(MODULE.ID, 'notePinTextLayout', normalizePinTextLayout(pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout);
+                await page.setFlag(MODULE.ID, 'notePinTextDisplay', normalizePinTextDisplay(pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay);
+                await page.setFlag(MODULE.ID, 'notePinTextColor', normalizePinTextColor(pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor);
+                await page.setFlag(MODULE.ID, 'notePinTextSize', normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize);
+                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength);
+                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin);
+                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin);
 
                 await updateNotePinForPage(page);
 
@@ -701,6 +940,13 @@ function registerNotePinHandlers() {
     if (!pins?.on || !isPinsApiAvailable(pins)) {
         return;
     }
+    if (!notePinSceneSyncHookId) {
+        notePinSceneSyncHookId = Hooks.on('updateScene', (scene, changes) => {
+            if (!scene || scene.id !== canvas?.scene?.id) return;
+            if (!changes?.flags) return;
+            syncNotesForDeletedPins(scene.id);
+        });
+    }
     registerNotePinContextMenuItems(pins);
     if (notePinClickDisposer) return;
 
@@ -763,15 +1009,23 @@ async function createNotePinForPage(page, sceneId, x, y) {
             y,
             moduleId: MODULE.ID,
             image: resolveNoteIconHtmlFromPage(page),
+            text: getNotePinTextForPage(page),
             size: getNotePinSizeForPage(page),
             shape: getNotePinShapeForPage(page),
             dropShadow: getNotePinDropShadowForPage(page),
             style: getNotePinStyleForPage(page),
+            textLayout: getNotePinTextLayoutForPage(page),
+            textDisplay: getNotePinTextDisplayForPage(page),
+            textColor: getNotePinTextColorForPage(page),
+            textSize: getNotePinTextSizeForPage(page),
+            textMaxLength: getNotePinTextMaxLengthForPage(page),
+            textScaleWithPin: getNotePinTextScaleWithPinForPage(page),
             ownership: getNotePinOwnershipForPage(page),
             config: {
                 noteUuid: page.uuid
             }
         };
+        logPinPackage('CREATE', pinPayload);
 
         const pinData = await pins.create(pinPayload, { sceneId });
 
@@ -826,17 +1080,50 @@ async function updateNotePinForPage(page) {
 
     const patch = {
         image: resolveNoteIconHtmlFromPage(page),
+        text: getNotePinTextForPage(page),
         size: getNotePinSizeForPage(page),
         shape: getNotePinShapeForPage(page),
         dropShadow: getNotePinDropShadowForPage(page),
         style: getNotePinStyleForPage(page),
+        textLayout: getNotePinTextLayoutForPage(page),
+        textDisplay: getNotePinTextDisplayForPage(page),
+        textColor: getNotePinTextColorForPage(page),
+        textSize: getNotePinTextSizeForPage(page),
+        textMaxLength: getNotePinTextMaxLengthForPage(page),
+        textScaleWithPin: getNotePinTextScaleWithPinForPage(page),
         ownership: getNotePinOwnershipForPage(page),
         config: { noteUuid: page.uuid }
     };
+    logPinPackage('UPDATE', { pinId, sceneId, ...patch });
 
     try {
+        const existing = typeof pins.get === 'function' ? pins.get(pinId, { sceneId }) : null;
         const updated = await pins.update(pinId, patch, { sceneId });
-        if (!updated && typeof pins.reload === 'function') {
+        if (updated === null) {
+            const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
+            if (typeof logger === 'function') {
+                logger('NOTE | PINS Pin update returned null (pin missing). Clearing note flags.', {
+                    pinId,
+                    sceneId,
+                    noteUuid: page.uuid
+                });
+            }
+            await page.setFlag(MODULE.ID, 'pinId', null);
+            await page.setFlag(MODULE.ID, 'sceneId', null);
+            await page.setFlag(MODULE.ID, 'x', null);
+            await page.setFlag(MODULE.ID, 'y', null);
+
+            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+            if (panelManager?.notesPanel && panelManager.element) {
+                await panelManager.notesPanel._refreshData();
+                panelManager.notesPanel.render(panelManager.element);
+            }
+            return;
+        }
+        const shadowChanged = existing && typeof existing.dropShadow === 'boolean'
+            ? existing.dropShadow !== patch.dropShadow
+            : false;
+        if ((!updated || shadowChanged) && typeof pins.reload === 'function') {
             await pins.reload({ sceneId });
         }
     } catch (error) {
@@ -1877,6 +2164,12 @@ export class NotesForm extends FormApplication {
             notePinShape: getDefaultNotePinDesign().shape,
             notePinStyle: getDefaultNotePinDesign().style,
             notePinDropShadow: getDefaultNotePinDesign().dropShadow,
+            notePinTextLayout: getDefaultNotePinDesign().textLayout,
+            notePinTextDisplay: getDefaultNotePinDesign().textDisplay,
+            notePinTextColor: getDefaultNotePinDesign().textColor,
+            notePinTextSize: getDefaultNotePinDesign().textSize,
+            notePinTextMaxLength: getDefaultNotePinDesign().textMaxLength,
+            notePinTextScaleWithPin: getDefaultNotePinDesign().textScaleWithPin,
             editorIds: []
         };
     }
@@ -2000,6 +2293,12 @@ export class NotesForm extends FormApplication {
                     await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
                     await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
                     await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
                     const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
                     let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
                     if (visibility === 'private') {
@@ -2054,6 +2353,12 @@ export class NotesForm extends FormApplication {
                             notePinShape: getNotePinShapeForNote(this.note),
                             notePinStyle: getNotePinStyleForNote(this.note),
                             notePinDropShadow: getNotePinDropShadowForNote(this.note),
+                            notePinTextLayout: getNotePinTextLayoutForNote(this.note),
+                            notePinTextDisplay: getNotePinTextDisplayForNote(this.note),
+                            notePinTextColor: getNotePinTextColorForNote(this.note),
+                            notePinTextSize: getNotePinTextSizeForNote(this.note),
+                            notePinTextMaxLength: getNotePinTextMaxLengthForNote(this.note),
+                            notePinTextScaleWithPin: getNotePinTextScaleWithPinForNote(this.note),
                             authorId: game.user.id,
                             timestamp: new Date().toISOString()
                         }
@@ -2140,12 +2445,27 @@ export class NotesForm extends FormApplication {
                     pinStyle: this.note.notePinStyle,
                     pinShape: this.note.notePinShape,
                     pinDropShadow: this.note.notePinDropShadow,
-                    onSelect: ({ icon, pinSize, pinStyle, pinShape, pinDropShadow }) => {
+                    pinTextConfig: {
+                        textLayout: this.note.notePinTextLayout,
+                        textDisplay: this.note.notePinTextDisplay,
+                        textColor: this.note.notePinTextColor,
+                        textSize: this.note.notePinTextSize,
+                        textMaxLength: this.note.notePinTextMaxLength,
+                        textScaleWithPin: this.note.notePinTextScaleWithPin
+                    },
+                    onSelect: ({ icon, pinSize, pinStyle, pinShape, pinDropShadow, pinTextConfig }) => {
                         this.note.noteIcon = icon;
                         this.note.notePinSize = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
                         this.note.notePinStyle = normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style;
                         this.note.notePinShape = normalizePinShape(pinShape) || getDefaultNotePinDesign().shape;
                         this.note.notePinDropShadow = typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow;
+                        this.note.notePinTextLayout = normalizePinTextLayout(pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
+                this.note.notePinTextDisplay = normalizePinTextDisplay(pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
+                        this.note.notePinTextColor = normalizePinTextColor(pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
+                        this.note.notePinTextSize = normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
+                        this.note.notePinTextMaxLength = normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
+                        this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
+                this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
                         this.note.iconHtml = buildNoteIconHtml(icon, 'notes-form-header-image');
                         headerIcon.innerHTML = this.note.iconHtml;
 
@@ -2157,6 +2477,13 @@ export class NotesForm extends FormApplication {
                                 await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
                                 await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
                                 await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
+                        await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
+                        await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
+                        await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
+                        await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
+                        await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
+                        await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
                                 await updateNotePinForPage(page);
 
                                 const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;

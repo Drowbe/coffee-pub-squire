@@ -624,7 +624,14 @@ export const registerSettings = function() {
                 stroke: '#ffffff',
                 strokeWidth: 2
             },
-            dropShadow: true
+            dropShadow: true,
+            text: '',
+            textLayout: 'under',
+            textDisplay: 'always',
+            textColor: '#ffffff',
+            textSize: 12,
+            textMaxLength: 0,
+            textScaleWithPin: true
         }
     });
 

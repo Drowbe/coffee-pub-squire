@@ -4,6 +4,15 @@
             <div class="notes-form-header-title">
                 <div class="notes-icon-picker-title"><i class="fa-solid fa-location-dot"></i> Token Design</div>
             </div>
+            <div class="notes-form-header-controls">
+                <div class="notes-edit-toggle-container">
+                    <span class="notes-edit-toggle-label">Use as Default</span>
+                    <div class="notes-edit-toggle">
+                        <input type="checkbox" id="notes-pin-default-toggle" class="notes-pin-default">
+                        <label for="notes-pin-default-toggle" class="notes-edit-toggle-slider"></label>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -46,9 +55,49 @@
                     <input type="checkbox" class="notes-pin-shadow" {{#if pinDropShadow}}checked{{/if}}>
                     Drop shadow
                 </label>
+            </div>
+        </div>
+
+        <div class="notes-section notes-pin-text-section">
+            <div class="notes-section-header"><i class="fa-solid fa-font"></i> Text Format</div>
+            <div class="notes-section-body">
+                <div class="notes-pin-design-row">
+                    <label class="notes-pin-design-field">
+                        <span>Text layout</span>
+                        <select class="notes-input notes-pin-text-layout">
+                            <option value="under" {{#if (eq pinTextLayout "under")}}selected{{/if}}>Under</option>
+                            <option value="around" {{#if (eq pinTextLayout "around")}}selected{{/if}}>Around</option>
+                        </select>
+                    </label>
+                    <label class="notes-pin-design-field">
+                        <span>Text display</span>
+                        <select class="notes-input notes-pin-text-display">
+                            <option value="always" {{#if (eq pinTextDisplay "always")}}selected{{/if}}>Always</option>
+                            <option value="hover" {{#if (eq pinTextDisplay "hover")}}selected{{/if}}>Hover</option>
+                            <option value="never" {{#if (eq pinTextDisplay "never")}}selected{{/if}}>Never</option>
+                            <option value="gm" {{#if (eq pinTextDisplay "gm")}}selected{{/if}}>GM only</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="notes-pin-design-row">
+                    <label class="notes-pin-design-field">
+                        <span>Text color</span>
+                        <input type="text" class="notes-input notes-pin-text-color" value="{{pinTextColor}}">
+                    </label>
+                    <label class="notes-pin-design-field">
+                        <span>Text size</span>
+                        <input type="number" class="notes-input notes-pin-text-size" min="6" step="1" value="{{pinTextSize}}">
+                    </label>
+                </div>
+                <div class="notes-pin-design-row">
+                    <label class="notes-pin-design-field">
+                        <span>Max length</span>
+                        <input type="number" class="notes-input notes-pin-text-max-length" min="0" step="1" value="{{pinTextMaxLength}}">
+                    </label>
+                </div>
                 <label class="notes-pin-design-toggle">
-                    <input type="checkbox" class="notes-pin-default">
-                    Make this default
+                    <input type="checkbox" class="notes-pin-text-scale" {{#if pinTextScaleWithPin}}checked{{/if}}>
+                    Scale text with pin
                 </label>
             </div>
         </div>
