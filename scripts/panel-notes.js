@@ -1259,9 +1259,6 @@ async function updateNotePinForPage(page) {
     logPinPackage('UPDATE', { pinId, sceneId, ...patch });
 
     try {
-        const existing = typeof pins.get === 'function' ? pins.get(pinId, { sceneId }) : null;
-        const oldImage = existing?.image ?? '';
-        const newImage = patch.image ?? '';
         const updated = await pins.update(pinId, patch, { sceneId });
         if (updated === null) {
             const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
@@ -1283,13 +1280,6 @@ async function updateNotePinForPage(page) {
                 panelManager.notesPanel.render(panelManager.element);
             }
             return;
-        }
-        if (oldImage !== newImage) {
-            if (typeof pins.reload === 'function') {
-                await pins.reload({ sceneId });
-            } else if (typeof pins.refresh === 'function') {
-                await pins.refresh({ sceneId });
-            }
         }
     } catch (error) {
         throw error;
