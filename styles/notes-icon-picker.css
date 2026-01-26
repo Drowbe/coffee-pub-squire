@@ -32,8 +32,8 @@
 .notes-icon-source-toggle {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 6px;
+    margin-bottom: inherit;
     padding: 8px 10px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.35);
@@ -46,7 +46,7 @@
     font-weight: 700;
     font-size: 0.8em;
     letter-spacing: 0.08em;
-    color: #d8caa4;
+    color: rgba(216, 202, 164, 0.9);
 }
 
 .notes-icon-source-switch {
@@ -89,8 +89,8 @@
     transform: translateX(22px);
 }
 
-.notes-icon-picker[data-icon-mode="image"] .notes-icon-grid,
-.notes-icon-picker[data-icon-mode="icon"] .notes-icon-image-row {
+.notes-icon-picker[data-icon-mode="image"] .notes-icon-library-section,
+.notes-icon-picker[data-icon-mode="icon"] .notes-icon-image-section {
     display: none;
 }
 

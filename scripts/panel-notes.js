@@ -455,7 +455,9 @@ class NoteIconPicker extends Application {
         super.activateListeners(html);
         const nativeHtml = html?.[0] || html;
 
-        const root = nativeHtml.querySelector('.notes-icon-picker');
+        const root = nativeHtml?.classList?.contains('notes-icon-picker')
+            ? nativeHtml
+            : nativeHtml.querySelector('.notes-icon-picker');
         const preview = nativeHtml.querySelector('.notes-form-header-icon');
         const imageInput = nativeHtml.querySelector('.notes-icon-image-input');
         const imageRow = nativeHtml.querySelector('.notes-icon-image-row');

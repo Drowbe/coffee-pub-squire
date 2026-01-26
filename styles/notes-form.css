@@ -255,10 +255,11 @@
 }
 
 .notes-edit-toggle-label {
-    font-size: 0.8em;
-    color: rgba(255, 255, 255, 0.9);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-weight: 700;
+    font-size: 0.8em;
+    letter-spacing: 0.08em;
+    color: rgba(216, 202, 164, 0.9);
 }
 
 .notes-edit-toggle {
