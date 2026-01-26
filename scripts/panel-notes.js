@@ -394,20 +394,6 @@ class NoteIconPicker extends Application {
         this.pinTextMaxLength = maxLength ?? defaultDesign.textMaxLength;
         this.pinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? defaultDesign.textScaleWithPin;
         this._pinRatio = this.pinSize.h ? this.pinSize.w / this.pinSize.h : 1;
-        this.icons = [
-            { label: 'Sticky Note', value: 'fa-note-sticky' },
-            { label: 'Map Pin', value: 'fa-map-pin' },
-            { label: 'Location Dot', value: 'fa-location-dot' },
-            { label: 'Book', value: 'fa-book' },
-            { label: 'Scroll', value: 'fa-scroll' },
-            { label: 'Feather', value: 'fa-feather' },
-            { label: 'Star', value: 'fa-star' },
-            { label: 'Gem', value: 'fa-gem' },
-            { label: 'Flag', value: 'fa-flag' },
-            { label: 'Compass', value: 'fa-compass' },
-            { label: 'Skull', value: 'fa-skull' },
-            { label: 'Question', value: 'fa-circle-question' }
-        ];
     }
 
     static get defaultOptions() {
@@ -422,18 +408,56 @@ class NoteIconPicker extends Application {
         });
     }
 
-    getData() {
+    static iconCategories = null;
+
+    static async loadIconCategories() {
+        if (this.iconCategories) {
+            return this.iconCategories;
+        }
+        try {
+            const response = await fetch(`modules/${MODULE.ID}/resources/pin-icons.json`);
+            if (!response.ok) {
+                throw new Error(`Failed to load pin icons: ${response.status}`);
+            }
+            this.iconCategories = await response.json();
+            return this.iconCategories;
+        } catch (error) {
+            const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
+            if (typeof logger === 'function') {
+                logger('NOTE | PINS Failed to load pin icons.', error.message);
+            }
+            this.iconCategories = [];
+            return this.iconCategories;
+        }
+    }
+
+    static formatIconLabel(iconClass) {
+        if (!iconClass) return '';
+        const name = iconClass.split(' ').find(cls => cls.startsWith('fa-')) || iconClass;
+        return name.replace(/^fa-/, '').replace(/-/g, ' ');
+    }
+
+    async getData() {
         const selected = this.selected || null;
         const previewHtml = buildNoteIconHtml(selected, 'notes-form-header-image');
         const imageValue = selected?.type === 'img' ? selected.value : '';
-        const icons = this.icons.map(icon => ({
-            ...icon,
-            isSelected: selected?.type === 'fa' && selected.value === icon.value
-        }));
+        const categories = await NoteIconPicker.loadIconCategories();
+        const iconCategories = (categories || []).map(category => {
+            const icons = (category.icons || []).map(iconClass => ({
+                value: iconClass,
+                label: NoteIconPicker.formatIconLabel(iconClass),
+                isSelected: selected?.type === 'fa' && selected.value === iconClass
+            }));
+            return {
+                category: category.category || 'Icons',
+                description: category.description || '',
+                icons
+            };
+        });
         return {
             previewHtml,
             imageValue,
-            icons,
+            iconCategories,
             pinWidth: this.pinSize?.w ?? NOTE_PIN_SIZE.w,
             pinHeight: this.pinSize?.h ?? NOTE_PIN_SIZE.h,
             lockProportions: this.lockProportions,

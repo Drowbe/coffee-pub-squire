@@ -139,6 +139,25 @@
     gap: 8px;
 }
 
+.notes-icon-category {
+    margin-bottom: 16px;
+}
+
+.notes-icon-category-title {
+    font-size: 0.85em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #c9b993;
+    margin-bottom: 4px;
+}
+
+.notes-icon-category-description {
+    font-size: 0.8em;
+    color: rgba(210, 200, 170, 0.75);
+    margin-bottom: 8px;
+}
+
 .notes-icon-option {
     height: 44px;
     width: 44px;

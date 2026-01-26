@@ -125,13 +125,21 @@
         <div class="notes-section notes-icon-library-section">
             <div class="notes-section-header"><i class="fa-solid fa-icons"></i> Icon Library</div>
             <div class="notes-section-body">
-                <div class="notes-icon-grid">
-                    {{#each icons}}
-                    <button type="button" class="notes-icon-option {{#if this.isSelected}}selected{{/if}}" data-type="fa" data-value="{{this.value}}" title="{{this.label}}">
-                        <i class="fa-solid {{this.value}}"></i>
-                    </button>
-                    {{/each}}
+                {{#each iconCategories}}
+                <div class="notes-icon-category">
+                    <div class="notes-icon-category-title">{{this.category}}</div>
+                    {{#if this.description}}
+                        <div class="notes-icon-category-description">{{this.description}}</div>
+                    {{/if}}
+                    <div class="notes-icon-grid">
+                        {{#each this.icons}}
+                        <button type="button" class="notes-icon-option {{#if this.isSelected}}selected{{/if}}" data-type="fa" data-value="{{this.value}}" title="{{this.label}}">
+                            <i class="{{this.value}}"></i>
+                        </button>
+                        {{/each}}
+                    </div>
                 </div>
+                {{/each}}
             </div>
         </div>
     </div>
