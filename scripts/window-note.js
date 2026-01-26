@@ -1,0 +1,660 @@
+import { MODULE, TEMPLATES } from './const.js';
+import { getNativeElement } from './helpers.js';
+
+// Import helper functions from panel-notes.js
+import {
+    buildNoteIconHtml,
+    normalizeNoteIconFlag,
+    resolveNoteIconHtmlFromContent,
+    getDefaultNotePinDesign,
+    buildNoteOwnership,
+    syncNoteOwnership,
+    createNotePinForPage,
+    updateNotePinForPage,
+    getNotePinSizeForNote,
+    getNotePinShapeForNote,
+    getNotePinStyleForNote,
+    getNotePinDropShadowForNote,
+    getNotePinTextLayoutForNote,
+    getNotePinTextDisplayForNote,
+    getNotePinTextColorForNote,
+    getNotePinTextSizeForNote,
+    getNotePinTextMaxLengthForNote,
+    getNotePinTextScaleWithPinForNote,
+    normalizePinSize,
+    normalizePinStyle,
+    normalizePinShape,
+    normalizePinTextLayout,
+    normalizePinTextDisplay,
+    normalizePinTextColor,
+    normalizePinTextSize,
+    normalizePinTextMaxLength,
+    normalizePinTextScaleWithPin,
+    NoteIconPicker,
+    extractFirstImageSrc
+} from './panel-notes.js';
+
+/**
+ * NotesForm - Lightweight form for quick note capture
+ * Uses FormApplication for simplicity (like CodexForm)
+ */
+export class NotesForm extends FormApplication {
+    constructor(note = null, options = {}) {
+        super(note, options);
+        // If note has pageId/pageUuid, it's an existing note being edited
+        this.isEditing = !!(note?.pageId || note?.pageUuid);
+        this.pageId = note?.pageId || null;
+        this.pageUuid = note?.pageUuid || null;
+        this.note = note || this._getDefaultNote();
+        this.isViewMode = !!options.viewMode && this.isEditing;
+        if (!this.isEditing) {
+            this.isViewMode = false;
+        }
+        this.isEditMode = !this.isViewMode;
+        this.dragActive = false;
+        this._eventHandlers = [];
+        
+        // If options contain canvas location, pre-fill it
+        if (options.sceneId) {
+            this.note.sceneId = options.sceneId;
+            this.note.x = options.x || null;
+            this.note.y = options.y || null;
+        }
+    }
+
+    static get defaultOptions() {
+        let saved = {};
+        try {
+            saved = game.settings.get(MODULE.ID, 'notesWindowPosition') || {};
+        } catch (e) {
+            saved = {};
+        }
+        const width = saved.width ?? 600;
+        const height = saved.height ?? 560;
+        const top = (typeof saved.top === 'number') ? saved.top : Math.max(0, (window.innerHeight - height) / 2);
+        const left = (typeof saved.left === 'number') ? saved.left : Math.max(0, (window.innerWidth - width) / 2);
+
+        return foundry.utils.mergeObject(super.defaultOptions, {
+            id: 'notes-quick-form',
+            classes: ['window-note', 'squire-window'],
+            title: 'New Note', // Will be updated in getData if editing
+            template: TEMPLATES.WINDOW_NOTE,
+            width,
+            height,
+            top,
+            left,
+            resizable: true,
+            closeOnSubmit: true,
+            submitOnClose: false,
+            submitOnChange: false,
+            minimizable: true
+        });
+    }
+    
+    get title() {
+        if (!this.isEditing) return 'New Note';
+        return this.isEditMode ? 'Edit Note' : 'View Note';
+    }
+
+    getData() {
+        // Update window title
+        if (this.isEditing) {
+            this.options.title = this.isEditMode ? 'Edit Note' : 'View Note';
+        } else {
+            this.options.title = 'New Note';
+        }
+
+        const tagsText = Array.isArray(this.note.tags)
+            ? this.note.tags.join(', ')
+            : (typeof this.note.tags === 'string' ? this.note.tags : '');
+        const iconHtml = this.note.iconHtml ||
+            (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'window-note-header-image') : null) ||
+            resolveNoteIconHtmlFromContent(this.note.content, 'window-note-header-image');
+        const editorIds = Array.isArray(this.note.editorIds) && this.note.editorIds.length
+            ? this.note.editorIds
+            : (this.note.authorId ? [this.note.authorId] : []);
+        const uniqueEditorIds = [...new Set(editorIds)];
+        const editorAvatars = uniqueEditorIds.map(id => {
+            const user = game.users.get(id) || game.users.find(u => u.id === id);
+            return {
+                id,
+                name: user?.name || id || 'Unknown',
+                img: user?.avatar || user?.img || 'icons/svg/mystery-man.svg'
+            };
+        });
+
+        return {
+            note: {
+                ...this.note,
+                tagsText,
+                iconHtml,
+                editorAvatars,
+                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
+            },
+            isGM: game.user.isGM,
+            isEditing: this.isEditing,
+            isEditMode: this.isEditMode,
+            isViewMode: this.isViewMode,
+            sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
+        };
+    }
+
+    _getDefaultNote() {
+        return {
+            title: '',
+            content: '',
+            authorName: game.user?.name || 'Unknown',
+            timestamp: null,
+            tags: [],
+            visibility: 'party',
+            sceneId: null,
+            x: null,
+            y: null,
+            noteIcon: null,
+            notePinSize: getDefaultNotePinDesign().size,
+            notePinShape: getDefaultNotePinDesign().shape,
+            notePinStyle: getDefaultNotePinDesign().style,
+            notePinDropShadow: getDefaultNotePinDesign().dropShadow,
+            notePinTextLayout: getDefaultNotePinDesign().textLayout,
+            notePinTextDisplay: getDefaultNotePinDesign().textDisplay,
+            notePinTextColor: getDefaultNotePinDesign().textColor,
+            notePinTextSize: getDefaultNotePinDesign().textSize,
+            notePinTextMaxLength: getDefaultNotePinDesign().textMaxLength,
+            notePinTextScaleWithPin: getDefaultNotePinDesign().textScaleWithPin,
+            editorIds: []
+        };
+    }
+
+    _buildNoteOwnership(visibility, authorId) {
+        return buildNoteOwnership(visibility, authorId);
+    }
+
+    async _syncNoteOwnership(page, visibility, authorId) {
+        await syncNoteOwnership(page, visibility, authorId);
+    }
+
+    setPosition(options={}) {
+        const minWidth = 550;
+        const minHeight = 650;
+        if (options.width && options.width < minWidth) options.width = minWidth;
+        if (options.height && options.height < minHeight) options.height = minHeight;
+
+        if (options.top !== undefined || options.left !== undefined) {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const windowWidth = options.width || this.position.width || 600;
+            const windowHeight = options.height || this.position.height || 560;
+
+            if (options.left !== undefined) {
+                options.left = Math.max(0, Math.min(options.left, viewportWidth - windowWidth));
+            }
+            if (options.top !== undefined) {
+                options.top = Math.max(0, Math.min(options.top, viewportHeight - windowHeight));
+            }
+        }
+
+        const pos = super.setPosition(options);
+        if (this.rendered) {
+            const { top, left, width, height } = this.position;
+            game.settings.set(MODULE.ID, 'notesWindowPosition', { top, left, width, height });
+        }
+        return pos;
+    }
+
+    async _updateObject(event, formData) {
+        // Get selected journal from settings
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') {
+            ui.notifications.error('No notes journal selected. Please select a journal in module settings.');
+            return;
+        }
+
+        const journal = game.journal.get(journalId);
+        if (!journal) {
+            ui.notifications.error('Selected notes journal not found.');
+            return;
+        }
+
+        // Convert tags to array
+        let tags = [];
+        if (formData.tags) {
+            tags = formData.tags.split(',')
+                .map(t => t.trim())
+                .filter(t => t)
+                .map(t => t.toUpperCase());
+        }
+
+        // Ensure visibility is set - check form directly if not in formData
+        let visibility = formData.visibility;
+        if (!visibility || (visibility !== 'party' && visibility !== 'private')) {
+            // Try to get it from the form element directly
+            const form = getNativeElement(this.element)?.querySelector('form');
+            if (form) {
+                const visibilityToggle = form.querySelector('#notes-visibility-private');
+                if (visibilityToggle) {
+                    visibility = visibilityToggle.checked ? 'private' : 'party';
+                } else {
+                    const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
+                    if (visibilityRadio) {
+                        visibility = visibilityRadio.value;
+                    } else {
+                        visibility = 'private';
+                    }
+                }
+            } else {
+                visibility = 'private';
+            }
+        }
+        
+        // Final check - ensure it's either 'party' or 'private'
+        visibility = visibility === 'party' ? 'party' : 'private';
+
+        // Generate HTML content (note body only, no metadata)
+        const content = this._generateNoteContent(formData);
+
+        try {
+            let page;
+            
+            if (this.isEditing && this.pageUuid) {
+                // Editing existing note - update it
+                try {
+                    page = await foundry.utils.fromUuid(this.pageUuid);
+                    if (!page) {
+                        ui.notifications.error('Note not found.');
+                        return false;
+                    }
+                    
+                    // Check permissions
+                    if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                        ui.notifications.error('You do not have permission to edit this note.');
+                        return false;
+                    }
+                    
+                    // Update the page
+                    await page.update({
+                        name: formData.title || 'Untitled Note',
+                        text: { content: content }
+                    });
+                    
+                    // Update flags
+                    await page.setFlag(MODULE.ID, 'tags', tags);
+                    await page.setFlag(MODULE.ID, 'visibility', visibility);
+                    await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
+                    await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
+                    await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
+                    const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
+                    let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
+                    if (visibility === 'private') {
+                        editorIds = [game.user.id];
+                    }
+                    await page.setFlag(MODULE.ID, 'editorIds', editorIds);
+                    if (formData.sceneId) {
+                        await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
+                        await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
+                        await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
+                    }
+
+                    let authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                    if (visibility === 'private' && authorId !== game.user.id) {
+                        authorId = game.user.id;
+                        await page.setFlag(MODULE.ID, 'authorId', authorId);
+                    }
+                    await this._syncNoteOwnership(page, visibility, authorId);
+                    await updateNotePinForPage(page);
+                } catch (error) {
+                    console.error('Error updating note:', error);
+                    ui.notifications.error(`Failed to update note: ${error.message}`);
+                    return false;
+                }
+            } else {
+                // Creating new note
+                // Check if user has permission to create pages in this journal
+                // Users need at least OBSERVER permission to create embedded documents
+                if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {
+                    ui.notifications.error('You do not have permission to create notes in this journal. Please contact your GM.');
+                    return false;
+                }
+
+                // Create journal page with flags
+                const pageData = {
+                    name: formData.title || 'Untitled Note',
+                    type: 'text',
+                    text: {
+                        content: content
+                    },
+                    flags: {
+                        [MODULE.ID]: {
+                            noteType: 'sticky',
+                            tags: tags,
+                            visibility: visibility,
+                            editorIds: [game.user.id],
+                            sceneId: formData.sceneId || null,
+                            x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
+                            y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
+                            noteIcon: this.note.noteIcon || null,
+                            notePinSize: getNotePinSizeForNote(this.note),
+                            notePinShape: getNotePinShapeForNote(this.note),
+                            notePinStyle: getNotePinStyleForNote(this.note),
+                            notePinDropShadow: getNotePinDropShadowForNote(this.note),
+                            notePinTextLayout: getNotePinTextLayoutForNote(this.note),
+                            notePinTextDisplay: getNotePinTextDisplayForNote(this.note),
+                            notePinTextColor: getNotePinTextColorForNote(this.note),
+                            notePinTextSize: getNotePinTextSizeForNote(this.note),
+                            notePinTextMaxLength: getNotePinTextMaxLengthForNote(this.note),
+                            notePinTextScaleWithPin: getNotePinTextScaleWithPinForNote(this.note),
+                            authorId: game.user.id,
+                            timestamp: new Date().toISOString()
+                        }
+                    }
+                };
+
+                // Create journal page
+                const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                page = newPage;
+
+                // Verify the flag was saved correctly
+                const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
+
+                const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
+                await this._syncNoteOwnership(page, visibility, authorId);
+            }
+
+            // If canvas location provided, register pin with Blacksmith (if available)
+            // Only for new notes (editing doesn't change pin location)
+            if (!this.isEditing && formData.sceneId && formData.x !== null && formData.y !== null) {
+                try {
+                    const pinId = await createNotePinForPage(
+                        page,
+                        formData.sceneId,
+                        parseFloat(formData.x),
+                        parseFloat(formData.y)
+                    );
+                    if (pinId) {
+                        await page.setFlag(MODULE.ID, 'pinId', pinId);
+                    }
+                } catch (error) {
+                    const message = String(error?.message || error || '');
+                    if (message.toLowerCase().includes('permission denied')) {
+                        // Check if user has permission on the page
+                        const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+                        if (hasPagePermission) {
+                            ui.notifications.error('Permission denied: Unable to create pin. The pin ownership may need to be synced. Try saving the note again or contact your GM.');
+                        } else {
+                            ui.notifications.error('Permission denied: You do not have Owner permission on this note.');
+                        }
+                    } else {
+                        ui.notifications.warn('Could not create Blacksmith pin for this note.');
+                    }
+                }
+            }
+
+            ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
+            this.close();
+            
+            // Refresh notes panel if it exists
+            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+            if (panelManager?.notesPanel && panelManager.element) {
+                await panelManager.notesPanel._refreshData();
+                panelManager.notesPanel.render(panelManager.element);
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error saving note:', error);
+            ui.notifications.error(`Failed to save note: ${error.message}`);
+            return false;
+        }
+    }
+
+    _generateNoteContent(formData) {
+        return formData.content || '';
+    }
+
+    activateListeners(html) {
+        super.activateListeners(html);
+        
+        // v13: Detect and convert jQuery to native DOM if needed
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+
+        const headerIcon = nativeHtml.querySelector('.window-note-header-icon');
+        if (headerIcon && this.isEditMode) {
+            const handler = () => {
+                let currentIcon = normalizeNoteIconFlag(this.note.noteIcon);
+                if (!currentIcon) {
+                    const imageSrc = extractFirstImageSrc(this.note.content);
+                    if (imageSrc) {
+                        currentIcon = { type: 'img', value: imageSrc };
+                    }
+                }
+                const picker = new NoteIconPicker(currentIcon, {
+                    pinSize: this.note.notePinSize,
+                    pinStyle: this.note.notePinStyle,
+                    pinShape: this.note.notePinShape,
+                    pinDropShadow: this.note.notePinDropShadow,
+                    pinTextConfig: {
+                        textLayout: this.note.notePinTextLayout,
+                        textDisplay: this.note.notePinTextDisplay,
+                        textColor: this.note.notePinTextColor,
+                        textSize: this.note.notePinTextSize,
+                        textMaxLength: this.note.notePinTextMaxLength,
+                        textScaleWithPin: this.note.notePinTextScaleWithPin
+                    },
+                    onSelect: ({ icon, pinSize, pinStyle, pinShape, pinDropShadow, pinTextConfig }) => {
+                        this.note.noteIcon = icon;
+                        this.note.notePinSize = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
+                        this.note.notePinStyle = normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style;
+                        this.note.notePinShape = normalizePinShape(pinShape) || getDefaultNotePinDesign().shape;
+                        this.note.notePinDropShadow = typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow;
+                        this.note.notePinTextLayout = normalizePinTextLayout(pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
+                        this.note.notePinTextDisplay = normalizePinTextDisplay(pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
+                        this.note.notePinTextColor = normalizePinTextColor(pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
+                        this.note.notePinTextSize = normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
+                        this.note.notePinTextMaxLength = normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
+                        this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
+                        this.note.iconHtml = buildNoteIconHtml(icon, 'window-note-header-image');
+                        headerIcon.innerHTML = this.note.iconHtml;
+
+                        if (this.isEditing && this.pageUuid) {
+                            foundry.utils.fromUuid(this.pageUuid).then(async (page) => {
+                                if (!page) return;
+                                await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
+                                await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
+                                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
+                                await updateNotePinForPage(page);
+
+                                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                                if (panelManager?.notesPanel && panelManager.element) {
+                                    await panelManager.notesPanel._refreshData();
+                                    panelManager.notesPanel.render(panelManager.element);
+                                }
+                            });
+                        }
+                    }
+                });
+                picker.render(true);
+            };
+            headerIcon.addEventListener('click', handler);
+            this._eventHandlers.push({ element: headerIcon, event: 'click', handler });
+        }
+
+        const editToggle = nativeHtml.querySelector('#notes-edit-toggle');
+        if (editToggle) {
+            const handler = async (event) => {
+                event.preventDefault();
+                if (this.isEditMode) {
+                    await this._captureFormState();
+                }
+                this.isEditMode = !!event.currentTarget.checked;
+                this.isViewMode = !this.isEditMode;
+                this.render(true);
+            };
+            editToggle.addEventListener('change', handler);
+            this._eventHandlers.push({ element: editToggle, event: 'change', handler });
+        }
+
+        // Handle cancel button
+        const cancelButton = nativeHtml.querySelector('button.cancel');
+        if (cancelButton) {
+            const handler = () => this.close();
+            cancelButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: cancelButton, event: 'click', handler });
+        }
+
+        // Handle form submission - prevent default FormApplication behavior
+        const form = nativeHtml.querySelector('form');
+        if (form) {
+            const handler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this._handleFormSubmit(event);
+            };
+            form.addEventListener('submit', handler);
+            this._eventHandlers.push({ element: form, event: 'submit', handler });
+        }
+
+        // Set up tag autocomplete (simple - just show existing tags)
+        this._setupTagAutocomplete(nativeHtml);
+    }
+
+    async _captureFormState() {
+        const nativeHtml = getNativeElement(this.element);
+        const form = nativeHtml?.querySelector('form');
+        if (!form) return;
+
+        if (this._saveEditor) {
+            await this._saveEditor('content');
+        } else if (this._saveEditors) {
+            await this._saveEditors();
+        } else if (this.editors?.content?.save) {
+            await this.editors.content.save();
+        }
+
+        const data = new FormData(form);
+        const title = data.get('title');
+        const content = data.get('content');
+        const tagsText = data.get('tags');
+        const visibilityToggle = form.querySelector('#notes-visibility-private');
+
+        if (typeof title === 'string') {
+            this.note.title = title;
+        }
+        if (typeof content === 'string') {
+            this.note.content = content;
+        }
+        if (typeof tagsText === 'string') {
+            this.note.tags = tagsText
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t);
+        }
+        if (visibilityToggle) {
+            this.note.visibility = visibilityToggle.checked ? 'private' : 'party';
+        }
+    }
+
+    async _handleFormSubmit(event) {
+        event.preventDefault();
+        if (!this.isEditMode) return;
+        
+        const form = event.target.closest('form') || event.target;
+        if (this._saveEditor) {
+            await this._saveEditor('content');
+        } else if (this._saveEditors) {
+            await this._saveEditors();
+        } else if (this.editors?.content?.save) {
+            await this.editors.content.save();
+        }
+        const formData = new FormData(form);
+        
+        // Convert FormData to object
+        const data = {};
+        for (const [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+
+        const visibilityToggle = form.querySelector('#notes-visibility-private');
+        if (visibilityToggle) {
+            data.visibility = visibilityToggle.checked ? 'private' : 'party';
+        } else {
+            const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
+            if (visibilityRadio) {
+                data.visibility = visibilityRadio.value;
+            } else {
+                const allRadios = form.querySelectorAll('input[name="visibility"]');
+                data.visibility = 'private';
+            }
+        }
+
+        // Debug: Log visibility value to help diagnose issues
+
+        // Call _updateObject
+        await this._updateObject(event, data);
+    }
+
+    _setupTagAutocomplete(html) {
+        // Simple tag autocomplete - just show existing tags from notes journal
+        const tagsInput = html.querySelector('input[name="tags"]');
+        if (!tagsInput) return;
+
+        // Get existing tags from notes journal
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') return;
+
+        const journal = game.journal.get(journalId);
+        if (!journal) return;
+
+        const existingTags = new Set();
+        for (const page of journal.pages.contents) {
+            const flags = page.getFlag(MODULE.ID, 'tags');
+            if (Array.isArray(flags)) {
+                flags.forEach(tag => existingTags.add(tag));
+            }
+        }
+
+        // Show tag suggestions (simple - could be enhanced later)
+        const suggestionsDiv = html.querySelector('.tag-suggestions');
+        if (suggestionsDiv && existingTags.size > 0) {
+            const tagsArray = Array.from(existingTags).sort().slice(0, 20);
+            const tagChips = tagsArray.map(tag => `<span class="common-tag" data-tag="${tag}">${tag}</span>`).join('');
+            suggestionsDiv.innerHTML = `<small>Common Tags:</small><div class="common-tags">${tagChips}</div>`;
+
+            suggestionsDiv.querySelectorAll('.common-tag').forEach(tagEl => {
+                const handler = () => {
+                    const tag = tagEl.dataset.tag;
+                    if (!tag) return;
+                    const current = (tagsInput.value || '')
+                        .split(',')
+                        .map(t => t.trim())
+                        .filter(t => t);
+                    const exists = current.some(t => t.toLowerCase() === tag.toLowerCase());
+                    if (!exists) {
+                        current.push(tag);
+                        tagsInput.value = current.join(', ');
+                        tagsInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                };
+                tagEl.addEventListener('click', handler);
+                this._eventHandlers.push({ element: tagEl, event: 'click', handler });
+            });
+        }
+    }
+}

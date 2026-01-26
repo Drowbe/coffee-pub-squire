@@ -102,6 +102,7 @@ export const TEMPLATES = {
     TRANSFER_DIALOG: `modules/${MODULE.ID}/templates/window-transfer.hbs`,
     WINDOW_CHARACTERS: `modules/${MODULE.ID}/templates/window-characters.hbs`,
     WINDOW_USERS: `modules/${MODULE.ID}/templates/window-users.hbs`,
+    WINDOW_NOTE: `modules/${MODULE.ID}/templates/window-note.hbs`,
     CHAT_CARD: `modules/${MODULE.ID}/templates/chat-cards.hbs`,
     PRINT_CHARACTER: `modules/${MODULE.ID}/templates/print-character.hbs`,
     TOOLTIP_QUEST: `modules/${MODULE.ID}/templates/tooltip-pin-quests-objective.hbs`,

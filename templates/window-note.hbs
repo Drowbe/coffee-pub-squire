@@ -1,21 +1,21 @@
-<form class="notes-form {{#unless isEditMode}}notes-form-view{{/unless}}" method="post">
-    <div class="notes-form-header">
-        <div class="notes-form-header-content">
-            <div class="notes-form-header-icon">
+<form class="window-note {{#unless isEditMode}}window-note-view{{/unless}}" method="post">
+    <div class="window-note-header">
+        <div class="window-note-header-content">
+            <div class="window-note-header-icon">
                 {{#if note.iconHtml}}
                     {{{note.iconHtml}}}
                 {{else}}
                     <i class="fa-solid fa-note-sticky"></i>
                 {{/if}}
             </div>
-            <div class="notes-form-header-title">
+            <div class="window-note-header-title">
                 {{#if isEditMode}}
-                    <input type="text" id="title" name="title" class="notes-form-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required>
+                    <input type="text" id="title" name="title" class="window-note-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required>
                 {{else}}
-                    <div class="notes-form-title-text">{{#if note.title}}{{note.title}}{{else}}Untitled Note{{/if}}</div>
+                    <div class="window-note-title-text">{{#if note.title}}{{note.title}}{{else}}Untitled Note{{/if}}</div>
                 {{/if}}
-                <div class="notes-form-meta">
-                    <span class="notes-form-meta-item notes-form-authors">
+                <div class="window-note-meta">
+                    <span class="window-note-meta-item window-note-authors">
                         {{#if note.editorAvatars.length}}
                         <span class="note-editor-avatars">
                             {{#each note.editorAvatars}}
@@ -27,27 +27,27 @@
                         {{/if}}
                     </span>
                     {{#if note.sceneName}}
-                        <span class="notes-form-meta-block">
-                            <span class="notes-form-meta-location">
-                                <i class="fa-solid fa-location-dot notes-form-meta-icon"></i>
+                        <span class="window-note-meta-block">
+                            <span class="window-note-meta-location">
+                                <i class="fa-solid fa-location-dot window-note-meta-icon"></i>
                                 {{note.sceneName}}
                             </span>
                             {{#if note.timestamp}}
-                                <span class="notes-form-meta-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
+                                <span class="window-note-meta-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
                             {{else}}
-                                <span class="notes-form-meta-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
+                                <span class="window-note-meta-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
                             {{/if}}
                         </span>
                     {{else}}
                         {{#if note.timestamp}}
-                            <span class="notes-form-meta-item notes-form-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
+                            <span class="window-note-meta-item window-note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
                         {{else}}
-                            <span class="notes-form-meta-item notes-form-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
+                            <span class="window-note-meta-item window-note-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
                         {{/if}}
                     {{/if}}
                 </div>
             </div>
-            <div class="notes-form-header-controls">
+            <div class="window-note-header-controls">
                 {{#if isEditing}}
                 <div class="notes-edit-toggle-container">
                     <span class="notes-edit-toggle-label">Edit</span>
@@ -68,7 +68,7 @@
         </div>
     </div>
 
-    <div class="notes-form-body">
+    <div class="window-note-body">
     <!-- Hidden fields -->
     <input type="hidden" name="sceneId" value="{{#if note.sceneId}}{{note.sceneId}}{{/if}}">
     <input type="hidden" name="x" value="{{#if note.x}}{{note.x}}{{/if}}">

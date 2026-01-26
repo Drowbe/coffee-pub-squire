@@ -71,6 +71,8 @@
     "scripts/panel-abilities.js",
     "scripts/panel-party.js",
     "scripts/panel-party-stats.js",
+    "scripts/window-note.js",
+    "scripts/panel-notes.js",
     "scripts/quest-pin.js",
     "scripts/utility-lights.js"
   ],

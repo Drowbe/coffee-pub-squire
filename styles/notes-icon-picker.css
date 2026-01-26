@@ -4,13 +4,13 @@
     flex-direction: column;
 }
 
-.notes-icon-picker .notes-form-body {
+.notes-icon-picker .window-note-body {
     flex: 1;
     overflow: auto;
     padding-bottom: 12px;
 }
 
-.notes-icon-picker .notes-form-header {
+.notes-icon-picker .window-note-header {
     flex-shrink: 0;
 }
 

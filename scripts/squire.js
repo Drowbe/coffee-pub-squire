@@ -8,7 +8,7 @@ import { QuestForm } from './window-quest.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { NotesForm } from './panel-notes.js';
+import { NotesForm } from './window-note.js';
 import { trackModuleTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 

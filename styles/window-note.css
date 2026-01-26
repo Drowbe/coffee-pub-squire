@@ -65,7 +65,7 @@
 
 /* ----- FORM STYLES ----- */
 
-.notes-form {
+.window-note {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -79,7 +79,7 @@
 /* Window Header - Sticky Top */
 
 
-.notes-form-header {
+.window-note-header {
     background: var(--notes-header-background);
     background-image: var(--notes-banner-image);
     flex-shrink: 0; /* Don't shrink */
@@ -92,14 +92,14 @@
     border-bottom: 1px solid var(--notes-border-color);
 }
 
-.notes-form-header-content {
+.window-note-header-content {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
 
-.notes-form-header-icon {
+.window-note-header-icon {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -112,12 +112,12 @@
     cursor: pointer;
 }
 
-.notes-form-header-icon i {
+.window-note-header-icon i {
     color: rgba(255, 255, 255, 0.9);
     font-size: 2.5em;
 }
 
-.notes-form-header-image {
+.window-note-header-image {
     width: 100%;
     height: 100%;
     border-radius: 50%;
@@ -125,7 +125,7 @@
 }
 
 
-.notes-form-header-title {
+.window-note-header-title {
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -134,7 +134,7 @@
     margin-right: 26px;
 }
 
-.notes-form-title-input {
+.window-note-title-input {
     background: rgba(0, 0, 0, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
@@ -146,7 +146,7 @@
     letter-spacing: 0.05em;
 }
 
-.notes-form-title-text {
+.window-note-title-text {
     font-size: 1.4em;
     font-weight: 900;
     color: rgba(201, 185, 147, 0.9);
@@ -159,7 +159,7 @@
 }
 
 
-.notes-form-title-input:focus {
+.window-note-title-input:focus {
     outline: none;
     border-color: rgba(255, 100, 0, 0.8);
     box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.15);
@@ -168,8 +168,7 @@
 
 
 
-
-.notes-form-meta {
+.window-note-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 8px;
@@ -180,13 +179,13 @@
     margin: 4px 0px 0px 0px;
 }
 
-.notes-form-meta-item {
+.window-note-meta-item {
     display: inline-flex;
     align-items: center;
     gap: 5px;
 }
 
-.notes-form-meta-block {
+.window-note-meta-block {
     display: grid;
     grid-template-columns: 18px auto;
     grid-template-rows: auto auto;
@@ -197,7 +196,7 @@
     padding: 2px 2px 2px 0px;
 }
 
-.notes-form-meta-location {
+.window-note-meta-location {
     grid-column: 1 / span 2;
     grid-row: 1;
     display: inline-flex;
@@ -206,7 +205,7 @@
     text-align: left;
 }
 
-.notes-form-meta-date {
+.window-note-meta-date {
     grid-column: 1 / span 2;
     grid-row: 2;
     display: inline-flex;
@@ -215,7 +214,7 @@
     text-align: left;
 }
 
-.notes-form-meta-block i {
+.window-note-meta-block i {
     width: 13px;
     align-items: center;
     text-align: center;
@@ -225,14 +224,14 @@
 
 
 
-.notes-form-meta .note-editor-avatars {
+.window-note-meta .note-editor-avatars {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
 
-.notes-form-meta .note-editor-avatar {
+.window-note-meta .note-editor-avatar {
     width: 32px;
     height: 32px;
     border-radius: 3px;
@@ -241,7 +240,7 @@
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
 }
 
-.notes-form-header-controls {
+.window-note-header-controls {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -385,7 +384,7 @@
     box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.3);
 }
 
-.notes-form-body {
+.window-note-body {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -395,7 +394,7 @@
     overflow-y: auto;
 }
 
-.notes-form-view .notes-form-body {
+.window-note-view .window-note-body {
     overflow: hidden;
 }
 
@@ -429,7 +428,7 @@
     gap: 8px;
 }
 
-.notes-form-view .notes-form-header-icon {
+.window-note-view .window-note-header-icon {
     cursor: default;
 }
 
@@ -477,7 +476,7 @@
     padding: 0;
 }
 
-.notes-form-view .notes-section-editor .notes-section-body {
+.window-note-view .notes-section-editor .notes-section-body {
     padding: 10px 12px;
     overflow: auto;
 }
@@ -498,7 +497,7 @@
 }
 
 /* Editor (ProseMirror) */
-.notes-form .editor {
+.window-note .editor {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--notes-border-color);
     border-radius: 4px;
@@ -509,37 +508,37 @@
     min-height: 0;
 }
 
-.notes-form .editor .editor-menu,
-.notes-form .editor .editor-toolbar {
+.window-note .editor .editor-menu,
+.window-note .editor .editor-toolbar {
     background: var(--notes-header-background);
     border-bottom: 1px solid var(--notes-border-color);
     padding: 4px;
 }
 
-.notes-form .editor .editor-menu button,
-.notes-form .editor .editor-toolbar button {
+.window-note .editor .editor-menu button,
+.window-note .editor .editor-toolbar button {
     color: #e0e0e0;
     border: 1px solid transparent;
     border-radius: 4px;
 }
 
-.notes-form .editor .editor-menu button:hover,
-.notes-form .editor .editor-toolbar button:hover {
+.window-note .editor .editor-menu button:hover,
+.window-note .editor .editor-toolbar button:hover {
     border-color: var(--notes-accent-color);
 }
 
-.notes-form .editor .editor-content,
-.notes-form .editor .ProseMirror,
-.notes-form .editor .prosemirror {
+.window-note .editor .editor-content,
+.window-note .editor .ProseMirror,
+.window-note .editor .prosemirror {
     color: #e0e0e0;
     padding: 8px 10px;
     min-height: 140px;
     flex: 1 1 auto;
 }
 
-.notes-form .editor .editor-content:focus,
-.notes-form .editor .ProseMirror:focus,
-.notes-form .editor .prosemirror:focus {
+.window-note .editor .editor-content:focus,
+.window-note .editor .ProseMirror:focus,
+.window-note .editor .prosemirror:focus {
     outline: none;
 }
 

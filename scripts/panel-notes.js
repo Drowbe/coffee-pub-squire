@@ -12,6 +12,7 @@ import {
 } from './utility-journal.js';
 import { NotesParser } from './utility-notes-parser.js';
 import { UsersWindow } from './window-users.js';
+import { NotesForm } from './window-note.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -37,19 +38,20 @@ const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
 const NOTE_PIN_SIZE = { w: 60, h: 60 };
 const NOTE_PIN_DEFAULT_SETTING = 'notesPinDefaultDesign';
 
-function normalizePinSize(size) {
+// Export helper functions for use in window-note.js
+export function normalizePinSize(size) {
     const w = Number(size?.w);
     const h = Number(size?.h);
     if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
     return { w: Math.round(w), h: Math.round(h) };
 }
 
-function normalizePinShape(shape) {
+export function normalizePinShape(shape) {
     if (shape === 'circle' || shape === 'square' || shape === 'none') return shape;
     return null;
 }
 
-function normalizePinStyle(style) {
+export function normalizePinStyle(style) {
     if (!style || typeof style !== 'object') return null;
     const fill = typeof style.fill === 'string' ? style.fill : null;
     const stroke = typeof style.stroke === 'string' ? style.stroke : null;
@@ -68,39 +70,39 @@ function normalizePinText(value) {
     return '';
 }
 
-function normalizePinTextLayout(layout) {
+export function normalizePinTextLayout(layout) {
     if (layout === 'under' || layout === 'over' || layout === 'around') return layout;
     return null;
 }
 
-function normalizePinTextDisplay(display) {
+export function normalizePinTextDisplay(display) {
     if (display === 'always' || display === 'hover' || display === 'never' || display === 'gm') return display;
     return null;
 }
 
-function normalizePinTextColor(color) {
+export function normalizePinTextColor(color) {
     if (typeof color === 'string' && color.trim()) return color.trim();
     return null;
 }
 
-function normalizePinTextSize(size) {
+export function normalizePinTextSize(size) {
     const parsed = Number(size);
     if (!Number.isFinite(parsed) || parsed <= 0) return null;
     return Math.round(parsed);
 }
 
-function normalizePinTextMaxLength(value) {
+export function normalizePinTextMaxLength(value) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed < 0) return null;
     return Math.round(parsed);
 }
 
-function normalizePinTextScaleWithPin(value) {
+export function normalizePinTextScaleWithPin(value) {
     if (typeof value === 'boolean') return value;
     return null;
 }
 
-function getDefaultNotePinDesign() {
+export function getDefaultNotePinDesign() {
     let stored = null;
     try {
         stored = game.settings.get(MODULE.ID, NOTE_PIN_DEFAULT_SETTING);
@@ -129,7 +131,7 @@ function getNotePinSizeForPage(page) {
     return normalizePinSize(page?.getFlag(MODULE.ID, 'notePinSize')) || getDefaultNotePinDesign().size;
 }
 
-function getNotePinSizeForNote(note) {
+export function getNotePinSizeForNote(note) {
     return normalizePinSize(note?.notePinSize) || getDefaultNotePinDesign().size;
 }
 
@@ -137,7 +139,7 @@ function getNotePinShapeForPage(page) {
     return normalizePinShape(page?.getFlag(MODULE.ID, 'notePinShape')) || getDefaultNotePinDesign().shape;
 }
 
-function getNotePinShapeForNote(note) {
+export function getNotePinShapeForNote(note) {
     return normalizePinShape(note?.notePinShape) || getDefaultNotePinDesign().shape;
 }
 
@@ -145,7 +147,7 @@ function getNotePinStyleForPage(page) {
     return mergeNotePinStyle(page?.getFlag(MODULE.ID, 'notePinStyle'));
 }
 
-function getNotePinStyleForNote(note) {
+export function getNotePinStyleForNote(note) {
     return mergeNotePinStyle(note?.notePinStyle);
 }
 
@@ -154,7 +156,7 @@ function getNotePinDropShadowForPage(page) {
     return typeof stored === 'boolean' ? stored : getDefaultNotePinDesign().dropShadow;
 }
 
-function getNotePinDropShadowForNote(note) {
+export function getNotePinDropShadowForNote(note) {
     const stored = note?.notePinDropShadow;
     return typeof stored === 'boolean' ? stored : getDefaultNotePinDesign().dropShadow;
 }
@@ -171,7 +173,7 @@ function getNotePinTextLayoutForPage(page) {
     return normalizePinTextLayout(page?.getFlag(MODULE.ID, 'notePinTextLayout')) || getDefaultNotePinDesign().textLayout;
 }
 
-function getNotePinTextLayoutForNote(note) {
+export function getNotePinTextLayoutForNote(note) {
     return normalizePinTextLayout(note?.notePinTextLayout) || getDefaultNotePinDesign().textLayout;
 }
 
@@ -179,7 +181,7 @@ function getNotePinTextDisplayForPage(page) {
     return normalizePinTextDisplay(page?.getFlag(MODULE.ID, 'notePinTextDisplay')) || getDefaultNotePinDesign().textDisplay;
 }
 
-function getNotePinTextDisplayForNote(note) {
+export function getNotePinTextDisplayForNote(note) {
     return normalizePinTextDisplay(note?.notePinTextDisplay) || getDefaultNotePinDesign().textDisplay;
 }
 
@@ -187,7 +189,7 @@ function getNotePinTextColorForPage(page) {
     return normalizePinTextColor(page?.getFlag(MODULE.ID, 'notePinTextColor')) || getDefaultNotePinDesign().textColor;
 }
 
-function getNotePinTextColorForNote(note) {
+export function getNotePinTextColorForNote(note) {
     return normalizePinTextColor(note?.notePinTextColor) || getDefaultNotePinDesign().textColor;
 }
 
@@ -195,7 +197,7 @@ function getNotePinTextSizeForPage(page) {
     return normalizePinTextSize(page?.getFlag(MODULE.ID, 'notePinTextSize')) || getDefaultNotePinDesign().textSize;
 }
 
-function getNotePinTextSizeForNote(note) {
+export function getNotePinTextSizeForNote(note) {
     return normalizePinTextSize(note?.notePinTextSize) || getDefaultNotePinDesign().textSize;
 }
 
@@ -204,7 +206,7 @@ function getNotePinTextMaxLengthForPage(page) {
     return stored ?? getDefaultNotePinDesign().textMaxLength;
 }
 
-function getNotePinTextMaxLengthForNote(note) {
+export function getNotePinTextMaxLengthForNote(note) {
     const stored = normalizePinTextMaxLength(note?.notePinTextMaxLength);
     return stored ?? getDefaultNotePinDesign().textMaxLength;
 }
@@ -214,7 +216,7 @@ function getNotePinTextScaleWithPinForPage(page) {
     return stored ?? getDefaultNotePinDesign().textScaleWithPin;
 }
 
-function getNotePinTextScaleWithPinForNote(note) {
+export function getNotePinTextScaleWithPinForNote(note) {
     const stored = normalizePinTextScaleWithPin(note?.notePinTextScaleWithPin);
     return stored ?? getDefaultNotePinDesign().textScaleWithPin;
 }
@@ -288,13 +290,13 @@ function toHexColor(color) {
     return color;
 }
 
-function extractFirstImageSrc(content) {
+export function extractFirstImageSrc(content) {
     if (!content) return null;
     const match = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
     return match?.[1] || null;
 }
 
-function normalizeNoteIconFlag(iconFlag) {
+export function normalizeNoteIconFlag(iconFlag) {
     if (!iconFlag) return null;
     if (typeof iconFlag === 'string') {
         const type = iconFlag.includes('fa-') ? 'fa' : 'img';
@@ -310,7 +312,7 @@ function normalizeNoteIconFlag(iconFlag) {
     return null;
 }
 
-function buildNoteIconHtml(iconData, imgClass = '') {
+export function buildNoteIconHtml(iconData, imgClass = '') {
     if (!iconData) return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
     if (iconData.type === 'fa') {
         return `<i class="fa-solid ${iconData.value}"></i>`;
@@ -343,7 +345,7 @@ function resolveNoteIconHtmlFromPage(page, imgClass = '') {
     return buildNoteIconHtml(null, imgClass);
 }
 
-function resolveNoteIconHtmlFromContent(content, imgClass = '') {
+export function resolveNoteIconHtmlFromContent(content, imgClass = '') {
     const imageSrc = extractFirstImageSrc(content);
     if (imageSrc) {
         return buildNoteIconHtml({ type: 'img', value: imageSrc }, imgClass);
@@ -404,7 +406,7 @@ function createPinPreviewElement(iconHtml, pinSize, pinStyle, pinShape, dropShad
     return preview;
 }
 
-class NoteIconPicker extends Application {
+export class NoteIconPicker extends Application {
     constructor(noteIcon, { onSelect, pinSize, pinStyle, pinShape, pinDropShadow, pinTextConfig } = {}) {
         super();
         this.onSelect = onSelect;
@@ -470,7 +472,7 @@ class NoteIconPicker extends Application {
 
     async getData() {
         const selected = this.selected || null;
-        const previewHtml = buildNoteIconHtml(selected, 'notes-form-header-image');
+        const previewHtml = buildNoteIconHtml(selected, 'window-note-header-image');
         const imageValue = selected?.type === 'img' ? selected.value : '';
         const categories = await NoteIconPicker.loadIconCategories();
         const iconCategories = (categories || []).map(category => {
@@ -514,7 +516,7 @@ class NoteIconPicker extends Application {
         const root = nativeHtml?.classList?.contains('notes-icon-picker')
             ? nativeHtml
             : nativeHtml.querySelector('.notes-icon-picker');
-        const preview = nativeHtml.querySelector('.notes-form-header-icon');
+        const preview = nativeHtml.querySelector('.window-note-header-icon');
         const imageInput = nativeHtml.querySelector('.notes-icon-image-input');
         const imageRow = nativeHtml.querySelector('.notes-icon-image-row');
         const imagePreview = nativeHtml.querySelector('.notes-icon-image-preview');
@@ -540,7 +542,7 @@ class NoteIconPicker extends Application {
 
         const updatePreview = () => {
             if (preview) {
-                preview.innerHTML = buildNoteIconHtml(this.selected, 'notes-form-header-image');
+                preview.innerHTML = buildNoteIconHtml(this.selected, 'window-note-header-image');
             }
             if (imageRow) {
                 imageRow.classList.toggle('selected', this.selected?.type === 'img');
@@ -827,12 +829,42 @@ function mergeNotePinStyle(override) {
 }
 
 function getNotePinOwnershipForPage(page) {
+    if (!page) {
+        return {
+            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+            users: {}
+        };
+    }
+
+    // Use the same logic as buildNoteOwnership to ensure pin ownership matches page ownership
     const visibility = page?.getFlag(MODULE.ID, 'visibility') || 'private';
     const authorId = page?.getFlag(MODULE.ID, 'authorId') || game.user.id;
+    
+    // Build ownership using the same rules as buildNoteOwnership
+    // PRIVATE: GM + author are OWNERS, everyone else is NONE
+    // PARTY: GM + all party members (non-GM players) are OWNERS
     const users = {};
 
-    users[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-    game.users?.forEach(user => {
+    if (visibility === 'party') {
+        // PARTY NOTE: GM and all party members (non-GM players) are OWNERS
+        game.users.forEach(user => {
+            if (!user.isGM) {
+                users[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+            }
+        });
+        // Ensure author is included (in case they're a GM)
+        if (authorId && !users[authorId]) {
+            users[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+        }
+    } else {
+        // PRIVATE NOTE: Only GM and author are OWNERS
+        if (authorId) {
+            users[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+        }
+    }
+
+    // Always include GMs as owners
+    game.users.forEach(user => {
         if (user.isGM) {
             users[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
         }
@@ -846,7 +878,7 @@ function getNotePinOwnershipForPage(page) {
     };
 }
 
-function buildNoteOwnership(visibility, authorId) {
+export function buildNoteOwnership(visibility, authorId) {
     const ownership = {
         default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
     };
@@ -872,7 +904,7 @@ function buildNoteOwnership(visibility, authorId) {
     return ownership;
 }
 
-async function syncNoteOwnership(page, visibility, authorId) {
+export async function syncNoteOwnership(page, visibility, authorId) {
     if (!page) return;
     if (game.user.isGM) {
         const ownership = buildNoteOwnership(visibility, authorId);
@@ -926,7 +958,7 @@ function buildNoteDataFromPage(page) {
         notePinTextSize: getNotePinTextSizeForPage(page),
         notePinTextMaxLength: getNotePinTextMaxLengthForPage(page),
         notePinTextScaleWithPin: getNotePinTextScaleWithPinForPage(page),
-        iconHtml: resolveNoteIconHtmlFromPage(page, 'notes-form-header-image'),
+        iconHtml: resolveNoteIconHtmlFromPage(page, 'window-note-header-image'),
         authorName: authorName,
         timestamp: timestamp,
         tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []),
@@ -1152,10 +1184,15 @@ function registerNotePinHandlers() {
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
 }
 
-async function createNotePinForPage(page, sceneId, x, y) {
+export async function createNotePinForPage(page, sceneId, x, y) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) {
         throw new Error('Pins API not available.');
+    }
+
+    // Check if user has permission on the page before attempting to create pin
+    if (!game.user.isGM && !page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+        throw new Error('Permission denied: You do not have Owner permission on this note.');
     }
 
     if (pins.create) {
@@ -1221,7 +1258,7 @@ async function deleteNotePinForPage(page) {
     return;
 }
 
-async function updateNotePinForPage(page) {
+export async function updateNotePinForPage(page) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
     if (!pins.update) return;
@@ -1280,6 +1317,20 @@ async function updateNotePinForPage(page) {
             return;
         }
     } catch (error) {
+        const message = String(error?.message || error || '');
+        // If it's a permission error, provide more context
+        if (message.toLowerCase().includes('permission denied') || message.toLowerCase().includes('cannot update')) {
+            // Check if user actually has permission on the page
+            const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+            if (hasPagePermission) {
+                // User has permission on page but not on pin - this suggests ownership sync issue
+                // The fix above should resolve this, but provide helpful error
+                throw new Error(`Permission denied: Pin ownership may be out of sync. Try unpinning and re-pinning the note.`);
+            } else {
+                // User doesn't have permission on page either
+                throw new Error(`Permission denied: You do not have Owner permission on this note.`);
+            }
+        }
         throw error;
     }
 }
@@ -1996,7 +2047,13 @@ export class NotesPanel {
         } catch (error) {
             const message = String(error?.message || error || '');
             if (message.toLowerCase().includes('permission denied')) {
-                ui.notifications.error('Blacksmith pins are GM-only unless "Allow player writes" is enabled in Blacksmith settings.');
+                // Check if user has permission on the page
+                const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+                if (hasPagePermission) {
+                    ui.notifications.error('Permission denied: Unable to create pin. The pin ownership may need to be synced. Try again or contact your GM.');
+                } else {
+                    ui.notifications.error('Permission denied: You do not have Owner permission on this note.');
+                }
             } else {
                 ui.notifications.error(`Failed to create pin: ${message}`);
             }
@@ -2193,621 +2250,4 @@ export class NotesPanel {
     }
 }
 
-/**
- * NotesForm - Lightweight form for quick note capture
- * Uses FormApplication for simplicity (like CodexForm)
- */
-export class NotesForm extends FormApplication {
-    constructor(note = null, options = {}) {
-        super(note, options);
-        // If note has pageId/pageUuid, it's an existing note being edited
-        this.isEditing = !!(note?.pageId || note?.pageUuid);
-        this.pageId = note?.pageId || null;
-        this.pageUuid = note?.pageUuid || null;
-        this.note = note || this._getDefaultNote();
-        this.isViewMode = !!options.viewMode && this.isEditing;
-        if (!this.isEditing) {
-            this.isViewMode = false;
-        }
-        this.isEditMode = !this.isViewMode;
-        this.dragActive = false;
-        this._eventHandlers = [];
-        
-        // If options contain canvas location, pre-fill it
-        if (options.sceneId) {
-            this.note.sceneId = options.sceneId;
-            this.note.x = options.x || null;
-            this.note.y = options.y || null;
-        }
-    }
-
-    static get defaultOptions() {
-        let saved = {};
-        try {
-            saved = game.settings.get(MODULE.ID, 'notesWindowPosition') || {};
-        } catch (e) {
-            saved = {};
-        }
-        const width = saved.width ?? 600;
-        const height = saved.height ?? 560;
-        const top = (typeof saved.top === 'number') ? saved.top : Math.max(0, (window.innerHeight - height) / 2);
-        const left = (typeof saved.left === 'number') ? saved.left : Math.max(0, (window.innerWidth - width) / 2);
-
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: 'notes-quick-form',
-            classes: ['notes-form-window', 'squire-window'],
-            title: 'New Note', // Will be updated in getData if editing
-            template: 'modules/coffee-pub-squire/templates/notes-form.hbs',
-            width,
-            height,
-            top,
-            left,
-            resizable: true,
-            closeOnSubmit: true,
-            submitOnClose: false,
-            submitOnChange: false,
-            minimizable: true
-        });
-    }
-    
-    get title() {
-        if (!this.isEditing) return 'New Note';
-        return this.isEditMode ? 'Edit Note' : 'View Note';
-    }
-
-    getData() {
-        // Update window title
-        if (this.isEditing) {
-            this.options.title = this.isEditMode ? 'Edit Note' : 'View Note';
-        } else {
-            this.options.title = 'New Note';
-        }
-
-        const tagsText = Array.isArray(this.note.tags)
-            ? this.note.tags.join(', ')
-            : (typeof this.note.tags === 'string' ? this.note.tags : '');
-        const iconHtml = this.note.iconHtml ||
-            (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'notes-form-header-image') : null) ||
-            resolveNoteIconHtmlFromContent(this.note.content, 'notes-form-header-image');
-        const editorIds = Array.isArray(this.note.editorIds) && this.note.editorIds.length
-            ? this.note.editorIds
-            : (this.note.authorId ? [this.note.authorId] : []);
-        const uniqueEditorIds = [...new Set(editorIds)];
-        const editorAvatars = uniqueEditorIds.map(id => {
-            const user = game.users.get(id) || game.users.find(u => u.id === id);
-            return {
-                id,
-                name: user?.name || id || 'Unknown',
-                img: user?.avatar || user?.img || 'icons/svg/mystery-man.svg'
-            };
-        });
-
-        return {
-            note: {
-                ...this.note,
-                tagsText,
-                iconHtml,
-                editorAvatars,
-                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
-            },
-            isGM: game.user.isGM,
-            isEditing: this.isEditing,
-            isEditMode: this.isEditMode,
-            isViewMode: this.isViewMode,
-            sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
-        };
-    }
-
-    _getDefaultNote() {
-        return {
-            title: '',
-            content: '',
-            authorName: game.user?.name || 'Unknown',
-            timestamp: null,
-            tags: [],
-            visibility: 'party',
-            sceneId: null,
-            x: null,
-            y: null,
-            noteIcon: null,
-            notePinSize: getDefaultNotePinDesign().size,
-            notePinShape: getDefaultNotePinDesign().shape,
-            notePinStyle: getDefaultNotePinDesign().style,
-            notePinDropShadow: getDefaultNotePinDesign().dropShadow,
-            notePinTextLayout: getDefaultNotePinDesign().textLayout,
-            notePinTextDisplay: getDefaultNotePinDesign().textDisplay,
-            notePinTextColor: getDefaultNotePinDesign().textColor,
-            notePinTextSize: getDefaultNotePinDesign().textSize,
-            notePinTextMaxLength: getDefaultNotePinDesign().textMaxLength,
-            notePinTextScaleWithPin: getDefaultNotePinDesign().textScaleWithPin,
-            editorIds: []
-        };
-    }
-
-    _buildNoteOwnership(visibility, authorId) {
-        return buildNoteOwnership(visibility, authorId);
-    }
-
-    async _syncNoteOwnership(page, visibility, authorId) {
-        await syncNoteOwnership(page, visibility, authorId);
-    }
-
-    setPosition(options={}) {
-        const minWidth = 550;
-        const minHeight = 650;
-        if (options.width && options.width < minWidth) options.width = minWidth;
-        if (options.height && options.height < minHeight) options.height = minHeight;
-
-        if (options.top !== undefined || options.left !== undefined) {
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            const windowWidth = options.width || this.position.width || 600;
-            const windowHeight = options.height || this.position.height || 560;
-
-            if (options.left !== undefined) {
-                options.left = Math.max(0, Math.min(options.left, viewportWidth - windowWidth));
-            }
-            if (options.top !== undefined) {
-                options.top = Math.max(0, Math.min(options.top, viewportHeight - windowHeight));
-            }
-        }
-
-        const pos = super.setPosition(options);
-        if (this.rendered) {
-            const { top, left, width, height } = this.position;
-            game.settings.set(MODULE.ID, 'notesWindowPosition', { top, left, width, height });
-        }
-        return pos;
-    }
-
-    async _updateObject(event, formData) {
-        // Get selected journal from settings
-        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-        if (!journalId || journalId === 'none') {
-            ui.notifications.error('No notes journal selected. Please select a journal in module settings.');
-            return;
-        }
-
-        const journal = game.journal.get(journalId);
-        if (!journal) {
-            ui.notifications.error('Selected notes journal not found.');
-            return;
-        }
-
-        // Convert tags to array
-        let tags = [];
-        if (formData.tags) {
-            tags = formData.tags.split(',')
-                .map(t => t.trim())
-                .filter(t => t)
-                .map(t => t.toUpperCase());
-        }
-
-        // Ensure visibility is set - check form directly if not in formData
-        let visibility = formData.visibility;
-        if (!visibility || (visibility !== 'party' && visibility !== 'private')) {
-            // Try to get it from the form element directly
-            const form = getNativeElement(this.element)?.querySelector('form');
-            if (form) {
-                const visibilityToggle = form.querySelector('#notes-visibility-private');
-                if (visibilityToggle) {
-                    visibility = visibilityToggle.checked ? 'private' : 'party';
-                } else {
-                    const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
-                    if (visibilityRadio) {
-                        visibility = visibilityRadio.value;
-                    } else {
-                        visibility = 'private';
-                    }
-                }
-            } else {
-                visibility = 'private';
-            }
-        }
-        
-        // Final check - ensure it's either 'party' or 'private'
-        visibility = visibility === 'party' ? 'party' : 'private';
-
-        // Generate HTML content (note body only, no metadata)
-        const content = this._generateNoteContent(formData);
-
-        try {
-            let page;
-            
-            if (this.isEditing && this.pageUuid) {
-                // Editing existing note - update it
-                try {
-                    page = await foundry.utils.fromUuid(this.pageUuid);
-                    if (!page) {
-                        ui.notifications.error('Note not found.');
-                        return false;
-                    }
-                    
-                    // Check permissions
-                    if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                        ui.notifications.error('You do not have permission to edit this note.');
-                        return false;
-                    }
-                    
-                    // Update the page
-                    await page.update({
-                        name: formData.title || 'Untitled Note',
-                        text: { content: content }
-                    });
-                    
-                    // Update flags
-                    await page.setFlag(MODULE.ID, 'tags', tags);
-                    await page.setFlag(MODULE.ID, 'visibility', visibility);
-                    await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
-                    await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
-                    const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
-                    let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
-                    if (visibility === 'private') {
-                        editorIds = [game.user.id];
-                    }
-                    await page.setFlag(MODULE.ID, 'editorIds', editorIds);
-                    if (formData.sceneId) {
-                        await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
-                        await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
-                        await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
-                    }
-
-                    let authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
-                    if (visibility === 'private' && authorId !== game.user.id) {
-                        authorId = game.user.id;
-                        await page.setFlag(MODULE.ID, 'authorId', authorId);
-                    }
-                    await this._syncNoteOwnership(page, visibility, authorId);
-                    await updateNotePinForPage(page);
-                } catch (error) {
-                    console.error('Error updating note:', error);
-                    ui.notifications.error(`Failed to update note: ${error.message}`);
-                    return false;
-                }
-            } else {
-                // Creating new note
-                // Check if user has permission to create pages in this journal
-                // Users need at least OBSERVER permission to create embedded documents
-                if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {
-                    ui.notifications.error('You do not have permission to create notes in this journal. Please contact your GM.');
-                    return false;
-                }
-
-                // Create journal page with flags
-                const pageData = {
-                    name: formData.title || 'Untitled Note',
-                    type: 'text',
-                    text: {
-                        content: content
-                    },
-                    flags: {
-                        [MODULE.ID]: {
-                            noteType: 'sticky',
-                            tags: tags,
-                            visibility: visibility,
-                            editorIds: [game.user.id],
-                            sceneId: formData.sceneId || null,
-                            x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
-                            y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
-                            noteIcon: this.note.noteIcon || null,
-                            notePinSize: getNotePinSizeForNote(this.note),
-                            notePinShape: getNotePinShapeForNote(this.note),
-                            notePinStyle: getNotePinStyleForNote(this.note),
-                            notePinDropShadow: getNotePinDropShadowForNote(this.note),
-                            notePinTextLayout: getNotePinTextLayoutForNote(this.note),
-                            notePinTextDisplay: getNotePinTextDisplayForNote(this.note),
-                            notePinTextColor: getNotePinTextColorForNote(this.note),
-                            notePinTextSize: getNotePinTextSizeForNote(this.note),
-                            notePinTextMaxLength: getNotePinTextMaxLengthForNote(this.note),
-                            notePinTextScaleWithPin: getNotePinTextScaleWithPinForNote(this.note),
-                            authorId: game.user.id,
-                            timestamp: new Date().toISOString()
-                        }
-                    }
-                };
-
-                // Create journal page
-                const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-                page = newPage;
-
-                // Verify the flag was saved correctly
-                const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
-
-                const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
-                await this._syncNoteOwnership(page, visibility, authorId);
-            }
-
-            // If canvas location provided, register pin with Blacksmith (if available)
-            // Only for new notes (editing doesn't change pin location)
-            if (!this.isEditing && formData.sceneId && formData.x !== null && formData.y !== null) {
-                try {
-                    const pinId = await createNotePinForPage(
-                        page,
-                        formData.sceneId,
-                        parseFloat(formData.x),
-                        parseFloat(formData.y)
-                    );
-                    if (pinId) {
-                        await page.setFlag(MODULE.ID, 'pinId', pinId);
-                    }
-                } catch (error) {
-                    const message = String(error?.message || error || '');
-                    if (message.toLowerCase().includes('permission denied')) {
-                        ui.notifications.error('Blacksmith pins are GM-only unless "Allow player writes" is enabled in Blacksmith settings.');
-                    } else {
-                        ui.notifications.warn('Could not create Blacksmith pin for this note.');
-                    }
-                }
-            }
-
-            ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
-            this.close();
-            
-            // Refresh notes panel if it exists
-            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-            if (panelManager?.notesPanel && panelManager.element) {
-                await panelManager.notesPanel._refreshData();
-                panelManager.notesPanel.render(panelManager.element);
-            }
-            
-            return true;
-        } catch (error) {
-            console.error('Error saving note:', error);
-            ui.notifications.error(`Failed to save note: ${error.message}`);
-            return false;
-        }
-    }
-
-    _generateNoteContent(formData) {
-        return formData.content || '';
-    }
-
-    activateListeners(html) {
-        super.activateListeners(html);
-        
-        // v13: Detect and convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-
-        const headerIcon = nativeHtml.querySelector('.notes-form-header-icon');
-        if (headerIcon && this.isEditMode) {
-            const handler = () => {
-                let currentIcon = normalizeNoteIconFlag(this.note.noteIcon);
-                if (!currentIcon) {
-                    const imageSrc = extractFirstImageSrc(this.note.content);
-                    if (imageSrc) {
-                        currentIcon = { type: 'img', value: imageSrc };
-                    }
-                }
-                const picker = new NoteIconPicker(currentIcon, {
-                    pinSize: this.note.notePinSize,
-                    pinStyle: this.note.notePinStyle,
-                    pinShape: this.note.notePinShape,
-                    pinDropShadow: this.note.notePinDropShadow,
-                    pinTextConfig: {
-                        textLayout: this.note.notePinTextLayout,
-                        textDisplay: this.note.notePinTextDisplay,
-                        textColor: this.note.notePinTextColor,
-                        textSize: this.note.notePinTextSize,
-                        textMaxLength: this.note.notePinTextMaxLength,
-                        textScaleWithPin: this.note.notePinTextScaleWithPin
-                    },
-                    onSelect: ({ icon, pinSize, pinStyle, pinShape, pinDropShadow, pinTextConfig }) => {
-                        this.note.noteIcon = icon;
-                        this.note.notePinSize = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
-                        this.note.notePinStyle = normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style;
-                        this.note.notePinShape = normalizePinShape(pinShape) || getDefaultNotePinDesign().shape;
-                        this.note.notePinDropShadow = typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow;
-                        this.note.notePinTextLayout = normalizePinTextLayout(pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
-                this.note.notePinTextDisplay = normalizePinTextDisplay(pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
-                        this.note.notePinTextColor = normalizePinTextColor(pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
-                        this.note.notePinTextSize = normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
-                        this.note.notePinTextMaxLength = normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
-                        this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
-                        this.note.iconHtml = buildNoteIconHtml(icon, 'notes-form-header-image');
-                        headerIcon.innerHTML = this.note.iconHtml;
-
-                        if (this.isEditing && this.pageUuid) {
-                            foundry.utils.fromUuid(this.pageUuid).then(async (page) => {
-                                if (!page) return;
-                                await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
-                                await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
-                        await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
-                        await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
-                        await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
-                        await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-                        await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
-                                await updateNotePinForPage(page);
-
-                                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                                if (panelManager?.notesPanel && panelManager.element) {
-                                    await panelManager.notesPanel._refreshData();
-                                    panelManager.notesPanel.render(panelManager.element);
-                                }
-                            });
-                        }
-                    }
-                });
-                picker.render(true);
-            };
-            headerIcon.addEventListener('click', handler);
-            this._eventHandlers.push({ element: headerIcon, event: 'click', handler });
-        }
-
-        const editToggle = nativeHtml.querySelector('#notes-edit-toggle');
-        if (editToggle) {
-            const handler = async (event) => {
-                event.preventDefault();
-                if (this.isEditMode) {
-                    await this._captureFormState();
-                }
-                this.isEditMode = !!event.currentTarget.checked;
-                this.isViewMode = !this.isEditMode;
-                this.render(true);
-            };
-            editToggle.addEventListener('change', handler);
-            this._eventHandlers.push({ element: editToggle, event: 'change', handler });
-        }
-
-        // Handle cancel button
-        const cancelButton = nativeHtml.querySelector('button.cancel');
-        if (cancelButton) {
-            const handler = () => this.close();
-            cancelButton.addEventListener('click', handler);
-            this._eventHandlers.push({ element: cancelButton, event: 'click', handler });
-        }
-
-        // Handle form submission - prevent default FormApplication behavior
-        const form = nativeHtml.querySelector('form');
-        if (form) {
-            const handler = (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                this._handleFormSubmit(event);
-            };
-            form.addEventListener('submit', handler);
-            this._eventHandlers.push({ element: form, event: 'submit', handler });
-        }
-
-        // Set up tag autocomplete (simple - just show existing tags)
-        this._setupTagAutocomplete(nativeHtml);
-    }
-
-    async _captureFormState() {
-        const nativeHtml = getNativeElement(this.element);
-        const form = nativeHtml?.querySelector('form');
-        if (!form) return;
-
-        if (this._saveEditor) {
-            await this._saveEditor('content');
-        } else if (this._saveEditors) {
-            await this._saveEditors();
-        } else if (this.editors?.content?.save) {
-            await this.editors.content.save();
-        }
-
-        const data = new FormData(form);
-        const title = data.get('title');
-        const content = data.get('content');
-        const tagsText = data.get('tags');
-        const visibilityToggle = form.querySelector('#notes-visibility-private');
-
-        if (typeof title === 'string') {
-            this.note.title = title;
-        }
-        if (typeof content === 'string') {
-            this.note.content = content;
-        }
-        if (typeof tagsText === 'string') {
-            this.note.tags = tagsText
-                .split(',')
-                .map(t => t.trim())
-                .filter(t => t);
-        }
-        if (visibilityToggle) {
-            this.note.visibility = visibilityToggle.checked ? 'private' : 'party';
-        }
-    }
-
-    async _handleFormSubmit(event) {
-        event.preventDefault();
-        if (!this.isEditMode) return;
-        
-        const form = event.target.closest('form') || event.target;
-        if (this._saveEditor) {
-            await this._saveEditor('content');
-        } else if (this._saveEditors) {
-            await this._saveEditors();
-        } else if (this.editors?.content?.save) {
-            await this.editors.content.save();
-        }
-        const formData = new FormData(form);
-        
-        // Convert FormData to object
-        const data = {};
-        for (const [key, value] of formData.entries()) {
-            data[key] = value;
-        }
-
-        const visibilityToggle = form.querySelector('#notes-visibility-private');
-        if (visibilityToggle) {
-            data.visibility = visibilityToggle.checked ? 'private' : 'party';
-        } else {
-            const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
-            if (visibilityRadio) {
-                data.visibility = visibilityRadio.value;
-            } else {
-                const allRadios = form.querySelectorAll('input[name="visibility"]');
-                data.visibility = 'private';
-            }
-        }
-
-        // Debug: Log visibility value to help diagnose issues
-
-        // Call _updateObject
-        await this._updateObject(event, data);
-    }
-
-    _setupTagAutocomplete(html) {
-        // Simple tag autocomplete - just show existing tags from notes journal
-        const tagsInput = html.querySelector('input[name="tags"]');
-        if (!tagsInput) return;
-
-        // Get existing tags from notes journal
-        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-        if (!journalId || journalId === 'none') return;
-
-        const journal = game.journal.get(journalId);
-        if (!journal) return;
-
-        const existingTags = new Set();
-        for (const page of journal.pages.contents) {
-            const flags = page.getFlag(MODULE.ID, 'tags');
-            if (Array.isArray(flags)) {
-                flags.forEach(tag => existingTags.add(tag));
-            }
-        }
-
-        // Show tag suggestions (simple - could be enhanced later)
-        const suggestionsDiv = html.querySelector('.tag-suggestions');
-        if (suggestionsDiv && existingTags.size > 0) {
-            const tagsArray = Array.from(existingTags).sort().slice(0, 20);
-            const tagChips = tagsArray.map(tag => `<span class="common-tag" data-tag="${tag}">${tag}</span>`).join('');
-            suggestionsDiv.innerHTML = `<small>Common Tags:</small><div class="common-tags">${tagChips}</div>`;
-
-            suggestionsDiv.querySelectorAll('.common-tag').forEach(tagEl => {
-                const handler = () => {
-                    const tag = tagEl.dataset.tag;
-                    if (!tag) return;
-                    const current = (tagsInput.value || '')
-                        .split(',')
-                        .map(t => t.trim())
-                        .filter(t => t);
-                    const exists = current.some(t => t.toLowerCase() === tag.toLowerCase());
-                    if (!exists) {
-                        current.push(tag);
-                        tagsInput.value = current.join(', ');
-                        tagsInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                };
-                tagEl.addEventListener('click', handler);
-                this._eventHandlers.push({ element: tagEl, event: 'click', handler });
-            });
-        }
-    }
-}
+// NotesForm has been moved to window-note.js
