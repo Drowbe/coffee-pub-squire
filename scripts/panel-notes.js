@@ -32,7 +32,6 @@ function isPinsApiAvailable(pins) {
 }
 
 const NOTE_PIN_ICON = 'fa-note-sticky';
-const NOTE_PIN_COLOR = 0xFFFF00;
 const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
 const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
 const NOTE_PIN_SIZE = { w: 60, h: 60 };
@@ -1016,7 +1015,6 @@ function registerNotePinContextMenuItems(pins) {
                 await page.setFlag(MODULE.ID, 'notePinTextColor', normalizePinTextColor(pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor);
                 await page.setFlag(MODULE.ID, 'notePinTextSize', normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize);
                 await page.setFlag(MODULE.ID, 'notePinTextMaxLength', normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength);
-                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin);
                 await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin);
 
                 await updateNotePinForPage(page);
@@ -2617,7 +2615,6 @@ export class NotesForm extends FormApplication {
                         this.note.notePinTextSize = normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
                         this.note.notePinTextMaxLength = normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
                         this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
-                this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
                         this.note.iconHtml = buildNoteIconHtml(icon, 'notes-form-header-image');
                         headerIcon.innerHTML = this.note.iconHtml;
 
@@ -2634,7 +2631,6 @@ export class NotesForm extends FormApplication {
                         await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
                         await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
                         await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-                        await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
                         await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
                                 await updateNotePinForPage(page);
 

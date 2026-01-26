@@ -195,6 +195,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -206,6 +207,8 @@
 
 .notes-icon-option i {
     font-size: 1.2em;
+    line-height: 1;
+    display: block;
 }
 
 .notes-icon-image-row {

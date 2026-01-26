@@ -17,10 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Notes pin creation sends size, icon, style, ownership consistently; note updates sync pin data.
 - Notes styling reorganized with clear Card/List sections and theme-specific blocks.
 - Notes CSS loading moved to `styles/default.css` imports (removed runtime injection).
+- Removed legacy pin reload workaround now that `pins.update()` handles icon/image swaps.
+- Removed unused note pin color constant.
 
 ### Fixed
 - Note pin placement cursor behavior and pin preview alignment.
 - Notes view mode layout to keep content scrollable above tags.
+- Removed duplicate note pin text scale writes during pin configuration and note icon updates.
 
 ## [13.1.0] - Sticky Notes
 
