@@ -104,12 +104,12 @@
         </div>
 
         <div class="notes-icon-source-toggle">
-            <button type="button" class="notes-icon-source-option {{#if (eq iconMode 'image')}}active{{/if}}" data-source="image">
-                <i class="fa-solid fa-image"></i> Image
-            </button>
-            <button type="button" class="notes-icon-source-option {{#if (eq iconMode 'icon')}}active{{/if}}" data-source="icon">
-                <i class="fa-solid fa-icons"></i> Icon
-            </button>
+            <span class="notes-icon-source-label">Image</span>
+            <div class="notes-icon-source-switch">
+                <input type="checkbox" id="notes-icon-source-toggle" class="notes-icon-source-toggle-input" {{#if (eq iconMode 'icon')}}checked{{/if}}>
+                <label for="notes-icon-source-toggle" class="notes-icon-source-toggle-slider"></label>
+            </div>
+            <span class="notes-icon-source-label">Icon</span>
         </div>
 
         <div class="notes-section">

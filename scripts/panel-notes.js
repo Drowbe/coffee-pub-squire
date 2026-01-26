@@ -473,7 +473,7 @@ class NoteIconPicker extends Application {
         const textMaxLengthInput = nativeHtml.querySelector('.notes-pin-text-max-length');
         const textScaleInput = nativeHtml.querySelector('.notes-pin-text-scale');
         const defaultInput = nativeHtml.querySelector('.notes-pin-default');
-        const sourceButtons = nativeHtml.querySelectorAll('.notes-icon-source-option');
+        const sourceToggle = nativeHtml.querySelector('.notes-icon-source-toggle-input');
 
         const updatePreview = () => {
             if (!preview) return;
@@ -487,9 +487,9 @@ class NoteIconPicker extends Application {
             if (root) {
                 root.dataset.iconMode = mode;
             }
-            sourceButtons.forEach(button => {
-                button.classList.toggle('active', button.dataset.source === mode);
-            });
+            if (sourceToggle) {
+                sourceToggle.checked = mode === 'icon';
+            }
         };
 
         const clampDimension = (value, fallback) => {
@@ -603,11 +603,8 @@ class NoteIconPicker extends Application {
         textScaleInput?.addEventListener('change', () => {
             this.pinTextScaleWithPin = !!textScaleInput.checked;
         });
-        sourceButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const mode = button.dataset.source === 'image' ? 'image' : 'icon';
-                updateMode(mode);
-            });
+        sourceToggle?.addEventListener('change', () => {
+            updateMode(sourceToggle.checked ? 'icon' : 'image');
         });
 
         nativeHtml.querySelector('.notes-icon-browse')?.addEventListener('click', async () => {
