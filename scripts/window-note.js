@@ -54,6 +54,7 @@ export class NotesForm extends FormApplication {
         this.dragActive = false;
         this._eventHandlers = [];
         this.page = null; // Store reference to page document for editor binding
+        this.usingCollabEditor = false; // Track if we're using collaborative editor
         
         // If options contain canvas location, pre-fill it
         if (options.sceneId) {
@@ -109,17 +110,60 @@ export class NotesForm extends FormApplication {
         if (this.isEditing && this.pageUuid && !this.page) {
             try {
                 this.page = await foundry.utils.fromUuid(this.pageUuid);
+                // Set object immediately when we have the page - this is critical for collab editor
+                if (this.page) {
+                    this.object = this.page;
+                    
+                    // Ensure text field exists and is properly structured
+                    const hasTextObject = this.page?.text && typeof this.page.text === 'object';
+                    const hasContentField = hasTextObject && ('content' in this.page.text);
+                    
+                    if (!hasTextObject || !hasContentField) {
+                        // If text field doesn't exist or is malformed, try to ensure data is loaded
+                        if (typeof this.page.prepareData === 'function') {
+                            await this.page.prepareData();
+                        }
+                        // Re-check after prepareData
+                        const hasTextObjectAfter = this.page?.text && typeof this.page.text === 'object';
+                        const hasContentFieldAfter = hasTextObjectAfter && ('content' in this.page.text);
+                        if (!hasTextObjectAfter || !hasContentFieldAfter) {
+                            console.warn('Page text field not available or malformed, falling back to content string');
+                            this.page = null;
+                            // Reset object if page is invalid
+                            if (!this.page) {
+                                this.object = this.note;
+                            }
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('Error loading page for editor:', error);
+                this.page = null;
+                // Reset object on error
+                if (!this.page) {
+                    this.object = this.note;
+                }
             }
         }
 
         const tagsText = Array.isArray(this.note.tags)
             ? this.note.tags.join(', ')
             : (typeof this.note.tags === 'string' ? this.note.tags : '');
+        // Extract pageContent first so we can use it for icon resolution
+        let pageContent = this.note.content || '';
+        if (this.isEditing && this.page) {
+            if (this.page.text && typeof this.page.text === 'object' && 'content' in this.page.text) {
+                if (typeof this.page.text.content === 'string') {
+                    pageContent = this.page.text.content;
+                } else if (this.page.text.content !== undefined) {
+                    pageContent = String(this.page.text.content || '');
+                }
+            }
+        }
+        
         const iconHtml = this.note.iconHtml ||
             (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'window-note-header-image') : null) ||
-            resolveNoteIconHtmlFromContent(this.note.content, 'window-note-header-image');
+            resolveNoteIconHtmlFromContent(pageContent, 'window-note-header-image');
         const editorIds = Array.isArray(this.note.editorIds) && this.note.editorIds.length
             ? this.note.editorIds
             : (this.note.authorId ? [this.note.authorId] : []);
@@ -133,10 +177,57 @@ export class NotesForm extends FormApplication {
             };
         });
 
-        // For collaborative editing, pass the page document's text field instead of extracted content
-        // This allows the editor to track co-editors and show avatars
-        const editorContent = (this.isEditing && this.page) ? this.page.text : this.note.content;
+        // For collaborative editing, we need to ensure the page is properly loaded
+        // The editor helper needs the page document with its text field
+        // If page isn't available or text field is missing, fall back to content string
+        let usePageForEditor = false;
+        
+        if (this.isEditing && this.page) {
+            // Check if page.text exists and is a proper DocumentData field with content
+            // page.text should be an object (DocumentData) with a content property (can be empty string)
+            const hasTextObject = this.page?.text && typeof this.page.text === 'object';
+            const hasContentField = hasTextObject && ('content' in this.page.text);
+            
+            if (hasTextObject && hasContentField) {
+                // Ensure content exists and is a string (can be empty string, but must be defined and string)
+                // This prevents issues when toggling edit/view and re-rendering
+                const contentValue = this.page.text.content;
+                if (contentValue !== undefined && contentValue !== null && typeof contentValue === 'string') {
+                    usePageForEditor = true;
+                } else {
+                    // Content field exists but is undefined/null/not a string - fall back
+                    console.warn('Page text.content is not a valid string, falling back to content string', {
+                        type: typeof contentValue,
+                        value: contentValue
+                    });
+                    this.page = null;
+                }
+            } else {
+                // Page loaded but text field not available or wrong type - fall back to content
+                console.warn('Page text field not available or wrong type, using content string instead', {
+                    hasText: !!this.page.text,
+                    textType: typeof this.page.text
+                });
+                this.page = null;
+            }
+        }
 
+        // Track whether we're using collaborative editor for defensive save logic
+        this.usingCollabEditor = usePageForEditor && this.isEditMode;
+
+        // Debug logging to verify document setup
+        console.log("NotesForm getData", {
+            isEditing: this.isEditing,
+            isEditMode: this.isEditMode,
+            hasPage: !!this.page,
+            pageType: this.page?.constructor?.name,
+            objectType: this.object?.constructor?.name,
+            textType: typeof this.page?.text,
+            contentType: typeof this.page?.text?.content,
+            usePageForEditor: usePageForEditor
+        });
+
+        // Always provide content as fallback - editor will use page.text if available
         return {
             note: {
                 ...this.note,
@@ -144,14 +235,14 @@ export class NotesForm extends FormApplication {
                 iconHtml,
                 editorAvatars,
                 sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
-                content: editorContent // Use page.text for existing notes to enable collaborative editing
+                content: pageContent // Use extracted content or fallback
             },
             isGM: game.user.isGM,
             isEditing: this.isEditing,
             isEditMode: this.isEditMode,
             isViewMode: this.isViewMode,
             sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
-            page: this.page // Pass page reference for editor binding
+            page: usePageForEditor ? this.page : null // Only pass page if we can use it for collaborative editing
         };
     }
 
@@ -286,11 +377,20 @@ export class NotesForm extends FormApplication {
                         return false;
                     }
                     
-                    // Update the page
-                    await page.update({
-                        name: formData.title || 'Untitled Note',
-                        text: { content: content }
-                    });
+                    // When using collaborative editing (collaborate=true), the editor updates the document directly
+                    // However, we still update text.content defensively as a "last-write-wins" safety net
+                    // This ensures changes aren't lost if collab binding fails or user closes without proper save
+                    const updateData = {
+                        name: formData.title || 'Untitled Note'
+                    };
+                    
+                    // Only skip text.content update if we're definitely using collab editor
+                    // Otherwise, update it defensively to prevent data loss
+                    if (!this.usingCollabEditor) {
+                        updateData['text.content'] = content;
+                    }
+                    
+                    await page.update(updateData);
                     
                     // Update flags
                     await page.setFlag(MODULE.ID, 'tags', tags);
@@ -434,6 +534,15 @@ export class NotesForm extends FormApplication {
         return formData.content || '';
     }
 
+    activateEditor(name, options = {}) {
+        // For collaborative editing, ensure document and fieldName are explicitly provided
+        if (this.usingCollabEditor && this.page && name === 'text.content') {
+            options.document = this.page;
+            options.fieldName = 'text.content';
+        }
+        return super.activateEditor(name, options);
+    }
+
     activateListeners(html) {
         super.activateListeners(html);
         
@@ -446,9 +555,19 @@ export class NotesForm extends FormApplication {
         const headerIcon = nativeHtml.querySelector('.window-note-header-icon');
         if (headerIcon && this.isEditMode) {
             const handler = () => {
+                // Get current content from page if available, otherwise use note content
+                let currentContent = this.note.content || '';
+                if (this.page && this.page.text && typeof this.page.text === 'object' && 'content' in this.page.text) {
+                    if (typeof this.page.text.content === 'string') {
+                        currentContent = this.page.text.content;
+                    } else if (this.page.text.content !== undefined) {
+                        currentContent = String(this.page.text.content || '');
+                    }
+                }
+                
                 let currentIcon = normalizeNoteIconFlag(this.note.noteIcon);
                 if (!currentIcon) {
-                    const imageSrc = extractFirstImageSrc(this.note.content);
+                    const imageSrc = extractFirstImageSrc(currentContent);
                     if (imageSrc) {
                         currentIcon = { type: 'img', value: imageSrc };
                     }
