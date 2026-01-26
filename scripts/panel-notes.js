@@ -68,7 +68,7 @@ function normalizePinText(value) {
 }
 
 function normalizePinTextLayout(layout) {
-    if (layout === 'under' || layout === 'around') return layout;
+    if (layout === 'under' || layout === 'over' || layout === 'around') return layout;
     return null;
 }
 
@@ -380,6 +380,7 @@ class NoteIconPicker extends Application {
         this.onSelect = onSelect;
         this.selected = noteIcon;
         const defaultDesign = getDefaultNotePinDesign();
+        this.iconMode = this.selected?.type === 'img' ? 'image' : 'icon';
         this.pinSize = normalizePinSize(pinSize) || defaultDesign.size;
         this.lockProportions = defaultDesign.lockProportions;
         this.pinShape = normalizePinShape(pinShape) || defaultDesign.shape;
@@ -416,7 +417,7 @@ class NoteIconPicker extends Application {
             template: TEMPLATES.NOTES_ICON_PICKER,
             width: 520,
             height: 560,
-            resizable: false,
+            resizable: true,
             classes: ['squire-window', 'notes-icon-picker-window']
         });
     }
@@ -445,7 +446,8 @@ class NoteIconPicker extends Application {
             pinTextColor: this.pinTextColor,
             pinTextSize: this.pinTextSize,
             pinTextMaxLength: this.pinTextMaxLength,
-            pinTextScaleWithPin: this.pinTextScaleWithPin
+            pinTextScaleWithPin: this.pinTextScaleWithPin,
+            iconMode: this.iconMode
         };
     }
 
@@ -453,6 +455,7 @@ class NoteIconPicker extends Application {
         super.activateListeners(html);
         const nativeHtml = html?.[0] || html;
 
+        const root = nativeHtml.querySelector('.notes-icon-picker');
         const preview = nativeHtml.querySelector('.notes-form-header-icon');
         const imageInput = nativeHtml.querySelector('.notes-icon-image-input');
         const imageRow = nativeHtml.querySelector('.notes-icon-image-row');
@@ -470,6 +473,7 @@ class NoteIconPicker extends Application {
         const textMaxLengthInput = nativeHtml.querySelector('.notes-pin-text-max-length');
         const textScaleInput = nativeHtml.querySelector('.notes-pin-text-scale');
         const defaultInput = nativeHtml.querySelector('.notes-pin-default');
+        const sourceButtons = nativeHtml.querySelectorAll('.notes-icon-source-option');
 
         const updatePreview = () => {
             if (!preview) return;
@@ -477,6 +481,15 @@ class NoteIconPicker extends Application {
             if (imageRow) {
                 imageRow.classList.toggle('selected', this.selected?.type === 'img');
             }
+        };
+        const updateMode = (mode) => {
+            this.iconMode = mode;
+            if (root) {
+                root.dataset.iconMode = mode;
+            }
+            sourceButtons.forEach(button => {
+                button.classList.toggle('active', button.dataset.source === mode);
+            });
         };
 
         const clampDimension = (value, fallback) => {
@@ -530,6 +543,7 @@ class NoteIconPicker extends Application {
                 if (imageInput) {
                     imageInput.value = '';
                 }
+                updateMode('icon');
                 updatePreview();
             });
         });
@@ -539,6 +553,7 @@ class NoteIconPicker extends Application {
             if (value) {
                 this.selected = { type: 'img', value };
                 nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
+                updateMode('image');
                 updatePreview();
             }
         });
@@ -588,6 +603,12 @@ class NoteIconPicker extends Application {
         textScaleInput?.addEventListener('change', () => {
             this.pinTextScaleWithPin = !!textScaleInput.checked;
         });
+        sourceButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const mode = button.dataset.source === 'image' ? 'image' : 'icon';
+                updateMode(mode);
+            });
+        });
 
         nativeHtml.querySelector('.notes-icon-browse')?.addEventListener('click', async () => {
             const picker = new FilePicker({
@@ -597,6 +618,7 @@ class NoteIconPicker extends Application {
                     imageInput.value = path;
                     this.selected = { type: 'img', value: path };
                     nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
+                    updateMode('image');
                     updatePreview();
                 }
             });
@@ -606,7 +628,20 @@ class NoteIconPicker extends Application {
         nativeHtml.querySelector('button.cancel')?.addEventListener('click', () => this.close());
 
         nativeHtml.querySelector('.notes-icon-use')?.addEventListener('click', async () => {
-            const finalSelection = this.selected || { type: 'fa', value: NOTE_PIN_ICON };
+            const mode = this.iconMode === 'image' ? 'image' : 'icon';
+            let finalSelection = null;
+            if (mode === 'image') {
+                const value = imageInput?.value?.trim() || '';
+                if (!value) {
+                    ui.notifications?.warn('Select an image for the pin.');
+                    return;
+                }
+                finalSelection = { type: 'img', value };
+            } else {
+                finalSelection = this.selected?.type === 'fa'
+                    ? this.selected
+                    : { type: 'fa', value: NOTE_PIN_ICON };
+            }
             const makeDefault = !!defaultInput?.checked;
             const pinSize = normalizePinSize(this.pinSize) || { ...NOTE_PIN_SIZE };
             const pinShape = normalizePinShape(this.pinShape) || 'circle';
@@ -643,6 +678,7 @@ class NoteIconPicker extends Application {
         });
 
         updatePreview();
+        updateMode(this.iconMode);
     }
 }
 

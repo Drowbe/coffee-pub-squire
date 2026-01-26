@@ -66,6 +66,7 @@
                         <span>Text layout</span>
                         <select class="notes-input notes-pin-text-layout">
                             <option value="under" {{#if (eq pinTextLayout "under")}}selected{{/if}}>Under</option>
+                            <option value="over" {{#if (eq pinTextLayout "over")}}selected{{/if}}>Over</option>
                             <option value="around" {{#if (eq pinTextLayout "around")}}selected{{/if}}>Around</option>
                         </select>
                     </label>
@@ -100,6 +101,15 @@
                     Scale text with pin
                 </label>
             </div>
+        </div>
+
+        <div class="notes-icon-source-toggle">
+            <button type="button" class="notes-icon-source-option {{#if (eq iconMode 'image')}}active{{/if}}" data-source="image">
+                <i class="fa-solid fa-image"></i> Image
+            </button>
+            <button type="button" class="notes-icon-source-option {{#if (eq iconMode 'icon')}}active{{/if}}" data-source="icon">
+                <i class="fa-solid fa-icons"></i> Icon
+            </button>
         </div>
 
         <div class="notes-section">

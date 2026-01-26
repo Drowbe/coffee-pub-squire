@@ -29,6 +29,39 @@
     color: #c9b993;
 }
 
+.notes-icon-source-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.notes-icon-source-option {
+    flex: 1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.45);
+    color: #d8caa4;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.notes-icon-source-option.active {
+    border-color: rgba(201, 185, 147, 0.9);
+    box-shadow: 0 0 10px rgba(201, 185, 147, 0.35);
+}
+
+.notes-icon-picker[data-icon-mode="image"] .notes-icon-grid,
+.notes-icon-picker[data-icon-mode="icon"] .notes-icon-image-row {
+    display: none;
+}
+
 .notes-pin-design-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
