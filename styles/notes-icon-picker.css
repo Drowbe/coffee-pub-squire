@@ -120,6 +120,32 @@
     gap: 8px;
 }
 
+.notes-pin-color-row {
+    display: grid;
+    grid-template-columns: 1fr 44px;
+    gap: 6px;
+    align-items: center;
+}
+
+.notes-pin-color-picker {
+    height: 26px;
+    width: 26px;
+    padding: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.notes-pin-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.notes-pin-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
 .notes-pin-design-toggle {
     display: inline-flex;
     align-items: center;
@@ -190,6 +216,27 @@
 
 .notes-icon-image-row .notes-icon-browse {
     white-space: nowrap;
+}
+
+.notes-icon-image-preview-wrap {
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    justify-content: center;
+}
+
+.notes-icon-image-preview {
+    max-width: 100%;
+    max-height: 180px;
+    border-radius: 6px;
+    object-fit: contain;
+}
+
+.notes-icon-image-preview.is-hidden {
+    display: none;
 }
 
 .notes-icon-picker .form-actions {

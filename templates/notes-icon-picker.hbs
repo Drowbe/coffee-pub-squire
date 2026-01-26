@@ -44,9 +44,21 @@
                         </select>
                     </label>
                     <label class="notes-pin-design-field">
+                        <span>Background</span>
+                        <div class="notes-pin-color-row">
+                            <input type="text" class="notes-input notes-pin-color-text notes-pin-fill-text" value="{{pinFill}}">
+                            <input type="color" class="notes-pin-color-picker notes-pin-fill" value="{{pinFill}}">
+                        </div>
+                    </label>
+                </div>
+                <div class="notes-pin-design-row">
+                    <label class="notes-pin-design-field">
                         <span>Border</span>
                         <div class="notes-pin-border-row">
-                            <input type="text" class="notes-input notes-pin-stroke" value="{{pinStroke}}">
+                            <div class="notes-pin-color-row">
+                                <input type="text" class="notes-input notes-pin-color-text notes-pin-stroke-text" value="{{pinStroke}}">
+                                <input type="color" class="notes-pin-color-picker notes-pin-stroke" value="{{pinStroke}}">
+                            </div>
                             <input type="number" class="notes-input notes-pin-stroke-width" min="0" step="1" value="{{pinStrokeWidth}}">
                         </div>
                     </label>
@@ -119,6 +131,9 @@
                     <input type="text" class="notes-input notes-icon-image-input" placeholder="Paste image URL..." value="{{imageValue}}">
                     <button type="button" class="btn-secondary notes-icon-browse"><i class="fa-solid fa-folder-open"></i> Browse</button>
                 </div>
+                <div class="notes-icon-image-preview-wrap">
+                    <img class="notes-icon-image-preview {{#unless imageValue}}is-hidden{{/unless}}" src="{{imageValue}}" alt="Pin preview">
+                </div>
             </div>
         </div>
 
@@ -149,7 +164,7 @@
             <i class="fa-solid fa-times"></i> Cancel
         </button>
         <button type="button" class="btn-primary notes-icon-use">
-            <i class="fa-solid fa-check"></i> Use Icon
+            <i class="fa-solid fa-check"></i> Save pin design
         </button>
     </div>
 </div>

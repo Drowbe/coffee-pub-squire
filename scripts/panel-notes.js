@@ -52,9 +52,11 @@ function normalizePinShape(shape) {
 
 function normalizePinStyle(style) {
     if (!style || typeof style !== 'object') return null;
+    const fill = typeof style.fill === 'string' ? style.fill : null;
     const stroke = typeof style.stroke === 'string' ? style.stroke : null;
     const strokeWidth = Number(style.strokeWidth);
     const normalized = {};
+    if (fill) normalized.fill = fill;
     if (stroke) normalized.stroke = stroke;
     if (Number.isFinite(strokeWidth) && strokeWidth >= 0) {
         normalized.strokeWidth = Math.round(strokeWidth);
@@ -401,8 +403,8 @@ class NoteIconPicker extends Application {
             id: 'notes-icon-picker',
             title: ' ',
             template: TEMPLATES.NOTES_ICON_PICKER,
-            width: 520,
-            height: 560,
+            width: 700,
+            height: 600,
             resizable: true,
             classes: ['squire-window', 'notes-icon-picker-window']
         });
@@ -464,6 +466,7 @@ class NoteIconPicker extends Application {
             pinShape: this.pinShape,
             pinStroke: this.pinStyle.stroke,
             pinStrokeWidth: this.pinStyle.strokeWidth,
+            pinFill: this.pinStyle.fill,
             pinDropShadow: this.dropShadow,
             pinTextLayout: this.pinTextLayout,
             pinTextDisplay: this.pinTextDisplay,
@@ -485,12 +488,16 @@ class NoteIconPicker extends Application {
         const preview = nativeHtml.querySelector('.notes-form-header-icon');
         const imageInput = nativeHtml.querySelector('.notes-icon-image-input');
         const imageRow = nativeHtml.querySelector('.notes-icon-image-row');
+        const imagePreview = nativeHtml.querySelector('.notes-icon-image-preview');
         const widthInput = nativeHtml.querySelector('.notes-pin-width');
         const heightInput = nativeHtml.querySelector('.notes-pin-height');
         const lockInput = nativeHtml.querySelector('.notes-pin-lock');
         const shapeInput = nativeHtml.querySelector('.notes-pin-shape');
         const strokeInput = nativeHtml.querySelector('.notes-pin-stroke');
+        const strokeTextInput = nativeHtml.querySelector('.notes-pin-stroke-text');
         const strokeWidthInput = nativeHtml.querySelector('.notes-pin-stroke-width');
+        const fillInput = nativeHtml.querySelector('.notes-pin-fill');
+        const fillTextInput = nativeHtml.querySelector('.notes-pin-fill-text');
         const shadowInput = nativeHtml.querySelector('.notes-pin-shadow');
         const textLayoutInput = nativeHtml.querySelector('.notes-pin-text-layout');
         const textDisplayInput = nativeHtml.querySelector('.notes-pin-text-display');
@@ -506,6 +513,11 @@ class NoteIconPicker extends Application {
             preview.innerHTML = buildNoteIconHtml(this.selected, 'notes-form-header-image');
             if (imageRow) {
                 imageRow.classList.toggle('selected', this.selected?.type === 'img');
+            }
+            if (imagePreview) {
+                const src = imageInput?.value?.trim() || '';
+                imagePreview.src = src;
+                imagePreview.classList.toggle('is-hidden', !src);
             }
         };
         const updateMode = (mode) => {
@@ -598,10 +610,40 @@ class NoteIconPicker extends Application {
         shapeInput?.addEventListener('change', () => {
             this.pinShape = normalizePinShape(shapeInput.value) || this.pinShape;
         });
+        strokeTextInput?.addEventListener('input', () => {
+            const value = strokeTextInput.value.trim();
+            if (value) {
+                this.pinStyle.stroke = value;
+                if (strokeInput) {
+                    strokeInput.value = value;
+                }
+            }
+        });
         strokeInput?.addEventListener('input', () => {
             const value = strokeInput.value.trim();
             if (value) {
                 this.pinStyle.stroke = value;
+                if (strokeTextInput) {
+                    strokeTextInput.value = value;
+                }
+            }
+        });
+        fillTextInput?.addEventListener('input', () => {
+            const value = fillTextInput.value.trim();
+            if (value) {
+                this.pinStyle.fill = value;
+                if (fillInput) {
+                    fillInput.value = value;
+                }
+            }
+        });
+        fillInput?.addEventListener('input', () => {
+            const value = fillInput.value.trim();
+            if (value) {
+                this.pinStyle.fill = value;
+                if (fillTextInput) {
+                    fillTextInput.value = value;
+                }
             }
         });
         strokeWidthInput?.addEventListener('input', () => {
@@ -668,7 +710,7 @@ class NoteIconPicker extends Application {
             const makeDefault = !!defaultInput?.checked;
             const pinSize = normalizePinSize(this.pinSize) || { ...NOTE_PIN_SIZE };
             const pinShape = normalizePinShape(this.pinShape) || 'circle';
-            const pinStyle = normalizePinStyle(this.pinStyle) || { stroke: '#ffffff', strokeWidth: 2 };
+            const pinStyle = normalizePinStyle(this.pinStyle) || { fill: '#000000', stroke: '#ffffff', strokeWidth: 2 };
             const pinTextConfig = {
                 textLayout: normalizePinTextLayout(this.pinTextLayout) || 'under',
                 textDisplay: normalizePinTextDisplay(this.pinTextDisplay) || 'always',
@@ -969,13 +1011,6 @@ function registerNotePinContextMenuItems(pins) {
             order: 10,
             onClick: makeOpenHandler(true)
         }),
-        pins.registerContextMenuItem(`${MODULE.ID}-configure-token`, {
-            name: 'Configure Token',
-            icon: '<i class="fa-solid fa-gear"></i>',
-            moduleId: MODULE.ID,
-            order: 20,
-            onClick: configureHandler
-        }),
         pins.registerContextMenuItem(`${MODULE.ID}-edit-note`, {
             name: 'Edit Note',
             icon: '<i class="fa-solid fa-pen"></i>',
@@ -983,11 +1018,18 @@ function registerNotePinContextMenuItems(pins) {
             order: 20,
             onClick: makeOpenHandler(false)
         }),
+        pins.registerContextMenuItem(`${MODULE.ID}-configure-pin`, {
+            name: 'Configure Pin',
+            icon: '<i class="fa-solid fa-gear"></i>',
+            moduleId: MODULE.ID,
+            order: 30,
+            onClick: configureHandler
+        }),
         pins.registerContextMenuItem(`${MODULE.ID}-delete-note`, {
             name: 'Delete Pin and Note',
             icon: '<i class="fa-solid fa-trash"></i>',
             moduleId: MODULE.ID,
-            order: 30,
+            order: 40,
             onClick: deleteHandler
         })
     ];
