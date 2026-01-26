@@ -78,7 +78,11 @@
     <div class="notes-section notes-section-editor">
         <div class="notes-section-body">
             {{#if isEditMode}}
-                {{editor note.content target="content" button=false owner=true editable=true engine="prosemirror"}}
+                {{#if page}}
+                    {{editor page.text target="content" button=false owner=false editable=true engine="prosemirror"}}
+                {{else}}
+                    {{editor note.content target="content" button=false owner=false editable=true engine="prosemirror"}}
+                {{/if}}
             {{else}}
                 <div class="notes-view-content">{{{note.content}}}</div>
             {{/if}}

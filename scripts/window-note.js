@@ -53,6 +53,7 @@ export class NotesForm extends FormApplication {
         this.isEditMode = !this.isViewMode;
         this.dragActive = false;
         this._eventHandlers = [];
+        this.page = null; // Store reference to page document for editor binding
         
         // If options contain canvas location, pre-fill it
         if (options.sceneId) {
@@ -96,12 +97,21 @@ export class NotesForm extends FormApplication {
         return this.isEditMode ? 'Edit Note' : 'View Note';
     }
 
-    getData() {
+    async getData() {
         // Update window title
         if (this.isEditing) {
             this.options.title = this.isEditMode ? 'Edit Note' : 'View Note';
         } else {
             this.options.title = 'New Note';
+        }
+
+        // For existing notes, load the page document to enable collaborative editing
+        if (this.isEditing && this.pageUuid && !this.page) {
+            try {
+                this.page = await foundry.utils.fromUuid(this.pageUuid);
+            } catch (error) {
+                console.error('Error loading page for editor:', error);
+            }
         }
 
         const tagsText = Array.isArray(this.note.tags)
@@ -123,19 +133,25 @@ export class NotesForm extends FormApplication {
             };
         });
 
+        // For collaborative editing, pass the page document's text field instead of extracted content
+        // This allows the editor to track co-editors and show avatars
+        const editorContent = (this.isEditing && this.page) ? this.page.text : this.note.content;
+
         return {
             note: {
                 ...this.note,
                 tagsText,
                 iconHtml,
                 editorAvatars,
-                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
+                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
+                content: editorContent // Use page.text for existing notes to enable collaborative editing
             },
             isGM: game.user.isGM,
             isEditing: this.isEditing,
             isEditMode: this.isEditMode,
             isViewMode: this.isViewMode,
-            sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null
+            sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
+            page: this.page // Pass page reference for editor binding
         };
     }
 
