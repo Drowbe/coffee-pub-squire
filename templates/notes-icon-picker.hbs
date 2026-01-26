@@ -95,7 +95,10 @@
                 <div class="notes-pin-design-row">
                     <label class="notes-pin-design-field">
                         <span>Text color</span>
-                        <input type="text" class="notes-input notes-pin-text-color" value="{{pinTextColor}}">
+                        <div class="notes-pin-color-row">
+                            <input type="text" class="notes-input notes-pin-color-text notes-pin-text-color-text" value="{{pinTextColor}}">
+                            <input type="color" class="notes-pin-color-picker notes-pin-text-color" value="{{pinTextColor}}">
+                        </div>
                     </label>
                     <label class="notes-pin-design-field">
                         <span>Text size</span>

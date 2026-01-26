@@ -502,6 +502,7 @@ class NoteIconPicker extends Application {
         const textLayoutInput = nativeHtml.querySelector('.notes-pin-text-layout');
         const textDisplayInput = nativeHtml.querySelector('.notes-pin-text-display');
         const textColorInput = nativeHtml.querySelector('.notes-pin-text-color');
+        const textColorTextInput = nativeHtml.querySelector('.notes-pin-text-color-text');
         const textSizeInput = nativeHtml.querySelector('.notes-pin-text-size');
         const textMaxLengthInput = nativeHtml.querySelector('.notes-pin-text-max-length');
         const textScaleInput = nativeHtml.querySelector('.notes-pin-text-scale');
@@ -659,8 +660,23 @@ class NoteIconPicker extends Application {
         textDisplayInput?.addEventListener('change', () => {
             this.pinTextDisplay = normalizePinTextDisplay(textDisplayInput.value) || this.pinTextDisplay;
         });
+        textColorTextInput?.addEventListener('input', () => {
+            const value = textColorTextInput.value.trim();
+            if (value) {
+                this.pinTextColor = normalizePinTextColor(value) || this.pinTextColor;
+                if (textColorInput) {
+                    textColorInput.value = value;
+                }
+            }
+        });
         textColorInput?.addEventListener('input', () => {
-            this.pinTextColor = normalizePinTextColor(textColorInput.value) || this.pinTextColor;
+            const value = textColorInput.value.trim();
+            if (value) {
+                this.pinTextColor = normalizePinTextColor(value) || this.pinTextColor;
+                if (textColorTextInput) {
+                    textColorTextInput.value = value;
+                }
+            }
         });
         textSizeInput?.addEventListener('input', () => {
             this.pinTextSize = clampTextSize(textSizeInput.value, this.pinTextSize);
@@ -1224,7 +1240,8 @@ async function updateNotePinForPage(page) {
         const shadowChanged = existing && typeof existing.dropShadow === 'boolean'
             ? existing.dropShadow !== patch.dropShadow
             : false;
-        if ((!updated || shadowChanged) && typeof pins.reload === 'function') {
+        const imageChanged = existing?.image && existing.image !== patch.image;
+        if ((!updated || shadowChanged || imageChanged) && typeof pins.reload === 'function') {
             await pins.reload({ sceneId });
         }
     } catch (error) {
