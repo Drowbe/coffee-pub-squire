@@ -320,6 +320,17 @@ function buildNoteIconHtml(iconData, imgClass = '') {
     return `<img src="${iconData.value}"${classAttr}>`;
 }
 
+function normalizePinImageSource(value) {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const imgMatch = trimmed.match(/<img\s+[^>]*src=["']([^"']+)["']/i);
+    if (imgMatch?.[1]) return imgMatch[1];
+    if (/^(https?:\/\/|\/|data:)/i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith('modules/')) return `/${trimmed}`;
+    return trimmed;
+}
+
 function resolveNoteIconHtmlFromPage(page, imgClass = '') {
     const iconFlag = normalizeNoteIconFlag(page?.getFlag(MODULE.ID, 'noteIcon'));
     if (iconFlag) {
@@ -339,6 +350,24 @@ function resolveNoteIconHtmlFromContent(content, imgClass = '') {
         return buildNoteIconHtml({ type: 'img', value: imageSrc }, imgClass);
     }
     return buildNoteIconHtml(null, imgClass);
+}
+
+function resolveNotePinImageValueFromPage(page) {
+    const iconFlag = normalizeNoteIconFlag(page?.getFlag(MODULE.ID, 'noteIcon'));
+    if (iconFlag) {
+        if (iconFlag.type === 'img') {
+            const src = normalizePinImageSource(iconFlag.value);
+            return src ? `<img src="${src}">` : '';
+        }
+        return buildNoteIconHtml(iconFlag);
+    }
+    const content = page?.text?.content || '';
+    const imageSrc = extractFirstImageSrc(content);
+    if (imageSrc) {
+        const src = normalizePinImageSource(imageSrc);
+        return src ? `<img src="${src}">` : '';
+    }
+    return buildNoteIconHtml(null);
 }
 
 function focusNoteCardInDom(noteUuid) {
@@ -383,6 +412,7 @@ class NoteIconPicker extends Application {
         this.selected = noteIcon;
         const defaultDesign = getDefaultNotePinDesign();
         this.iconMode = this.selected?.type === 'img' ? 'image' : 'icon';
+        this.lastIconSelection = this.selected?.type === 'fa' ? this.selected : null;
         this.pinSize = normalizePinSize(pinSize) || defaultDesign.size;
         this.lockProportions = defaultDesign.lockProportions;
         this.pinShape = normalizePinShape(pinShape) || defaultDesign.shape;
@@ -510,8 +540,9 @@ class NoteIconPicker extends Application {
         const sourceToggle = nativeHtml.querySelector('.notes-icon-source-toggle-input');
 
         const updatePreview = () => {
-            if (!preview) return;
-            preview.innerHTML = buildNoteIconHtml(this.selected, 'notes-form-header-image');
+            if (preview) {
+                preview.innerHTML = buildNoteIconHtml(this.selected, 'notes-form-header-image');
+            }
             if (imageRow) {
                 imageRow.classList.toggle('selected', this.selected?.type === 'img');
             }
@@ -523,12 +554,28 @@ class NoteIconPicker extends Application {
         };
         const updateMode = (mode) => {
             this.iconMode = mode;
+            if (mode === 'image') {
+                if (this.selected?.type === 'fa') {
+                    this.lastIconSelection = this.selected;
+                }
+                const imgValue = imageInput?.value?.trim() || '';
+                if (imgValue) {
+                    this.selected = { type: 'img', value: imgValue };
+                }
+            } else {
+                if (this.lastIconSelection) {
+                    this.selected = this.lastIconSelection;
+                } else if (this.selected?.type !== 'fa') {
+                    this.selected = { type: 'fa', value: NOTE_PIN_ICON };
+                }
+            }
             if (root) {
                 root.dataset.iconMode = mode;
             }
             if (sourceToggle) {
                 sourceToggle.checked = mode === 'icon';
             }
+            updatePreview();
         };
 
         const clampDimension = (value, fallback) => {
@@ -577,13 +624,13 @@ class NoteIconPicker extends Application {
             button.addEventListener('click', () => {
                 const value = button.dataset.value;
                 this.selected = { type: 'fa', value };
+                this.lastIconSelection = this.selected;
                 nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
                 button.classList.add('selected');
                 if (imageInput) {
                     imageInput.value = '';
                 }
                 updateMode('icon');
-                updatePreview();
             });
         });
 
@@ -593,7 +640,6 @@ class NoteIconPicker extends Application {
                 this.selected = { type: 'img', value };
                 nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
                 updateMode('image');
-                updatePreview();
             }
         });
 
@@ -700,7 +746,6 @@ class NoteIconPicker extends Application {
                     this.selected = { type: 'img', value: path };
                     nativeHtml.querySelectorAll('.notes-icon-option').forEach(btn => btn.classList.remove('selected'));
                     updateMode('image');
-                    updatePreview();
                 }
             });
             picker.browse();
@@ -1125,7 +1170,7 @@ async function createNotePinForPage(page, sceneId, x, y) {
             x,
             y,
             moduleId: MODULE.ID,
-            image: resolveNoteIconHtmlFromPage(page),
+            image: resolveNotePinImageValueFromPage(page),
             text: getNotePinTextForPage(page),
             size: getNotePinSizeForPage(page),
             shape: getNotePinShapeForPage(page),
@@ -1196,7 +1241,7 @@ async function updateNotePinForPage(page) {
     if (!sceneId) return;
 
     const patch = {
-        image: resolveNoteIconHtmlFromPage(page),
+        image: resolveNotePinImageValueFromPage(page),
         text: getNotePinTextForPage(page),
         size: getNotePinSizeForPage(page),
         shape: getNotePinShapeForPage(page),
@@ -1215,6 +1260,8 @@ async function updateNotePinForPage(page) {
 
     try {
         const existing = typeof pins.get === 'function' ? pins.get(pinId, { sceneId }) : null;
+        const oldImage = existing?.image ?? '';
+        const newImage = patch.image ?? '';
         const updated = await pins.update(pinId, patch, { sceneId });
         if (updated === null) {
             const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
@@ -1237,17 +1284,14 @@ async function updateNotePinForPage(page) {
             }
             return;
         }
-        const shadowChanged = existing && typeof existing.dropShadow === 'boolean'
-            ? existing.dropShadow !== patch.dropShadow
-            : false;
-        const imageChanged = existing?.image && existing.image !== patch.image;
-        if ((!updated || shadowChanged || imageChanged) && typeof pins.reload === 'function') {
-            await pins.reload({ sceneId });
+        if (oldImage !== newImage) {
+            if (typeof pins.reload === 'function') {
+                await pins.reload({ sceneId });
+            } else if (typeof pins.refresh === 'function') {
+                await pins.refresh({ sceneId });
+            }
         }
     } catch (error) {
-        if (typeof pins.reload === 'function') {
-            await pins.reload({ sceneId });
-        }
         throw error;
     }
 }
