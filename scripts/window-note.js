@@ -30,16 +30,9 @@ import {
     normalizePinTextSize,
     normalizePinTextMaxLength,
     normalizePinTextScaleWithPin,
-    requestGmCreateNotePin,
-    requestGmUpdateNotePin,
     NoteIconPicker,
     extractFirstImageSrc
 } from './panel-notes.js';
-
-function isPermissionDeniedError(error) {
-    const message = String(error?.message || error || '').toLowerCase();
-    return message.includes('permission denied');
-}
 
 /**
  * NotesForm - Lightweight form for quick note capture
@@ -426,25 +419,7 @@ export class NotesForm extends FormApplication {
                         await page.setFlag(MODULE.ID, 'authorId', authorId);
                     }
                     await this._syncNoteOwnership(page, visibility, authorId);
-                    try {
-                        await updateNotePinForPage(page);
-                    } catch (error) {
-                        if (!game.user.isGM && isPermissionDeniedError(error)) {
-                            try {
-                                const response = await requestGmUpdateNotePin({ page });
-                                if (response?.error) {
-                                    ui.notifications.warn(`Note saved, but pin update failed: ${response.error}`);
-                                } else {
-                                    ui.notifications.info('Pin update sent to GM. It should appear shortly.');
-                                }
-                            } catch (socketError) {
-                                const socketMessage = String(socketError?.message || socketError || '');
-                                ui.notifications.warn(`Note saved, but pin update failed: ${socketMessage}`);
-                            }
-                        } else {
-                            throw error;
-                        }
-                    }
+                    await updateNotePinForPage(page);
                 } catch (error) {
                     console.error('Error updating note:', error);
                     ui.notifications.error(`Failed to update note: ${error.message}`);
@@ -518,24 +493,7 @@ export class NotesForm extends FormApplication {
                     }
                 } catch (error) {
                     const message = String(error?.message || error || '');
-                    if (!game.user.isGM && isPermissionDeniedError(error)) {
-                        try {
-                            const response = await requestGmCreateNotePin({
-                                page,
-                                sceneId: formData.sceneId,
-                                x: parseFloat(formData.x),
-                                y: parseFloat(formData.y)
-                            });
-                            if (response?.pinId) {
-                                await page.setFlag(MODULE.ID, 'pinId', response.pinId);
-                            }
-                            ui.notifications.info('Pin creation sent to GM. It should appear shortly.');
-                        } catch (socketError) {
-                            const socketMessage = String(socketError?.message || socketError || '');
-                            ui.notifications.error(`Failed to create pin: ${socketMessage}`);
-                        }
-                    } else if (message.toLowerCase().includes('permission denied')) {
-                        // Check if user has permission on the page
+                    if (message.toLowerCase().includes('permission denied')) {
                         const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
                         if (hasPagePermission) {
                             ui.notifications.error('Permission denied: Unable to create pin. The pin ownership may need to be synced. Try saving the note again or contact your GM.');

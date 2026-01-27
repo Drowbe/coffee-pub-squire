@@ -42,6 +42,7 @@ const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
 const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
 const NOTE_PIN_SIZE = { w: 60, h: 60 };
 const NOTE_PIN_DEFAULT_SETTING = 'notesPinDefaultDesign';
+const NOTE_PIN_TYPE = 'coffee-pub-squire-sticky-notes';
 
 // Export helper functions for use in window-note.js
 export function normalizePinSize(size) {
@@ -244,51 +245,10 @@ let notePinContextMenuRegistered = false;
 let notePinContextMenuDisposers = [];
 let notePinSceneSyncHookId = null;
 
-export async function requestGmCreateNotePin({ page, sceneId, x, y }) {
-    const blacksmith = getBlacksmith();
-    if (!blacksmith?.sockets?.emit) {
-        throw new Error('Socket manager is not ready.');
-    }
-    if (!page?.uuid) {
-        throw new Error('Note UUID is missing.');
-    }
-    return blacksmith.sockets.emit('squire:createNotePin', {
-        pageUuid: page.uuid,
-        sceneId,
-        x,
-        y
-    });
-}
-
-export async function requestGmUpdateNotePin({ page }) {
-    const blacksmith = getBlacksmith();
-    if (!blacksmith?.sockets?.emit) {
-        throw new Error('Socket manager is not ready.');
-    }
-    if (!page?.uuid) {
-        throw new Error('Note UUID is missing.');
-    }
-    return blacksmith.sockets.emit('squire:updateNotePin', {
-        pageUuid: page.uuid
-    });
-}
-
-export async function requestGmDeleteNotePin({ page }) {
-    const blacksmith = getBlacksmith();
-    if (!blacksmith?.sockets?.emit) {
-        throw new Error('Socket manager is not ready.');
-    }
-    if (!page?.uuid) {
-        throw new Error('Note UUID is missing.');
-    }
-    return blacksmith.sockets.emit('squire:deleteNotePin', {
-        pageUuid: page.uuid
-    });
-}
-
 async function syncNotesForDeletedPins(sceneId) {
+    if (!game.user?.isGM) return;
     const pins = getPinsApi();
-    if (!pins?.list || !sceneId) return;
+    if (!sceneId || !pins) return;
 
     const journalId = game.settings.get(MODULE.ID, 'notesJournal');
     if (!journalId || journalId === 'none') return;
@@ -299,12 +259,6 @@ async function syncNotesForDeletedPins(sceneId) {
     const pages = journal.pages.contents || journal.pages;
     if (!pages?.length) return;
 
-    const pinIds = new Set(
-        (pins.list({ moduleId: MODULE.ID, sceneId }) || [])
-            .map(pin => pin?.id)
-            .filter(Boolean)
-    );
-
     let changed = false;
     for (const page of pages) {
         const pinId = page.getFlag(MODULE.ID, 'pinId');
@@ -312,7 +266,11 @@ async function syncNotesForDeletedPins(sceneId) {
         const pageSceneId = page.getFlag(MODULE.ID, 'sceneId');
         if (pageSceneId && pageSceneId !== sceneId) continue;
 
-        if (!pinIds.has(pinId)) {
+        const pinExists = typeof pins.exists === 'function'
+            ? pins.exists(pinId, { sceneId })
+            : !!pins.get?.(pinId, { sceneId });
+
+        if (!pinExists) {
             await page.setFlag(MODULE.ID, 'pinId', null);
             await page.setFlag(MODULE.ID, 'sceneId', null);
             await page.setFlag(MODULE.ID, 'x', null);
@@ -1252,6 +1210,7 @@ export async function createNotePinForPage(page, sceneId, x, y) {
             x,
             y,
             moduleId: MODULE.ID,
+            type: NOTE_PIN_TYPE,
             image: resolveNotePinImageValueFromPage(page),
             text: getNotePinTextForPage(page),
             size: getNotePinSizeForPage(page),
@@ -1266,12 +1225,26 @@ export async function createNotePinForPage(page, sceneId, x, y) {
             textScaleWithPin: getNotePinTextScaleWithPinForPage(page),
             ownership: getNotePinOwnershipForPage(page),
             config: {
-                noteUuid: page.uuid
+                noteUuid: page.uuid,
+                visibility: page.getFlag(MODULE.ID, 'visibility') || 'private',
+                authorId: page.getFlag(MODULE.ID, 'authorId') || game.user.id
             }
         };
         logPinPackage('CREATE', pinPayload);
 
-        const pinData = await pins.create(pinPayload, { sceneId });
+        let pinData;
+        try {
+            pinData = await pins.create(pinPayload, { sceneId });
+        } catch (error) {
+            if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
+                pinData = await pins.requestGM('create', {
+                    sceneId,
+                    payload: pinPayload
+                });
+            } else {
+                throw error;
+            }
+        }
 
         if (typeof pins.reload === 'function') {
             await pins.reload({ sceneId });
@@ -1289,14 +1262,28 @@ export async function deleteNotePinForPage(page) {
 
     const pinId = page.getFlag(MODULE.ID, 'pinId');
     if (pins.delete) {
+        const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id;
+        const deletePin = async (id) => {
+            try {
+                await pins.delete(id, { sceneId });
+            } catch (error) {
+                if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
+                    await pins.requestGM('delete', { sceneId, pinId: id });
+                } else {
+                    throw error;
+                }
+            }
+        };
+
         if (pinId) {
-            await pins.delete(pinId, { sceneId: page.getFlag(MODULE.ID, 'sceneId') });
+            await deletePin(pinId);
         } else if (pins.list) {
-            const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id;
-            const matches = pins.list({ moduleId: MODULE.ID, sceneId })
+            const matches = pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, sceneId })
                 .filter(pin => pin?.config?.noteUuid === page.uuid);
             for (const pin of matches) {
-                await pins.delete(pin.id, { sceneId });
+                if (pin?.id) {
+                    await deletePin(pin.id);
+                }
             }
         }
         return;
@@ -1335,15 +1322,48 @@ export async function updateNotePinForPage(page) {
         textSize: getNotePinTextSizeForPage(page),
         textMaxLength: getNotePinTextMaxLengthForPage(page),
         textScaleWithPin: getNotePinTextScaleWithPinForPage(page),
+        type: NOTE_PIN_TYPE,
         ownership: getNotePinOwnershipForPage(page),
-        config: { noteUuid: page.uuid }
+        config: {
+            noteUuid: page.uuid,
+            visibility: page.getFlag(MODULE.ID, 'visibility') || 'private',
+            authorId: page.getFlag(MODULE.ID, 'authorId') || game.user.id
+        }
     };
     logPinPackage('UPDATE', { pinId, sceneId, ...patch });
 
     try {
-        const updated = await pins.update(pinId, patch, { sceneId });
+        let updated;
+        try {
+            updated = await pins.update(pinId, patch, { sceneId });
+        } catch (error) {
+            if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
+                updated = await pins.requestGM('update', {
+                    sceneId,
+                    pinId,
+                    patch
+                });
+            } else {
+                throw error;
+            }
+        }
         if (updated === null) {
             const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
+            const pinExists = typeof pins.exists === 'function'
+                ? pins.exists(pinId, { sceneId })
+                : !!pins.get?.(pinId, { sceneId });
+
+            if (pinExists) {
+                if (typeof logger === 'function') {
+                    logger('NOTE | PINS Pin update returned null but pin still exists. Keeping note flags.', {
+                        pinId,
+                        sceneId,
+                        noteUuid: page.uuid
+                    });
+                }
+                return;
+            }
+
             if (typeof logger === 'function') {
                 logger('NOTE | PINS Pin update returned null (pin missing). Clearing note flags.', {
                     pinId,
@@ -1609,6 +1629,111 @@ export class NotesPanel {
         }
     }
 
+    async _cleanupMissingPins() {
+        if (!game.user?.isGM) return;
+
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        const journal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
+        if (!journal) return;
+
+        const pins = getPinsApi();
+        if (!isPinsApiAvailable(pins)) {
+            ui.notifications.warn('Blacksmith Pins API not available.');
+            return;
+        }
+
+        if (typeof pins.whenReady === 'function') {
+            await pins.whenReady();
+        }
+
+        const sceneIds = new Set();
+        for (const page of journal.pages.contents) {
+            const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+            if (sceneId) {
+                sceneIds.add(sceneId);
+            }
+        }
+
+        if (!sceneIds.size && canvas?.scene?.id) {
+            sceneIds.add(canvas.scene.id);
+        }
+
+        const pinIndex = new Map();
+        for (const sceneId of sceneIds) {
+            const scenePins = pins.list ? (pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, sceneId }) || []) : [];
+            for (const pin of scenePins) {
+                const noteUuid = pin?.config?.noteUuid;
+                if (!noteUuid) continue;
+                pinIndex.set(noteUuid, { pin, sceneId });
+            }
+        }
+
+        for (const sceneId of sceneIds) {
+            await syncNotesForDeletedPins(sceneId);
+        }
+
+        for (const page of journal.pages.contents) {
+            const match = pinIndex.get(page.uuid);
+            if (!match) continue;
+            const { pin, sceneId } = match;
+            const pinId = pin?.id || null;
+            if (!pinId) continue;
+
+            const storedPinId = page.getFlag(MODULE.ID, 'pinId');
+            const storedSceneId = page.getFlag(MODULE.ID, 'sceneId');
+            const needsUpdate = storedPinId !== pinId || storedSceneId !== sceneId;
+
+            if (needsUpdate) {
+                await page.setFlag(MODULE.ID, 'pinId', pinId);
+                await page.setFlag(MODULE.ID, 'sceneId', sceneId);
+                await page.setFlag(MODULE.ID, 'x', typeof pin.x === 'number' ? pin.x : page.getFlag(MODULE.ID, 'x'));
+                await page.setFlag(MODULE.ID, 'y', typeof pin.y === 'number' ? pin.y : page.getFlag(MODULE.ID, 'y'));
+            }
+        }
+
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.notesPanel && panelManager.element) {
+            await panelManager.notesPanel._refreshData();
+            panelManager.notesPanel.render(panelManager.element);
+        }
+    }
+
+    async _deleteAllPins(scope) {
+        if (!game.user?.isGM) return;
+        const pins = getPinsApi();
+        if (!isPinsApiAvailable(pins) || !pins?.deleteAllByType) {
+            ui.notifications.warn('Blacksmith Pins API not available.');
+            return;
+        }
+
+        const sceneIds = [];
+        if (scope === 'scene') {
+            if (!canvas?.scene?.id) {
+                ui.notifications.warn('No active scene.');
+                return;
+            }
+            sceneIds.push(canvas.scene.id);
+        } else {
+            game.scenes?.forEach(scene => {
+                if (scene?.id) sceneIds.push(scene.id);
+            });
+        }
+
+        if (!sceneIds.length) return;
+
+        for (const sceneId of sceneIds) {
+            await pins.deleteAllByType(NOTE_PIN_TYPE, { sceneId, moduleId: MODULE.ID });
+        }
+
+        await this._cleanupMissingPins();
+
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.notesPanel && panelManager.element) {
+            await panelManager.notesPanel._refreshData();
+            panelManager.notesPanel.render(panelManager.element);
+        }
+    }
+
     activateListeners(html) {
         // v13: Detect and convert jQuery to native DOM if needed
         let nativeHtml = html;
@@ -1670,6 +1795,67 @@ export class NotesPanel {
                 event.preventDefault();
                 await this._refreshData();
                 this.render(this.element);
+            });
+        }
+
+        const cleanupButton = nativeHtml.querySelector('.cleanup-notes-pins-button');
+        if (cleanupButton) {
+            const newButton = cleanupButton.cloneNode(true);
+            cleanupButton.parentNode?.replaceChild(newButton, cleanupButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const confirmed = await Dialog.confirm({
+                    title: 'Clean Up Missing Pins',
+                    content: '<p>Scan notes and clear pin flags when the pin no longer exists?</p>',
+                    yes: () => true,
+                    no: () => false,
+                    defaultYes: false
+                });
+                if (!confirmed) return;
+                await this._cleanupMissingPins();
+                ui.notifications.info('Pin cleanup complete.');
+            });
+        }
+
+        const deleteAllPinsButton = nativeHtml.querySelector('.delete-all-notes-pins-button');
+        if (deleteAllPinsButton) {
+            const newButton = deleteAllPinsButton.cloneNode(true);
+            deleteAllPinsButton.parentNode?.replaceChild(newButton, deleteAllPinsButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const choice = await Dialog.wait({
+                    title: 'Delete Note Pins',
+                    content: '<p>Delete note pins for this scene, or all scenes?</p>',
+                    buttons: {
+                        scene: {
+                            label: 'This Scene',
+                            callback: () => 'scene'
+                        },
+                        all: {
+                            label: 'All Scenes',
+                            callback: () => 'all'
+                        },
+                        cancel: {
+                            label: 'Cancel',
+                            callback: () => null
+                        }
+                    },
+                    default: 'cancel',
+                    close: () => null
+                });
+                if (!choice) return;
+                const confirmed = await Dialog.confirm({
+                    title: 'Confirm Deletion',
+                    content: choice === 'scene'
+                        ? '<p>Delete all note pins for this scene?</p>'
+                        : '<p>Delete all note pins across all scenes?</p>',
+                    yes: () => true,
+                    no: () => false,
+                    defaultYes: false
+                });
+                if (!confirmed) return;
+                await this._deleteAllPins(choice);
+                ui.notifications.info('Note pins deleted.');
             });
         }
 
@@ -2092,23 +2278,6 @@ export class NotesPanel {
             await page.setFlag(MODULE.ID, 'x', x);
             await page.setFlag(MODULE.ID, 'y', y);
         } catch (error) {
-            if (!game.user.isGM && isPermissionDeniedError(error)) {
-                try {
-                    const response = await requestGmCreateNotePin({ page, sceneId, x, y });
-                    if (response?.pinId) {
-                        await page.setFlag(MODULE.ID, 'pinId', response.pinId);
-                        await page.setFlag(MODULE.ID, 'sceneId', sceneId);
-                        await page.setFlag(MODULE.ID, 'x', x);
-                        await page.setFlag(MODULE.ID, 'y', y);
-                    }
-                    ui.notifications.info('Pin creation sent to GM. It should appear shortly.');
-                } catch (socketError) {
-                    const message = String(socketError?.message || socketError || '');
-                    ui.notifications.error(`Failed to create pin: ${message}`);
-                }
-                return;
-            }
-
             const message = String(error?.message || error || '');
             if (message.toLowerCase().includes('permission denied')) {
                 // Check if user has permission on the page
@@ -2135,19 +2304,6 @@ export class NotesPanel {
         try {
             await deleteNotePinForPage(page);
         } catch (error) {
-            if (!game.user.isGM && isPermissionDeniedError(error)) {
-                try {
-                    const response = await requestGmDeleteNotePin({ page });
-                    if (response?.error) {
-                        ui.notifications.warn(`Pin removal sent to GM but failed: ${response.error}`);
-                    } else {
-                        ui.notifications.info('Pin removal sent to GM. It should disappear shortly.');
-                    }
-                } catch (socketError) {
-                    const socketMessage = String(socketError?.message || socketError || '');
-                    ui.notifications.warn(`Pin removal sent to GM but failed: ${socketMessage}`);
-                }
-            }
         }
 
         await page.setFlag(MODULE.ID, 'sceneId', null);
