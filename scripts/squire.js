@@ -9,7 +9,7 @@ import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
-import { createNotePinForPage, updateNotePinForPage } from './panel-notes.js';
+import { createNotePinForPage, updateNotePinForPage, deleteNotePinForPage } from './panel-notes.js';
 import { trackModuleTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
@@ -2067,6 +2067,35 @@ Hooks.once('ready', async function() {
         blacksmith.utils?.postConsoleAndNotification?.(
             MODULE.NAME,
             'Failed to register note pin update socket handler',
+            { error },
+            true,
+            false
+        );
+    }
+
+    // Register socket handler for GM pin deletion on notes
+    try {
+        await blacksmith.sockets?.register('squire:deleteNotePin', async (data) => {
+            if (!game.user.isGM) return null;
+            if (!data?.pageUuid) return { error: 'Note UUID missing.' };
+            const page = await foundry.utils.fromUuid(data.pageUuid);
+            if (!page) return { error: 'Note not found.' };
+
+            try {
+                await deleteNotePinForPage(page);
+                await page.setFlag(MODULE.ID, 'pinId', null);
+                await page.setFlag(MODULE.ID, 'sceneId', null);
+                await page.setFlag(MODULE.ID, 'x', null);
+                await page.setFlag(MODULE.ID, 'y', null);
+                return { ok: true };
+            } catch (error) {
+                return { error: String(error?.message || error || 'Failed to delete pin.') };
+            }
+        });
+    } catch (error) {
+        blacksmith.utils?.postConsoleAndNotification?.(
+            MODULE.NAME,
+            'Failed to register note pin deletion socket handler',
             { error },
             true,
             false

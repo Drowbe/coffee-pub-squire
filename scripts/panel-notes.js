@@ -273,6 +273,19 @@ export async function requestGmUpdateNotePin({ page }) {
     });
 }
 
+export async function requestGmDeleteNotePin({ page }) {
+    const blacksmith = getBlacksmith();
+    if (!blacksmith?.sockets?.emit) {
+        throw new Error('Socket manager is not ready.');
+    }
+    if (!page?.uuid) {
+        throw new Error('Note UUID is missing.');
+    }
+    return blacksmith.sockets.emit('squire:deleteNotePin', {
+        pageUuid: page.uuid
+    });
+}
+
 async function syncNotesForDeletedPins(sceneId) {
     const pins = getPinsApi();
     if (!pins?.list || !sceneId) return;
@@ -1270,7 +1283,7 @@ export async function createNotePinForPage(page, sceneId, x, y) {
     throw new Error('Pins API does not support create.');
 }
 
-async function deleteNotePinForPage(page) {
+export async function deleteNotePinForPage(page) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
 
@@ -2122,6 +2135,19 @@ export class NotesPanel {
         try {
             await deleteNotePinForPage(page);
         } catch (error) {
+            if (!game.user.isGM && isPermissionDeniedError(error)) {
+                try {
+                    const response = await requestGmDeleteNotePin({ page });
+                    if (response?.error) {
+                        ui.notifications.warn(`Pin removal sent to GM but failed: ${response.error}`);
+                    } else {
+                        ui.notifications.info('Pin removal sent to GM. It should disappear shortly.');
+                    }
+                } catch (socketError) {
+                    const socketMessage = String(socketError?.message || socketError || '');
+                    ui.notifications.warn(`Pin removal sent to GM but failed: ${socketMessage}`);
+                }
+            }
         }
 
         await page.setFlag(MODULE.ID, 'sceneId', null);
