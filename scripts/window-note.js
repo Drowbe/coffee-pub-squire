@@ -34,6 +34,10 @@ import {
     extractFirstImageSrc
 } from './panel-notes.js';
 
+function getPinsApi() {
+    return game.modules.get('coffee-pub-blacksmith')?.api?.pins || null;
+}
+
 /**
  * NotesForm - Lightweight form for quick note capture
  * Uses FormApplication for simplicity (like CodexForm)
@@ -548,7 +552,62 @@ export class NotesForm extends FormApplication {
 
         const headerIcon = nativeHtml.querySelector('.window-note-header-icon');
         if (headerIcon && this.isEditMode) {
-            const handler = () => {
+            const handler = async () => {
+                const pins = getPinsApi();
+                const pinId = this.note?.pinId || this.page?.getFlag?.(MODULE.ID, 'pinId') || null;
+                const sceneId = this.note?.sceneId || this.page?.getFlag?.(MODULE.ID, 'sceneId') || null;
+
+                if (pins?.configure && pinId) {
+                    try {
+                        await pins.configure(pinId, {
+                            sceneId: sceneId || undefined,
+                            onSelect: async (config) => {
+                                const icon = config?.icon || null;
+                                this.note.noteIcon = icon;
+                                this.note.notePinSize = normalizePinSize(config?.pinSize) || getDefaultNotePinDesign().size;
+                                this.note.notePinStyle = normalizePinStyle(config?.pinStyle) || getDefaultNotePinDesign().style;
+                                this.note.notePinShape = normalizePinShape(config?.pinShape) || getDefaultNotePinDesign().shape;
+                                this.note.notePinDropShadow = typeof config?.pinDropShadow === 'boolean' ? config.pinDropShadow : getDefaultNotePinDesign().dropShadow;
+                                this.note.notePinTextLayout = normalizePinTextLayout(config?.pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
+                                this.note.notePinTextDisplay = normalizePinTextDisplay(config?.pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
+                                this.note.notePinTextColor = normalizePinTextColor(config?.pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
+                                this.note.notePinTextSize = normalizePinTextSize(config?.pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
+                                this.note.notePinTextMaxLength = normalizePinTextMaxLength(config?.pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
+                                this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(config?.pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
+                                this.note.iconHtml = buildNoteIconHtml(icon, 'window-note-header-image');
+                                headerIcon.innerHTML = this.note.iconHtml;
+
+                                if (this.isEditing && this.pageUuid) {
+                                    const page = await foundry.utils.fromUuid(this.pageUuid);
+                                    if (!page) return;
+                                    await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
+                                    await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
+                                    await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
+
+                                    const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                                    if (panelManager?.notesPanel && panelManager.element) {
+                                        await panelManager.notesPanel._refreshData();
+                                        panelManager.notesPanel.render(panelManager.element);
+                                    }
+                                }
+                            }
+                        });
+                        return;
+                    } catch (error) {
+                        console.error('Failed to open pin configuration window:', error);
+                        ui.notifications.error('Failed to open pin configuration window.');
+                        return;
+                    }
+                }
+
                 // Get current content from page if available, otherwise use note content
                 let currentContent = this.note.content || '';
                 if (this.page) {
@@ -563,7 +622,7 @@ export class NotesForm extends FormApplication {
                         }
                     }
                 }
-                
+
                 let currentIcon = normalizeNoteIconFlag(this.note.noteIcon);
                 if (!currentIcon) {
                     const imageSrc = extractFirstImageSrc(currentContent);

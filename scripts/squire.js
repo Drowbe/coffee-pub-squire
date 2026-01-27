@@ -9,6 +9,19 @@ import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
+import {
+    getDefaultNotePinDesign,
+    normalizeNoteIconFlag,
+    normalizePinShape,
+    normalizePinSize,
+    normalizePinStyle,
+    normalizePinTextColor,
+    normalizePinTextDisplay,
+    normalizePinTextLayout,
+    normalizePinTextMaxLength,
+    normalizePinTextScaleWithPin,
+    normalizePinTextSize
+} from './panel-notes.js';
 import { trackModuleTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
@@ -69,6 +82,96 @@ Hooks.once('ready', () => {
             version: MODULE.VERSION
         });
         // Module registered with Blacksmith successfully
+
+        Hooks.on('blacksmith.pins.updated', async ({ pinId, sceneId, moduleId, pin }) => {
+            if (moduleId !== MODULE.ID) return;
+            const noteUuid = pin?.config?.noteUuid;
+            if (!noteUuid) return;
+
+            const page = await foundry.utils.fromUuid(noteUuid);
+            if (!page) return;
+            if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                return;
+            }
+
+            if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
+                await page.setFlag(MODULE.ID, 'pinId', pinId);
+            }
+            if (sceneId && page.getFlag(MODULE.ID, 'sceneId') !== sceneId) {
+                await page.setFlag(MODULE.ID, 'sceneId', sceneId);
+            }
+
+            const defaultDesign = getDefaultNotePinDesign();
+            const icon = pin?.image ? normalizeNoteIconFlag(pin.image) : null;
+
+            if (pin?.x !== undefined && page.getFlag(MODULE.ID, 'x') !== pin.x) {
+                await page.setFlag(MODULE.ID, 'x', pin.x);
+            }
+            if (pin?.y !== undefined && page.getFlag(MODULE.ID, 'y') !== pin.y) {
+                await page.setFlag(MODULE.ID, 'y', pin.y);
+            }
+
+            await page.setFlag(MODULE.ID, 'noteIcon', icon || null);
+            await page.setFlag(MODULE.ID, 'notePinSize', normalizePinSize(pin?.size) || defaultDesign.size);
+            await page.setFlag(MODULE.ID, 'notePinShape', normalizePinShape(pin?.shape) || defaultDesign.shape);
+            await page.setFlag(MODULE.ID, 'notePinStyle', normalizePinStyle(pin?.style) || defaultDesign.style);
+            await page.setFlag(MODULE.ID, 'notePinDropShadow', typeof pin?.dropShadow === 'boolean' ? pin.dropShadow : defaultDesign.dropShadow);
+            await page.setFlag(MODULE.ID, 'notePinTextLayout', normalizePinTextLayout(pin?.textLayout) || defaultDesign.textLayout);
+            await page.setFlag(MODULE.ID, 'notePinTextDisplay', normalizePinTextDisplay(pin?.textDisplay) || defaultDesign.textDisplay);
+            await page.setFlag(MODULE.ID, 'notePinTextColor', normalizePinTextColor(pin?.textColor) || defaultDesign.textColor);
+            await page.setFlag(MODULE.ID, 'notePinTextSize', normalizePinTextSize(pin?.textSize) || defaultDesign.textSize);
+            await page.setFlag(MODULE.ID, 'notePinTextMaxLength', normalizePinTextMaxLength(pin?.textMaxLength) ?? defaultDesign.textMaxLength);
+            await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pin?.textScaleWithPin) ?? defaultDesign.textScaleWithPin);
+
+            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+            if (panelManager?.notesPanel && panelManager.element) {
+                await panelManager.notesPanel._refreshData();
+                panelManager.notesPanel.render(panelManager.element);
+            }
+        });
+
+        Hooks.on('blacksmith.pins.deleted', async ({ pinId, sceneId, moduleId, pin, config }) => {
+            if (moduleId !== MODULE.ID) return;
+            const noteUuid = config?.noteUuid || pin?.config?.noteUuid;
+            if (!noteUuid) return;
+
+            const page = await foundry.utils.fromUuid(noteUuid);
+            if (!page) return;
+            if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                return;
+            }
+
+            if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
+                return;
+            }
+
+            await page.setFlag(MODULE.ID, 'pinId', null);
+            await page.setFlag(MODULE.ID, 'sceneId', null);
+            await page.setFlag(MODULE.ID, 'x', null);
+            await page.setFlag(MODULE.ID, 'y', null);
+
+            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+            if (panelManager?.notesPanel && panelManager.element) {
+                await panelManager.notesPanel._refreshData();
+                panelManager.notesPanel.render(panelManager.element);
+            }
+        });
+
+        Hooks.on('blacksmith.pins.deletedAll', async ({ moduleId }) => {
+            if (moduleId && moduleId !== MODULE.ID) return;
+            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+            if (panelManager?.notesPanel && panelManager.element) {
+                await panelManager.notesPanel._cleanupMissingPins();
+            }
+        });
+
+        Hooks.on('blacksmith.pins.deletedAllByType', async ({ moduleId }) => {
+            if (moduleId && moduleId !== MODULE.ID) return;
+            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+            if (panelManager?.notesPanel && panelManager.element) {
+                await panelManager.notesPanel._cleanupMissingPins();
+            }
+        });
         
         // Register all hooks after Blacksmith is ready
         const renderActorSheet5eHookId = BlacksmithHookManager.registerHook({

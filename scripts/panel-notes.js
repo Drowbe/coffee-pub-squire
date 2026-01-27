@@ -999,73 +999,6 @@ function registerNotePinContextMenuItems(pins) {
         form.render(true);
     };
 
-    const configureHandler = async (pinData) => {
-        const noteUuid = pinData?.config?.noteUuid;
-        if (!noteUuid) return;
-        const page = await foundry.utils.fromUuid(noteUuid);
-        if (!page) {
-            ui.notifications.error('Note not found.');
-            return;
-        }
-        const pinSceneId = pinData?.sceneId || pinData?.scene || null;
-        if (pinSceneId && page.getFlag(MODULE.ID, 'sceneId') !== pinSceneId) {
-            await page.setFlag(MODULE.ID, 'sceneId', pinSceneId);
-        }
-        if (pinData?.id && page.getFlag(MODULE.ID, 'pinId') !== pinData.id) {
-            await page.setFlag(MODULE.ID, 'pinId', pinData.id);
-        }
-
-        if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-            ui.notifications.warn('You do not have permission to configure this note.');
-            return;
-        }
-
-        let currentIcon = normalizeNoteIconFlag(page.getFlag(MODULE.ID, 'noteIcon'));
-        if (!currentIcon) {
-            const imageSrc = extractFirstImageSrc(page.text?.content || '');
-            if (imageSrc) {
-                currentIcon = { type: 'img', value: imageSrc };
-            }
-        }
-
-        const picker = new NoteIconPicker(currentIcon, {
-            pinSize: getNotePinSizeForPage(page),
-            pinStyle: page.getFlag(MODULE.ID, 'notePinStyle'),
-            pinShape: getNotePinShapeForPage(page),
-            pinDropShadow: getNotePinDropShadowForPage(page),
-            pinTextConfig: {
-                textLayout: getNotePinTextLayoutForPage(page),
-                textDisplay: getNotePinTextDisplayForPage(page),
-                textColor: getNotePinTextColorForPage(page),
-                textSize: getNotePinTextSizeForPage(page),
-                textMaxLength: getNotePinTextMaxLengthForPage(page),
-                textScaleWithPin: getNotePinTextScaleWithPinForPage(page)
-            },
-            onSelect: async ({ icon, pinSize, pinShape, pinStyle, pinDropShadow, pinTextConfig }) => {
-                await page.setFlag(MODULE.ID, 'noteIcon', icon || null);
-                await page.setFlag(MODULE.ID, 'notePinSize', normalizePinSize(pinSize) || getDefaultNotePinDesign().size);
-                await page.setFlag(MODULE.ID, 'notePinShape', normalizePinShape(pinShape) || getDefaultNotePinDesign().shape);
-                await page.setFlag(MODULE.ID, 'notePinStyle', normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style);
-                await page.setFlag(MODULE.ID, 'notePinDropShadow', typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow);
-                await page.setFlag(MODULE.ID, 'notePinTextLayout', normalizePinTextLayout(pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout);
-                await page.setFlag(MODULE.ID, 'notePinTextDisplay', normalizePinTextDisplay(pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay);
-                await page.setFlag(MODULE.ID, 'notePinTextColor', normalizePinTextColor(pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor);
-                await page.setFlag(MODULE.ID, 'notePinTextSize', normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize);
-                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength);
-                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin);
-
-                await updateNotePinForPage(page);
-
-                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                if (panelManager?.notesPanel && panelManager.element) {
-                    await panelManager.notesPanel._refreshData();
-                    panelManager.notesPanel.render(panelManager.element);
-                }
-            }
-        });
-        picker.render(true);
-    };
-
     const deleteHandler = async (pinData) => {
         const noteUuid = pinData?.config?.noteUuid;
         if (!noteUuid) return;
@@ -1082,7 +1015,7 @@ function registerNotePinContextMenuItems(pins) {
 
         const confirmed = await Dialog.confirm({
             title: 'Delete Note',
-            content: '<p>Delete this note and its pin?</p>',
+            content: '<p>Delete this note?</p>',
             yes: () => true,
             no: () => false,
             defaultYes: false
@@ -1114,15 +1047,8 @@ function registerNotePinContextMenuItems(pins) {
             order: 20,
             onClick: makeOpenHandler(false)
         }),
-        pins.registerContextMenuItem(`${MODULE.ID}-configure-pin`, {
-            name: 'Configure Pin',
-            icon: '<i class="fa-solid fa-gear"></i>',
-            moduleId: MODULE.ID,
-            order: 30,
-            onClick: configureHandler
-        }),
         pins.registerContextMenuItem(`${MODULE.ID}-delete-note`, {
-            name: 'Delete Pin and Note',
+            name: 'Delete Note',
             icon: '<i class="fa-solid fa-trash"></i>',
             moduleId: MODULE.ID,
             order: 40,
