@@ -30,9 +30,15 @@ import {
     normalizePinTextSize,
     normalizePinTextMaxLength,
     normalizePinTextScaleWithPin,
+    requestGmCreateNotePin,
     NoteIconPicker,
     extractFirstImageSrc
 } from './panel-notes.js';
+
+function isPermissionDeniedError(error) {
+    const message = String(error?.message || error || '').toLowerCase();
+    return message.includes('permission denied');
+}
 
 /**
  * NotesForm - Lightweight form for quick note capture
@@ -498,7 +504,23 @@ export class NotesForm extends FormApplication {
                     }
                 } catch (error) {
                     const message = String(error?.message || error || '');
-                    if (message.toLowerCase().includes('permission denied')) {
+                    if (!game.user.isGM && isPermissionDeniedError(error)) {
+                        try {
+                            const response = await requestGmCreateNotePin({
+                                page,
+                                sceneId: formData.sceneId,
+                                x: parseFloat(formData.x),
+                                y: parseFloat(formData.y)
+                            });
+                            if (response?.pinId) {
+                                await page.setFlag(MODULE.ID, 'pinId', response.pinId);
+                            }
+                            ui.notifications.info('Pin creation sent to GM. It should appear shortly.');
+                        } catch (socketError) {
+                            const socketMessage = String(socketError?.message || socketError || '');
+                            ui.notifications.error(`Failed to create pin: ${socketMessage}`);
+                        }
+                    } else if (message.toLowerCase().includes('permission denied')) {
                         // Check if user has permission on the page
                         const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
                         if (hasPagePermission) {

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Note pin placement cursor behavior and pin preview alignment.
 - Notes view mode layout to keep content scrollable above tags.
 - Removed duplicate note pin text scale writes during pin configuration and note icon updates.
+- Player pin placement now routes through a GM socket when direct pin creation is denied.
 
 ## [13.1.0] - Sticky Notes
 

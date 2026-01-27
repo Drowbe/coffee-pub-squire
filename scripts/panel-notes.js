@@ -24,6 +24,11 @@ function getPinsApi() {
     return blacksmith?.pins || null;
 }
 
+function isPermissionDeniedError(error) {
+    const message = String(error?.message || error || '').toLowerCase();
+    return message.includes('permission denied');
+}
+
 function isPinsApiAvailable(pins) {
     if (!pins) return false;
     if (typeof pins.isAvailable === 'function') {
@@ -238,6 +243,22 @@ let notePinHandlerController = null;
 let notePinContextMenuRegistered = false;
 let notePinContextMenuDisposers = [];
 let notePinSceneSyncHookId = null;
+
+export async function requestGmCreateNotePin({ page, sceneId, x, y }) {
+    const blacksmith = getBlacksmith();
+    if (!blacksmith?.sockets?.emit) {
+        throw new Error('Socket manager is not ready.');
+    }
+    if (!page?.uuid) {
+        throw new Error('Note UUID is missing.');
+    }
+    return blacksmith.sockets.emit('squire:createNotePin', {
+        pageUuid: page.uuid,
+        sceneId,
+        x,
+        y
+    });
+}
 
 async function syncNotesForDeletedPins(sceneId) {
     const pins = getPinsApi();
@@ -2045,6 +2066,23 @@ export class NotesPanel {
             await page.setFlag(MODULE.ID, 'x', x);
             await page.setFlag(MODULE.ID, 'y', y);
         } catch (error) {
+            if (!game.user.isGM && isPermissionDeniedError(error)) {
+                try {
+                    const response = await requestGmCreateNotePin({ page, sceneId, x, y });
+                    if (response?.pinId) {
+                        await page.setFlag(MODULE.ID, 'pinId', response.pinId);
+                        await page.setFlag(MODULE.ID, 'sceneId', sceneId);
+                        await page.setFlag(MODULE.ID, 'x', x);
+                        await page.setFlag(MODULE.ID, 'y', y);
+                    }
+                    ui.notifications.info('Pin creation sent to GM. It should appear shortly.');
+                } catch (socketError) {
+                    const message = String(socketError?.message || socketError || '');
+                    ui.notifications.error(`Failed to create pin: ${message}`);
+                }
+                return;
+            }
+
             const message = String(error?.message || error || '');
             if (message.toLowerCase().includes('permission denied')) {
                 // Check if user has permission on the page

@@ -9,6 +9,7 @@ import { QuestParser } from './utility-quest-parser.js';
 import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
+import { createNotePinForPage } from './panel-notes.js';
 import { trackModuleTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
@@ -2005,6 +2006,42 @@ Hooks.once('ready', async function() {
         blacksmith.utils?.postConsoleAndNotification?.(
             MODULE.NAME,
             'Failed to register notes ownership socket handler',
+            { error },
+            true,
+            false
+        );
+    }
+
+    // Register socket handler for GM pin creation on notes
+    try {
+        await blacksmith.sockets?.register('squire:createNotePin', async (data) => {
+            if (!game.user.isGM) return null;
+            if (!data?.pageUuid) return { error: 'Note UUID missing.' };
+            const page = await foundry.utils.fromUuid(data.pageUuid);
+            if (!page) return { error: 'Note not found.' };
+
+            const sceneId = data.sceneId || canvas?.scene?.id;
+            if (!sceneId) return { error: 'Scene not available.' };
+
+            const x = Number(data.x);
+            const y = Number(data.y);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) {
+                return { error: 'Invalid pin coordinates.' };
+            }
+
+            const pinId = await createNotePinForPage(page, sceneId, x, y);
+            if (pinId) {
+                await page.setFlag(MODULE.ID, 'pinId', pinId);
+                await page.setFlag(MODULE.ID, 'sceneId', sceneId);
+                await page.setFlag(MODULE.ID, 'x', x);
+                await page.setFlag(MODULE.ID, 'y', y);
+            }
+            return { pinId };
+        });
+    } catch (error) {
+        blacksmith.utils?.postConsoleAndNotification?.(
+            MODULE.NAME,
+            'Failed to register note pin creation socket handler',
             { error },
             true,
             false
