@@ -31,6 +31,7 @@ import {
     normalizePinTextMaxLength,
     normalizePinTextScaleWithPin,
     requestGmCreateNotePin,
+    requestGmUpdateNotePin,
     NoteIconPicker,
     extractFirstImageSrc
 } from './panel-notes.js';
@@ -112,7 +113,7 @@ export class NotesForm extends FormApplication {
             this.options.title = 'New Note';
         }
 
-        // For existing notes, load the page document to enable collaborative editing
+        // For existing notes, load the page document so we can pull fresh content
         if (this.isEditing && this.pageUuid && !this.page) {
             try {
                 this.page = await foundry.utils.fromUuid(this.pageUuid);
@@ -134,21 +135,12 @@ export class NotesForm extends FormApplication {
                         const hasContentFieldAfter = hasTextObjectAfter && ('content' in this.page.text);
                         if (!hasTextObjectAfter || !hasContentFieldAfter) {
                             console.warn('Page text field not available or malformed, falling back to content string');
-                            this.page = null;
-                            // Reset object if page is invalid
-                            if (!this.page) {
-                                this.object = this.note;
-                            }
                         }
                     }
                 }
             } catch (error) {
                 console.error('Error loading page for editor:', error);
                 this.page = null;
-                // Reset object on error
-                if (!this.page) {
-                    this.object = this.note;
-                }
             }
         }
 
@@ -158,15 +150,19 @@ export class NotesForm extends FormApplication {
         // Extract pageContent first so we can use it for icon resolution
         let pageContent = this.note.content || '';
         if (this.isEditing && this.page) {
-            if (this.page.text && typeof this.page.text === 'object' && 'content' in this.page.text) {
-                if (typeof this.page.text.content === 'string') {
-                    pageContent = this.page.text.content;
-                } else if (this.page.text.content !== undefined) {
-                    pageContent = String(this.page.text.content || '');
+            const pageText = this.page.text;
+            if (typeof pageText === 'string') {
+                pageContent = pageText;
+            } else if (pageText && typeof pageText === 'object' && 'content' in pageText) {
+                if (typeof pageText.content === 'string') {
+                    pageContent = pageText.content;
+                } else if (pageText.content !== undefined) {
+                    pageContent = String(pageText.content || '');
                 }
             }
         }
         
+        this.note.content = pageContent;
         const iconHtml = this.note.iconHtml ||
             (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'window-note-header-image') : null) ||
             resolveNoteIconHtmlFromContent(pageContent, 'window-note-header-image');
@@ -189,33 +185,33 @@ export class NotesForm extends FormApplication {
         let usePageForEditor = false;
         
         if (this.isEditing && this.page) {
-            // Check if page.text exists and is a proper DocumentData field with content
-            // page.text should be an object (DocumentData) with a content property (can be empty string)
-            const hasTextObject = this.page?.text && typeof this.page.text === 'object';
-            const hasContentField = hasTextObject && ('content' in this.page.text);
-            
+            const pageText = this.page?.text;
+            const hasTextObject = pageText && typeof pageText === 'object';
+            const hasContentField = hasTextObject && ('content' in pageText);
             if (hasTextObject && hasContentField) {
-                // Ensure content exists and is a string (can be empty string, but must be defined and string)
-                // This prevents issues when toggling edit/view and re-rendering
-                const contentValue = this.page.text.content;
+                const contentValue = pageText.content;
                 if (contentValue !== undefined && contentValue !== null && typeof contentValue === 'string') {
                     usePageForEditor = true;
                 } else {
-                    // Content field exists but is undefined/null/not a string - fall back
                     console.warn('Page text.content is not a valid string, falling back to content string', {
                         type: typeof contentValue,
                         value: contentValue
                     });
-                    this.page = null;
                 }
-            } else {
-                // Page loaded but text field not available or wrong type - fall back to content
+            } else if (typeof pageText !== 'string') {
                 console.warn('Page text field not available or wrong type, using content string instead', {
-                    hasText: !!this.page.text,
-                    textType: typeof this.page.text
+                    hasText: !!pageText,
+                    textType: typeof pageText
                 });
-                this.page = null;
             }
+        }
+
+        // Collaborative editor requires the native JournalEntryPage sheet DOM.
+        // Disable it in this custom window to avoid ProseMirror step errors.
+        const allowCollabEditor = false;
+        usePageForEditor = usePageForEditor && allowCollabEditor;
+        if (!usePageForEditor) {
+            this.object = this.note;
         }
 
         // Track whether we're using collaborative editor for defensive save logic
@@ -430,7 +426,25 @@ export class NotesForm extends FormApplication {
                         await page.setFlag(MODULE.ID, 'authorId', authorId);
                     }
                     await this._syncNoteOwnership(page, visibility, authorId);
-                    await updateNotePinForPage(page);
+                    try {
+                        await updateNotePinForPage(page);
+                    } catch (error) {
+                        if (!game.user.isGM && isPermissionDeniedError(error)) {
+                            try {
+                                const response = await requestGmUpdateNotePin({ page });
+                                if (response?.error) {
+                                    ui.notifications.warn(`Note saved, but pin update failed: ${response.error}`);
+                                } else {
+                                    ui.notifications.info('Pin update sent to GM. It should appear shortly.');
+                                }
+                            } catch (socketError) {
+                                const socketMessage = String(socketError?.message || socketError || '');
+                                ui.notifications.warn(`Note saved, but pin update failed: ${socketMessage}`);
+                            }
+                        } else {
+                            throw error;
+                        }
+                    }
                 } catch (error) {
                     console.error('Error updating note:', error);
                     ui.notifications.error(`Failed to update note: ${error.message}`);
@@ -579,11 +593,16 @@ export class NotesForm extends FormApplication {
             const handler = () => {
                 // Get current content from page if available, otherwise use note content
                 let currentContent = this.note.content || '';
-                if (this.page && this.page.text && typeof this.page.text === 'object' && 'content' in this.page.text) {
-                    if (typeof this.page.text.content === 'string') {
-                        currentContent = this.page.text.content;
-                    } else if (this.page.text.content !== undefined) {
-                        currentContent = String(this.page.text.content || '');
+                if (this.page) {
+                    const pageText = this.page.text;
+                    if (typeof pageText === 'string') {
+                        currentContent = pageText;
+                    } else if (pageText && typeof pageText === 'object' && 'content' in pageText) {
+                        if (typeof pageText.content === 'string') {
+                            currentContent = pageText.content;
+                        } else if (pageText.content !== undefined) {
+                            currentContent = String(pageText.content || '');
+                        }
                     }
                 }
                 

@@ -260,6 +260,19 @@ export async function requestGmCreateNotePin({ page, sceneId, x, y }) {
     });
 }
 
+export async function requestGmUpdateNotePin({ page }) {
+    const blacksmith = getBlacksmith();
+    if (!blacksmith?.sockets?.emit) {
+        throw new Error('Socket manager is not ready.');
+    }
+    if (!page?.uuid) {
+        throw new Error('Note UUID is missing.');
+    }
+    return blacksmith.sockets.emit('squire:updateNotePin', {
+        pageUuid: page.uuid
+    });
+}
+
 async function syncNotesForDeletedPins(sceneId) {
     const pins = getPinsApi();
     if (!pins?.list || !sceneId) return;
