@@ -94,7 +94,6 @@ export const TEMPLATES = {
     PANEL_PARTY: `modules/${MODULE.ID}/templates/panel-party.hbs`,
     PANEL_PARTY_STATS: `modules/${MODULE.ID}/templates/panel-party-stats.hbs`,
     PANEL_NOTES: `modules/${MODULE.ID}/templates/panel-notes.hbs`,
-    NOTES_ICON_PICKER: `modules/${MODULE.ID}/templates/notes-icon-picker.hbs`,
     PANEL_CODEX: `modules/${MODULE.ID}/templates/panel-codex.hbs`,
     PANEL_QUEST: `modules/${MODULE.ID}/templates/panel-quest.hbs`,
     HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`,

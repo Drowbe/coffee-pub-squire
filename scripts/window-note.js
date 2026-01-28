@@ -30,9 +30,7 @@ import {
     normalizePinTextColor,
     normalizePinTextSize,
     normalizePinTextMaxLength,
-    normalizePinTextScaleWithPin,
-    NoteIconPicker,
-    extractFirstImageSrc
+    normalizePinTextScaleWithPin
 } from './panel-notes.js';
 
 function getPinsApi() {
@@ -613,83 +611,7 @@ export class NotesForm extends FormApplication {
                         return;
                     }
                 }
-
-                // Get current content from page if available, otherwise use note content
-                let currentContent = this.note.content || '';
-                if (this.page) {
-                    const pageText = this.page.text;
-                    if (typeof pageText === 'string') {
-                        currentContent = pageText;
-                    } else if (pageText && typeof pageText === 'object' && 'content' in pageText) {
-                        if (typeof pageText.content === 'string') {
-                            currentContent = pageText.content;
-                        } else if (pageText.content !== undefined) {
-                            currentContent = String(pageText.content || '');
-                        }
-                    }
-                }
-
-                let currentIcon = normalizeNoteIconFlag(this.note.noteIcon);
-                if (!currentIcon) {
-                    const imageSrc = extractFirstImageSrc(currentContent);
-                    if (imageSrc) {
-                        currentIcon = { type: 'img', value: imageSrc };
-                    }
-                }
-                const picker = new NoteIconPicker(currentIcon, {
-                    pinSize: this.note.notePinSize,
-                    pinStyle: this.note.notePinStyle,
-                    pinShape: this.note.notePinShape,
-                    pinDropShadow: this.note.notePinDropShadow,
-                    pinTextConfig: {
-                        textLayout: this.note.notePinTextLayout,
-                        textDisplay: this.note.notePinTextDisplay,
-                        textColor: this.note.notePinTextColor,
-                        textSize: this.note.notePinTextSize,
-                        textMaxLength: this.note.notePinTextMaxLength,
-                        textScaleWithPin: this.note.notePinTextScaleWithPin
-                    },
-                    onSelect: ({ icon, pinSize, pinStyle, pinShape, pinDropShadow, pinTextConfig }) => {
-                        this.note.noteIcon = icon;
-                        this.note.notePinSize = normalizePinSize(pinSize) || getDefaultNotePinDesign().size;
-                        this.note.notePinStyle = normalizePinStyle(pinStyle) || getDefaultNotePinDesign().style;
-                        this.note.notePinShape = normalizePinShape(pinShape) || getDefaultNotePinDesign().shape;
-                        this.note.notePinDropShadow = typeof pinDropShadow === 'boolean' ? pinDropShadow : getDefaultNotePinDesign().dropShadow;
-                        this.note.notePinTextLayout = normalizePinTextLayout(pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
-                        this.note.notePinTextDisplay = normalizePinTextDisplay(pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
-                        this.note.notePinTextColor = normalizePinTextColor(pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
-                        this.note.notePinTextSize = normalizePinTextSize(pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
-                        this.note.notePinTextMaxLength = normalizePinTextMaxLength(pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
-                        this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
-                        this.note.iconHtml = buildNoteIconHtml(icon, 'window-note-header-image');
-                        headerIcon.innerHTML = this.note.iconHtml;
-
-                        if (this.isEditing && this.pageUuid) {
-                            foundry.utils.fromUuid(this.pageUuid).then(async (page) => {
-                                if (!page) return;
-                                await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
-                                await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-                                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
-                                await updateNotePinForPage(page);
-
-                                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                                if (panelManager?.notesPanel && panelManager.element) {
-                                    await panelManager.notesPanel._refreshData();
-                                    panelManager.notesPanel.render(panelManager.element);
-                                }
-                            });
-                        }
-                    }
-                });
-                picker.render(true);
+                ui.notifications?.warn('Create a pin for this note before configuring its design.');
             };
             headerIcon.addEventListener('click', handler);
             this._eventHandlers.push({ element: headerIcon, event: 'click', handler });

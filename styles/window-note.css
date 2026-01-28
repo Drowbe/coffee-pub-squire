@@ -12,8 +12,7 @@
 /* ----- WINDOW STRUCTURE ----- */
 
 /* Window Container */
-#notes-quick-form,
-#notes-icon-picker {
+#notes-quick-form {
     background: var(--notes-background-color) !important;
     border: 1px solid var(--notes-border-color) !important;
     border-radius: 8px !important;
@@ -21,8 +20,7 @@
 }
 
 /* Window header */
-#notes-quick-form .window-header,
-#notes-icon-picker .window-header {
+#notes-quick-form .window-header {
     background: var(--notes-header-background) !important;
     border-bottom: 1px solid var(--notes-border-color) !important;
     color: var(--notes-accent-color) !important;
@@ -32,8 +30,7 @@
     line-height: 30px !important;
 }
 
-#notes-quick-form .window-header .window-title,
-#notes-icon-picker .window-header .window-title {
+#notes-quick-form .window-header .window-title {
     color: var(--notes-accent-color) !important;
     text-transform: uppercase !important;
     font-weight: bold !important;
@@ -41,22 +38,19 @@
     text-shadow: 1px 1px 0px #000 !important;
 }
 
-#notes-quick-form .window-header .header-button,
-#notes-icon-picker .window-header .header-button {
+#notes-quick-form .window-header .header-button {
     color: var(--notes-accent-color) !important;
     border: none !important;
     background: none !important;
 }
 
-#notes-quick-form .window-header .header-button:hover,
-#notes-icon-picker .window-header .header-button:hover {
+#notes-quick-form .window-header .header-button:hover {
     color: #fff !important;
     text-shadow: 0 0 8px var(--notes-accent-color) !important;
 }
 
 /* Window content */
-#notes-quick-form .window-content,
-#notes-icon-picker .window-content {
+#notes-quick-form .window-content {
     background: var(--notes-content-background) !important;
     padding: 0 !important;
     color: #e0e0e0 !important;
