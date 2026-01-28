@@ -8,6 +8,7 @@ import {
     resolveNoteIconHtmlFromContent,
     getDefaultNotePinDesign,
     buildNoteOwnership,
+    describePinsProxyError,
     syncNoteOwnership,
     createNotePinForPage,
     updateNotePinForPage,
@@ -497,6 +498,11 @@ export class NotesForm extends FormApplication {
                     }
                 } catch (error) {
                     const message = String(error?.message || error || '');
+                    const proxyMessage = describePinsProxyError(message);
+                    if (proxyMessage) {
+                        ui.notifications.error(proxyMessage);
+                        return false;
+                    }
                     if (message.toLowerCase().includes('permission denied')) {
                         const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
                         if (hasPagePermission) {

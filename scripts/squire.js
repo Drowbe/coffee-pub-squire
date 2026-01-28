@@ -73,6 +73,25 @@ function normalizePinImageForNoteIcon(image) {
     return normalizeNoteIconFlag(trimmed);
 }
 
+async function updateNoteFlagsIfChanged(page, updates) {
+    if (!page || !updates) return;
+    const changes = {};
+    const deepEqual = foundry?.utils?.deepEqual;
+    for (const [key, value] of Object.entries(updates)) {
+        const current = page.getFlag(MODULE.ID, key);
+        const isEqual = typeof deepEqual === 'function'
+            ? deepEqual(current, value)
+            : JSON.stringify(current) === JSON.stringify(value);
+        if (!isEqual) {
+            changes[key] = value;
+        }
+    }
+
+    if (Object.keys(changes).length) {
+        await page.update({ flags: { [MODULE.ID]: changes } });
+    }
+}
+
 function ensureSelectObjectsWrapper() {
     if (!canvas || typeof canvas.selectObjects !== 'function') {
         return;
@@ -117,34 +136,25 @@ Hooks.once('ready', () => {
                     return;
                 }
 
-                if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
-                    await page.setFlag(MODULE.ID, 'pinId', pinId);
-                }
-                if (sceneId && page.getFlag(MODULE.ID, 'sceneId') !== sceneId) {
-                    await page.setFlag(MODULE.ID, 'sceneId', sceneId);
-                }
-
                 const defaultDesign = getDefaultNotePinDesign();
                 const icon = normalizePinImageForNoteIcon(pin?.image);
-
-                if (pin?.x !== undefined && page.getFlag(MODULE.ID, 'x') !== pin.x) {
-                    await page.setFlag(MODULE.ID, 'x', pin.x);
-                }
-                if (pin?.y !== undefined && page.getFlag(MODULE.ID, 'y') !== pin.y) {
-                    await page.setFlag(MODULE.ID, 'y', pin.y);
-                }
-
-                await page.setFlag(MODULE.ID, 'noteIcon', icon || null);
-                await page.setFlag(MODULE.ID, 'notePinSize', normalizePinSize(pin?.size) || defaultDesign.size);
-                await page.setFlag(MODULE.ID, 'notePinShape', normalizePinShape(pin?.shape) || defaultDesign.shape);
-                await page.setFlag(MODULE.ID, 'notePinStyle', normalizePinStyle(pin?.style) || defaultDesign.style);
-                await page.setFlag(MODULE.ID, 'notePinDropShadow', typeof pin?.dropShadow === 'boolean' ? pin.dropShadow : defaultDesign.dropShadow);
-                await page.setFlag(MODULE.ID, 'notePinTextLayout', normalizePinTextLayout(pin?.textLayout) || defaultDesign.textLayout);
-                await page.setFlag(MODULE.ID, 'notePinTextDisplay', normalizePinTextDisplay(pin?.textDisplay) || defaultDesign.textDisplay);
-                await page.setFlag(MODULE.ID, 'notePinTextColor', normalizePinTextColor(pin?.textColor) || defaultDesign.textColor);
-                await page.setFlag(MODULE.ID, 'notePinTextSize', normalizePinTextSize(pin?.textSize) || defaultDesign.textSize);
-                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', normalizePinTextMaxLength(pin?.textMaxLength) ?? defaultDesign.textMaxLength);
-                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pin?.textScaleWithPin) ?? defaultDesign.textScaleWithPin);
+                await updateNoteFlagsIfChanged(page, {
+                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
+                    sceneId: sceneId ?? page.getFlag(MODULE.ID, 'sceneId'),
+                    x: pin?.x !== undefined ? pin.x : page.getFlag(MODULE.ID, 'x'),
+                    y: pin?.y !== undefined ? pin.y : page.getFlag(MODULE.ID, 'y'),
+                    noteIcon: icon || null,
+                    notePinSize: normalizePinSize(pin?.size) || defaultDesign.size,
+                    notePinShape: normalizePinShape(pin?.shape) || defaultDesign.shape,
+                    notePinStyle: normalizePinStyle(pin?.style) || defaultDesign.style,
+                    notePinDropShadow: typeof pin?.dropShadow === 'boolean' ? pin.dropShadow : defaultDesign.dropShadow,
+                    notePinTextLayout: normalizePinTextLayout(pin?.textLayout) || defaultDesign.textLayout,
+                    notePinTextDisplay: normalizePinTextDisplay(pin?.textDisplay) || defaultDesign.textDisplay,
+                    notePinTextColor: normalizePinTextColor(pin?.textColor) || defaultDesign.textColor,
+                    notePinTextSize: normalizePinTextSize(pin?.textSize) || defaultDesign.textSize,
+                    notePinTextMaxLength: normalizePinTextMaxLength(pin?.textMaxLength) ?? defaultDesign.textMaxLength,
+                    notePinTextScaleWithPin: normalizePinTextScaleWithPin(pin?.textScaleWithPin) ?? defaultDesign.textScaleWithPin
+                });
 
                 const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
                 if (panelManager?.notesPanel && panelManager.element) {
@@ -175,10 +185,12 @@ Hooks.once('ready', () => {
                     return;
                 }
 
-                await page.setFlag(MODULE.ID, 'pinId', null);
-                await page.setFlag(MODULE.ID, 'sceneId', null);
-                await page.setFlag(MODULE.ID, 'x', null);
-                await page.setFlag(MODULE.ID, 'y', null);
+                await updateNoteFlagsIfChanged(page, {
+                    pinId: null,
+                    sceneId: null,
+                    x: null,
+                    y: null
+                });
 
                 const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
                 if (panelManager?.notesPanel && panelManager.element) {

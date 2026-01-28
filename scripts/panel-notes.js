@@ -322,13 +322,46 @@ export function normalizeNoteIconFlag(iconFlag) {
             return null;
         }
         const type = trimmed.includes('fa-') ? 'fa' : 'img';
+        if (type === 'fa') {
+            return { type, value: normalizeFaClassList(trimmed) };
+        }
         return { type, value: trimmed };
     }
     if (typeof iconFlag === 'object') {
         const type = iconFlag.type || iconFlag.kind;
         const value = iconFlag.value || iconFlag.icon || iconFlag.src;
         if (type && value) {
+            if (type === 'fa') {
+                return { type, value: normalizeFaClassList(value) };
+            }
             return { type, value };
+        }
+    }
+    return null;
+}
+
+function normalizeFaClassList(value) {
+    if (typeof value !== 'string') return '';
+    const classMatch = value.trim().startsWith('<i')
+        ? value.match(/class=["']([^"']+)["']/i)?.[1]
+        : value;
+    const tokens = String(classMatch || '')
+        .split(/\s+/)
+        .map(token => token.trim())
+        .filter(Boolean);
+    const deduped = Array.from(new Set(tokens));
+    if (!deduped.some(token => token.startsWith('fa-') || token.startsWith('fa'))) {
+        return '';
+    }
+    return deduped.join(' ');
+}
+
+export function describePinsProxyError(message) {
+    const lowered = String(message || '').toLowerCase();
+    if (!lowered) return null;
+    if (lowered.includes('blacksmith-pins-gm-proxy') || lowered.includes('handler')) {
+        if (lowered.includes('refused') || lowered.includes('not registered')) {
+            return 'Failed to create pin: GM proxy not registered. Have the GM reload and ensure Blacksmith + SocketLib are active, then try again.';
         }
     }
     return null;
@@ -346,17 +379,11 @@ export function buildNoteIconHtml(iconData, imgClass = '') {
     if (!iconData) return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
     if (iconData.type === 'fa') {
         const rawValue = String(iconData.value || '');
-        let classValue = rawValue;
-        if (rawValue.trim().startsWith('<i')) {
-            const classMatch = rawValue.match(/class=["']([^"']+)["']/i);
-            if (classMatch?.[1]) {
-                classValue = classMatch[1];
-            }
-        }
-        if (!classValue.includes('fa-')) {
+        const classValue = normalizeFaClassList(rawValue);
+        if (!classValue) {
             return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
         }
-        return `<i class="fa-solid ${classValue}"></i>`;
+        return `<i class="${classValue}"></i>`;
     }
     const classAttr = imgClass ? ` class="${imgClass}"` : '';
     const src = normalizePinImageSource(iconData.value);
@@ -374,6 +401,21 @@ function normalizePinImageSource(value) {
     if (imgMatch?.[1]) return imgMatch[1];
     if (/^(https?:\/\/|\/|data:)/i.test(trimmed)) return trimmed;
     if (trimmed.startsWith('modules/')) return `/${trimmed}`;
+    return trimmed;
+}
+
+function normalizePinImageForCompare(value) {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('<img')) {
+        const imgMatch = trimmed.match(/src=["']([^"']+)["']/i);
+        return imgMatch?.[1] || '';
+    }
+    if (trimmed.startsWith('<i') && trimmed.includes('fa-')) {
+        const classMatch = trimmed.match(/class=["']([^"']+)["']/i);
+        return classMatch?.[1] || trimmed;
+    }
     return trimmed;
 }
 
@@ -403,17 +445,17 @@ function resolveNotePinImageValueFromPage(page) {
     if (iconFlag) {
         if (iconFlag.type === 'img') {
             const src = normalizePinImageSource(iconFlag.value);
-            return src ? `<img src="${src}">` : '';
+            return src || '';
         }
-        return buildNoteIconHtml(iconFlag);
+        return normalizeFaClassList(iconFlag.value);
     }
     const content = page?.text?.content || '';
     const imageSrc = extractFirstImageSrc(content);
     if (imageSrc) {
         const src = normalizePinImageSource(imageSrc);
-        return src ? `<img src="${src}">` : '';
+        return src || '';
     }
-    return buildNoteIconHtml(null);
+    return NOTE_PIN_ICON;
 }
 
 function focusNoteCardInDom(noteUuid) {
@@ -1296,6 +1338,32 @@ export async function updateNotePinForPage(page) {
             authorId: page.getFlag(MODULE.ID, 'authorId') || game.user.id
         }
     };
+
+    const existing = pins.get?.(pinId, { sceneId }) || null;
+    if (existing) {
+        const deepEqual = foundry?.utils?.deepEqual;
+        const normalizedExisting = {
+            ...existing,
+            image: normalizePinImageForCompare(existing.image)
+        };
+        const normalizedPatch = {
+            ...patch,
+            image: normalizePinImageForCompare(patch.image)
+        };
+        const keys = Object.keys(normalizedPatch);
+        const isDifferent = keys.some(key => {
+            const left = normalizedExisting[key];
+            const right = normalizedPatch[key];
+            if (typeof deepEqual === 'function') {
+                return !deepEqual(left, right);
+            }
+            return JSON.stringify(left) !== JSON.stringify(right);
+        });
+        if (!isDifferent) {
+            return;
+        }
+    }
+
     logPinPackage('UPDATE', { pinId, sceneId, ...patch });
 
     try {
@@ -1515,19 +1583,6 @@ export class NotesPanel {
                 const note = await NotesParser.parseSinglePage(page, enriched);
                 
                 if (note) {
-                    const storedIcon = page.getFlag(MODULE.ID, 'noteIcon');
-                    const normalizedIcon = normalizeNoteIconForStorage(storedIcon);
-                    if (page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                        if (normalizedIcon) {
-                            const storedSerialized = JSON.stringify(storedIcon ?? null);
-                            const normalizedSerialized = JSON.stringify(normalizedIcon);
-                            if (storedSerialized !== normalizedSerialized) {
-                                await page.setFlag(MODULE.ID, 'noteIcon', normalizedIcon);
-                            }
-                        } else if (storedIcon) {
-                            await page.setFlag(MODULE.ID, 'noteIcon', null);
-                        }
-                    }
                     // Ensure authorName is always set (fallback to user ID if name lookup failed)
                     if (!note.authorName && note.authorId) {
                         note.authorName = note.authorId;
@@ -2275,6 +2330,11 @@ export class NotesPanel {
             await page.setFlag(MODULE.ID, 'y', y);
         } catch (error) {
             const message = String(error?.message || error || '');
+            const proxyMessage = describePinsProxyError(message);
+            if (proxyMessage) {
+                ui.notifications.error(proxyMessage);
+                return;
+            }
             if (message.toLowerCase().includes('permission denied')) {
                 // Check if user has permission on the page
                 const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
