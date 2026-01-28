@@ -1275,6 +1275,13 @@ export class NotesPanel {
                 const note = await NotesParser.parseSinglePage(page, enriched);
                 
                 if (note) {
+                    if (!note.sceneId) {
+                        const storedSceneId = page.getFlag(MODULE.ID, 'sceneId');
+                        if (storedSceneId) {
+                            note.sceneId = storedSceneId;
+                            note.sceneName = game.scenes?.get(storedSceneId)?.name || note.sceneName || null;
+                        }
+                    }
                     // Ensure authorName is always set (fallback to user ID if name lookup failed)
                     if (!note.authorName && note.authorId) {
                         note.authorName = note.authorId;
@@ -1329,6 +1336,56 @@ export class NotesPanel {
 
         if (game.user.isGM && !this._suppressPinOwnershipSync) {
             await this._syncPinnedNotesOwnership();
+        }
+    }
+
+    _updateNoteCardPinState(page) {
+        if (!page) return;
+        const root = this.element;
+        if (!root) return;
+        const card = root.querySelector(`[data-note-uuid="${page.uuid}"]`);
+        if (!card) return;
+
+        const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+        const sceneName = sceneId ? (game.scenes?.get(sceneId)?.name || 'none') : null;
+        card.dataset.scene = sceneName || 'none';
+
+        const pinButton = card.querySelector('.note-pin, .note-unpin');
+        if (!pinButton) return;
+
+        if (sceneId) {
+            pinButton.classList.remove('note-pin');
+            pinButton.classList.add('note-unpin');
+            pinButton.title = 'Unpin from Canvas';
+            pinButton.innerHTML = '<i class="fa-solid fa-location-dot note-pin-icon note-pin-active"></i>';
+        } else {
+            pinButton.classList.remove('note-unpin');
+            pinButton.classList.add('note-pin');
+            pinButton.title = 'Pin to Canvas';
+            pinButton.innerHTML = '<i class="fa-solid fa-location-dot note-pin-icon note-pin-dim"></i>';
+        }
+
+        const locationEl = card.querySelector('.note-location-section');
+        if (sceneId) {
+            const pinId = page.getFlag(MODULE.ID, 'pinId') || '';
+            const label = sceneName || 'Scene';
+            if (locationEl) {
+                locationEl.dataset.pinId = pinId;
+                locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${label}`;
+            } else {
+                const footer = card.querySelector('.note-footer');
+                const newLocation = document.createElement('div');
+                newLocation.classList.add('note-location-section');
+                if (pinId) newLocation.dataset.pinId = pinId;
+                newLocation.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${label}`;
+                if (footer?.parentNode) {
+                    footer.parentNode.insertBefore(newLocation, footer.nextSibling);
+                } else {
+                    card.appendChild(newLocation);
+                }
+            }
+        } else if (locationEl) {
+            locationEl.remove();
         }
     }
 
@@ -1449,9 +1506,9 @@ export class NotesPanel {
         }
 
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        if (panelManager?.notesPanel && panelManager.element) {
-            await panelManager.notesPanel._refreshData();
-            panelManager.notesPanel.render(panelManager.element);
+        const targetElement = panelManager?.element || this.element;
+        if (targetElement) {
+            await this.render(targetElement);
         }
     }
 
@@ -1485,9 +1542,9 @@ export class NotesPanel {
         await this._cleanupMissingPins();
 
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        if (panelManager?.notesPanel && panelManager.element) {
-            await panelManager.notesPanel._refreshData();
-            panelManager.notesPanel.render(panelManager.element);
+        const targetElement = panelManager?.element || this.element;
+        if (targetElement) {
+            await this.render(targetElement);
         }
     }
 
@@ -1808,6 +1865,12 @@ export class NotesPanel {
                     return;
                 }
 
+                const pageSceneId = page.getFlag(MODULE.ID, 'sceneId');
+                if (!isUnpin && pageSceneId) {
+                    await this._unpinNote(page);
+                    return;
+                }
+
                 if (isUnpin) {
                     await this._unpinNote(page);
                     return;
@@ -2055,6 +2118,8 @@ export class NotesPanel {
             return;
         }
 
+        this._updateNoteCardPinState(page);
+
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (panelManager?.notesPanel && panelManager.element) {
             await panelManager.notesPanel._refreshData();
@@ -2071,6 +2136,8 @@ export class NotesPanel {
         await page.setFlag(MODULE.ID, 'sceneId', null);
         await page.setFlag(MODULE.ID, 'x', null);
         await page.setFlag(MODULE.ID, 'y', null);
+
+        this._updateNoteCardPinState(page);
 
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (panelManager?.notesPanel && panelManager.element) {
