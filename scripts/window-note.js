@@ -11,6 +11,7 @@ import {
     describePinsProxyError,
     syncNoteOwnership,
     createNotePinForPage,
+    deleteNotePinForPage,
     updateNotePinForPage,
     getNotePinSizeForNote,
     getNotePinShapeForNote,
@@ -58,6 +59,10 @@ export class NotesForm extends FormApplication {
         this._eventHandlers = [];
         this.page = null; // Store reference to page document for editor binding
         this.usingCollabEditor = false; // Track if we're using collaborative editor
+        this.isDraft = false;
+        this._draftCreating = false;
+        this._draftCreated = false;
+        this._didSubmit = false;
         
         // If options contain canvas location, pre-fill it
         if (options.sceneId) {
@@ -97,16 +102,20 @@ export class NotesForm extends FormApplication {
     }
     
     get title() {
-        if (!this.isEditing) return 'New Note';
+        if (this.isDraft || !this.isEditing) return 'New Note';
         return this.isEditMode ? 'Edit Note' : 'View Note';
     }
 
     async getData() {
+        if (!this.isEditing) {
+            await this._ensureDraftNote();
+        }
+
         // Update window title
-        if (this.isEditing) {
-            this.options.title = this.isEditMode ? 'Edit Note' : 'View Note';
-        } else {
+        if (this.isDraft || !this.isEditing) {
             this.options.title = 'New Note';
+        } else {
+            this.options.title = this.isEditMode ? 'Edit Note' : 'View Note';
         }
 
         // For existing notes, load the page document so we can pull fresh content
@@ -244,6 +253,135 @@ export class NotesForm extends FormApplication {
         };
     }
 
+    async _ensureDraftNote() {
+        if (this.isEditing || this._draftCreating || this._draftCreated) return;
+        this._draftCreating = true;
+
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') {
+            ui.notifications.error('No notes journal selected. Please select a journal in module settings.');
+            this._draftCreating = false;
+            return;
+        }
+
+        const journal = game.journal.get(journalId);
+        if (!journal) {
+            ui.notifications.error('Selected notes journal not found.');
+            this._draftCreating = false;
+            return;
+        }
+
+        if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {
+            ui.notifications.error('You do not have permission to create notes in this journal. Please contact your GM.');
+            this._draftCreating = false;
+            return;
+        }
+
+        const visibility = this.note?.visibility === 'party' ? 'party' : 'private';
+        const tags = Array.isArray(this.note?.tags) ? this.note.tags : [];
+        const sceneId = this.note?.sceneId || null;
+        const x = this.note?.x ?? null;
+        const y = this.note?.y ?? null;
+
+        const pageData = {
+            name: this.note?.title || 'Untitled Note',
+            type: 'text',
+            text: {
+                content: this.note?.content || ''
+            },
+            flags: {
+                [MODULE.ID]: {
+                    noteType: 'sticky',
+                    draft: true,
+                    tags,
+                    visibility,
+                    editorIds: [game.user.id],
+                    sceneId,
+                    x: x !== undefined && x !== '' ? x : null,
+                    y: y !== undefined && y !== '' ? y : null,
+                    noteIcon: this.note?.noteIcon || null,
+                    notePinSize: getNotePinSizeForNote(this.note),
+                    notePinShape: getNotePinShapeForNote(this.note),
+                    notePinStyle: getNotePinStyleForNote(this.note),
+                    notePinDropShadow: getNotePinDropShadowForNote(this.note),
+                    notePinTextLayout: getNotePinTextLayoutForNote(this.note),
+                    notePinTextDisplay: getNotePinTextDisplayForNote(this.note),
+                    notePinTextColor: getNotePinTextColorForNote(this.note),
+                    notePinTextSize: getNotePinTextSizeForNote(this.note),
+                    notePinTextMaxLength: getNotePinTextMaxLengthForNote(this.note),
+                    notePinTextScaleWithPin: getNotePinTextScaleWithPinForNote(this.note),
+                    authorId: game.user.id,
+                    timestamp: new Date().toISOString()
+                }
+            }
+        };
+
+        try {
+            const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+            if (!newPage) {
+                ui.notifications.error('Failed to create draft note.');
+                this._draftCreating = false;
+                return;
+            }
+
+            this.page = newPage;
+            this.pageUuid = newPage.uuid;
+            this.pageId = newPage.id;
+            this.note.pageUuid = newPage.uuid;
+            this.note.pageId = newPage.id;
+            this.object = newPage;
+            this.isEditing = true;
+            this.isDraft = true;
+            this.isViewMode = false;
+            this.isEditMode = true;
+
+            try {
+                const hasPlacement = !!sceneId && x !== null && y !== null;
+                const pinId = await createNotePinForPage(
+                    newPage,
+                    hasPlacement ? sceneId : undefined,
+                    hasPlacement ? x : undefined,
+                    hasPlacement ? y : undefined
+                );
+                if (pinId) {
+                    await newPage.setFlag(MODULE.ID, 'pinId', pinId);
+                    this.note.pinId = pinId;
+                }
+            } catch (error) {
+                const message = String(error?.message || error || '');
+                const proxyMessage = describePinsProxyError(message);
+                if (proxyMessage) {
+                    ui.notifications.error(proxyMessage);
+                } else {
+                    ui.notifications.warn('Draft note created, but pin creation failed.');
+                }
+            }
+        } catch (error) {
+            console.error('Error creating draft note:', error);
+            ui.notifications.error(`Failed to create draft note: ${error.message}`);
+        } finally {
+            this._draftCreated = true;
+            this._draftCreating = false;
+        }
+    }
+
+    async _deleteDraftNote() {
+        if (!this.isDraft || !this.pageUuid) return;
+        try {
+            const page = this.page || await foundry.utils.fromUuid(this.pageUuid);
+            if (page) {
+                try {
+                    await deleteNotePinForPage(page);
+                } catch (error) {
+                    console.warn('Failed to delete draft pin:', error);
+                }
+                await page.delete();
+            }
+        } catch (error) {
+            console.warn('Failed to delete draft note:', error);
+        }
+    }
+
     _getDefaultNote() {
         return {
             title: '',
@@ -251,7 +389,7 @@ export class NotesForm extends FormApplication {
             authorName: game.user?.name || 'Unknown',
             timestamp: null,
             tags: [],
-            visibility: 'party',
+            visibility: 'private',
             sceneId: null,
             x: null,
             y: null,
@@ -304,6 +442,13 @@ export class NotesForm extends FormApplication {
             game.settings.set(MODULE.ID, 'notesWindowPosition', { top, left, width, height });
         }
         return pos;
+    }
+
+    async close(options={}) {
+        if (this.isDraft && !this._didSubmit) {
+            await this._deleteDraftNote();
+        }
+        return super.close(options);
     }
 
     async _updateObject(event, formData) {
@@ -410,6 +555,10 @@ export class NotesForm extends FormApplication {
                         editorIds = [game.user.id];
                     }
                     await page.setFlag(MODULE.ID, 'editorIds', editorIds);
+                    if (this.isDraft) {
+                        await page.setFlag(MODULE.ID, 'draft', false);
+                        this.isDraft = false;
+                    }
                     if (formData.sceneId) {
                         await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
                         await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
@@ -515,6 +664,7 @@ export class NotesForm extends FormApplication {
             }
 
             ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
+            this._didSubmit = true;
             this.close();
             
             // Refresh notes panel if it exists

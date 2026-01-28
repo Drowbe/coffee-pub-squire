@@ -121,7 +121,7 @@ export function getDefaultNotePinDesign() {
         size: normalized || { ...NOTE_PIN_SIZE },
         lockProportions,
         shape: normalizePinShape(stored?.shape) || 'circle',
-        style: normalizePinStyle(stored?.style) || { stroke: '#ffffff', strokeWidth: 2 },
+        style: normalizePinStyle(stored?.style) || { fill: 'rgba(205, 200, 117, 0.9)', stroke: '#ffffff', strokeWidth: 2 },
         dropShadow: typeof stored?.dropShadow === 'boolean' ? stored.dropShadow : true,
         text: normalizePinText(stored?.text),
         textLayout: normalizePinTextLayout(stored?.textLayout) || 'under',
@@ -1244,6 +1244,10 @@ export class NotesPanel {
                 const noteType = page.getFlag(MODULE.ID, 'noteType');
                 if (noteType !== 'sticky') {
                     // Not a note, skip it
+                    continue;
+                }
+                const isDraft = page.getFlag(MODULE.ID, 'draft');
+                if (isDraft) {
                     continue;
                 }
 
