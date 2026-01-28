@@ -822,6 +822,12 @@ export async function createNotePinForPage(page, sceneId, x, y) {
 
         const existingPinId = page.getFlag(MODULE.ID, 'pinId');
         if (existingPinId) {
+            const pinExists = typeof pins.exists === 'function'
+                ? pins.exists(existingPinId)
+                : !!pins.get?.(existingPinId);
+            if (!pinExists) {
+                await page.setFlag(MODULE.ID, 'pinId', null);
+            } else {
             if (hasPlacement) {
                 const existingPin = pins.get?.(existingPinId) || null;
                 if (!existingPin?.sceneId && typeof pins.place === 'function') {
@@ -852,6 +858,7 @@ export async function createNotePinForPage(page, sceneId, x, y) {
             }
 
             return existingPinId;
+            }
         }
 
         const pinPayload = {

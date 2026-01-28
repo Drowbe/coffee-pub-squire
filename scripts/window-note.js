@@ -555,13 +555,36 @@ export class NotesForm extends FormApplication {
         }
 
         const headerIcon = nativeHtml.querySelector('.window-note-header-icon');
-        if (headerIcon && this.isEditMode) {
+        if (headerIcon) {
             const handler = async () => {
                 const pins = getPinsApi();
                 let pinId = this.note?.pinId || this.page?.getFlag?.(MODULE.ID, 'pinId') || null;
                 const sceneId = this.note?.sceneId || this.page?.getFlag?.(MODULE.ID, 'sceneId') || null;
 
                 if (pins?.configure) {
+                    const pinExists = pinId && (typeof pins.exists === 'function' ? pins.exists(pinId) : !!pins.get?.(pinId));
+                    if (pinId && !pinExists && this.page) {
+                        const recoveryPins = [];
+                        if (typeof pins.list === 'function') {
+                            if (sceneId) {
+                                recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, sceneId }) || []));
+                            }
+                            recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || []));
+                        }
+                        const recovered = recoveryPins.find(candidate => candidate?.config?.noteUuid === this.page.uuid);
+                        if (recovered?.id) {
+                            pinId = recovered.id;
+                            await this.page.setFlag(MODULE.ID, 'pinId', recovered.id);
+                            if (recovered.sceneId) {
+                                await this.page.setFlag(MODULE.ID, 'sceneId', recovered.sceneId);
+                                await this.page.setFlag(MODULE.ID, 'x', typeof recovered.x === 'number' ? recovered.x : null);
+                                await this.page.setFlag(MODULE.ID, 'y', typeof recovered.y === 'number' ? recovered.y : null);
+                            }
+                        } else {
+                            await this.page.setFlag(MODULE.ID, 'pinId', null);
+                            pinId = null;
+                        }
+                    }
                     if (!pinId && this.page) {
                         try {
                             const createdPinId = await createNotePinForPage(this.page);
@@ -578,6 +601,13 @@ export class NotesForm extends FormApplication {
                 }
 
                 if (pins?.configure && pinId) {
+                    const verifiedPin = typeof pins.get === 'function'
+                        ? pins.get(pinId)
+                        : (typeof pins.exists === 'function' ? (pins.exists(pinId) ? pinId : null) : pinId);
+                    if (!verifiedPin) {
+                        ui.notifications.error('Pin not found. This looks like a pins API issue with unplaced pins. Try refreshing or placing the pin once on a scene.');
+                        return;
+                    }
                     try {
                         await pins.configure(pinId, {
                             sceneId: sceneId || undefined,
@@ -622,6 +652,63 @@ export class NotesForm extends FormApplication {
                         });
                         return;
                     } catch (error) {
+                        const message = String(error?.message || error || '');
+                        const isNotFound = message.toLowerCase().includes('pin not found');
+                        if (isNotFound && this.page) {
+                            try {
+                                await this.page.setFlag(MODULE.ID, 'pinId', null);
+                                const recreatedId = await createNotePinForPage(this.page);
+                                if (recreatedId) {
+                                    pinId = recreatedId;
+                                    await this.page.setFlag(MODULE.ID, 'pinId', recreatedId);
+                                    await pins.configure(recreatedId, {
+                                        sceneId: sceneId || undefined,
+                                        onSelect: async (config) => {
+                                            const icon = config?.icon || null;
+                                            this.note.noteIcon = icon;
+                                            this.note.notePinSize = normalizePinSize(config?.pinSize) || getDefaultNotePinDesign().size;
+                                            this.note.notePinStyle = normalizePinStyle(config?.pinStyle) || getDefaultNotePinDesign().style;
+                                            this.note.notePinShape = normalizePinShape(config?.pinShape) || getDefaultNotePinDesign().shape;
+                                            this.note.notePinDropShadow = typeof config?.pinDropShadow === 'boolean' ? config.pinDropShadow : getDefaultNotePinDesign().dropShadow;
+                                            this.note.notePinTextLayout = normalizePinTextLayout(config?.pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
+                                            this.note.notePinTextDisplay = normalizePinTextDisplay(config?.pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
+                                            this.note.notePinTextColor = normalizePinTextColor(config?.pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
+                                            this.note.notePinTextSize = normalizePinTextSize(config?.pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
+                                            this.note.notePinTextMaxLength = normalizePinTextMaxLength(config?.pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
+                                            this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(config?.pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
+                                            this.note.iconHtml = buildNoteIconHtml(icon, 'window-note-header-image');
+                                            headerIcon.innerHTML = this.note.iconHtml;
+
+                                            if (this.isEditing && this.pageUuid) {
+                                                const page = await foundry.utils.fromUuid(this.pageUuid);
+                                                if (!page) return;
+                                                await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
+                                                await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
+                                                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
+
+                                                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                                                if (panelManager?.notesPanel && panelManager.element) {
+                                                    await panelManager.notesPanel._refreshData();
+                                                    panelManager.notesPanel.render(panelManager.element);
+                                                }
+                                            }
+                                        }
+                                    });
+                                    return;
+                                }
+                            } catch (retryError) {
+                                console.error('Failed to recover from missing pin:', retryError);
+                            }
+                        }
+
                         console.error('Failed to open pin configuration window:', error);
                         ui.notifications.error('Failed to open pin configuration window.');
                         return;
