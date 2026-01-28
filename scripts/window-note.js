@@ -63,6 +63,7 @@ export class NotesForm extends FormApplication {
         this._draftCreating = false;
         this._draftCreated = false;
         this._didSubmit = false;
+        this._placeAfterSave = false;
         
         // If options contain canvas location, pre-fill it
         if (options.sceneId) {
@@ -655,9 +656,21 @@ export class NotesForm extends FormApplication {
                 }
             }
 
+            const shouldPlace = this._placeAfterSave;
+            this._placeAfterSave = false;
             ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
             this._didSubmit = true;
-            this.close();
+            await this.close();
+
+            if (shouldPlace && page) {
+                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                const notesPanel = panelManager?.notesPanel;
+                if (notesPanel?._beginNotePinPlacement) {
+                    await notesPanel._beginNotePinPlacement(page);
+                } else {
+                    ui.notifications.warn('Unable to place pin: Notes panel not available.');
+                }
+            }
             
             // Refresh notes panel if it exists
             const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
@@ -862,6 +875,7 @@ export class NotesForm extends FormApplication {
             this._eventHandlers.push({ element: headerIcon, event: 'click', handler });
         }
 
+
         const editToggle = nativeHtml.querySelector('#notes-edit-toggle');
         if (editToggle) {
             const handler = async (event) => {
@@ -940,8 +954,11 @@ export class NotesForm extends FormApplication {
     async _handleFormSubmit(event) {
         event.preventDefault();
         if (!this.isEditMode) return;
-        
+
         const form = event.target.closest('form') || event.target;
+        const submitter = event.submitter || form?.querySelector('button[type="submit"][data-place-pin=\"true\"]:focus');
+        this._placeAfterSave = submitter?.dataset?.placePin === 'true' || submitter?.name === 'placePin';
+
         if (this._saveEditor) {
             await this._saveEditor('content');
         } else if (this._saveEditors) {
@@ -949,12 +966,17 @@ export class NotesForm extends FormApplication {
         } else if (this.editors?.content?.save) {
             await this.editors.content.save();
         }
-        const formData = new FormData(form);
+        const formData = submitter && typeof FormData === 'function'
+            ? new FormData(form, submitter)
+            : new FormData(form);
         
         // Convert FormData to object
         const data = {};
         for (const [key, value] of formData.entries()) {
             data[key] = value;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'placePin')) {
+            this._placeAfterSave = String(data.placePin) === '1' || String(data.placePin).toLowerCase() === 'true';
         }
 
         const visibilityToggle = form.querySelector('#notes-visibility-private');

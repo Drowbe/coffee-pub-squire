@@ -262,6 +262,7 @@ async function syncNotesForDeletedPins(sceneId) {
 
     let changed = false;
     for (const page of pages) {
+        if (!page?.id || typeof page.getFlag !== 'function') continue;
         const pinId = page.getFlag(MODULE.ID, 'pinId');
         if (!pinId) continue;
         const pageSceneId = page.getFlag(MODULE.ID, 'sceneId');
@@ -504,7 +505,7 @@ function createPinPreviewElement(iconHtml, pinSize, pinStyle, pinShape, dropShad
 
 function getNotePinStyle() {
     return {
-        fill: '#000000',
+        fill: 'rgba(205, 200, 117, 0.9)',
         stroke: '#ffffff',
         strokeWidth: 2,
         alpha: 0.9

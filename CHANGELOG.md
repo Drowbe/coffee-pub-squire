@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.1.2]
+### Added
+- Notes now create a note + unplaced pin immediately on open (no draft hiding); "Untitled Note" behavior matches typical note apps.
+- Save-and-place flow in Notes window: **Save and Place Pin** launches the canvas placement cursor after save.
+- Quick Note tool registered in the Blacksmith menubar (left/general group).
+- Unplaced pin support across the notes system (create, update, delete, and configure without a scene).
+- Pins API hooks wired for create/place/unplace/update/delete to keep note flags in sync.
+
+### Changed
+- Notes pin workflow fully migrated to Blacksmith Pins API (create/update/delete/placement/ownership sync).
+- Note icon configuration uses Blacksmith `pins.configure()` (legacy NoteIconPicker removed).
+- Default note visibility set to **private**.
+- Default sticky note pin fill set to `rgba(205, 200, 117, 0.9)` when no user default is set.
+
+### Fixed
+- Pin configuration now works for unplaced pins (recovery + create-on-demand in note window).
+- Prevented pin ownership/visibility desyncs and improved unpin behavior using `unplace`.
+- Normalized note icon storage to avoid `fa-solid` spam and `<img>` 404s.
+- Reduced log spam and sync loops caused by pin updates.
+
 ## [13.1.1] 
 ### Added
 - Notes view mode with Edit toggle in the header (view/read-only vs edit).

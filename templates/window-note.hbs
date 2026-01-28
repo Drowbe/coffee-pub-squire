@@ -121,6 +121,11 @@
             <i class="fa-solid fa-times"></i> {{#if isEditMode}}Cancel{{else}}Close{{/if}}
         </button>
         {{#if isEditMode}}
+        {{#unless note.sceneId}}
+        <button type="submit" class="btn-secondary notes-save-place-pin" name="placePin" value="1" data-place-pin="true">
+            <i class="fa-solid fa-map-pin"></i> Save and Place Pin
+        </button>
+        {{/unless}}
         <button type="submit" class="btn-primary">
             <i class="fa-solid fa-save"></i> Save Note
         </button>
