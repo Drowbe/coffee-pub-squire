@@ -267,15 +267,24 @@ async function syncNotesForDeletedPins(sceneId) {
         const pageSceneId = page.getFlag(MODULE.ID, 'sceneId');
         if (pageSceneId && pageSceneId !== sceneId) continue;
 
-        const pinExists = typeof pins.exists === 'function'
+        const pinExistsOnScene = typeof pins.exists === 'function'
             ? pins.exists(pinId, { sceneId })
             : !!pins.get?.(pinId, { sceneId });
 
-        if (!pinExists) {
-            await page.setFlag(MODULE.ID, 'pinId', null);
-            await page.setFlag(MODULE.ID, 'sceneId', null);
-            await page.setFlag(MODULE.ID, 'x', null);
-            await page.setFlag(MODULE.ID, 'y', null);
+        if (!pinExistsOnScene) {
+            const pinExistsAnywhere = typeof pins.exists === 'function'
+                ? pins.exists(pinId)
+                : !!pins.get?.(pinId);
+            if (pinExistsAnywhere) {
+                await page.setFlag(MODULE.ID, 'sceneId', null);
+                await page.setFlag(MODULE.ID, 'x', null);
+                await page.setFlag(MODULE.ID, 'y', null);
+            } else {
+                await page.setFlag(MODULE.ID, 'pinId', null);
+                await page.setFlag(MODULE.ID, 'sceneId', null);
+                await page.setFlag(MODULE.ID, 'x', null);
+                await page.setFlag(MODULE.ID, 'y', null);
+            }
             changed = true;
         }
     }
@@ -806,14 +815,47 @@ export async function createNotePinForPage(page, sceneId, x, y) {
     }
 
     if (pins.create) {
-        if (typeof pins.whenReady === 'function') {
+        const hasPlacement = typeof sceneId === 'string' && Number.isFinite(x) && Number.isFinite(y);
+        if (hasPlacement && typeof pins.whenReady === 'function') {
             await pins.whenReady();
+        }
+
+        const existingPinId = page.getFlag(MODULE.ID, 'pinId');
+        if (existingPinId) {
+            if (hasPlacement) {
+                const existingPin = pins.get?.(existingPinId) || null;
+                if (!existingPin?.sceneId && typeof pins.place === 'function') {
+                    try {
+                        await pins.place(existingPinId, { sceneId, x, y });
+                    } catch (error) {
+                        if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
+                            await pins.requestGM('update', { sceneId, pinId: existingPinId, patch: { sceneId, x, y } });
+                        } else {
+                            throw error;
+                        }
+                    }
+                } else {
+                    try {
+                        await pins.update(existingPinId, { sceneId, x, y }, { sceneId });
+                    } catch (error) {
+                        if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
+                            await pins.requestGM('update', { sceneId, pinId: existingPinId, patch: { sceneId, x, y } });
+                        } else {
+                            throw error;
+                        }
+                    }
+                }
+
+                if (typeof pins.reload === 'function') {
+                    await pins.reload({ sceneId });
+                }
+            }
+
+            return existingPinId;
         }
 
         const pinPayload = {
             id: generateNotePinId(),
-            x,
-            y,
             moduleId: MODULE.ID,
             type: NOTE_PIN_TYPE,
             image: resolveNotePinImageValueFromPage(page),
@@ -835,23 +877,28 @@ export async function createNotePinForPage(page, sceneId, x, y) {
                 authorId: page.getFlag(MODULE.ID, 'authorId') || game.user.id
             }
         };
+        if (hasPlacement) {
+            pinPayload.x = x;
+            pinPayload.y = y;
+        }
         logPinPackage('CREATE', pinPayload);
 
         let pinData;
         try {
-            pinData = await pins.create(pinPayload, { sceneId });
+            pinData = await pins.create(pinPayload, hasPlacement ? { sceneId } : undefined);
         } catch (error) {
             if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
-                pinData = await pins.requestGM('create', {
-                    sceneId,
-                    payload: pinPayload
-                });
+                const gmParams = { payload: pinPayload };
+                if (hasPlacement) {
+                    gmParams.sceneId = sceneId;
+                }
+                pinData = await pins.requestGM('create', gmParams);
             } else {
                 throw error;
             }
         }
 
-        if (typeof pins.reload === 'function') {
+        if (hasPlacement && typeof pins.reload === 'function') {
             await pins.reload({ sceneId });
         }
 
@@ -867,13 +914,17 @@ export async function deleteNotePinForPage(page) {
 
     const pinId = page.getFlag(MODULE.ID, 'pinId');
     if (pins.delete) {
-        const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id;
+        const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id || undefined;
         const deletePin = async (id) => {
             try {
-                await pins.delete(id, { sceneId });
+                await pins.delete(id, sceneId ? { sceneId } : undefined);
             } catch (error) {
                 if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
-                    await pins.requestGM('delete', { sceneId, pinId: id });
+                    const gmParams = { pinId: id };
+                    if (sceneId) {
+                        gmParams.sceneId = sceneId;
+                    }
+                    await pins.requestGM('delete', gmParams);
                 } else {
                     throw error;
                 }
@@ -885,7 +936,10 @@ export async function deleteNotePinForPage(page) {
         } else if (pins.list) {
             const matches = pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, sceneId })
                 .filter(pin => pin?.config?.noteUuid === page.uuid);
-            for (const pin of matches) {
+            const unplacedMatches = pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, unplacedOnly: true })
+                .filter(pin => pin?.config?.noteUuid === page.uuid);
+            const allMatches = [...matches, ...unplacedMatches];
+            for (const pin of allMatches) {
                 if (pin?.id) {
                     await deletePin(pin.id);
                 }
@@ -897,6 +951,45 @@ export async function deleteNotePinForPage(page) {
     return;
 }
 
+export async function unplaceNotePinForPage(page) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+
+    const pinId = page.getFlag(MODULE.ID, 'pinId');
+    if (!pinId) return;
+    const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id || undefined;
+
+    if (typeof pins.unplace === 'function') {
+        try {
+            await pins.unplace(pinId);
+        } catch (error) {
+            if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
+                const gmParams = { pinId, patch: { unplace: true } };
+                if (sceneId) {
+                    gmParams.sceneId = sceneId;
+                }
+                await pins.requestGM('update', gmParams);
+            } else {
+                throw error;
+            }
+        }
+    } else if (typeof pins.update === 'function') {
+        try {
+            await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+        } catch (error) {
+            if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
+                const gmParams = { pinId, patch: { unplace: true } };
+                if (sceneId) {
+                    gmParams.sceneId = sceneId;
+                }
+                await pins.requestGM('update', gmParams);
+            } else {
+                throw error;
+            }
+        }
+    }
+}
+
 export async function updateNotePinForPage(page) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
@@ -904,15 +997,7 @@ export async function updateNotePinForPage(page) {
 
     const pinId = page.getFlag(MODULE.ID, 'pinId');
     if (!pinId) return;
-
-    let sceneId = page.getFlag(MODULE.ID, 'sceneId');
-    if (!sceneId && typeof pins.findScene === 'function') {
-        sceneId = pins.findScene(pinId);
-    }
-    if (!sceneId) {
-        sceneId = canvas?.scene?.id || null;
-    }
-    if (!sceneId) return;
+    const sceneId = page.getFlag(MODULE.ID, 'sceneId') || null;
 
     const patch = {
         image: resolveNotePinImageValueFromPage(page),
@@ -936,7 +1021,7 @@ export async function updateNotePinForPage(page) {
         }
     };
 
-    const existing = pins.get?.(pinId, { sceneId }) || null;
+    const existing = pins.get?.(pinId) || null;
     if (existing) {
         const deepEqual = foundry?.utils?.deepEqual;
         const normalizedExisting = {
@@ -966,14 +1051,14 @@ export async function updateNotePinForPage(page) {
     try {
         let updated;
         try {
-            updated = await pins.update(pinId, patch, { sceneId });
+            updated = await pins.update(pinId, patch, sceneId ? { sceneId } : undefined);
         } catch (error) {
             if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
-                updated = await pins.requestGM('update', {
-                    sceneId,
-                    pinId,
-                    patch
-                });
+                const gmParams = { pinId, patch };
+                if (sceneId) {
+                    gmParams.sceneId = sceneId;
+                }
+                updated = await pins.requestGM('update', gmParams);
             } else {
                 throw error;
             }
@@ -981,8 +1066,8 @@ export async function updateNotePinForPage(page) {
         if (updated === null) {
             const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
             const pinExists = typeof pins.exists === 'function'
-                ? pins.exists(pinId, { sceneId })
-                : !!pins.get?.(pinId, { sceneId });
+                ? pins.exists(pinId)
+                : !!pins.get?.(pinId);
 
             if (pinExists) {
                 if (typeof logger === 'function') {
@@ -1305,6 +1390,15 @@ export class NotesPanel {
             }
         }
 
+        const unplacedPins = pins.list ? (pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, unplacedOnly: true }) || []) : [];
+        for (const pin of unplacedPins) {
+            const noteUuid = pin?.config?.noteUuid;
+            if (!noteUuid) continue;
+            if (!pinIndex.has(noteUuid)) {
+                pinIndex.set(noteUuid, { pin, sceneId: null });
+            }
+        }
+
         for (const sceneId of sceneIds) {
             await syncNotesForDeletedPins(sceneId);
         }
@@ -1323,8 +1417,13 @@ export class NotesPanel {
             if (needsUpdate) {
                 await page.setFlag(MODULE.ID, 'pinId', pinId);
                 await page.setFlag(MODULE.ID, 'sceneId', sceneId);
-                await page.setFlag(MODULE.ID, 'x', typeof pin.x === 'number' ? pin.x : page.getFlag(MODULE.ID, 'x'));
-                await page.setFlag(MODULE.ID, 'y', typeof pin.y === 'number' ? pin.y : page.getFlag(MODULE.ID, 'y'));
+                if (sceneId) {
+                    await page.setFlag(MODULE.ID, 'x', typeof pin.x === 'number' ? pin.x : page.getFlag(MODULE.ID, 'x'));
+                    await page.setFlag(MODULE.ID, 'y', typeof pin.y === 'number' ? pin.y : page.getFlag(MODULE.ID, 'y'));
+                } else {
+                    await page.setFlag(MODULE.ID, 'x', null);
+                    await page.setFlag(MODULE.ID, 'y', null);
+                }
             }
         }
 
@@ -1955,14 +2054,13 @@ export class NotesPanel {
 
     async _unpinNote(page) {
         try {
-            await deleteNotePinForPage(page);
+            await unplaceNotePinForPage(page);
         } catch (error) {
         }
 
         await page.setFlag(MODULE.ID, 'sceneId', null);
         await page.setFlag(MODULE.ID, 'x', null);
         await page.setFlag(MODULE.ID, 'y', null);
-        await page.setFlag(MODULE.ID, 'pinId', null);
 
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (panelManager?.notesPanel && panelManager.element) {

@@ -481,15 +481,15 @@ export class NotesForm extends FormApplication {
                 await this._syncNoteOwnership(page, visibility, authorId);
             }
 
-            // If canvas location provided, register pin with Blacksmith (if available)
-            // Only for new notes (editing doesn't change pin location)
-            if (!this.isEditing && formData.sceneId && formData.x !== null && formData.y !== null) {
+            // Create pin data for new notes (unplaced by default; placed if scene coords provided)
+            if (!this.isEditing) {
                 try {
+                    const hasPlacement = !!formData.sceneId && formData.x !== null && formData.y !== null;
                     const pinId = await createNotePinForPage(
                         page,
-                        formData.sceneId,
-                        parseFloat(formData.x),
-                        parseFloat(formData.y)
+                        hasPlacement ? formData.sceneId : undefined,
+                        hasPlacement ? parseFloat(formData.x) : undefined,
+                        hasPlacement ? parseFloat(formData.y) : undefined
                     );
                     if (pinId) {
                         await page.setFlag(MODULE.ID, 'pinId', pinId);
@@ -558,8 +558,24 @@ export class NotesForm extends FormApplication {
         if (headerIcon && this.isEditMode) {
             const handler = async () => {
                 const pins = getPinsApi();
-                const pinId = this.note?.pinId || this.page?.getFlag?.(MODULE.ID, 'pinId') || null;
+                let pinId = this.note?.pinId || this.page?.getFlag?.(MODULE.ID, 'pinId') || null;
                 const sceneId = this.note?.sceneId || this.page?.getFlag?.(MODULE.ID, 'sceneId') || null;
+
+                if (pins?.configure) {
+                    if (!pinId && this.page) {
+                        try {
+                            const createdPinId = await createNotePinForPage(this.page);
+                            if (createdPinId) {
+                                pinId = createdPinId;
+                                await this.page.setFlag(MODULE.ID, 'pinId', createdPinId);
+                            }
+                        } catch (error) {
+                            console.error('Failed to create unplaced pin:', error);
+                            ui.notifications.error('Failed to create pin for this note.');
+                            return;
+                        }
+                    }
+                }
 
                 if (pins?.configure && pinId) {
                     try {

@@ -168,6 +168,102 @@ Hooks.once('ready', () => {
             }
         });
 
+        Hooks.on('blacksmith.pins.created', async ({ pinId, moduleId, pin, sceneId }) => {
+            if (moduleId !== MODULE.ID) return;
+            const noteUuid = pin?.config?.noteUuid;
+            if (!noteUuid) return;
+
+            suppressNotesPanelRoute = true;
+            try {
+                const page = await foundry.utils.fromUuid(noteUuid);
+                if (!page) return;
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                    return;
+                }
+
+                await updateNoteFlagsIfChanged(page, {
+                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
+                    sceneId: sceneId ?? null,
+                    x: pin?.x ?? null,
+                    y: pin?.y ?? null
+                });
+
+                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                if (panelManager?.notesPanel && panelManager.element) {
+                    panelManager.notesPanel._suppressPinOwnershipSync = true;
+                    await panelManager.notesPanel._refreshData();
+                    panelManager.notesPanel.render(panelManager.element);
+                    panelManager.notesPanel._suppressPinOwnershipSync = false;
+                }
+            } finally {
+                suppressNotesPanelRoute = false;
+            }
+        });
+
+        Hooks.on('blacksmith.pins.placed', async ({ pinId, sceneId, moduleId, pin }) => {
+            if (moduleId !== MODULE.ID) return;
+            const noteUuid = pin?.config?.noteUuid;
+            if (!noteUuid) return;
+
+            suppressNotesPanelRoute = true;
+            try {
+                const page = await foundry.utils.fromUuid(noteUuid);
+                if (!page) return;
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                    return;
+                }
+
+                await updateNoteFlagsIfChanged(page, {
+                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
+                    sceneId: sceneId ?? page.getFlag(MODULE.ID, 'sceneId'),
+                    x: pin?.x ?? page.getFlag(MODULE.ID, 'x'),
+                    y: pin?.y ?? page.getFlag(MODULE.ID, 'y')
+                });
+
+                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                if (panelManager?.notesPanel && panelManager.element) {
+                    panelManager.notesPanel._suppressPinOwnershipSync = true;
+                    await panelManager.notesPanel._refreshData();
+                    panelManager.notesPanel.render(panelManager.element);
+                    panelManager.notesPanel._suppressPinOwnershipSync = false;
+                }
+            } finally {
+                suppressNotesPanelRoute = false;
+            }
+        });
+
+        Hooks.on('blacksmith.pins.unplaced', async ({ pinId, moduleId, pin }) => {
+            if (moduleId !== MODULE.ID) return;
+            const noteUuid = pin?.config?.noteUuid;
+            if (!noteUuid) return;
+
+            suppressNotesPanelRoute = true;
+            try {
+                const page = await foundry.utils.fromUuid(noteUuid);
+                if (!page) return;
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                    return;
+                }
+
+                await updateNoteFlagsIfChanged(page, {
+                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
+                    sceneId: null,
+                    x: null,
+                    y: null
+                });
+
+                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                if (panelManager?.notesPanel && panelManager.element) {
+                    panelManager.notesPanel._suppressPinOwnershipSync = true;
+                    await panelManager.notesPanel._refreshData();
+                    panelManager.notesPanel.render(panelManager.element);
+                    panelManager.notesPanel._suppressPinOwnershipSync = false;
+                }
+            } finally {
+                suppressNotesPanelRoute = false;
+            }
+        });
+
         Hooks.on('blacksmith.pins.deleted', async ({ pinId, sceneId, moduleId, pin, config }) => {
             if (moduleId !== MODULE.ID) return;
             const noteUuid = config?.noteUuid || pin?.config?.noteUuid;
@@ -2238,6 +2334,41 @@ Hooks.once('ready', async function() {
         }
     } catch (error) {
         console.error('Coffee Pub Squire | Error registering macros with Blacksmith menubar:', error);
+    }
+
+    // Register quick note with Blacksmith menubar
+    try {
+        const openQuickNote = () => {
+            const form = new NotesForm(null, {});
+            form.render(true);
+        };
+
+        const success = blacksmith.registerMenubarTool('squire-quick-note', {
+            icon: "fa-solid fa-note-sticky",
+            name: "squire-quick-note",
+            title: "Quick Note",
+            tooltip: "Quick Note",
+            onClick: openQuickNote,
+            zone: "left",
+            group: "notes",
+            groupOrder: null,
+            order: 1,
+            moduleId: MODULE.ID,
+            gmOnly: false,
+            leaderOnly: false,
+            visible: true,
+            toggleable: false,
+            active: false,
+            iconColor: null,
+            buttonNormalTint: null,
+            buttonSelectedTint: null
+        });
+
+        if (!success) {
+            console.error('Coffee Pub Squire | Failed to register quick note with Blacksmith menubar');
+        }
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering quick note with Blacksmith menubar:', error);
     }
 
 
