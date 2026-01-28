@@ -244,6 +244,7 @@ let notePinHandlerController = null;
 let notePinContextMenuRegistered = false;
 let notePinContextMenuDisposers = [];
 let notePinSceneSyncHookId = null;
+let notePinOwnershipSyncActive = false;
 
 async function syncNotesForDeletedPins(sceneId) {
     if (!game.user?.isGM) return;
@@ -304,8 +305,24 @@ export function extractFirstImageSrc(content) {
 export function normalizeNoteIconFlag(iconFlag) {
     if (!iconFlag) return null;
     if (typeof iconFlag === 'string') {
-        const type = iconFlag.includes('fa-') ? 'fa' : 'img';
-        return { type, value: iconFlag };
+        const trimmed = iconFlag.trim();
+        if (!trimmed) return null;
+        if (trimmed.startsWith('<img')) {
+            const imgMatch = trimmed.match(/src=["']([^"']+)["']/i);
+            if (imgMatch?.[1]) {
+                return { type: 'img', value: imgMatch[1] };
+            }
+            return null;
+        }
+        if (trimmed.startsWith('<i') && trimmed.includes('fa-')) {
+            const classMatch = trimmed.match(/class=["']([^"']+)["']/i);
+            if (classMatch?.[1]) {
+                return { type: 'fa', value: classMatch[1] };
+            }
+            return null;
+        }
+        const type = trimmed.includes('fa-') ? 'fa' : 'img';
+        return { type, value: trimmed };
     }
     if (typeof iconFlag === 'object') {
         const type = iconFlag.type || iconFlag.kind;
@@ -317,13 +334,36 @@ export function normalizeNoteIconFlag(iconFlag) {
     return null;
 }
 
+function normalizeNoteIconForStorage(iconFlag) {
+    if (!iconFlag) return null;
+    if (typeof iconFlag === 'object' && iconFlag.type && iconFlag.value) {
+        return iconFlag;
+    }
+    return normalizeNoteIconFlag(iconFlag);
+}
+
 export function buildNoteIconHtml(iconData, imgClass = '') {
     if (!iconData) return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
     if (iconData.type === 'fa') {
-        return `<i class="fa-solid ${iconData.value}"></i>`;
+        const rawValue = String(iconData.value || '');
+        let classValue = rawValue;
+        if (rawValue.trim().startsWith('<i')) {
+            const classMatch = rawValue.match(/class=["']([^"']+)["']/i);
+            if (classMatch?.[1]) {
+                classValue = classMatch[1];
+            }
+        }
+        if (!classValue.includes('fa-')) {
+            return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
+        }
+        return `<i class="fa-solid ${classValue}"></i>`;
     }
     const classAttr = imgClass ? ` class="${imgClass}"` : '';
-    return `<img src="${iconData.value}"${classAttr}>`;
+    const src = normalizePinImageSource(iconData.value);
+    if (!src) {
+        return `<i class="fa-solid ${NOTE_PIN_ICON}"></i>`;
+    }
+    return `<img src="${src}"${classAttr}>`;
 }
 
 function normalizePinImageSource(value) {
@@ -1475,6 +1515,19 @@ export class NotesPanel {
                 const note = await NotesParser.parseSinglePage(page, enriched);
                 
                 if (note) {
+                    const storedIcon = page.getFlag(MODULE.ID, 'noteIcon');
+                    const normalizedIcon = normalizeNoteIconForStorage(storedIcon);
+                    if (page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                        if (normalizedIcon) {
+                            const storedSerialized = JSON.stringify(storedIcon ?? null);
+                            const normalizedSerialized = JSON.stringify(normalizedIcon);
+                            if (storedSerialized !== normalizedSerialized) {
+                                await page.setFlag(MODULE.ID, 'noteIcon', normalizedIcon);
+                            }
+                        } else if (storedIcon) {
+                            await page.setFlag(MODULE.ID, 'noteIcon', null);
+                        }
+                    }
                     // Ensure authorName is always set (fallback to user ID if name lookup failed)
                     if (!note.authorName && note.authorId) {
                         note.authorName = note.authorId;
@@ -1527,31 +1580,37 @@ export class NotesPanel {
             return new Date(b.timestamp) - new Date(a.timestamp);
         });
 
-        if (game.user.isGM) {
+        if (game.user.isGM && !this._suppressPinOwnershipSync) {
             await this._syncPinnedNotesOwnership();
         }
     }
 
     async _syncPinnedNotesOwnership() {
-        const pins = getPinsApi();
-        if (!isPinsApiAvailable(pins) || !pins?.update) return;
-        if (typeof pins.whenReady === 'function') {
-            await pins.whenReady();
-        }
+        if (notePinOwnershipSyncActive) return;
+        notePinOwnershipSyncActive = true;
+        try {
+            const pins = getPinsApi();
+            if (!isPinsApiAvailable(pins) || !pins?.update) return;
+            if (typeof pins.whenReady === 'function') {
+                await pins.whenReady();
+            }
 
-        let updated = 0;
-        for (const note of this.notes) {
-            if (!note?.uuid) continue;
-            const page = await foundry.utils.fromUuid(note.uuid);
-            if (!page) continue;
-            const pinId = page.getFlag(MODULE.ID, 'pinId');
-            const sceneId = page.getFlag(MODULE.ID, 'sceneId');
-            if (!pinId || !sceneId) continue;
-            await updateNotePinForPage(page);
-            updated += 1;
-        }
+            let updated = 0;
+            for (const note of this.notes) {
+                if (!note?.uuid) continue;
+                const page = await foundry.utils.fromUuid(note.uuid);
+                if (!page) continue;
+                const pinId = page.getFlag(MODULE.ID, 'pinId');
+                const sceneId = page.getFlag(MODULE.ID, 'sceneId');
+                if (!pinId || !sceneId) continue;
+                await updateNotePinForPage(page);
+                updated += 1;
+            }
 
-        if (updated > 0) {
+            if (updated > 0) {
+            }
+        } finally {
+            notePinOwnershipSyncActive = false;
         }
     }
 
@@ -1614,6 +1673,17 @@ export class NotesPanel {
                 await page.setFlag(MODULE.ID, 'sceneId', sceneId);
                 await page.setFlag(MODULE.ID, 'x', typeof pin.x === 'number' ? pin.x : page.getFlag(MODULE.ID, 'x'));
                 await page.setFlag(MODULE.ID, 'y', typeof pin.y === 'number' ? pin.y : page.getFlag(MODULE.ID, 'y'));
+            }
+        }
+
+        for (const page of journal.pages.contents) {
+            const storedIcon = page.getFlag(MODULE.ID, 'noteIcon');
+            const normalizedIcon = normalizeNoteIconForStorage(storedIcon);
+            if (!normalizedIcon) continue;
+            const storedSerialized = JSON.stringify(storedIcon ?? null);
+            const normalizedSerialized = JSON.stringify(normalizedIcon);
+            if (storedSerialized !== normalizedSerialized) {
+                await page.setFlag(MODULE.ID, 'noteIcon', normalizedIcon);
             }
         }
 

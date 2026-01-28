@@ -36,6 +36,7 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 let nativeSelectObjects = null;
 let wrappedSelectObjects = null;
 let selectionUpdateFrameId = null;
+let suppressNotesPanelRoute = false;
 
 function queueSelectionDisplayUpdate() {
     if (selectionUpdateFrameId !== null) {
@@ -50,6 +51,26 @@ function queueSelectionDisplayUpdate() {
             console.error('Coffee Pub Squire | Failed to update selection display:', error);
         }
     });
+}
+
+function normalizePinImageForNoteIcon(image) {
+    if (!image || typeof image !== 'string') return null;
+    const trimmed = image.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('<img')) {
+        const srcMatch = trimmed.match(/src=["']([^"']+)["']/i);
+        if (srcMatch?.[1]) {
+            return { type: 'img', value: srcMatch[1] };
+        }
+        return null;
+    }
+    if (trimmed.startsWith('<i') && trimmed.includes('fa-')) {
+        const classMatch = trimmed.match(/class=["']([^"']+)["']/i);
+        if (classMatch?.[1]) {
+            return { type: 'fa', value: classMatch[1] };
+        }
+    }
+    return normalizeNoteIconFlag(trimmed);
 }
 
 function ensureSelectObjectsWrapper() {
@@ -88,45 +109,52 @@ Hooks.once('ready', () => {
             const noteUuid = pin?.config?.noteUuid;
             if (!noteUuid) return;
 
-            const page = await foundry.utils.fromUuid(noteUuid);
-            if (!page) return;
-            if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                return;
-            }
+            suppressNotesPanelRoute = true;
+            try {
+                const page = await foundry.utils.fromUuid(noteUuid);
+                if (!page) return;
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                    return;
+                }
 
-            if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
-                await page.setFlag(MODULE.ID, 'pinId', pinId);
-            }
-            if (sceneId && page.getFlag(MODULE.ID, 'sceneId') !== sceneId) {
-                await page.setFlag(MODULE.ID, 'sceneId', sceneId);
-            }
+                if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
+                    await page.setFlag(MODULE.ID, 'pinId', pinId);
+                }
+                if (sceneId && page.getFlag(MODULE.ID, 'sceneId') !== sceneId) {
+                    await page.setFlag(MODULE.ID, 'sceneId', sceneId);
+                }
 
-            const defaultDesign = getDefaultNotePinDesign();
-            const icon = pin?.image ? normalizeNoteIconFlag(pin.image) : null;
+                const defaultDesign = getDefaultNotePinDesign();
+                const icon = normalizePinImageForNoteIcon(pin?.image);
 
-            if (pin?.x !== undefined && page.getFlag(MODULE.ID, 'x') !== pin.x) {
-                await page.setFlag(MODULE.ID, 'x', pin.x);
-            }
-            if (pin?.y !== undefined && page.getFlag(MODULE.ID, 'y') !== pin.y) {
-                await page.setFlag(MODULE.ID, 'y', pin.y);
-            }
+                if (pin?.x !== undefined && page.getFlag(MODULE.ID, 'x') !== pin.x) {
+                    await page.setFlag(MODULE.ID, 'x', pin.x);
+                }
+                if (pin?.y !== undefined && page.getFlag(MODULE.ID, 'y') !== pin.y) {
+                    await page.setFlag(MODULE.ID, 'y', pin.y);
+                }
 
-            await page.setFlag(MODULE.ID, 'noteIcon', icon || null);
-            await page.setFlag(MODULE.ID, 'notePinSize', normalizePinSize(pin?.size) || defaultDesign.size);
-            await page.setFlag(MODULE.ID, 'notePinShape', normalizePinShape(pin?.shape) || defaultDesign.shape);
-            await page.setFlag(MODULE.ID, 'notePinStyle', normalizePinStyle(pin?.style) || defaultDesign.style);
-            await page.setFlag(MODULE.ID, 'notePinDropShadow', typeof pin?.dropShadow === 'boolean' ? pin.dropShadow : defaultDesign.dropShadow);
-            await page.setFlag(MODULE.ID, 'notePinTextLayout', normalizePinTextLayout(pin?.textLayout) || defaultDesign.textLayout);
-            await page.setFlag(MODULE.ID, 'notePinTextDisplay', normalizePinTextDisplay(pin?.textDisplay) || defaultDesign.textDisplay);
-            await page.setFlag(MODULE.ID, 'notePinTextColor', normalizePinTextColor(pin?.textColor) || defaultDesign.textColor);
-            await page.setFlag(MODULE.ID, 'notePinTextSize', normalizePinTextSize(pin?.textSize) || defaultDesign.textSize);
-            await page.setFlag(MODULE.ID, 'notePinTextMaxLength', normalizePinTextMaxLength(pin?.textMaxLength) ?? defaultDesign.textMaxLength);
-            await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pin?.textScaleWithPin) ?? defaultDesign.textScaleWithPin);
+                await page.setFlag(MODULE.ID, 'noteIcon', icon || null);
+                await page.setFlag(MODULE.ID, 'notePinSize', normalizePinSize(pin?.size) || defaultDesign.size);
+                await page.setFlag(MODULE.ID, 'notePinShape', normalizePinShape(pin?.shape) || defaultDesign.shape);
+                await page.setFlag(MODULE.ID, 'notePinStyle', normalizePinStyle(pin?.style) || defaultDesign.style);
+                await page.setFlag(MODULE.ID, 'notePinDropShadow', typeof pin?.dropShadow === 'boolean' ? pin.dropShadow : defaultDesign.dropShadow);
+                await page.setFlag(MODULE.ID, 'notePinTextLayout', normalizePinTextLayout(pin?.textLayout) || defaultDesign.textLayout);
+                await page.setFlag(MODULE.ID, 'notePinTextDisplay', normalizePinTextDisplay(pin?.textDisplay) || defaultDesign.textDisplay);
+                await page.setFlag(MODULE.ID, 'notePinTextColor', normalizePinTextColor(pin?.textColor) || defaultDesign.textColor);
+                await page.setFlag(MODULE.ID, 'notePinTextSize', normalizePinTextSize(pin?.textSize) || defaultDesign.textSize);
+                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', normalizePinTextMaxLength(pin?.textMaxLength) ?? defaultDesign.textMaxLength);
+                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', normalizePinTextScaleWithPin(pin?.textScaleWithPin) ?? defaultDesign.textScaleWithPin);
 
-            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-            if (panelManager?.notesPanel && panelManager.element) {
-                await panelManager.notesPanel._refreshData();
-                panelManager.notesPanel.render(panelManager.element);
+                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                if (panelManager?.notesPanel && panelManager.element) {
+                    panelManager.notesPanel._suppressPinOwnershipSync = true;
+                    await panelManager.notesPanel._refreshData();
+                    panelManager.notesPanel.render(panelManager.element);
+                    panelManager.notesPanel._suppressPinOwnershipSync = false;
+                }
+            } finally {
+                suppressNotesPanelRoute = false;
             }
         });
 
@@ -135,25 +163,32 @@ Hooks.once('ready', () => {
             const noteUuid = config?.noteUuid || pin?.config?.noteUuid;
             if (!noteUuid) return;
 
-            const page = await foundry.utils.fromUuid(noteUuid);
-            if (!page) return;
-            if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                return;
-            }
+            suppressNotesPanelRoute = true;
+            try {
+                const page = await foundry.utils.fromUuid(noteUuid);
+                if (!page) return;
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                    return;
+                }
 
-            if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
-                return;
-            }
+                if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
+                    return;
+                }
 
-            await page.setFlag(MODULE.ID, 'pinId', null);
-            await page.setFlag(MODULE.ID, 'sceneId', null);
-            await page.setFlag(MODULE.ID, 'x', null);
-            await page.setFlag(MODULE.ID, 'y', null);
+                await page.setFlag(MODULE.ID, 'pinId', null);
+                await page.setFlag(MODULE.ID, 'sceneId', null);
+                await page.setFlag(MODULE.ID, 'x', null);
+                await page.setFlag(MODULE.ID, 'y', null);
 
-            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-            if (panelManager?.notesPanel && panelManager.element) {
-                await panelManager.notesPanel._refreshData();
-                panelManager.notesPanel.render(panelManager.element);
+                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+                if (panelManager?.notesPanel && panelManager.element) {
+                    panelManager.notesPanel._suppressPinOwnershipSync = true;
+                    await panelManager.notesPanel._refreshData();
+                    panelManager.notesPanel.render(panelManager.element);
+                    panelManager.notesPanel._suppressPinOwnershipSync = false;
+                }
+            } finally {
+                suppressNotesPanelRoute = false;
             }
         });
 
@@ -161,7 +196,11 @@ Hooks.once('ready', () => {
             if (moduleId && moduleId !== MODULE.ID) return;
             const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
             if (panelManager?.notesPanel && panelManager.element) {
+                suppressNotesPanelRoute = true;
+                panelManager.notesPanel._suppressPinOwnershipSync = true;
                 await panelManager.notesPanel._cleanupMissingPins();
+                panelManager.notesPanel._suppressPinOwnershipSync = false;
+                suppressNotesPanelRoute = false;
             }
         });
 
@@ -169,7 +208,11 @@ Hooks.once('ready', () => {
             if (moduleId && moduleId !== MODULE.ID) return;
             const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
             if (panelManager?.notesPanel && panelManager.element) {
+                suppressNotesPanelRoute = true;
+                panelManager.notesPanel._suppressPinOwnershipSync = true;
                 await panelManager.notesPanel._cleanupMissingPins();
+                panelManager.notesPanel._suppressPinOwnershipSync = false;
+                suppressNotesPanelRoute = false;
             }
         });
         
@@ -1212,6 +1255,7 @@ async function _routeToNotesPanel(page, changes, options, userId) {
     const panelManager = getPanelManager();
     const notesPanel = panelManager?.instance?.notesPanel;
     if (!notesPanel) return;
+    if (suppressNotesPanelRoute) return;
     
     try {
         // Check if this is a note (has noteType flag)
