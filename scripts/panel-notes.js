@@ -45,6 +45,10 @@ const NOTE_PIN_DEFAULT_SETTING = 'notesPinDefaultDesign';
 const NOTE_PIN_TYPE = 'coffee-pub-squire-sticky-notes';
 
 // Export helper functions for use in window-note.js
+export function getDefaultNoteIconFlag() {
+    return { type: 'fa', value: `fa-solid ${NOTE_PIN_ICON}` };
+}
+
 export function normalizePinSize(size) {
     const w = Number(size?.w);
     const h = Number(size?.h);
@@ -451,21 +455,19 @@ export function resolveNoteIconHtmlFromContent(content, imgClass = '') {
 }
 
 function resolveNotePinImageValueFromPage(page) {
-    const iconFlag = normalizeNoteIconFlag(page?.getFlag(MODULE.ID, 'noteIcon'));
-    if (iconFlag) {
-        if (iconFlag.type === 'img') {
-            const src = normalizePinImageSource(iconFlag.value);
-            return src || '';
-        }
-        return normalizeFaClassList(iconFlag.value);
-    }
     const content = page?.text?.content || '';
     const imageSrc = extractFirstImageSrc(content);
     if (imageSrc) {
         const src = normalizePinImageSource(imageSrc);
         return src || '';
     }
-    return NOTE_PIN_ICON;
+    const iconFlag = normalizeNoteIconFlag(page?.getFlag(MODULE.ID, 'noteIcon'))
+        || { type: 'fa', value: `fa-solid ${NOTE_PIN_ICON}` };
+    if (iconFlag.type === 'img') {
+        const src = normalizePinImageSource(iconFlag.value);
+        return src || '';
+    }
+    return normalizeFaClassList(iconFlag.value);
 }
 
 function focusNoteCardInDom(noteUuid) {

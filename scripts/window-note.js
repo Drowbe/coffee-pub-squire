@@ -6,6 +6,7 @@ import {
     buildNoteIconHtml,
     normalizeNoteIconFlag,
     resolveNoteIconHtmlFromContent,
+    getDefaultNoteIconFlag,
     getDefaultNotePinDesign,
     buildNoteOwnership,
     describePinsProxyError,
@@ -579,6 +580,9 @@ export class NotesForm extends FormApplication {
                     return false;
                 }
 
+                const normalizedIcon = normalizeNoteIconFlag(this.note.noteIcon) || getDefaultNoteIconFlag();
+                this.note.noteIcon = normalizedIcon;
+
                 // Create journal page with flags
                 const pageData = {
                     name: formData.title || 'Untitled Note',
@@ -595,7 +599,7 @@ export class NotesForm extends FormApplication {
                             sceneId: formData.sceneId || null,
                             x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
                             y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
-                            noteIcon: this.note.noteIcon || null,
+                            noteIcon: normalizedIcon,
                             notePinSize: getNotePinSizeForNote(this.note),
                             notePinShape: getNotePinShapeForNote(this.note),
                             notePinStyle: getNotePinStyleForNote(this.note),
