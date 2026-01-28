@@ -292,7 +292,6 @@ export class NotesForm extends FormApplication {
             flags: {
                 [MODULE.ID]: {
                     noteType: 'sticky',
-                    draft: true,
                     tags,
                     visibility,
                     editorIds: [game.user.id],
@@ -442,13 +441,6 @@ export class NotesForm extends FormApplication {
             game.settings.set(MODULE.ID, 'notesWindowPosition', { top, left, width, height });
         }
         return pos;
-    }
-
-    async close(options={}) {
-        if (this.isDraft && !this._didSubmit) {
-            await this._deleteDraftNote();
-        }
-        return super.close(options);
     }
 
     async _updateObject(event, formData) {

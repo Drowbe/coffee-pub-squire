@@ -1246,10 +1246,6 @@ export class NotesPanel {
                     // Not a note, skip it
                     continue;
                 }
-                const isDraft = page.getFlag(MODULE.ID, 'draft');
-                if (isDraft) {
-                    continue;
-                }
 
                 // Check visibility - filter private notes
                 const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
