@@ -1015,6 +1015,9 @@ export async function deleteNotePinForPage(page) {
                 }
             }
         }
+        if (sceneId && typeof pins.reload === 'function') {
+            await pins.reload({ sceneId });
+        }
         return;
     }
 
@@ -1067,6 +1070,10 @@ export async function unplaceNotePinForPage(page) {
                 throw error;
             }
         }
+    }
+
+    if (sceneId && typeof pins.reload === 'function') {
+        await pins.reload({ sceneId });
     }
 }
 
