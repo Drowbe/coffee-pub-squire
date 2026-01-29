@@ -1085,6 +1085,19 @@ export class NotesForm extends FormApplication {
             this._eventHandlers.push({ element: form, event: 'submit', handler });
         }
 
+        const savePlaceButton = nativeHtml.querySelector('button.notes-save-place-pin');
+        if (savePlaceButton) {
+            const handler = () => {
+                this._placeAfterSave = true;
+                const form = nativeHtml.querySelector('form');
+                if (form) {
+                    form.dataset.placePin = 'true';
+                }
+            };
+            savePlaceButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: savePlaceButton, event: 'click', handler });
+        }
+
         if (this.isEditMode) {
             const touchHandler = () => {
                 this._touchEditLock().catch(error => {
@@ -1165,6 +1178,12 @@ export class NotesForm extends FormApplication {
         }
         if (Object.prototype.hasOwnProperty.call(data, 'placePin')) {
             this._placeAfterSave = String(data.placePin) === '1' || String(data.placePin).toLowerCase() === 'true';
+        }
+        if (!this._placeAfterSave && form?.dataset?.placePin === 'true') {
+            this._placeAfterSave = true;
+        }
+        if (form?.dataset) {
+            delete form.dataset.placePin;
         }
 
         const visibilityToggle = form.querySelector('#notes-visibility-private');

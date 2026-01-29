@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Player pin updates for **unplaced** pins now route through GM (prevents world-setting permission errors; GM must be online).
 - GM edits no longer convert a player’s private note into a GM private note.
 - Early-load settings guard prevents startup errors when `notesJournal` is not yet registered.
+- Pin placement/unplacement now reloads the scene so pins disappear/appear immediately.
+- Player pin placement now routes through GM, with fallback for older proxy actions.
+- Save and Place Pin button reliably triggers the placement flow.
 
 ## [13.1.1] 
 ### Added
