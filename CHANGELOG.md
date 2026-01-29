@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Quick Note tool registered in the Blacksmith menubar (left/general group).
 - Unplaced pin support across the notes system (create, update, delete, and configure without a scene).
 - Pins API hooks wired for create/place/unplace/update/delete to keep note flags in sync.
+- Note edit locks with “being edited” indicators (tray + window). Locks are per-note flags and auto-expire after 30 minutes of idle time.
 
 ### Changed
 - Notes pin workflow fully migrated to Blacksmith Pins API (create/update/delete/placement/ownership sync).
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default note visibility set to **private**.
 - Default sticky note pin fill set to `rgba(205, 200, 117, 0.9)` when no user default is set.
 - Notes pin defaults now pull from Blacksmith per-user defaults via `pins.getDefaultPinDesign()` with world default fallback.
+- Note edit locks now clear on save/close, on client load for the current user, and when a user disconnects.
 
 ### Fixed
 - Pin configuration now works for unplaced pins (recovery + create-on-demand in note window).
@@ -27,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduced log spam and sync loops caused by pin updates.
 - Players can save pin design defaults without world-setting permission errors (client-scope defaults).
 - Player pin updates for **unplaced** pins now route through GM (prevents world-setting permission errors; GM must be online).
+- GM edits no longer convert a player’s private note into a GM private note.
+- Early-load settings guard prevents startup errors when `notesJournal` is not yet registered.
 
 ## [13.1.1] 
 ### Added

@@ -690,10 +690,16 @@ export class NotesForm extends FormApplication {
                     await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
                     await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
                     await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
+                    let authorId = page.getFlag(MODULE.ID, 'authorId');
+                    if (!authorId) {
+                        authorId = game.user.id;
+                        await page.setFlag(MODULE.ID, 'authorId', authorId);
+                    }
+
                     const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
                     let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
                     if (visibility === 'private') {
-                        editorIds = [game.user.id];
+                        editorIds = [authorId];
                     }
                     await page.setFlag(MODULE.ID, 'editorIds', editorIds);
                     if (this.isDraft) {
@@ -706,11 +712,6 @@ export class NotesForm extends FormApplication {
                         await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
                     }
 
-                    let authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
-                    if (visibility === 'private' && authorId !== game.user.id) {
-                        authorId = game.user.id;
-                        await page.setFlag(MODULE.ID, 'authorId', authorId);
-                    }
                     await this._syncNoteOwnership(page, visibility, authorId);
                     await updateNotePinForPage(page);
                 } catch (error) {
