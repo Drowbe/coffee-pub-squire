@@ -115,9 +115,21 @@ export function normalizePinTextScaleWithPin(value) {
 export function getDefaultNotePinDesign() {
     let stored = null;
     try {
-        stored = game.settings.get(MODULE.ID, NOTE_PIN_DEFAULT_SETTING);
+        const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+        if (pins?.getDefaultPinDesign) {
+            stored = pins.getDefaultPinDesign(MODULE.ID);
+        }
     } catch (error) {
         stored = null;
+    }
+    try {
+        if (!stored) {
+            stored = game.settings.get(MODULE.ID, NOTE_PIN_DEFAULT_SETTING);
+        }
+    } catch (error) {
+        if (!stored) {
+            stored = null;
+        }
     }
     const normalized = normalizePinSize(stored?.size);
     const lockProportions = typeof stored?.lockProportions === 'boolean' ? stored.lockProportions : true;
@@ -524,7 +536,7 @@ function mergeNotePinStyle(override) {
     };
 }
 
-function getNotePinOwnershipForPage(page) {
+export function getNotePinOwnershipForPage(page) {
     if (!page) {
         return {
             default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,

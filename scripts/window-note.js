@@ -14,6 +14,7 @@ import {
     createNotePinForPage,
     deleteNotePinForPage,
     updateNotePinForPage,
+    getNotePinOwnershipForPage,
     getNotePinSizeForNote,
     getNotePinShapeForNote,
     getNotePinStyleForNote,
@@ -767,9 +768,11 @@ export class NotesForm extends FormApplication {
                         ui.notifications.error('Pin not found. This looks like a pins API issue with unplaced pins. Try refreshing or placing the pin once on a scene.');
                         return;
                     }
-                    try {
+                    const openConfig = async () => {
                         await pins.configure(pinId, {
                             sceneId: sceneId || undefined,
+                            moduleId: MODULE.ID,
+                            useAsDefault: true,
                             onSelect: async (config) => {
                                 const icon = config?.icon || null;
                                 this.note.noteIcon = icon;
@@ -809,10 +812,26 @@ export class NotesForm extends FormApplication {
                                 }
                             }
                         });
+                    };
+                    try {
+                        await openConfig();
                         return;
                     } catch (error) {
                         const message = String(error?.message || error || '');
                         const isNotFound = message.toLowerCase().includes('pin not found');
+                        const isPermission = message.toLowerCase().includes('permission denied');
+                        if (isPermission && this.page && typeof pins.requestGM === 'function') {
+                            try {
+                                await pins.requestGM('update', {
+                                    pinId,
+                                    patch: { ownership: getNotePinOwnershipForPage(this.page) }
+                                });
+                                await openConfig();
+                                return;
+                            } catch (retryError) {
+                                console.error('Failed to update pin ownership before configure:', retryError);
+                            }
+                        }
                         if (isNotFound && this.page) {
                             try {
                                 await this.page.setFlag(MODULE.ID, 'pinId', null);
@@ -822,6 +841,8 @@ export class NotesForm extends FormApplication {
                                     await this.page.setFlag(MODULE.ID, 'pinId', recreatedId);
                                     await pins.configure(recreatedId, {
                                         sceneId: sceneId || undefined,
+                                        moduleId: MODULE.ID,
+                                        useAsDefault: true,
                                         onSelect: async (config) => {
                                             const icon = config?.icon || null;
                                             this.note.noteIcon = icon;

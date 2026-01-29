@@ -18,12 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Note icon configuration uses Blacksmith `pins.configure()` (legacy NoteIconPicker removed).
 - Default note visibility set to **private**.
 - Default sticky note pin fill set to `rgba(205, 200, 117, 0.9)` when no user default is set.
+- Notes pin defaults now pull from Blacksmith per-user defaults via `pins.getDefaultPinDesign()` with world default fallback.
 
 ### Fixed
 - Pin configuration now works for unplaced pins (recovery + create-on-demand in note window).
 - Prevented pin ownership/visibility desyncs and improved unpin behavior using `unplace`.
 - Normalized note icon storage to avoid `fa-solid` spam and `<img>` 404s.
 - Reduced log spam and sync loops caused by pin updates.
+- Players can save pin design defaults without world-setting permission errors (client-scope defaults).
 
 ## [13.1.1] 
 ### Added

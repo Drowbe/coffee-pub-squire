@@ -10,6 +10,7 @@ import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './q
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
 import {
+    buildNoteOwnership,
     getDefaultNotePinDesign,
     normalizeNoteIconFlag,
     normalizePinShape,
@@ -122,6 +123,13 @@ Hooks.once('ready', () => {
             version: MODULE.VERSION
         });
         // Module registered with Blacksmith successfully
+
+        Hooks.on('blacksmith.pins.resolveOwnership', (context) => {
+            if (!context || context.moduleId !== MODULE.ID) return null;
+            const visibility = context.metadata?.visibility || 'private';
+            const authorId = context.metadata?.authorId || game.user?.id;
+            return buildNoteOwnership(visibility, authorId);
+        });
 
         Hooks.on('blacksmith.pins.updated', async ({ pinId, sceneId, moduleId, pin }) => {
             if (moduleId !== MODULE.ID) return;
