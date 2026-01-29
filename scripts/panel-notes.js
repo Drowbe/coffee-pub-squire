@@ -26,7 +26,11 @@ function getPinsApi() {
 
 function isPermissionDeniedError(error) {
     const message = String(error?.message || error || '').toLowerCase();
-    return message.includes('permission denied');
+    return (
+        message.includes('permission denied') ||
+        message.includes('lacks permission') ||
+        message.includes('permission to update setting')
+    );
 }
 
 function isPinsApiAvailable(pins) {
@@ -856,6 +860,25 @@ export async function createNotePinForPage(page, sceneId, x, y) {
             await pins.whenReady();
         }
 
+        const requestGMPlace = async (pinId, placement) => {
+            if (typeof pins.requestGM !== 'function') {
+                throw new Error('Pins API does not support GM proxy placement.');
+            }
+            try {
+                return await pins.requestGM('place', { pinId, placement });
+            } catch (error) {
+                const message = String(error?.message || error || '');
+                if (message.toLowerCase().includes('unknown action')) {
+                    return await pins.requestGM('update', {
+                        sceneId: placement?.sceneId,
+                        pinId,
+                        patch: { sceneId: placement?.sceneId, x: placement?.x, y: placement?.y }
+                    });
+                }
+                throw error;
+            }
+        };
+
         const existingPinId = page.getFlag(MODULE.ID, 'pinId');
         if (existingPinId) {
             const pinExists = typeof pins.exists === 'function'
@@ -870,8 +893,10 @@ export async function createNotePinForPage(page, sceneId, x, y) {
                     try {
                         await pins.place(existingPinId, { sceneId, x, y });
                     } catch (error) {
-                        if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
-                            await pins.requestGM('update', { sceneId, pinId: existingPinId, patch: { sceneId, x, y } });
+                        const message = String(error?.message || error || '').toLowerCase();
+                        const isUnknownAction = message.includes('unknown action');
+                        if (!game.user.isGM && (isPermissionDeniedError(error) || isUnknownAction) && typeof pins.requestGM === 'function') {
+                            await requestGMPlace(existingPinId, { sceneId, x, y });
                         } else {
                             throw error;
                         }
@@ -880,8 +905,10 @@ export async function createNotePinForPage(page, sceneId, x, y) {
                     try {
                         await pins.update(existingPinId, { sceneId, x, y }, { sceneId });
                     } catch (error) {
-                        if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
-                            await pins.requestGM('update', { sceneId, pinId: existingPinId, patch: { sceneId, x, y } });
+                        const message = String(error?.message || error || '').toLowerCase();
+                        const isUnknownAction = message.includes('unknown action');
+                        if (!game.user.isGM && (isPermissionDeniedError(error) || isUnknownAction) && typeof pins.requestGM === 'function') {
+                            await requestGMPlace(existingPinId, { sceneId, x, y });
                         } else {
                             throw error;
                         }
@@ -1001,17 +1028,31 @@ export async function unplaceNotePinForPage(page) {
     const pinId = page.getFlag(MODULE.ID, 'pinId');
     if (!pinId) return;
     const sceneId = page.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id || undefined;
+    const requestGMUnplace = async (id) => {
+        if (typeof pins.requestGM !== 'function') {
+            throw new Error('Pins API does not support GM proxy placement.');
+        }
+        try {
+            return await pins.requestGM('unplace', { pinId: id });
+        } catch (error) {
+            const message = String(error?.message || error || '');
+            if (message.toLowerCase().includes('unknown action')) {
+                const gmParams = { pinId: id, patch: { unplace: true } };
+                if (sceneId) {
+                    gmParams.sceneId = sceneId;
+                }
+                return await pins.requestGM('update', gmParams);
+            }
+            throw error;
+        }
+    };
 
     if (typeof pins.unplace === 'function') {
         try {
             await pins.unplace(pinId);
         } catch (error) {
             if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
-                const gmParams = { pinId, patch: { unplace: true } };
-                if (sceneId) {
-                    gmParams.sceneId = sceneId;
-                }
-                await pins.requestGM('update', gmParams);
+                await requestGMUnplace(pinId);
             } else {
                 throw error;
             }
@@ -1021,11 +1062,7 @@ export async function unplaceNotePinForPage(page) {
             await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
         } catch (error) {
             if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
-                const gmParams = { pinId, patch: { unplace: true } };
-                if (sceneId) {
-                    gmParams.sceneId = sceneId;
-                }
-                await pins.requestGM('update', gmParams);
+                await requestGMUnplace(pinId);
             } else {
                 throw error;
             }
