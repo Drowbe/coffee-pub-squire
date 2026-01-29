@@ -43,6 +43,8 @@ const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
 const NOTE_PIN_SIZE = { w: 60, h: 60 };
 const NOTE_PIN_DEFAULT_SETTING = 'notesPinDefaultDesign';
 const NOTE_PIN_TYPE = 'coffee-pub-squire-sticky-notes';
+const NOTE_EDIT_LOCK_FLAG = 'editLock';
+const NOTE_EDIT_LOCK_TTL_MS = 30 * 60 * 1000;
 
 // Export helper functions for use in window-note.js
 export function getDefaultNoteIconFlag() {
@@ -110,6 +112,24 @@ export function normalizePinTextMaxLength(value) {
 export function normalizePinTextScaleWithPin(value) {
     if (typeof value === 'boolean') return value;
     return null;
+}
+
+export function getNoteEditLockInfo(page) {
+    if (!page) return null;
+    const rawLock = page.getFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG);
+    if (!rawLock || typeof rawLock !== 'object') return null;
+    const userId = rawLock.userId;
+    const at = Number(rawLock.at);
+    if (!userId || !Number.isFinite(at)) return null;
+    const ageMs = Date.now() - at;
+    if (ageMs > NOTE_EDIT_LOCK_TTL_MS) return null;
+    const user = game.users.get(userId) || game.users.find(u => u.id === userId);
+    return {
+        userId,
+        userName: rawLock.userName || user?.name || userId,
+        at,
+        ageMs
+    };
 }
 
 export function getDefaultNotePinDesign() {
@@ -675,7 +695,8 @@ function buildNoteDataFromPage(page) {
         x: x,
         y: y,
         authorId: authorId,
-        editorIds: page.getFlag(MODULE.ID, 'editorIds') || []
+        editorIds: page.getFlag(MODULE.ID, 'editorIds') || [],
+        editLock: getNoteEditLockInfo(page)
     };
 }
 
@@ -1073,7 +1094,12 @@ export async function updateNotePinForPage(page) {
     try {
         let updated;
         try {
-            updated = await pins.update(pinId, patch, sceneId ? { sceneId } : undefined);
+            if (!game.user.isGM && !sceneId && typeof pins.requestGM === 'function') {
+                logPinPackage('UPDATE REQUESTGM (UNPLACED)', { pinId, sceneId, ...patch });
+                updated = await pins.requestGM('update', { pinId, patch });
+            } else {
+                updated = await pins.update(pinId, patch, sceneId ? { sceneId } : undefined);
+            }
         } catch (error) {
             if (!game.user.isGM && isPermissionDeniedError(error) && typeof pins.requestGM === 'function') {
                 const gmParams = { pinId, patch };

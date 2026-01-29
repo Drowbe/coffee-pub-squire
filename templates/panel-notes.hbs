@@ -92,6 +92,14 @@
                             {{/if}}
                         </span>
                         <span class="note-row-title note-open-title" data-uuid="{{uuid}}">{{name}}</span>
+                        {{#if editLock}}
+                        <span class="note-row-editing" title="{{#if (eq editLock.userId ../currentUserId)}}You are editing{{else}}{{editLock.userName}} is editing{{/if}}">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span class="note-row-editing-text">
+                                {{#if (eq editLock.userId ../currentUserId)}}Editing{{else}}Editing: {{editLock.userName}}{{/if}}
+                            </span>
+                        </span>
+                        {{/if}}
                         <div class="note-row-actions">
                             {{#if (eq visibility 'private')}}
                             {{#if ../isGM}}
@@ -135,6 +143,12 @@
                                 {{/if}}
                             </span>
                             <div class="note-title note-open-title" data-uuid="{{uuid}}">{{name}}</div>
+                            {{#if editLock}}
+                            <span class="note-card-editing" title="{{#if (eq editLock.userId ../currentUserId)}}You are editing{{else}}{{editLock.userName}} is editing{{/if}}">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <span>{{#if (eq editLock.userId ../currentUserId)}}Editing{{else}}Editing: {{editLock.userName}}{{/if}}</span>
+                            </span>
+                            {{/if}}
                             <div class="note-actions">
                                 {{#if (eq visibility 'private')}}
                                 {{#if ../isGM}}

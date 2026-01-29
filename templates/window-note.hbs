@@ -46,13 +46,19 @@
                         {{/if}}
                     {{/if}}
                 </div>
+                {{#if editLock}}
+                    <div class="window-note-editing-indicator" title="{{#if editLock.isSelf}}You are editing{{else}}{{editLock.userName}} is editing{{/if}}">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>{{#if editLock.isSelf}}Editing{{else}}Editing: {{editLock.userName}}{{/if}}</span>
+                    </div>
+                {{/if}}
             </div>
             <div class="window-note-header-controls">
                 {{#if isEditing}}
                 <div class="notes-edit-toggle-container">
                     <span class="notes-edit-toggle-label">Edit</span>
                     <div class="notes-edit-toggle">
-                        <input type="checkbox" id="notes-edit-toggle" {{#if isEditMode}}checked{{/if}}>
+                        <input type="checkbox" id="notes-edit-toggle" {{#if isEditMode}}checked{{/if}} {{#unless canEdit}}disabled{{/unless}}>
                         <label for="notes-edit-toggle" class="notes-edit-toggle-slider"></label>
                     </div>
                 </div>

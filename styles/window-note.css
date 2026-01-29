@@ -173,6 +173,26 @@
     margin: 4px 0px 0px 0px;
 }
 
+.window-note-editing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 200, 120, 0.9);
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 200, 120, 0.4);
+    border-radius: 4px;
+    padding: 2px 6px;
+    width: fit-content;
+}
+
+.window-note-editing-indicator i {
+    font-size: 0.85em;
+}
+
 .window-note-meta-item {
     display: inline-flex;
     align-items: center;

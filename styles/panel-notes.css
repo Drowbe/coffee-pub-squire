@@ -522,6 +522,25 @@ body.squire-notes-pin-placement * {
     min-width: 0;
 }
 
+.squire-tray[data-position="left"] .notes-list.notes-view--cards .note-card-editing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 200, 120, 0.4);
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(255, 200, 120, 0.9);
+    font-size: 0.7em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.squire-tray[data-position="left"] .notes-list.notes-view--cards .note-card-editing i {
+    font-size: 0.75em;
+}
+
 .squire-tray[data-position="left"] .notes-list .note-open-title {
     cursor: pointer;
 }
@@ -980,6 +999,29 @@ body.squire-notes-pin-placement * {
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-editing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 200, 120, 0.4);
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(255, 200, 120, 0.9);
+    font-size: 0.65em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-editing i {
+    font-size: 0.7em;
+}
+
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-editing-text {
+    display: inline-block;
 }
 
 .squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-title:hover {

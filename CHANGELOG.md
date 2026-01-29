@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Normalized note icon storage to avoid `fa-solid` spam and `<img>` 404s.
 - Reduced log spam and sync loops caused by pin updates.
 - Players can save pin design defaults without world-setting permission errors (client-scope defaults).
+- Player pin updates for **unplaced** pins now route through GM (prevents world-setting permission errors; GM must be online).
 
 ## [13.1.1] 
 ### Added

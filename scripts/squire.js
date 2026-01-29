@@ -74,6 +74,36 @@ function normalizePinImageForNoteIcon(image) {
     return normalizeNoteIconFlag(trimmed);
 }
 
+const NOTE_EDIT_LOCK_FLAG = 'editLock';
+const NOTE_EDIT_LOCK_TTL_MS = 30 * 60 * 1000;
+
+async function clearNoteEditLocks({ userId = null, clearExpired = false } = {}) {
+    if (!game.settings?.settings?.has(`${MODULE.ID}.notesJournal`)) {
+        return;
+    }
+    const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+    if (!journalId || journalId === 'none') return;
+    const journal = game.journal.get(journalId);
+    if (!journal) return;
+    const now = Date.now();
+
+    for (const page of journal.pages.contents) {
+        const lock = page.getFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG);
+        if (!lock || typeof lock !== 'object') continue;
+        const lockUserId = lock.userId;
+        const lockAt = Number(lock.at);
+        const expired = !Number.isFinite(lockAt) || (now - lockAt > NOTE_EDIT_LOCK_TTL_MS);
+        if ((userId && lockUserId === userId) || (clearExpired && expired)) {
+            if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) continue;
+            if (typeof page.unsetFlag === 'function') {
+                await page.unsetFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG);
+            } else {
+                await page.setFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG, null);
+            }
+        }
+    }
+}
+
 async function updateNoteFlagsIfChanged(page, updates) {
     if (!page || !updates) return;
     const changes = {};
@@ -115,7 +145,7 @@ function ensureSelectObjectsWrapper() {
     canvas.selectObjects = wrappedSelectObjects;
 }
 
-Hooks.once('ready', () => {
+Hooks.once('ready', async () => {
     try {
         // Register your module with Blacksmith
         BlacksmithModuleManager.registerModule(MODULE.ID, {
@@ -123,6 +153,13 @@ Hooks.once('ready', () => {
             version: MODULE.VERSION
         });
         // Module registered with Blacksmith successfully
+
+        await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
+
+        Hooks.on('userDisconnected', async (user) => {
+            if (!user?.id) return;
+            await clearNoteEditLocks({ userId: user.id });
+        });
 
         Hooks.on('blacksmith.pins.resolveOwnership', (context) => {
             if (!context || context.moduleId !== MODULE.ID) return null;

@@ -40,6 +40,10 @@ function getPinsApi() {
     return game.modules.get('coffee-pub-blacksmith')?.api?.pins || null;
 }
 
+const NOTE_EDIT_LOCK_FLAG = 'editLock';
+const NOTE_EDIT_LOCK_TTL_MS = 30 * 60 * 1000;
+const NOTE_EDIT_LOCK_TOUCH_MIN_MS = 30 * 1000;
+
 /**
  * NotesForm - Lightweight form for quick note capture
  * Uses FormApplication for simplicity (like CodexForm)
@@ -66,6 +70,10 @@ export class NotesForm extends FormApplication {
         this._draftCreated = false;
         this._didSubmit = false;
         this._placeAfterSave = false;
+        this._editLock = null;
+        this._editLockExpiryTimeout = null;
+        this._lockNoticeUserId = null;
+        this._lastEditLockTouch = 0;
         
         // If options contain canvas location, pre-fill it
         if (options.sceneId) {
@@ -150,6 +158,10 @@ export class NotesForm extends FormApplication {
                 console.error('Error loading page for editor:', error);
                 this.page = null;
             }
+        }
+
+        if (this.isEditing && this.page) {
+            await this._syncEditLockState();
         }
 
         const tagsText = Array.isArray(this.note.tags)
@@ -247,6 +259,10 @@ export class NotesForm extends FormApplication {
                 sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
                 content: pageContent // Use extracted content or fallback
             },
+            editLock: this._editLock
+                ? { ...this._editLock, isSelf: this._editLock.userId === game.user.id }
+                : null,
+            canEdit: !this._editLock || this._editLock.userId === game.user.id,
             isGM: game.user.isGM,
             isEditing: this.isEditing,
             isEditMode: this.isEditMode,
@@ -254,6 +270,135 @@ export class NotesForm extends FormApplication {
             sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
             page: usePageForEditor ? this.page : null // Only pass page if we can use it for collaborative editing
         };
+    }
+
+    _normalizeEditLock(lock) {
+        if (!lock || typeof lock !== 'object') return null;
+        const userId = lock.userId;
+        const at = Number(lock.at);
+        if (!userId || !Number.isFinite(at)) return null;
+        const user = game.users.get(userId) || game.users.find(u => u.id === userId);
+        return {
+            userId,
+            userName: lock.userName || user?.name || userId,
+            at
+        };
+    }
+
+    _isEditLockExpired(lock) {
+        if (!lock || !Number.isFinite(lock.at)) return true;
+        return Date.now() - lock.at > NOTE_EDIT_LOCK_TTL_MS;
+    }
+
+    async _setEditLock(page) {
+        if (!page) return null;
+        const lock = {
+            userId: game.user.id,
+            userName: game.user.name,
+            at: Date.now()
+        };
+        await page.setFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG, lock);
+        this._editLock = lock;
+        this._lastEditLockTouch = lock.at;
+        this._scheduleEditLockExpiry(lock);
+        return lock;
+    }
+
+    async _clearEditLock(page, onlyIfUserId = null) {
+        if (!page) return;
+        const existing = this._normalizeEditLock(page.getFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG));
+        if (!existing) return;
+        if (onlyIfUserId && existing.userId !== onlyIfUserId) return;
+        if (typeof page.unsetFlag === 'function') {
+            await page.unsetFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG);
+        } else {
+            await page.setFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG, null);
+        }
+        this._editLock = null;
+        if (this._editLockExpiryTimeout) {
+            clearTimeout(this._editLockExpiryTimeout);
+            this._editLockExpiryTimeout = null;
+        }
+    }
+
+    _scheduleEditLockExpiry(lock) {
+        if (!lock) return;
+        if (this._editLockExpiryTimeout) {
+            clearTimeout(this._editLockExpiryTimeout);
+            this._editLockExpiryTimeout = null;
+        }
+        const remaining = NOTE_EDIT_LOCK_TTL_MS - (Date.now() - lock.at);
+        if (remaining <= 0) {
+            this._handleEditLockExpiry();
+            return;
+        }
+        this._editLockExpiryTimeout = setTimeout(() => {
+            this._handleEditLockExpiry();
+        }, remaining);
+    }
+
+    async _touchEditLock() {
+        if (!this.page || !this._editLock) return;
+        if (this._editLock.userId !== game.user.id) return;
+        const now = Date.now();
+        if (now - this._lastEditLockTouch < NOTE_EDIT_LOCK_TOUCH_MIN_MS) return;
+        const lock = {
+            userId: game.user.id,
+            userName: game.user.name,
+            at: now
+        };
+        await this.page.setFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG, lock);
+        this._editLock = lock;
+        this._lastEditLockTouch = now;
+        this._scheduleEditLockExpiry(lock);
+    }
+
+    async _handleEditLockExpiry() {
+        if (!this.page) return;
+        const lock = this._normalizeEditLock(this.page.getFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG));
+        if (!lock || lock.userId !== game.user.id) return;
+        ui.notifications.warn('Your edit session expired. This note is now read-only.');
+        await this._clearEditLock(this.page, game.user.id);
+        this.isEditMode = false;
+        this.isViewMode = true;
+        this.render(true);
+    }
+
+    async _syncEditLockState() {
+        const page = this.page;
+        if (!page) return;
+
+        const rawLock = this._normalizeEditLock(page.getFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG));
+        if (rawLock && this._isEditLockExpired(rawLock)) {
+            await this._clearEditLock(page);
+        }
+
+        const currentLock = this._normalizeEditLock(page.getFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG));
+        if (currentLock && currentLock.userId !== game.user.id) {
+            if (this.isEditMode && this._lockNoticeUserId !== currentLock.userId) {
+                ui.notifications.warn(`${currentLock.userName} is editing this note. Opening read-only.`);
+                this._lockNoticeUserId = currentLock.userId;
+            }
+            this.isEditMode = false;
+            this.isViewMode = true;
+            this._editLock = currentLock;
+            return;
+        }
+
+        this._lockNoticeUserId = null;
+
+        if (this.isEditMode) {
+            if (!currentLock) {
+                await this._setEditLock(page);
+            } else {
+                this._editLock = currentLock;
+                this._scheduleEditLockExpiry(currentLock);
+            }
+        } else if (currentLock && currentLock.userId === game.user.id) {
+            await this._clearEditLock(page, game.user.id);
+        } else {
+            this._editLock = currentLock;
+        }
     }
 
     async _ensureDraftNote() {
@@ -358,6 +503,7 @@ export class NotesForm extends FormApplication {
                     ui.notifications.warn('Draft note created, but pin creation failed.');
                 }
             }
+            await this._setEditLock(newPage);
         } catch (error) {
             console.error('Error creating draft note:', error);
             ui.notifications.error(`Failed to create draft note: ${error.message}`);
@@ -665,6 +811,7 @@ export class NotesForm extends FormApplication {
             this._placeAfterSave = false;
             ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
             this._didSubmit = true;
+            await this._clearEditLock(this.page, game.user.id);
             await this.close();
 
             if (shouldPlace && page) {
@@ -907,6 +1054,7 @@ export class NotesForm extends FormApplication {
                 event.preventDefault();
                 if (this.isEditMode) {
                     await this._captureFormState();
+                    await this._clearEditLock(this.page, game.user.id);
                 }
                 this.isEditMode = !!event.currentTarget.checked;
                 this.isViewMode = !this.isEditMode;
@@ -934,6 +1082,20 @@ export class NotesForm extends FormApplication {
             };
             form.addEventListener('submit', handler);
             this._eventHandlers.push({ element: form, event: 'submit', handler });
+        }
+
+        if (this.isEditMode) {
+            const touchHandler = () => {
+                this._touchEditLock().catch(error => {
+                    console.warn('Failed to refresh edit lock:', error);
+                });
+            };
+            nativeHtml.addEventListener('keydown', touchHandler);
+            nativeHtml.addEventListener('mousedown', touchHandler);
+            nativeHtml.addEventListener('touchstart', touchHandler);
+            this._eventHandlers.push({ element: nativeHtml, event: 'keydown', handler: touchHandler });
+            this._eventHandlers.push({ element: nativeHtml, event: 'mousedown', handler: touchHandler });
+            this._eventHandlers.push({ element: nativeHtml, event: 'touchstart', handler: touchHandler });
         }
 
         // Set up tag autocomplete (simple - just show existing tags)
@@ -1021,6 +1183,23 @@ export class NotesForm extends FormApplication {
 
         // Call _updateObject
         await this._updateObject(event, data);
+    }
+
+    async close(options = {}) {
+        try {
+            if (!this._didSubmit && this.isEditMode && this.page) {
+                await this._clearEditLock(this.page, game.user.id);
+            }
+        } catch (error) {
+            console.warn('Failed to clear edit lock on close:', error);
+        }
+
+        if (this._editLockExpiryTimeout) {
+            clearTimeout(this._editLockExpiryTimeout);
+            this._editLockExpiryTimeout = null;
+        }
+
+        return super.close(options);
     }
 
     _setupTagAutocomplete(html) {
