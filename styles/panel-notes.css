@@ -588,6 +588,9 @@ body.squire-notes-pin-placement * {
     clear: right;
     line-height: 1.5;
     font-size: 0.9em;
+    max-height: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards .note-content p {
