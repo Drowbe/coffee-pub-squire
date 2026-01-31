@@ -1,5 +1,12 @@
 # Quest Pin Migration Plan: Removing Custom Pin System, Using Blacksmith API
 
+**System of record:** This document is the single source of truth for the quest pin migration. Supporting reference for Notes implementation detail and code examples: **`documents/quest-pin-migration-findings.md`** (use when implementing; not the plan).
+
+## Authoritative Reference
+
+- **Blacksmith Pins API**: [API: Pins · coffee-pub-blacksmith Wiki](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Pins)  
+  Use this as the source of truth for availability checks, CRUD, events, ownership, and drag-and-drop.
+
 ## Overview
 
 This document outlines the migration plan for **removing** Coffee Pub Squire's custom quest pin rendering and management system and **replacing it entirely** with the Blacksmith Pin API. 
@@ -11,8 +18,11 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 - **DELETE**: ~1800 lines of PIXI rendering code (`QuestPin` class)
 - **DELETE**: All container management (`canvas.squirePins`)
 - **DELETE**: All visual appearance code
-- **REPLACE WITH**: Simple API calls to Blacksmith (`pins.create()`, `pins.update()`, `pins.delete()`)
+- **DELETE**: All drag-to-canvas creation (replaced with "Pin to Scene" button, same as Notes)
+- **REPLACE WITH**: Simple API calls to Blacksmith (`pins.create()`, `pins.update()`, `pins.delete()`, `pins.place()`, `pins.unplace()`)
 - **KEEP**: Quest-specific business logic (complete objective, toggle visibility, etc.)
+
+**Underlying quest system is unchanged**: Journal-based quests, QuestParser, QuestForm, QuestPanel, and all quest business logic (complete objective, toggle visibility, etc.) stay as-is. Only **how pins are rendered and stored** changes: we stop using PIXI and scene flags for pins and use the Blacksmith Pin API instead.
 
 **Result**: We will have **zero pin rendering code** in this module. Blacksmith handles:
 - All DOM rendering
@@ -54,11 +64,13 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 - **Our Code**: Only API calls and quest-specific business logic
 
 ### What We Do
-- Call `pins.create()` to create pins
+- Call `pins.create()` to create pins (unplaced by default, like Notes)
+- Call `pins.place()` / `pins.unplace()` to add/remove pins from the canvas (no drag-to-canvas)
 - Call `pins.update()` to update pin state/appearance
 - Call `pins.delete()` to remove pins
-- Register `pins.on()` event handlers for quest-specific interactions
-- Map quest/objective data to Blacksmith's `PinData` format
+- Register `pins.on('click', ...)` for left-click only (open quest tab, scroll, flash)
+- Register `pins.registerContextMenuItem()` for all other actions (complete, fail, toggle hidden, delete)
+- Map quest/objective data to Blacksmith's `PinData` format; follow Notes pattern for ownership
 - Handle quest-specific business logic (complete objective, toggle visibility, etc.)
 
 ### What Blacksmith Does
@@ -78,8 +90,8 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 | Current Feature | Target Implementation | Status | Notes |
 |----------------|----------------------|--------|-------|
 | **Pin Creation** | | | |
-| Drag quest to canvas | `pins.create()` via `dropCanvasData` hook | ⏳ | Use `type: 'blacksmith-pin'` |
-| Drag objective to canvas | `pins.create()` via `dropCanvasData` hook | ⏳ | Use `type: 'blacksmith-pin'` |
+| Pin quest to scene | `pins.create()` (unplaced) then `pins.place(pinId, { sceneId, x, y })` via "Pin to Scene" button | ⏳ | Same pattern as Notes; no drag-to-canvas |
+| Pin objective to scene | Same as quest; "Pin to Scene" on objective opens scene picker, places pin | ⏳ | Remove drag-to-canvas creation |
 | **Pin Appearance** | | | |
 | Quest pin (circular) | `shape: 'circle'` | ⏳ | Direct mapping |
 | Objective pin (square) | `shape: 'square'` | ⏳ | Direct mapping |
@@ -88,19 +100,15 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 | Quest number label | `text` property | ⏳ | Format: "Q85" or "Q85.03" |
 | Quest title text | `text` property (if enabled) | ⏳ | Conditional based on setting |
 | **Pin Interactions** | | | |
-| Left-click (select & jump) | `pins.on('click', ...)` | ⏳ | Implement jump-to-quest logic |
-| Left double-click (complete) | `pins.on('doubleClick', ...)` | ⏳ | Implement complete objective |
-| Right-click (toggle/fail) | `pins.on('rightClick', ...)` | ⏳ | Context menu or handler |
-| Double right-click (delete) | `pins.on('rightClick', ...)` + timeout | ⏳ | Detect double-click pattern |
-| Middle-click (toggle hidden) | `pins.on('middleClick', ...)` | ⏳ | Direct mapping |
-| Shift+Left-click (toggle) | `pins.on('click', ...)` + modifiers | ⏳ | Check `evt.modifiers.shift` |
-| Drag to reposition | `pins.on('dragEnd', ...)` | ⏳ | Use drag events |
-| Hover tooltip | `pins.on('hoverIn', ...)` | ⏳ | Show existing tooltip system |
+| Left-click (select & jump) | `pins.on('click', ...)` | ⏳ | **Only** left-click: open quest tab, scroll to quest, flash entry (same as today) |
+| All other actions | `pins.registerContextMenuItem()` | ⏳ | Right-click context menu: Complete objective, Fail objective, Toggle hidden, Delete pin (no double-click, shift-click, middle-click) |
+| Drag to reposition | Blacksmith handles | ⏳ | API manages drag; we do not store position |
+| Hover tooltip | Blacksmith or `pins.on('hoverIn', ...)` | ⏳ | Per API; show quest/objective tooltip |
 | **Pin State Management** | | | |
 | Quest status updates | `pins.update(pinId, { style, ... })` | ⏳ | On journal entry update |
 | Objective state updates | `pins.update(pinId, { style, ... })` | ⏳ | On journal entry update |
 | Visibility filtering | `ownership` property | ⏳ | Map quest/objective visibility |
-| User hide flag | Filter before creating/updating | ⏳ | Check `hideQuestPins` flag |
+| User hide-all flag | Request API enhancement | ⏳ | If API has no "hide all by type", remove toggle; document and request enhancement |
 | **Pin Persistence** | | | |
 | Save to scene flags | Automatic (Blacksmith) | ⏳ | No manual save needed |
 | Load on scene change | Automatic (Blacksmith) | ⏳ | Call `pins.reload()` if needed |
@@ -113,6 +121,7 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 | Quest status | `config.questStatus` | ⏳ | Store in config |
 | Objective state | `config.objectiveState` | ⏳ | Store in config |
 | Participants | `config.participants` | ⏳ | Store in config |
+| **Pin type (API)** | `type: 'quest' \| 'objective'` | ⏳ | Use for `list({ type })` and `deleteAllByType()` |
 
 ### ⚠️ Features to Adapt/Change
 
@@ -167,6 +176,26 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 | **Icon-only Pins** | `shape: 'none'` | Minimal visual footprint |
 | **Sound Support** | `ping()` with `sound` option | Audio feedback for interactions |
 
+## Gaps: Current System vs Blacksmith API
+
+These are the main gaps between our current quest pin behavior and the API; the plan addresses each.
+
+| Gap | API behavior | Our approach |
+|-----|--------------|-------------|
+| **Lookup by quest** | `pins.list(options)` only supports `sceneId`, `moduleId`, `type`, `unplacedOnly`. No filter by `config.questUuid`. | Call `pins.list({ moduleId: 'coffee-pub-squire', sceneId })` then filter in code by `pin.config?.questUuid` (and `pin.config?.objectiveIndex` for objectives). |
+| **Second ring (hidden quest)** | API has no “second ring” or extra border for “hidden but GM-visible”. | Accept single-pin appearance or use an alternative (e.g. distinct `style.stroke` or `shape` for hidden). Document as trade-off. |
+| **Double right-click** | API has no built-in double right-click. | Implement in our `pins.on('rightClick', ...)` handler with a short timeout (e.g. 300 ms) like current code; second right-click within window = delete pin. |
+| **User hide-all flag** | API filters by `ownership` only, not by a separate “hide all quest pins” flag. | Before creating/updating pins, check `game.user.getFlag(MODULE.ID, 'hideQuestPins')`. If set, either skip creating or set ownership so pin is not visible; in UI, keep toggle that shows/hides pins (e.g. filter which pins we create, or use a dedicated layer/visibility approach per API capabilities). |
+| **Placed vs unplaced** | API treats unplaced pins as the default; we only need pins on the canvas. | We always create **placed** pins: pass `sceneId` and `x`,`y` (e.g. via `pins.create(pinData, { sceneId })` or `pins.place()` after create). No need for unplace/place flow unless we add “remove from canvas but keep in journal” later. |
+| **Drag position save** | Blacksmith persists position on drag. | We do not store pin positions in our own flags. Use `pins.get(pinId)` / `pins.list()` when we need pin data; no extra persistence step. |
+| **Event payload** | `evt.pin` has top-level `moduleId`, not inside `config`. | In handlers, use `evt.pin.moduleId === 'coffee-pub-squire'` and `evt.pin.config` for quest/objective fields. |
+
+**Optional:** Use Blacksmith’s **ownership resolver hook** (`blacksmith.pins.resolveOwnership`) to map quest/objective visibility to pin `ownership` so we don’t have to pass ownership on every `pins.create()` / `pins.update()`.
+
+### Notes Pattern Reference
+
+We follow the **Notes tab** implementation for pin lifecycle and ownership. The Notes tab already uses the Blacksmith Pins API with: unplaced pins by default; `pins.place()` / `pins.unplace()` for canvas; `getNotePinOwnershipForPage(page)` for ownership; GM proxy (`pins.requestGM()`) for non-GM users. For quests we add **left-click only** (open tab, scroll, flash) and put all other actions in **context menu** via `pins.registerContextMenuItem()`. For code-level detail and examples, see **`documents/quest-pin-migration-findings.md`** (supporting reference; use when implementing).
+
 ## Migration Phases
 
 ### Phase 1: Preparation & Analysis ✅
@@ -185,20 +214,21 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 **Status**: Not Started  
 **Goal**: Migrate pin data format and integrate Blacksmith API
 
-- [ ] Create data migration function
-  - [ ] Convert `questPins` scene flags to Blacksmith format
-  - [ ] Map quest pin data to `PinData` structure
-  - [ ] Preserve all quest/objective metadata in `config`
-  - [ ] Handle orphaned pins (missing quests)
+- [ ] Create data migration function (one-time per scene)
+  - [ ] Run when canvas is ready and `pins.whenReady()` resolves
+  - [ ] Read `scene.getFlag(MODULE.ID, 'questPins')` (legacy array)
+  - [ ] For each entry: build `PinData` (id, x, y, moduleId, type, shape, image, text, size, style, ownership, config), then `pins.create(pinData, { sceneId: scene.id })`
+  - [ ] Preserve all quest/objective metadata in `config`; use existing `pinId` as pin `id` if valid
+  - [ ] Handle orphaned pins: skip or delete entries whose quest UUID no longer resolves
+  - [ ] After successful migration: clear `scene.setFlag(MODULE.ID, 'questPins', [])` (or remove flag)
+  - [ ] Call `pins.reload()` for current scene
 - [ ] Implement API availability checks
-  - [ ] Add `isAvailable()` checks before API calls
-  - [ ] Add `whenReady()` waits for canvas initialization
-  - [ ] Add graceful degradation if Blacksmith unavailable
-- [ ] Update pin creation logic
-  - [ ] Replace `new QuestPin()` with `pins.create()`
-  - [ ] Map quest/objective data to `PinData`
-  - [ ] Set `moduleId: 'coffee-pub-squire'`
-  - [ ] Store quest metadata in `config` property
+  - [ ] Add `pins.isAvailable()` before any API use; add `await pins.whenReady()` when creating pins at init/ready
+  - [ ] Graceful degradation: if Blacksmith unavailable, quest pins are disabled (no rendering, no errors)
+- [ ] Update pin creation logic (drop handler and any other creation paths)
+  - [ ] In `dropCanvasData` handler: replace `new QuestPin(...)` + `canvas.squirePins.addChild(pin)` + `pin._saveToPersistence()` with `await pins.create(pinData, { sceneId: canvas.scene.id })`; use drop event coordinates for `x`, `y`
+  - [ ] Map quest/objective data to `PinData`: `id` (e.g. existing pinId or `crypto.randomUUID()`), `x`, `y`, `moduleId: 'coffee-pub-squire'`, `type: 'quest' | 'objective'`, `shape`, `image`, `text`, `size`, `style`, `ownership`, `config` (questUuid, objectiveIndex, questIndex, etc.)
+  - [ ] Store all quest/objective metadata in `config`; do not store position in our flags (Blacksmith persists it)
 - [ ] Update pin update logic
   - [ ] Replace `pin.updateObjectiveState()` with `pins.update()`
   - [ ] Replace `pin.updateQuestStatus()` with `pins.update()`
@@ -246,8 +276,8 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
   - [ ] Fail objective (existing logic)
   - [ ] Delete pin (use `pins.delete()`)
 - [ ] Filter events by module
-  - [ ] Check `evt.pin.moduleId === 'coffee-pub-squire'`
-  - [ ] Check `evt.pin.config` for quest-specific data
+  - [ ] Use `evt.pin.moduleId === 'coffee-pub-squire'` (moduleId is on the pin, not in config)
+  - [ ] Use `evt.pin.config` for quest/objective data (questUuid, objectiveIndex, etc.)
 - [ ] Implement context menu (optional)
   - [ ] Register custom menu items via `pins.registerContextMenuItem()`
   - [ ] Add "Complete Objective", "Fail Objective", "Toggle Hidden", "Delete Pin"
@@ -257,8 +287,8 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 **Goal**: Migrate journal entry update handlers
 
 - [ ] Update `updateJournalEntryPage` hook
-  - [ ] Find pins via `pins.list({ moduleId, config: { questUuid } })`
-  - [ ] Update quest status pins via `pins.update()`
+  - [ ] Find pins via `pins.list({ moduleId: 'coffee-pub-squire', sceneId })` then filter by `pin.config?.questUuid` (and `objectiveIndex` for objectives)
+  - [ ] Update quest status pins via `pins.update(pinId, { style, text, ... })`
   - [ ] Update objective state pins via `pins.update()`
   - [ ] Update visibility via `ownership` property
 - [ ] Update quest visibility flag handler
@@ -289,33 +319,27 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 
 ### Phase 7: Cleanup & Removal
 **Status**: Not Started  
-**Goal**: Delete all pin rendering/management code
+**Goal**: Delete all pin rendering/management code and mark legacy code for deletion
 
-- [ ] Delete `QuestPin` class entirely
-  - [ ] Delete `scripts/quest-pin.js` (~1800 lines)
-  - [ ] Remove all imports of `QuestPin` from other files
-  - [ ] Remove `loadPersistedPins` and `loadPersistedPinsOnCanvasReady` exports
-- [ ] Delete `canvas.squirePins` container code
-  - [ ] Remove all container creation code from `squire.js`
-  - [ ] Remove all container management hooks
-  - [ ] Remove container positioning code
-- [ ] Delete all persistence code
-  - [ ] Remove all `_saveToPersistence()` calls
-  - [ ] Remove all `_removeFromPersistence()` calls
-  - [ ] Remove `loadPersistedPins()` function
-  - [ ] Remove `loadPersistedPinsOnCanvasReady()` function
-- [ ] Delete config system
-  - [ ] Delete `themes/quest-pins.json` (no longer needed)
-  - [ ] Remove `loadPinConfig()` function
-  - [ ] Remove `PIN_CONFIG_CACHE` variable
-- [ ] Delete PIXI-related code
-  - [ ] Remove all PIXI imports related to pins
-  - [ ] Remove all PIXI event handlers
-  - [ ] Remove all graphics rendering code
-- [ ] Update documentation
-  - [ ] Update `architecture-pins.md` to reflect API usage (or remove)
-  - [ ] Update `overview-quests.md` with new pin system
-  - [ ] Remove references to custom pin rendering
+**Legacy code marked for deletion:**
+
+| Location | What to remove |
+|---------|----------------|
+| **`scripts/quest-pin.js`** | **DELETE FILE** – `QuestPin` class, `loadPinConfig()`, `PIN_CONFIG_CACHE`, `loadPersistedPins()`, `loadPersistedPinsOnCanvasReady()`, `cleanupQuestPins()`, `cleanupOrphanedPins()`, `getQuestNumber()` (move to helper if still needed). |
+| **`scripts/squire.js`** | Remove import of `QuestPin`, `loadPersistedPins`, `loadPersistedPinsOnCanvasReady`. Remove all `canvas.squirePins` creation/positioning (PIXI.Container). In `dropCanvasData`: replace QuestPin instantiation with `pins.create()`. In `_routeToQuestPins`: replace `canvas.squirePins.children.filter(...)` with `pins.list({ moduleId, sceneId })` + filter by `config.questUuid`; replace pin method calls with `pins.update()`. Replace `loadPersistedPins()` / `loadPersistedPinsOnCanvasReady()` with migration + `pins.reload()` where appropriate. Remove `canvasSceneChange` / `updateScene` logic that calls `loadPersistedPins`. |
+| **`scripts/panel-quest.js`** | Remove import of `QuestPin`, `loadPersistedPins`. Replace `canvas.squirePins` usage: `_clearAllQuestPins`, `_clearQuestPins`, toggle visibility, `showQuestPinText` callback – use `pins.list()`, `pins.delete()`, `pins.deleteAllByType()` or update pin visibility via `pins.update()`. |
+| **`scripts/panel-notes.js`** | Replace `canvas.squirePins?.toLocal(...)` with Blacksmith canvas API or equivalent if still needed for note pin placement. |
+| **`scripts/helpers.js`** | Remove import of `QuestPin`; replace “objective near pin” check with `pins.list()` + filter by `config`. |
+| **`scripts/manager-handle.js`** | Replace `canvas.squirePins.children.filter(QuestPin)` with `pins.list()` + filter; use `pins.panTo(pinId)` or equivalent for “pan to pin”. |
+| **`scripts/manager-panel.js`** | Remove import of `QuestPin` if only used for type checks. |
+| **`scripts/settings.js`** | Replace `canvas.squirePins.children.forEach(...)` (showQuestPinText, etc.) with `pins.list()` + per-pin update or document that Blacksmith handles styling. |
+| **`themes/quest-pins.json`** | **DELETE FILE** – pin appearance comes from API (shape, style, image, text). |
+
+- [ ] Delete `QuestPin` class and `scripts/quest-pin.js`
+- [ ] Remove all imports/usages of `QuestPin`, `loadPersistedPins`, `loadPersistedPinsOnCanvasReady` from squire.js, panel-quest.js, helpers.js, manager-handle.js, manager-panel.js, settings.js
+- [ ] Delete `canvas.squirePins` container creation and all references
+- [ ] Delete `themes/quest-pins.json` and any `loadPinConfig()` usage
+- [ ] Update documentation (`architecture-quests.md`, any overview docs) to describe Blacksmith pin API usage only
 
 ### Phase 8: Testing & Validation
 **Status**: Not Started  
@@ -373,6 +397,28 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
   - [ ] Loading states during migration
 
 ## Implementation Details
+
+### API Methods We Use (per [API: Pins](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Pins))
+
+| Method | Use |
+|--------|-----|
+| `pins.isAvailable()` | Guard before any API use. |
+| `pins.whenReady()` | Wait for canvas + scene before creating/reloading pins. |
+| `pins.create(pinData, options?)` | Create placed quest/objective pins (with `sceneId`). |
+| `pins.update(pinId, patch, options?)` | Update style, text, ownership, config after journal/state changes. |
+| `pins.delete(pinId, options?)` | Remove pin (e.g. double right-click, clear pins). |
+| `pins.get(pinId)` | Resolve pin by ID when we have it (e.g. from config). |
+| `pins.exists(pinId)` | Check before create or delete. |
+| `pins.list({ moduleId, sceneId, type? })` | Find pins for a scene; filter in code by `config.questUuid` / `objectiveIndex`. |
+| `pins.on(eventType, handler, { moduleId, signal })` | Click, doubleClick, rightClick, middleClick, hoverIn, hoverOut, dragEnd (with `dragEvents: true`). |
+| `pins.reload(options?)` | Re-render pins after migration or scene load. |
+| `pins.panTo(pinId, options?)` | Pan to pin from quest panel / handle. |
+| `pins.ping(pinId, options?)` | Optional: highlight pin (e.g. after pan). |
+| `pins.registerContextMenuItem(itemId, itemData)` | Optional: "Complete objective", "Fail objective", "Delete pin". |
+| `pins.findScene(pinId)` | Optional: resolve scene when we only have pinId. |
+| `pins.refreshPin(pinId)` | Optional: force re-render after update. |
+
+We do **not** use unplaced pins for quests: all quest pins are placed on a scene when created.
 
 ### What We Provide to Blacksmith API
 
@@ -473,9 +519,9 @@ await pins.whenReady();
 const controller = new AbortController();
 
 pins.on('click', async (evt) => {
-  if (evt.pin.config?.moduleId !== 'coffee-pub-squire') return;
+  if (evt.pin.moduleId !== 'coffee-pub-squire') return;
   
-  const { questUuid, objectiveIndex } = evt.pin.config;
+  const { questUuid, objectiveIndex } = evt.pin.config || {};
   
   if (evt.modifiers.shift && game.user.isGM) {
     // Toggle hidden state
@@ -530,6 +576,10 @@ Hooks.on('unloadModule', (id) => {
 ### 8. Visual Appearance Differences
 **Challenge**: Blacksmith pins may look different than current PIXI pins  
 **Solution**: Accept Blacksmith's default appearance, or configure via API properties (shape, style, image, text)
+
+### 9. Export/Import (Quest JSON)
+**Challenge**: Current export includes `scenePins[sceneId].questPins`; after migration, pin data lives in Blacksmith scene flags, not Squire flags.  
+**Solution**: Decide and document: (a) export pin payloads (id, x, y, config) and on import re-call `pins.create()` per pin for each scene, or (b) do not export pins and document that GMs re-place pins after import. Prefer (a) for seamless world transfer.
 
 ## Testing Checklist
 
