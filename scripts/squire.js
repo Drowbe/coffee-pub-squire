@@ -10,7 +10,7 @@ import { QuestParser } from './utility-quest-parser.js';
 // import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 
 // New Blacksmith API-based quest pins
-import { createQuestPin, createObjectivePin, isPinsApiAvailable } from './utility-quest-pins.js';
+import { isPinsApiAvailable } from './utility-quest-pins.js';
 import { migrateLegacyQuestPins } from './utility-quest-pin-migration.js';
 import { registerQuestPinEvents } from './quest-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
@@ -999,104 +999,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        // Quest Pin Hooks - MIGRATED TO BLACKSMITH API
-        // NOTE: Drag-to-canvas creation is DEPRECATED. Use "Pin to Scene" button instead (like Notes).
-        // This hook remains for backward compatibility during transition period.
-        const questPinDropCanvasDataHookId = BlacksmithHookManager.registerHook({
-            name: "dropCanvasData",
-            description: "Coffee Pub Squire: Handle quest pin canvas data drops (DEPRECATED - use Pin to Scene button)",
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (canvas, data) => {
-                if (data.type !== 'quest-objective' && data.type !== 'quest-quest') return; // Let Foundry handle all other drops!
-                
-                // Only GMs can create quest pins
-                if (!game.user.isGM) return false;
-                
-                // Check if Blacksmith API is available
-                if (!isPinsApiAvailable()) {
-                    ui.notifications.warn('Quest pins require the Blacksmith module');
-                    return false;
-                }
-                
-                if (data.type === 'quest-objective') {
-                    // Handle objective-level pins
-                    const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory, questState } = data;
-                    
-                    // Get objective data from quest parser
-                    const page = await fromUuid(questUuid);
-                    if (!page) {
-                        ui.notifications.error('Quest not found');
-                        return false;
-                    }
-                    
-                    const enrichedHtml = await TextEditor.enrichHTML(page.text?.content || '', { async: true });
-                    const quest = await QuestParser.parseSinglePage(page, enrichedHtml);
-                    
-                    if (!quest || !quest.tasks || !quest.tasks[objectiveIndex]) {
-                        ui.notifications.error('Objective not found');
-                        return false;
-                    }
-                    
-                    const objective = quest.tasks[objectiveIndex];
-                    
-                    // Create objective pin via Blacksmith API
-                    const pin = await createObjectivePin({
-                        questUuid,
-                        questIndex,
-                        objectiveIndex,
-                        questCategory,
-                        questState: questState || 'visible',
-                        objective,
-                        x: data.x,
-                        y: data.y,
-                        sceneId: canvas.scene.id
-                    });
-                    
-                    if (pin) {
-                        ui.notifications.info('Objective pin created');
-                        
-                        // Auto-show quest pins if they're currently hidden
-                        const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
-                        if (currentVisibility) {
-                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
-                            ui.notifications.info('Quest pins automatically shown');
-                        }
-                    }
-                    
-                    return true;
-                    
-                } else if (data.type === 'quest-quest') {
-                    // Handle quest-level pins
-                    const { questUuid, questIndex, questCategory, questState, questStatus } = data;
-                    
-                    // Create quest pin via Blacksmith API
-                    const pin = await createQuestPin({
-                        questUuid,
-                        questIndex,
-                        questCategory,
-                        questStatus: questStatus || 'Not Started',
-                        questState: questState || 'visible',
-                        x: data.x,
-                        y: data.y,
-                        sceneId: canvas.scene.id
-                    });
-                    
-                    if (pin) {
-                        ui.notifications.info('Quest pin created');
-                        
-                        // Auto-show quest pins if they're currently hidden
-                        const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
-                        if (currentVisibility) {
-                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
-                            ui.notifications.info('Quest pins automatically shown');
-                        }
-                    }
-                    
-                    return true;
-                }
-            }
-        });
+        // REMOVED: dropCanvasData quest pin handler - Use "Pin to Scene" button only (like Notes).
         
         // REMOVED: questPinCanvasSceneChangeHookId - Migration now handled in canvasReady hook
         // No need to manually reload pins on scene change - Blacksmith handles this automatically
@@ -1507,20 +1410,18 @@ async function _embedNoteMetadataBox(sheet, html, data) {
 async function _routeToQuestPins(page, changes, options, userId) {
     // MIGRATED TO BLACKSMITH API
     try {
-        // Import the utility function dynamically to avoid circular dependencies
-        const { updateQuestPinVisibility } = await import('./utility-quest-pins.js');
+        const { updateQuestPinVisibility, updateQuestPinStylesForPage } = await import('./utility-quest-pins.js');
         
         // Handle quest visibility changes
         if (changes.flags && changes.flags[MODULE.ID] && changes.flags[MODULE.ID].visible !== undefined) {
-            // Update pin ownership for all pins related to this quest
             await updateQuestPinVisibility(page.uuid, canvas.scene?.id);
         }
         
-        // Handle quest content changes (objective states, quest status, etc.)
-        // TODO: Implement pin style/color updates based on quest status changes
-        // For now, Blacksmith handles visibility via ownership
-        // Future: Update pin style.fill based on quest status and objective states
-        
+        // Handle quest content changes (objective states, quest status) - sync pin styles
+        if (changes.text && Object.keys(changes.text).length) {
+            await updateQuestPinStylesForPage(page, canvas.scene?.id);
+            await updateQuestPinVisibility(page.uuid, canvas.scene?.id);
+        }
     } catch (error) {
         console.error('Error routing to quest pins:', error);
     }

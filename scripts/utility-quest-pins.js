@@ -9,6 +9,7 @@
  */
 
 import { MODULE } from './const.js';
+import { QuestParser } from './utility-quest-parser.js';
 
 /**
  * Get the Blacksmith Pins API
@@ -357,5 +358,78 @@ export async function reloadAllQuestPins() {
         console.log(`${MODULE.ID} | Reloaded all quest pins`);
     } catch (error) {
         console.error(`${MODULE.ID} | Failed to reload quest pins:`, error);
+    }
+}
+
+/**
+ * Update pin styles (colors) and config when quest journal content changes.
+ * Call from updateJournalEntryPage when changes.text is present.
+ * @param {JournalEntryPage} page - Quest journal page (with updated content)
+ * @param {string} sceneId - Scene ID (optional, defaults to current scene)
+ * @returns {Promise<void>}
+ */
+export async function updateQuestPinStylesForPage(page, sceneId = null) {
+    const pins = getPinsApi();
+    if (!pins || !pins.isAvailable()) return;
+    
+    sceneId = sceneId || canvas.scene?.id;
+    if (!sceneId) return;
+    
+    const questUuid = page.uuid;
+    const questVisible = page.getFlag(MODULE.ID, 'visible') !== false;
+    const questState = questVisible ? 'visible' : 'hidden';
+    
+    let entry = null;
+    try {
+        const enrichedHtml = await TextEditor.enrichHTML(page.text?.content || '', { async: true });
+        entry = await QuestParser.parseSinglePage(page, enrichedHtml);
+    } catch (e) {
+        console.warn(`${MODULE.ID} | Could not parse quest for pin style update:`, e);
+        return;
+    }
+    
+    if (!entry) return;
+    
+    const questStatus = entry.status || 'Not Started';
+    const allPins = pins.list({ moduleId: MODULE.ID, sceneId });
+    const questPins = allPins.filter(p => p.config?.questUuid === questUuid);
+    
+    for (const pin of questPins) {
+        try {
+            if (pin.type === 'quest') {
+                const color = getQuestPinColor(questStatus, questState);
+                await pins.update(pin.id, {
+                    style: {
+                        fill: color,
+                        stroke: '#000000',
+                        strokeWidth: 2
+                    },
+                    config: {
+                        ...pin.config,
+                        questStatus,
+                        questState
+                    }
+                });
+            } else if (pin.type === 'objective') {
+                const objectiveIndex = pin.config?.objectiveIndex;
+                if (objectiveIndex == null || !entry.tasks || !entry.tasks[objectiveIndex]) continue;
+                const task = entry.tasks[objectiveIndex];
+                const color = getObjectivePinColor(task.state);
+                await pins.update(pin.id, {
+                    style: {
+                        fill: color,
+                        stroke: '#000000',
+                        strokeWidth: 2
+                    },
+                    config: {
+                        ...pin.config,
+                        objectiveState: task.state,
+                        objectiveText: task.text
+                    }
+                });
+            }
+        } catch (error) {
+            console.error(`${MODULE.ID} | Failed to update pin style:`, pin.id, error);
+        }
     }
 }
