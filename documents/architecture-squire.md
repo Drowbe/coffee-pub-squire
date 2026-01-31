@@ -1,174 +1,195 @@
-# Coffee Pub Squire
+# Coffee Pub Squire – Architecture
 
 ## Overview
-Coffee Pub Squire is a FoundryVTT module in the Coffee Pub suite that provides quick access to character-specific combat information through a sliding tray interface. It serves as both a practical tool and a reference implementation of the Blacksmith API integration.
+
+Coffee Pub Squire is a FoundryVTT module in the Coffee Pub suite. It provides quick access to character-specific combat information and world tools (Notes, Codex, Quests) through a sliding tray interface. It serves as both a practical tool and a reference implementation of the Blacksmith API integration.
 
 ## Project Structure
+
 ```
 coffee-pub-squire/
 ├── module.json
 ├── scripts/
-│   ├── squire.js (main module file)
-│   ├── const.js (constants and configuration)
-│   ├── manager-panel.js (handles tray and panel states)
-│   ├── panel-spells.js
-│   ├── panel-weapons.js
-│   └── panel-info.js
+│   ├── squire.js              # Main module: hooks, Blacksmith registration
+│   ├── const.js               # MODULE, TEMPLATES, CSS_CLASSES, PANELS, etc.
+│   ├── helpers.js             # Shared utilities (renderTemplate, etc.)
+│   ├── settings.js            # Foundry settings registration
+│   ├── manager-panel.js       # PanelManager: tray, panel switching, state
+│   ├── manager-handle.js      # HandleManager: handle content per view mode
+│   ├── timer-utils.js         # Tracked timeouts/intervals for cleanup
+│   ├── transfer-utils.js      # Party transfer workflows
+│   ├── quest-pin.js           # QuestPin, canvas quest pin integration
+│   ├── panel-*.js             # Panel classes (see Panels below)
+│   ├── window-*.js            # Window/form classes (Notes, Quest, etc.)
+│   ├── utility-*-parser.js    # Parsers (codex, notes, quest, base)
+│   ├── utility-journal.js
+│   ├── utility-lights.js
+│   └── utility-print-character.js
 ├── styles/
-│   ├── squire.css (main styles)
-│   ├── tray.css (tray animation and layout)
-│   ├── panel-spells.css
-│   ├── panel-weapons.css
-│   └── panel-info.css
+│   ├── default.css            # Main entry; imports all others
+│   ├── common.css, tray.css, handle.css
+│   ├── panel-*.css            # Panel-specific styles
+│   ├── window-*.css           # Window/form styles
+│   └── quest-markers.css, codex-form.css, notes-metadata-box.css
 ├── templates/
-│   ├── tray.hbs (main slide-out container)
-│   ├── panel-spells.hbs
-│   ├── panel-weapons.hbs
-│   └── panel-info.hbs
-└── README.md
+│   ├── tray.hbs               # Main tray layout (handle + content)
+│   ├── handle-*.hbs           # Handle content per view (player, party, notes, codex, quest)
+│   ├── panel-*.hbs            # Panel templates
+│   ├── window-*.hbs           # Window templates
+│   ├── partials/              # Reusable partials
+│   ├── chat-cards.hbs, print-character.hbs
+│   └── tooltip-pin-quests-*.hbs
+├── resources/
+│   ├── light-sources.json
+│   └── pin-icons.json
+├── themes/
+│   └── quest-pins.json
+└── documents/                 # Architecture and planning docs
 ```
 
 ## Core Components
 
 ### Main Module (squire.js)
-- Initializes the module
-- Registers with Blacksmith API
-- Sets up event listeners
-- Manages module lifecycle
+
+- Registers with Blacksmith via `BlacksmithModuleManager.registerModule()`
+- Hooks: `init`, `ready`, `canvasReady`, `setup`, `getActorDirectoryEntryContext`, etc.
+- Wraps `canvas.selectObjects` for multi-select / selection display
+- Registers menubar tools (dice tray, macros, quick note)
+- Handles note edit locks, Blacksmith pin hooks (`pins.created`, `pins.updated`, `pins.resolveOwnership`)
+- Registers socketlib module for cross-client operations
 
 ### Panel Manager (manager-panel.js)
-- Controls tray visibility
-- Handles panel switching
-- Manages state persistence
-- Coordinates data updates
+
+- `PanelManager` singleton: controls tray visibility, panel switching, state
+- Creates and owns all panels; coordinates `updateTray()` and `render()`
+- Manages view modes: `player`, `party`, `notes`, `codex`, `quest`
+- Handles multi-select, GM details, selection display
+- Uses `timer-utils` for tracked timeouts/intervals; cleans up on `cleanupModule`
+
+### Handle Manager (manager-handle.js)
+
+- `HandleManager`: renders tray handle content based on `viewMode`
+- Handle partials: `handle-player`, `handle-party`, `handle-notes`, `handle-codex`, `handle-quest`
+- Handles resize for fade effect; resolves token for actor display
 
 ### Panels
-1. Spells Panel (panel-spells.js)
-   - Quick access to character spells
-   - Spell slot tracking
-   - Spell search and filtering
-   - Cast spell actions
 
-2. Weapons Panel (panel-weapons.js)
-   - Weapon quick access
-   - Attack roll integration
-   - Damage calculation
-   - Ammunition tracking
+| Panel | Script | Description |
+|-------|--------|-------------|
+| Character | panel-character.js | Portrait, name, conditions |
+| GM | panel-gm.js | GM-only actor details |
+| Control | panel-control.js | Favorites/Weapons/Spells/Features/Inventory tabs |
+| Health | panel-health.js | HP bar, popout window |
+| Experience | panel-experience.js | XP progress |
+| Abilities | panel-abilities.js | Ability scores |
+| Stats | panel-stats.js | AC, speed, senses |
+| Dice Tray | panel-dicetray.js | Dice roller, popout |
+| Macros | panel-macros.js | Macro slots, popout |
+| Favorites | panel-favorites.js | Pinned items |
+| Weapons | panel-weapons.js | Weapon attacks |
+| Spells | panel-spells.js | Spell slots, casting |
+| Features | panel-features.js | Class/race features |
+| Inventory | panel-inventory.js | Items |
+| Party | panel-party.js | Party members, transfers |
+| Party Stats | panel-party-stats.js | Party overview |
+| Notes | panel-notes.js | Journal-based notes, Blacksmith pins |
+| Codex | panel-codex.js | World reference items |
+| Quest | panel-quest.js | Quest tracking, quest pins |
 
-3. Info Panel (panel-info.js)
-   - Character stats overview
-   - Combat-relevant abilities
-   - Resource tracking
-   - Quick reference information
+### Windows / Forms
 
-## Templates
+| Window | Script | Description |
+|--------|--------|-------------|
+| Notes | window-note.js | NotesForm – note editor, pin creation |
+| Quest | window-quest.js | QuestForm – quest create/edit |
+| Characters | window-characters.js | Character picker |
+| Users | window-users.js | User picker |
+| Health | window-health.js | Health popout |
+| Dice Tray | window-dicetray.js | Dice tray popout |
+| Macros | window-macros.js | Macros popout |
+| Transfer | (in manager/party) | Transfer dialog |
 
-### Tray Template (tray.hbs)
-```handlebars
-<div class="squire-tray">
-    <div class="tray-tabs">
-        <div class="tab-item" data-tab="spells"><i class="fas fa-magic"></i></div>
-        <div class="tab-item" data-tab="weapons"><i class="fas fa-sword"></i></div>
-        <div class="tab-item" data-tab="info"><i class="fas fa-info-circle"></i></div>
-    </div>
-    <div class="tray-content">
-        <div class="panel-container" data-panel="spells">
-            {{> "modules/coffee-pub-squire/templates/panel-spells.hbs"}}
-        </div>
-        <div class="panel-container" data-panel="weapons">
-            {{> "modules/coffee-pub-squire/templates/panel-weapons.hbs"}}
-        </div>
-        <div class="panel-container" data-panel="info">
-            {{> "modules/coffee-pub-squire/templates/panel-info.hbs"}}
-        </div>
-    </div>
-</div>
-```
+### Utilities
 
-## Styling
-- Main styles (squire.css)
-- Tray animations and layout (tray.css)
-- Panel-specific styles (panel-*.css)
-- Responsive design for different screen sizes
+- **Parsers**: `utility-base-parser`, `utility-codex-parser`, `utility-notes-parser`, `utility-quest-parser`
+- **Journal**: `utility-journal.js`
+- **Lights**: `utility-lights.js`
+- **Print**: `utility-print-character.js`
+- **Transfer**: `transfer-utils.js`
+- **Timers**: `timer-utils.js` (for cleanup)
 
-## Blacksmith API Integration
+## Tray Layout
+
+The tray has a collapsible handle (left edge) and main content:
+
+- **Handle**: Pin, toggle, view-cycle buttons; handle content (player portrait, party list, notes icon, etc.)
+- **Content**: View tabs (Player, Party, Notes, Codex, Quest) and stacked panel containers
+- **Player view**: Character, GM (if GM), Health, Experience, Abilities, Stats, Dice Tray, Macros, Control, Favorites/Weapons/Spells/Features/Inventory
+
+## Blacksmith Integration
 
 ### Registration
-```javascript
-Hooks.once('init', async function() {
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    if (!blacksmith) return;
 
-    blacksmith.registerModule('coffee-pub-squire', {
-        name: 'SQUIRE',
-        version: '1.0.0',
-        features: [
-            {
-                type: 'chatPanelIcon',
-                data: {
-                    icon: 'fas fa-scroll',
-                    tooltip: 'Toggle Squire Panel',
-                    onClick: () => PanelManager.toggleTray()
-                }
-            }
-        ]
-    });
+```javascript
+BlacksmithModuleManager.registerModule(MODULE.ID, {
+    name: MODULE.NAME,
+    version: MODULE.VERSION
 });
 ```
 
+### Menubar Tools
+
+- `squire-dice-tray` – Dice tray launcher
+- `squire-macros` – Macros window launcher
+- `squire-quick-note` – Quick note creation
+
+### Pins
+
+- **Notes**: Notes stored as JournalEntry pages; pins via Blacksmith Pin API; `blacksmith.pins.resolveOwnership`, `pins.created`, `pins.updated`
+- **Quests**: Quest pins via `QuestPin`; canvas integration in `quest-pin.js`
+
 ### Utility Usage
+
 ```javascript
-const utils = blacksmith?.utils;
-if (utils) {
-    // Format time values
-    utils.formatTime(duration);
-    // Post notifications
-    utils.postConsoleAndNotification("Squire | Initializing");
-    // Access other shared utilities
-}
+const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+blacksmith?.utils?.postConsoleAndNotification(MODULE.NAME, "message", ...);
 ```
 
-## Development Phases
+## Panel Initialization Pattern
 
-### Phase 1: Core Infrastructure
-- [x] Basic module setup
-- [ ] Tray implementation
-- [ ] Panel switching
-- [ ] Blacksmith integration
+Managers and system references are initialized at render time, not in constructors:
 
-### Phase 2: Panel Implementation
-- [ ] Spells panel
-- [ ] Weapons panel
-- [ ] Info panel
+1. **Constructors** – Only basic property setup
+2. **Render** – Initialize `panelManager`, system references, listeners
+3. **Availability** – Verify system/manager availability before use
 
-### Phase 3: Enhancement
-- [ ] Performance optimization
-- [ ] Additional features
-- [ ] User customization
+This avoids timing issues where Foundry system managers are not ready yet. The Favorites panel is the reference implementation for this pattern.
+
+## Development Guidelines
+
+### Code Modification
+
+- Do not change code unrelated to the current task
+- Do not optimize or refactor without an explicit request
+- Preserve whitespace and formatting
+- Discuss significant changes before implementing
+
+### Standards
+
+- Use `postConsoleAndNotification` from Blacksmith utils; prefix messages with `SQUIRE | `
+- Target Foundry v13 API; use Application V2 patterns
+- Maintain compatibility with socketlib
+- Target D&D 5e version 5.5+
+
+### References
+
+- [Foundry v13 API](https://foundryvtt.com/api/)
+- [Application V2 Guide](https://foundryvtt.wiki/en/development/guides/applicationV2-conversion-guide)
+- [D&D 5e System](https://github.com/foundryvtt/dnd5e/wiki)
 
 ## Technical Requirements
-- FoundryVTT v12 (v13 ready)
-- Coffee Pub Blacksmith dependency
-- FoundryVTT App V2 API
-- Modern JavaScript (ES6+)
 
-## Best Practices
-1. Code Organization
-   - Clear file structure
-   - Modular components
-   - Consistent naming
-
-2. Error Handling
-   - Graceful degradation
-   - User feedback
-   - Logging
-
-3. Performance
-   - Efficient data loading
-   - Optimized rendering
-   - State management
-
-4. Testing
-   - Panel functionality
-   - Data handling
-   - User interactions 
+- FoundryVTT v13+
+- D&D 5e system 5.5+
+- Required: `coffee-pub-blacksmith`, `socketlib`
+- Recommended: `coffee-pub-bibliosoph`, `coffee-pub-crier`, `coffee-pub-monarch`, `coffee-pub-scribe`

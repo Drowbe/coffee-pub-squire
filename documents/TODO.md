@@ -29,13 +29,24 @@
 
 ## LOW PRIORITY
 
-### Notes Future Enhancements (from plan-notes)
+### Notes Future Enhancements
 - [ ] **ENHANCEMENT** Note templates
 - [ ] **ENHANCEMENT** Note linking
 - [ ] **ENHANCEMENT** Export formats for notes
 - [ ] **ENHANCEMENT** Note sharing
 - [ ] **ENHANCEMENT** Note reactions
 - [ ] **ENHANCEMENT** Note mentions
+
+### Quest Future Enhancements
+- [ ] **ENHANCEMENT** Quest relationships (link quests: prerequisites, follow-ups)
+- [ ] **ENHANCEMENT** Timeline view (chronological quest events)
+- [ ] **ENHANCEMENT** Quest templates (pre-built structures)
+- [ ] **ENHANCEMENT** Automated rewards (auto-grant XP/items on completion)
+- [ ] **ENHANCEMENT** Quest chains (automatic progression through sequences)
+- [ ] **ENHANCEMENT** Player notes (allow players to add personal notes to quests)
+- [ ] **ENHANCEMENT** Quest sharing (share between GMs or worlds)
+- [ ] **ENHANCEMENT** Advanced filtering (by participants, location, timeframe)
+- [ ] **ENHANCEMENT** Quest analytics (completion rates, average time)
 
 ## Architecture & Code Quality
 
@@ -59,3 +70,6 @@
 
 ## Investigation Needed
 - [ ] Investigate why expand animation changed from sliding to fading
+- [ ] **INVESTIGATE** Add initialization order tests; verify panel behavior across different load conditions
+- [ ] **INVESTIGATE** Test integration with other Coffee Pub modules
+- [ ] **INVESTIGATE** Monitor initialization timing; track event handling efficiency; maintain responsive UI during loading
