@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
-import { QuestPin, loadPersistedPins } from './quest-pin.js';
+// REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -455,20 +456,24 @@ export class QuestPanel {
      */
     async _clearAllQuestPins(scope) {
         try {
+            // MIGRATED TO BLACKSMITH API
+            const pins = getPinsApi();
+            if (!pins || !pins.isAvailable()) {
+                ui.notifications.warn('Quest pins require the Blacksmith module');
+                return;
+            }
+            
             if (scope === 'thisScene') {
                 // Clear pins from current scene only
-                if (canvas.scene && canvas.squirePins) {
-                    const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
-                    let clearedCount = pins.length;
+                if (canvas.scene) {
+                    const allPins = pins.list({ moduleId: MODULE.ID, sceneId: canvas.scene.id });
+                    let clearedCount = allPins.length;
                     
                     if (clearedCount > 0) {
-                        // Remove all pins from canvas first
-                        pins.forEach(pin => {
-                            canvas.squirePins.removeChild(pin);
-                        });
-                        
-                        // Clear all pins from persistence in one operation (prevents multiple refreshes)
-                        await canvas.scene.setFlag(MODULE.ID, 'questPins', []);
+                        // Delete all pins via Blacksmith API
+                        for (const pin of allPins) {
+                            await pins.delete(pin.id);
+                        }
                         
                         ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
                     }
@@ -478,19 +483,11 @@ export class QuestPanel {
                 let totalCleared = 0;
                 
                 for (const scene of game.scenes.contents) {
-                    const scenePins = scene.getFlag(MODULE.ID, 'questPins') || [];
-                    if (scenePins.length > 0) {
-                        await scene.setFlag(MODULE.ID, 'questPins', []);
-                        totalCleared += scenePins.length;
+                    const scenePins = pins.list({ moduleId: MODULE.ID, sceneId: scene.id });
+                    for (const pin of scenePins) {
+                        await pins.delete(pin.id);
+                        totalCleared++;
                     }
-                }
-                
-                // Also clear pins from current canvas if they exist
-                if (canvas.squirePins) {
-                    const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
-                    pins.forEach(pin => {
-                        canvas.squirePins.removeChild(pin);
-                    });
                 }
                 
                 ui.notifications.info(`Cleared ${totalCleared} quest pins from all scenes.`);
@@ -508,25 +505,11 @@ export class QuestPanel {
      */
     async _clearQuestPins(questUuid) {
         try {
-            if (!canvas.scene || !canvas.squirePins) return;
+            if (!canvas.scene) return;
             
-            // First, remove pins from the scene flags
-            const scenePins = canvas.scene.getFlag(MODULE.ID, 'questPins') || [];
-            const updatedScenePins = scenePins.filter(pinData => pinData.questUuid !== questUuid);
-            await canvas.scene.setFlag(MODULE.ID, 'questPins', updatedScenePins);
-            
-            // Then remove pins from the canvas
-            const pins = canvas.squirePins.children.filter(child => 
-                child instanceof QuestPin && child.questUuid === questUuid
-            );
-            
-            let clearedCount = 0;
-            for (const pin of pins) {
-                canvas.squirePins.removeChild(pin);
-                clearedCount++;
-            }
-            
-            ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
+            // MIGRATED TO BLACKSMITH API
+            await deleteQuestPins(questUuid, canvas.scene?.id);
+            ui.notifications.info('Quest pins cleared from the current scene.');
         } catch (error) {
             console.error('Error clearing quest pins:', { error, questUuid });
             ui.notifications.error('Error clearing quest pins. See console for details.');
@@ -1708,13 +1691,8 @@ export class QuestPanel {
                     }
                 }
                 
-                // Update pin visibility on canvas
-                if (canvas.squirePins) {
-                    const pins = canvas.squirePins.children.filter(child => child instanceof QuestPin);
-                    pins.forEach(pin => {
-                        pin.updateVisibility();
-                    });
-                }
+                // MIGRATED TO BLACKSMITH API: Reload all quest pins to apply visibility change
+                await reloadAllQuestPins();
                 
                 ui.notifications.info(`Quest pins ${newVisibility ? 'hidden' : 'shown'}.`);
             });
@@ -1747,13 +1725,10 @@ export class QuestPanel {
                     icon.title = 'Show Quest Labels';
                 }
                 
-                // Update pin appearance on canvas to show/hide labels
-                if (canvas.squirePins) {
-                    canvas.squirePins.children.forEach(child => {
-                        if (child._updatePinAppearance) {
-                            child._updatePinAppearance();
-                        }
-                    });
+                // MIGRATED TO BLACKSMITH API: Reload pins to apply label changes
+                const pins = getPinsApi();
+                if (pins?.isAvailable()) {
+                    await pins.reload({ moduleId: MODULE.ID });
                 }
                 
                 ui.notifications.info(`Quest pin labels ${newLabels ? 'shown' : 'hidden'}.`);
@@ -3511,12 +3486,8 @@ export class QuestPanel {
             if (importedScenes > 0) {
                 ui.notifications.info(`Scene pins imported: ${importedScenes} scenes updated with ${updatedPins} total pins.`);
                 
-                // Reload pins on canvas if available
-                if (canvas.squirePins && typeof loadPersistedPins === 'function') {
-                    trackModuleTimeout(() => {
-                        loadPersistedPins();
-                    }, 1000);
-                }
+                // MIGRATED TO BLACKSMITH API: Reload pins on canvas
+                await reloadAllQuestPins();
             }
             
             if (skippedScenes > 0) {

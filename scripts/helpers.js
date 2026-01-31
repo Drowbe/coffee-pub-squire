@@ -1,6 +1,6 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
-import { QuestPin } from './quest-pin.js';
+// REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 
 // Helper function to safely get Blacksmith API
@@ -668,9 +668,13 @@ export async function getObjectiveTooltipData(questPageUuid, objectiveIndex, pin
         // Check if there's a pin nearby for hidden objectives
         let objectiveNearby = false;
         if (task.state === 'hidden') {
-            if (canvas.squirePins && canvas.squirePins.children) {
-                objectiveNearby = canvas.squirePins.children.some(child =>
-                    child instanceof QuestPin && child.questUuid === questPageUuid && child.objectiveIndex === objectiveIndex
+            // MIGRATED TO BLACKSMITH API: Check if objective pin exists via Blacksmith API
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                const allPins = pins.list({ moduleId: MODULE.ID, sceneId: canvas.scene?.id });
+                objectiveNearby = allPins.some(pin => 
+                    pin.config?.questUuid === questPageUuid && 
+                    pin.config?.objectiveIndex === objectiveIndex
                 );
             }
         }

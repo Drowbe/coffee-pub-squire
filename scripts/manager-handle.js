@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getObjectiveTooltipData } from './helpers.js';
 import { QuestParser } from './utility-quest-parser.js';
-import { QuestPin } from './quest-pin.js';
+// REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { DiceTrayPanel } from './panel-dicetray.js';
 import { MacrosPanel } from './panel-macros.js';
 import { HealthPanel } from './panel-health.js';
@@ -1049,16 +1049,19 @@ export class HandleManager {
                 }
             }
             
-            // Find the corresponding quest pin on the canvas
-            if (canvas.squirePins && canvas.squirePins.children) {
-                const questPins = canvas.squirePins.children.filter(child =>
-                    child instanceof QuestPin && child.questUuid === pinnedQuestUuid && child.objectiveIndex === taskIndex
+            // MIGRATED TO BLACKSMITH API: Find and pan to quest pin
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                const allPins = pins.list({ moduleId: 'coffee-pub-squire', sceneId: canvas.scene?.id });
+                const questPin = allPins.find(p => 
+                    p.config?.questUuid === pinnedQuestUuid && 
+                    p.config?.objectiveIndex === taskIndex
                 );
-                if (questPins.length > 0) {
-                    const pin = questPins[0];
-                    canvas.animatePan({ x: pin.x, y: pin.y });
-                    pin.alpha = 0.6;
-                    trackModuleTimeout(() => { pin.alpha = 1.0; }, 200);
+                
+                if (questPin) {
+                    // Use Blacksmith API to pan and ping the pin
+                    await pins.panTo(questPin.id);
+                    await pins.ping(questPin.id);
                 } else {
                     ui.notifications.warn(`No pin found for objective ${taskIndex + 1}.`);
                 }

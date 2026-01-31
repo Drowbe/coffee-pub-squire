@@ -1154,13 +1154,10 @@ export const registerSettings = function() {
         type: Boolean,
         default: true,
         onChange: () => {
-            // Update all quest pins on the canvas when this setting changes
-            if (canvas.squirePins) {
-                canvas.squirePins.children.forEach(child => {
-                    if (child._updatePinAppearance) {
-                        child._updatePinAppearance();
-                    }
-                });
+            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                pins.reload({ moduleId: 'coffee-pub-squire' });
             }
         }
     });
@@ -1179,13 +1176,10 @@ export const registerSettings = function() {
         },
         default: 30,
         onChange: () => {
-            // Update all quest pins on the canvas when this setting changes
-            if (canvas.squirePins) {
-                canvas.squirePins.children.forEach(child => {
-                    if (child._updatePinAppearance) {
-                        child._updatePinAppearance();
-                    }
-                });
+            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                pins.reload({ moduleId: 'coffee-pub-squire' });
             }
         }
     });
@@ -1204,13 +1198,10 @@ export const registerSettings = function() {
         },
         default: 200,
         onChange: () => {
-            // Update all quest pins on the canvas when this setting changes
-            if (canvas.squirePins) {
-                canvas.squirePins.children.forEach(child => {
-                    if (child._updatePinAppearance) {
-                        child._updatePinAppearance();
-                    }
-                });
+            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                pins.reload({ moduleId: 'coffee-pub-squire' });
             }
         }
     });
@@ -1229,13 +1220,10 @@ export const registerSettings = function() {
         },
         default: 50,
         onChange: () => {
-            // Update all quest pins on the canvas when this setting changes
-            if (canvas.squirePins) {
-                canvas.squirePins.children.forEach(child => {
-                    if (child._updatePinAppearance) {
-                        child._updatePinAppearance();
-                    }
-                });
+            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                pins.reload({ moduleId: 'coffee-pub-squire' });
             }
         }
     });
@@ -1254,13 +1242,10 @@ export const registerSettings = function() {
         },
         default: 1.0,
         onChange: () => {
-            // Update all quest pins on the canvas when this setting changes
-            if (canvas.squirePins) {
-                canvas.squirePins.children.forEach(child => {
-                    if (child._updatePinAppearance) {
-                        child._updatePinAppearance();
-                    }
-                });
+            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
+            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+            if (pins?.isAvailable()) {
+                pins.reload({ moduleId: 'coffee-pub-squire' });
             }
         }
     });

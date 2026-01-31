@@ -2113,8 +2113,8 @@ export class NotesPanel {
             const rect = view.getBoundingClientRect();
             const globalX = event.clientX - rect.left;
             const globalY = event.clientY - rect.top;
-            const localPos = canvas.squirePins?.toLocal({ x: globalX, y: globalY }) ||
-                canvas.stage?.toLocal({ x: globalX, y: globalY });
+            // MIGRATED TO BLACKSMITH API: No longer need squirePins container
+            const localPos = canvas.stage?.toLocal({ x: globalX, y: globalY });
 
             if (!localPos) {
                 ui.notifications.warn('Unable to place pin: canvas position unavailable.');

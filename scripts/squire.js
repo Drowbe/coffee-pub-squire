@@ -6,7 +6,12 @@ import { registerHelpers, renderTemplate } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestForm } from './window-quest.js';
 import { QuestParser } from './utility-quest-parser.js';
-import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
+// Legacy PIXI-based quest pins - TO BE REMOVED
+// import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
+
+// New Blacksmith API-based quest pins
+import { createQuestPin, createObjectivePin, isPinsApiAvailable } from './utility-quest-pins.js';
+import { migrateLegacyQuestPins } from './utility-quest-pin-migration.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
 import {
@@ -386,60 +391,18 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const canvasInitHookId = BlacksmithHookManager.registerHook({
-            name: 'canvasInit',
-            description: 'Coffee Pub Squire: Create squirePins container on canvas initialization',
-            context: MODULE.ID,
-            priority: 2,
-            callback: () => {
-                // CanvasInit hook called
-                if (!canvas.squirePins) {
-                    // Creating squirePins container
-                    const squirePins = new PIXI.Container();
-                    squirePins.sortableChildren = true;
-                    squirePins.interactive = true;
-                    squirePins.eventMode = 'static';
-                    if (canvas.foregroundGroup) {
-                        canvas.foregroundGroup.addChild(squirePins);
-                    } else {
-                        canvas.stage.addChild(squirePins);
-                    }
-                    canvas.squirePins = squirePins;
-                    // squirePins container created
-                }
-            }
-        });
+        // REMOVED: PIXI container creation - Blacksmith handles all rendering now
+        // Legacy canvasInit and canvasReady hooks for squirePins container have been deleted
         
         const canvasReadyHookId = BlacksmithHookManager.registerHook({
             name: 'canvasReady',
-            description: 'Coffee Pub Squire: Ensure squirePins container is properly positioned and handle canvas selection',
+            description: 'Coffee Pub Squire: Handle canvas ready (migration and selection monitoring)',
             context: MODULE.ID,
             priority: 2,
-            callback: () => {
-                // CanvasReady hook called
-                if (!canvas.squirePins) {
-                    // Creating squirePins container in canvasReady
-                    const squirePins = new PIXI.Container();
-                    squirePins.sortableChildren = true;
-                    squirePins.interactive = true;
-                    squirePins.eventMode = 'static';
-                    if (canvas.foregroundGroup) {
-                        canvas.foregroundGroup.addChild(squirePins);
-                    } else {
-                        canvas.stage.addChild(squirePins);
-                    }
-                    canvas.squirePins = squirePins;
-                    // squirePins container created in canvasReady
-                }
-                
-                // Move squirePins to top of display order
-                if (canvas.squirePins) {
-                    const parent = canvas.squirePins.parent;
-                    if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
-                        parent.addChild(canvas.squirePins);
-                    }
-                    canvas.squirePins.interactive = true;
-                    // squirePins container positioned and interactive
+            callback: async () => {
+                // Migrate legacy quest pins if needed
+                if (canvas.scene && isPinsApiAvailable()) {
+                    await migrateLegacyQuestPins(canvas.scene);
                 }
 
                 // Monitor canvas selection changes for bulk selection support
@@ -1033,10 +996,12 @@ Hooks.once('ready', async () => {
             }
         });
         
-        // Quest Pin Hooks
+        // Quest Pin Hooks - MIGRATED TO BLACKSMITH API
+        // NOTE: Drag-to-canvas creation is DEPRECATED. Use "Pin to Scene" button instead (like Notes).
+        // This hook remains for backward compatibility during transition period.
         const questPinDropCanvasDataHookId = BlacksmithHookManager.registerHook({
             name: "dropCanvasData",
-            description: "Coffee Pub Squire: Handle quest pin canvas data drops",
+            description: "Coffee Pub Squire: Handle quest pin canvas data drops (DEPRECATED - use Pin to Scene button)",
             context: MODULE.ID,
             priority: 2,
             callback: async (canvas, data) => {
@@ -1045,145 +1010,96 @@ Hooks.once('ready', async () => {
                 // Only GMs can create quest pins
                 if (!game.user.isGM) return false;
                 
+                // Check if Blacksmith API is available
+                if (!isPinsApiAvailable()) {
+                    ui.notifications.warn('Quest pins require the Blacksmith module');
+                    return false;
+                }
+                
                 if (data.type === 'quest-objective') {
                     // Handle objective-level pins
                     const { questUuid, objectiveIndex, objectiveState, questIndex, questCategory, questState } = data;
                     
-                    // Use the objective state from the drag data (default to 'active' if not provided)
-                    const finalObjectiveState = objectiveState || 'active';
-                    
-                    const pin = new QuestPin({
-                        x: data.x, 
-                        y: data.y, 
-                        questUuid, 
-                        objectiveIndex, 
-                        objectiveState: finalObjectiveState,
-                        questIndex, 
-                        questCategory,
-                        questState: questState || 'visible'
-                    });
-                    
-                    if (canvas.squirePins) {
-                        canvas.squirePins.addChild(pin);
-                        // Save to persistence
-                        pin._saveToPersistence();
-                        
-                        // Auto-show quest pins if they're currently hidden and this is a GM
-                        const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
-                        if (currentVisibility) {
-                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
-                            ui.notifications.info('Quest pins automatically shown after placing new quest pin.');
-                            
-                            // Update the toggle button in the quest panel to reflect the new state
-                            const toggleButton = document.querySelector('.toggle-pin-visibility');
-                            if (toggleButton) {
-                                toggleButton.classList.remove('fa-location-dot');
-                                toggleButton.classList.add('fa-location-dot-slash');
-                                toggleButton.title = 'Show Quest Pins';
-                            }
-                        }
-                    } else {
-                        // canvas.squirePins is not available
-                    }
-                    return true;
-                } else if (data.type === 'quest-quest') {
-                    // Handle quest-level pins
-                    const { questUuid, questIndex, questCategory, questState, questStatus, participants } = data;
-                    
-                    // Convert participant UUIDs to participant objects with names
-                    const processedParticipants = [];
-                    if (participants && Array.isArray(participants)) {
-                        for (const participantUuid of participants) {
-                            try {
-                                if (participantUuid && participantUuid.trim()) {
-                                    // Try to get actor name from UUID
-                                    const actor = await fromUuid(participantUuid);
-                                    if (actor && actor.name) {
-                                        processedParticipants.push({
-                                            uuid: participantUuid,
-                                            name: actor.name,
-                                            img: actor.img || 'icons/svg/mystery-man.svg'
-                                        });
-                                    }
-                                }
-                            } catch (error) {
-                                // If we can't resolve the UUID, add a placeholder
-                                processedParticipants.push({
-                                    uuid: participantUuid,
-                                    name: 'Unknown',
-                                    img: 'icons/svg/mystery-man.svg'
-                                });
-                            }
-                        }
+                    // Get objective data from quest parser
+                    const page = await fromUuid(questUuid);
+                    if (!page) {
+                        ui.notifications.error('Quest not found');
+                        return false;
                     }
                     
-                    const pin = new QuestPin({
-                        x: data.x, 
-                        y: data.y, 
-                        questUuid, 
-                        objectiveIndex: null, // Indicates quest-level pin
-                        objectiveState: null, // Not applicable for quest pins
-                        questIndex, 
+                    const enrichedHtml = await TextEditor.enrichHTML(page.text?.content || '', { async: true });
+                    const quest = await QuestParser.parseSinglePage(page, enrichedHtml);
+                    
+                    if (!quest || !quest.tasks || !quest.tasks[objectiveIndex]) {
+                        ui.notifications.error('Objective not found');
+                        return false;
+                    }
+                    
+                    const objective = quest.tasks[objectiveIndex];
+                    
+                    // Create objective pin via Blacksmith API
+                    const pin = await createObjectivePin({
+                        questUuid,
+                        questIndex,
+                        objectiveIndex,
                         questCategory,
                         questState: questState || 'visible',
-                        questStatus: questStatus || 'Not Started',
-                        participants: processedParticipants
+                        objective,
+                        x: data.x,
+                        y: data.y,
+                        sceneId: canvas.scene.id
                     });
                     
-                    if (canvas.squirePins) {
-                        canvas.squirePins.addChild(pin);
-                        // Save to persistence
-                        pin._saveToPersistence();
+                    if (pin) {
+                        ui.notifications.info('Objective pin created');
                         
-                        // Auto-show quest pins if they're currently hidden and this is a GM
+                        // Auto-show quest pins if they're currently hidden
                         const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
                         if (currentVisibility) {
                             await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
-                            ui.notifications.info('Quest pins automatically shown after placing new quest pin.');
-                            
-                            // Update the toggle button in the quest panel to reflect the new state
-                            const toggleButton = document.querySelector('.toggle-pin-visibility');
-                            if (toggleButton) {
-                                toggleButton.classList.remove('fa-location-dot');
-                                toggleButton.classList.add('fa-location-dot-slash');
-                                toggleButton.title = 'Show Quest Pins';
-                            }
+                            ui.notifications.info('Quest pins automatically shown');
                         }
-                    } else {
-                        // canvas.squirePins is not available
                     }
+                    
+                    return true;
+                    
+                } else if (data.type === 'quest-quest') {
+                    // Handle quest-level pins
+                    const { questUuid, questIndex, questCategory, questState, questStatus } = data;
+                    
+                    // Create quest pin via Blacksmith API
+                    const pin = await createQuestPin({
+                        questUuid,
+                        questIndex,
+                        questCategory,
+                        questStatus: questStatus || 'Not Started',
+                        questState: questState || 'visible',
+                        x: data.x,
+                        y: data.y,
+                        sceneId: canvas.scene.id
+                    });
+                    
+                    if (pin) {
+                        ui.notifications.info('Quest pin created');
+                        
+                        // Auto-show quest pins if they're currently hidden
+                        const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
+                        if (currentVisibility) {
+                            await game.user.setFlag(MODULE.ID, 'hideQuestPins', false);
+                            ui.notifications.info('Quest pins automatically shown');
+                        }
+                    }
+                    
                     return true;
                 }
             }
         });
         
-        const questPinCanvasSceneChangeHookId = BlacksmithHookManager.registerHook({
-            name: "canvasSceneChange",
-            description: "Coffee Pub Squire: Handle quest pin canvas scene changes",
-            context: MODULE.ID,
-            priority: 2,
-            callback: (scene) => {
-                // Delay loading to ensure scene is fully loaded
-                trackModuleTimeout(() => {
-                    loadPersistedPins();
-                }, 1000);
-            }
-        });
+        // REMOVED: questPinCanvasSceneChangeHookId - Migration now handled in canvasReady hook
+        // No need to manually reload pins on scene change - Blacksmith handles this automatically
         
-        const questPinUpdateSceneHookId = BlacksmithHookManager.registerHook({
-            name: "updateScene",
-            description: "Coffee Pub Squire: Handle quest pin scene updates",
-            context: MODULE.ID,
-            priority: 2,
-            callback: (scene, changes, options, userId) => {
-                if (scene.id === canvas.scene?.id && changes.flags && changes.flags[MODULE.ID]) {
-                    // Delay loading to ensure the scene update is fully processed
-                    trackModuleTimeout(() => {
-                        loadPersistedPins();
-                    }, 500);
-                }
-            }
-        });
+        // REMOVED: questPinUpdateSceneHookId - No longer needed with Blacksmith API
+        // Blacksmith automatically handles scene flag updates
         
         const questPinUpdateTokenHookId = BlacksmithHookManager.registerHook({
             name: "updateToken",
@@ -1191,21 +1107,8 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: (token, changes) => {
-                if (changes.x !== undefined || changes.y !== undefined || changes.vision !== undefined) {
-                    // Update pin visibility for all pins
-                    if (canvas.squirePins) {
-                        const pins = canvas.squirePins.children.filter(child => child.constructor.name === 'QuestPin');
-                        pins.forEach(pin => {
-                            try {
-                                if (pin.updateVisibility) {
-                                    pin.updateVisibility();
-                                }
-                            } catch (error) {
-                                // Error updating pin visibility
-                            }
-                        });
-                    }
-                }
+                // REMOVED: Pin visibility updates - Blacksmith handles this automatically via ownership
+                // No manual visibility updates needed
             }
         });
         
@@ -1258,19 +1161,8 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: () => {
-                // Update pin visibility for all pins
-                if (canvas.squirePins) {
-                    const pins = canvas.squirePins.children.filter(child => child.constructor.name === 'QuestPin');
-                    pins.forEach(pin => {
-                        try {
-                            if (pin.updateVisibility) {
-                                pin.updateVisibility();
-                            }
-                        } catch (error) {
-                            // Error updating pin visibility
-                        }
-                    });
-                }
+                // REMOVED: Pin visibility updates - Blacksmith handles this automatically via ownership
+                // No manual visibility updates needed
             }
         });
         
@@ -1294,52 +1186,8 @@ Hooks.once('ready', async () => {
 // ===== END: BLACKSMITH API REGISTRATIONS ==========================
 // ================================================================== 
 
-// Canvas hooks use native FoundryVTT hooks as Blacksmith timing for canvas events is unreliable
-Hooks.on('canvasInit', () => {
-    // Native CanvasInit hook called
-    if (!canvas.squirePins) {
-        // Creating squirePins container via native hook
-        const squirePins = new PIXI.Container();
-        squirePins.sortableChildren = true;
-        squirePins.interactive = true;
-        squirePins.eventMode = 'static';
-        if (canvas.foregroundGroup) {
-            canvas.foregroundGroup.addChild(squirePins);
-        } else {
-            canvas.stage.addChild(squirePins);
-        }
-        canvas.squirePins = squirePins;
-        // squirePins container created via native hook
-    }
-});
-
-Hooks.on('canvasReady', () => {
-    // Native CanvasReady hook called
-    if (!canvas.squirePins) {
-        // Creating squirePins container via native canvasReady
-        const squirePins = new PIXI.Container();
-        squirePins.sortableChildren = true;
-        squirePins.interactive = true;
-        squirePins.eventMode = 'static';
-        if (canvas.foregroundGroup) {
-            canvas.foregroundGroup.addChild(squirePins);
-        } else {
-            canvas.stage.addChild(squirePins);
-        }
-        canvas.squirePins = squirePins;
-        // squirePins container created via native canvasReady
-    }
-    
-    // Move squirePins to top of display order
-    if (canvas.squirePins) {
-        const parent = canvas.squirePins.parent;
-        if (parent && parent.children[parent.children.length - 1] !== canvas.squirePins) {
-            parent.addChild(canvas.squirePins);
-        }
-        canvas.squirePins.interactive = true;
-        // squirePins container positioned and interactive via native hook
-    }
-});
+// REMOVED: Native canvas hooks for PIXI container creation
+// Blacksmith handles all pin rendering now - no need for canvas.squirePins container
 
 // Helper function to get PanelManager dynamically to avoid circular dependencies
 function getPanelManager() {
@@ -1654,158 +1502,29 @@ async function _embedNoteMetadataBox(sheet, html, data) {
 }
 
 async function _routeToQuestPins(page, changes, options, userId) {
+    // MIGRATED TO BLACKSMITH API
     try {
-        // Handle quest-specific updates (visibility, pin updates, etc.)
+        // Import the utility function dynamically to avoid circular dependencies
+        const { updateQuestPinVisibility } = await import('./utility-quest-pins.js');
+        
+        // Handle quest visibility changes
         if (changes.flags && changes.flags[MODULE.ID] && changes.flags[MODULE.ID].visible !== undefined) {
-            const isVisible = changes.flags[MODULE.ID].visible;
-            
-            // Update quest pins for this quest
-            if (canvas.squirePins) {
-                const questPins = canvas.squirePins.children.filter(child => 
-                    child.constructor.name === 'QuestPin' && child.questUuid === page.uuid
-                );
-                
-                questPins.forEach(pin => {
-                    try {
-                        // Update quest state
-                        pin.questState = isVisible ? 'visible' : 'hidden';
-                        
-                        // Update pin appearance
-                        if (pin._updatePinAppearance) {
-                            pin._updatePinAppearance();
-                        }
-                        
-                        // Update visibility
-                        if (pin.updateVisibility) {
-                            pin.updateVisibility();
-                        }
-                    } catch (error) {
-                        console.error('Error updating quest pin state:', { error, pin, page });
-                    }
-                });
-            }
+            // Update pin ownership for all pins related to this quest
+            await updateQuestPinVisibility(page.uuid, canvas.scene?.id);
         }
         
         // Handle quest content changes (objective states, quest status, etc.)
-        if (changes.text && changes.text.content && canvas.squirePins) {
-            const updatedContent = changes?.text?.content ?? page.text?.content ?? '';
-            let newStatus = '';
-
-            // Check for markdown-style status first ("## Quest Status: ...")
-            const markdownStatus = updatedContent.match(/## Quest Status:\s*(.+)/);
-            if (markdownStatus) {
-                newStatus = markdownStatus[1].trim();
-            } else {
-                // Fallback to HTML structure "<strong>Status:</strong> ..."
-                const htmlStatus = updatedContent.match(/<strong>Status:<\/strong>\s*([^<]*)/i);
-                if (htmlStatus) {
-                    newStatus = htmlStatus[1].trim();
-                }
-            }
-
-            const questPins = canvas.squirePins.children.filter(child => 
-                child.constructor.name === 'QuestPin' && child.questUuid === page.uuid
-            );
-            
-            questPins.forEach(pin => {
-                try {
-                    // Update quest status for quest-level pins when we have it
-                    if (pin.pinType === 'quest' && newStatus && pin.updateQuestStatus) {
-                        pin.updateQuestStatus(newStatus);
-                    }
-                    
-                    // Update objective states for objective pins regardless of quest status
-                    if (pin.pinType === 'objective') {
-                        _updateQuestPinObjectiveStates(pin, updatedContent);
-                    }
-                } catch (error) {
-                    console.error('Error updating quest pin status:', { error, pin, page });
-                }
-            });
-        }
+        // TODO: Implement pin style/color updates based on quest status changes
+        // For now, Blacksmith handles visibility via ownership
+        // Future: Update pin style.fill based on quest status and objective states
         
-        // Update pin visibility for all pins
-        if (canvas.squirePins) {
-            const pins = canvas.squirePins.children.filter(child => child.constructor.name === 'QuestPin');
-            pins.forEach(pin => {
-                try {
-                    if (pin.updateVisibility) {
-                        pin.updateVisibility();
-                    }
-                } catch (error) {
-                    // Error updating pin visibility
-                }
-            });
-        }
     } catch (error) {
         console.error('Error routing to quest pins:', error);
     }
 }
 
-// Helper function to update quest pin objective states
-function _updateQuestPinObjectiveStates(pin, pageContent) {
-    try {
-        if (pin.pinType === 'objective' && pin.objectiveIndex !== null && pin.objectiveIndex !== undefined) {
-            // Parse the quest content to find the objective state
-            const content = pageContent || '';
-            let listItems = [];
-
-            // Attempt to match markdown-style tasks first
-            const markdownMatch = content.match(/## Tasks:\s*([\s\S]*?)(?=##|$)/);
-            if (markdownMatch) {
-                const tasksHtml = markdownMatch[1];
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                listItems = Array.from(doc.querySelectorAll('li'));
-            }
-
-            // If markdown match failed, look for HTML structure
-            if (!listItems.length) {
-                const htmlMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/i);
-                if (htmlMatch) {
-                    const tasksHtml = htmlMatch[1];
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
-                    listItems = Array.from(doc.querySelectorAll('li'));
-                }
-            }
-
-            // Final fallback: parse full document and locate the Tasks section
-            if (!listItems.length) {
-                const parser = new DOMParser();
-                const fullDoc = parser.parseFromString(content, 'text/html');
-                const strongTags = Array.from(fullDoc.querySelectorAll('strong'));
-                const tasksStrong = strongTags.find(tag => tag.textContent.trim().toUpperCase() === 'TASKS:');
-
-                if (tasksStrong) {
-                    const parentParagraph = tasksStrong.closest('p');
-                    const potentialList = parentParagraph?.nextElementSibling;
-                    if (potentialList && potentialList.tagName === 'UL') {
-                        listItems = Array.from(potentialList.querySelectorAll('li'));
-                    }
-                }
-            }
-
-            const li = listItems[pin.objectiveIndex];
-            if (li) {
-                let newState = 'active';
-                if (li.querySelector('s, del, strike')) {
-                    newState = 'completed';
-                } else if (li.querySelector('code')) {
-                    newState = 'failed';
-                } else if (li.querySelector('em, i')) {
-                    newState = 'hidden';
-                }
-                
-                if (pin.updateObjectiveState) {
-                    pin.updateObjectiveState(newState);
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error updating quest pin objective states:', { error, pin });
-    }
-}
+// REMOVED: _updateQuestPinObjectiveStates - No longer needed with Blacksmith API
+// Pin appearance updates will be handled via pins.update() when quest content changes
 
 
 
@@ -2507,8 +2226,7 @@ Hooks.once('ready', async function() {
             // The meta box hook should handle individual pages
         });
         
-        // Load quest pins first
-        loadPersistedPinsOnCanvasReady();
+        // REMOVED: loadPersistedPinsOnCanvasReady() - Quest pins now loaded via migration in canvasReady hook
         
         // Register the controlToken hook AFTER settings are registered
         const controlTokenHookId = BlacksmithHookManager.registerHook({

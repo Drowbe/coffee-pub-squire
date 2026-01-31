@@ -20,7 +20,7 @@ import { CodexPanel } from './panel-codex.js';
 import { QuestPanel } from './panel-quest.js';
 import { MacrosPanel } from './panel-macros.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
-import { QuestPin } from './quest-pin.js';
+// REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { HandleManager } from './manager-handle.js';
 import { trackModuleInterval, trackModuleTimeout, registerTimeoutId, registerIntervalId, clearTrackedInterval, clearTrackedTimeout } from './timer-utils.js';
 
