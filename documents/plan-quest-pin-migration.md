@@ -108,7 +108,7 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 | Quest status updates | `pins.update(pinId, { style, ... })` | ⏳ | On journal entry update |
 | Objective state updates | `pins.update(pinId, { style, ... })` | ⏳ | On journal entry update |
 | Visibility filtering | `ownership` property | ⏳ | Map quest/objective visibility |
-| User hide-all flag | Request API enhancement | ⏳ | If API has no "hide all by type", remove toggle; document and request enhancement |
+| User hide-all flag | "Coming Soon" notification | ⏳ | Keep toggle; clicking shows notification; request API enhancement |
 | **Pin Persistence** | | | |
 | Save to scene flags | Automatic (Blacksmith) | ⏳ | No manual save needed |
 | Load on scene change | Automatic (Blacksmith) | ⏳ | Call `pins.reload()` if needed |
@@ -141,7 +141,7 @@ This document outlines the migration plan for **removing** Coffee Pub Squire's c
 | Quest visibility flag | `ownership` property | ⏳ | Map visibility to ownership |
 | Objective state parsing | HTML parsing (unchanged) | ⏳ | Update pin via API |
 | **Visibility System** | | | |
-| User hide flag | Filter before render | ⏳ | Check flag before create/update |
+| User hide flag | "Coming Soon" notification | ⏳ | Toggle shows notification until API supports it |
 | Quest hidden state | `ownership.default: 0` | ⏳ | NONE = hidden |
 | Objective hidden state | `ownership.default: 0` | ⏳ | NONE = hidden |
 | GM override (see hidden) | `ownership` per user | ⏳ | Set GM to LIMITED+ |
@@ -191,6 +191,8 @@ These are the main gaps between our current quest pin behavior and the API; the 
 | **Event payload** | `evt.pin` has top-level `moduleId`, not inside `config`. | In handlers, use `evt.pin.moduleId === 'coffee-pub-squire'` and `evt.pin.config` for quest/objective fields. |
 
 **Optional:** Use Blacksmith’s **ownership resolver hook** (`blacksmith.pins.resolveOwnership`) to map quest/objective visibility to pin `ownership` so we don’t have to pass ownership on every `pins.create()` / `pins.update()`.
+
+**Note on hide-all toggle:** The toggle will remain in the quest panel but show a "Coming Soon" notification when clicked: `ui.notifications.info("Hide all quest pins feature coming soon - requires Blacksmith API enhancement")`. This preserves the UI element while we request the API enhancement from Blacksmith.
 
 ### Notes Pattern Reference
 
