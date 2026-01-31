@@ -2,16 +2,18 @@
 
 ## Overview
 
-The Quest system provides structured adventure and task management for FoundryVTT. It features quest creation, progress tracking, visual scene integration via canvas pins, and rich metadata management. The system uses FoundryVTT's native Journal system as its data store and stores pin positions in scene flags.
+The Quest system provides structured adventure and task management for FoundryVTT. It features quest creation, progress tracking, visual scene integration via canvas pins, and rich metadata management. The system uses FoundryVTT's native Journal system as its data store. Pins are rendered and persisted via the **Blacksmith Pins API** (coffee-pub-blacksmith).
 
 ## Project Files
 
 | File | Class/Purpose |
 |------|---------------|
-| `scripts/panel-quest.js` | `QuestPanel` – Main panel UI, filtering, organization |
+| `scripts/panel-quest.js` | `QuestPanel` – Main panel UI, filtering, organization, Pin to Scene |
 | `scripts/window-quest.js` | `QuestForm` – FormApplication for quest create/edit |
 | `scripts/utility-quest-parser.js` | `QuestParser` – Parses HTML journal content to JS objects |
-| `scripts/quest-pin.js` | `QuestPin`, `loadPersistedPins`, `loadPersistedPinsOnCanvasReady`, `cleanupQuestPins` |
+| `scripts/utility-quest-pins.js` | Quest pin utilities – create, update, delete, ownership, colors |
+| `scripts/utility-quest-pin-migration.js` | One-time migration of legacy scene-flag pins to Blacksmith |
+| `scripts/quest-pin-events.js` | Click handler, context menu registration for quest pins |
 | `templates/panel-quest.hbs` | Panel template |
 | `templates/quest-form.hbs` | Form template |
 | `templates/handle-quest.hbs` | Handle content for quest view (tray handle) |
@@ -21,7 +23,7 @@ The Quest system provides structured adventure and task management for FoundryVT
 | `styles/panel-quest.css` | Panel styles |
 | `styles/quest-form.css` | Form styles |
 | `styles/quest-markers.css` | Pin marker styles |
-| `themes/quest-pins.json` | Pin appearance configuration |
+| `themes/quest-pins.json` | Pin appearance configuration (TODO: wire to pins) |
 
 ## Core Design
 
@@ -59,21 +61,9 @@ Quests are stored as HTML with semantic markup:
 - `||text||`: GM hints
 - `((treasure))`: Treasure unlocks
 
-### Scene Pin Integration
+### Scene Pin Integration (Blacksmith API)
 
-Pin positions are stored in scene flags (`coffee-pub-squire.questPins`):
-
-```javascript
-scene.setFlag(MODULE.ID, 'questPins', [
-  {
-    pinId: 'unique-id',
-    questUuid: '...',
-    objectiveIndex: 0,  // null for quest-level pin
-    x: 100,
-    y: 200
-  }
-]);
-```
+Pins are created and placed via the Blacksmith Pins API. Position persistence is handled by Blacksmith. Legacy pins from scene flags (`coffee-pub-squire.questPins`) are migrated to Blacksmith on scene load; see `utility-quest-pin-migration.js`.
 
 ## Components
 
@@ -121,38 +111,65 @@ Main UI component for displaying and managing quests.
 
 **Filtering:** Client-side DOM filtering for performance (no re-render needed).
 
-### QuestPin (`quest-pin.js`)
+### Quest Pins (Blacksmith API)
 
-PIXI-based visual representation of quests and objectives on the canvas.
+Visual representation of quests and objectives on the canvas via `pins.create()`, `pins.place()`, `pins.update()`, `pins.delete()`.
 
 **Pin Types:**
-- **Quest pins** (circular): Represent entire quests
-- **Objective pins** (rounded rectangle): Represent specific objectives
+- **Quest pins** (`type: 'quest'`, `shape: 'circle'`): Represent entire quests
+- **Objective pins** (`type: 'objective'`, `shape: 'square'`): Represent specific objectives
 
-**Visual States:**
-- Quest status colors: Not Started (blue), In Progress (white), Complete (green), Failed (red), Hidden (gray)
-- Objective state colors: Active (white), Completed (green), Failed (red), Hidden (gray)
-- Category icons: Main Quest vs Side Quest
+**Data Passed to Blacksmith API**
+
+| Field | Quest Pin | Objective Pin |
+|-------|-----------|---------------|
+| `moduleId` | `coffee-pub-squire` | `coffee-pub-squire` |
+| `type` | `'quest'` | `'objective'` |
+| `shape` | `'circle'` | `'square'` |
+| `text` | `Q{questIndex}` | `Q{questIndex}.{objectiveIndex+1}` |
+| `size` | 32 | 28 |
+| `style.fill` | From status/state (see below) | From objective state |
+| `config.questUuid` | ✓ | ✓ |
+| `config.questIndex` | ✓ | ✓ |
+| `config.questCategory` | ✓ | ✓ |
+| `config.questStatus` | ✓ | — |
+| `config.questState` | ✓ (`visible`/`hidden`) | ✓ |
+| `config.objectiveIndex` | — | ✓ |
+| `config.objectiveState` | — | ✓ |
+| `config.objectiveText` | — | ✓ |
+| `ownership` | `calculateQuestPinOwnership(page)` | `calculateQuestPinOwnership(page, objective)` |
+
+**Quest Status → Pin Color:**
+| Status | Color (hex) |
+|--------|-------------|
+| Complete | `#00ff00` (Green) |
+| Failed | `#ff0000` (Red) |
+| In Progress | `#ffff00` (Yellow) |
+| Not Started | `#ffffff` (White) |
+| Hidden state | `#000000` (Black) |
+
+**Objective State → Pin Color:**
+| State | HTML Marker | Color (hex) |
+|-------|-------------|-------------|
+| active | Plain text | `#ffff00` (Yellow) |
+| completed | `<s>`, `<del>`, `<strike>` | `#00ff00` (Green) |
+| failed | `<code>` | `#ff0000` (Red) |
+| hidden | `<em>`, `<i>` | `#000000` (Black) |
+
+**Ownership Calculation** (`calculateQuestPinOwnership(page, objective)`):
+1. **Layer 1**: Global `hideQuestPins` user flag → All hidden (`default: NONE`)
+2. **Layer 2**: GMs always see (`users[gmId]: OWNER`)
+3. **Layer 3**: Quest `visible` flag false → Hidden from players, GMs only
+4. **Layer 4**: Objective `state === 'hidden'` → Hidden from players, GMs only
+5. **Layer 5**: Otherwise → Everyone `OBSERVER`
 
 **Interactive Features:**
-- **Drag**: GMs can reposition pins
-- **Left-click**: Select pin, jump to quest in tracker
-- **Double-click**: Complete objective (GM only)
-- **Right-click**: Toggle visibility (quest) or fail objective (objective)
-- **Double right-click**: Delete pin (GM only)
-- **Shift+Left-click** / **Middle-click**: Toggle hidden state (GM only)
+- **Left-click**: Open quest tab, expand entry, scroll to quest/objective, flash highlight
+- **Right-click**: Context menu – Complete Objective, Fail Objective, Toggle Hidden from Players (quest), Toggle Objective Hidden (objective), Delete Pin
+- **Pin to Scene**: GM clicks icon on quest/objective in panel → crosshair mode → click canvas to place
+- **Drag**: GMs can reposition (Blacksmith persists position)
 
-**Quest Numbering:** Hash-based from UUID (Q1–Q100)
-```javascript
-function getQuestNumber(questUuid) {
-  let hash = 0;
-  for (let i = 0; i < questUuid.length; i++) {
-    hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
-    hash = hash & hash;
-  }
-  return Math.abs(hash) % 100 + 1;
-}
-```
+**Quest Numbering:** Hash-based from UUID (Q1–Q100), via `getQuestNumber(questUuid)` in `helpers.js`.
 
 ## Data Flow
 
@@ -165,19 +182,19 @@ function getQuestNumber(questUuid) {
 6. Panel renders updated quest
 
 ### Objective Completion
-1. GM clicks objective checkbox or double-clicks pin
-2. Event handler wraps task in `<s>` tags in journal HTML
+1. GM clicks objective checkbox in panel **or** right-clicks pin → context menu → Complete/Fail Objective
+2. Event handler updates journal HTML (`<s>`, `<code>`, `<em>`, or plain text) via `updateObjectiveStateInJournal`
 3. Updates quest status if all tasks completed
-4. Journal update triggers `updateJournalEntryPage` hook
-5. Panel re-renders with updated progress
-6. Pin updates appearance; notification sent (if enabled)
+4. Journal update triggers `updateJournalEntryPage` hook → `_routeToQuestPins` → `updateQuestPinStylesForPage`
+5. Panel re-renders; pin style (color) syncs via `pins.update()`
+6. Notification sent (if enabled)
 
 ### Pin Creation
-1. GM clicks "Pin" button on quest entry
-2. `QuestPin` instance created, fetches quest data
-3. Pin added to `canvas.squirePins` container
-4. Pin position saved to scene flags (`questPins`)
-5. Pin persists across scene changes
+1. GM clicks "Pin to Scene" icon on quest or objective in panel
+2. Crosshair mode activates; preview element follows mouse
+3. GM clicks canvas at desired position
+4. `createQuestPin` or `createObjectivePin` calls `pins.create()` then `pins.place()`
+5. Blacksmith persists position; pin persists across scene changes
 
 ## Export/Import System
 
@@ -207,7 +224,7 @@ The quest system supports full JSON export/import including scene pins.
 ### What's Exported
 - Quest content (tasks, rewards, participants, etc.)
 - Quest progress (completed/failed objectives, status)
-- Scene pins (positions on all scenes)
+- Scene pins (positions on all scenes) – *Note: Export currently reads from legacy scene flags. Pins created after Blacksmith migration are stored by Blacksmith; a future update may source from `pins.list()`.*
 - Pin states (objective completion, visibility)
 
 ### Import Logic
@@ -241,9 +258,9 @@ The quest system supports full JSON export/import including scene pins.
 ## Hooks Integration
 
 **Blacksmith HookManager (squire.js):**
-- **Journal:** `updateJournalEntryPage`, `createJournalEntryPage`, `deleteJournalEntryPage` – route to quest panel refresh and/or quest pin updates (`_routeToQuestPanel`, `_routeToQuestPins`).
-- **Panel:** After render, `QuestPanel` calls `Hooks.call('renderQuestPanel')`; `quest-pin.js` registers a `renderQuestPanel` listener to apply pin visibility (`hideQuestPins`) and label visibility (`showQuestPinText`).
-- **Scene/canvas:** `canvasReady` runs `loadPersistedPinsOnCanvasReady`; `updateScene` refreshes pins; scene change and token create/update/delete hooks manage pin lifecycle and cleanup.
+- **Journal:** `updateJournalEntryPage`, `createJournalEntryPage`, `deleteJournalEntryPage` – route to quest panel refresh and/or quest pin updates (`_routeToQuestPanel`, `_routeToQuestPins`). On visibility or content change, `_routeToQuestPins` calls `updateQuestPinVisibility` and `updateQuestPinStylesForPage`.
+- **Panel:** After render, `QuestPanel` calls `Hooks.call('renderQuestPanel')`. Blacksmith handles pin visibility; `showQuestPinText` and `hideQuestPins` apply via `pins.reload({ moduleId })` when settings change.
+- **Scene/canvas:** `canvasReady` runs `migrateLegacyQuestPins(scene)` then `registerQuestPinEvents()`. Blacksmith manages pin lifecycle; no PIXI containers.
 
 ## Technical Requirements
 
@@ -280,7 +297,7 @@ if (typeof page.text?.content === 'string') {
 - Debounce rapid state changes
 
 ### Pin Management
-- Check for existing pins before creating
+- Check for existing pins before creating (avoid duplicates)
 - Clean up orphaned pins (reference non-existent quests)
-- Update pin appearance when quest state changes
-- Save pin positions immediately after drag
+- Update pin appearance when quest state changes via `updateQuestPinStylesForPage`
+- Blacksmith persists pin positions; no manual save needed

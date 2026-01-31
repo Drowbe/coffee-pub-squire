@@ -18,7 +18,9 @@ coffee-pub-squire/
 │   ├── manager-handle.js      # HandleManager: handle content per view mode
 │   ├── timer-utils.js         # Tracked timeouts/intervals for cleanup
 │   ├── transfer-utils.js      # Party transfer workflows
-│   ├── quest-pin.js           # QuestPin, canvas quest pin integration
+│   ├── utility-quest-pins.js  # Quest pin creation, update, ownership
+│   ├── utility-quest-pin-migration.js  # Legacy pin migration to Blacksmith
+│   ├── quest-pin-events.js    # Pin click handler, context menu
 │   ├── panel-*.js             # Panel classes (see Panels below)
 │   ├── window-*.js            # Window/form classes (Notes, Quest, etc.)
 │   ├── utility-*-parser.js    # Parsers (codex, notes, quest, base)
@@ -117,6 +119,7 @@ coffee-pub-squire/
 - **Print**: `utility-print-character.js`
 - **Transfer**: `transfer-utils.js`
 - **Timers**: `timer-utils.js` (for cleanup)
+- **Quest Pins**: `utility-quest-pins.js`, `utility-quest-pin-migration.js`, `quest-pin-events.js`
 
 ## Tray Layout
 
@@ -146,7 +149,7 @@ BlacksmithModuleManager.registerModule(MODULE.ID, {
 ### Pins
 
 - **Notes**: Notes stored as JournalEntry pages; pins via Blacksmith Pin API; `blacksmith.pins.resolveOwnership`, `pins.created`, `pins.updated`
-- **Quests**: Quest pins via `QuestPin`; canvas integration in `quest-pin.js`
+- **Quests**: Quest pins via Blacksmith API; `utility-quest-pins.js`, `quest-pin-events.js`
 
 ### Utility Usage
 
