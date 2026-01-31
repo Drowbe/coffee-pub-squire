@@ -588,7 +588,7 @@ body.squire-notes-pin-placement * {
     clear: right;
     line-height: 1.5;
     font-size: 0.9em;
-    max-height: 250px;
+    max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
 }

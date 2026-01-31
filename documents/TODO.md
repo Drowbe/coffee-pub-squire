@@ -1,6 +1,5 @@
 # Squire Tray TODO List
 
-
 ## CURRENT ISSUES (Fix First)
 - Nothing critical
 
@@ -23,39 +22,35 @@
 ### CODEX TAB
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
-- [ ] **ENHANCEMENT** When dragging a token to the manual add, we need to pull the bio and put it in the description
-- [ ] **BUG** Guard the `canvas.selectObjects` override (`squire.js` canvasReady hook) so we don't stack wrappers and timers every scene load; restore original during cleanup.
-- [ ] **BUG** Replace `cleanupModule`'s zero-delay interval sweep (`squire.js`) with targeted tracked timers; avoid spawning the extra `setInterval(() => {}, 0)` that never clears.
-- [ ] **BUG** Ensure quest-pin drag listeners on `document` are always removed (`quest-pin.js`); call `_endDrag` when pins are destroyed/scene changes so pointermove/up handlers don't leak.
-
+- [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description
+- [ ] **BUG** Guard the `canvas.selectObjects` override (`squire.js` canvasReady hook) so we don't stack wrappers and timers every scene load; restore original during cleanup
+- [ ] **BUG** Replace `cleanupModule`'s zero-delay interval sweep (`squire.js`) with targeted tracked timers; avoid spawning the extra `setInterval(() => {}, 0)` that never clears
+- [ ] **BUG** Ensure quest-pin drag listeners on `document` are always removed (`quest-pin.js`); call `_endDrag` when pins are destroyed/scene changes so pointermove/up handlers don't leak
 
 ## LOW PRIORITY
 
-### Biography Tab - Add Details Section
-- **Issue**: Add a "details" section to the biography tab (similar to the details section in the narrative template)
-- **Status**: PENDING - Needs implementation
-- **Priority**: LOW - UI/UX enhancement
-- **Current State**: Biography tab only shows biography content, no separate details section
-- **Location**: `templates/partial-character-biography.hbs`, character worksheet templates
-- **Tasks Needed**:
-  - Add a "Details" section to the biography tab
-  - Include similar functionality to the narrative details section (e.g., "Specifics" field)
-  - Ensure proper styling and layout consistency with other sections
-  - Test integration with character worksheet
-- **Related Files**: 
-  - `templates/partial-character-biography.hbs`
-  - `templates/window-query-workspace-character.hbs`
-  - Character worksheet JavaScript (if needed for functionality)
-- **Notes**: This would provide a dedicated space for character-specific details separate from the main biography content
+### Notes Future Enhancements (from plan-notes)
+- [ ] **ENHANCEMENT** Note templates
+- [ ] **ENHANCEMENT** Note linking
+- [ ] **ENHANCEMENT** Export formats for notes
+- [ ] **ENHANCEMENT** Note sharing
+- [ ] **ENHANCEMENT** Note reactions
+- [ ] **ENHANCEMENT** Note mentions
 
 ## Architecture & Code Quality
+
+### Base Panel Class (Phase 1.4 from plan-notes)
+- [ ] **PLANNED** Create `scripts/base-panel.js` - Extract common panel patterns from Codex, Notes, Quest:
+  - Common methods: `constructor`, `_refreshData()`, `_activateListeners(html)`, `_setupSearchFilter(html)`, `_setupTagFilter(html)`
+  - Refactor `CodexPanel`, `NotesPanel`, `QuestPanel` to extend `BasePanel`
+  - Lower priority - deferred until needed (~6-8 hours)
 
 ### Code Cleanup
 - [ ] **PLANNED** Remove legacy code from our fixes
 - [ ] **PLANNED** Modularize manager-panel.js (too large, not modular enough)
 - [ ] **PLANNED** Review and clean up any remaining unnecessary `updateTray()` calls
-- [ ] **PLANNED** Revisit party transfer refactor goals (`panel-party.js`) now that `TransferUtils` handles most workflows; decide what parts of the old plan still add value.
-- [ ] **PLANNED** Break the `HandleManager` ↔ `PanelManager` circular import by passing required data via constructors or shared context.
+- [ ] **PLANNED** Revisit party transfer refactor goals (`panel-party.js`) now that `TransferUtils` handles most workflows; decide what parts of the old plan still add value
+- [ ] **PLANNED** Break the `HandleManager` ↔ `PanelManager` circular import by passing required data via constructors or shared context
 - [ ] **PLANNED** Remove jQuery detection patterns where elements are guaranteed to be native DOM (technical debt cleanup)
 
 ### Performance Optimization
