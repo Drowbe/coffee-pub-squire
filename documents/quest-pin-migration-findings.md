@@ -270,3 +270,163 @@ The notes implementation provides a clear blueprint for quest pin migration:
 - Consistent with notes UX
 - Leverages Blacksmith for rendering, persistence, events
 - Simpler maintenance
+
+---
+
+## Quest Visibility System (Implementation Reference)
+
+**Important:** The quest visibility system is NOT changing. We are only translating existing visibility logic to pin ownership when calling the Blacksmith API.
+
+### Current Visibility Logic (quest-pin.js)
+
+```javascript
+shouldBeVisible() {
+  // Layer 1: Global hide-all (both GMs and players)
+  if (game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
+    return false;
+  }
+
+  // Layer 2: GM bypass (GMs see everything except global hide-all)
+  if (game.user.isGM) {
+    return true;
+  }
+
+  // Layer 3: Players check quest visibility
+  if (this.questState === 'hidden') { // From page.getFlag(MODULE.ID, 'visible')
+    return false;
+  }
+
+  // Layer 4: For quest pins, that's enough
+  if (this.pinType === 'quest') {
+    return true;
+  }
+
+  // Layer 5: For objective pins, also check objective visibility
+  if (this.objectiveState === 'hidden') { // From HTML <em> markup
+    return false;
+  }
+
+  return true;
+}
+```
+
+### Migration: Translate to Ownership
+
+```javascript
+/**
+ * Calculate pin ownership based on quest visibility logic
+ * @param {JournalEntryPage} page - Quest journal page
+ * @param {Object} objective - Objective data (null for quest-level pins)
+ * @returns {Object} Ownership object for Blacksmith pins
+ */
+function calculateQuestPinOwnership(page, objective = null) {
+  // Layer 1: Global hide-all (handled separately in create/update logic)
+  const hideAll = game.user.getFlag(MODULE.ID, 'hideQuestPins');
+  if (hideAll) {
+    return { 
+      default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, 
+      users: {} 
+    };
+  }
+  
+  // Layer 2: GMs always see everything
+  const gmUsers = {};
+  game.users.forEach(user => {
+    if (user.isGM) {
+      gmUsers[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+    }
+  });
+  
+  // Layer 3: Check quest visibility
+  const questVisible = page?.getFlag(MODULE.ID, 'visible') !== false; // Default true
+  if (!questVisible) {
+    return { 
+      default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, 
+      users: gmUsers 
+    };
+  }
+  
+  // Layer 4: For objective pins, also check objective visibility
+  if (objective && objective.state === 'hidden') { // From HTML <em> markup
+    return { 
+      default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, 
+      users: gmUsers 
+    };
+  }
+  
+  // Layer 5: Visible to everyone
+  return { 
+    default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, 
+    users: gmUsers 
+  };
+}
+```
+
+### Usage Examples
+
+**Creating a quest pin:**
+```javascript
+const page = await fromUuid(questUuid);
+const ownership = calculateQuestPinOwnership(page);
+
+await pins.create({
+  id: crypto.randomUUID(),
+  moduleId: MODULE.ID,
+  type: 'quest',
+  shape: 'circle',
+  ownership, // ← Pass calculated ownership
+  config: { questUuid, questIndex }
+});
+```
+
+**Creating an objective pin:**
+```javascript
+const page = await fromUuid(questUuid);
+const quest = await QuestParser.parseSinglePage(page, enrichedHtml);
+const objective = quest.tasks[objectiveIndex];
+const ownership = calculateQuestPinOwnership(page, objective); // ← Pass objective
+
+await pins.create({
+  id: crypto.randomUUID(),
+  moduleId: MODULE.ID,
+  type: 'objective',
+  shape: 'square',
+  ownership, // ← Pass calculated ownership
+  config: { questUuid, objectiveIndex, questIndex }
+});
+```
+
+**Updating pin when quest visibility changes:**
+```javascript
+// When quest visibility flag changes
+await page.setFlag(MODULE.ID, 'visible', !visible);
+
+// Update all pins for this quest (quest pin + objective pins)
+const allPins = pins.list({ moduleId: MODULE.ID, sceneId: canvas.scene.id });
+const questPins = allPins.filter(p => p.config?.questUuid === questUuid);
+
+for (const pin of questPins) {
+  const objective = pin.type === 'objective' 
+    ? quest.tasks[pin.config.objectiveIndex] 
+    : null;
+  const ownership = calculateQuestPinOwnership(page, objective);
+  await pins.update(pin.id, { ownership });
+}
+```
+
+**Updating all pins when "hide all" toggle changes:**
+```javascript
+// When user clicks "hide all" toggle
+await game.user.setFlag(MODULE.ID, 'hideQuestPins', !hideAll);
+
+// Reload all quest pins (most efficient)
+await pins.reload({ moduleId: MODULE.ID });
+```
+
+### Key Points
+
+1. **No changes to quest data or flags** - `visible` flag, HTML markup, `hideQuestPins` flag all stay the same
+2. **Only translation layer** - `shouldBeVisible()` logic becomes `calculateQuestPinOwnership()`
+3. **GMs always see everything** - Except when global "hide all" is active
+4. **Players respect visibility** - Quest hidden → no pin; objective hidden → no pin
+5. **Blacksmith handles filtering** - We just pass ownership, API does the rest

@@ -198,6 +198,223 @@ These are the main gaps between our current quest pin behavior and the API; the 
 
 We follow the **Notes tab** implementation for pin lifecycle and ownership. The Notes tab already uses the Blacksmith Pins API with: unplaced pins by default; `pins.place()` / `pins.unplace()` for canvas; `getNotePinOwnershipForPage(page)` for ownership; GM proxy (`pins.requestGM()`) for non-GM users. For quests we add **left-click only** (open tab, scroll, flash) and put all other actions in **context menu** via `pins.registerContextMenuItem()`. For code-level detail and examples, see **`documents/quest-pin-migration-findings.md`** (supporting reference; use when implementing).
 
+## Edge Cases & Special Handling
+
+These are specific scenarios that require careful handling during migration. **Key principle:** We are NOT changing quest visibility logic - only how we pass that information to pins.
+
+### 1. Global "Hide All Quest Pins" Toggle
+
+**Current behavior:**
+```javascript
+// In quest-pin.js shouldBeVisible()
+if (game.user.getFlag(MODULE.ID, 'hideQuestPins')) {
+  return false; // Hides ALL quest pins via PIXI visible = false
+}
+```
+
+**Migration approach:**
+- **Keep the flag and logic unchanged** - this is quest system behavior, not pin rendering
+- **Option A (Recommended):** When creating/updating pins, check flag and adjust ownership:
+  ```javascript
+  const hideAll = game.user.getFlag(MODULE.ID, 'hideQuestPins');
+  const ownership = hideAll ? {
+    default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+    users: {} // No one sees it
+  } : calculateNormalOwnership();
+  ```
+- **Option B:** Don't create/place pins when flag is true (cleaner, but requires recreating pins when toggled)
+- **Option C:** Use `pins.reload()` when flag changes to refresh all pins
+- **UI:** Keep toggle button in quest panel; when clicked, update flag and refresh pins
+- **Future:** Request API enhancement for "hide all by moduleId" feature
+
+### 2. Second Ring for Hidden Quests (GM Visual Indicator)
+
+**Current behavior:**
+```javascript
+// In quest-pin.js _updatePinAppearance()
+if (this.questState === 'hidden' && game.user.isGM) {
+  // Draw second black ring around pin to indicate "hidden from players"
+}
+```
+
+**Migration approach:**
+- **Accept limitation:** Blacksmith API doesn't support "second ring" or extra visual indicators
+- **Alternative:** Use distinct `style.stroke` color for hidden quests (e.g., black stroke for hidden, normal color for visible)
+- **Request API enhancement:** Document need for "GM-only visual indicator" feature in Blacksmith
+- **Temporary:** GMs won't see the second ring until API is enhanced - they'll still see the pin (ownership allows it), just without the visual distinction
+
+### 3. Pin Updates When Quest Visibility Changes
+
+**Current behavior:**
+```javascript
+// When quest visibility flag changes (right-click toggle or panel toggle)
+await page.setFlag(MODULE.ID, 'visible', !visible);
+pin.questState = visible ? 'visible' : 'hidden';
+pin.updateVisibility(); // Updates PIXI visible property
+```
+
+**Migration approach:**
+- **Keep flag update logic unchanged** - this is quest system behavior
+- **Replace pin update:** Instead of `pin.updateVisibility()`, call:
+  ```javascript
+  const newOwnership = calculateOwnership(page); // Same logic as shouldBeVisible()
+  await pins.update(pinId, { ownership: newOwnership });
+  ```
+- **Trigger:** Same hooks/events we use today (`updateJournalEntryPage`, right-click handler, panel toggle)
+- **Batch updates:** If quest has multiple objective pins, update all of them (loop through `pins.list()` filtered by questUuid)
+
+### 4. Pin Updates When User Toggles "Hide All"
+
+**Current behavior:**
+```javascript
+// When user clicks "hide all" toggle in quest panel
+await game.user.setFlag(MODULE.ID, 'hideQuestPins', !hideAll);
+// All pins call updateVisibility() which checks the flag
+```
+
+**Migration approach:**
+- **Option A (Recommended):** Call `pins.reload({ moduleId: MODULE.ID })` to refresh all quest pins
+- **Option B:** Loop through all quest pins and update ownership individually:
+  ```javascript
+  const allPins = pins.list({ moduleId: MODULE.ID, sceneId: canvas.scene.id });
+  for (const pin of allPins) {
+    await pins.update(pin.id, { ownership: calculateOwnership(pin) });
+  }
+  ```
+- **Option C:** Handle in UI layer only (don't show pins in quest panel list, but they still exist on canvas) - **Not recommended**, inconsistent with current behavior
+- **Performance:** `pins.reload()` is likely more efficient than individual updates
+
+### 5. Objective Pin Visibility (HTML `<em>` Markup)
+
+**Current behavior:**
+```javascript
+// In QuestParser - parses HTML to determine objective state
+if (taskElement.querySelector('em, i')) {
+  objective.state = 'hidden'; // Hidden from players
+}
+
+// In quest-pin.js shouldBeVisible()
+if (this.objectiveState === 'hidden') {
+  return false; // For players only
+}
+```
+
+**Migration approach:**
+- **Keep parsing logic unchanged** - QuestParser still extracts objective state from HTML
+- **Calculate ownership per-objective:** When creating objective pins:
+  ```javascript
+  const objective = quest.tasks[objectiveIndex];
+  const ownership = (objective.state === 'hidden') ? {
+    default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+    users: getGMUsers() // Only GMs see it
+  } : {
+    default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER // Everyone sees it
+  };
+  await pins.create({ ...pinData, ownership });
+  ```
+- **Update on HTML change:** When quest content is edited and objective markup changes, update pin ownership
+- **Quest-level visibility:** If quest is hidden, ALL objective pins for that quest are also hidden (check both quest AND objective visibility)
+
+### 6. Quest Visibility Flag (`visible` on Journal Page)
+
+**Current behavior:**
+```javascript
+// Quest visibility is stored as a flag on the journal page
+let visible = await page.getFlag(MODULE.ID, 'visible');
+if (typeof visible === 'undefined') visible = true; // Default to visible
+
+// In shouldBeVisible()
+if (this.questState === 'hidden') { // questState derived from visible flag
+  return false; // For players only
+}
+```
+
+**Migration approach:**
+- **Keep flag system unchanged** - this is quest system behavior, not pin rendering
+- **Calculate ownership from flag:**
+  ```javascript
+  function getQuestPinOwnership(page) {
+    const visible = page?.getFlag(MODULE.ID, 'visible');
+    const isVisible = visible !== false; // Default to visible
+    
+    const gmUsers = {};
+    game.users.forEach(user => {
+      if (user.isGM) {
+        gmUsers[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+      }
+    });
+    
+    return {
+      default: isVisible 
+        ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER  // All users can see
+        : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,     // Only GMs can see
+      users: gmUsers // GMs always see all pins
+    };
+  }
+  ```
+- **Applies to:** Both quest-level pins AND all objective pins for that quest
+- **Update trigger:** When flag changes (right-click toggle, panel toggle), update pin ownership
+
+### 7. Combined Visibility Logic
+
+**Current behavior:**
+```javascript
+shouldBeVisible() {
+  // Layer 1: Global hide-all (both GMs and players)
+  if (game.user.getFlag(MODULE.ID, 'hideQuestPins')) return false;
+  
+  // Layer 2: GM bypass (GMs see everything except global hide-all)
+  if (game.user.isGM) return true;
+  
+  // Layer 3: Players check quest visibility
+  if (this.questState === 'hidden') return false;
+  
+  // Layer 4: For quest pins, that's enough
+  if (this.pinType === 'quest') return true;
+  
+  // Layer 5: For objective pins, also check objective visibility
+  if (this.objectiveState === 'hidden') return false;
+  
+  return true;
+}
+```
+
+**Migration approach:**
+- **Keep all logic layers** - just translate to ownership calculation:
+  ```javascript
+  function calculateQuestPinOwnership(page, objective = null) {
+    // Layer 1: Global hide-all (handled separately - see Edge Case #1)
+    const hideAll = game.user.getFlag(MODULE.ID, 'hideQuestPins');
+    if (hideAll) {
+      return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, users: {} };
+    }
+    
+    // Layer 2: GMs always see everything
+    const gmUsers = {};
+    game.users.forEach(user => {
+      if (user.isGM) {
+        gmUsers[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+      }
+    });
+    
+    // Layer 3: Check quest visibility
+    const questVisible = page?.getFlag(MODULE.ID, 'visible') !== false;
+    if (!questVisible) {
+      return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, users: gmUsers };
+    }
+    
+    // Layer 4: For objective pins, also check objective visibility
+    if (objective && objective.state === 'hidden') {
+      return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, users: gmUsers };
+    }
+    
+    // Layer 5: Visible to everyone
+    return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, users: gmUsers };
+  }
+  ```
+- **Single source of truth:** This function replaces `shouldBeVisible()` for pin ownership calculation
+- **Call when:** Creating pins, updating pins, or when any visibility flag changes
+
 ## Migration Phases
 
 ### Phase 1: Preparation & Analysis ✅
@@ -620,6 +837,15 @@ Hooks.on('unloadModule', (id) => {
 - [ ] Toggle hide flag shows/hides pins
 
 ### Edge Cases
+See **"Edge Cases & Special Handling"** section above for detailed implementation approach.
+
+- [ ] Global "hide all" toggle works correctly (Edge Case #1)
+- [ ] Second ring for hidden quests (Edge Case #2 - API enhancement needed)
+- [ ] Quest visibility changes update pin ownership (Edge Case #3)
+- [ ] User "hide all" toggle updates all pins (Edge Case #4)
+- [ ] Objective visibility from HTML markup works (Edge Case #5)
+- [ ] Quest visibility flag maps to ownership (Edge Case #6)
+- [ ] Combined visibility logic works correctly (Edge Case #7)
 - [ ] Orphaned pins (missing quests) are cleaned up
 - [ ] Multiple pins for same quest work correctly
 - [ ] Rapid state changes don't cause issues
