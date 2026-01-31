@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin } from './utility-quest-pins.js';
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -521,6 +521,34 @@ export class QuestPanel {
     static QUEST_PIN_CANVAS_CURSOR_CLASS = 'squire-quest-pin-placement-canvas';
 
     /**
+     * Create a preview element for Pin to Scene (follows mouse, like Notes).
+     * @param {'circle'|'square'} shape - Pin shape
+     * @param {number} sizePx - Size in pixels
+     * @param {string} fillColor - Fill hex color
+     * @param {string} text - Label text (e.g. Q85)
+     * @param {string} iconHtml - Icon HTML (e.g. <i class="fa-solid fa-scroll"></i>)
+     * @returns {HTMLDivElement}
+     * @private
+     */
+    _createQuestPinPreviewElement(shape, sizePx, fillColor, text, iconHtml) {
+        const preview = document.createElement('div');
+        preview.className = 'quest-pin-preview';
+        preview.dataset.shape = shape;
+        preview.style.setProperty('--quest-pin-width', `${sizePx}px`);
+        preview.style.setProperty('--quest-pin-height', `${sizePx}px`);
+        preview.style.setProperty('--quest-pin-fill', fillColor);
+        preview.style.setProperty('--quest-pin-stroke', '#000000');
+        preview.style.setProperty('--quest-pin-stroke-width', '2px');
+        preview.innerHTML = `
+            <div class="quest-pin-preview-inner">
+                ${iconHtml || ''}
+                <span>${text || ''}</span>
+            </div>
+        `;
+        return preview;
+    }
+
+    /**
      * Begin Pin to Scene placement for a quest-level pin. User clicks on canvas to place.
      * @param {string} questUuid - Quest journal page UUID
      * @param {number} questIndex - Quest number for label
@@ -546,6 +574,23 @@ export class QuestPanel {
         const view = canvas.app.view;
         view.classList.add(QuestPanel.QUEST_PIN_CANVAS_CURSOR_CLASS);
 
+        const questStateVal = questState === 'true' || questState === true ? 'visible' : 'hidden';
+        const fillColor = getQuestPinColor(questStatus || 'Not Started', questStateVal);
+        const questNum = typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0);
+        const previewEl = this._createQuestPinPreviewElement(
+            'circle',
+            32,
+            fillColor,
+            `Q${questNum}`,
+            '<i class="fa-solid fa-scroll"></i>'
+        );
+        document.body.appendChild(previewEl);
+
+        const onPointerMove = (event) => {
+            previewEl.style.left = `${event.clientX}px`;
+            previewEl.style.top = `${event.clientY}px`;
+        };
+
         const onPointerDown = async (event) => {
             if (event.button !== 0) return;
             event.preventDefault();
@@ -561,10 +606,10 @@ export class QuestPanel {
             }
             const pin = await createQuestPin({
                 questUuid,
-                questIndex: typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0),
+                questIndex: questNum,
                 questCategory: questCategory || 'Side Quest',
                 questStatus: questStatus || 'Not Started',
-                questState: questState === 'true' || questState === true ? 'visible' : 'hidden',
+                questState: questStateVal,
                 x: localPos.x,
                 y: localPos.y,
                 sceneId: canvas.scene.id
@@ -591,10 +636,13 @@ export class QuestPanel {
         view.addEventListener('pointerdown', onPointerDown, true);
         view.addEventListener('contextmenu', onContextMenu, true);
         window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('pointermove', onPointerMove);
 
         this._questPinPlacement = {
             view,
+            previewEl,
             onPointerDown,
+            onPointerMove,
             onContextMenu,
             onKeyDown
         };
@@ -627,6 +675,24 @@ export class QuestPanel {
         const view = canvas.app.view;
         view.classList.add(QuestPanel.QUEST_PIN_CANVAS_CURSOR_CLASS);
 
+        const questStateVal = questState === 'true' || questState === true ? 'visible' : 'hidden';
+        const objectiveState = objective?.state || 'active';
+        const fillColor = getObjectivePinColor(objectiveState);
+        const questNum = typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0);
+        const previewEl = this._createQuestPinPreviewElement(
+            'square',
+            28,
+            fillColor,
+            `Q${questNum}.${objectiveIndex + 1}`,
+            '<i class="fa-solid fa-bullseye"></i>'
+        );
+        document.body.appendChild(previewEl);
+
+        const onPointerMove = (event) => {
+            previewEl.style.left = `${event.clientX}px`;
+            previewEl.style.top = `${event.clientY}px`;
+        };
+
         const onPointerDown = async (event) => {
             if (event.button !== 0) return;
             event.preventDefault();
@@ -642,10 +708,10 @@ export class QuestPanel {
             }
             const pin = await createObjectivePin({
                 questUuid,
-                questIndex: typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0),
+                questIndex: questNum,
                 objectiveIndex,
                 questCategory: questCategory || 'Side Quest',
-                questState: questState === 'true' || questState === true ? 'visible' : 'hidden',
+                questState: questStateVal,
                 objective: objective || { state: 'active', text: '' },
                 x: localPos.x,
                 y: localPos.y,
@@ -673,10 +739,13 @@ export class QuestPanel {
         view.addEventListener('pointerdown', onPointerDown, true);
         view.addEventListener('contextmenu', onContextMenu, true);
         window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('pointermove', onPointerMove);
 
         this._questPinPlacement = {
             view,
+            previewEl,
             onPointerDown,
+            onPointerMove,
             onContextMenu,
             onKeyDown
         };
@@ -684,10 +753,12 @@ export class QuestPanel {
 
     _clearQuestPinPlacement() {
         if (!this._questPinPlacement) return;
-        const { view, onPointerDown, onContextMenu, onKeyDown } = this._questPinPlacement;
+        const { view, previewEl, onPointerDown, onPointerMove, onContextMenu, onKeyDown } = this._questPinPlacement;
         view?.removeEventListener('pointerdown', onPointerDown, true);
         view?.removeEventListener('contextmenu', onContextMenu, true);
         window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('pointermove', onPointerMove);
+        previewEl?.remove();
         document.body.classList.remove(QuestPanel.QUEST_PIN_CURSOR_CLASS);
         document.body.style.cursor = '';
         view?.classList.remove(QuestPanel.QUEST_PIN_CANVAS_CURSOR_CLASS);

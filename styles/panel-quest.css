@@ -20,6 +20,42 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     cursor: crosshair;
 }
 
+/* Quest pin placement preview (follows mouse, like Notes) */
+.quest-pin-preview {
+    position: fixed;
+    z-index: 10000;
+    width: var(--quest-pin-width, 32px);
+    height: var(--quest-pin-height, 32px);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border-radius: 50%;
+    background: var(--quest-pin-fill, #ffff00);
+    border: var(--quest-pin-stroke-width, 2px) solid var(--quest-pin-stroke, #000000);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.quest-pin-preview[data-shape="square"] {
+    border-radius: 15%;
+}
+
+.quest-pin-preview .quest-pin-preview-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: rgba(0, 0, 0, 0.9);
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.quest-pin-preview .quest-pin-preview-inner i {
+    font-size: 0.85em;
+}
+
 /* CONTENT */
 
 .squire-tray[data-position="left"] .quest-content {
