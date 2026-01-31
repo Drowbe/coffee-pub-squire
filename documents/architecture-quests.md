@@ -11,11 +11,13 @@ The Quest system provides structured adventure and task management for FoundryVT
 | `scripts/panel-quest.js` | `QuestPanel` – Main panel UI, filtering, organization |
 | `scripts/window-quest.js` | `QuestForm` – FormApplication for quest create/edit |
 | `scripts/utility-quest-parser.js` | `QuestParser` – Parses HTML journal content to JS objects |
-| `scripts/quest-pin.js` | `QuestPin` – PIXI.Container for canvas quest/objective pins |
+| `scripts/quest-pin.js` | `QuestPin`, `loadPersistedPins`, `loadPersistedPinsOnCanvasReady`, `cleanupQuestPins` |
 | `templates/panel-quest.hbs` | Panel template |
 | `templates/quest-form.hbs` | Form template |
+| `templates/handle-quest.hbs` | Handle content for quest view (tray handle) |
 | `templates/partials/quest-entry.hbs` | Quest entry partial |
-| `templates/tooltip-pin-quests-*.hbs` | Pin tooltip templates |
+| `templates/tooltip-pin-quests-objective.hbs` | Objective pin tooltip |
+| `templates/tooltip-pin-quests-quest.hbs` | Quest pin tooltip |
 | `styles/panel-quest.css` | Panel styles |
 | `styles/quest-form.css` | Form styles |
 | `styles/quest-markers.css` | Pin marker styles |
@@ -231,17 +233,17 @@ The quest system supports full JSON export/import including scene pins.
 | Setting | Key | Scope | Description |
 |---------|-----|-------|-------------|
 | Quest Journal | `questJournal` | world | Journal for quest pages |
-| Quest Categories | `questCategories` | world | Available categories |
+| Quest Categories | `questCategories` | world | Available categories (default includes Pinned, Main Quest, Side Quest, Completed, Failed) |
+| Show Quest Pin Titles | `showQuestPinText` | user | Display quest/objective names below pins; when off, only numbers (Q85, Q85.03) and icons |
+
+**User flag (not in settings UI):** `hideQuestPins` – toggles pin visibility on canvas (e.g. from panel toolbar).
 
 ## Hooks Integration
 
-**Journal Hooks:**
-- `updateJournalEntry`, `updateJournalEntryPage`: Refresh panel on quest changes
-- `deleteJournalEntryPage`: Remove quest from panel
-
-**Scene Hooks:**
-- `canvasReady`: Load persisted pins
-- `updateScene`: Refresh pins
+**Blacksmith HookManager (squire.js):**
+- **Journal:** `updateJournalEntryPage`, `createJournalEntryPage`, `deleteJournalEntryPage` – route to quest panel refresh and/or quest pin updates (`_routeToQuestPanel`, `_routeToQuestPins`).
+- **Panel:** After render, `QuestPanel` calls `Hooks.call('renderQuestPanel')`; `quest-pin.js` registers a `renderQuestPanel` listener to apply pin visibility (`hideQuestPins`) and label visibility (`showQuestPinText`).
+- **Scene/canvas:** `canvasReady` runs `loadPersistedPinsOnCanvasReady`; `updateScene` refreshes pins; scene change and token create/update/delete hooks manage pin lifecycle and cleanup.
 
 ## Technical Requirements
 

@@ -1,12 +1,28 @@
-# Codex System Architecture Overview
+# Coffee Pub Squire – Codex System Architecture
 
-## Introduction
+## Overview
 
-The Codex system is a flexible, journal-based world-building and reference management system for FoundryVTT modules. It provides a structured way to organize characters, locations, items, events, and other game entities with rich metadata, search capabilities, and visual presentation.
+The Codex system is a journal-based world-building and reference system. It organizes characters, locations, items, events, and other entities with rich metadata, search, and filtering. Each entry is a journal page in a designated codex journal; the panel displays entries by category with tag-based filtering and supports import/export and auto-discovery from party inventories.
 
-This document outlines the architecture, design patterns, and implementation details to help other module developers understand and potentially reuse similar approaches.
+## Placement in the Tray
 
----
+- **View**: Codex tab (`viewMode === 'codex'`).
+- **Visibility**: Controlled by `showTabCodex` (user setting).
+- **Container**: `templates/tray.hbs` includes `<div class="panel-container" data-panel="panel-codex"></div>`; `PanelManager` injects the codex panel HTML there.
+
+## Project Files
+
+| File | Class/Purpose |
+|------|---------------|
+| `scripts/panel-codex.js` | `CodexPanel` – main panel UI; `CodexForm` – FormApplication for creating entries |
+| `scripts/utility-codex-parser.js` | `CodexParser` – extends `BaseParser`, parses HTML journal content to entry objects |
+| `scripts/utility-base-parser.js` | `BaseParser` – shared `extractFieldFromHTML`, `extractImage`, `extractTags`, `extractLink` |
+| `templates/panel-codex.hbs` | Panel template |
+| `templates/codex-form.hbs` | Form template (add entry) |
+| `templates/handle-codex.hbs` | Handle content for codex view |
+| `styles/panel-codex.css` | Panel styles |
+| `styles/codex-form.css` | Form styles |
+| `prompts/prompt-codex.txt` | Optional AI-assisted import prompt text |
 
 ## Core Design Philosophy
 
@@ -45,182 +61,93 @@ The system is divided into distinct components:
 
 ### 1. CodexParser (`scripts/utility-codex-parser.js`)
 
-The parser is responsible for converting HTML journal content into structured JavaScript objects.
+Extends **`BaseParser`** (`utility-base-parser.js`). Converts HTML journal content into structured entry objects using `BaseParser.extractFieldFromHTML`, `BaseParser.extractImage`, `BaseParser.extractTags`, `BaseParser.extractLink`.
 
 #### Key Methods
 
 **`parseSinglePage(page, enrichedHtml)`**
 - Parses a single journal page into a codex entry object
-- Handles async content resolution
-- Extracts all codex fields (category, description, plotHook, location, tags, link, image)
-- Returns a structured entry object or `null` if invalid
+- Extracts: category, description, plotHook, location, tags, link (UUID or `data-uuid`), image (first `<img>`)
+- Normalizes category (capitalize first letter)
+- Returns a structured entry object (always; no mandatory fields beyond page name)
 
-**Design Patterns:**
-```javascript
-// Uses DOMParser for safe HTML parsing
-const parser = new DOMParser();
-const doc = parser.parseFromString(enrichedHtml, 'text/html');
-
-// Robust field extraction with fallbacks
-const strong = p.querySelector('strong');
-if (!strong) continue;
-let label = strong.textContent.trim();
-if (label.endsWith(':')) label = label.slice(0, -1);
-
-// Handles both UUID format and data-attribute links
-const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
-```
+**`parseContent(html)`** (legacy)
+- Parses multi-entry HTML (e.g. by `<h1>` sections) into an array of entries; used for alternate formats.
 
 **Key Features:**
-- Case-insensitive label matching
-- Handles HTML entities and formatting
-- Supports both `<p><strong>Label:</strong> value</p>` and `<li><strong>Label:</strong> value</li>` formats
-- Extracts images, links (UUID format), and tags
-- Graceful error handling for malformed entries
+- Case-insensitive label matching; supports `<p><strong>Label:</strong> value</p>` and `<li>` formats
+- Link extraction: `@UUID[type.id]{label}` or `<a data-uuid="...">`
+- Graceful handling of missing fields
 
-### 2. CodexForm (`scripts/panel-codex.js` - FormApplication Class)
+### 2. CodexForm (`scripts/panel-codex.js`)
 
-A FoundryVTT `FormApplication` that provides a user-friendly interface for creating and editing codex entries.
+`FormApplication` for **creating** codex entries (edit is done via journal sheet or “Open Journal”).
 
 #### Key Features
 
-**Drag & Drop Auto-Population**
-- Accepts tokens, items, and journal entries
-- Automatically extracts relevant data (name, image, description)
-- Pre-fills form fields to reduce manual entry
+**Drag & Drop**
+- Accepts tokens, items, and journal entries; extracts name, image, description and pre-fills form (e.g. token drag sets category “Characters” and tags).
 
-**Smart Field Management**
-- Category and location dropdowns with "New" option
-- Auto-complete from existing entries
-- Tag suggestions and comma-separated input
-- Image preview and management
+**Fields**
+- Category and location dropdowns built from existing entries (`_getExistingCategories`, `_getExistingLocations`); tag input comma-separated; image preview and remove.
 
 **Journal Integration**
-- Creates new journal pages on save
-- Generates structured HTML content
-- Handles journal selection via settings
+- Uses `codexJournal` setting; creates new journal pages via `journal.createEmbeddedDocuments('JournalEntryPage', [pageData])`; content from `_generateJournalContent(entry)` (img, category, description, plotHook, location, tags). Does not write a Link field.
 
-**Implementation Pattern:**
-```javascript
-class CodexForm extends FormApplication {
-    async _updateObject(event, formData) {
-        // Convert form data to entry object
-        const entry = expandObject(formData);
-        
-        // Get selected journal from settings
-        const journalId = game.settings.get(MODULE.ID, 'codexJournal');
-        const journal = game.journal.get(journalId);
-        
-        // Generate HTML content
-        const pageData = {
-            name: entry.name,
-            type: 'text',
-            text: {
-                content: this._generateJournalContent(entry)
-            }
-        };
-        
-        // Create journal page
-        await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-    }
-}
-```
+**After Save**
+- Closes form; refreshes `CodexPanel` (`_refreshData()` then `render(element)`).
 
-### 3. CodexPanel (`scripts/panel-codex.js` - Panel Class)
+### 3. CodexPanel (`scripts/panel-codex.js`)
 
-The main UI component that displays and manages codex entries.
+Main UI component that displays and manages codex entries.
 
 #### Data Structure
 
 ```javascript
 {
     categories: Set,           // Unique category names
-    data: {                   // Entries grouped by category
-        "Characters": [entry1, entry2, ...],
-        "Locations": [entry3, entry4, ...],
-        ...
-    },
-    filters: {
-        search: "",
-        tags: [],
-        category: "all"
-    },
-    allTags: Set              // All unique tags across entries
+    data: {},                 // Entries grouped by category, e.g. data["Characters"] = [entry1, ...]
+    filters: { search: "", tags: [], category: "all" },
+    allTags: Set,
+    selectedJournal: JournalEntry | null,
+    isImporting: false        // Suppresses refresh during import
 }
 ```
 
 #### Key Methods
 
 **`_refreshData()`**
-- Loads all pages from the selected journal
-- Enriches HTML content using TextEditor
-- Parses each page using `CodexParser.parseSinglePage()`
-- Organizes entries by category
-- Extracts all tags for filtering
+- Clears categories, data, allTags; loads `codexJournal` into `selectedJournal`
+- For each page: resolves content (sync/async), enriches with TextEditor, parses with `CodexParser.parseSinglePage()`, groups by category (default “No Category”), collects tags
 
 **`render(element)`**
-- Renders the panel using Handlebars templates
-- Groups entries by category
-- Applies filters and search
-- Handles collapsed/expanded states
+- Finds `[data-panel="panel-codex"]`; loads `_refreshData()` then renders `TEMPLATES.PANEL_CODEX` with categories, entries, filters, collapsed state (`codexCollapsedCategories`), tag cloud collapsed (`codexTagCloudCollapsed`)
+- Injects HTML and calls `_activateListeners(codexContainer)`
 
 **`_activateListeners(html)`**
-- Sets up all event handlers
-- Implements live search filtering
-- Handles tag selection and filtering
-- Manages entry expansion/collapse
-- Handles entry actions (edit, delete, visibility)
+- Search input → DOM filter on `.codex-entry`; tag cloud `.codex-tag` → toggle selected, filter entries and sections; `.codex-section` collapse/expand (persist to `codexCollapsedCategories`); set journal, open journal, add entry, edit (feather), delete, visibility toggle; refresh button; import/export dialogs; auto-discover from party inventories
 
-#### Filtering Architecture
+**Helpers**
+- **`_isPageInSelectedJournal(page)`** – `page.parent.id === this.selectedJournal.id`
+- **`_isCodexEntry(page)`** – Heuristic: has Category field or ≥2 of Description/Tags/Plot Hook/Location
+- **`getCategoryIcon(category)`** – Returns FontAwesome class (e.g. Characters → fa-user, Locations → fa-location-pin); default `fa-book`
 
-The panel implements client-side filtering for performance:
+#### Filtering
 
-1. **Search Filter**: Text-based search across all entry fields
-2. **Tag Filter**: Multi-select tag filtering
-3. **Category Filter**: Filter by category (future enhancement)
-4. **Visibility Filter**: Respects FoundryVTT ownership levels
+Client-side DOM filtering: search (text across entry content), tag multi-select; section visibility updated from visible entries. No full re-render.
 
-**Filtering Pattern:**
-```javascript
-// DOM-based filtering (no re-render needed)
-const filterEntries = () => {
-    const search = this.filters.search.trim().toLowerCase();
-    nativeHtml.querySelectorAll('.codex-entry').forEach(entry => {
-        let text = entry.textContent?.toLowerCase() || '';
-        let searchMatch = !search || text.includes(search);
-        entry.style.display = searchMatch ? '' : 'none';
-    });
-};
-```
+### 4. Settings and User Flags
 
-### 4. Settings Integration (`scripts/settings.js`)
+| Setting | Key | Scope | Description |
+|---------|-----|-------|-------------|
+| Show Codex Tab | `showTabCodex` | user | Show/hide Codex tab on tray |
+| Codex Journal | `codexJournal` | world | Journal for codex pages; chosen via panel “Set Journal” or settings; onChange refreshes panel |
 
-The codex system uses FoundryVTT settings for configuration:
+**User flags (not in settings UI):**
+- `codexCollapsedCategories` – Object mapping category name to collapsed boolean; persists section expand/collapse
+- `codexTagCloudCollapsed` – Boolean for tag cloud collapse
 
-```javascript
-game.settings.register(MODULE.ID, 'codexJournal', {
-    name: "Codex Journal",
-    hint: "The journal to use for codex entries...",
-    scope: "world",
-    config: false,  // Set programmatically, not in settings UI
-    type: String,
-    choices: () => {
-        // Dynamic choices based on available journals
-        const choices = { 'none': '- Select Journal -' };
-        game.journal.contents.forEach(j => {
-            choices[j.id] = j.name;
-        });
-        return choices;
-    },
-    default: "none",
-    onChange: () => {
-        // Refresh panel when journal changes
-        if (PanelManager.instance?.codexPanel) {
-            PanelManager.instance.codexPanel.render(...);
-        }
-    }
-});
-```
+**Page flag:** `codexUuid` – Set on imported entries for deduplication on re-import.
 
 ---
 
@@ -353,35 +280,22 @@ The form template provides:
 
 ---
 
-## Integration Points
+## Hooks Integration
 
-### 1. **Journal Hooks**
+**Blacksmith HookManager (squire.js):**
+- **Journal:** `updateJournalEntryPage` (and create/delete journal page hooks) route to `_routeToCodexPanel(page, changes, options, userId)` when the page is in the selected codex journal and `codexPanel._isCodexEntry(page)` is true. If not `isImporting`, panel runs `_refreshData()` and `codexPanel.render(panelManager.element)`.
 
-The system listens to journal updates to refresh the panel:
-- `updateJournalEntry` hook: Refreshes when journal is updated
-- `updateJournalEntryPage` hook: Refreshes when page is updated
-- `deleteJournalEntryPage` hook: Removes entry from panel
+## Import/Export and Auto-Discover
 
-These hooks are typically managed by a centralized HookManager.
+### Import
+- **JSON import**: Dialog with paste area; expects array of codex entry objects. Creates journal pages via `createEmbeddedDocuments`; sets `codexUuid` flag for deduplication. Progress bar via tray progress area. Optional AI-assisted import using `prompts/prompt-codex.txt` template.
+- **Deduplication**: On import, existing pages are matched by `page.getFlag(MODULE.ID, 'codexUuid') === entry.uuid`; matching entries are updated, others created.
 
-### 2. **Settings Integration**
+### Export
+- **JSON export**: Converts all entries (from `_refreshData()`-style parsing) to JSON array; copy to clipboard or download file (e.g. `COFFEEPUB-SQUIRE-codex-export-{timestamp}.json`).
 
-- Journal selection via settings
-- User preferences (collapsed categories, tag cloud state)
-- Module configuration
-
-### 3. **External Module Integration**
-
-The system can integrate with other modules:
-- **Coffee Pub Blacksmith**: For item discovery and auto-population
-- **Other modules**: Can extend CodexParser or add custom fields
-
-### 4. **Import/Export**
-
-The system supports JSON import/export:
-- **Export**: Converts all entries to JSON array
-- **Import**: Creates journal pages from JSON array
-- Useful for bulk entry creation or module migration
+### Auto-Discover from Party Inventories
+- Button in panel: scans all player-owned character tokens on the canvas, collects inventory item UUIDs and names, then for each codex entry checks if any party member has that item; updates entry “discoverers” and progress. Uses global progress bar; notifies when no party tokens or no inventory items found.
 
 ---
 
@@ -439,95 +353,12 @@ if (typeof page.text?.content === 'string') {
 
 ## Extension Points
 
-### Adding Custom Fields
+- **Custom fields:** Add extraction in `CodexParser.parseSinglePage()`, form field in `codex-form.hbs`, display in panel template, and output in `CodexForm._generateJournalContent()`.
+- **Category icons:** Extend `CodexPanel.getCategoryIcon(category)` map (e.g. `'Custom Category': 'fa-custom-icon'`; default `'fa-book'`).
 
-1. **Update Parser**: Add field extraction in `CodexParser.parseSinglePage()`
-2. **Update Form**: Add form field in `codex-form.hbs` and form logic
-3. **Update Template**: Add display section in `panel-codex.hbs`
-4. **Update Content Generator**: Add field to `_generateJournalContent()`
+## Technical Requirements
 
-### Custom Category Icons
-
-Extend `getCategoryIcon()` method:
-```javascript
-getCategoryIcon(category) {
-    const map = {
-        'Custom Category': 'fa-custom-icon',
-        // ... existing mappings
-    };
-    return map[category] || 'fa-book';
-}
-```
-
-### Custom Parsers
-
-Create specialized parsers for different entry types:
-```javascript
-class CustomCodexParser extends CodexParser {
-    static async parseCustomEntry(page, enrichedHtml) {
-        // Custom parsing logic
-    }
-}
-```
-
----
-
-## Migration Considerations
-
-### From Custom Database to Journal-Based
-
-If migrating from a custom database system:
-
-1. **Export existing data** to JSON format
-2. **Use import functionality** to create journal pages
-3. **Verify parser** handles your data structure
-4. **Update UI** to use journal-based workflows
-
-### Version Compatibility
-
-- Parser should handle missing fields gracefully
-- Use feature detection for FoundryVTT version differences
-- Provide migration utilities for data structure changes
-
----
-
-## Lessons Learned
-
-### What Works Well
-
-1. **Journal-based storage**: Leverages native FoundryVTT systems, no custom sync needed
-2. **HTML parsing**: Flexible, human-editable, version-tolerant
-3. **Client-side filtering**: Fast, responsive user experience
-4. **Category organization**: Intuitive grouping without rigid schemas
-5. **Tag system**: Flexible multi-dimensional filtering
-
-### Challenges and Solutions
-
-1. **Async content**: Handle both sync and async journal content
-2. **Event listener duplication**: Use cloning pattern to prevent duplicates
-3. **Performance with many entries**: Client-side filtering, efficient data structures
-4. **Ownership complexity**: Leverage FoundryVTT's native system, don't reinvent
-
-### Future Enhancements
-
-1. **Full-text search**: Index entries for faster searching
-2. **Relationships**: Link entries to each other
-3. **Timeline view**: Chronological organization for events
-4. **Map integration**: Visual location mapping
-5. **Export formats**: PDF, Markdown, etc.
-
----
-
-## Conclusion
-
-The Codex system demonstrates a flexible, journal-based approach to world-building data management in FoundryVTT. By leveraging native systems (journals, ownership, TextEditor) and using parser-based architecture, it provides a robust foundation that can be extended and adapted for various use cases.
-
-Key takeaways for other module developers:
-- **Use native systems** when possible (journals, settings, ownership)
-- **Parser-based architecture** provides flexibility and version tolerance
-- **Client-side filtering** improves performance and UX
-- **Separation of concerns** makes the system maintainable and extensible
-- **Error handling** is critical for user-facing data operations
-
-For questions or contributions, refer to the main module documentation or GitHub repository.
+- FoundryVTT v13+
+- D&D 5e system 5.5+
+- Required: `coffee-pub-blacksmith`
 

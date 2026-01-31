@@ -30,7 +30,7 @@ coffee-pub-squire/
 │   ├── common.css, tray.css, handle.css
 │   ├── panel-*.css            # Panel-specific styles
 │   ├── window-*.css           # Window/form styles
-│   └── quest-markers.css, codex-form.css, notes-metadata-box.css
+│   └── quest-markers.css, quest-form.css, codex-form.css, window-note.css, notes-metadata-box.css
 ├── templates/
 │   ├── tray.hbs               # Main tray layout (handle + content)
 │   ├── handle-*.hbs           # Handle content per view (player, party, notes, codex, quest)
@@ -76,7 +76,7 @@ coffee-pub-squire/
 
 | Panel | Script | Description |
 |-------|--------|-------------|
-| Character | panel-character.js | Portrait, name, conditions |
+| Character | panel-character.js | Portrait, name, class/level, speeds, quick actions |
 | GM | panel-gm.js | GM-only actor details |
 | Control | panel-control.js | Favorites/Weapons/Spells/Features/Inventory tabs |
 | Health | panel-health.js | HP bar, popout window |
@@ -107,7 +107,7 @@ coffee-pub-squire/
 | Health | window-health.js | Health popout |
 | Dice Tray | window-dicetray.js | Dice tray popout |
 | Macros | window-macros.js | Macros popout |
-| Transfer | (in manager/party) | Transfer dialog |
+| Transfer | (panel-party.js, transfer-utils.js) | Transfer dialog (window-transfer.hbs) |
 
 ### Utilities
 
