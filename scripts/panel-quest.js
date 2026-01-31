@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi } from './utility-quest-pins.js';
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -514,6 +514,184 @@ export class QuestPanel {
             console.error('Error clearing quest pins:', { error, questUuid });
             ui.notifications.error('Error clearing quest pins. See console for details.');
         }
+    }
+
+    /** Cursor class for Pin to Scene placement mode */
+    static QUEST_PIN_CURSOR_CLASS = 'squire-quest-pin-placement';
+    static QUEST_PIN_CANVAS_CURSOR_CLASS = 'squire-quest-pin-placement-canvas';
+
+    /**
+     * Begin Pin to Scene placement for a quest-level pin. User clicks on canvas to place.
+     * @param {string} questUuid - Quest journal page UUID
+     * @param {number} questIndex - Quest number for label
+     * @param {string} questCategory - Quest category
+     * @param {string} questStatus - Quest status
+     * @param {string} questState - 'visible' or 'hidden'
+     * @private
+     */
+    async _beginQuestPinPlacement(questUuid, questIndex, questCategory, questStatus, questState) {
+        if (!canvas?.scene || !canvas?.app?.view) {
+            ui.notifications.warn('Canvas is not ready. Open a scene to place a quest pin.');
+            return;
+        }
+        if (!getPinsApi()?.isAvailable()) {
+            ui.notifications.warn('Quest pins require the Blacksmith module.');
+            return;
+        }
+        if (this._questPinPlacement) this._clearQuestPinPlacement();
+
+        ui.notifications.info('Click on the map to place the quest pin. Press Esc to cancel.');
+        document.body.classList.add(QuestPanel.QUEST_PIN_CURSOR_CLASS);
+        document.body.style.cursor = 'crosshair';
+        const view = canvas.app.view;
+        view.classList.add(QuestPanel.QUEST_PIN_CANVAS_CURSOR_CLASS);
+
+        const onPointerDown = async (event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const rect = view.getBoundingClientRect();
+            const globalX = event.clientX - rect.left;
+            const globalY = event.clientY - rect.top;
+            const localPos = canvas.stage?.toLocal({ x: globalX, y: globalY });
+            if (!localPos) {
+                ui.notifications.warn('Unable to place pin: canvas position unavailable.');
+                this._clearQuestPinPlacement();
+                return;
+            }
+            const pin = await createQuestPin({
+                questUuid,
+                questIndex: typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0),
+                questCategory: questCategory || 'Side Quest',
+                questStatus: questStatus || 'Not Started',
+                questState: questState === 'true' || questState === true ? 'visible' : 'hidden',
+                x: localPos.x,
+                y: localPos.y,
+                sceneId: canvas.scene.id
+            });
+            this._clearQuestPinPlacement();
+            if (pin) {
+                ui.notifications.info('Quest pin placed.');
+                this.render(this.element);
+            }
+        };
+
+        const onContextMenu = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this._clearQuestPinPlacement();
+        };
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                this._clearQuestPinPlacement();
+            }
+        };
+
+        view.addEventListener('pointerdown', onPointerDown, true);
+        view.addEventListener('contextmenu', onContextMenu, true);
+        window.addEventListener('keydown', onKeyDown);
+
+        this._questPinPlacement = {
+            view,
+            onPointerDown,
+            onContextMenu,
+            onKeyDown
+        };
+    }
+
+    /**
+     * Begin Pin to Scene placement for an objective-level pin.
+     * @param {string} questUuid - Quest journal page UUID
+     * @param {number} objectiveIndex - Task index
+     * @param {number} questIndex - Quest number for label
+     * @param {string} questCategory - Quest category
+     * @param {string} questState - 'visible' or 'hidden'
+     * @param {Object} objective - { state, text }
+     * @private
+     */
+    async _beginObjectivePinPlacement(questUuid, objectiveIndex, questIndex, questCategory, questState, objective) {
+        if (!canvas?.scene || !canvas?.app?.view) {
+            ui.notifications.warn('Canvas is not ready. Open a scene to place an objective pin.');
+            return;
+        }
+        if (!getPinsApi()?.isAvailable()) {
+            ui.notifications.warn('Quest pins require the Blacksmith module.');
+            return;
+        }
+        if (this._questPinPlacement) this._clearQuestPinPlacement();
+
+        ui.notifications.info('Click on the map to place the objective pin. Press Esc to cancel.');
+        document.body.classList.add(QuestPanel.QUEST_PIN_CURSOR_CLASS);
+        document.body.style.cursor = 'crosshair';
+        const view = canvas.app.view;
+        view.classList.add(QuestPanel.QUEST_PIN_CANVAS_CURSOR_CLASS);
+
+        const onPointerDown = async (event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const rect = view.getBoundingClientRect();
+            const globalX = event.clientX - rect.left;
+            const globalY = event.clientY - rect.top;
+            const localPos = canvas.stage?.toLocal({ x: globalX, y: globalY });
+            if (!localPos) {
+                ui.notifications.warn('Unable to place pin: canvas position unavailable.');
+                this._clearQuestPinPlacement();
+                return;
+            }
+            const pin = await createObjectivePin({
+                questUuid,
+                questIndex: typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0),
+                objectiveIndex,
+                questCategory: questCategory || 'Side Quest',
+                questState: questState === 'true' || questState === true ? 'visible' : 'hidden',
+                objective: objective || { state: 'active', text: '' },
+                x: localPos.x,
+                y: localPos.y,
+                sceneId: canvas.scene.id
+            });
+            this._clearQuestPinPlacement();
+            if (pin) {
+                ui.notifications.info('Objective pin placed.');
+                this.render(this.element);
+            }
+        };
+
+        const onContextMenu = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this._clearQuestPinPlacement();
+        };
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                this._clearQuestPinPlacement();
+            }
+        };
+
+        view.addEventListener('pointerdown', onPointerDown, true);
+        view.addEventListener('contextmenu', onContextMenu, true);
+        window.addEventListener('keydown', onKeyDown);
+
+        this._questPinPlacement = {
+            view,
+            onPointerDown,
+            onContextMenu,
+            onKeyDown
+        };
+    }
+
+    _clearQuestPinPlacement() {
+        if (!this._questPinPlacement) return;
+        const { view, onPointerDown, onContextMenu, onKeyDown } = this._questPinPlacement;
+        view?.removeEventListener('pointerdown', onPointerDown, true);
+        view?.removeEventListener('contextmenu', onContextMenu, true);
+        window.removeEventListener('keydown', onKeyDown);
+        document.body.classList.remove(QuestPanel.QUEST_PIN_CURSOR_CLASS);
+        document.body.style.cursor = '';
+        view?.classList.remove(QuestPanel.QUEST_PIN_CANVAS_CURSOR_CLASS);
+        this._questPinPlacement = null;
     }
 
     /**
@@ -1538,6 +1716,49 @@ export class QuestPanel {
                 if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
                     await game.modules.get('coffee-pub-squire').api.PanelManager.instance.updateHandle();
                 }
+            });
+        });
+
+        // Pin to Scene (quest-level) - GM only
+        nativeHtml.querySelectorAll('.quest-pin-to-scene').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode?.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const uuid = newBtn.dataset.uuid;
+                const questNumber = newBtn.dataset.questNumber;
+                const category = newBtn.dataset.category;
+                const visible = newBtn.dataset.visible;
+                const questStatus = newBtn.dataset.questStatus;
+                if (!uuid) return;
+                await this._beginQuestPinPlacement(uuid, questNumber, category, questStatus, visible);
+            });
+        });
+
+        // Pin to Scene (objective-level) - GM only
+        nativeHtml.querySelectorAll('.objective-pin-to-scene').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode?.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const questUuid = newBtn.dataset.questUuid;
+                const questNumber = newBtn.dataset.questNumber;
+                const category = newBtn.dataset.category;
+                const visible = newBtn.dataset.visible;
+                const taskIndex = parseInt(newBtn.dataset.taskIndex, 10);
+                const taskState = newBtn.dataset.taskState || 'active';
+                const taskText = newBtn.dataset.taskText || '';
+                if (questUuid == null || isNaN(taskIndex)) return;
+                await this._beginObjectivePinPlacement(
+                    questUuid,
+                    taskIndex,
+                    questNumber,
+                    category,
+                    visible,
+                    { state: taskState, text: taskText }
+                );
             });
         });
 

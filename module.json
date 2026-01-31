@@ -75,6 +75,7 @@
     "scripts/panel-notes.js",
     "scripts/utility-quest-pins.js",
     "scripts/utility-quest-pin-migration.js",
+    "scripts/quest-pin-events.js",
     "scripts/utility-lights.js"
   ],
   "packs": [],

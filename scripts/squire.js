@@ -12,6 +12,7 @@ import { QuestParser } from './utility-quest-parser.js';
 // New Blacksmith API-based quest pins
 import { createQuestPin, createObjectivePin, isPinsApiAvailable } from './utility-quest-pins.js';
 import { migrateLegacyQuestPins } from './utility-quest-pin-migration.js';
+import { registerQuestPinEvents } from './quest-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
 import {
@@ -404,6 +405,8 @@ Hooks.once('ready', async () => {
                 if (canvas.scene && isPinsApiAvailable()) {
                     await migrateLegacyQuestPins(canvas.scene);
                 }
+                // Register quest pin click and context menu handlers
+                registerQuestPinEvents();
 
                 // Monitor canvas selection changes for bulk selection support
                 ensureSelectObjectsWrapper();

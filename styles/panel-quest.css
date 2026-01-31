@@ -4,6 +4,22 @@
     flex-direction: column;
 }
 
+/* Pin to Scene placement mode cursor */
+html.squire-quest-pin-placement,
+body.squire-quest-pin-placement {
+    cursor: crosshair;
+}
+
+html.squire-quest-pin-placement *,
+body.squire-quest-pin-placement * {
+    cursor: inherit !important;
+}
+
+body.squire-quest-pin-placement .squire-quest-pin-placement-canvas,
+html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
+    cursor: crosshair;
+}
+
 /* CONTENT */
 
 .squire-tray[data-position="left"] .quest-content {
@@ -100,6 +116,22 @@
 
 .squire-tray[data-position="left"] .quest-toolbar .quest-pin.pinned {
     opacity: 1;
+}
+
+.squire-tray[data-position="left"] .quest-toolbar .quest-pin-to-scene {
+    opacity: 0.8;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene {
+    font-size: 0.85em;
+    opacity: 0.7;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene:hover {
+    opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
 }
 
 
