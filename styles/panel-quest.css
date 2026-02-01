@@ -94,7 +94,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     color: rgba(159, 146, 117, 0.9);
     justify-content: flex-end;
     gap: 8px;
-    position: relative; /* Required for absolute positioning of dropdown */
+    position: relative;
 }
 /* Control Icons */
 
@@ -716,28 +716,6 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     background: linear-gradient(90deg, #791a38 0%, #831c3c 100%);
     border-radius: 2px;
     transition: width 0.3s;
-}
-
-.squire-tray[data-position="left"] .quest-status-dropdown {
-    position: absolute;
-    z-index: 100;
-    background: #232323;
-    border: 1px solid #444;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    min-width: 120px;
-    display: none;
-    /* Position will be set dynamically via JavaScript */
-}
-.squire-tray[data-position="left"] .quest-status-option {
-    padding: 6px 12px;
-    cursor: pointer;
-    color: #fff;
-    font-size: 0.95em;
-    transition: background 0.2s;
-}
-.squire-tray[data-position="left"] .quest-status-option:hover {
-    background: #444;
 }
 
 /* Add drop target styling for quest entries */

@@ -516,6 +516,52 @@ export class QuestPanel {
         }
     }
 
+    /**
+     * Apply quest status change (Not Started, In Progress, Complete, Failed).
+     * @param {string} uuid - Quest journal page UUID
+     * @param {string} newStatus - New status value
+     * @private
+     */
+    async _applyQuestStatus(uuid, newStatus) {
+        const page = await fromUuid(uuid);
+        if (!page) return;
+
+        let content = '';
+        if (typeof page.text?.content === 'string') content = page.text.content;
+        else if (page.text?.content) content = await page.text.content;
+        const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+        const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
+        const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
+
+        if (statusMatch) {
+            content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, `$1${newStatus}`);
+        } else {
+            content += `<p><strong>Status:</strong> ${newStatus}</p>`;
+        }
+
+        let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+        if (!originalCategory && currentCategory && !['Completed', 'Failed'].includes(currentCategory)) {
+            originalCategory = currentCategory;
+            await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
+        }
+
+        if (newStatus === 'Complete' && currentCategory !== 'Completed') {
+            if (!originalCategory && currentCategory) {
+                await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
+            }
+        } else if (newStatus === 'Failed' && currentCategory !== 'Failed') {
+            if (!originalCategory && currentCategory) {
+                await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
+            }
+        } else if (['Not Started', 'In Progress'].includes(newStatus) && ['Completed', 'Failed'].includes(currentCategory) && originalCategory) {
+            if (categoryMatch) {
+                content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
+            }
+        }
+
+        await page.update({ text: { content } });
+    }
+
     /** Cursor class for Pin to Scene placement mode */
     static QUEST_PIN_CURSOR_CLASS = 'squire-quest-pin-placement';
     static QUEST_PIN_CANVAS_CURSOR_CLASS = 'squire-quest-pin-placement-canvas';
@@ -1916,44 +1962,6 @@ export class QuestPanel {
             });
         }
 
-        // Clear Quest Pins for specific quest (GM only)
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.clear-quest-pins').forEach(clearButton => {
-            const newButton = clearButton.cloneNode(true);
-            clearButton.parentNode?.replaceChild(newButton, clearButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (!game.user.isGM) return;
-                
-                const uuid = event.currentTarget.dataset.uuid;
-                if (!uuid) return;
-                
-                const page = await fromUuid(uuid);
-                if (!page) return;
-                new Dialog({
-                    title: `Clear Pins for "${page.name}"`,
-                    content: `
-                        <p>This will remove all quest pins for "${page.name}" from the current scene.</p>
-                        <p><strong>This action cannot be undone.</strong></p>
-                    `,
-                    buttons: {
-                        clear: {
-                            icon: '<i class="fa-solid fa-trash-alt"></i>',
-                            label: 'Clear Quest Pins',
-                            callback: async () => {
-                                await this._clearQuestPins(uuid);
-                            }
-                        },
-                        cancel: {
-                            icon: '<i class="fa-solid fa-times"></i>',
-                            label: 'Cancel'
-                        }
-                    }
-                }).render(true);
-            });
-        });
-
         // Toggle Pin Visibility (GM and Players) - uses Blacksmith setModuleVisibility
         // v13: Use nativeHtml instead of html
         const togglePinVisibilityButton = nativeHtml.querySelector('.toggle-pin-visibility');
@@ -2582,134 +2590,49 @@ export class QuestPanel {
             });
         }
 
-        // Status menu (GM only)
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.quest-status-menu').forEach(menuButton => {
-            const newButton = menuButton.cloneNode(true);
-            menuButton.parentNode?.replaceChild(newButton, menuButton);
-            newButton.addEventListener('click', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                // Hide any other open dropdowns
-                // v13: Use nativeHtml instead of html
-                nativeHtml.querySelectorAll('.quest-status-dropdown').forEach(dd => {
-                    dd.style.display = 'none';
+        // Quest options menu (GM only) - Blacksmith Context Menu
+        const ctxMenu = getBlacksmith()?.uiContextMenu;
+        if (ctxMenu?.show) {
+            nativeHtml.querySelectorAll('.quest-status-menu').forEach(menuButton => {
+                const newButton = menuButton.cloneNode(true);
+                menuButton.parentNode?.replaceChild(newButton, menuButton);
+                newButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!game.user.isGM) return;
+                    const uuid = newButton.dataset.uuid;
+                    if (!uuid) return;
+
+                    const zones = [
+                        {
+                            name: 'Clear Quest Pins',
+                            icon: 'fa-solid fa-eraser',
+                            callback: async () => {
+                                await this._clearQuestPins(uuid);
+                            }
+                        },
+                        {
+                            name: 'Change Status',
+                            icon: 'fa-solid fa-pen',
+                            submenu: [
+                                { name: 'Not Started', icon: 'fa-solid fa-circle', callback: () => this._applyQuestStatus(uuid, 'Not Started') },
+                                { name: 'In Progress', icon: 'fa-solid fa-spinner', callback: () => this._applyQuestStatus(uuid, 'In Progress') },
+                                { name: 'Complete', icon: 'fa-solid fa-check', callback: () => this._applyQuestStatus(uuid, 'Complete') },
+                                { name: 'Failed', icon: 'fa-solid fa-xmark', callback: () => this._applyQuestStatus(uuid, 'Failed') }
+                            ]
+                        }
+                    ];
+
+                    ctxMenu.show({
+                        id: `${MODULE.ID}-quest-entry-menu`,
+                        x: event.clientX,
+                        y: event.clientY,
+                        zones,
+                        zoneClass: 'core'
+                    });
                 });
-                // Show the dropdown next to this button
-                const btn = event.currentTarget;
-                const dropdown = btn.parentElement?.querySelector('.quest-status-dropdown');
-                if (!dropdown) return;
-                
-                const isVisible = dropdown.style.display !== 'none';
-                
-                if (isVisible) {
-                    dropdown.style.display = 'none';
-                } else {
-                    // Position the dropdown properly before showing it
-                    const btnRect = btn.getBoundingClientRect();
-                    const toolbar = btn.closest('.quest-toolbar');
-                    if (!toolbar) return;
-                    const toolbarRect = toolbar.getBoundingClientRect();
-                    
-                    // Calculate position relative to the toolbar
-                    let left = btnRect.left - toolbarRect.left;
-                    const top = btnRect.bottom - toolbarRect.top + 4; // 4px gap
-                    
-                    // Get dropdown dimensions to check boundaries
-                    const dropdownWidth = 120; // min-width from CSS
-                    const toolbarWidth = toolbarRect.width;
-                    
-                    // Check if dropdown would run off the right edge
-                    if (left + dropdownWidth > toolbarWidth) {
-                        // Position dropdown to the left of the button instead
-                        left = Math.max(0, btnRect.right - toolbarRect.left - dropdownWidth);
-                    }
-                    
-                    // Apply positioning
-                    dropdown.style.left = left + 'px';
-                    dropdown.style.top = top + 'px';
-                    dropdown.style.right = 'auto'; // Override the CSS right: 0
-                    dropdown.style.display = 'block';
-                }
-                
-                // Close on click outside
-                const closeHandler = () => {
-                    dropdown.style.display = 'none';
-                    document.removeEventListener('click', closeHandler);
-                };
-                setTimeout(() => {
-                    document.addEventListener('click', closeHandler, { once: true });
-                }, 0);
             });
-        });
-        // Status option click
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.quest-status-option').forEach(option => {
-            const newOption = option.cloneNode(true);
-            option.parentNode?.replaceChild(newOption, option);
-            newOption.addEventListener('click', async function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const newStatus = event.currentTarget.dataset.status;
-                const uuid = event.currentTarget.dataset.uuid;
-                if (!uuid) return;
-                const page = await fromUuid(uuid);
-                if (!page) return;
-                
-                let content = page.text.content;
-                const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
-                const currentStatus = statusMatch ? statusMatch[1].trim() : '';
-                
-                // Update the status in the content
-                if (statusMatch) {
-                    content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, `$1${newStatus}`);
-                } else {
-                    content += `<p><strong>Status:</strong> ${newStatus}</p>`;
-                }
-                
-                // Get the current category
-                const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
-                const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
-                
-                // Get the original category from flag or current category
-                let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
-                if (!originalCategory && currentCategory && !['Completed', 'Failed'].includes(currentCategory)) {
-                    originalCategory = currentCategory;
-                    await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
-                }
-                
-                // Handle category changes based on status
-                if (newStatus === 'Complete') {
-                    // Store original category if not already stored
-                    if (currentCategory !== 'Completed') {
-                        if (!originalCategory && currentCategory) {
-                            await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
-                        }
-                    }
-                } else if (newStatus === 'Failed') {
-                    // Store original category if not already stored
-                    if (currentCategory !== 'Failed') {
-                        if (!originalCategory && currentCategory) {
-                            await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
-                        }
-                    }
-                } else if (['Not Started', 'In Progress'].includes(newStatus)) {
-                    // Restore original category if quest is active again
-                    if (['Completed', 'Failed'].includes(currentCategory) && originalCategory) {
-                        if (categoryMatch) {
-                            content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
-                        }
-                    }
-                }
-                
-                await page.update({ text: { content } });
-                // No manual refresh; let the updateJournalEntryPage hook handle it
-                const dropdown = event.currentTarget.closest('.quest-status-dropdown');
-                if (dropdown) {
-                    dropdown.style.display = 'none';
-                }
-            });
-        });
+        }
 
         // --- Drag and Drop for Quest Entries (GM only) ---
         if (game.user.isGM) {
