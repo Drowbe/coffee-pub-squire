@@ -12,7 +12,6 @@ The Quest system provides structured adventure and task management for FoundryVT
 | `scripts/window-quest.js` | `QuestForm` – FormApplication for quest create/edit |
 | `scripts/utility-quest-parser.js` | `QuestParser` – Parses HTML journal content to JS objects |
 | `scripts/utility-quest-pins.js` | Quest pin utilities – create, update, delete, ownership, colors |
-| `scripts/utility-quest-pin-migration.js` | One-time migration of legacy scene-flag pins to Blacksmith |
 | `scripts/quest-pin-events.js` | Click handler, context menu registration for quest pins |
 | `templates/panel-quest.hbs` | Panel template |
 | `templates/quest-form.hbs` | Form template |
@@ -63,7 +62,7 @@ Quests are stored as HTML with semantic markup:
 
 ### Scene Pin Integration (Blacksmith API)
 
-Pins are created and placed via the Blacksmith Pins API. Position persistence is handled by Blacksmith. Legacy pins from scene flags (`coffee-pub-squire.questPins`) are migrated to Blacksmith on scene load; see `utility-quest-pin-migration.js`.
+Pins are created and placed via the Blacksmith Pins API. Position persistence is handled by Blacksmith.
 
 ## Components
 
@@ -157,15 +156,15 @@ Visual representation of quests and objectives on the canvas via `pins.create()`
 | hidden | `<em>`, `<i>` | `#000000` (Black) |
 
 **Ownership Calculation** (`calculateQuestPinOwnership(page, objective)`):
-1. **Layer 1**: Global `hideQuestPins` user flag → All hidden (`default: NONE`)
-2. **Layer 2**: GMs always see (`users[gmId]: OWNER`)
-3. **Layer 3**: Quest `visible` flag false → Hidden from players, GMs only
-4. **Layer 4**: Objective `state === 'hidden'` → Hidden from players, GMs only
-5. **Layer 5**: Otherwise → Everyone `OBSERVER`
+- **Note**: Global hide-all is handled by Blacksmith via `pins.setModuleVisibility()`; no ownership mutation.
+1. **Layer 1**: GMs always see (`users[gmId]: OWNER`)
+2. **Layer 2**: Quest `visible` flag false → Hidden from players, GMs only (crown badge)
+3. **Layer 3**: Objective `state === 'hidden'` → Hidden from players, GMs only (crown badge)
+4. **Layer 4**: Otherwise → Everyone `OBSERVER`
 
 **Interactive Features:**
 - **Left-click**: Open quest tab, expand entry, scroll to quest/objective, flash highlight
-- **Right-click**: Context menu – Complete Objective, Fail Objective, Toggle Hidden from Players (quest), Toggle Objective Hidden (objective), Delete Pin
+- **Right-click**: Context menu (GM-only items) – Complete Objective, Fail Objective, Toggle Hidden from Players (quest), Toggle Objective Hidden (objective), Delete Pin
 - **Pin to Scene**: GM clicks icon on quest/objective in panel → crosshair mode → click canvas to place
 - **Drag**: GMs can reposition (Blacksmith persists position)
 
@@ -253,14 +252,14 @@ The quest system supports full JSON export/import including scene pins.
 | Quest Categories | `questCategories` | world | Available categories (default includes Pinned, Main Quest, Side Quest, Completed, Failed) |
 | Show Quest Pin Titles | `showQuestPinText` | user | Display quest/objective names below pins; when off, only numbers (Q85, Q85.03) and icons |
 
-**User flag (not in settings UI):** `hideQuestPins` – toggles pin visibility on canvas (e.g. from panel toolbar).
+**Pin visibility toggle:** Uses Blacksmith `pins.setModuleVisibility(moduleId, visible)` / `pins.getModuleVisibility(moduleId)` for per-user hide/show without ownership mutation.
 
 ## Hooks Integration
 
 **Blacksmith HookManager (squire.js):**
 - **Journal:** `updateJournalEntryPage`, `createJournalEntryPage`, `deleteJournalEntryPage` – route to quest panel refresh and/or quest pin updates (`_routeToQuestPanel`, `_routeToQuestPins`). On visibility or content change, `_routeToQuestPins` calls `updateQuestPinVisibility` and `updateQuestPinStylesForPage`.
 - **Panel:** After render, `QuestPanel` calls `Hooks.call('renderQuestPanel')`. Blacksmith handles pin visibility; `showQuestPinText` and `hideQuestPins` apply via `pins.reload({ moduleId })` when settings change.
-- **Scene/canvas:** `canvasReady` runs `migrateLegacyQuestPins(scene)` then `registerQuestPinEvents()`. Blacksmith manages pin lifecycle; no PIXI containers.
+- **Scene/canvas:** `canvasReady` runs `registerQuestPinEvents()`. Blacksmith manages pin lifecycle; no PIXI containers.
 
 ## Technical Requirements
 

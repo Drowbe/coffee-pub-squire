@@ -116,13 +116,14 @@ function registerQuestPinContextMenuItems(pins) {
 
     const disposers = [];
 
-    // Complete Objective (objective pins only)
+    // Complete Objective (objective pins only, GM only)
     disposers.push(
         pins.registerContextMenuItem(`${MODULE.ID}-quest-complete-objective`, {
             name: 'Complete Objective',
             icon: '<i class="fa-solid fa-check"></i>',
             moduleId: MODULE.ID,
             order: 10,
+            gmOnly: true,
             visible: (pinData) => pinData?.type === 'objective',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
@@ -141,13 +142,14 @@ function registerQuestPinContextMenuItems(pins) {
         })
     );
 
-    // Fail Objective (objective pins only)
+    // Fail Objective (objective pins only, GM only)
     disposers.push(
         pins.registerContextMenuItem(`${MODULE.ID}-quest-fail-objective`, {
             name: 'Fail Objective',
             icon: '<i class="fa-solid fa-xmark"></i>',
             moduleId: MODULE.ID,
             order: 20,
+            gmOnly: true,
             visible: (pinData) => pinData?.type === 'objective',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
@@ -161,13 +163,14 @@ function registerQuestPinContextMenuItems(pins) {
         })
     );
 
-    // Toggle Hidden (quest pins only - quest-level visibility)
+    // Toggle Hidden (quest pins only - quest-level visibility, GM only)
     disposers.push(
         pins.registerContextMenuItem(`${MODULE.ID}-quest-toggle-hidden`, {
             name: 'Toggle Hidden from Players',
             icon: '<i class="fa-solid fa-eye-slash"></i>',
             moduleId: MODULE.ID,
             order: 30,
+            gmOnly: true,
             visible: (pinData) => pinData?.type === 'quest',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
@@ -177,13 +180,14 @@ function registerQuestPinContextMenuItems(pins) {
         })
     );
 
-    // Toggle Objective Hidden (objective pins only - wrap in <em>)
+    // Toggle Objective Hidden (objective pins only - wrap in <em>, GM only)
     disposers.push(
         pins.registerContextMenuItem(`${MODULE.ID}-quest-toggle-objective-hidden`, {
             name: 'Toggle Objective Hidden',
             icon: '<i class="fa-solid fa-eye-slash"></i>',
             moduleId: MODULE.ID,
             order: 32,
+            gmOnly: true,
             visible: (pinData) => pinData?.type === 'objective',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
@@ -199,13 +203,14 @@ function registerQuestPinContextMenuItems(pins) {
         })
     );
 
-    // Delete Pin
+    // Delete Pin (GM only)
     disposers.push(
         pins.registerContextMenuItem(`${MODULE.ID}-quest-delete-pin`, {
             name: 'Delete Pin',
             icon: '<i class="fa-solid fa-trash"></i>',
             moduleId: MODULE.ID,
             order: 40,
+            gmOnly: true,
             onClick: async (pinData) => {
                 const pinId = pinData?.id;
                 if (!pinId) return;

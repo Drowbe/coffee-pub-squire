@@ -11,7 +11,6 @@ import { QuestParser } from './utility-quest-parser.js';
 
 // New Blacksmith API-based quest pins
 import { isPinsApiAvailable } from './utility-quest-pins.js';
-import { migrateLegacyQuestPins } from './utility-quest-pin-migration.js';
 import { registerQuestPinEvents } from './quest-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
@@ -397,14 +396,10 @@ Hooks.once('ready', async () => {
         
         const canvasReadyHookId = BlacksmithHookManager.registerHook({
             name: 'canvasReady',
-            description: 'Coffee Pub Squire: Handle canvas ready (migration and selection monitoring)',
+            description: 'Coffee Pub Squire: Handle canvas ready (quest pin events and selection monitoring)',
             context: MODULE.ID,
             priority: 2,
             callback: async () => {
-                // Migrate legacy quest pins if needed
-                if (canvas.scene && isPinsApiAvailable()) {
-                    await migrateLegacyQuestPins(canvas.scene);
-                }
                 // Register quest pin click and context menu handlers
                 registerQuestPinEvents();
 
@@ -1891,6 +1886,14 @@ Hooks.once('ready', async function() {
 
     // Register module settings
     registerSettings();
+
+    // Register pin types with friendly names (Blacksmith uses these for context menus, tools, etc.)
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    if (pins?.isAvailable()) {
+        pins.registerPinType(MODULE.ID, 'quest', 'Squire Quests');
+        pins.registerPinType(MODULE.ID, 'objective', 'Squire Quests');
+        pins.registerPinType(MODULE.ID, 'coffee-pub-squire-sticky-notes', 'Squire Notes');
+    }
 
     // Register socket handler for GM ownership sync on notes
     try {

@@ -1,435 +1,396 @@
 /**
- * Quest Pin Utilities for Blacksmith Pin API Integration
- * 
- * This module provides helper functions for managing quest pins via the Blacksmith Pin API.
- * It replaces the legacy PIXI-based QuestPin class with simple API calls.
- * 
- * Key principle: We translate existing quest visibility logic to pin ownership.
- * The underlying quest system (flags, HTML markup, parsing) remains unchanged.
+ * Quest Pin Utilities – Blacksmith Pins API integration
+ *
+ * Create, update, delete, and sync quest/objective pins. Ownership and
+ * visibility use Blacksmith ownership; per-user hide-all uses
+ * pins.setModuleVisibility(MODULE.ID, visible).
  */
 
 import { MODULE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 
+const QUEST_PIN_SIZE = { w: 32, h: 32 };
+const OBJECTIVE_PIN_SIZE = { w: 28, h: 28 };
+const QUEST_ICON = '<i class="fa-solid fa-scroll"></i>';
+const OBJECTIVE_ICON = '<i class="fa-solid fa-bullseye"></i>';
+
+/** Quest status / state → fill color (hex) */
+const QUEST_STATUS_COLORS = {
+    'Complete': '#00ff00',
+    'Failed': '#ff0000',
+    'In Progress': '#ffff00',
+    'Not Started': '#ffffff',
+    'hidden': '#000000'
+};
+
+/** Objective state → fill color (hex) */
+const OBJECTIVE_STATE_COLORS = {
+    active: '#ffff00',
+    completed: '#00ff00',
+    failed: '#ff0000',
+    hidden: '#000000'
+};
+
+function getQuestNumber(questUuid) {
+    if (!questUuid || typeof questUuid !== 'string') return 1;
+    let hash = 0;
+    for (let i = 0; i < questUuid.length; i++) {
+        hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash) % 100 + 1;
+}
+
 /**
- * Get the Blacksmith Pins API
- * @returns {Object|null} Pins API or null if not available
+ * Get the Blacksmith Pins API.
+ * @returns {object|undefined}
  */
 export function getPinsApi() {
-    return game.modules.get('coffee-pub-blacksmith')?.api?.pins || null;
+    return game.modules.get('coffee-pub-blacksmith')?.api?.pins;
 }
 
 /**
- * Check if Blacksmith Pins API is available
- * @returns {boolean} True if API is available
+ * Check whether the Pins API is available.
+ * @param {object} [pins] - Optional API instance; if omitted, uses getPinsApi()
+ * @returns {boolean}
  */
-export function isPinsApiAvailable() {
-    const pins = getPinsApi();
-    return pins?.isAvailable() || false;
+export function isPinsApiAvailable(pins) {
+    const api = pins ?? getPinsApi();
+    return typeof api?.isAvailable === 'function' && api.isAvailable();
 }
 
 /**
- * Wait for Blacksmith Pins API to be ready
- * @returns {Promise<boolean>} Resolves to true when ready, false if unavailable
- */
-export async function waitForPinsApi() {
-    const pins = getPinsApi();
-    if (!pins) return false;
-    
-    try {
-        await pins.whenReady();
-        return true;
-    } catch (error) {
-        console.error(`${MODULE.ID} | Failed to wait for Blacksmith Pins API:`, error);
-        return false;
-    }
-}
-
-/**
- * Calculate pin ownership based on quest visibility logic
- * This translates the legacy shouldBeVisible() logic to Blacksmith ownership
- * 
+ * Calculate pin ownership from quest/objective visibility.
+ * GMs always get OWNER; hidden quest/objective → NONE for default, GMs in users.
  * @param {JournalEntryPage} page - Quest journal page
- * @param {Object} objective - Objective data (null for quest-level pins)
- * @returns {Object} Ownership object for Blacksmith pins
+ * @param {object|null} [objective] - Objective data (null for quest-level pin)
+ * @returns {object} Ownership for pins.create/pins.update
  */
 export function calculateQuestPinOwnership(page, objective = null) {
-    // Layer 1: Global hide-all (handled separately in create/update logic)
-    const hideAll = game.user.getFlag(MODULE.ID, 'hideQuestPins');
-    if (hideAll) {
-        return { 
-            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, 
-            users: {} 
-        };
-    }
-    
-    // Layer 2: GMs always see everything
     const gmUsers = {};
     game.users.forEach(user => {
-        if (user.isGM) {
-            gmUsers[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-        }
+        if (user.isGM) gmUsers[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
     });
-    
-    // Layer 3: Check quest visibility
-    const questVisible = page?.getFlag(MODULE.ID, 'visible') !== false; // Default true
+
+    const questVisible = page?.getFlag(MODULE.ID, 'visible') !== false;
     if (!questVisible) {
-        return { 
-            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, 
-            users: gmUsers 
-        };
+        return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, users: gmUsers };
     }
-    
-    // Layer 4: For objective pins, also check objective visibility
-    if (objective && objective.state === 'hidden') { // From HTML <em> markup
-        return { 
-            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, 
-            users: gmUsers 
-        };
+
+    if (objective && objective.state === 'hidden') {
+        return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, users: gmUsers };
     }
-    
-    // Layer 5: Visible to everyone
-    return { 
-        default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, 
-        users: gmUsers 
-    };
+
+    return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, users: gmUsers };
 }
 
 /**
- * Get quest pin color based on quest status
- * @param {string} status - Quest status ('Not Started', 'In Progress', 'Complete', 'Failed')
- * @param {string} state - Quest state ('visible', 'hidden')
- * @returns {string} Hex color code
+ * Get fill color for a quest pin by status (or hidden state).
+ * @param {string} status - e.g. 'Not Started', 'In Progress', 'Complete', 'Failed'
+ * @param {string} [questState] - 'visible' | 'hidden'; if 'hidden', returns black
+ * @returns {string} Hex color
  */
-export function getQuestPinColor(status, state) {
-    // TODO: Load from themes/quest-pins.json or settings
-    if (state === 'hidden') return '#000000'; // Black for hidden
-    
-    switch (status) {
-        case 'Complete': return '#00ff00'; // Green
-        case 'Failed': return '#ff0000'; // Red
-        case 'In Progress': return '#ffff00'; // Yellow
-        case 'Not Started': return '#ffffff'; // White
-        default: return '#ffff00'; // Default to yellow
-    }
+export function getQuestPinColor(status, questState) {
+    if (questState === 'hidden') return QUEST_STATUS_COLORS.hidden ?? '#000000';
+    return QUEST_STATUS_COLORS[status] ?? QUEST_STATUS_COLORS['Not Started'];
 }
 
 /**
- * Get objective pin color based on objective state
- * @param {string} state - Objective state ('active', 'completed', 'failed', 'hidden')
- * @returns {string} Hex color code
+ * Get fill color for an objective pin by state.
+ * @param {string} state - 'active' | 'completed' | 'failed' | 'hidden'
+ * @returns {string} Hex color
  */
 export function getObjectivePinColor(state) {
-    // TODO: Load from themes/quest-pins.json or settings
-    switch (state) {
-        case 'completed': return '#00ff00'; // Green
-        case 'failed': return '#ff0000'; // Red
-        case 'hidden': return '#000000'; // Black
-        case 'active':
-        default: return '#ffff00'; // Yellow
-    }
+    return OBJECTIVE_STATE_COLORS[state] ?? OBJECTIVE_STATE_COLORS.active;
 }
 
 /**
- * Create a quest pin via Blacksmith API
- * @param {Object} options - Pin creation options
- * @param {string} options.questUuid - Quest journal page UUID
- * @param {number} options.questIndex - Quest index number
- * @param {string} options.questCategory - Quest category
- * @param {string} options.questStatus - Quest status
- * @param {string} options.questState - Quest state ('visible' or 'hidden')
- * @param {number} options.x - X coordinate
- * @param {number} options.y - Y coordinate
- * @param {string} options.sceneId - Scene ID
- * @returns {Promise<Object|null>} Created pin or null if failed
+ * Create a quest-level pin and optionally place it on a scene.
+ * @param {object} opts - questUuid, questIndex, questCategory, questStatus, questState, x, y, sceneId
+ * @returns {Promise<object|null>} Created pin data or null
  */
-export async function createQuestPin(options) {
+export async function createQuestPin(opts) {
     const pins = getPinsApi();
-    if (!pins || !pins.isAvailable()) {
-        console.warn(`${MODULE.ID} | Blacksmith Pins API not available`);
-        return null;
-    }
-    
-    const { questUuid, questIndex, questCategory, questStatus, questState, x, y, sceneId } = options;
-    
-    // Get the quest page for ownership calculation
+    if (!isPinsApiAvailable(pins)) return null;
+
+    const {
+        questUuid,
+        questIndex,
+        questCategory = 'Side Quest',
+        questStatus = 'Not Started',
+        questState = 'visible',
+        x,
+        y,
+        sceneId
+    } = opts;
+
     const page = await fromUuid(questUuid);
-    if (!page) {
-        console.error(`${MODULE.ID} | Quest page not found: ${questUuid}`);
-        return null;
-    }
-    
-    // Calculate ownership
+    if (!page) return null;
+
     const ownership = calculateQuestPinOwnership(page);
-    
-    // Get color based on status
-    const color = getQuestPinColor(questStatus, questState);
-    
-    // Build pin data
+    const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
+    const fillColor = getQuestPinColor(questStatus, questState);
+
     const pinData = {
-        id: foundry.utils.randomID(),
+        id: crypto.randomUUID(),
         moduleId: MODULE.ID,
         type: 'quest',
         shape: 'circle',
-        image: '<i class="fa-solid fa-scroll"></i>', // TODO: Make configurable
-        text: `Q${questIndex}`,
-        size: 32, // TODO: Load from settings
-        style: {
-            fill: color,
-            stroke: '#000000',
-            strokeWidth: 2
-        },
+        text: `Q${questNum}`,
+        image: QUEST_ICON,
+        size: QUEST_PIN_SIZE,
+        style: { fill: fillColor, stroke: '#000000', strokeWidth: 2, iconColor: '#ffffff' },
         ownership,
         config: {
             questUuid,
-            questIndex,
+            questIndex: questNum,
             questCategory,
             questStatus,
             questState
         }
     };
-    
+
+    const hasPlacement = typeof sceneId === 'string' && Number.isFinite(x) && Number.isFinite(y);
+    if (hasPlacement) {
+        pinData.x = x;
+        pinData.y = y;
+    }
+
     try {
-        // Create the pin (unplaced)
-        const pin = await pins.create(pinData);
-        
-        // Place it on the scene
-        await pins.place(pin.id, { sceneId, x, y });
-        
-        console.log(`${MODULE.ID} | Created quest pin:`, pin.id);
-        return pin;
-    } catch (error) {
-        console.error(`${MODULE.ID} | Failed to create quest pin:`, error);
+        if (typeof pins.whenReady === 'function') await pins.whenReady();
+        const created = await pins.create(pinData, hasPlacement ? { sceneId } : undefined);
+        if (hasPlacement && typeof pins.reload === 'function') await pins.reload({ sceneId });
+        return created;
+    } catch (err) {
+        console.error('Coffee Pub Squire | createQuestPin:', err);
         return null;
     }
 }
 
 /**
- * Create an objective pin via Blacksmith API
- * @param {Object} options - Pin creation options
- * @param {string} options.questUuid - Quest journal page UUID
- * @param {number} options.questIndex - Quest index number
- * @param {number} options.objectiveIndex - Objective index within quest
- * @param {string} options.questCategory - Quest category
- * @param {string} options.questState - Quest state ('visible' or 'hidden')
- * @param {Object} options.objective - Objective data from QuestParser
- * @param {number} options.x - X coordinate
- * @param {number} options.y - Y coordinate
- * @param {string} options.sceneId - Scene ID
- * @returns {Promise<Object|null>} Created pin or null if failed
+ * Create an objective-level pin and optionally place it on a scene.
+ * @param {object} opts - questUuid, objectiveIndex, questIndex, questCategory, questState, objective, x, y, sceneId
+ * @returns {Promise<object|null>} Created pin data or null
  */
-export async function createObjectivePin(options) {
+export async function createObjectivePin(opts) {
     const pins = getPinsApi();
-    if (!pins || !pins.isAvailable()) {
-        console.warn(`${MODULE.ID} | Blacksmith Pins API not available`);
-        return null;
-    }
-    
-    const { questUuid, questIndex, objectiveIndex, questCategory, questState, objective, x, y, sceneId } = options;
-    
-    // Get the quest page for ownership calculation
+    if (!isPinsApiAvailable(pins)) return null;
+
+    const {
+        questUuid,
+        objectiveIndex,
+        questIndex,
+        questCategory = 'Side Quest',
+        questState = 'visible',
+        objective = { state: 'active', text: '' },
+        x,
+        y,
+        sceneId
+    } = opts;
+
     const page = await fromUuid(questUuid);
-    if (!page) {
-        console.error(`${MODULE.ID} | Quest page not found: ${questUuid}`);
-        return null;
-    }
-    
-    // Calculate ownership (includes both quest AND objective visibility)
+    if (!page) return null;
+
+    const objState = objective.state || 'active';
     const ownership = calculateQuestPinOwnership(page, objective);
-    
-    // Get color based on objective state
-    const color = getObjectivePinColor(objective.state);
-    
-    // Build pin data
+    const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
+    const fillColor = getObjectivePinColor(objState);
+
     const pinData = {
-        id: foundry.utils.randomID(),
+        id: crypto.randomUUID(),
         moduleId: MODULE.ID,
         type: 'objective',
         shape: 'square',
-        image: '<i class="fa-solid fa-bullseye"></i>', // TODO: Make configurable
-        text: `Q${questIndex}.${objectiveIndex + 1}`,
-        size: 28, // TODO: Load from settings
-        style: {
-            fill: color,
-            stroke: '#000000',
-            strokeWidth: 2
-        },
+        text: `Q${questNum}.${(objectiveIndex ?? 0) + 1}`,
+        image: OBJECTIVE_ICON,
+        size: OBJECTIVE_PIN_SIZE,
+        style: { fill: fillColor, stroke: '#000000', strokeWidth: 2, iconColor: '#ffffff' },
         ownership,
         config: {
             questUuid,
-            questIndex,
-            objectiveIndex,
+            questIndex: questNum,
+            objectiveIndex: objectiveIndex ?? 0,
             questCategory,
             questState,
-            objectiveState: objective.state,
-            objectiveText: objective.text
+            objectiveState: objState,
+            objectiveText: (objective.text || '').trim()
         }
     };
-    
+
+    const hasPlacement = typeof sceneId === 'string' && Number.isFinite(x) && Number.isFinite(y);
+    if (hasPlacement) {
+        pinData.x = x;
+        pinData.y = y;
+    }
+
     try {
-        // Create the pin (unplaced)
-        const pin = await pins.create(pinData);
-        
-        // Place it on the scene
-        await pins.place(pin.id, { sceneId, x, y });
-        
-        console.log(`${MODULE.ID} | Created objective pin:`, pin.id);
-        return pin;
-    } catch (error) {
-        console.error(`${MODULE.ID} | Failed to create objective pin:`, error);
+        if (typeof pins.whenReady === 'function') await pins.whenReady();
+        const created = await pins.create(pinData, hasPlacement ? { sceneId } : undefined);
+        if (hasPlacement && typeof pins.reload === 'function') await pins.reload({ sceneId });
+        return created;
+    } catch (err) {
+        console.error('Coffee Pub Squire | createObjectivePin:', err);
         return null;
     }
 }
 
 /**
- * Update quest pin ownership when visibility changes
- * @param {string} questUuid - Quest journal page UUID
- * @param {string} sceneId - Scene ID (optional, defaults to current scene)
- * @returns {Promise<void>}
+ * Delete all pins for a quest on a scene (or all scenes if sceneId omitted).
+ * @param {string} questUuid - Quest page UUID
+ * @param {string} [sceneId] - If provided, only delete from this scene
  */
-export async function updateQuestPinVisibility(questUuid, sceneId = null) {
+export async function deleteQuestPins(questUuid, sceneId) {
     const pins = getPinsApi();
-    if (!pins || !pins.isAvailable()) return;
-    
-    sceneId = sceneId || canvas.scene?.id;
-    if (!sceneId) return;
-    
-    // Get the quest page
-    const page = await fromUuid(questUuid);
-    if (!page) return;
-    
-    // Get all pins for this quest
-    const allPins = pins.list({ moduleId: MODULE.ID, sceneId });
-    const questPins = allPins.filter(p => p.config?.questUuid === questUuid);
-    
-    // Update ownership for each pin
-    for (const pin of questPins) {
-        const objective = pin.type === 'objective' && pin.config?.objectiveIndex !== undefined
-            ? { state: pin.config.objectiveState } // Reconstruct objective for ownership calc
-            : null;
-        
-        const ownership = calculateQuestPinOwnership(page, objective);
-        
-        try {
-            await pins.update(pin.id, { ownership });
-        } catch (error) {
-            console.error(`${MODULE.ID} | Failed to update pin ownership:`, pin.id, error);
+    if (!isPinsApiAvailable(pins)) return;
+
+    const targetScenes = sceneId ? [sceneId] : game.scenes.contents.map(s => s.id);
+    for (const sid of targetScenes) {
+        const list = pins.list({ moduleId: MODULE.ID, sceneId: sid }) || [];
+        const forQuest = list.filter(p => p.config?.questUuid === questUuid);
+        for (const pin of forQuest) {
+            try {
+                await pins.delete(pin.id, { sceneId: sid });
+            } catch (e) {
+                console.warn('Coffee Pub Squire | deleteQuestPins:', e);
+            }
         }
     }
 }
 
 /**
- * Delete all pins for a quest
- * @param {string} questUuid - Quest journal page UUID
- * @param {string} sceneId - Scene ID (optional, defaults to current scene)
- * @returns {Promise<void>}
- */
-export async function deleteQuestPins(questUuid, sceneId = null) {
-    const pins = getPinsApi();
-    if (!pins || !pins.isAvailable()) return;
-    
-    sceneId = sceneId || canvas.scene?.id;
-    if (!sceneId) return;
-    
-    // Get all pins for this quest
-    const allPins = pins.list({ moduleId: MODULE.ID, sceneId });
-    const questPins = allPins.filter(p => p.config?.questUuid === questUuid);
-    
-    // Delete each pin
-    for (const pin of questPins) {
-        try {
-            await pins.delete(pin.id);
-        } catch (error) {
-            console.error(`${MODULE.ID} | Failed to delete pin:`, pin.id, error);
-        }
-    }
-}
-
-/**
- * Reload all quest pins (useful when global hide-all toggle changes)
- * @returns {Promise<void>}
+ * Reload pins for the current scene (e.g. after visibility toggle).
  */
 export async function reloadAllQuestPins() {
     const pins = getPinsApi();
-    if (!pins || !pins.isAvailable()) return;
-    
-    try {
-        await pins.reload({ moduleId: MODULE.ID });
-        console.log(`${MODULE.ID} | Reloaded all quest pins`);
-    } catch (error) {
-        console.error(`${MODULE.ID} | Failed to reload quest pins:`, error);
-    }
+    if (!isPinsApiAvailable(pins) || !canvas?.scene) return;
+    if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
 }
 
 /**
- * Update pin styles (colors) and config when quest journal content changes.
- * Call from updateJournalEntryPage when changes.text is present.
- * @param {JournalEntryPage} page - Quest journal page (with updated content)
- * @param {string} sceneId - Scene ID (optional, defaults to current scene)
- * @returns {Promise<void>}
+ * Update ownership for all pins belonging to a quest (e.g. after visibility flag change).
+ * @param {string} questUuid - Quest page UUID
+ * @param {string} [sceneId] - Optional scene; defaults to canvas.scene.id
  */
-export async function updateQuestPinStylesForPage(page, sceneId = null) {
+export async function updateQuestPinVisibility(questUuid, sceneId) {
     const pins = getPinsApi();
-    if (!pins || !pins.isAvailable()) return;
-    
-    sceneId = sceneId || canvas.scene?.id;
-    if (!sceneId) return;
-    
-    const questUuid = page.uuid;
-    const questVisible = page.getFlag(MODULE.ID, 'visible') !== false;
-    const questState = questVisible ? 'visible' : 'hidden';
-    
-    let entry = null;
+    if (!isPinsApiAvailable(pins)) return;
+
+    const sid = sceneId ?? canvas?.scene?.id;
+    if (!sid) return;
+
+    const page = await fromUuid(questUuid);
+    if (!page) return;
+
+    let content = '';
     try {
-        const enrichedHtml = await TextEditor.enrichHTML(page.text?.content || '', { async: true });
-        entry = await QuestParser.parseSinglePage(page, enrichedHtml);
-    } catch (e) {
-        console.warn(`${MODULE.ID} | Could not parse quest for pin style update:`, e);
-        return;
-    }
-    
-    if (!entry) return;
-    
-    const questStatus = entry.status || 'Not Started';
-    const allPins = pins.list({ moduleId: MODULE.ID, sceneId });
-    const questPins = allPins.filter(p => p.config?.questUuid === questUuid);
-    
-    for (const pin of questPins) {
+        if (typeof page.text?.content === 'string') content = page.text.content;
+        else if (page.text?.content) content = await page.text.content;
+    } catch (_) {}
+
+    const enrichedHtml = typeof page.getEnrichedContent === 'function'
+        ? await page.getEnrichedContent(content)
+        : content;
+    const quest = await QuestParser.parseSinglePage(page, enrichedHtml);
+    const tasks = quest?.tasks ?? [];
+
+    const list = pins.list({ moduleId: MODULE.ID, sceneId: sid }) || [];
+    const forQuest = list.filter(p => p.config?.questUuid === questUuid);
+
+    for (const pin of forQuest) {
+        const objective = pin.type === 'objective' && typeof pin.config?.objectiveIndex === 'number'
+            ? tasks[pin.config.objectiveIndex]
+            : null;
+        const ownership = calculateQuestPinOwnership(page, objective);
         try {
-            if (pin.type === 'quest') {
-                const color = getQuestPinColor(questStatus, questState);
-                await pins.update(pin.id, {
-                    style: {
-                        fill: color,
-                        stroke: '#000000',
-                        strokeWidth: 2
-                    },
-                    config: {
-                        ...pin.config,
-                        questStatus,
-                        questState
-                    }
-                });
-            } else if (pin.type === 'objective') {
-                const objectiveIndex = pin.config?.objectiveIndex;
-                if (objectiveIndex == null || !entry.tasks || !entry.tasks[objectiveIndex]) continue;
-                const task = entry.tasks[objectiveIndex];
-                const color = getObjectivePinColor(task.state);
-                await pins.update(pin.id, {
-                    style: {
-                        fill: color,
-                        stroke: '#000000',
-                        strokeWidth: 2
-                    },
-                    config: {
-                        ...pin.config,
-                        objectiveState: task.state,
-                        objectiveText: task.text
-                    }
-                });
-            }
-        } catch (error) {
-            console.error(`${MODULE.ID} | Failed to update pin style:`, pin.id, error);
+            await pins.update(pin.id, { ownership }, { sceneId: sid });
+        } catch (e) {
+            console.warn('Coffee Pub Squire | updateQuestPinVisibility:', e);
         }
     }
+
+    if (typeof pins.reload === 'function') await pins.reload({ sceneId: sid });
+}
+
+/**
+ * Update pin styles (colors) for all pins belonging to a quest page after content change.
+ * @param {JournalEntryPage} page - Quest journal page
+ * @param {string} [sceneId] - Optional scene; defaults to canvas.scene.id
+ */
+export async function updateQuestPinStylesForPage(page, sceneId) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins) || !page) return;
+
+    const sid = sceneId ?? canvas?.scene?.id;
+    if (!sid) return;
+
+    let content = '';
+    try {
+        if (typeof page.text?.content === 'string') content = page.text.content;
+        else if (page.text?.content) content = await page.text.content;
+    } catch (_) {}
+
+    const enrichedHtml = typeof page.getEnrichedContent === 'function'
+        ? await page.getEnrichedContent(content)
+        : content;
+    const quest = await QuestParser.parseSinglePage(page, enrichedHtml);
+    if (!quest) return;
+
+    const list = pins.list({ moduleId: MODULE.ID, sceneId: sid }) || [];
+    const forQuest = list.filter(p => p.config?.questUuid === page.uuid);
+    const questStatus = quest.status || 'Not Started';
+    const questState = page.getFlag(MODULE.ID, 'visible') === false ? 'hidden' : 'visible';
+
+    for (const pin of forQuest) {
+        const patch = {};
+        if (pin.type === 'quest') {
+            patch.style = {
+                ...(pin.style || {}),
+                fill: getQuestPinColor(questStatus, questState),
+                stroke: '#000000',
+                strokeWidth: 2,
+                iconColor: '#ffffff'
+            };
+            patch.config = { ...(pin.config || {}), questStatus, questState };
+        } else if (pin.type === 'objective' && typeof pin.config?.objectiveIndex === 'number') {
+            const obj = quest.tasks[pin.config.objectiveIndex];
+            const objState = obj?.state || 'active';
+            patch.style = {
+                ...(pin.style || {}),
+                fill: getObjectivePinColor(objState),
+                stroke: '#000000',
+                strokeWidth: 2,
+                iconColor: '#ffffff'
+            };
+            patch.config = { ...(pin.config || {}), objectiveState: objState, objectiveText: (obj?.text || '').trim() };
+        }
+        if (Object.keys(patch).length) {
+            try {
+                await pins.update(pin.id, patch, { sceneId: sid });
+            } catch (e) {
+                console.warn('Coffee Pub Squire | updateQuestPinStylesForPage:', e);
+            }
+        }
+    }
+
+    if (typeof pins.reload === 'function') await pins.reload({ sceneId: sid });
+}
+
+/**
+ * Set per-user visibility of all Squire quest pins (Blacksmith module visibility).
+ * @param {boolean} visible
+ */
+export async function setQuestPinModuleVisibility(visible) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins) || typeof pins.setModuleVisibility !== 'function') return;
+    await pins.setModuleVisibility(MODULE.ID, visible);
+}
+
+/**
+ * Get current per-user visibility of Squire quest pins.
+ * @returns {boolean}
+ */
+export function getQuestPinModuleVisibility() {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins) || typeof pins.getModuleVisibility !== 'function') return true;
+    return pins.getModuleVisibility(MODULE.ID) !== false;
 }

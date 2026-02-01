@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor } from './utility-quest-pins.js';
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -1954,7 +1954,7 @@ export class QuestPanel {
             });
         });
 
-        // Toggle Pin Visibility (GM and Players)
+        // Toggle Pin Visibility (GM and Players) - uses Blacksmith setModuleVisibility
         // v13: Use nativeHtml instead of html
         const togglePinVisibilityButton = nativeHtml.querySelector('.toggle-pin-visibility');
         if (togglePinVisibilityButton) {
@@ -1963,30 +1963,26 @@ export class QuestPanel {
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                
-                const currentVisibility = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
-                const newVisibility = !currentVisibility;
-                
-                await game.user.setFlag(MODULE.ID, 'hideQuestPins', newVisibility);
-                
+
+                const currentVisible = getQuestPinModuleVisibility();
+                const newVisible = !currentVisible;
+                await setQuestPinModuleVisibility(newVisible);
+
                 // Update the icon - use currentTarget or fallback to finding the element
                 const icon = event.currentTarget || newButton;
                 if (icon && icon.classList) {
-                    if (newVisibility) {
+                    if (newVisible) {
                         icon.classList.remove('fa-location-dot-slash');
                         icon.classList.add('fa-location-dot');
-                        icon.title = 'Show Quest Pins';
+                        icon.title = 'Hide Quest Pins';
                     } else {
                         icon.classList.remove('fa-location-dot');
                         icon.classList.add('fa-location-dot-slash');
-                        icon.title = 'Hide Quest Pins';
+                        icon.title = 'Show Quest Pins';
                     }
                 }
-                
-                // MIGRATED TO BLACKSMITH API: Reload all quest pins to apply visibility change
-                await reloadAllQuestPins();
-                
-                ui.notifications.info(`Quest pins ${newVisibility ? 'hidden' : 'shown'}.`);
+
+                ui.notifications.info(`Quest pins ${newVisible ? 'shown' : 'hidden'}.`);
             });
         }
 
@@ -3303,18 +3299,18 @@ export class QuestPanel {
             if (toggleTagsButton) toggleTagsButton.classList.add('active');
         }
         
-        // Set initial state of pin visibility toggle for all users
-        const hideQuestPins = game.user.getFlag(MODULE.ID, 'hideQuestPins') || false;
+        // Set initial state of pin visibility toggle for all users (Blacksmith getModuleVisibility)
+        const pinsVisible = getQuestPinModuleVisibility();
         const toggleButton = questContainer.querySelector('.toggle-pin-visibility');
         if (toggleButton) {
-            if (hideQuestPins) {
+            if (pinsVisible) {
                 toggleButton.classList.remove('fa-location-dot-slash');
                 toggleButton.classList.add('fa-location-dot');
-                toggleButton.setAttribute('title', 'Show Quest Pins');
+                toggleButton.setAttribute('title', 'Hide Quest Pins');
             } else {
                 toggleButton.classList.remove('fa-location-dot');
                 toggleButton.classList.add('fa-location-dot-slash');
-                toggleButton.setAttribute('title', 'Hide Quest Pins');
+                toggleButton.setAttribute('title', 'Show Quest Pins');
             }
         }
         

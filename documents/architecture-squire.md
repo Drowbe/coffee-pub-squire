@@ -19,7 +19,6 @@ coffee-pub-squire/
 │   ├── timer-utils.js         # Tracked timeouts/intervals for cleanup
 │   ├── transfer-utils.js      # Party transfer workflows
 │   ├── utility-quest-pins.js  # Quest pin creation, update, ownership
-│   ├── utility-quest-pin-migration.js  # Legacy pin migration to Blacksmith
 │   ├── quest-pin-events.js    # Pin click handler, context menu
 │   ├── panel-*.js             # Panel classes (see Panels below)
 │   ├── window-*.js            # Window/form classes (Notes, Quest, etc.)
@@ -119,7 +118,7 @@ coffee-pub-squire/
 - **Print**: `utility-print-character.js`
 - **Transfer**: `transfer-utils.js`
 - **Timers**: `timer-utils.js` (for cleanup)
-- **Quest Pins**: `utility-quest-pins.js`, `utility-quest-pin-migration.js`, `quest-pin-events.js`
+- **Quest Pins**: `utility-quest-pins.js`, `quest-pin-events.js`
 
 ## Tray Layout
 
