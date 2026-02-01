@@ -10,7 +10,6 @@
       <i class="fa-solid fa-thumbtack quest-pin {{#if entry.isPinned}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{entry.category}}" title="Pin this quest"></i>
       {{#if isGM}}
       <i class="fa-solid fa-location-dot quest-pin-to-scene" data-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}" data-quest-status="{{entry.status}}" title="Pin to Scene"></i>
-        <i class="fa-solid fa-feather quest-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
         <i class="fas {{#if entry.visible}}fa-eye quest-entry-visibility visible{{else}}fa-eye-slash quest-entry-visibility{{/if}} toggle-visible" data-uuid="{{entry.uuid}}" title="{{#if entry.visible}}Hide from players{{else}}Show to players{{/if}}"></i>
         <i class="fa-solid fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Quest options"></i>
       {{/if}}

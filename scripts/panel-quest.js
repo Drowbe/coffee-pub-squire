@@ -1314,21 +1314,6 @@ export class QuestPanel {
             });
         });
 
-        // Feather icon opens the current journal page
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.quest-entry-feather').forEach(feather => {
-            const newFeather = feather.cloneNode(true);
-            feather.parentNode?.replaceChild(newFeather, feather);
-            newFeather.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const uuid = event.currentTarget.dataset.uuid;
-                if (uuid) {
-                    const doc = await fromUuid(uuid);
-                    if (doc) doc.sheet.render(true);
-                }
-            });
-        });
-
         // Participant portrait clicks
         // v13: Use nativeHtml instead of html
         nativeHtml.querySelectorAll('.participant-portrait').forEach(portrait => {
@@ -1382,8 +1367,7 @@ export class QuestPanel {
                     const taskIndex = parseInt(checkbox.dataset.taskIndex);
                     const questEntry = listItem.closest('.quest-entry');
                     if (!questEntry) return;
-                    const questFeather = questEntry.querySelector('.quest-entry-feather');
-                    const questUuid = questFeather?.dataset.uuid;
+                    const questUuid = questEntry.dataset.questUuid;
                     const questNameElement = questEntry.querySelector('.quest-entry-name');
                     const questName = questNameElement?.textContent?.trim() || '';
                     const objectiveText = event.currentTarget.textContent?.trim() || '';
@@ -1426,10 +1410,8 @@ export class QuestPanel {
                 questNameElement.addEventListener('dragstart', (event) => {
                     // Prevent drag if clicking on interactive elements
                     const target = event.target;
-                    if (target.classList.contains('quest-entry-feather') ||
-                        target.classList.contains('quest-entry-visibility') ||
+                    if (target.classList.contains('quest-entry-visibility') ||
                         target.classList.contains('quest-entry-toggle') ||
-                        target.closest('.quest-entry-feather') ||
                         target.closest('.quest-entry-visibility') ||
                         target.closest('.quest-entry-toggle')) {
                         event.preventDefault();
@@ -1438,8 +1420,7 @@ export class QuestPanel {
                     
                     const questEntry = event.currentTarget.closest('.quest-entry');
                     if (!questEntry) return;
-                    const questFeather = questEntry.querySelector('.quest-entry-feather');
-                    const questUuid = questFeather?.dataset.uuid;
+                    const questUuid = questEntry.dataset.questUuid;
                     const questNameText = event.currentTarget.textContent?.trim() || '';
                     
                     // Get quest visibility state
@@ -1495,8 +1476,7 @@ export class QuestPanel {
                 const taskIndex = parseInt(event.currentTarget.dataset.taskIndex);
                 const questEntry = event.currentTarget.closest('.quest-entry');
                 if (!questEntry) return;
-                const questFeather = questEntry.querySelector('.quest-entry-feather');
-                const questUuid = questFeather?.dataset.uuid;
+                const questUuid = questEntry.dataset.questUuid;
                 if (!questUuid) return;
                 const journalId = game.settings.get(MODULE.ID, 'questJournal');
                 if (!journalId || journalId === 'none') return;
@@ -1693,8 +1673,7 @@ export class QuestPanel {
         // Restore open/closed state from user flag
         const questCardCollapsed = game.user.getFlag(MODULE.ID, 'questCardCollapsed') || {};
         nativeHtml.querySelectorAll('.quest-entry').forEach(entry => {
-            const feather = entry.querySelector('.quest-entry-feather');
-            const uuid = feather?.dataset.uuid;
+            const uuid = entry.dataset.questUuid;
             if (uuid && questCardCollapsed[uuid] === false) {
                 entry.classList.remove('collapsed');
             }
@@ -1712,8 +1691,7 @@ export class QuestPanel {
             const card = toggle.closest('.quest-entry');
             if (!card) return;
             card.classList.toggle('collapsed');
-            const feather = card.querySelector('.quest-entry-feather');
-            const uuid = feather?.dataset.uuid;
+            const uuid = card.dataset.questUuid;
             if (uuid) {
                 const collapsed = card.classList.contains('collapsed');
                 const flag = game.user.getFlag(MODULE.ID, 'questCardCollapsed') || {};
@@ -1732,8 +1710,7 @@ export class QuestPanel {
             const card = header.closest('.quest-entry');
             if (!card) return;
             card.classList.toggle('collapsed');
-            const feather = card.querySelector('.quest-entry-feather');
-            const uuid = feather?.dataset.uuid;
+            const uuid = card.dataset.questUuid;
             if (uuid) {
                 const collapsed = card.classList.contains('collapsed');
                 const flag = game.user.getFlag(MODULE.ID, 'questCardCollapsed') || {};
@@ -2605,6 +2582,14 @@ export class QuestPanel {
 
                     const zones = [
                         {
+                            name: 'Open Journal Page',
+                            icon: 'fa-solid fa-feather',
+                            callback: async () => {
+                                const doc = await fromUuid(uuid);
+                                if (doc) doc.sheet.render(true);
+                            }
+                        },
+                        {
                             name: 'Clear Quest Pins',
                             icon: 'fa-solid fa-eraser',
                             callback: async () => {
@@ -2686,8 +2671,7 @@ export class QuestPanel {
                             const sound = game.settings.get(MODULE.ID, 'dropSound');
                             blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
                         }
-                        const feather = entryEl.querySelector('.quest-entry-feather');
-                        const uuid = feather?.dataset.uuid;
+                        const uuid = entryEl.dataset.questUuid;
                         if (!uuid) {
                             ui.notifications.warn("Could not find the quest entry.");
                             return;
@@ -2949,8 +2933,7 @@ export class QuestPanel {
                 const participantName = event.currentTarget.title;
                 const questEntry = event.currentTarget.closest('.quest-entry');
                 if (!questEntry) return;
-                const feather = questEntry.querySelector('.quest-entry-feather');
-                const questUuid = feather?.dataset.uuid;
+                const questUuid = questEntry.dataset.questUuid;
                 
                 if (!questUuid) {
                     ui.notifications.warn("Could not find the quest entry.");
