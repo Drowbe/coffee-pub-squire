@@ -1,5 +1,107 @@
 import { MODULE, SQUIRE } from './const.js';
 
+const DEFAULT_QUEST_ICON_CLASS = 'fa-solid fa-scroll';
+
+function extractFirstImageSrc(content) {
+    if (!content) return null;
+    const match = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+    return match?.[1] || null;
+}
+
+function normalizeFaClassList(value) {
+    if (typeof value !== 'string') return '';
+    const classMatch = value.trim().startsWith('<i')
+        ? value.match(/class=["']([^"']+)["']/i)?.[1]
+        : value;
+    const tokens = String(classMatch || '')
+        .split(/\s+/)
+        .map(token => token.trim())
+        .filter(Boolean);
+    const deduped = Array.from(new Set(tokens));
+    if (!deduped.some(token => token.startsWith('fa-') || token.startsWith('fa'))) {
+        return '';
+    }
+    return deduped.join(' ');
+}
+
+function normalizePinImageSource(value) {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const imgMatch = trimmed.match(/<img\s+[^>]*src=["']([^"']+)["']/i);
+    if (imgMatch?.[1]) return imgMatch[1];
+    if (/^(https?:\/\/|\/|data:)/i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith('modules/')) return `/${trimmed}`;
+    return trimmed;
+}
+
+function normalizeQuestIconFlag(iconFlag) {
+    if (!iconFlag) return null;
+    if (typeof iconFlag === 'string') {
+        const trimmed = iconFlag.trim();
+        if (!trimmed) return null;
+        if (trimmed.startsWith('<img')) {
+            const match = trimmed.match(/src=["']([^"']+)["']/i);
+            if (match?.[1]) {
+                return { type: 'img', value: match[1] };
+            }
+            return null;
+        }
+        if (trimmed.startsWith('<i') && trimmed.includes('fa-')) {
+            const match = trimmed.match(/class=["']([^"']+)["']/i);
+            if (match?.[1]) {
+                return { type: 'fa', value: match[1] };
+            }
+            return null;
+        }
+        const type = trimmed.includes('fa-') ? 'fa' : 'img';
+        if (type === 'fa') {
+            return { type, value: normalizeFaClassList(trimmed) };
+        }
+        return { type, value: trimmed };
+    }
+    if (typeof iconFlag === 'object') {
+        const type = iconFlag.type || iconFlag.kind || 'img';
+        const value = iconFlag.value || iconFlag.icon || iconFlag.src;
+        if (!value) return null;
+        if (type === 'fa') {
+            return { type, value: normalizeFaClassList(value) };
+        }
+        return { type: 'img', value };
+    }
+    return null;
+}
+
+function buildQuestIconHtml(iconData, imgClass = '') {
+    if (!iconData) {
+        return `<i class="${DEFAULT_QUEST_ICON_CLASS}"></i>`;
+    }
+    if (iconData.type === 'fa') {
+        const rawValue = String(iconData.value || '');
+        const classValue = normalizeFaClassList(rawValue);
+        if (!classValue) {
+            return `<i class="${DEFAULT_QUEST_ICON_CLASS}"></i>`;
+        }
+        return `<i class="${classValue}"></i>`;
+    }
+    const classAttr = imgClass ? ` class="${imgClass}"` : '';
+    const src = normalizePinImageSource(iconData.value);
+    if (!src) {
+        return `<i class="${DEFAULT_QUEST_ICON_CLASS}"></i>`;
+    }
+    return `<img src="${src}"${classAttr}>`;
+}
+
+function resolveQuestIconHtml(page, enrichedHtml, imgClass = '') {
+    const iconFlag = normalizeQuestIconFlag(page?.getFlag?.(MODULE.ID, 'questIcon'));
+    if (iconFlag) return buildQuestIconHtml(iconFlag, imgClass);
+    const imageSrc = extractFirstImageSrc(enrichedHtml);
+    if (imageSrc) {
+        return buildQuestIconHtml({ type: 'img', value: imageSrc }, imgClass);
+    }
+    return `<i class="${DEFAULT_QUEST_ICON_CLASS}"></i>`;
+}
+
 export class QuestParser {
     /**
      * Parse a single journal page into a quest entry object
@@ -36,6 +138,7 @@ export class QuestParser {
         // Get the first <img> for the quest image
         const imgTag = doc.querySelector('img');
         if (imgTag) entry.img = imgTag.src;
+        entry.iconHtml = resolveQuestIconHtml(page, enrichedHtml, 'quest-entry-icon-image');
 
         // Parse all <p> fields
         const pTags = Array.from(doc.querySelectorAll('p'));
