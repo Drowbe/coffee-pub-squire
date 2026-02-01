@@ -2580,40 +2580,41 @@ export class QuestPanel {
                     const uuid = newButton.dataset.uuid;
                     if (!uuid) return;
 
-                    const zones = [
-                        {
-                            name: 'Open Journal Page',
-                            icon: 'fa-solid fa-feather',
-                            callback: async () => {
-                                const doc = await fromUuid(uuid);
-                                if (doc) doc.sheet.render(true);
+                    const zones = {
+                        gm: [
+                            {
+                                name: 'Open Journal Page',
+                                icon: 'fa-solid fa-feather',
+                                callback: async () => {
+                                    const doc = await fromUuid(uuid);
+                                    if (doc) doc.sheet.render(true);
+                                }
+                            },
+                            {
+                                name: 'Clear Quest Pins',
+                                icon: 'fa-solid fa-eraser',
+                                callback: async () => {
+                                    await this._clearQuestPins(uuid);
+                                }
+                            },
+                            {
+                                name: 'Change Status',
+                                icon: 'fa-solid fa-pen',
+                                submenu: [
+                                    { name: 'Not Started', icon: 'fa-solid fa-circle', callback: () => this._applyQuestStatus(uuid, 'Not Started') },
+                                    { name: 'In Progress', icon: 'fa-solid fa-spinner', callback: () => this._applyQuestStatus(uuid, 'In Progress') },
+                                    { name: 'Complete', icon: 'fa-solid fa-check', callback: () => this._applyQuestStatus(uuid, 'Complete') },
+                                    { name: 'Failed', icon: 'fa-solid fa-xmark', callback: () => this._applyQuestStatus(uuid, 'Failed') }
+                                ]
                             }
-                        },
-                        {
-                            name: 'Clear Quest Pins',
-                            icon: 'fa-solid fa-eraser',
-                            callback: async () => {
-                                await this._clearQuestPins(uuid);
-                            }
-                        },
-                        {
-                            name: 'Change Status',
-                            icon: 'fa-solid fa-pen',
-                            submenu: [
-                                { name: 'Not Started', icon: 'fa-solid fa-circle', callback: () => this._applyQuestStatus(uuid, 'Not Started') },
-                                { name: 'In Progress', icon: 'fa-solid fa-spinner', callback: () => this._applyQuestStatus(uuid, 'In Progress') },
-                                { name: 'Complete', icon: 'fa-solid fa-check', callback: () => this._applyQuestStatus(uuid, 'Complete') },
-                                { name: 'Failed', icon: 'fa-solid fa-xmark', callback: () => this._applyQuestStatus(uuid, 'Failed') }
-                            ]
-                        }
-                    ];
+                        ]
+                    };
 
                     ctxMenu.show({
                         id: `${MODULE.ID}-quest-entry-menu`,
                         x: event.clientX,
                         y: event.clientY,
-                        zones,
-                        zoneClass: 'core'
+                        zones
                     });
                 });
             });
