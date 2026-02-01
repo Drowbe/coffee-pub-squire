@@ -87,7 +87,16 @@ function normalizePinText(value) {
 }
 
 export function normalizePinTextLayout(layout) {
-    if (layout === 'under' || layout === 'over' || layout === 'around') return layout;
+    if (layout === 'around') return 'arc-below';
+    if (
+        layout === 'under'
+        || layout === 'over'
+        || layout === 'above'
+        || layout === 'right'
+        || layout === 'left'
+        || layout === 'arc-above'
+        || layout === 'arc-below'
+    ) return layout;
     return null;
 }
 
@@ -1093,7 +1102,6 @@ export async function updateNotePinForPage(page) {
         shape: getNotePinShapeForPage(page),
         dropShadow: getNotePinDropShadowForPage(page),
         style: getNotePinStyleForPage(page),
-        textLayout: getNotePinTextLayoutForPage(page),
         textDisplay: getNotePinTextDisplayForPage(page),
         textColor: getNotePinTextColorForPage(page),
         textSize: getNotePinTextSizeForPage(page),
@@ -1107,6 +1115,10 @@ export async function updateNotePinForPage(page) {
             authorId: page.getFlag(MODULE.ID, 'authorId') || game.user.id
         }
     };
+    const storedTextLayout = normalizePinTextLayout(page?.getFlag(MODULE.ID, 'notePinTextLayout'));
+    if (storedTextLayout !== null) {
+        patch.textLayout = storedTextLayout;
+    }
 
     const existing = pins.get?.(pinId) || null;
     if (existing) {
