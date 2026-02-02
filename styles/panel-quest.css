@@ -611,12 +611,28 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding: 4px;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks li i.task-checkbox {
-    margin-top: 3px; /* Slight top margin to align with the first line of text */
-    flex-shrink: 0; /* Prevent the icon from shrinking */
+/* Objective number: clickable for state (GM) / set active (pinned) */
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-number {
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
-/* Drag and drop styles for quest objectives */
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-number .objective-number-icon {
+    display: inline-block;
+    font-size: 1em;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* Completed/failed rows: icon inherits li color (green/red) */
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete .objective-number-icon {
+    color: rgba(60, 146, 69, 0.95);
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed .objective-number-icon {
+    color: rgba(255, 48, 33, 0.95);
+}
+
 
 
 

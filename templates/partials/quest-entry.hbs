@@ -50,10 +50,10 @@
           <ul>
             {{#each entry.tasks}}
               <li class="{{#if (eq this.state 'completed')}}task-complete{{/if}} {{#if (eq this.state 'hidden')}}task-hidden{{/if}} {{#if (eq this.state 'failed')}}task-failed{{/if}}" data-task-state="{{this.state}}" data-task-index="{{@index}}">
-                <!-- Objective Checkbox -->
-                <i class="fas {{#if this.completed}}fa-check-square{{else if (eq this.state 'failed')}}fa-square-xmark{{else if (eq this.state 'hidden')}}fa-square-question{{else}}fa-square{{/if}} task-checkbox" {{#if ../isGM}}data-task-index="{{@index}}" data-task-state="{{this.state}}"{{/if}}></i>
-                <!-- Objective Number -->
-                <span class="objective-number{{#if this.isActive}} active{{/if}}{{#if ../entry.isPinned}} clickable-objective{{/if}}" {{#if ../entry.isPinned}}data-task-index="{{@index}}" data-quest-uuid="{{../entry.uuid}}" title="Click to set as active objective"{{/if}}>{{this.objectiveNumber}}</span>
+                <!-- Objective Number (or check/x); GM: left=complete, middle=hidden, right=failed; Player: click=toggle active -->
+                <span class="objective-number{{#if this.isActive}} active{{/if}}{{#if ../entry.isPinned}} clickable-objective{{/if}}" title="{{#if ../isGM}}Left=complete, Middle=hidden, Right=failed{{else}}Click to toggle active objective{{/if}}">
+                  {{#if this.completed}}<i class="fas fa-check objective-number-icon" title="Complete"></i>{{else if (eq this.state 'failed')}}<i class="fas fa-times objective-number-icon" title="Failed"></i>{{else}}{{this.objectiveNumber}}{{/if}}
+                </span>
                 <!-- Objective Text -->
                 <div class="objective-text{{#if this.isActive}} active{{/if}}" {{#if (and ../isGM this.gmHint)}}data-tooltip="GM Note: {{this.gmHint}}"{{/if}}>
                     {{#if (and (eq this.state 'hidden') (not ../isGM))}}
@@ -84,7 +84,7 @@
                 </div>
                 {{#if ../isGM}}
                 <i class="fa-solid fa-location-dot objective-pin-to-scene" data-quest-uuid="{{../entry.uuid}}" data-quest-number="{{../entry.questNumber}}" data-category="{{../entry.category}}" data-visible="{{../entry.visible}}" data-task-index="{{@index}}" data-task-state="{{this.state}}" data-task-text="{{this.text}}" title="Pin objective to Scene"></i>
-                <i class="fa-solid fa-ellipsis-h objective-context-menu" data-quest-uuid="{{../entry.uuid}}" data-quest-number="{{../entry.questNumber}}" data-category="{{../entry.category}}" data-visible="{{../entry.visible}}" data-task-index="{{@index}}" data-task-state="{{this.state}}" data-task-text="{{this.text}}" title="Objective options"></i>
+                <i class="fa-solid fa-ellipsis-h objective-context-menu" data-quest-uuid="{{../entry.uuid}}" data-quest-number="{{../entry.questNumber}}" data-category="{{../entry.category}}" data-visible="{{../entry.visible}}" data-task-index="{{@index}}" data-task-state="{{this.state}}" data-task-text="{{this.text}}" data-is-active="{{this.isActive}}" title="Objective options"></i>
                 {{/if}}
               </li>
             {{/each}}

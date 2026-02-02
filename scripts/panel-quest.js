@@ -2138,26 +2138,48 @@ export class QuestPanel {
             });
         });
 
-        // Task completion and hidden toggling
+        // Objective number: GM = mousedown (left=complete, middle=hidden, right=failed); Player = click (toggle active)
         // v13: Use nativeHtml instead of html
-        const taskCheckboxes = nativeHtml.querySelectorAll('.task-checkbox');
+        const objectiveNumbers = nativeHtml.querySelectorAll('.quest-entry-tasks .objective-number');
         
-        // Use mousedown to detect different click types
-        // v13: Use native DOM event listeners
-        taskCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('mousedown', async function(event) {
+        objectiveNumbers.forEach(numEl => {
+            // PLAYER: left-click = toggle active/not active
+            numEl.addEventListener('click', async function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (game.user.isGM) {
+                    if (event.currentTarget._stateChangeHandled) event.currentTarget._stateChangeHandled = false;
+                    return;
+                }
+                const li = event.currentTarget.closest('li');
+                const questEntry = event.currentTarget.closest('.quest-entry');
+                if (!li || !questEntry) return;
+                const taskIndex = parseInt(li.dataset.taskIndex);
+                const questUuid = questEntry.dataset.questUuid;
+                if (isNaN(taskIndex) || !questUuid) return;
+                const currentActiveIndex = await this._getActiveObjectiveIndex(questUuid);
+                if (currentActiveIndex === taskIndex) {
+                    await this._clearActiveObjective(questUuid);
+                    ui.notifications.info('Active objective cleared.');
+                } else {
+                    await this._clearAllActiveObjectives();
+                    await this._setActiveObjective(questUuid, taskIndex);
+                    ui.notifications.info(`Objective ${taskIndex + 1} set as active.`);
+                }
+                this.render(this.element);
+            }.bind(this));
+
+            // GM: mousedown = left=complete, middle=hidden, right=failed
+            numEl.addEventListener('mousedown', async function(event) {
                 // Check for shift-left-click (same as middle-click for hidden toggle)
                 const isShiftLeftClick = event.button === 0 && event.shiftKey;
                 const isMiddleClick = event.button === 1;
                 const isRightClick = event.button === 2;
                 const isLeftClick = event.button === 0 && !event.shiftKey;
-                if (!game.user.isGM) {
-                    ui.notifications.warn("Only the GM can edit objectives. Please ask the GM to do so.");
-                    event.preventDefault();
-                    event.stopPropagation();
-                    return;
-                }
-                const taskIndex = parseInt(event.currentTarget.dataset.taskIndex);
+                if (!game.user.isGM) return;
+                const li = event.currentTarget.closest('li');
+                if (!li) return;
+                const taskIndex = parseInt(li.dataset.taskIndex);
                 const questEntry = event.currentTarget.closest('.quest-entry');
                 if (!questEntry) return;
                 const questUuid = questEntry.dataset.questUuid;
@@ -2176,12 +2198,13 @@ export class QuestPanel {
                 const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
                 const ul = ulDoc.querySelector('ul');
                 const liList = ul ? Array.from(ul.children) : [];
-                const li = liList[taskIndex];
-                if (!li) return;
+                const taskLi = liList[taskIndex];
+                if (!taskLi) return;
 
                 if (isMiddleClick || isShiftLeftClick) { // Middle-click or Shift+Left-click: toggle hidden
                 event.preventDefault();
-                const emTag = li.querySelector('em');
+                event.currentTarget._stateChangeHandled = true;
+                const emTag = taskLi.querySelector('em');
                 if (emTag) {
                     // Task is already hidden, unhide it - unwrap <em>
                     emTag.replaceWith(...emTag.childNodes);
@@ -2193,14 +2216,14 @@ export class QuestPanel {
                     
                     if (sTag) {
                         // If completed, unwrap <s> first
-                        li.innerHTML = sTag.innerHTML;
+                        taskLi.innerHTML = sTag.innerHTML;
                     } else if (codeTag) {
                         // If failed, unwrap <code> first
-                        li.innerHTML = codeTag.innerHTML;
+                        taskLi.innerHTML = codeTag.innerHTML;
                     }
                     
                     // Now wrap in <em>
-                    li.innerHTML = `<em>${li.innerHTML}</em>`;
+                    taskLi.innerHTML = `<em>${taskLi.innerHTML}</em>`;
                 }
                 const newTasksHtml = ul.innerHTML;
                 const newContent = content.replace(tasksMatch[1], newTasksHtml);
@@ -2220,27 +2243,27 @@ export class QuestPanel {
                 
                 if (isRightClick) { // Right-click: toggle failed state
                     event.preventDefault();
-                    
-                    const codeTag = li.querySelector('code');
+                    event.currentTarget._stateChangeHandled = true;
+                    const codeTag = taskLi.querySelector('code');
                     if (codeTag) {
                         // Task is already failed, unfail it - unwrap <code>
-                        li.innerHTML = codeTag.innerHTML;
+                        taskLi.innerHTML = codeTag.innerHTML;
                     } else {
                         // Task is not failed, fail it - wrap in <code> and remove other states
                         // First, unwrap any existing state tags to ensure clean state
-                        const sTag = li.querySelector('s');
-                        const emTag = li.querySelector('em');
+                        const sTag = taskLi.querySelector('s');
+                        const emTag = taskLi.querySelector('em');
                         
                         if (sTag) {
                             // If completed, unwrap <s> first
-                            li.innerHTML = sTag.innerHTML;
+                            taskLi.innerHTML = sTag.innerHTML;
                         } else if (emTag) {
                             // If hidden, unwrap <em> first
-                            li.innerHTML = emTag.innerHTML;
+                            taskLi.innerHTML = emTag.innerHTML;
                         }
                         
                         // Now wrap in <code>
-                        li.innerHTML = `<code>${li.innerHTML}</code>`;
+                        taskLi.innerHTML = `<code>${taskLi.innerHTML}</code>`;
                     }
                     
                     const newTasksHtml = ul.innerHTML;
@@ -2261,29 +2284,31 @@ export class QuestPanel {
                 }
                 
                 if (isLeftClick) { // Left-click: toggle completed
-                const sTag = li.querySelector('s');
+                event.preventDefault();
+                event.currentTarget._stateChangeHandled = true;
+                const sTag = taskLi.querySelector('s');
                 if (sTag) {
                     // Task is already completed, uncomplete it - unwrap <s>
-                    li.innerHTML = sTag.innerHTML;
+                    taskLi.innerHTML = sTag.innerHTML;
                 } else {
                     // Task is not completed, complete it - wrap in <s> and remove other states
                     // First, unwrap any existing state tags to ensure clean state
-                    const codeTag = li.querySelector('code');
-                    const emTag = li.querySelector('em');
+                    const codeTag = taskLi.querySelector('code');
+                    const emTag = taskLi.querySelector('em');
                     
                     if (codeTag) {
                         // If failed, unwrap <code> first
-                        li.innerHTML = codeTag.innerHTML;
+                        taskLi.innerHTML = codeTag.innerHTML;
                     } else if (emTag) {
                         // If hidden, unwrap <em> first
-                        li.innerHTML = emTag.innerHTML;
+                        taskLi.innerHTML = emTag.innerHTML;
                     }
                     
                     // Now wrap in <s>
-                    li.innerHTML = `<s>${li.innerHTML}</s>`;
+                    taskLi.innerHTML = `<s>${taskLi.innerHTML}</s>`;
                     
                     // Send objective completed notification
-                    const objectiveText = li.textContent.trim();
+                    const objectiveText = taskLi.textContent.trim();
                     notifyObjectiveCompleted(objectiveText);
                 }
                 const newTasksHtml = ul.innerHTML;
@@ -2511,42 +2536,6 @@ export class QuestPanel {
             });
         });
 
-        
-        // Active objective click handler (pinned quests only)
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.clickable-objective').forEach(objective => {
-            const newObjective = objective.cloneNode(true);
-            objective.parentNode?.replaceChild(newObjective, objective);
-            newObjective.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                const taskIndex = parseInt(event.currentTarget.dataset.taskIndex);
-                const questUuid = event.currentTarget.dataset.questUuid;
-                
-                if (isNaN(taskIndex) || !questUuid) return;
-                
-                // Get current active objective for this quest
-                const currentActiveIndex = await this._getActiveObjectiveIndex(questUuid);
-                            
-                if (currentActiveIndex === taskIndex) {
-                    // If clicking the same objective, clear it
-                    await this._clearActiveObjective(questUuid);
-                    ui.notifications.info('Active objective cleared.');
-                } else {
-                    // Clear ALL active objectives first (only one can be active at a time)
-                    await this._clearAllActiveObjectives();
-                    
-                    // Set new active objective
-                    await this._setActiveObjective(questUuid, taskIndex);
-                    ui.notifications.info(`Objective ${taskIndex + 1} set as active.`);
-                }
-                
-                // Re-render to update the display
-                this.render(this.element);
-            });
-        });
-
         // Objective context menu (GM only) - Blacksmith Context Menu
         const objCtxMenu = getBlacksmith()?.uiContextMenu;
         if (objCtxMenu?.show) {
@@ -2564,6 +2553,7 @@ export class QuestPanel {
                     const taskIndex = parseInt(newButton.dataset.taskIndex, 10);
                     const taskState = newButton.dataset.taskState || 'active';
                     const taskText = newButton.dataset.taskText || '';
+                    const isActive = newButton.dataset.isActive === 'true';
                     if (!questUuid || isNaN(taskIndex)) return;
 
                     const zones = {
@@ -2583,7 +2573,7 @@ export class QuestPanel {
                                 }
                             },
                             {
-                                name: 'Set Active',
+                                name: isActive ? 'Set Not Active' : 'Set Active',
                                 icon: 'fa-solid fa-bullseye',
                                 callback: async () => {
                                     const currentActiveIndex = await this._getActiveObjectiveIndex(questUuid);
