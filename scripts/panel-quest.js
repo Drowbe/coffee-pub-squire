@@ -21,6 +21,75 @@ function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+// --- Quest pin icon helpers (mirror notes pattern) ---
+const QUEST_PIN_ICON = 'fa-scroll';
+const OBJECTIVE_PIN_ICON = 'fa-bullseye';
+
+function getDefaultQuestIconFlag() {
+    return { type: 'fa', value: `fa-solid ${QUEST_PIN_ICON}` };
+}
+
+function normalizeQuestIconFaClassList(value) {
+    if (typeof value !== 'string') return '';
+    const classMatch = value.trim().startsWith('<i')
+        ? value.match(/class=["']([^"']+)["']/i)?.[1]
+        : value;
+    const tokens = String(classMatch || '').split(/\s+/).map(t => t.trim()).filter(Boolean);
+    const deduped = Array.from(new Set(tokens));
+    if (!deduped.some(t => t.startsWith('fa-') || t.startsWith('fa'))) return '';
+    return deduped.join(' ');
+}
+
+function normalizeQuestIconFlag(iconFlag) {
+    if (!iconFlag) return null;
+    if (typeof iconFlag === 'string') {
+        const trimmed = iconFlag.trim();
+        if (!trimmed) return null;
+        if (trimmed.startsWith('<img')) {
+            const m = trimmed.match(/src=["']([^"']+)["']/i);
+            if (m?.[1]) return { type: 'img', value: m[1] };
+            return null;
+        }
+        if (trimmed.startsWith('<i') && trimmed.includes('fa-')) {
+            const m = trimmed.match(/class=["']([^"']+)["']/i);
+            if (m?.[1]) return { type: 'fa', value: m[1] };
+            return null;
+        }
+        return { type: trimmed.includes('fa-') ? 'fa' : 'img', value: trimmed };
+    }
+    if (typeof iconFlag === 'object') {
+        const type = iconFlag.type || iconFlag.kind;
+        const value = iconFlag.value || iconFlag.icon || iconFlag.src;
+        if (type && value) {
+            if (type === 'fa') return { type, value: normalizeQuestIconFaClassList(value) };
+            return { type, value };
+        }
+    }
+    return null;
+}
+
+function buildQuestIconHtml(iconData, imgClass = '') {
+    if (!iconData) return `<i class="fa-solid ${QUEST_PIN_ICON}"></i>`;
+    if (iconData.type === 'fa') {
+        const classValue = normalizeQuestIconFaClassList(String(iconData.value || ''));
+        if (!classValue) return `<i class="fa-solid ${QUEST_PIN_ICON}"></i>`;
+        return `<i class="${classValue}"></i>`;
+    }
+    const classAttr = imgClass ? ` class="${imgClass}"` : '';
+    let src = typeof iconData.value === 'string' ? iconData.value.trim() : '';
+    const imgMatch = src.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (imgMatch?.[1]) src = imgMatch[1];
+    if (!src || (!/^(https?:\/\/|\/|data:)/i.test(src) && !src.startsWith('modules/'))) return `<i class="fa-solid ${QUEST_PIN_ICON}"></i>`;
+    const href = src.startsWith('modules/') ? `/${src}` : src;
+    return `<img src="${href}"${classAttr}>`;
+}
+
+function resolveQuestIconHtmlFromPage(page, imgClass = '') {
+    const iconFlag = normalizeQuestIconFlag(page?.getFlag(MODULE.ID, 'questIcon'));
+    if (iconFlag) return buildQuestIconHtml(iconFlag, imgClass);
+    return buildQuestIconHtml(null, imgClass);
+}
+
 // Quest notification functions - moved to QuestPanel class methods
 
 export function notifyObjectiveCompleted(objectiveText) {
@@ -580,6 +649,63 @@ export class QuestPanel {
         }
     }
 
+    /**
+     * Open Blacksmith Configure Pin for the quest's pin. Persists design to quest flags.
+     * @param {string} uuid - Quest journal page UUID
+     * @private
+     */
+    async _configureQuestPin(uuid) {
+        const pins = getPinsApi();
+        if (!pins?.configure) return;
+        const page = await fromUuid(uuid);
+        if (!page) return;
+        const pinId = page.getFlag(MODULE.ID, 'pinId');
+        if (!pinId) {
+            ui.notifications.warn('No pin for this quest. Pin the quest to the scene first.');
+            return;
+        }
+        const sceneId = page.getFlag(MODULE.ID, 'sceneId') || undefined;
+        try {
+            await pins.configure(pinId, {
+                sceneId,
+                moduleId: MODULE.ID,
+                useAsDefault: true,
+                defaultSettingKey: 'questPinDefaultDesign',
+                onSelect: async (config) => {
+                    if (config?.icon != null) await page.setFlag(MODULE.ID, 'questIcon', config.icon);
+                    if (config?.pinSize != null) await page.setFlag(MODULE.ID, 'questPinSize', config.pinSize);
+                    if (config?.pinShape != null) await page.setFlag(MODULE.ID, 'questPinShape', config.pinShape);
+                    if (config?.pinStyle != null) await page.setFlag(MODULE.ID, 'questPinStyle', config.pinStyle);
+                    if (typeof config?.pinDropShadow === 'boolean') await page.setFlag(MODULE.ID, 'questPinDropShadow', config.pinDropShadow);
+                    const textConfig = config?.pinTextConfig;
+                    if (textConfig) {
+                        if (textConfig.textLayout != null) await page.setFlag(MODULE.ID, 'questPinTextLayout', textConfig.textLayout);
+                        if (textConfig.textDisplay != null) await page.setFlag(MODULE.ID, 'questPinTextDisplay', textConfig.textDisplay);
+                        if (textConfig.textColor != null) await page.setFlag(MODULE.ID, 'questPinTextColor', textConfig.textColor);
+                        if (textConfig.textSize != null) await page.setFlag(MODULE.ID, 'questPinTextSize', textConfig.textSize);
+                        if (textConfig.textMaxLength != null) await page.setFlag(MODULE.ID, 'questPinTextMaxLength', textConfig.textMaxLength);
+                        if (textConfig.textMaxWidth != null) await page.setFlag(MODULE.ID, 'questPinTextMaxWidth', textConfig.textMaxWidth);
+                        if (typeof textConfig.textScaleWithPin === 'boolean') await page.setFlag(MODULE.ID, 'questPinTextScaleWithPin', textConfig.textScaleWithPin);
+                    }
+                    if (this.element) {
+                        await this._refreshData();
+                        this.render(this.element);
+                    }
+                }
+            });
+        } catch (err) {
+            const msg = String(err?.message || err || '').toLowerCase();
+            if (msg.includes('pin not found')) {
+                await page.setFlag(MODULE.ID, 'pinId', null);
+                await page.setFlag(MODULE.ID, 'sceneId', null);
+                ui.notifications.warn('Pin no longer exists. Cleared from quest. Pin the quest again to configure.');
+            } else {
+                console.error('Coffee Pub Squire | _configureQuestPin:', err);
+                ui.notifications.error('Failed to open pin configuration. See console.');
+            }
+        }
+    }
+
     /** Cursor class for Pin to Scene placement mode */
     static QUEST_PIN_CURSOR_CLASS = 'squire-quest-pin-placement';
     static QUEST_PIN_CANVAS_CURSOR_CLASS = 'squire-quest-pin-placement-canvas';
@@ -680,6 +806,11 @@ export class QuestPanel {
             });
             this._clearQuestPinPlacement();
             if (pin) {
+                const page = await fromUuid(questUuid);
+                if (page) {
+                    await page.setFlag(MODULE.ID, 'pinId', pin.id);
+                    await page.setFlag(MODULE.ID, 'sceneId', canvas.scene.id);
+                }
                 ui.notifications.info('Quest pin placed.');
                 this.render(this.element);
             }
@@ -783,6 +914,12 @@ export class QuestPanel {
             });
             this._clearQuestPinPlacement();
             if (pin) {
+                const page = await fromUuid(questUuid);
+                if (page) {
+                    const objectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
+                    objectivePins[String(objectiveIndex)] = { pinId: pin.id, sceneId: canvas.scene.id };
+                    await page.setFlag(MODULE.ID, 'objectivePins', objectivePins);
+                }
                 ui.notifications.info('Objective pin placed.');
                 this.render(this.element);
             }
@@ -964,6 +1101,7 @@ export class QuestPanel {
                                 });
                             }
                             
+                            entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image');
                             const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
                             this.data[category].push(entry);
                             
@@ -2587,6 +2725,13 @@ export class QuestPanel {
                                 callback: async () => {
                                     const doc = await fromUuid(uuid);
                                     if (doc) doc.sheet.render(true);
+                                }
+                            },
+                            {
+                                name: 'Configure Pin',
+                                icon: 'fa-solid fa-palette',
+                                callback: async () => {
+                                    await this._configureQuestPin(uuid);
                                 }
                             },
                             {

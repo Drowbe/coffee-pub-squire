@@ -1890,8 +1890,8 @@ Hooks.once('ready', async function() {
     // Register pin types with friendly names (Blacksmith uses these for context menus, tools, etc.)
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
     if (pins?.isAvailable()) {
-        pins.registerPinType(MODULE.ID, 'quest', 'Squire Quests');
-        pins.registerPinType(MODULE.ID, 'objective', 'Squire Quests');
+        pins.registerPinType(MODULE.ID, 'quest', 'Quest');
+        pins.registerPinType(MODULE.ID, 'objective', 'Objective');
         pins.registerPinType(MODULE.ID, 'coffee-pub-squire-sticky-notes', 'Squire Notes');
     }
 

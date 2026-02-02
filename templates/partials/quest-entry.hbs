@@ -2,7 +2,9 @@
   <!-- ENTRY HEADER -->
   <div class="quest-entry-header">
     <div class="quest-entry-name" {{#if isGM}}draggable="true"{{/if}} data-tooltip="{{entry.name}}">
-      {{#if (eq entry.category "Main Quest")}}<i class="fa-solid fa-flag quest-type-icon" title="Main Quest"></i>{{else}}<i class="fa-solid fa-map-signs quest-type-icon" title="Side Quest"></i>{{/if}}
+      <span class="quest-icon">
+        {{#if entry.iconHtml}}{{{entry.iconHtml}}}{{else}}<i class="fa-solid fa-scroll quest-type-icon"></i>{{/if}}
+      </span>
       <span class="quest-number">{{entry.questNumber}}</span>
       {{entry.name}}
     </div>

@@ -635,6 +635,29 @@ export const registerSettings = function() {
         }
     });
 
+    game.settings.register(MODULE.ID, 'questPinDefaultDesign', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {
+            size: { w: 32, h: 32 },
+            lockProportions: true,
+            shape: 'circle',
+            style: {
+                stroke: '#000000',
+                strokeWidth: 2
+            },
+            dropShadow: true,
+            text: '',
+            textLayout: 'under',
+            textDisplay: 'always',
+            textColor: '#ffffff',
+            textSize: 12,
+            textMaxLength: 0,
+            textScaleWithPin: true
+        }
+    });
+
     // --------------------------------
     // --- Transfer Settings ---
     // --------------------------------

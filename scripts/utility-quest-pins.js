@@ -42,6 +42,64 @@ function getQuestNumber(questUuid) {
 }
 
 /**
+ * Resolve quest pin image string from page flags (for pins.create image property).
+ * @param {JournalEntryPage} page - Quest journal page
+ * @returns {string} FA HTML, FA class string, or image URL
+ */
+function getQuestPinImageFromPage(page) {
+    if (!page) return QUEST_ICON;
+    const iconFlag = page.getFlag(MODULE.ID, 'questIcon');
+    if (!iconFlag) return QUEST_ICON;
+    if (typeof iconFlag === 'object') {
+        if (iconFlag.type === 'fa' && iconFlag.value) {
+            const v = String(iconFlag.value).trim();
+            return v.startsWith('<i') ? v : `<i class="${v}"></i>`;
+        }
+        if (iconFlag.type === 'img' && iconFlag.value) return iconFlag.value;
+    }
+    if (typeof iconFlag === 'string') {
+        const t = iconFlag.trim();
+        if (t.startsWith('<i') && t.includes('fa-')) return t;
+        if (t.includes('fa-')) return `<i class="${t}"></i>`;
+        return t;
+    }
+    return QUEST_ICON;
+}
+
+/**
+ * Get quest pin design from page flags and default setting.
+ * @param {JournalEntryPage} page - Quest journal page
+ * @returns {{ size, shape, style, dropShadow, textLayout, textDisplay, textColor, textSize, textMaxLength, textMaxWidth, textScaleWithPin }}
+ */
+function getQuestPinDesignFromPage(page) {
+    const defaultDesign = game.settings.get(MODULE.ID, 'questPinDefaultDesign') || {};
+    const size = page?.getFlag(MODULE.ID, 'questPinSize') ?? defaultDesign.size ?? QUEST_PIN_SIZE;
+    const shape = page?.getFlag(MODULE.ID, 'questPinShape') ?? defaultDesign.shape ?? 'circle';
+    const style = page?.getFlag(MODULE.ID, 'questPinStyle') ?? defaultDesign.style ?? {};
+    const dropShadow = page?.getFlag(MODULE.ID, 'questPinDropShadow') ?? defaultDesign.dropShadow ?? true;
+    const textLayout = page?.getFlag(MODULE.ID, 'questPinTextLayout') ?? defaultDesign.textLayout ?? 'under';
+    const textDisplay = page?.getFlag(MODULE.ID, 'questPinTextDisplay') ?? defaultDesign.textDisplay ?? 'always';
+    const textColor = page?.getFlag(MODULE.ID, 'questPinTextColor') ?? defaultDesign.textColor ?? '#ffffff';
+    const textSize = page?.getFlag(MODULE.ID, 'questPinTextSize') ?? defaultDesign.textSize ?? 12;
+    const textMaxLength = page?.getFlag(MODULE.ID, 'questPinTextMaxLength') ?? defaultDesign.textMaxLength ?? 0;
+    const textMaxWidth = page?.getFlag(MODULE.ID, 'questPinTextMaxWidth') ?? defaultDesign.textMaxWidth ?? 0;
+    const textScaleWithPin = page?.getFlag(MODULE.ID, 'questPinTextScaleWithPin') ?? defaultDesign.textScaleWithPin ?? true;
+    return {
+        size: size && typeof size.w === 'number' && typeof size.h === 'number' ? size : QUEST_PIN_SIZE,
+        shape: shape === 'circle' || shape === 'square' || shape === 'none' ? shape : 'circle',
+        style: typeof style === 'object' ? style : {},
+        dropShadow: !!dropShadow,
+        textLayout,
+        textDisplay,
+        textColor,
+        textSize,
+        textMaxLength,
+        textMaxWidth,
+        textScaleWithPin
+    };
+}
+
+/**
  * Get the Blacksmith Pins API.
  * @returns {object|undefined}
  */
@@ -130,16 +188,27 @@ export async function createQuestPin(opts) {
     const ownership = calculateQuestPinOwnership(page);
     const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
     const fillColor = getQuestPinColor(questStatus, questState);
+    const design = getQuestPinDesignFromPage(page);
+    const image = getQuestPinImageFromPage(page);
+    const style = { ...design.style, fill: fillColor, stroke: design.style?.stroke ?? '#000000', strokeWidth: design.style?.strokeWidth ?? 2, iconColor: design.style?.iconColor ?? '#ffffff' };
 
     const pinData = {
         id: crypto.randomUUID(),
         moduleId: MODULE.ID,
         type: 'quest',
-        shape: 'circle',
+        shape: design.shape,
         text: `Q${questNum}`,
-        image: QUEST_ICON,
-        size: QUEST_PIN_SIZE,
-        style: { fill: fillColor, stroke: '#000000', strokeWidth: 2, iconColor: '#ffffff' },
+        image,
+        size: design.size,
+        style,
+        dropShadow: design.dropShadow,
+        textLayout: design.textLayout,
+        textDisplay: design.textDisplay,
+        textColor: design.textColor,
+        textSize: design.textSize,
+        textMaxLength: design.textMaxLength,
+        textMaxWidth: design.textMaxWidth,
+        textScaleWithPin: design.textScaleWithPin,
         ownership,
         config: {
             questUuid,
@@ -236,6 +305,7 @@ export async function createObjectivePin(opts) {
 
 /**
  * Delete all pins for a quest on a scene (or all scenes if sceneId omitted).
+ * Uses stored pinId and objectivePins on the page when present; otherwise finds by config.questUuid.
  * @param {string} questUuid - Quest page UUID
  * @param {string} [sceneId] - If provided, only delete from this scene
  */
@@ -243,7 +313,30 @@ export async function deleteQuestPins(questUuid, sceneId) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
 
+    const page = await fromUuid(questUuid);
+    const storedPinId = page?.getFlag(MODULE.ID, 'pinId');
+    const storedSceneId = page?.getFlag(MODULE.ID, 'sceneId');
+    const objectivePins = page?.getFlag(MODULE.ID, 'objectivePins') || {};
     const targetScenes = sceneId ? [sceneId] : game.scenes.contents.map(s => s.id);
+
+    if (storedPinId && (!sceneId || storedSceneId === sceneId)) {
+        try {
+            await pins.delete(storedPinId, { sceneId: storedSceneId });
+        } catch (e) {
+            console.warn('Coffee Pub Squire | deleteQuestPins (quest pin):', e);
+        }
+    }
+    for (const key of Object.keys(objectivePins)) {
+        const obj = objectivePins[key];
+        const pinId = obj?.pinId ?? obj;
+        const objSceneId = typeof obj === 'object' && obj?.sceneId != null ? obj.sceneId : null;
+        if (!pinId || (sceneId && objSceneId !== sceneId)) continue;
+        try {
+            await pins.delete(pinId, { sceneId: objSceneId });
+        } catch (e) {
+            console.warn('Coffee Pub Squire | deleteQuestPins (objective pin):', e);
+        }
+    }
     for (const sid of targetScenes) {
         const list = pins.list({ moduleId: MODULE.ID, sceneId: sid }) || [];
         const forQuest = list.filter(p => p.config?.questUuid === questUuid);
@@ -251,8 +344,28 @@ export async function deleteQuestPins(questUuid, sceneId) {
             try {
                 await pins.delete(pin.id, { sceneId: sid });
             } catch (e) {
-                console.warn('Coffee Pub Squire | deleteQuestPins:', e);
+                console.warn('Coffee Pub Squire | deleteQuestPins (orphan):', e);
             }
+        }
+    }
+
+    if (page) {
+        if (!sceneId) {
+            await page.setFlag(MODULE.ID, 'pinId', null);
+            await page.setFlag(MODULE.ID, 'sceneId', null);
+            await page.setFlag(MODULE.ID, 'objectivePins', {});
+        } else {
+            if (storedPinId && storedSceneId === sceneId) {
+                await page.setFlag(MODULE.ID, 'pinId', null);
+                await page.setFlag(MODULE.ID, 'sceneId', null);
+            }
+            const nextObjectivePins = { ...objectivePins };
+            for (const key of Object.keys(nextObjectivePins)) {
+                const obj = nextObjectivePins[key];
+                const objSceneId = typeof obj === 'object' && obj?.sceneId != null ? obj.sceneId : null;
+                if (objSceneId === sceneId) delete nextObjectivePins[key];
+            }
+            await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
         }
     }
 }

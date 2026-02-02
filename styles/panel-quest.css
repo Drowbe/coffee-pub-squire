@@ -348,6 +348,20 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     margin-right: 2px;
 }
 
+.squire-tray[data-position="left"] .quest-entry-name .quest-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 2px;
+}
+
+.squire-tray[data-position="left"] .quest-entry-name .quest-icon i,
+.squire-tray[data-position="left"] .quest-entry-name .quest-icon img {
+    font-size: 0.85em;
+    width: 1em;
+    height: 1em;
+    object-fit: contain;
+}
+
 .squire-tray[data-position="left"] .quest-entry-name:active {
     cursor: grabbing;
 }
