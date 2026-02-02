@@ -568,6 +568,422 @@ export class QuestPanel {
     }
 
     /**
+     * Open the Clear All Quest Pins dialog (titlebar menu).
+     * @private
+     */
+    _openClearAllQuestPinsDialog() {
+        new Dialog({
+            title: 'Clear All Quest Pins',
+            content: `
+                <p>Choose which scenes to clear quest pins from:</p>
+                <div style="margin: 10px 0;">
+                    <label><input type="radio" name="clearScope" value="thisScene" checked> This Scene Only</label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label><input type="radio" name="clearScope" value="allScenes"> All Scenes</label>
+                </div>
+            `,
+            buttons: {
+                clear: {
+                    icon: '<i class="fa-solid fa-trash-alt"></i>',
+                    label: 'Clear Pins',
+                    callback: async (dlgHtml) => {
+                        let nativeDlgHtml = dlgHtml;
+                        if (dlgHtml && (dlgHtml.jquery || typeof dlgHtml.find === 'function')) {
+                            nativeDlgHtml = dlgHtml[0] || dlgHtml.get?.(0) || dlgHtml;
+                        }
+                        const checkedInput = nativeDlgHtml.querySelector('input[name="clearScope"]:checked');
+                        const scope = checkedInput?.value;
+                        if (scope) await this._clearAllQuestPins(scope);
+                    }
+                },
+                cancel: {
+                    icon: '<i class="fa-solid fa-times"></i>',
+                    label: 'Cancel'
+                }
+            }
+        }).render(true);
+    }
+
+    /**
+     * Open the Import Quests from JSON dialog (titlebar menu).
+     * @private
+     */
+    async _openImportQuestsDialog() {
+        if (!game.user.isGM) return;
+        let template = '';
+        try {
+            const response = await fetch('modules/coffee-pub-squire/prompts/prompt-quests.txt');
+            template = response.ok ? await response.text() : 'Failed to load prompt-quests.txt.';
+        } catch (e) {
+            template = 'Failed to load prompt-quests.txt.';
+        }
+        new Dialog({
+            title: 'Import Quests and Scene Pins from JSON',
+            width: 600,
+            resizable: true,
+            content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                type: 'quests',
+                isImport: true,
+                isExport: false,
+                jsonInputId: 'import-quests-json-input'
+            }),
+            buttons: {
+                cancel: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel Import' },
+                import: {
+                    icon: '<i class="fa-solid fa-file-import"></i>',
+                    label: 'Import JSON',
+                    callback: async (dlgHtml) => {
+                        let nativeDlgHtml = dlgHtml;
+                        if (dlgHtml && (dlgHtml.jquery || typeof dlgHtml.find === 'function')) {
+                            nativeDlgHtml = dlgHtml[0] || dlgHtml.get?.(0) || dlgHtml;
+                        }
+                        const input = nativeDlgHtml.querySelector('#import-quests-json-input');
+                        const inputValue = input?.value || '';
+                        let importData;
+                        try {
+                            importData = JSON.parse(inputValue);
+                        } catch (e) {
+                            ui.notifications.error('Invalid JSON: ' + e.message);
+                            return;
+                        }
+                        this.isImporting = true;
+                        this._showProgressBar();
+                        try {
+                            let quests, scenePins;
+                            if (Array.isArray(importData)) {
+                                quests = importData;
+                                scenePins = {};
+                            } else if (importData.quests && Array.isArray(importData.quests)) {
+                                quests = importData.quests;
+                                scenePins = importData.scenePins || {};
+                                if (importData.exportVersion) {
+                                    ui.notifications.info(`Importing enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
+                                }
+                            } else {
+                                ui.notifications.error('Invalid format: JSON must be either an array of quests or an object with quests and scenePins properties.');
+                                return;
+                            }
+                            let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
+                            let changed = false;
+                            for (const cat of ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]) {
+                                if (!categories.includes(cat)) { categories.push(cat); changed = true; }
+                            }
+                            if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
+                            const journalId = game.settings.get(MODULE.ID, 'questJournal');
+                            if (!journalId || journalId === 'none') {
+                                ui.notifications.error('No quest journal selected.');
+                                return;
+                            }
+                            const journal = game.journal.get(journalId);
+                            if (!journal) {
+                                ui.notifications.error('Selected quest journal not found.');
+                                return;
+                            }
+                            await this._importQuestsFromData(quests, scenePins, journal);
+                        } catch (error) {
+                            this._hideProgressBar();
+                            this.isImporting = false;
+                            console.error('Error during quest import:', error);
+                            ui.notifications.error(`Quest import failed: ${error.message}`);
+                        }
+                    }
+                }
+            },
+            classes: ['import-export-dialog'],
+            id: 'import-export-dialog-quest-import',
+            render: (html) => {
+                let nativeDlgHtml = html;
+                if (html && (html.jquery || typeof html.find === 'function')) {
+                    nativeDlgHtml = html[0] || html.get?.(0) || html;
+                }
+                const cancelButton = nativeDlgHtml.querySelector('[data-button="cancel"]');
+                if (cancelButton) cancelButton.classList.add('squire-cancel-button');
+                const importButton = nativeDlgHtml.querySelector('[data-button="import"]');
+                if (importButton) importButton.classList.add('squire-submit-button');
+                const copyTemplateButton = nativeDlgHtml.querySelector('.copy-template-button');
+                if (copyTemplateButton) {
+                    copyTemplateButton.addEventListener('click', () => {
+                        let output = template;
+                        const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
+                        if (rulebooks && rulebooks.trim()) output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
+                        copyToClipboard(output);
+                        ui.notifications.info('Template copied to clipboard!');
+                    });
+                }
+                const browseFileButton = nativeDlgHtml.querySelector('.browse-file-button');
+                if (browseFileButton) {
+                    browseFileButton.addEventListener('click', () => {
+                        const fileInput = nativeDlgHtml.querySelector('#import-file-input');
+                        if (fileInput) fileInput.click();
+                    });
+                }
+                const fileInput = nativeDlgHtml.querySelector('#import-file-input');
+                if (fileInput) {
+                    fileInput.addEventListener('change', async (event) => {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        try {
+                            if (!file.name.toLowerCase().endsWith('.json')) {
+                                ui.notifications.error('Please select a JSON file.');
+                                return;
+                            }
+                            const text = await file.text();
+                            let importData;
+                            try {
+                                importData = JSON.parse(text);
+                            } catch (e) {
+                                ui.notifications.error('Invalid JSON in file: ' + e.message);
+                                return;
+                            }
+                            let quests, scenePins;
+                            if (Array.isArray(importData)) {
+                                quests = importData;
+                                scenePins = {};
+                            } else if (importData.quests && Array.isArray(importData.quests)) {
+                                quests = importData.quests;
+                                scenePins = importData.scenePins || {};
+                                if (importData.exportVersion) {
+                                    ui.notifications.info(`File contains enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
+                                }
+                            } else {
+                                ui.notifications.error('Invalid file format: Must be either an array of quests or an object with quests and scenePins properties.');
+                                return;
+                            }
+                            const jsonInput = nativeDlgHtml.querySelector('#import-quests-json-input');
+                            if (jsonInput) jsonInput.value = text;
+                            ui.notifications.info(`File "${file.name}" loaded successfully! Review the content below and click Import when ready.`);
+                            event.target.value = '';
+                        } catch (error) {
+                            console.error('Error reading file:', { error, fileName: file.name });
+                            ui.notifications.error(`Error reading file: ${error.message}`);
+                        }
+                    });
+                }
+            }
+        }).render(true);
+    }
+
+    /**
+     * Open the Export Quests to JSON dialog (titlebar menu).
+     * @private
+     */
+    async _openExportQuestsDialog() {
+        if (!game.user.isGM) return;
+        await this._refreshData();
+        const allQuests = [];
+        for (const category of this.categories) {
+            allQuests.push(...(this.data[category] || []));
+        }
+        const uniqueQuests = [];
+        const seenUUIDs = new Set();
+        allQuests.forEach(quest => {
+            if (quest.uuid && !seenUUIDs.has(quest.uuid)) {
+                seenUUIDs.add(quest.uuid);
+                uniqueQuests.push(quest);
+            }
+        });
+        if (uniqueQuests.length === 0) {
+            ui.notifications.warn("No quests to export");
+            return;
+        }
+        const exportQuests = uniqueQuests.map(q => ({
+            name: q.name,
+            uuid: q.uuid,
+            img: (q.img || "").replace(new RegExp('^' + window.location.origin + '/'), ''),
+            category: q.category || "Side Quest",
+            description: q.description || "",
+            plotHook: q.plotHook || "",
+            status: q.status || "Not Started",
+            visible: q.visible !== false,
+            timeframe: q.timeframe || { duration: "" },
+            tasks: (q.tasks || []).map(t => ({
+                text: t.text,
+                completed: t.completed || false,
+                state: t.state || "active",
+                gmnotes: t.gmHint || "",
+                tasktreasure: t.treasureUnlocks || [],
+                originalText: t.originalText || ""
+            })),
+            reward: { xp: q.reward?.xp || 0, treasure: q.reward?.treasure || [] },
+            participants: q.participants || [],
+            tags: q.tags || [],
+            location: q.location || ""
+        }));
+        const scenePins = await this._exportScenePins();
+        const enhancedExportData = {
+            quests: exportQuests,
+            scenePins,
+            exportVersion: "1.1",
+            timestamp: new Date().toISOString(),
+            metadata: {
+                totalQuests: exportQuests.length,
+                totalScenesWithPins: Object.keys(scenePins).length,
+                totalPins: Object.values(scenePins).reduce((sum, scene) => sum + (scene.questPins ? scene.questPins.length : 0), 0)
+            }
+        };
+        const exportData = JSON.stringify(enhancedExportData, null, 2);
+        new Dialog({
+            title: 'Export Quests and Scene Pins to JSON',
+            width: 600,
+            resizable: true,
+            content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                type: 'quests',
+                isImport: false,
+                isExport: true,
+                jsonOutputId: 'export-quests-json-output',
+                exportData,
+                exportSummary: {
+                    totalItems: exportQuests.length,
+                    totalScenes: Object.keys(scenePins).length,
+                    totalPins: Object.values(scenePins).reduce((sum, scene) => sum + (scene.questPins ? scene.questPins.length : 0), 0),
+                    exportVersion: enhancedExportData.exportVersion,
+                    timestamp: enhancedExportData.timestamp
+                },
+                hasScenePins: Object.keys(scenePins).length > 0,
+                scenePins: Object.keys(scenePins).length > 0 ? Object.values(scenePins).map(scene => ({ sceneName: scene.sceneName })) : []
+            }),
+            buttons: {
+                close: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel Export' },
+                download: {
+                    icon: '<i class="fa-solid fa-download"></i>',
+                    label: 'Download JSON',
+                    callback: () => {
+                        try {
+                            const sanitizeWindowsFilename = (name) => name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').replace(/\s+$/g, '').replace(/\.+$/g, '').slice(0, 150);
+                            const filename = `quests-export-${sanitizeWindowsFilename(game.world?.name || 'export')}-${Date.now()}.json`;
+                            if (typeof saveDataToFile === 'function') {
+                                saveDataToFile(exportData, "application/json;charset=utf-8", filename);
+                                ui.notifications.info(`Quest export saved as ${filename}`);
+                            } else {
+                                const blob = new Blob([exportData], { type: 'application/json;charset=utf-8' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = filename;
+                                a.rel = "noopener";
+                                a.style.display = 'none';
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
+                                ui.notifications.info(`Quest export downloaded as ${filename}`);
+                            }
+                        } catch (error) {
+                            copyToClipboard(exportData);
+                            ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
+                            console.error('Export download failed:', error);
+                        }
+                    }
+                }
+            },
+            classes: ['import-export-dialog'],
+            id: 'import-export-dialog-quest-export',
+            render: (html) => {
+                let nativeDlgHtml = html;
+                if (html && (html.jquery || typeof html.find === 'function')) {
+                    nativeDlgHtml = html[0] || html.get?.(0) || html;
+                }
+                const closeButton = nativeDlgHtml.querySelector('[data-button="close"]');
+                if (closeButton) closeButton.classList.add('squire-cancel-button');
+                const downloadButton = nativeDlgHtml.querySelector('[data-button="download"]');
+                if (downloadButton) downloadButton.classList.add('squire-submit-button');
+            }
+        }).render(true);
+    }
+
+    /**
+     * Run the core import logic (validation, quest create/update, scene pins). Called from _openImportQuestsDialog.
+     * @param {object[]} quests - Parsed quest data
+     * @param {object} scenePins - Scene pins data keyed by scene id
+     * @param {Journal} journal - Quest journal
+     * @private
+     */
+    async _importQuestsFromData(quests, scenePins, journal) {
+        this._updateProgressBar(10, 'Validating import data...');
+        const importNameCounts = {};
+        const duplicateNames = [];
+        quests.forEach(q => {
+            if (q.name) {
+                importNameCounts[q.name] = (importNameCounts[q.name] || 0) + 1;
+                if (importNameCounts[q.name] > 1 && !duplicateNames.includes(q.name)) duplicateNames.push(q.name);
+            }
+        });
+        if (duplicateNames.length > 0) {
+            ui.notifications.warn(`Warning: Import data contains duplicate quest names: ${duplicateNames.join(', ')}. These will be merged with existing quests.`);
+        }
+        this._updateProgressBar(20, `Processing ${quests.length} quests...`);
+        let imported = 0, updated = 0, duplicatesMerged = 0;
+        const totalQuests = quests.length;
+        for (let i = 0; i < quests.length; i++) {
+            const quest = quests[i];
+            if (!quest.name) continue;
+            const questProgress = 20 + ((i / totalQuests) * 60);
+            this._updateProgressBar(questProgress, `Processing: ${quest.name}`);
+            let existingPage = null, matchType = 'none';
+            if (quest.uuid) {
+                existingPage = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === quest.uuid);
+                if (existingPage) matchType = 'uuid';
+            }
+            if (!existingPage) {
+                existingPage = journal.pages.find(p => p.name === quest.name);
+                if (existingPage) matchType = 'name';
+            }
+            if (existingPage) {
+                let existingContent = '';
+                if (typeof existingPage.text?.content === 'string') existingContent = existingPage.text.content;
+                else if (existingPage.text?.content) existingContent = await existingPage.text.content;
+                const updatedContent = this._mergeJournalContent(existingContent, quest);
+                await existingPage.update({ text: { content: updatedContent } });
+                if (quest.visible !== undefined) await existingPage.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+                const uuid = quest.uuid || existingPage.getFlag(MODULE.ID, 'questUuid') || foundry.utils.randomID();
+                if (uuid !== existingPage.getFlag(MODULE.ID, 'questUuid')) await existingPage.setFlag(MODULE.ID, 'questUuid', uuid);
+                if (quest.name && quest.name !== existingPage.name) await existingPage.update({ name: quest.name });
+                if ((quest.status === 'Complete' || quest.status === 'Failed') && quest.category && !(await existingPage.getFlag(MODULE.ID, 'originalCategory'))) {
+                    await existingPage.setFlag(MODULE.ID, 'originalCategory', quest.category);
+                }
+                updated++;
+                if (matchType === 'name') duplicatesMerged++;
+            } else {
+                const uuid = quest.uuid || foundry.utils.randomID();
+                const pageData = {
+                    name: quest.name,
+                    type: 'text',
+                    text: { content: this._generateJournalContentFromImport(quest) },
+                    flags: { [MODULE.ID]: { questUuid: uuid } }
+                };
+                const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                const page = created[0];
+                if (page) {
+                    await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+                    if ((quest.status === 'Complete' || quest.status === 'Failed') && quest.category) await page.setFlag(MODULE.ID, 'originalCategory', quest.category);
+                    imported++;
+                }
+            }
+            if (i % 5 === 0) await moduleDelay(100);
+        }
+        this._updateProgressBar(80, 'Importing scene pins...');
+        if (Object.keys(scenePins).length > 0) {
+            try {
+                await this._importScenePins(scenePins);
+            } catch (error) {
+                console.error('Error during scene pin import:', error);
+                ui.notifications.warn('Scene pins import failed, but quests were imported successfully. Check console for details.');
+            }
+        }
+        this._updateProgressBar(90, 'Finalizing import...');
+        let message = `Quest import complete: ${imported} added, ${updated} updated.`;
+        if (duplicatesMerged > 0) message += ` ${duplicatesMerged} duplicates were merged.`;
+        ui.notifications.info(message);
+        this._updateProgressBar(100, 'Import complete!');
+        await moduleDelay(2000);
+        this._hideProgressBar();
+        this.isImporting = false;
+        await this._refreshData();
+        this.render(this.element);
+    }
+
+    /**
      * Clear quest pins for a specific quest from the current scene
      * @param {string} questUuid - The UUID of the quest
      * @private
@@ -1322,49 +1738,6 @@ export class QuestPanel {
             });
         }
 
-        // Refresh button
-        const refreshButton = nativeHtml.querySelector('.refresh-quest-button');
-        if (refreshButton) {
-            // Clone to remove existing listeners
-            const newButton = refreshButton.cloneNode(true);
-            refreshButton.parentNode?.replaceChild(newButton, refreshButton);
-            
-            newButton.addEventListener('click', async () => {
-                if (this.selectedJournal) {
-                    await this._refreshData();
-                    this.render(this.element);
-                    ui.notifications.info("Quests refreshed.");
-                }
-            });
-        }
-
-        // Open quest journal button
-        // v13: Use nativeHtml instead of html
-        const openQuestJournalButton = nativeHtml.querySelector('.open-quest-journal');
-        if (openQuestJournalButton) {
-            const newButton = openQuestJournalButton.cloneNode(true);
-            openQuestJournalButton.parentNode?.replaceChild(newButton, openQuestJournalButton);
-            newButton.addEventListener('click', async () => {
-                const journalId = game.settings.get(MODULE.ID, 'questJournal');
-                if (!journalId || journalId === 'none') {
-                    if (game.user.isGM) {
-                        ui.notifications.warn("No quest journal selected. Click the gear icon to select one.");
-                    } else {
-                        ui.notifications.warn("No quest journal has been set by the GM.");
-                    }
-                    return;
-                }
-                
-                const journal = game.journal.get(journalId);
-                if (!journal) {
-                    ui.notifications.error("Could not find the quest journal.");
-                    return;
-                }
-                
-                journal.sheet.render(true);
-            });
-        }
-
         // Add new quest button
         // v13: Use nativeHtml instead of html
         const addQuestButton = nativeHtml.querySelector('.add-quest-button');
@@ -1376,7 +1749,7 @@ export class QuestPanel {
                 
                 const journalId = game.settings.get(MODULE.ID, 'questJournal');
                 if (!journalId || journalId === 'none') {
-                    ui.notifications.warn("No quest journal selected. Click the gear icon to select one.");
+                    ui.notifications.warn("No quest journal selected. Use the … menu to select one.");
                     return;
                 }
                 
@@ -1388,6 +1761,119 @@ export class QuestPanel {
                 
                 const questForm = new QuestForm();
                 questForm.render(true);
+            });
+        }
+
+        // Quest titlebar "..." context menu (Blacksmith) - all actions except Add New Quest
+        const titlebarMenuBtn = nativeHtml.querySelector('.quest-titlebar-menu');
+        if (titlebarMenuBtn && getBlacksmith()?.uiContextMenu?.show) {
+            const newTitlebarBtn = titlebarMenuBtn.cloneNode(true);
+            titlebarMenuBtn.parentNode?.replaceChild(newTitlebarBtn, titlebarMenuBtn);
+            newTitlebarBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const pinsVisible = getQuestPinModuleVisibility();
+                const labelsVisible = game.settings.get(MODULE.ID, 'showQuestPinText');
+                const zones = {
+                    core: [
+                        {
+                            name: 'Refresh Quests',
+                            icon: 'fa-solid fa-sync-alt',
+                            callback: async () => {
+                                if (this.selectedJournal) {
+                                    await this._refreshData();
+                                    this.render(this.element);
+                                    ui.notifications.info("Quests refreshed.");
+                                }
+                            }
+                        },
+                        {
+                            name: 'Open Quest Journal',
+                            icon: 'fa-solid fa-feather',
+                            callback: async () => {
+                                const journalId = game.settings.get(MODULE.ID, 'questJournal');
+                                if (!journalId || journalId === 'none') {
+                                    ui.notifications.warn(game.user.isGM ? "No quest journal selected. Use the … menu to select one." : "No quest journal has been set by the GM.");
+                                    return;
+                                }
+                                const journal = game.journal.get(journalId);
+                                if (!journal) {
+                                    ui.notifications.error("Could not find the quest journal.");
+                                    return;
+                                }
+                                journal.sheet.render(true);
+                            }
+                        },
+                        {
+                            name: labelsVisible ? 'Hide Quest Labels' : 'Show Quest Labels',
+                            icon: labelsVisible ? 'fa-solid fa-text-slash' : 'fa-solid fa-text',
+                            callback: async () => {
+                                const current = game.settings.get(MODULE.ID, 'showQuestPinText');
+                                const newVal = !current;
+                                await game.settings.set(MODULE.ID, 'showQuestPinText', newVal);
+                                const pins = getPinsApi();
+                                if (pins?.isAvailable()) await pins.reload({ moduleId: MODULE.ID });
+                                ui.notifications.info(`Quest pin labels ${newVal ? 'shown' : 'hidden'}.`);
+                                if (this.element) {
+                                    await this._refreshData();
+                                    this.render(this.element);
+                                }
+                            }
+                        },
+                        {
+                            name: pinsVisible ? 'Hide Quest Pins' : 'Show Quest Pins',
+                            icon: pinsVisible ? 'fa-solid fa-location-dot-slash' : 'fa-solid fa-location-dot',
+                            callback: async () => {
+                                const newVisible = !pinsVisible;
+                                await setQuestPinModuleVisibility(newVisible);
+                                ui.notifications.info(`Quest pins ${newVisible ? 'shown' : 'hidden'}.`);
+                                if (this.element) {
+                                    await this._refreshData();
+                                    this.render(this.element);
+                                }
+                            }
+                        }
+                    ],
+                    gm: game.user.isGM ? [
+                        {
+                            name: 'Clear All Quest Pins',
+                            icon: 'fa-solid fa-location-xmark',
+                            callback: () => this._openClearAllQuestPinsDialog()
+                        },
+                        {
+                            name: 'Select Journal for Quests',
+                            icon: 'fa-solid fa-cog',
+                            callback: () => {
+                                showJournalPicker({
+                                    title: 'Select Journal for Quests',
+                                    getCurrentId: () => game.settings.get(MODULE.ID, 'questJournal'),
+                                    onSelect: async (journalId) => {
+                                        await game.settings.set(MODULE.ID, 'questJournal', journalId);
+                                        ui.notifications.info(`Journal for Quests ${journalId === 'none' ? 'cleared' : 'selected'}.`);
+                                    },
+                                    reRender: () => this.render(this.element),
+                                    infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate quest.</p>'
+                                });
+                            }
+                        },
+                        {
+                            name: 'Import Quests from JSON',
+                            icon: 'fa-solid fa-file-import',
+                            callback: () => this._openImportQuestsDialog()
+                        },
+                        {
+                            name: 'Export Quests to JSON',
+                            icon: 'fa-solid fa-file-export',
+                            callback: () => this._openExportQuestsDialog()
+                        }
+                    ] : []
+                };
+                getBlacksmith().uiContextMenu.show({
+                    id: `${MODULE.ID}-quest-titlebar-menu`,
+                    x: event.clientX,
+                    y: event.clientY,
+                    zones
+                });
             });
         }
 
@@ -1516,26 +2002,6 @@ export class QuestPanel {
                 game.user.setFlag(MODULE.ID, 'questCollapsedCategories', collapsedCategories);
             });
         });
-
-        // Journal selection
-        // v13: Use nativeHtml instead of html
-        const setQuestButton = nativeHtml.querySelector('.set-quest-button');
-        if (setQuestButton) {
-            const newButton = setQuestButton.cloneNode(true);
-            setQuestButton.parentNode?.replaceChild(newButton, setQuestButton);
-            newButton.addEventListener('click', () => {
-                showJournalPicker({
-                    title: 'Select Journal for Quests',
-                    getCurrentId: () => game.settings.get(MODULE.ID, 'questJournal'),
-                    onSelect: async (journalId) => {
-                        await game.settings.set(MODULE.ID, 'questJournal', journalId);
-                        ui.notifications.info(`Journal for Quests ${journalId === 'none' ? 'cleared' : 'selected'}.`);
-                    },
-                    reRender: () => this.render(this.element),
-                    infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate quest.</p>'
-                });
-            });
-        }
 
         // Link clicks
         // v13: Use nativeHtml instead of html
@@ -2112,123 +2578,7 @@ export class QuestPanel {
             });
         });
 
-        // Clear All Quest Pins (GM only)
-        // v13: Use nativeHtml instead of html
-        const clearAllQuestPinsButton = nativeHtml.querySelector('.clear-all-quest-pins');
-        if (clearAllQuestPinsButton) {
-            const newButton = clearAllQuestPinsButton.cloneNode(true);
-            clearAllQuestPinsButton.parentNode?.replaceChild(newButton, clearAllQuestPinsButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (!game.user.isGM) return;
-                new Dialog({
-                    title: 'Clear All Quest Pins',
-                    content: `
-                        <p>Choose which scenes to clear quest pins from:</p>
-                        <div style="margin: 10px 0;">
-                            <label><input type="radio" name="clearScope" value="thisScene" checked> This Scene Only</label>
-                        </div>
-                        <div style="margin: 10px 0;">
-                            <label><input type="radio" name="clearScope" value="allScenes"> All Scenes</label>
-                        </div>
-                    `,
-                    buttons: {
-                        clear: {
-                            icon: '<i class="fa-solid fa-trash-alt"></i>',
-                            label: 'Clear Pins',
-                            callback: async (dlgHtml) => {
-                                // v13: Detect and convert jQuery to native DOM if needed
-                                let nativeDlgHtml = dlgHtml;
-                                if (dlgHtml && (dlgHtml.jquery || typeof dlgHtml.find === 'function')) {
-                                    nativeDlgHtml = dlgHtml[0] || dlgHtml.get?.(0) || dlgHtml;
-                                }
-                                const checkedInput = nativeDlgHtml.querySelector('input[name="clearScope"]:checked');
-                                const scope = checkedInput?.value;
-                                if (scope) {
-                                    await this._clearAllQuestPins(scope);
-                                }
-                            }
-                        },
-                        cancel: {
-                            icon: '<i class="fa-solid fa-times"></i>',
-                            label: 'Cancel'
-                        }
-                    }
-                }).render(true);
-            });
-        }
-
-        // Toggle Pin Visibility (GM and Players) - uses Blacksmith setModuleVisibility
-        // v13: Use nativeHtml instead of html
-        const togglePinVisibilityButton = nativeHtml.querySelector('.toggle-pin-visibility');
-        if (togglePinVisibilityButton) {
-            const newButton = togglePinVisibilityButton.cloneNode(true);
-            togglePinVisibilityButton.parentNode?.replaceChild(newButton, togglePinVisibilityButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-
-                const currentVisible = getQuestPinModuleVisibility();
-                const newVisible = !currentVisible;
-                await setQuestPinModuleVisibility(newVisible);
-
-                // Update the icon - use currentTarget or fallback to finding the element
-                const icon = event.currentTarget || newButton;
-                if (icon && icon.classList) {
-                    if (newVisible) {
-                        icon.classList.remove('fa-location-dot-slash');
-                        icon.classList.add('fa-location-dot');
-                        icon.title = 'Hide Quest Pins';
-                    } else {
-                        icon.classList.remove('fa-location-dot');
-                        icon.classList.add('fa-location-dot-slash');
-                        icon.title = 'Show Quest Pins';
-                    }
-                }
-
-                ui.notifications.info(`Quest pins ${newVisible ? 'shown' : 'hidden'}.`);
-            });
-        }
-
-        // Toggle Pin Labels
-        // v13: Use nativeHtml instead of html
-        const togglePinLabelsButton = nativeHtml.querySelector('.toggle-pin-labels');
-        if (togglePinLabelsButton) {
-            const newButton = togglePinLabelsButton.cloneNode(true);
-            togglePinLabelsButton.parentNode?.replaceChild(newButton, togglePinLabelsButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                const currentLabels = game.settings.get(MODULE.ID, 'showQuestPinText');
-                const newLabels = !currentLabels;
-                
-                await game.settings.set(MODULE.ID, 'showQuestPinText', newLabels);
-                
-                // Update the icon
-                const icon = event.currentTarget;
-                if (newLabels) {
-                    icon.classList.remove('fa-text-slash');
-                    icon.classList.add('fa-text');
-                    icon.title = 'Hide Quest Labels';
-                } else {
-                    icon.classList.remove('fa-text');
-                    icon.classList.add('fa-text-slash');
-                    icon.title = 'Show Quest Labels';
-                }
-                
-                // MIGRATED TO BLACKSMITH API: Reload pins to apply label changes
-                const pins = getPinsApi();
-                if (pins?.isAvailable()) {
-                    await pins.reload({ moduleId: MODULE.ID });
-                }
-                
-                ui.notifications.info(`Quest pin labels ${newLabels ? 'shown' : 'hidden'}.`);
-            });
-        }
-
-        // Import Quests from JSON (GM only)
+        // Import Quests from JSON - now in titlebar menu; handler below uses _openImportQuestsDialog
         // v13: Use nativeHtml instead of html
         const importQuestsButton = nativeHtml.querySelector('.import-quests-json');
         if (importQuestsButton) {
