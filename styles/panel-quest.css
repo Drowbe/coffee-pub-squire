@@ -357,7 +357,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     font-weight: 500;
     color: rgba(159, 146, 117, 0.9);
     font-size: 1.2em;
-    cursor: grab;
+    cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
     overflow: hidden;
@@ -381,18 +381,6 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     width: 1em;
     height: 1em;
     object-fit: contain;
-}
-
-.squire-tray[data-position="left"] .quest-entry-name:active {
-    cursor: grabbing;
-}
-
-.squire-tray[data-position="left"] .quest-entry-name.dragging {
-    opacity: 0.6;
-    transform: scale(1.01);
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 /* Quest Number Styling */

@@ -2109,68 +2109,6 @@ export class QuestPanel {
                     event.currentTarget.classList.remove('dragging');
                 });
             });
-            
-            // Make the quest header draggable for quest-level pins (GM only)
-            // v13: Use nativeHtml instead of html
-            const questDragHandles = nativeHtml.querySelectorAll('.quest-entry-header[draggable="true"]');
-            const ignoreDragSelectors = ['.quest-toolbar', '.quest-entry-toggle'];
-
-            questDragHandles.forEach(handle => {
-                handle.addEventListener('dragstart', (event) => {
-                    const target = event.target;
-                    if (ignoreDragSelectors.some(selector => target.closest(selector))) {
-                        event.preventDefault();
-                        return;
-                    }
-
-                    const questEntry = event.currentTarget.closest('.quest-entry');
-                    if (!questEntry) {
-                        event.preventDefault();
-                        return;
-                    }
-
-                    const questUuid = questEntry.dataset.questUuid;
-                    if (!questUuid) {
-                        event.preventDefault();
-                        return;
-                    }
-
-                    const questNameElement = questEntry.querySelector('.quest-entry-name');
-                    const questNameText = questNameElement?.textContent?.trim() || '';
-
-                    // Get quest visibility state
-                    const questState = questEntry.dataset.visible === 'false' ? 'hidden' : 'visible';
-
-                    // Get quest status from data attribute or default
-                    const questStatus = questEntry.dataset.questStatus || 'Not Started';
-
-                    // Get participants from data attribute or default
-                    const participantsData = questEntry.dataset.participants || '';
-                    const participants = participantsData ? participantsData.split(',').filter(p => p.trim()) : [];
-
-                    // Create drag data for quest-level pin
-                    const dragData = {
-                        type: 'quest-quest',
-                        questUuid: questUuid,
-                        questName: questNameText,
-                        questIndex: questEntry.dataset.questNumber || '??',
-                        questCategory: questEntry.dataset.category || '??',
-                        questState: questState,
-                        questStatus: questStatus,
-                        participants: participants
-                    };
-
-                    event.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-                    event.dataTransfer.effectAllowed = 'copy';
-
-                    // Add visual feedback
-                    event.currentTarget.classList.add('dragging');
-                });
-
-                handle.addEventListener('dragend', (event) => {
-                    event.currentTarget.classList.remove('dragging');
-                });
-            });
         }
         
         // Use mousedown to detect different click types
