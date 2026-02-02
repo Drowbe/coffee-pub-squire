@@ -206,6 +206,14 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
+/* Quest pin icon states (like Notes): dim = unplaced, active = placed */
+.squire-tray[data-position="left"] .quest-pin-icon.quest-pin-dim {
+    opacity: 0.4;
+}
+.squire-tray[data-position="left"] .quest-pin-icon.quest-pin-active {
+    opacity: 1;
+}
+
 
 /* SEARCH & FILTER BAR */
 

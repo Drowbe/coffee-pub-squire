@@ -11,7 +11,7 @@
     <div class="quest-toolbar">
       <i class="fa-solid fa-thumbtack quest-pin {{#if entry.isPinned}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{entry.category}}" title="Pin this quest"></i>
       {{#if isGM}}
-      <i class="fa-solid fa-location-dot quest-pin-to-scene" data-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}" data-quest-status="{{entry.status}}" title="Pin to Scene"></i>
+      <i class="fa-solid fa-location-dot quest-pin-to-scene quest-pin-icon {{#if entry.hasPinOnScene}}quest-pin-active{{else}}quest-pin-dim{{/if}}" data-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}" data-quest-status="{{entry.status}}" data-has-pin-on-scene="{{entry.hasPinOnScene}}" title="{{#if entry.hasPinOnScene}}Unpin from Scene{{else}}Pin to Scene{{/if}}"></i>
         <i class="fa-solid fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Quest options"></i>
       {{/if}}
       <i class="fa-solid fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
@@ -83,7 +83,7 @@
                   {{/if}}
                 </div>
                 {{#if ../isGM}}
-                <i class="fa-solid fa-location-dot objective-pin-to-scene" data-quest-uuid="{{../entry.uuid}}" data-quest-number="{{../entry.questNumber}}" data-category="{{../entry.category}}" data-visible="{{../entry.visible}}" data-task-index="{{@index}}" data-task-state="{{this.state}}" data-task-text="{{this.text}}" title="Pin objective to Scene"></i>
+                <i class="fa-solid fa-location-dot objective-pin-to-scene quest-pin-icon {{#if this.hasPinOnScene}}quest-pin-active{{else}}quest-pin-dim{{/if}}" data-quest-uuid="{{../entry.uuid}}" data-quest-number="{{../entry.questNumber}}" data-category="{{../entry.category}}" data-visible="{{../entry.visible}}" data-task-index="{{@index}}" data-task-state="{{this.state}}" data-task-text="{{this.text}}" data-has-pin-on-scene="{{this.hasPinOnScene}}" title="{{#if this.hasPinOnScene}}Unpin objective from Scene{{else}}Pin objective to Scene{{/if}}"></i>
                 <i class="fa-solid fa-ellipsis-h objective-context-menu" data-quest-uuid="{{../entry.uuid}}" data-quest-number="{{../entry.questNumber}}" data-category="{{../entry.category}}" data-visible="{{../entry.visible}}" data-task-index="{{@index}}" data-task-state="{{this.state}}" data-task-text="{{this.text}}" data-is-active="{{this.isActive}}" title="Objective options"></i>
                 {{/if}}
               </li>

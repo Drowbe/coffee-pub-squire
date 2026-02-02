@@ -371,6 +371,77 @@ export async function deleteQuestPins(questUuid, sceneId) {
 }
 
 /**
+ * Unplace the quest-level pin from the canvas (pin remains, can be placed again).
+ * Caller should clear page flags (sceneId) after this so UI shows dim.
+ * @param {JournalEntryPage} page - Quest journal page
+ */
+export async function unplaceQuestPinForPage(page) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+
+    const pinId = page?.getFlag(MODULE.ID, 'pinId');
+    if (!pinId) return;
+    const sceneId = page?.getFlag(MODULE.ID, 'sceneId') || canvas?.scene?.id || undefined;
+
+    if (typeof pins.unplace === 'function') {
+        try {
+            await pins.unplace(pinId);
+        } catch (e) {
+            if (typeof pins.update === 'function') {
+                await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+            } else {
+                throw e;
+            }
+        }
+    } else if (typeof pins.update === 'function') {
+        await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+    }
+
+    if (sceneId && typeof pins.reload === 'function') {
+        await pins.reload({ sceneId });
+    }
+}
+
+/**
+ * Unplace an objective pin from the canvas (pin remains, can be placed again).
+ * Updates page flag objectivePins so that entry keeps pinId but no sceneId.
+ * @param {JournalEntryPage} page - Quest journal page
+ * @param {number} objectiveIndex - Task index
+ */
+export async function unplaceObjectivePinForPage(page, objectiveIndex) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+
+    const objectivePins = page?.getFlag(MODULE.ID, 'objectivePins') || {};
+    const objPin = objectivePins[String(objectiveIndex)] ?? objectivePins[objectiveIndex];
+    const pinId = objPin?.pinId ?? objPin;
+    const sceneId = typeof objPin === 'object' && objPin?.sceneId != null ? objPin.sceneId : (canvas?.scene?.id || undefined);
+    if (!pinId) return;
+
+    if (typeof pins.unplace === 'function') {
+        try {
+            await pins.unplace(pinId);
+        } catch (e) {
+            if (typeof pins.update === 'function') {
+                await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+            } else {
+                throw e;
+            }
+        }
+    } else if (typeof pins.update === 'function') {
+        await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+    }
+
+    const nextObjectivePins = { ...objectivePins };
+    nextObjectivePins[String(objectiveIndex)] = { pinId };
+    await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
+
+    if (sceneId && typeof pins.reload === 'function') {
+        await pins.reload({ sceneId });
+    }
+}
+
+/**
  * Reload pins for the current scene (e.g. after visibility toggle).
  */
 export async function reloadAllQuestPins() {

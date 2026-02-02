@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility } from './utility-quest-pins.js';
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility, unplaceQuestPinForPage, unplaceObjectivePinForPage } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -1669,6 +1669,40 @@ export class QuestPanel {
     }
 
     /**
+     * Unplace the quest-level pin from the canvas (like Notes unpin). Clears sceneId so UI shows dim.
+     * @param {string} questUuid - Quest journal page UUID
+     * @private
+     */
+    async _unplaceQuestPin(questUuid) {
+        const page = await fromUuid(questUuid);
+        if (!page) return;
+        try {
+            await unplaceQuestPinForPage(page);
+        } catch (e) {
+            console.warn('Coffee Pub Squire | Unplace quest pin:', e);
+        }
+        await page.setFlag(MODULE.ID, 'sceneId', null);
+        this.render(this.element);
+    }
+
+    /**
+     * Unplace an objective pin from the canvas. unplaceObjectivePinForPage already updates objectivePins.
+     * @param {string} questUuid - Quest journal page UUID
+     * @param {number} objectiveIndex - Task index
+     * @private
+     */
+    async _unplaceObjectivePin(questUuid, objectiveIndex) {
+        const page = await fromUuid(questUuid);
+        if (!page) return;
+        try {
+            await unplaceObjectivePinForPage(page, objectiveIndex);
+        } catch (e) {
+            console.warn('Coffee Pub Squire | Unplace objective pin:', e);
+        }
+        this.render(this.element);
+    }
+
+    /**
      * Unpin a hidden quest from all players
      * @param {string} questUuid - The UUID of the quest to unpin
      * @private
@@ -1804,6 +1838,14 @@ export class QuestPanel {
                             }
                             
                             entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image');
+                            entry.hasPinOnScene = !!page.getFlag(MODULE.ID, 'sceneId');
+                            const objectivePinsFlag = page.getFlag(MODULE.ID, 'objectivePins') || {};
+                            if (entry.tasks && Array.isArray(entry.tasks)) {
+                                entry.tasks.forEach((task, index) => {
+                                    const objPin = objectivePinsFlag[String(index)] ?? objectivePinsFlag[index];
+                                    task.hasPinOnScene = !!objPin?.sceneId;
+                                });
+                            }
                             const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
                             this.data[category].push(entry);
                             
@@ -2606,7 +2648,7 @@ export class QuestPanel {
             });
         });
 
-        // Pin to Scene (quest-level) - GM only
+        // Pin to Scene (quest-level) - GM only; click dim = place, click not-dim = unplace (like Notes)
         nativeHtml.querySelectorAll('.quest-pin-to-scene').forEach(btn => {
             const newBtn = btn.cloneNode(true);
             btn.parentNode?.replaceChild(newBtn, btn);
@@ -2618,12 +2660,17 @@ export class QuestPanel {
                 const category = newBtn.dataset.category;
                 const visible = newBtn.dataset.visible;
                 const questStatus = newBtn.dataset.questStatus;
+                const hasPinOnScene = newBtn.dataset.hasPinOnScene === 'true';
                 if (!uuid) return;
-                await this._beginQuestPinPlacement(uuid, questNumber, category, questStatus, visible);
+                if (hasPinOnScene) {
+                    await this._unplaceQuestPin(uuid);
+                } else {
+                    await this._beginQuestPinPlacement(uuid, questNumber, category, questStatus, visible);
+                }
             });
         });
 
-        // Pin to Scene (objective-level) - GM only
+        // Pin to Scene (objective-level) - GM only; click dim = place, click not-dim = unplace (like Notes)
         nativeHtml.querySelectorAll('.objective-pin-to-scene').forEach(btn => {
             const newBtn = btn.cloneNode(true);
             btn.parentNode?.replaceChild(newBtn, btn);
@@ -2637,15 +2684,20 @@ export class QuestPanel {
                 const taskIndex = parseInt(newBtn.dataset.taskIndex, 10);
                 const taskState = newBtn.dataset.taskState || 'active';
                 const taskText = newBtn.dataset.taskText || '';
+                const hasPinOnScene = newBtn.dataset.hasPinOnScene === 'true';
                 if (questUuid == null || isNaN(taskIndex)) return;
-                await this._beginObjectivePinPlacement(
-                    questUuid,
-                    taskIndex,
-                    questNumber,
-                    category,
-                    visible,
-                    { state: taskState, text: taskText }
-                );
+                if (hasPinOnScene) {
+                    await this._unplaceObjectivePin(questUuid, taskIndex);
+                } else {
+                    await this._beginObjectivePinPlacement(
+                        questUuid,
+                        taskIndex,
+                        questNumber,
+                        category,
+                        visible,
+                        { state: taskState, text: taskText }
+                    );
+                }
             });
         });
 
