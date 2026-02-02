@@ -2054,63 +2054,6 @@ export class QuestPanel {
         // v13: Use nativeHtml instead of html
         const taskCheckboxes = nativeHtml.querySelectorAll('.task-checkbox');
         
-        // Add drag functionality for quest objectives (GM only)
-        if (game.user.isGM) {
-            // Make the objective text draggable (not the entire list item)
-            // v13: Use nativeHtml instead of html
-            const objectiveTexts = nativeHtml.querySelectorAll('.quest-entry-tasks .objective-text-draggable');
-            objectiveTexts.forEach(textElement => {
-                textElement.addEventListener('dragstart', (event) => {
-                    // Prevent drag if clicking on the checkbox
-                    if (event.target.classList.contains('task-checkbox')) {
-                        event.preventDefault();
-                        return;
-                    }
-                    
-                    const listItem = event.currentTarget.closest('li');
-                    if (!listItem) return;
-                    const checkbox = listItem.querySelector('.task-checkbox');
-                    if (!checkbox) return;
-                    const taskIndex = parseInt(checkbox.dataset.taskIndex);
-                    const questEntry = listItem.closest('.quest-entry');
-                    if (!questEntry) return;
-                    const questUuid = questEntry.dataset.questUuid;
-                    const questNameElement = questEntry.querySelector('.quest-entry-name');
-                    const questName = questNameElement?.textContent?.trim() || '';
-                    const objectiveText = event.currentTarget.textContent?.trim() || '';
-                    
-                    // Get objective state from data attribute on the checkbox
-                    const objectiveState = checkbox.dataset.taskState || 'active';
-                    
-                    // Get quest visibility state
-                    const questState = questEntry.dataset.visible === 'false' ? 'hidden' : 'visible';
-                    
-                    // Create drag data
-                    const dragData = {
-                        type: 'quest-objective',
-                        questUuid: questUuid,
-                        objectiveIndex: taskIndex,
-                        questName: questName,
-                        objectiveText: objectiveText,
-                        objectiveState: objectiveState,
-                        questIndex: questEntry.dataset.questNumber || '??',
-                        questCategory: questEntry.dataset.category || '??',
-                        questState: questState
-                    };
-                    
-                    event.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-                    event.dataTransfer.effectAllowed = 'copy';
-                    
-                    // Add visual feedback
-                    event.currentTarget.classList.add('dragging');
-                });
-                
-                textElement.addEventListener('dragend', (event) => {
-                    event.currentTarget.classList.remove('dragging');
-                });
-            });
-        }
-        
         // Use mousedown to detect different click types
         // v13: Use native DOM event listeners
         taskCheckboxes.forEach(checkbox => {
