@@ -85,6 +85,9 @@
                     </span>
                   {{/if}}
                 </div>
+                {{#if ../isGM}}
+                <i class="fa-solid fa-ellipsis-h objective-context-menu" data-quest-uuid="{{../entry.uuid}}" data-quest-number="{{../entry.questNumber}}" data-category="{{../entry.category}}" data-visible="{{../entry.visible}}" data-task-index="{{@index}}" data-task-state="{{this.state}}" data-task-text="{{this.text}}" title="Objective options"></i>
+                {{/if}}
               </li>
             {{/each}}
           </ul>

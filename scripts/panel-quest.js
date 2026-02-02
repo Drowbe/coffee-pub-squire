@@ -456,6 +456,94 @@ export class QuestPanel {
     }
 
     /**
+     * Set a single objective's state in the journal (completed, active/incomplete, failed, hidden).
+     * Mirrors the task checkbox left/right/middle-click behavior.
+     * @param {string} questUuid - The quest journal page UUID
+     * @param {number} taskIndex - The objective index
+     * @param {string} state - One of: 'completed', 'active', 'failed', 'hidden'
+     * @private
+     */
+    async _setObjectiveState(questUuid, taskIndex, state) {
+        const journalId = game.settings.get(MODULE.ID, 'questJournal');
+        if (!journalId || journalId === 'none') return;
+        const journal = game.journal.get(journalId);
+        if (!journal) return;
+        const page = journal.pages.find(p => p.uuid === questUuid);
+        if (!page) return;
+        let content = page.text.content;
+        const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+        if (!tasksMatch) return;
+        const tasksHtml = tasksMatch[1];
+        const parser = new DOMParser();
+        const ulDoc = parser.parseFromString(`<ul>${tasksHtml}</ul>`, 'text/html');
+        const ul = ulDoc.querySelector('ul');
+        const liList = ul ? Array.from(ul.children) : [];
+        const li = liList[taskIndex];
+        if (!li) return;
+
+        // Get raw inner content (strip s/code/em)
+        const sTag = li.querySelector('s');
+        const codeTag = li.querySelector('code');
+        const emTag = li.querySelector('em');
+        const rawInner = (sTag || codeTag || emTag)?.innerHTML ?? li.innerHTML;
+
+        if (state === 'completed') {
+            li.innerHTML = `<s>${rawInner}</s>`;
+            notifyObjectiveCompleted(li.textContent.trim());
+        } else if (state === 'failed') {
+            li.innerHTML = `<code>${rawInner}</code>`;
+        } else if (state === 'hidden') {
+            li.innerHTML = `<em>${rawInner}</em>`;
+        } else {
+            // active / incomplete
+            li.innerHTML = rawInner;
+        }
+
+        let newContent = content.replace(tasksMatch[1], ul.innerHTML);
+
+        // All-completed / uncomplete quest status logic (same as checkbox left-click)
+        const allLis = Array.from(ul.children);
+        const allCompleted = allLis.length > 0 && allLis.every(l => l.querySelector('s'));
+        const statusMatch = newContent.match(/<strong>Status:<\/strong>\s*([^<]*)/);
+        const currentStatus = statusMatch ? statusMatch[1].trim() : '';
+        const categoryMatch = newContent.match(/<strong>Category:<\/strong>\s*([^<]*)/);
+        const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
+
+        if (allCompleted && currentStatus !== 'Complete') {
+            if (statusMatch) {
+                newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Complete');
+            } else {
+                newContent += `<p><strong>Status:</strong> Complete</p>`;
+            }
+            let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+            if (!originalCategory && currentCategory && currentCategory !== 'Completed') {
+                originalCategory = currentCategory;
+                await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
+            }
+            const questName = page.name || 'Unknown Quest';
+            notifyQuestCompleted(questName);
+        } else if (!allCompleted && currentStatus === 'Complete') {
+            newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
+            if (currentCategory === 'Completed') {
+                const originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
+                if (originalCategory && categoryMatch) {
+                    newContent = newContent.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
+                }
+            }
+        }
+
+        try {
+            await page.update({ text: { content: newContent } });
+            if (this.element) {
+                await this._refreshData();
+                this.render(this.element);
+            }
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error setting objective state:', error);
+        }
+    }
+
+    /**
      * Verifies that all required categories exist and updates if needed
      * @private
      */
@@ -2458,6 +2546,80 @@ export class QuestPanel {
                 this.render(this.element);
             });
         });
+
+        // Objective context menu (GM only) - Blacksmith Context Menu
+        const objCtxMenu = getBlacksmith()?.uiContextMenu;
+        if (objCtxMenu?.show) {
+            nativeHtml.querySelectorAll('.objective-context-menu').forEach(menuButton => {
+                const newButton = menuButton.cloneNode(true);
+                menuButton.parentNode?.replaceChild(newButton, menuButton);
+                newButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!game.user.isGM) return;
+                    const questUuid = newButton.dataset.questUuid;
+                    const questNumber = newButton.dataset.questNumber;
+                    const category = newButton.dataset.category;
+                    const visible = newButton.dataset.visible;
+                    const taskIndex = parseInt(newButton.dataset.taskIndex, 10);
+                    const taskState = newButton.dataset.taskState || 'active';
+                    const taskText = newButton.dataset.taskText || '';
+                    if (!questUuid || isNaN(taskIndex)) return;
+
+                    const zones = {
+                        gm: [
+                            {
+                                name: 'Pin to Canvas',
+                                icon: 'fa-solid fa-location-dot',
+                                callback: async () => {
+                                    await this._beginObjectivePinPlacement(
+                                        questUuid,
+                                        taskIndex,
+                                        questNumber,
+                                        category,
+                                        visible,
+                                        { state: taskState, text: taskText }
+                                    );
+                                }
+                            },
+                            {
+                                name: 'Set Active',
+                                icon: 'fa-solid fa-bullseye',
+                                callback: async () => {
+                                    const currentActiveIndex = await this._getActiveObjectiveIndex(questUuid);
+                                    if (currentActiveIndex === taskIndex) {
+                                        await this._clearActiveObjective(questUuid);
+                                        ui.notifications.info('Active objective cleared.');
+                                    } else {
+                                        await this._clearAllActiveObjectives();
+                                        await this._setActiveObjective(questUuid, taskIndex);
+                                        ui.notifications.info(`Objective ${taskIndex + 1} set as active.`);
+                                    }
+                                    this.render(this.element);
+                                }
+                            },
+                            {
+                                name: 'Set Status',
+                                icon: 'fa-solid fa-pen',
+                                submenu: [
+                                    { name: 'Complete', icon: 'fa-solid fa-check', callback: () => this._setObjectiveState(questUuid, taskIndex, 'completed') },
+                                    { name: 'Incomplete', icon: 'fa-solid fa-square', callback: () => this._setObjectiveState(questUuid, taskIndex, 'active') },
+                                    { name: 'Failed', icon: 'fa-solid fa-xmark', callback: () => this._setObjectiveState(questUuid, taskIndex, 'failed') },
+                                    { name: 'Hidden', icon: 'fa-solid fa-eye-slash', callback: () => this._setObjectiveState(questUuid, taskIndex, 'hidden') }
+                                ]
+                            }
+                        ]
+                    };
+
+                    objCtxMenu.show({
+                        id: `${MODULE.ID}-objective-menu-${questUuid}-${taskIndex}`,
+                        x: event.clientX,
+                        y: event.clientY,
+                        zones
+                    });
+                });
+            });
+        }
 
         // Import Quests from JSON - now in titlebar menu; handler below uses _openImportQuestsDialog
         // v13: Use nativeHtml instead of html
