@@ -179,29 +179,31 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     opacity: 0.8;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene {
-    font-size: 0.85em;
-    opacity: 0.7;
+/* Objective row icons: match Codex/tray style (tanish, don't inherit li color) */
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene,
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu {
+    color: rgba(159, 146, 117, 0.9);
+    font-size: 1em;
     cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene {
+    opacity: 0.5;
     margin-right: 4px;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene:hover {
-    opacity: 1;
-    color: var(--color-border-highlight, #ff6400);
-}
-
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu {
-    font-size: 0.85em;
     opacity: 0.7;
-    cursor: pointer;
     margin-left: 2px;
-    flex-shrink: 0;
 }
 
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene:hover,
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 
