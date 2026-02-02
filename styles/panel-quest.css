@@ -413,52 +413,49 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding-left: 2px;
     padding-right: 2px;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Objective Number Styling */
-.squire-tray[data-position="left"] .objective-number {
-    font-weight: bold;
-    margin-right: 0px;
-    display: inline-block;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background-color: rgba(145, 134, 108, 0.05);
-    border-radius: 3px;
-    min-width: 26px;
-    text-align: center;
-}
 
-/* Active Objective Styling */
-.squire-tray[data-position="left"] .objective-number.active {
-    border: 2px solid #4CAF50;
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #4CAF50;
-    font-weight: 900;
-}
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-text {
-    flex: 1;
-}
 
-.squire-tray[data-position="left"] .objective-text.active {
-    position: relative;
-}
 
-.squire-tray[data-position="left"] .objective-text.active::before {
-    content: "[ACTIVE] ";
-    color: #4CAF50;
-    font-weight: bold;
-    font-size: 0.9em;
-}
 
-/* Clickable Objective Number */
-.squire-tray[data-position="left"] .objective-number.clickable-objective {
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
 
-.squire-tray[data-position="left"] .objective-number.clickable-objective:hover {
-    border-color: rgba(76, 175, 80, 0.6);
-    background-color: rgba(76, 175, 80, 0.1);
-    transform: scale(1.05);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* IMAGE */
 
@@ -611,50 +608,133 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding: 4px;
 }
 
-/* Objective number: clickable for state (GM) / set active (pinned) */
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-number {
-    cursor: pointer;
-    flex-shrink: 0;
+
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-text {
+    flex: 1;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-number .objective-number-icon {
+.squire-tray[data-position="left"] .objective-text.active {
+    position: relative;
+}
+
+/* ACTIVE BADGE */
+.squire-tray[data-position="left"] .objective-text.active::before {
+    content: "ACTIVE ";
+    color: rgba(255,255,255, 0.9);
+    font-weight: 400;
+    background-color: rgba(54, 124, 204, 0.6);
+    padding: 0px 2px 0px 4px;
+    border-radius: 3px;
+    margin-right: 3px;
+    text-decoration: uppercase;
+}
+
+/* OBJECTIVE NUMBER */
+
+.squire-tray[data-position="left"] .objective-number {
+    font-weight: 700;
+    margin-right: 0px;
     display: inline-block;
-    font-size: 1em;
-    line-height: 1;
-    vertical-align: middle;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(145, 134, 108, 0.1);
+    border-radius: 3px;
+    min-width: 26px;
+    text-align: center;
 }
 
-/* Completed/failed rows: icon inherits li color (green/red) */
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete .objective-number-icon {
-    color: rgba(60, 146, 69, 0.95);
+/* Objective Number - NORMAL */
+
+/* Clickable Objective Number */
+.squire-tray[data-position="left"] .objective-number.clickable-objective {
+    cursor: pointer;
+    transition: all 0.1s ease;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed .objective-number-icon {
-    color: rgba(255, 48, 33, 0.95);
+.squire-tray[data-position="left"] .objective-number.clickable-objective:hover {
+    border: 2px solid rgba(169, 79, 57, 0.9) !important;
+    background-color: rgba(169, 79, 57, 0.9);
+    color: rgba(255,255,255, 0.7);
+    transform: scale(1.05);
 }
 
 
+/* Objective Number - ACTIVE*/
 
-
-
-
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
-    opacity: 1.0;
-    color: rgba(60, 146, 69, .9);
-    text-decoration: none;
+/* Active Objective Styling */
+.squire-tray[data-position="left"] .objective-number.active {
+    border: 1px solid rgba(54, 124, 204, 0.6);
+    background-color: rgba(54, 124, 204, 0.2);
+    color: rgba(255,255,255, 0.7);
+    font-weight: 900;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed {
-    opacity: 1.0;
-    color: rgba(255, 48, 33, 0.9);
-    text-decoration: none;
-}
+
+/* Objective Number - HIDDEN */
+
 
 .squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden {
     opacity: 1.0;
     color: rgba(134, 134, 134, 0.9);
     text-decoration: none;
 }
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden .objective-number.clickable-objective {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: rgba(119, 119, 118, 0.6);
+    color: rgba(255,255,255, 0.7);
+    border: 1px solid rgba(119, 119, 118, 0.6);
+}
+
+
+/* Objective Number - COMPLETE */
+
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
+    opacity: 1.0;
+    color: rgba(60, 146, 69, .9);
+    text-decoration: none;
+}
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete .objective-number.clickable-objective {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: rgba(60, 146, 69, 0.6);
+    color: rgba(255,255,255, 0.9);
+    border: 1px solid rgba(60, 146, 69, 0.6);
+}
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete .objective-number-icon {
+    color: rgba(255,255,255, 0.8);
+    font-size: .85em;
+}
+
+
+/* Objective Number - FAILED*/
+
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed {
+    opacity: 1.0;
+    color: rgba(255, 48, 33, 0.9);
+    text-decoration: none;
+}
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed .objective-number.clickable-objective {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: rgba(182, 36, 25, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(182, 36, 25, 0.6);
+}
+.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed .objective-number-icon {
+    color: rgba(255,255,255, 0.8);
+    font-size: .85em;
+}
+
+
+
+
+
+
+
+
+
+
 
 /* GM Hints and Treasure Unlocks */
 .squire-tray[data-position="left"] .quest-entry-tasks [data-tooltip] {
