@@ -861,25 +861,3 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
         box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
     }
 }
-.squire-tray[data-position="left"] .quest-entry-icon {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin-right: 0.75rem;
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.squire-tray[data-position="left"] .quest-entry-icon i {
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 1rem;
-}
-.squire-tray[data-position="left"] .quest-entry-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: inherit;
-}

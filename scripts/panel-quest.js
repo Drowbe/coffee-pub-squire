@@ -1403,36 +1403,44 @@ export class QuestPanel {
                 });
             });
             
-            // Make quest names draggable for quest-level pins (GM only)
+            // Make the quest header draggable for quest-level pins (GM only)
             // v13: Use nativeHtml instead of html
-            const questNames = nativeHtml.querySelectorAll('.quest-entry-name');
-            questNames.forEach(questNameElement => {
-                questNameElement.addEventListener('dragstart', (event) => {
-                    // Prevent drag if clicking on interactive elements
+            const questDragHandles = nativeHtml.querySelectorAll('.quest-entry-header[draggable="true"]');
+            const ignoreDragSelectors = ['.quest-toolbar', '.quest-entry-toggle', '.quest-entry-visibility'];
+
+            questDragHandles.forEach(handle => {
+                handle.addEventListener('dragstart', (event) => {
                     const target = event.target;
-                    if (target.classList.contains('quest-entry-visibility') ||
-                        target.classList.contains('quest-entry-toggle') ||
-                        target.closest('.quest-entry-visibility') ||
-                        target.closest('.quest-entry-toggle')) {
+                    if (ignoreDragSelectors.some(selector => target.closest(selector))) {
                         event.preventDefault();
                         return;
                     }
-                    
+
                     const questEntry = event.currentTarget.closest('.quest-entry');
-                    if (!questEntry) return;
+                    if (!questEntry) {
+                        event.preventDefault();
+                        return;
+                    }
+
                     const questUuid = questEntry.dataset.questUuid;
-                    const questNameText = event.currentTarget.textContent?.trim() || '';
-                    
+                    if (!questUuid) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const questNameElement = questEntry.querySelector('.quest-entry-name');
+                    const questNameText = questNameElement?.textContent?.trim() || '';
+
                     // Get quest visibility state
                     const questState = questEntry.dataset.visible === 'false' ? 'hidden' : 'visible';
-                    
+
                     // Get quest status from data attribute or default
                     const questStatus = questEntry.dataset.questStatus || 'Not Started';
-                    
+
                     // Get participants from data attribute or default
                     const participantsData = questEntry.dataset.participants || '';
                     const participants = participantsData ? participantsData.split(',').filter(p => p.trim()) : [];
-                    
+
                     // Create drag data for quest-level pin
                     const dragData = {
                         type: 'quest-quest',
@@ -1444,15 +1452,15 @@ export class QuestPanel {
                         questStatus: questStatus,
                         participants: participants
                     };
-                    
+
                     event.dataTransfer.setData('text/plain', JSON.stringify(dragData));
                     event.dataTransfer.effectAllowed = 'copy';
-                    
+
                     // Add visual feedback
                     event.currentTarget.classList.add('dragging');
                 });
-                
-                questNameElement.addEventListener('dragend', (event) => {
+
+                handle.addEventListener('dragend', (event) => {
                     event.currentTarget.classList.remove('dragging');
                 });
             });
