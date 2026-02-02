@@ -651,6 +651,7 @@ export class QuestPanel {
 
     /**
      * Open Blacksmith Configure Pin for the quest's pin. Persists design to quest flags.
+     * Creates an unplaced quest pin if none exists (same pattern as notes).
      * @param {string} uuid - Quest journal page UUID
      * @private
      */
@@ -659,13 +660,52 @@ export class QuestPanel {
         if (!pins?.configure) return;
         const page = await fromUuid(uuid);
         if (!page) return;
-        const pinId = page.getFlag(MODULE.ID, 'pinId');
-        if (!pinId) {
-            ui.notifications.warn('No pin for this quest. Pin the quest to the scene first.');
-            return;
+
+        let pinId = page.getFlag(MODULE.ID, 'pinId');
+        let sceneId = page.getFlag(MODULE.ID, 'sceneId') || undefined;
+
+        if (pinId) {
+            const pinExists = typeof pins.exists === 'function' ? pins.exists(pinId) : !!pins.get?.(pinId);
+            if (!pinExists) {
+                const recoveryPins = [];
+                if (typeof pins.list === 'function') {
+                    if (sceneId) recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, sceneId }) || []));
+                    recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || []));
+                }
+                const recovered = recoveryPins.find(p => p?.config?.questUuid === uuid);
+                if (recovered?.id) {
+                    pinId = recovered.id;
+                    await page.setFlag(MODULE.ID, 'pinId', pinId);
+                    sceneId = recovered.sceneId ?? undefined;
+                    if (sceneId) await page.setFlag(MODULE.ID, 'sceneId', sceneId);
+                } else {
+                    await page.setFlag(MODULE.ID, 'pinId', null);
+                    await page.setFlag(MODULE.ID, 'sceneId', null);
+                    pinId = null;
+                    sceneId = undefined;
+                }
+            }
         }
-        const sceneId = page.getFlag(MODULE.ID, 'sceneId') || undefined;
-        try {
+
+        if (!pinId) {
+            const questState = page.getFlag(MODULE.ID, 'visible') === false ? 'hidden' : 'visible';
+            const pin = await createQuestPin({
+                questUuid: uuid,
+                questIndex: getQuestNumber(uuid),
+                questCategory: 'Side Quest',
+                questStatus: 'Not Started',
+                questState
+            });
+            if (pin) {
+                pinId = pin.id;
+                await page.setFlag(MODULE.ID, 'pinId', pinId);
+            } else {
+                ui.notifications.error('Failed to create pin for this quest.');
+                return;
+            }
+        }
+
+        const openConfig = async () => {
             await pins.configure(pinId, {
                 sceneId,
                 moduleId: MODULE.ID,
@@ -693,12 +733,57 @@ export class QuestPanel {
                     }
                 }
             });
+        };
+
+        try {
+            await openConfig();
         } catch (err) {
             const msg = String(err?.message || err || '').toLowerCase();
             if (msg.includes('pin not found')) {
                 await page.setFlag(MODULE.ID, 'pinId', null);
                 await page.setFlag(MODULE.ID, 'sceneId', null);
-                ui.notifications.warn('Pin no longer exists. Cleared from quest. Pin the quest again to configure.');
+                try {
+                    const pin = await createQuestPin({
+                        questUuid: uuid,
+                        questIndex: getQuestNumber(uuid),
+                        questCategory: 'Side Quest',
+                        questStatus: 'Not Started',
+                        questState: page.getFlag(MODULE.ID, 'visible') === false ? 'hidden' : 'visible'
+                    });
+                    if (pin) {
+                        await page.setFlag(MODULE.ID, 'pinId', pin.id);
+                        await pins.configure(pin.id, {
+                            sceneId: undefined,
+                            moduleId: MODULE.ID,
+                            useAsDefault: true,
+                            defaultSettingKey: 'questPinDefaultDesign',
+                            onSelect: async (config) => {
+                                if (config?.icon != null) await page.setFlag(MODULE.ID, 'questIcon', config.icon);
+                                if (config?.pinSize != null) await page.setFlag(MODULE.ID, 'questPinSize', config.pinSize);
+                                if (config?.pinShape != null) await page.setFlag(MODULE.ID, 'questPinShape', config.pinShape);
+                                if (config?.pinStyle != null) await page.setFlag(MODULE.ID, 'questPinStyle', config.pinStyle);
+                                if (typeof config?.pinDropShadow === 'boolean') await page.setFlag(MODULE.ID, 'questPinDropShadow', config.pinDropShadow);
+                                const textConfig = config?.pinTextConfig;
+                                if (textConfig) {
+                                    if (textConfig.textLayout != null) await page.setFlag(MODULE.ID, 'questPinTextLayout', textConfig.textLayout);
+                                    if (textConfig.textDisplay != null) await page.setFlag(MODULE.ID, 'questPinTextDisplay', textConfig.textDisplay);
+                                    if (textConfig.textColor != null) await page.setFlag(MODULE.ID, 'questPinTextColor', textConfig.textColor);
+                                    if (textConfig.textSize != null) await page.setFlag(MODULE.ID, 'questPinTextSize', textConfig.textSize);
+                                    if (textConfig.textMaxLength != null) await page.setFlag(MODULE.ID, 'questPinTextMaxLength', textConfig.textMaxLength);
+                                    if (textConfig.textMaxWidth != null) await page.setFlag(MODULE.ID, 'questPinTextMaxWidth', textConfig.textMaxWidth);
+                                    if (typeof textConfig.textScaleWithPin === 'boolean') await page.setFlag(MODULE.ID, 'questPinTextScaleWithPin', textConfig.textScaleWithPin);
+                                }
+                                if (this.element) {
+                                    await this._refreshData();
+                                    this.render(this.element);
+                                }
+                            }
+                        });
+                    }
+                } catch (retryErr) {
+                    console.error('Coffee Pub Squire | _configureQuestPin (recreate):', retryErr);
+                    ui.notifications.warn('Pin no longer exists. Cleared from quest. Configure again to create a new pin.');
+                }
             } else {
                 console.error('Coffee Pub Squire | _configureQuestPin:', err);
                 ui.notifications.error('Failed to open pin configuration. See console.');
