@@ -96,7 +96,16 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     gap: 8px;
     position: relative;
 }
-/* Control Icons */
+
+/* Titlebar controls (match notes panel pattern) */
+.squire-tray[data-position="left"] .quest-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Control Icons (section toolbars, entry toolbars) */
 
 .squire-tray[data-position="left"] .quest-toolbar i {
     font-size: 1.0em;
@@ -109,6 +118,18 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 .squire-tray[data-position="left"] .quest-toolbar i:hover {
+    opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}
+
+/* Titlebar icon styling (override to match notes: dimmer default, highlight on hover) */
+.squire-tray[data-position="left"] .quest-controls i {
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.squire-tray[data-position="left"] .quest-controls i:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
