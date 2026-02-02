@@ -562,6 +562,24 @@ export class QuestPanel {
         await page.update({ text: { content } });
     }
 
+    /**
+     * Toggle quest visibility (show/hide to players).
+     * @param {string} uuid - Quest journal page UUID
+     * @private
+     */
+    async _toggleQuestVisibility(uuid) {
+        const page = await fromUuid(uuid);
+        if (!page) return;
+        let visible = await page.getFlag(MODULE.ID, 'visible');
+        if (typeof visible === 'undefined') visible = true;
+        visible = !visible;
+        await page.setFlag(MODULE.ID, 'visible', visible);
+        if (this.element) {
+            await this._refreshData();
+            this.render(this.element);
+        }
+    }
+
     /** Cursor class for Pin to Scene placement mode */
     static QUEST_PIN_CURSOR_CLASS = 'squire-quest-pin-placement';
     static QUEST_PIN_CANVAS_CURSOR_CLASS = 'squire-quest-pin-placement-canvas';
@@ -1406,7 +1424,7 @@ export class QuestPanel {
             // Make the quest header draggable for quest-level pins (GM only)
             // v13: Use nativeHtml instead of html
             const questDragHandles = nativeHtml.querySelectorAll('.quest-entry-header[draggable="true"]');
-            const ignoreDragSelectors = ['.quest-toolbar', '.quest-entry-toggle', '.quest-entry-visibility'];
+            const ignoreDragSelectors = ['.quest-toolbar', '.quest-entry-toggle'];
 
             questDragHandles.forEach(handle => {
                 handle.addEventListener('dragstart', (event) => {
@@ -1725,35 +1743,6 @@ export class QuestPanel {
                 flag[uuid] = collapsed;
                 await game.user.setFlag(MODULE.ID, 'questCardCollapsed', flag);
             }
-        });
-
-        // Toggle quest visibility (show/hide to players)
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.toggle-visible').forEach(toggle => {
-            const newToggle = toggle.cloneNode(true);
-            toggle.parentNode?.replaceChild(newToggle, toggle);
-            newToggle.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (!game.user.isGM) return;
-                const uuid = event.currentTarget.dataset.uuid;
-                if (!uuid) return;
-                const page = await fromUuid(uuid);
-                if (!page) return;
-                let visible = await page.getFlag(MODULE.ID, 'visible');
-                if (typeof visible === 'undefined') visible = true;
-                visible = !visible;
-                await page.setFlag(MODULE.ID, 'visible', visible);
-                
-                // Refresh the panel display to show the updated visibility state
-                if (this.element) {
-                    await this._refreshData();
-                    this.render(this.element);
-                }
-                
-                // Note: No longer automatically changing quest status when making visible
-                // This allows GMs to show quests to players without forcing them into "In Progress" status
-            });
         });
 
         // Pin quest handler
@@ -2588,6 +2577,8 @@ export class QuestPanel {
                     const uuid = newButton.dataset.uuid;
                     if (!uuid) return;
 
+                    const entryEl = newButton.closest('.quest-entry');
+                    const visible = entryEl?.dataset?.visible === 'true';
                     const zones = {
                         gm: [
                             {
@@ -2596,6 +2587,13 @@ export class QuestPanel {
                                 callback: async () => {
                                     const doc = await fromUuid(uuid);
                                     if (doc) doc.sheet.render(true);
+                                }
+                            },
+                            {
+                                name: visible ? 'Hide from players' : 'Show to players',
+                                icon: visible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye',
+                                callback: async () => {
+                                    await this._toggleQuestVisibility(uuid);
                                 }
                             },
                             {
