@@ -620,33 +620,34 @@ export class QuestPanel {
                 return;
             }
             
+            // Only clear this module's quest and objective pins (not Notes or other pin types)
+            const isQuestOrObjectivePin = (pin) => pin?.type === 'quest' || pin?.type === 'objective';
+
             if (scope === 'thisScene') {
-                // Clear pins from current scene only
+                // Clear quest/objective pins from current scene only
                 if (canvas.scene) {
-                    const allPins = pins.list({ moduleId: MODULE.ID, sceneId: canvas.scene.id });
-                    let clearedCount = allPins.length;
+                    const allPins = pins.list({ moduleId: MODULE.ID, sceneId: canvas.scene.id }) || [];
+                    const questObjectivePins = allPins.filter(isQuestOrObjectivePin);
+                    const clearedCount = questObjectivePins.length;
                     
                     if (clearedCount > 0) {
-                        // Delete all pins via Blacksmith API
-                        for (const pin of allPins) {
+                        for (const pin of questObjectivePins) {
                             await pins.delete(pin.id);
                         }
-                        
                         ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
                     }
                 }
             } else if (scope === 'allScenes') {
-                // Clear pins from all scenes
+                // Clear quest/objective pins from all scenes
                 let totalCleared = 0;
-                
                 for (const scene of game.scenes.contents) {
-                    const scenePins = pins.list({ moduleId: MODULE.ID, sceneId: scene.id });
-                    for (const pin of scenePins) {
+                    const scenePins = pins.list({ moduleId: MODULE.ID, sceneId: scene.id }) || [];
+                    const questObjectivePins = scenePins.filter(isQuestOrObjectivePin);
+                    for (const pin of questObjectivePins) {
                         await pins.delete(pin.id);
                         totalCleared++;
                     }
                 }
-                
                 ui.notifications.info(`Cleared ${totalCleared} quest pins from all scenes.`);
             }
         } catch (error) {
