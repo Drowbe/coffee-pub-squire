@@ -427,6 +427,18 @@ export async function unplaceObjectivePinForPage(page, objectiveIndex) {
     const sceneId = typeof objPin === 'object' && objPin?.sceneId != null ? objPin.sceneId : (canvas?.scene?.id || undefined);
     if (!pinId) return;
 
+    // If the pin isn't actually on a scene anymore, treat it as already unplaced and
+    // clear the stored sceneId so the UI shows dim instead of trying to unplace again.
+    const pinExistsOnScene = typeof pins.exists === 'function'
+        ? pins.exists(pinId, sceneId ? { sceneId } : undefined)
+        : !!pins.get?.(pinId, sceneId ? { sceneId } : undefined);
+    if (!pinExistsOnScene) {
+        const nextObjectivePins = { ...objectivePins };
+        nextObjectivePins[String(objectiveIndex)] = { pinId };
+        await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
+        return;
+    }
+
     if (typeof pins.unplace === 'function') {
         try {
             await pins.unplace(pinId);

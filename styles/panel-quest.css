@@ -179,6 +179,16 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     opacity: 0.8;
 }
 
+.squire-tray[data-position="left"] .quest-pin-icon.quest-pin-dim {
+    opacity: 0.4;
+}
+
+.squire-tray[data-position="left"] .quest-pin-icon.quest-pin-active {
+    opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}
+
 /* Objective row icons: match Codex/tray style (tanish, don't inherit li color) */
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene,
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu {
@@ -192,6 +202,14 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene {
     opacity: 0.5;
     margin-right: 4px;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-active {
+    opacity: 1;
+}
+
+.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-dim {
+    opacity: 0.4;
 }
 
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu {
