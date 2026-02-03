@@ -2736,7 +2736,7 @@ export class QuestPanel {
             nativeHtml.querySelectorAll('.objective-context-menu').forEach(menuButton => {
                 const newButton = menuButton.cloneNode(true);
                 menuButton.parentNode?.replaceChild(newButton, menuButton);
-                newButton.addEventListener('click', (event) => {
+                newButton.addEventListener('click', async (event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     if (!game.user.isGM) return;
@@ -2748,24 +2748,58 @@ export class QuestPanel {
                     const taskState = newButton.dataset.taskState || 'active';
                     const taskText = newButton.dataset.taskText || '';
                     const isActive = newButton.dataset.isActive === 'true';
+                    let hasPinOnScene = newButton.dataset.hasPinOnScene === 'true';
                     if (!questUuid || isNaN(taskIndex)) return;
+
+                    // Re-verify pin existence so the menu reflects reality.
+                    if (hasPinOnScene) {
+                        const pins = getPinsApi();
+                        if (pins?.isAvailable()) {
+                            const page = await fromUuid(questUuid);
+                            const objectivePinsFlag = page?.getFlag(MODULE.ID, 'objectivePins') || {};
+                            const objPin = objectivePinsFlag[String(taskIndex)] ?? objectivePinsFlag[taskIndex];
+                            const pinId = objPin?.pinId ?? objPin;
+                            const storedSceneId = typeof objPin === 'object' && objPin?.sceneId != null ? objPin.sceneId : undefined;
+                            const exists = pinId && (typeof pins.exists === 'function'
+                                ? pins.exists(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined)
+                                : !!pins.get?.(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined));
+                            if (!exists) {
+                                hasPinOnScene = false;
+                                const next = { ...objectivePinsFlag };
+                                if (pinId) next[String(taskIndex)] = { pinId };
+                                await page?.setFlag(MODULE.ID, 'objectivePins', next);
+                            }
+                        } else {
+                            hasPinOnScene = false;
+                        }
+                    }
+
+                    const pinMenuEntry = hasPinOnScene
+                        ? {
+                            name: 'Unpin from Canvas',
+                            icon: 'fa-solid fa-location-dot-slash',
+                            callback: async () => {
+                                await this._unplaceObjectivePin(questUuid, taskIndex);
+                            }
+                        }
+                        : {
+                            name: 'Pin to Canvas',
+                            icon: 'fa-solid fa-location-dot',
+                            callback: async () => {
+                                await this._beginObjectivePinPlacement(
+                                    questUuid,
+                                    taskIndex,
+                                    questNumber,
+                                    category,
+                                    visible,
+                                    { state: taskState, text: taskText }
+                                );
+                            }
+                        };
 
                     const zones = {
                         gm: [
-                            {
-                                name: 'Pin to Canvas',
-                                icon: 'fa-solid fa-location-dot',
-                                callback: async () => {
-                                    await this._beginObjectivePinPlacement(
-                                        questUuid,
-                                        taskIndex,
-                                        questNumber,
-                                        category,
-                                        visible,
-                                        { state: taskState, text: taskText }
-                                    );
-                                }
-                            },
+                            pinMenuEntry,
                             {
                                 name: isActive ? 'Set Not Active' : 'Set Active',
                                 icon: 'fa-solid fa-bullseye',
