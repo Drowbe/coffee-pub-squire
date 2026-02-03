@@ -206,10 +206,12 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-active {
     opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-dim {
-    opacity: 0.4;
+    opacity: 0.35;
 }
 
 .squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu {

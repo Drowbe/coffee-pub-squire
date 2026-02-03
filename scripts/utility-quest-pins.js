@@ -605,3 +605,84 @@ export function getQuestPinModuleVisibility() {
     if (!isPinsApiAvailable(pins) || typeof pins.getModuleVisibility !== 'function') return true;
     return pins.getModuleVisibility(MODULE.ID) !== false;
 }
+
+/**
+ * Reconcile quest/objective page flags with actual pins in the Pins API.
+ * - Restores pinId/sceneId on pages when pins exist.
+ * - Clears stale flags when pins were deleted or unplaced externally.
+ * @param {object} [opts]
+ * @param {string|string[]} [opts.sceneId] - Scene(s) to scope placed pin lookup; defaults to all scenes.
+ */
+export async function reconcileQuestPins(opts = {}) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+
+    const sceneIds = opts.sceneId
+        ? Array.isArray(opts.sceneId) ? opts.sceneId : [opts.sceneId]
+        : game.scenes.contents.map(s => s.id);
+
+    // Gather placed pins from scoped scenes and unplaced pins.
+    const placedPins = [];
+    for (const sid of sceneIds) {
+        const list = pins.list({ moduleId: MODULE.ID, sceneId: sid }) || [];
+        placedPins.push(...list);
+    }
+    const unplacedPins = pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || [];
+    const allPins = [...placedPins, ...unplacedPins].filter(p => p?.config?.questUuid);
+
+    // Build lookup by questUuid + objectiveIndex (nullable).
+    const byQuest = new Map();
+    for (const pin of allPins) {
+        const qid = pin.config.questUuid;
+        if (!qid) continue;
+        const objIndex = typeof pin.config.objectiveIndex === 'number' ? pin.config.objectiveIndex : null;
+        const key = objIndex === null ? qid : `${qid}|${objIndex}`;
+        byQuest.set(key, pin);
+    }
+
+    // Walk all quest pages to repair flags.
+    const journalId = game.settings.get(MODULE.ID, 'questJournal');
+    const journal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
+    const pages = journal?.pages ?? [];
+
+    for (const page of pages) {
+        if (!page) continue;
+        const qid = page.uuid;
+
+        // Quest-level pin
+        const questPin = byQuest.get(qid);
+        const questExists = questPin ? true : false;
+        if (questExists) {
+            await page.setFlag(MODULE.ID, 'pinId', questPin.id);
+            await page.setFlag(MODULE.ID, 'sceneId', questPin.sceneId ?? null);
+        } else {
+            // Verify stored pinId still exists; clear if not.
+            const storedId = page.getFlag(MODULE.ID, 'pinId');
+            if (storedId && !pins.exists(storedId)) {
+                await page.setFlag(MODULE.ID, 'pinId', null);
+                await page.setFlag(MODULE.ID, 'sceneId', null);
+            }
+        }
+
+        // Objective pins
+        const objectivePinsFlag = page.getFlag(MODULE.ID, 'objectivePins') || {};
+        const nextObjectivePins = { ...objectivePinsFlag };
+
+        // Clear stale entries
+        for (const [key, val] of Object.entries(objectivePinsFlag)) {
+            const pinId = val?.pinId ?? val;
+            const exists = pinId && pins.exists(pinId);
+            if (!exists) delete nextObjectivePins[key];
+        }
+
+        // Add/refresh entries from live pins
+        const questPinsForPage = allPins.filter(p => p.config.questUuid === qid && p.type === 'objective');
+        for (const pin of questPinsForPage) {
+            const idx = pin.config.objectiveIndex;
+            if (typeof idx !== 'number') continue;
+            nextObjectivePins[String(idx)] = { pinId: pin.id, sceneId: pin.sceneId ?? null };
+        }
+
+        await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
+    }
+}

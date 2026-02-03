@@ -402,6 +402,8 @@ Hooks.once('ready', async () => {
             callback: async () => {
                 // Register quest pin click and context menu handlers
                 registerQuestPinEvents();
+                // Keep quest/objective flags in sync with Blacksmith pins
+                import('./quest-pin-events.js').then(mod => mod.registerQuestPinSync?.()).catch(() => {});
 
                 // Monitor canvas selection changes for bulk selection support
                 ensureSelectObjectsWrapper();

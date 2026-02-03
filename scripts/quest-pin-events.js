@@ -9,7 +9,8 @@ import { MODULE } from './const.js';
 import {
     getPinsApi,
     isPinsApiAvailable,
-    updateQuestPinVisibility
+    updateQuestPinVisibility,
+    reconcileQuestPins
 } from './utility-quest-pins.js';
 import { trackModuleTimeout } from './timer-utils.js';
 import { notifyObjectiveCompleted } from './panel-quest.js';
@@ -18,6 +19,8 @@ let questPinEventsRegistered = false;
 let questPinClickDisposer = null;
 let questPinHandlerController = null;
 let questPinContextMenuDisposers = [];
+let questPinSyncRegistered = false;
+let questPinSceneSyncHookId = null;
 
 /**
  * Focus and flash the quest entry in the quest panel
@@ -296,4 +299,41 @@ export function unregisterQuestPinEvents() {
     });
     questPinContextMenuDisposers = [];
     questPinEventsRegistered = false;
+}
+
+/**
+ * Register sync hooks so quest/objective flags stay aligned with the Pins API.
+ * Mirrors the Notes panel resilience: any external pin change triggers a reconcile.
+ */
+export function registerQuestPinSync() {
+    if (questPinSyncRegistered) return;
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+
+    const handle = async (payload = {}) => {
+        if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
+        await reconcileQuestPins({ sceneId: payload.sceneId });
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (panelManager?.questPanel?.render && panelManager.element) {
+            await panelManager.questPanel.render(panelManager.element);
+        }
+    };
+
+    Hooks.on('blacksmith.pins.deleted', handle);
+    Hooks.on('blacksmith.pins.unplaced', handle);
+    Hooks.on('blacksmith.pins.placed', handle);
+    Hooks.on('blacksmith.pins.updated', handle);
+    Hooks.on('blacksmith.pins.created', handle);
+    Hooks.on('blacksmith.pins.deletedAll', handle);
+    Hooks.on('blacksmith.pins.deletedAllByType', handle);
+
+    // Scene flag changes can also desync after bulk deletes.
+    if (!questPinSceneSyncHookId) {
+        questPinSceneSyncHookId = Hooks.on('updateScene', (scene, changes) => {
+            if (!scene || !changes?.flags) return;
+            reconcileQuestPins({ sceneId: scene.id });
+        });
+    }
+
+    questPinSyncRegistered = true;
 }
