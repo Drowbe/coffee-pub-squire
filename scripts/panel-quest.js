@@ -2689,8 +2689,32 @@ export class QuestPanel {
                 const taskIndex = parseInt(newBtn.dataset.taskIndex, 10);
                 const taskState = newBtn.dataset.taskState || 'active';
                 const taskText = newBtn.dataset.taskText || '';
-                const hasPinOnScene = newBtn.dataset.hasPinOnScene === 'true';
+                let hasPinOnScene = newBtn.dataset.hasPinOnScene === 'true';
                 if (questUuid == null || isNaN(taskIndex)) return;
+
+                // Verify the stored pin actually exists on the scene; if not, clear sceneId so we fall into placement flow.
+                if (hasPinOnScene) {
+                    const pins = getPinsApi();
+                    if (pins?.isAvailable()) {
+                        const page = await fromUuid(questUuid);
+                        const objectivePinsFlag = page?.getFlag(MODULE.ID, 'objectivePins') || {};
+                        const objPin = objectivePinsFlag[String(taskIndex)] ?? objectivePinsFlag[taskIndex];
+                        const pinId = objPin?.pinId ?? objPin;
+                        const storedSceneId = typeof objPin === 'object' && objPin?.sceneId != null ? objPin.sceneId : undefined;
+                        const exists = pinId && (typeof pins.exists === 'function'
+                            ? pins.exists(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined)
+                            : !!pins.get?.(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined));
+                        if (!exists) {
+                            hasPinOnScene = false;
+                            const next = { ...objectivePinsFlag };
+                            if (pinId) next[String(taskIndex)] = { pinId };
+                            await page?.setFlag(MODULE.ID, 'objectivePins', next);
+                        }
+                    } else {
+                        hasPinOnScene = false;
+                    }
+                }
+
                 if (hasPinOnScene) {
                     await this._unplaceObjectivePin(questUuid, taskIndex);
                 } else {
