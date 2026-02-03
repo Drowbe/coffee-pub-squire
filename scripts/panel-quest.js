@@ -1524,13 +1524,20 @@ export class QuestPanel {
             const pins = getPinsApi();
             const pinExists = typeof pins?.exists === 'function' ? pins.exists(storedObjPinId) : !!pins?.get?.(storedObjPinId);
             if (pinExists) {
-                ui.notifications.warn('This objective is already pinned. Unpin it first to place elsewhere.');
-                return;
+                // If it is already placed somewhere, unplace first so we can place anew.
+                try {
+                    await this._unplaceObjectivePin(questUuid, objectiveIndex);
+                } catch (e) {
+                    console.warn('Coffee Pub Squire | Auto-unplace objective pin before re-place:', e);
+                    return;
+                }
+            } else {
+                // Stale sceneId; clear so placement can proceed.
+                const nextObjectivePins = { ...objectivePins };
+                delete nextObjectivePins[String(objectiveIndex)];
+                delete nextObjectivePins[objectiveIndex];
+                await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
             }
-            const nextObjectivePins = { ...objectivePins };
-            delete nextObjectivePins[String(objectiveIndex)];
-            delete nextObjectivePins[objectiveIndex];
-            await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
         }
         if (this._questPinPlacement) this._clearQuestPinPlacement();
 
