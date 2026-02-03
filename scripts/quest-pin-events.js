@@ -117,8 +117,11 @@ async function toggleQuestVisibility(questUuid) {
  * @param {Object} pins - Blacksmith Pins API
  */
 function registerQuestPinContextMenuItems(pins) {
-    if (questPinContextMenuDisposers.length > 0) return;
     if (!pins?.registerContextMenuItem) return;
+
+    // Re-register cleanly to avoid stale disposers if pins re-init.
+    questPinContextMenuDisposers.forEach((d) => { try { if (typeof d === 'function') d(); } catch (_) {} });
+    questPinContextMenuDisposers = [];
 
     const disposers = [];
 
@@ -130,7 +133,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 10,
             gmOnly: true,
-            visible: (pinData) => pinData?.type === 'objective',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 const objectiveIndex = pinData?.config?.objectiveIndex;
@@ -156,7 +159,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 20,
             gmOnly: true,
-            visible: (pinData) => pinData?.type === 'objective',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 const objectiveIndex = pinData?.config?.objectiveIndex;
@@ -177,7 +180,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 30,
             gmOnly: true,
-            visible: (pinData) => pinData?.type === 'quest',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'quest',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 if (!questUuid) return;
@@ -194,7 +197,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 32,
             gmOnly: true,
-            visible: (pinData) => pinData?.type === 'objective',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 const objectiveIndex = pinData?.config?.objectiveIndex;
@@ -217,6 +220,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 40,
             gmOnly: true,
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === 'quest' || pinData?.type === 'objective'),
             onClick: async (pinData) => {
                 const pinId = pinData?.id;
                 if (!pinId) return;
@@ -233,10 +237,22 @@ function registerQuestPinContextMenuItems(pins) {
  * Register quest pin click and context menu handlers.
  * Call once when pins API is ready (e.g. from canvasReady after migration).
  */
-export function registerQuestPinEvents() {
+export async function registerQuestPinEvents() {
     const pins = getPinsApi();
     if (!pins || !isPinsApiAvailable()) return;
     if (questPinEventsRegistered) return;
+
+    if (typeof pins.whenReady === 'function') {
+        try { await pins.whenReady(); } catch (_) {}
+    }
+
+    // Register friendly names for pin types (helps menus/tools label correctly)
+    if (typeof pins.registerPinType === 'function') {
+        try {
+            pins.registerPinType(MODULE.ID, 'quest', 'Quest Pin');
+            pins.registerPinType(MODULE.ID, 'objective', 'Objective Pin');
+        } catch (_) {}
+    }
 
     registerQuestPinContextMenuItems(pins);
 

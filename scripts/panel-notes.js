@@ -775,6 +775,7 @@ function registerNotePinContextMenuItems(pins) {
             icon: '<i class="fa-solid fa-eye"></i>',
             moduleId: MODULE.ID,
             order: 10,
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === NOTE_PIN_TYPE || pinData?.config?.noteUuid),
             onClick: makeOpenHandler(true)
         }),
         pins.registerContextMenuItem(`${MODULE.ID}-edit-note`, {
@@ -782,6 +783,7 @@ function registerNotePinContextMenuItems(pins) {
             icon: '<i class="fa-solid fa-pen"></i>',
             moduleId: MODULE.ID,
             order: 20,
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === NOTE_PIN_TYPE || pinData?.config?.noteUuid),
             onClick: makeOpenHandler(false)
         }),
         pins.registerContextMenuItem(`${MODULE.ID}-delete-note`, {
@@ -789,6 +791,7 @@ function registerNotePinContextMenuItems(pins) {
             icon: '<i class="fa-solid fa-trash"></i>',
             moduleId: MODULE.ID,
             order: 40,
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === NOTE_PIN_TYPE || pinData?.config?.noteUuid),
             onClick: deleteHandler
         })
     ];

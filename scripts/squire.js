@@ -401,7 +401,7 @@ Hooks.once('ready', async () => {
             priority: 2,
             callback: async () => {
                 // Register quest pin click and context menu handlers
-                registerQuestPinEvents();
+                await registerQuestPinEvents();
                 // Keep quest/objective flags in sync with Blacksmith pins
                 import('./quest-pin-events.js').then(mod => mod.registerQuestPinSync?.()).catch(() => {});
 

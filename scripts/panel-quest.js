@@ -5,6 +5,7 @@ import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, create
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
+import { registerQuestPinEvents, registerQuestPinSync } from './quest-pin-events.js';
 
 // Helper function to get quest number from UUID
 function getQuestNumber(questUuid) {
@@ -149,6 +150,9 @@ export class QuestPanel {
         this._notificationDebounceTimeouts = {}; // Debounce timeouts for notifications
         this._verifyAndUpdateCategories();
         this._setupHooks();
+        // Ensure pin events / context menus are registered (mirrors notes panel behavior)
+        registerQuestPinEvents()?.catch?.(() => {});
+        registerQuestPinSync?.();
     }
 
     /**
