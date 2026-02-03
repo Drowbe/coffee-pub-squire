@@ -1842,6 +1842,7 @@ export class QuestPanel {
                             }
                             
                             entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image');
+                            // Placed/unplaced like Notes: truthy sceneId = placed
                             entry.hasPinOnScene = !!page.getFlag(MODULE.ID, 'sceneId');
                             const objectivePinsFlag = page.getFlag(MODULE.ID, 'objectivePins') || {};
                             if (entry.tasks && Array.isArray(entry.tasks)) {
