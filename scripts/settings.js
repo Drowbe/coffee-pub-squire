@@ -640,20 +640,23 @@ export const registerSettings = function() {
         config: false,
         type: Object,
         default: {
-            size: { w: 32, h: 32 },
+            size: { w: 50, h: 50 },
             lockProportions: true,
-            shape: 'circle',
+            shape: 'square',
             style: {
-                stroke: '#000000',
-                strokeWidth: 2
+                fill: '#682008',
+                stroke: '#ffffff',
+                strokeWidth: 2,
+                iconColor: '#ffffff'
             },
             dropShadow: true,
             text: '',
-            textLayout: 'under',
-            textDisplay: 'always',
+            textLayout: 'right',
+            textDisplay: 'hover',
             textColor: '#ffffff',
             textSize: 12,
             textMaxLength: 0,
+            textMaxWidth: 30,
             textScaleWithPin: true
         }
     });

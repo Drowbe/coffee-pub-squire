@@ -9,10 +9,10 @@
 import { MODULE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 
-const QUEST_PIN_SIZE = { w: 32, h: 32 };
-const OBJECTIVE_PIN_SIZE = { w: 28, h: 28 };
-const QUEST_ICON = '<i class="fa-solid fa-scroll"></i>';
-const OBJECTIVE_ICON = '<i class="fa-solid fa-bullseye"></i>';
+const QUEST_PIN_SIZE = { w: 50, h: 50 };
+const OBJECTIVE_PIN_SIZE = { w: 30, h: 30 };
+const QUEST_ICON = '<i class="fa-solid fa-flag"></i>';
+const OBJECTIVE_ICON = '<i class="fa-solid fa-sign-post"></i>';
 
 /** Quest status / state → fill color (hex) */
 const QUEST_STATUS_COLORS = {
@@ -77,16 +77,16 @@ function getQuestPinDesignFromPage(page) {
     const shape = page?.getFlag(MODULE.ID, 'questPinShape') ?? defaultDesign.shape ?? 'circle';
     const style = page?.getFlag(MODULE.ID, 'questPinStyle') ?? defaultDesign.style ?? {};
     const dropShadow = page?.getFlag(MODULE.ID, 'questPinDropShadow') ?? defaultDesign.dropShadow ?? true;
-    const textLayout = page?.getFlag(MODULE.ID, 'questPinTextLayout') ?? defaultDesign.textLayout ?? 'under';
-    const textDisplay = page?.getFlag(MODULE.ID, 'questPinTextDisplay') ?? defaultDesign.textDisplay ?? 'always';
+    const textLayout = page?.getFlag(MODULE.ID, 'questPinTextLayout') ?? defaultDesign.textLayout ?? 'right';
+    const textDisplay = page?.getFlag(MODULE.ID, 'questPinTextDisplay') ?? defaultDesign.textDisplay ?? 'hover';
     const textColor = page?.getFlag(MODULE.ID, 'questPinTextColor') ?? defaultDesign.textColor ?? '#ffffff';
     const textSize = page?.getFlag(MODULE.ID, 'questPinTextSize') ?? defaultDesign.textSize ?? 12;
     const textMaxLength = page?.getFlag(MODULE.ID, 'questPinTextMaxLength') ?? defaultDesign.textMaxLength ?? 0;
-    const textMaxWidth = page?.getFlag(MODULE.ID, 'questPinTextMaxWidth') ?? defaultDesign.textMaxWidth ?? 0;
+    const textMaxWidth = page?.getFlag(MODULE.ID, 'questPinTextMaxWidth') ?? defaultDesign.textMaxWidth ?? 30;
     const textScaleWithPin = page?.getFlag(MODULE.ID, 'questPinTextScaleWithPin') ?? defaultDesign.textScaleWithPin ?? true;
     return {
         size: size && typeof size.w === 'number' && typeof size.h === 'number' ? size : QUEST_PIN_SIZE,
-        shape: shape === 'circle' || shape === 'square' || shape === 'none' ? shape : 'circle',
+        shape: shape === 'circle' || shape === 'square' || shape === 'none' ? shape : 'square',
         style: typeof style === 'object' ? style : {},
         dropShadow: !!dropShadow,
         textLayout,
@@ -192,12 +192,15 @@ export async function createQuestPin(opts) {
     const image = getQuestPinImageFromPage(page);
     const style = { ...design.style, fill: fillColor, stroke: design.style?.stroke ?? '#000000', strokeWidth: design.style?.strokeWidth ?? 2, iconColor: design.style?.iconColor ?? '#ffffff' };
 
+    const questTitle = (page?.name || 'Quest').trim();
+    const pinTitle = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
+
     const pinData = {
         id: crypto.randomUUID(),
         moduleId: MODULE.ID,
         type: 'quest',
         shape: design.shape,
-        text: `Q${questNum}`,
+        text: pinTitle,
         image,
         size: design.size,
         style,
@@ -265,12 +268,16 @@ export async function createObjectivePin(opts) {
     const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
     const fillColor = getObjectivePinColor(objState);
 
+    const objNum = String((objectiveIndex ?? 0) + 1).padStart(2, '0');
+    const objectiveText = (objective?.text || 'Objective').trim();
+    const pinTitle = `Quest ${questNum}.${objNum}: ${objectiveText}${objectiveText.endsWith('.') ? '' : '.'}`;
+
     const pinData = {
         id: crypto.randomUUID(),
         moduleId: MODULE.ID,
         type: 'objective',
         shape: 'square',
-        text: `Q${questNum}.${(objectiveIndex ?? 0) + 1}`,
+        text: pinTitle,
         image: OBJECTIVE_ICON,
         size: OBJECTIVE_PIN_SIZE,
         style: { fill: fillColor, stroke: '#000000', strokeWidth: 2, iconColor: '#ffffff' },
@@ -523,6 +530,8 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
     const forQuest = list.filter(p => p.config?.questUuid === page.uuid);
     const questStatus = quest.status || 'Not Started';
     const questState = page.getFlag(MODULE.ID, 'visible') === false ? 'hidden' : 'visible';
+    const questNum = getQuestNumber(page.uuid);
+    const questTitle = (page?.name || 'Quest').trim();
 
     for (const pin of forQuest) {
         const patch = {};
@@ -535,6 +544,7 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
                 iconColor: '#ffffff'
             };
             patch.config = { ...(pin.config || {}), questStatus, questState };
+            patch.text = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
         } else if (pin.type === 'objective' && typeof pin.config?.objectiveIndex === 'number') {
             const obj = quest.tasks[pin.config.objectiveIndex];
             const objState = obj?.state || 'active';
@@ -546,6 +556,9 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
                 iconColor: '#ffffff'
             };
             patch.config = { ...(pin.config || {}), objectiveState: objState, objectiveText: (obj?.text || '').trim() };
+            const objNum = String((pin.config.objectiveIndex ?? 0) + 1).padStart(2, '0');
+            const objectiveText = (obj?.text || 'Objective').trim();
+            patch.text = `Quest ${questNum}.${objNum}: ${objectiveText}${objectiveText.endsWith('.') ? '' : '.'}`;
         }
         if (Object.keys(patch).length) {
             try {
