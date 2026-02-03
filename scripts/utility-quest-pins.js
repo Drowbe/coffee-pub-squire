@@ -11,24 +11,26 @@ import { QuestParser } from './utility-quest-parser.js';
 
 const QUEST_PIN_SIZE = { w: 50, h: 50 };
 const OBJECTIVE_PIN_SIZE = { w: 30, h: 30 };
+export const QUEST_PIN_BACKGROUND = '#682008';
+export const OBJECTIVE_PIN_BACKGROUND = '#8c2d0d';
 const QUEST_ICON = '<i class="fa-solid fa-flag"></i>';
 const OBJECTIVE_ICON = '<i class="fa-solid fa-sign-post"></i>';
 
-/** Quest status / state → fill color (hex) */
+/** Quest status / state → border (stroke) color (hex). Background is fixed QUEST_PIN_BACKGROUND. */
 const QUEST_STATUS_COLORS = {
-    'Complete': '#00ff00',
-    'Failed': '#ff0000',
-    'In Progress': '#ffff00',
+    'Complete': '#0ea40e',
+    'Failed': '#d51301',
+    'In Progress': '#ffffff',
     'Not Started': '#ffffff',
-    'hidden': '#000000'
+    'hidden': '#a3a3a3'
 };
 
-/** Objective state → fill color (hex) */
+/** Objective state → border (stroke) color (hex). Background is fixed OBJECTIVE_PIN_BACKGROUND. */
 const OBJECTIVE_STATE_COLORS = {
-    active: '#ffff00',
-    completed: '#00ff00',
-    failed: '#ff0000',
-    hidden: '#000000'
+    active: '#ffffff',
+    completed: '#0ea40e',
+    failed: '#d51301',
+    hidden: '#a3a3a3'
 };
 
 function getQuestNumber(questUuid) {
@@ -143,18 +145,18 @@ export function calculateQuestPinOwnership(page, objective = null) {
 }
 
 /**
- * Get fill color for a quest pin by status (or hidden state).
+ * Get border (stroke) color for a quest pin by status (or hidden state). Background is fixed.
  * @param {string} status - e.g. 'Not Started', 'In Progress', 'Complete', 'Failed'
- * @param {string} [questState] - 'visible' | 'hidden'; if 'hidden', returns black
+ * @param {string} [questState] - 'visible' | 'hidden'; if 'hidden', returns hidden color
  * @returns {string} Hex color
  */
 export function getQuestPinColor(status, questState) {
-    if (questState === 'hidden') return QUEST_STATUS_COLORS.hidden ?? '#000000';
+    if (questState === 'hidden') return QUEST_STATUS_COLORS.hidden ?? '#a3a3a3';
     return QUEST_STATUS_COLORS[status] ?? QUEST_STATUS_COLORS['Not Started'];
 }
 
 /**
- * Get fill color for an objective pin by state.
+ * Get border (stroke) color for an objective pin by state. Background is fixed.
  * @param {string} state - 'active' | 'completed' | 'failed' | 'hidden'
  * @returns {string} Hex color
  */
@@ -187,10 +189,10 @@ export async function createQuestPin(opts) {
 
     const ownership = calculateQuestPinOwnership(page);
     const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
-    const fillColor = getQuestPinColor(questStatus, questState);
+    const strokeColor = getQuestPinColor(questStatus, questState);
     const design = getQuestPinDesignFromPage(page);
     const image = getQuestPinImageFromPage(page);
-    const style = { ...design.style, fill: fillColor, stroke: design.style?.stroke ?? '#000000', strokeWidth: design.style?.strokeWidth ?? 2, iconColor: design.style?.iconColor ?? '#ffffff' };
+    const style = { ...design.style, fill: QUEST_PIN_BACKGROUND, stroke: strokeColor, strokeWidth: design.style?.strokeWidth ?? 2, iconColor: design.style?.iconColor ?? '#ffffff' };
 
     const questTitle = (page?.name || 'Quest').trim();
     const pinTitle = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
@@ -266,7 +268,7 @@ export async function createObjectivePin(opts) {
     const objState = objective.state || 'active';
     const ownership = calculateQuestPinOwnership(page, objective);
     const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
-    const fillColor = getObjectivePinColor(objState);
+    const strokeColor = getObjectivePinColor(objState);
 
     const objNum = String((objectiveIndex ?? 0) + 1).padStart(2, '0');
     const objectiveText = (objective?.text || 'Objective').trim();
@@ -280,7 +282,7 @@ export async function createObjectivePin(opts) {
         text: pinTitle,
         image: OBJECTIVE_ICON,
         size: OBJECTIVE_PIN_SIZE,
-        style: { fill: fillColor, stroke: '#000000', strokeWidth: 2, iconColor: '#ffffff' },
+        style: { fill: OBJECTIVE_PIN_BACKGROUND, stroke: strokeColor, strokeWidth: 2, iconColor: '#ffffff' },
         ownership,
         config: {
             questUuid,
@@ -538,8 +540,8 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
         if (pin.type === 'quest') {
             patch.style = {
                 ...(pin.style || {}),
-                fill: getQuestPinColor(questStatus, questState),
-                stroke: '#000000',
+                fill: QUEST_PIN_BACKGROUND,
+                stroke: getQuestPinColor(questStatus, questState),
                 strokeWidth: 2,
                 iconColor: '#ffffff'
             };
@@ -550,8 +552,8 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
             const objState = obj?.state || 'active';
             patch.style = {
                 ...(pin.style || {}),
-                fill: getObjectivePinColor(objState),
-                stroke: '#000000',
+                fill: OBJECTIVE_PIN_BACKGROUND,
+                stroke: getObjectivePinColor(objState),
                 strokeWidth: 2,
                 iconColor: '#ffffff'
             };

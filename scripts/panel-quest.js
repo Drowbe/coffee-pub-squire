@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility, unplaceQuestPinForPage, unplaceObjectivePinForPage } from './utility-quest-pins.js';
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility, unplaceQuestPinForPage, unplaceObjectivePinForPage, QUEST_PIN_BACKGROUND, OBJECTIVE_PIN_BACKGROUND } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -1316,22 +1316,24 @@ export class QuestPanel {
 
     /**
      * Create a preview element for Pin to Scene (follows mouse, like Notes).
+     * Uses fixed background and status-based border color (same as placed pin).
      * @param {'circle'|'square'} shape - Pin shape
      * @param {number} sizePx - Size in pixels
-     * @param {string} fillColor - Fill hex color
+     * @param {string} fillColor - Background fill hex (e.g. QUEST_PIN_BACKGROUND)
+     * @param {string} strokeColor - Border stroke hex (status/state color)
      * @param {string} text - Label text (e.g. Q85)
      * @param {string} iconHtml - Icon HTML (e.g. <i class="fa-solid fa-scroll"></i>)
      * @returns {HTMLDivElement}
      * @private
      */
-    _createQuestPinPreviewElement(shape, sizePx, fillColor, text, iconHtml) {
+    _createQuestPinPreviewElement(shape, sizePx, fillColor, strokeColor, text, iconHtml) {
         const preview = document.createElement('div');
         preview.className = 'quest-pin-preview';
         preview.dataset.shape = shape;
         preview.style.setProperty('--quest-pin-width', `${sizePx}px`);
         preview.style.setProperty('--quest-pin-height', `${sizePx}px`);
         preview.style.setProperty('--quest-pin-fill', fillColor);
-        preview.style.setProperty('--quest-pin-stroke', '#000000');
+        preview.style.setProperty('--quest-pin-stroke', strokeColor);
         preview.style.setProperty('--quest-pin-stroke-width', '2px');
         preview.innerHTML = `
             <div class="quest-pin-preview-inner">
@@ -1383,12 +1385,13 @@ export class QuestPanel {
         view.classList.add(QuestPanel.QUEST_PIN_CANVAS_CURSOR_CLASS);
 
         const questStateVal = questState === 'true' || questState === true ? 'visible' : 'hidden';
-        const fillColor = getQuestPinColor(questStatus || 'Not Started', questStateVal);
+        const strokeColor = getQuestPinColor(questStatus || 'Not Started', questStateVal);
         const questNum = typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0);
         const previewEl = this._createQuestPinPreviewElement(
-            'circle',
-            32,
-            fillColor,
+            'square',
+            50,
+            QUEST_PIN_BACKGROUND,
+            strokeColor,
             `Q${questNum}`,
             '<i class="fa-solid fa-scroll"></i>'
         );
@@ -1539,12 +1542,13 @@ export class QuestPanel {
 
         const questStateVal = questState === 'true' || questState === true ? 'visible' : 'hidden';
         const objectiveState = objective?.state || 'active';
-        const fillColor = getObjectivePinColor(objectiveState);
+        const strokeColor = getObjectivePinColor(objectiveState);
         const questNum = typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0);
         const previewEl = this._createQuestPinPreviewElement(
             'square',
-            28,
-            fillColor,
+            30,
+            OBJECTIVE_PIN_BACKGROUND,
+            strokeColor,
             `Q${questNum}.${objectiveIndex + 1}`,
             '<i class="fa-solid fa-bullseye"></i>'
         );

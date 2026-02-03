@@ -37,8 +37,11 @@ function focusQuestEntryInDom(questUuid, objectiveIndex = null) {
         entry.classList.remove('quest-highlighted');
     }, 2000);
 
-    if (objectiveIndex !== null && objectiveIndex !== undefined) {
-        const taskItem = entry.querySelector(`.quest-entry-tasks li:nth-child(${objectiveIndex + 1})`);
+    const objIndex = objectiveIndex !== null && objectiveIndex !== undefined
+        ? (typeof objectiveIndex === 'number' ? objectiveIndex : parseInt(objectiveIndex, 10))
+        : null;
+    if (objIndex !== null && !Number.isNaN(objIndex)) {
+        const taskItem = entry.querySelector(`.quest-entry-tasks li[data-task-index="${objIndex}"]`);
         if (taskItem) {
             taskItem.classList.add('objective-highlighted');
             trackModuleTimeout(() => taskItem.classList.remove('objective-highlighted'), 2000);
@@ -240,11 +243,16 @@ export function registerQuestPinEvents() {
     questPinClickDisposer = pins.on(
         'click',
         async (evt) => {
-            if (evt?.pin?.moduleId !== MODULE.ID) return;
-            const config = evt.pin.config || {};
+            let pin = evt?.pin ?? evt?.pinData;
+            if (!pin && evt?.pinId && typeof pins.get === 'function') {
+                pin = pins.get(evt.pinId, evt.sceneId ? { sceneId: evt.sceneId } : undefined);
+            }
+            if (!pin) return;
+            if (pin.moduleId != null && pin.moduleId !== MODULE.ID) return;
+            const config = pin.config || {};
             const questUuid = config.questUuid;
-            const objectiveIndex = config.objectiveIndex;
             if (!questUuid) return;
+            const objectiveIndex = config.objectiveIndex;
 
             const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
             if (!panelManager) return;
