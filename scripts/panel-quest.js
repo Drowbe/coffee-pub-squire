@@ -143,7 +143,8 @@ export class QuestPanel {
         this.filters = {
             search: "",
             tags: [],
-            category: "all"
+            category: "all",
+            statusFilter: "active" // active, available, complete, failed
         };
         this.allTags = new Set();
         this.isImporting = false; // Flag to prevent panel refreshes during import
@@ -1940,6 +1941,39 @@ export class QuestPanel {
     }
 
     /**
+     * Map status filter value to data-status attribute
+     * @private
+     */
+    _statusFilterToDataStatus(filterValue) {
+        const map = {
+            active: 'In Progress',
+            available: 'Not Started',
+            complete: 'Complete',
+            failed: 'Failed'
+        };
+        return map[filterValue] ?? null;
+    }
+
+    /**
+     * Apply status filter to show/hide quest sections
+     * @param {HTMLElement} html - The quest container element
+     * @private
+     */
+    _applyStatusFilter(html) {
+        const nativeHtml = getNativeElement(html);
+        if (!nativeHtml) return;
+
+        const statusFilter = this.filters.statusFilter || 'active';
+        const targetStatus = this._statusFilterToDataStatus(statusFilter);
+
+        nativeHtml.querySelectorAll('.quest-section[data-status]').forEach(section => {
+            const sectionStatus = section.getAttribute('data-status');
+            const shouldShow = targetStatus && sectionStatus === targetStatus;
+            section.style.display = shouldShow ? '' : 'none';
+        });
+    }
+
+    /**
      * Apply current filters to entries
      * @private
      */
@@ -1981,7 +2015,7 @@ export class QuestPanel {
                 const searchValue = event.target.value.toLowerCase();
                 this.filters.search = searchValue;
                 
-                // Show all entries first
+                // Show all entries first (within visible sections)
                 // v13: Use nativeHtml instead of html
                 if (game.user.isGM) {
                     nativeHtml.querySelectorAll('.quest-entry').forEach(entry => {
@@ -2048,12 +2082,13 @@ export class QuestPanel {
                                 const attrValue = s.getAttribute('data-status');
                                 return attrValue && attrValue.trim() === category.trim();
                             });
-                            if (section) {
+                            if (section && !section.classList.contains('quest-section--no-titlebar')) {
                                 section.classList.add('collapsed');
                             }
                         }
                     }
                 }
+                this._applyStatusFilter(nativeHtml);
             });
         }
 
@@ -2236,7 +2271,7 @@ export class QuestPanel {
                                 const attrValue = s.getAttribute('data-status');
                                 return attrValue && attrValue.trim() === category.trim();
                             });
-                            if (section) {
+                            if (section && !section.classList.contains('quest-section--no-titlebar')) {
                                 section.classList.add('collapsed');
                             }
                         }
@@ -2256,6 +2291,7 @@ export class QuestPanel {
             newClearButton.addEventListener('click', (event) => {
                 this.filters.search = "";
                 this.filters.tags = [];
+                this.filters.statusFilter = "active";
                 if (searchInput) {
                     searchInput.value = "";
                 }
@@ -2277,7 +2313,7 @@ export class QuestPanel {
                 for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                     if (collapsed) {
                         const section = nativeHtml.querySelector(`.quest-section[data-status="${category}"]`);
-                        if (section) {
+                        if (section && !section.classList.contains('quest-section--no-titlebar')) {
                             section.classList.add('collapsed');
                         }
                     }
@@ -2286,6 +2322,21 @@ export class QuestPanel {
                 this.render(this.element);
             });
         }
+
+        // Status filter buttons
+        nativeHtml.querySelectorAll('.quest-status-button').forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode?.replaceChild(newButton, button);
+            newButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                const statusFilter = event.currentTarget.dataset.statusFilter || 'active';
+                this.filters.statusFilter = statusFilter;
+                this._applyStatusFilter(nativeHtml);
+                nativeHtml.querySelectorAll('.quest-status-button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.statusFilter === statusFilter);
+                });
+            });
+        });
 
         // Toggle tags button
         // v13: Use nativeHtml instead of html
@@ -4028,7 +4079,9 @@ export class QuestPanel {
             filters: {
                 ...this.filters,
                 search: this.filters.search || "",
-                tags: this.filters.tags || []
+                tags: this.filters.tags || [],
+                statusFilter: this.filters.statusFilter || "active",
+                hasActiveFilters: !!(this.filters.search || (this.filters.tags || []).length)
             },
             allTags: Array.from(allTags).sort(),
             isTagCloudCollapsed,
@@ -4114,10 +4167,13 @@ export class QuestPanel {
         // Activate listeners
         this._activateListeners(questContainer);
 
+        // Apply status filter to show/hide sections
+        this._applyStatusFilter(questContainer);
+
         // After rendering, set initial states
-        if (this.filters.search) {
+        if (this.filters.search || (this.filters.tags || []).length > 0) {
             const clearSearch = questContainer.querySelector('.clear-search');
-            if (clearSearch) clearSearch.style.display = '';
+            if (clearSearch) clearSearch.classList.remove('disabled');
         }
         if (!isTagCloudCollapsed) {
             const toggleTagsButton = questContainer.querySelector('.toggle-tags-button');
@@ -4180,7 +4236,9 @@ export class QuestPanel {
                     const attrValue = s.getAttribute('data-status');
                     return attrValue && attrValue.trim() === status.trim();
                 });
-                if (section) section.classList.add('collapsed');
+                if (section && !section.classList.contains('quest-section--no-titlebar')) {
+                    section.classList.add('collapsed');
+                }
             }
         }
     }

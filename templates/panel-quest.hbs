@@ -14,7 +14,7 @@
     <div class="quest-filters">
         <div class="quest-search">
             <input type="text" placeholder="Search quests..." value="{{filters.search}}">
-            <i class="fa-solid fa-times clear-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+            <i class="fa-solid fa-times clear-search {{#unless filters.hasActiveFilters}}disabled{{/unless}}" title="Clear search"></i>
             <i class="fa-solid fa-filter toggle-tags-button {{#unless isTagCloudCollapsed}}active{{/unless}}" title="Toggle tag filters"></i>
         </div>
         {{#if allTags.length}}
@@ -26,19 +26,33 @@
         {{/if}}
     </div>
 
+    {{#if hasJournal}}
+    <div class="quest-status-section">
+        <div class="quest-status-buttons">
+            <button class="quest-status-button {{#if (eq filters.statusFilter 'active')}}active{{/if}}" data-status-filter="active" type="button" title="Active quests">
+                <i class="fa-solid fa-bow-arrow"></i>
+                <span>Active</span>
+            </button>
+            <button class="quest-status-button {{#if (eq filters.statusFilter 'available')}}active{{/if}}" data-status-filter="available" type="button" title="Available quests">
+                <i class="fa-solid fa-campground"></i>
+                <span>Available</span>
+            </button>
+            <button class="quest-status-button {{#if (eq filters.statusFilter 'complete')}}active{{/if}}" data-status-filter="complete" type="button" title="Complete quests">
+                <i class="fa-solid fa-crown"></i>
+                <span>Complete</span>
+            </button>
+            <button class="quest-status-button {{#if (eq filters.statusFilter 'failed')}}active{{/if}}" data-status-filter="failed" type="button" title="Failed quests">
+                <i class="fa-solid fa-skull"></i>
+                <span>Failed</span>
+            </button>
+        </div>
+    </div>
+    {{/if}}
+
     <div class="quest-content">
         {{#if hasJournal}}
-            <!-- In Progress Section -->
-            <div class="quest-section" data-status="In Progress">
-                <div class="quest-category">
-                    <h3>
-                        <i class="fa-solid fa-bow-arrow"></i>
-                        In Progress {{#if statusGroups.inProgress.length}}({{statusGroups.inProgress.length}}){{/if}}
-                    </h3>
-                    <div class="quest-toolbar">
-                        <i class="fa-solid fa-chevron-down" title="Toggle In Progress"></i>
-                    </div>
-                </div>
+            <!-- Active (In Progress) Section - no titlebar, always expanded -->
+            <div class="quest-section quest-section--no-titlebar" data-status="In Progress">
                 <div class="quest-entries">
                     {{#each statusGroups.inProgress as |entry|}}
                         {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}
@@ -46,17 +60,8 @@
                 </div>
             </div>
 
-            <!-- Not Started Section -->
-            <div class="quest-section" data-status="Not Started">
-                <div class="quest-category">
-                    <h3>
-                        <i class="fa-solid fa-campground"></i>
-                        Not Started {{#if statusGroups.notStarted.length}}({{statusGroups.notStarted.length}}){{/if}}
-                    </h3>
-                    <div class="quest-toolbar">
-                        <i class="fa-solid fa-chevron-down" title="Toggle Not Started"></i>
-                    </div>
-                </div>
+            <!-- Available (Not Started) Section - no titlebar, always expanded -->
+            <div class="quest-section quest-section--no-titlebar" data-status="Not Started">
                 <div class="quest-entries">
                     {{#each statusGroups.notStarted as |entry|}}
                         {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}
@@ -64,15 +69,15 @@
                 </div>
             </div>
 
-            <!-- Completed Section -->
+            <!-- Complete Section -->
             <div class="quest-section" data-status="Complete">
                 <div class="quest-category">
                     <h3>
                         <i class="fa-solid fa-crown"></i>
-                        Completed {{#if statusGroups.completed.length}}({{statusGroups.completed.length}}){{/if}}
+                        Complete {{#if statusGroups.completed.length}}({{statusGroups.completed.length}}){{/if}}
                     </h3>
                     <div class="quest-toolbar">
-                        <i class="fa-solid fa-chevron-down" title="Toggle Completed"></i>
+                        <i class="fa-solid fa-chevron-down" title="Toggle Complete"></i>
                     </div>
                 </div>
                 <div class="quest-entries">

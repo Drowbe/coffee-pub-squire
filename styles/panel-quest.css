@@ -312,11 +312,62 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding: 4px;
 }
 
+/* QUEST STATUS FILTER BUTTONS */
+
+.squire-tray[data-position="left"] .quest-status-section {
+    display: flex;
+    justify-content: center;
+    padding: 6px 8px 8px;
+}
+
+.squire-tray[data-position="left"] .quest-status-buttons {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 6px;
+}
+
+.squire-tray[data-position="left"] .quest-status-button {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(235, 233, 225, 1);
+    cursor: pointer;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.squire-tray[data-position="left"] .quest-status-button:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    color: #fff;
+}
+
+.squire-tray[data-position="left"] .quest-status-button.active {
+    background: rgba(145, 133, 107, 0.4);
+    border-color: rgba(145, 133, 107, 0.9);
+    color: #fff;
+}
+
 
 /* CATEGORY HEADERS */
 
 .squire-tray[data-position="left"] .quest-section {
     margin-bottom: 8px;
+}
+
+.squire-tray[data-position="left"] .quest-section--no-titlebar .quest-entries {
+    margin-top: 0;
 }
 
 .squire-tray[data-position="left"] .quest-category {
