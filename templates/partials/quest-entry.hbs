@@ -1,37 +1,42 @@
 <div class="quest-entry collapsed" data-quest-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}" data-quest-status="{{entry.status}}" data-participants="{{#if entry.participants}}{{#each entry.participants}}{{#unless @first}},{{/unless}}{{this.uuid}}{{/each}}{{/if}}">
-  <!-- ENTRY HEADER -->
-  <div class="quest-entry-header">
-    <div class="quest-entry-name" data-tooltip="{{entry.name}}">
-      <span class="quest-icon">
-        {{#if entry.iconHtml}}{{{entry.iconHtml}}}{{else}}<i class="fa-solid fa-scroll quest-type-icon"></i>{{/if}}
-      </span>
-      <span class="quest-number">{{entry.questNumber}}</span>
-      {{entry.name}}
+  
+  
+  <div class="quest-entry-header-wrapper">
+    <!-- ENTRY HEADER -->
+    <div class="quest-entry-header">
+      <div class="quest-entry-name" data-tooltip="{{entry.name}}">
+        <span class="quest-icon">
+          {{#if entry.iconHtml}}{{{entry.iconHtml}}}{{else}}<i class="fa-solid fa-flag quest-type-icon"></i>{{/if}}
+        </span>
+        <span class="quest-number">{{entry.questNumber}}</span>
+        {{entry.name}}
+      </div>
+      <div class="quest-toolbar">
+        <i class="fa-solid fa-thumbtack quest-pin {{#if entry.isPinned}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{entry.category}}" title="Pin this quest"></i>
+        {{#if isGM}}
+        <i class="fa-solid fa-location-dot quest-pin-to-scene quest-pin-icon {{#if entry.hasPinOnScene}}quest-pin-active{{else}}quest-pin-dim{{/if}}" data-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}" data-quest-status="{{entry.status}}" data-has-pin-on-scene="{{entry.hasPinOnScene}}" title="{{#if entry.hasPinOnScene}}Unpin from Scene{{else}}Pin to Scene{{/if}}"></i>
+          <i class="fa-solid fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Quest options"></i>
+        {{/if}}
+        <i class="fa-solid fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
+      </div>  
     </div>
-    <div class="quest-toolbar">
-      <i class="fa-solid fa-thumbtack quest-pin {{#if entry.isPinned}}pinned{{/if}}" data-uuid="{{entry.uuid}}" data-category="{{entry.category}}" title="Pin this quest"></i>
-      {{#if isGM}}
-      <i class="fa-solid fa-location-dot quest-pin-to-scene quest-pin-icon {{#if entry.hasPinOnScene}}quest-pin-active{{else}}quest-pin-dim{{/if}}" data-uuid="{{entry.uuid}}" data-quest-number="{{entry.questNumber}}" data-category="{{entry.category}}" data-visible="{{entry.visible}}" data-quest-status="{{entry.status}}" data-has-pin-on-scene="{{entry.hasPinOnScene}}" title="{{#if entry.hasPinOnScene}}Unpin from Scene{{else}}Pin to Scene{{/if}}"></i>
-        <i class="fa-solid fa-ellipsis-h quest-status-menu" data-uuid="{{entry.uuid}}" title="Quest options"></i>
-      {{/if}}
-      <i class="fa-solid fa-chevron-right quest-entry-toggle" title="Expand/Collapse"></i>
-    </div>
-  </div>
-  <!-- PROGRESS BAR -->
-  {{#if entry.tasks}}
-    {{#if entry.tasks.length}}
-      {{#if (gt entry.progress 0)}}
-        <div class="quest-entry-progressbar">
-          <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
-        </div>
+    <!-- PROGRESS BAR -->
+    {{#if entry.tasks}}
+      {{#if entry.tasks.length}}
+        {{#if (gt entry.progress 0)}}
+          <div class="quest-entry-progressbar">
+            <div class="quest-entry-progressbar-fill" style="width: {{entry.progress}}%;"></div>
+          </div>
+        {{/if}}
       {{/if}}
     {{/if}}
-  {{/if}}
+  </div>
+
+
   <!-- ENTRY CONTENT -->
   <div class="quest-entry-content">
     <!-- DESCRIPTION -->
     {{#if entry.description}}
-      <div class="quest-entry-divider"></div>
       <div class="quest-entry-description">
         {{#if entry.img}}
           <div class="quest-entry-image">
@@ -105,7 +110,6 @@
     {{#if entry.reward}}
       {{#if entry.reward.treasure}}
         {{#if entry.reward.treasure.length}}
-          <div class="quest-entry-divider"></div>
           <div class="quest-entry-reward">
             <span class="quest-entry-label">Treasure</span>
             <ul>
@@ -168,8 +172,6 @@
         {{/if}}
       {{/if}}
     {{/if}}
-    <!-- DIVIDER -->
-    <div class="quest-entry-divider"></div>
     <!-- REWARD -->
     {{#if entry.reward}}
       {{#if entry.reward.xp}}

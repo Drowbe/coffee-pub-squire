@@ -23,7 +23,7 @@ function getBlacksmith() {
 }
 
 // --- Quest pin icon helpers (mirror notes pattern) ---
-const QUEST_PIN_ICON = 'fa-scroll';
+const QUEST_PIN_ICON = 'fa-flag';
 const OBJECTIVE_PIN_ICON = 'fa-bullseye';
 
 function getDefaultQuestIconFlag() {
@@ -144,7 +144,7 @@ export class QuestPanel {
             search: "",
             tags: [],
             category: "all",
-            statusFilter: "active" // active, available, complete, failed
+            statusFilter: "active" // active, available, complete (includes failed)
         };
         this.allTags = new Set();
         this.isImporting = false; // Flag to prevent panel refreshes during import
@@ -1429,7 +1429,7 @@ export class QuestPanel {
             QUEST_PIN_BACKGROUND,
             strokeColor,
             `Q${questNum}`,
-            '<i class="fa-solid fa-scroll"></i>'
+            '<i class="fa-solid fa-flag"></i>'
         );
         document.body.appendChild(previewEl);
 
@@ -1948,8 +1948,7 @@ export class QuestPanel {
         const map = {
             active: 'In Progress',
             available: 'Not Started',
-            complete: 'Complete',
-            failed: 'Failed'
+            complete: 'Complete'
         };
         return map[filterValue] ?? null;
     }
@@ -4157,6 +4156,8 @@ export class QuestPanel {
                 group.unshift(pinned);
             }
         }
+
+        templateData.completeAndFailedCount = templateData.statusGroups.completed.length + templateData.statusGroups.failed.length;
 
         // Deep clone to break references and ensure only primitives are passed
         const safeTemplateData = JSON.parse(JSON.stringify(templateData));

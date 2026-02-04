@@ -12,7 +12,7 @@
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
             <button class="tray-handle-button-viewcycle" title="Toggle View Mode">
-                <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quest')}}fa-scroll{{else}}fa-user{{/if}}"></i>
+                <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else if (eq viewMode 'notes')}}fa-sticky-note{{else if (eq viewMode 'codex')}}fa-book{{else if (eq viewMode 'quest')}}fa-flag{{else}}fa-user{{/if}}"></i>
             </button>
 
             <div class="tray-handle-content-wrapper">
@@ -64,7 +64,7 @@
             {{/if}}
             {{#if showTabQuests}}
             <button class="tray-tab-button {{#if (eq viewMode 'quest')}}active{{/if}}" data-view="quest" title="Quests">
-                <i class="fa-solid fa-scroll"></i> Quests
+                <i class="fa-solid fa-flag"></i> Quests
             </button>
             {{/if}}
         </div>

@@ -37,13 +37,9 @@
                 <i class="fa-solid fa-campground"></i>
                 <span>Available</span>
             </button>
-            <button class="quest-status-button {{#if (eq filters.statusFilter 'complete')}}active{{/if}}" data-status-filter="complete" type="button" title="Complete quests">
+            <button class="quest-status-button {{#if (eq filters.statusFilter 'complete')}}active{{/if}}" data-status-filter="complete" type="button" title="Complete and failed quests">
                 <i class="fa-solid fa-crown"></i>
                 <span>Complete</span>
-            </button>
-            <button class="quest-status-button {{#if (eq filters.statusFilter 'failed')}}active{{/if}}" data-status-filter="failed" type="button" title="Failed quests">
-                <i class="fa-solid fa-skull"></i>
-                <span>Failed</span>
             </button>
         </div>
     </div>
@@ -69,39 +65,21 @@
                 </div>
             </div>
 
-            <!-- Complete Section -->
-            <div class="quest-section" data-status="Complete">
-                <div class="quest-category">
-                    <h3>
-                        <i class="fa-solid fa-crown"></i>
-                        Complete {{#if statusGroups.completed.length}}({{statusGroups.completed.length}}){{/if}}
-                    </h3>
-                    <div class="quest-toolbar">
-                        <i class="fa-solid fa-chevron-down" title="Toggle Complete"></i>
-                    </div>
-                </div>
+            <!-- Complete Section (Succeeded then Failed, no expandable title) -->
+            <div class="quest-section quest-section--no-titlebar" data-status="Complete">
                 <div class="quest-entries">
-                    {{#each statusGroups.completed as |entry|}}
-                        {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}
-                    {{/each}}
-                </div>
-            </div>
-
-            <!-- Failed Section -->
-            <div class="quest-section" data-status="Failed">
-                <div class="quest-category">
-                    <h3>
-                        <i class="fa-solid fa-skull"></i>
-                        Failed {{#if statusGroups.failed.length}}({{statusGroups.failed.length}}){{/if}}
-                    </h3>
-                    <div class="quest-toolbar">
-                        <i class="fa-solid fa-chevron-down" title="Toggle Failed"></i>
-                    </div>
-                </div>
-                <div class="quest-entries">
-                    {{#each statusGroups.failed as |entry|}}
-                        {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}
-                    {{/each}}
+                    {{#if statusGroups.completed.length}}
+                        <div class="quest-entries-subgroup-header">Succeeded</div>
+                        {{#each statusGroups.completed as |entry|}}
+                            {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}
+                        {{/each}}
+                    {{/if}}
+                    {{#if statusGroups.failed.length}}
+                        <div class="quest-entries-subgroup-header">Failed</div>
+                        {{#each statusGroups.failed as |entry|}}
+                            {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}
+                        {{/each}}
+                    {{/if}}
                 </div>
             </div>
         {{else}}

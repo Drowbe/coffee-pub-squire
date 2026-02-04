@@ -1232,7 +1232,7 @@ export class PanelManager {
         // Update toggle button icon
         const icon = tray.querySelector('.tray-handle-button-viewcycle i');
         if (icon) {
-            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note', 'fa-book', 'fa-scroll');
+            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note', 'fa-book', 'fa-flag');
             switch (mode) {
                 case 'party':
                     icon.classList.add('fa-users');
@@ -1244,7 +1244,7 @@ export class PanelManager {
                     icon.classList.add('fa-book');
                     break;
                 case 'quest':
-                    icon.classList.add('fa-scroll');
+                    icon.classList.add('fa-flag');
                     break;
                 default:
                     icon.classList.add('fa-user');
