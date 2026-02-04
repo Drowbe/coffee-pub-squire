@@ -182,6 +182,7 @@ export class PanelManager {
                     // Force a re-render of the inventory panel if it exists
                     if (PanelManager.instance?.inventoryPanel?.element) {
                         PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
+                        PanelManager.instance.controlPanel?.reapplySearch();
                     }
                 }, 30000); // Check every 30 seconds
                 PanelManager._cleanupInterval = intervalId;
@@ -556,6 +557,7 @@ export class PanelManager {
             this.weaponsPanel?.render(element);
             this.inventoryPanel?.render(element);
             this.featuresPanel?.render(element);
+            this.controlPanel?.reapplySearch();
 
             // Only render panels if they are enabled in settings
             if (game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
@@ -1150,6 +1152,7 @@ export class PanelManager {
                                         if (this.inventoryPanel) await this.inventoryPanel.render(this.element);
                                         break;
                                 }
+                                this.controlPanel?.reapplySearch();
                             } catch (error) {
                                 console.error('DROPZONE | Error processing world item:', error);
                                 ui.notifications.error("Error processing dropped item. See console for details.");

@@ -135,6 +135,8 @@ export class SpellsPanel {
         // Activate listeners on the root element
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
+
+        PanelManager.instance?.controlPanel?.reapplySearch();
     }
 
     _getSpellSlots() {

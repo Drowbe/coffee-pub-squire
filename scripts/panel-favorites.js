@@ -547,6 +547,8 @@ export class FavoritesPanel {
         
         // Update light icons
         this._updateLightIcons(html);
+
+        PanelManager.instance?.controlPanel?.reapplySearch();
     }
 
     _removeEventListeners(panel) {

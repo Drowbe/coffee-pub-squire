@@ -146,6 +146,8 @@ export class InventoryPanel {
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
         this._updateLightIcons(this.element);
+
+        PanelManager.instance?.controlPanel?.reapplySearch();
     }
 
     _updateVisibility(html) {

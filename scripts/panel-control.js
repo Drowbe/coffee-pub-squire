@@ -5,6 +5,7 @@ import { getNativeElement, renderTemplate } from './helpers.js';
 export class ControlPanel {
     constructor(actor) {
         this.actor = actor;
+        this._searchTerm = '';
     }
 
     async render(html) {
@@ -27,6 +28,21 @@ export class ControlPanel {
         
         this._activateListeners(this.element);
         this._updateVisibility();
+    }
+
+    /**
+     * Re-apply the current search filter. Call this after stacked panels
+     * (favorites, weapons, spells, features, inventory) re-render to restore
+     * the filtered view, since their DOM replacement clears display styles.
+     */
+    reapplySearch() {
+        if (!this._searchTerm) return;
+        const controlPanel = this.element?.querySelector('[data-panel="control"]');
+        const searchInput = controlPanel?.querySelector('.global-search');
+        if (searchInput) {
+            searchInput.value = this._searchTerm;
+        }
+        this._handleSearch(this._searchTerm);
     }
 
     _updateVisibility() {
@@ -66,15 +82,17 @@ export class ControlPanel {
     _handleSearch(searchTerm) {
         // v13: Use native DOM methods instead of jQuery
         if (!this.element) return;
-        
+
+        this._searchTerm = searchTerm;
+
         // Convert search term to lowercase for case-insensitive comparison
-        searchTerm = searchTerm.toLowerCase();
+        const normalizedTerm = searchTerm.toLowerCase();
 
         // Toggle visibility of individual search boxes based on global search state
         // v13: Use native DOM querySelectorAll
         const searchContainers = this.element.querySelectorAll('.panel-containers.stacked .panel-container .search-container');
         searchContainers.forEach(container => {
-            container.style.display = searchTerm === '' ? '' : 'none';
+            container.style.display = normalizedTerm === '' ? '' : 'none';
         });
 
         // Track visible items for each panel
@@ -122,7 +140,7 @@ export class ControlPanel {
                 clonedName.querySelectorAll('*').forEach(child => child.remove());
                 const itemName = clonedName.textContent.toLowerCase().trim();
                 
-                const shouldShow = searchTerm === '' || itemName.includes(searchTerm);
+                const shouldShow = normalizedTerm === '' || itemName.includes(normalizedTerm);
                 
                 // Toggle item visibility
                 // v13: Use style.display instead of jQuery toggle
@@ -131,7 +149,7 @@ export class ControlPanel {
             });
 
             // Handle ALL category headers in this panel
-            if (searchTerm !== '') {
+            if (normalizedTerm !== '') {
                 // First hide all headers
                 // v13: Use native DOM querySelectorAll
                 const categoryHeaders = panelElement.querySelectorAll('.category-header');
@@ -167,7 +185,7 @@ export class ControlPanel {
             // v13: Use native DOM querySelector
             const noMatchesElement = panelElement.querySelector('.no-matches');
             if (noMatchesElement) {
-                if (searchTerm === '') {
+                if (normalizedTerm === '') {
                     noMatchesElement.classList.remove('show');
                     noMatchesElement.style.display = 'none';
                 } else {
@@ -198,7 +216,7 @@ export class ControlPanel {
         }
 
         // Clear individual search boxes when global search is cleared
-        if (searchTerm === '') {
+        if (normalizedTerm === '') {
             // v13: Use native DOM querySelectorAll
             const searchInputs = this.element.querySelectorAll('.panel-containers.stacked .panel-container .search-container input');
             searchInputs.forEach(input => {
