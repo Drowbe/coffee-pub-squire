@@ -1507,7 +1507,7 @@ export class QuestPanel {
                 if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
                 this._clearQuestPinPlacement();
                 ui.notifications.info('Quest pin placed.');
-                this.render(this.element);
+                // Sync hooks (blacksmith.pins.placed) will trigger panel refresh; avoid duplicate render
             } catch (e) {
                 console.warn('Coffee Pub Squire | Place quest pin failed:', e);
                 this._clearQuestPinPlacement();
@@ -1682,7 +1682,7 @@ export class QuestPanel {
                 if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
                 this._clearQuestPinPlacement();
                 ui.notifications.info('Objective pin placed.');
-                this.render(this.element);
+                // Sync hooks (blacksmith.pins.placed) will trigger panel refresh; avoid duplicate render
             } catch (e) {
                 console.warn('Coffee Pub Squire | Place objective pin failed:', e);
                 this._clearQuestPinPlacement();
@@ -1744,7 +1744,7 @@ export class QuestPanel {
             console.warn('Coffee Pub Squire | Unplace quest pin:', e);
         }
         await page.setFlag(MODULE.ID, 'sceneId', null);
-        this.render(this.element);
+        // Sync hooks (blacksmith.pins.unplaced) will trigger panel refresh; avoid duplicate render
     }
 
     /**
@@ -1761,7 +1761,7 @@ export class QuestPanel {
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace objective pin:', e);
         }
-        this.render(this.element);
+        // Sync hooks (blacksmith.pins.unplaced) will trigger panel refresh; avoid duplicate render
     }
 
     /**
@@ -1999,7 +1999,12 @@ export class QuestPanel {
         // v13: Use helper method for consistency
         const nativeHtml = getNativeElement(html);
         if (!nativeHtml) return;
-        
+
+        // Abort previous container-level listeners to prevent duplicates on re-render
+        if (this._questListenersAbort) this._questListenersAbort.abort();
+        this._questListenersAbort = new AbortController();
+        const listenerSignal = this._questListenersAbort.signal;
+
         // Search input - live DOM filtering
         const questSearchContainer = nativeHtml.querySelector('.quest-search');
         const searchInput = questSearchContainer?.querySelector('input');
@@ -2668,7 +2673,7 @@ export class QuestPanel {
                 entry.classList.remove('collapsed');
             }
         });
-        // v13: Use native DOM event delegation
+        // v13: Use native DOM event delegation (with signal to avoid duplicates on re-render)
         // Toggle collapse on chevron click
         nativeHtml.addEventListener('click', async function(e) {
             // Check if the clicked element is the toggle or is inside the toggle
@@ -2688,7 +2693,7 @@ export class QuestPanel {
                 flag[uuid] = collapsed;
                 await game.user.setFlag(MODULE.ID, 'questCardCollapsed', flag);
             }
-        });
+        }, { signal: listenerSignal });
         // Toggle collapse on header click (but not controls)
         nativeHtml.addEventListener('click', async function(e) {
             const header = e.target.closest('.quest-entry-header');
@@ -2707,7 +2712,7 @@ export class QuestPanel {
                 flag[uuid] = collapsed;
                 await game.user.setFlag(MODULE.ID, 'questCardCollapsed', flag);
             }
-        });
+        }, { signal: listenerSignal });
 
         // Pin quest handler
         // v13: Use nativeHtml instead of html

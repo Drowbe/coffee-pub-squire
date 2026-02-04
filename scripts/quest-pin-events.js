@@ -21,6 +21,7 @@ let questPinHandlerController = null;
 let questPinContextMenuDisposers = [];
 let questPinSyncRegistered = false;
 let questPinSceneSyncHookId = null;
+let questPinSyncDebounceTimer = null;
 
 /**
  * Focus and flash the quest entry in the quest panel
@@ -326,13 +327,22 @@ export function registerQuestPinSync() {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
 
-    const handle = async (payload = {}) => {
+    const doSyncAndRender = async (payload = {}) => {
         if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
         await reconcileQuestPins({ sceneId: payload.sceneId });
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (panelManager?.questPanel?.render && panelManager.element) {
             await panelManager.questPanel.render(panelManager.element);
         }
+    };
+
+    const handle = (payload = {}) => {
+        if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
+        if (questPinSyncDebounceTimer) clearTimeout(questPinSyncDebounceTimer);
+        questPinSyncDebounceTimer = trackModuleTimeout(() => {
+            questPinSyncDebounceTimer = null;
+            doSyncAndRender(payload);
+        }, 50);
     };
 
     Hooks.on('blacksmith.pins.deleted', handle);
