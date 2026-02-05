@@ -4,7 +4,8 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-squire/release.yml)
 ![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-squire/total)
 ![MIT License](https://img.shields.io/badge/license-MIT-blue)
-![Foundry v12](https://img.shields.io/badge/foundry-v12-green)
+![Foundry v12](https://img.shields.io/badge/foundry-v12-yellow)
+![Foundry v13](https://img.shields.io/badge/foundry-v13-green)
 
 ## Disclaimer
 

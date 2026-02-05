@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [13.1.3]
+
+### Added
+- **Quest Status Filter Buttons**: Quest tab now uses filter buttons (like Notes) to show one status at a time: Active, Available, Complete. Removed "All" option.
+- **Quest Subgroup Headers**: Complete section shows "Succeeded" and "Failed" as subgroup headers instead of expandable title bars.
+
+### Changed
+- **Quest Status Labels**: Renamed "In Progress" → "Active", "Not Started" → "Available", "Completed" → "Complete". "Failed" unchanged.
+- **Quest Active/Available Sections**: Removed redundant expandable title bars; these sections are always expanded (no collapse).
+- **Quest Complete Section**: Merged Failed into Complete; both appear under the Complete button with "Succeeded" and "Failed" subgroup headers. Replaced expandable Complete title bar with subgroup headers.
+- **Character Panel Search**: Search term is now persisted and re-applied when stacked panels (Favorites, Weapons, Spells, Features, Inventory) re-render (e.g. 30s cleanup, item drops). Added `reapplySearch()` to restore filtered view after panel refreshes.
+- **Quest Pin Sync**: Debounced quest-pin-sync handler (50ms) to reduce rapid successive panel refreshes.
+
+### Fixed
+- **Quest Panel Collapse/Expand**: Fixed quests becoming un-expandable after setting an objective active or placing a pin. Duplicate event listeners on re-render caused double-toggle (expand then collapse). Now uses `AbortController` to clear previous listeners before adding new ones.
+- **Quest Panel Redundant Renders**: Removed duplicate full re-renders after placing/unplacing quest and objective pins; sync hooks alone now trigger the refresh.
+
 ## [13.1.2]
 ### Added
 - Notes now create a note + unplaced pin immediately on open (no draft hiding); "Untitled Note" behavior matches typical note apps.
