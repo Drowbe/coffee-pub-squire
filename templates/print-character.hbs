@@ -333,6 +333,21 @@
             font-size: 0.89em;
             color: #333;
         }
+        /* Images in item/biography descriptions: fit within container, no overflow */
+        .item-main-description img,
+        .item-additional-details img,
+        .additional-details-content img,
+        .additional-details-box img,
+        .biography-block-content img,
+        .feature-main-description img,
+        .feature-additional-details img {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #9f9275;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px #0001;
+            background: #f8f6f2;
+        }
         /* Biography section */
         .biography-grid {
             display: grid;
