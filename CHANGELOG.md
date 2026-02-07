@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.1.4]
+
+### Added
+- **Print Character - Cover Page**: Cover page with character name, race • class • level subtitle, and full-width portrait. Uses `page-break-after` for separate first page when printing.
+- **Print Character - Biography Section**: Biography tab data after Skills: physical traits (eyes, hair, skin, height, weight, age, gender, faith), character details (race, background, size), personality traits, ideals, bonds, flaws, and biography text.
+- **Print Character - Stats & Combat**: Initiative, speed (walk/fly/swim/climb/burrow), hit dice, temporary HP, experience points, saving throws, and trait badges (senses, resistances, armor proficiencies, weapon proficiencies, languages).
+- **Print Character - Inventory Extras**: Encumbrance, currency (PP/GP/EP/SP/CP), and dedicated Weapons section (separate from equipment) with damage formulas.
+- **Print Character - Image Overflow Fix**: CSS for images inside item descriptions, additional details, biography content, and features so they scale to fit (`max-width: 100%`) and do not overflow.
+
+### Changed
+- **Print Character - Cover Subtitle**: Replaced pipe (`|`) with bullet (`•`) between race and class/level on cover page.
+- **Print Character - Ability Labels**: Ability Scores section now uses prepared abilities with proper labels (Strength, Dexterity, etc.) from CONFIG.DND5E instead of raw system data.
+- **Print Character - Appearance Section**: Removed duplicate Appearance block; physical traits remain in the Biography section grid only.
+
+### Fixed
+- **Print Character - ES5 Compatibility**: Replaced nullish coalescing (`??`) and optional chaining (`?.`) in `utility-print-character.js` with ES5-safe patterns to fix SyntaxError in environments that do not support ES2020.
+- **Print Character - Missing Ability Labels**: Ability score boxes now display labels (Strength, Dexterity, etc.); template was using `actor.system.abilities` which lacks a `.label` property.
+
 ## [13.1.3]
 
 ### Added
