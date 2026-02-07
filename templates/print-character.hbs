@@ -185,6 +185,10 @@
                 background: #fff !important;
                 color: #000 !important;
             }
+            .cover-page {
+                min-height: 100vh;
+                page-break-after: always;
+            }
             .character-sheet {
                 box-shadow: none;
                 background: #fff;
@@ -329,9 +333,136 @@
             font-size: 0.89em;
             color: #333;
         }
+        /* Biography section */
+        .biography-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 24px;
+            margin-bottom: 14px;
+        }
+        .biography-field {
+            display: flex;
+            gap: 8px;
+        }
+        .biography-label {
+            font-weight: bold;
+            color: #7a3b2e;
+            min-width: 80px;
+        }
+        .biography-value {
+            color: #333;
+            flex: 1;
+        }
+        .biography-block {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0d8c3;
+        }
+        .biography-block-label {
+            font-weight: bold;
+            color: #7a3b2e;
+            margin-bottom: 4px;
+        }
+        .biography-block-content {
+            font-size: 0.98em;
+            color: #333;
+            line-height: 1.5;
+        }
+        /* Cover page */
+        .cover-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 24px 24px;
+            margin-bottom: 32px;
+            page-break-after: always;
+        }
+        .cover-name {
+            font-size: 2.8em;
+            font-weight: bold;
+            color: #7a3b2e;
+            text-align: center;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .cover-subtitle {
+            font-size: 1.2em;
+            color: #555;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .cover-portrait {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 3px solid #9f9275;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        /* Trait badges (Senses, Resistances, Armor, Weapons, Languages) */
+        .trait-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            margin-bottom: 14px;
+        }
+        .trait-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .trait-group-label {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #7a3b2e;
+            min-width: 75px;
+        }
+        .trait-badges-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .trait-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            background: #e8e4dc;
+            color: #444;
+        }
+        .trait-badge.resistance {
+            background: #d4edda;
+            color: #155724;
+        }
+        .saves-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .save-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 10px;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
     </style>
 </head>
 <body>
+    <!-- Cover Page -->
+    <div class="cover-page">
+        <div class="cover-name">{{actor.coverPage.name}}</div>
+        <div class="cover-subtitle">{{actor.coverPage.race}}{{#if actor.coverPage.race}}{{#if actor.coverPage.classAndLevel}} • {{/if}}{{/if}}{{actor.coverPage.classAndLevel}}</div>
+        {{#if actor.coverPage.portrait}}
+        <img src="{{actor.coverPage.portrait}}" alt="{{actor.coverPage.name}}" class="cover-portrait">
+        {{/if}}
+    </div>
+
     <div class="character-sheet">
         <!-- Header with Portrait and Basic Info -->
         <div class="header">
@@ -357,7 +488,7 @@
         <div class="section card">
             <div class="section-title">Ability Scores</div>
             <div class="abilities-grid">
-                {{#each actor.system.abilities as |ability id|}}
+                {{#each actor.abilities as |ability|}}
                 <div class="ability">
                     <div class="ability-name">{{ability.label}}</div>
                     <div class="ability-score">{{ability.value}}</div>
@@ -370,7 +501,7 @@
         <!-- Stats -->
         <div class="section card">
             <div class="section-title">Stats</div>
-            <div class="stats-grid">
+            <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
                 <div class="stat">
                     <div class="stat-name">HP</div>
                     <div class="stat-value">{{actor.system.attributes.hp.value}}/{{actor.system.attributes.hp.max}}</div>
@@ -383,6 +514,89 @@
                     <div class="stat-name">Proficiency</div>
                     <div class="stat-value">+{{actor.system.attributes.prof}}</div>
                 </div>
+                <div class="stat">
+                    <div class="stat-name">Initiative</div>
+                    <div class="stat-value">{{actor.statsAndCombat.initiative}}</div>
+                </div>
+                {{#each actor.statsAndCombat.speeds as |s|}}
+                <div class="stat">
+                    <div class="stat-name">{{s.label}}</div>
+                    <div class="stat-value">{{s.value}} {{../actor.statsAndCombat.speedUnits}}</div>
+                </div>
+                {{/each}}
+                {{#if actor.statsAndCombat.hitDice}}
+                <div class="stat">
+                    <div class="stat-name">Hit Dice</div>
+                    <div class="stat-value">{{actor.statsAndCombat.hitDice}}</div>
+                </div>
+                {{/if}}
+                {{#if actor.statsAndCombat.tempHp}}
+                <div class="stat">
+                    <div class="stat-name">Temp HP</div>
+                    <div class="stat-value">{{actor.statsAndCombat.tempHp}}</div>
+                </div>
+                {{/if}}
+                {{#if actor.statsAndCombat.experience}}
+                <div class="stat">
+                    <div class="stat-name">Experience</div>
+                    <div class="stat-value">{{actor.statsAndCombat.experience}}</div>
+                </div>
+                {{/if}}
+            </div>
+            {{#if actor.statsAndCombat.savingThrows.length}}
+            <div style="margin-top: 14px;">
+                <div class="biography-block-label" style="margin-bottom: 6px;">Saving Throws</div>
+                <div class="saves-grid">
+                    {{#each actor.statsAndCombat.savingThrows as |save|}}
+                    <div class="save-item">
+                        <span>{{save.label}}</span>
+                        <span>{{save.display}}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+            <div class="trait-badges" style="margin-top: 14px;">
+                {{#if actor.statsAndCombat.senses.length}}
+                <div class="trait-group">
+                    <span class="trait-group-label">Senses</span>
+                    <div class="trait-badges-list">
+                        {{#each actor.statsAndCombat.senses as |s|}}<span class="trait-badge">{{s}}</span>{{/each}}
+                    </div>
+                </div>
+                {{/if}}
+                {{#if actor.statsAndCombat.resistances.length}}
+                <div class="trait-group">
+                    <span class="trait-group-label">Resistances</span>
+                    <div class="trait-badges-list">
+                        {{#each actor.statsAndCombat.resistances as |r|}}<span class="trait-badge resistance">{{r}}</span>{{/each}}
+                    </div>
+                </div>
+                {{/if}}
+                {{#if actor.statsAndCombat.armorProfs.length}}
+                <div class="trait-group">
+                    <span class="trait-group-label">Armor</span>
+                    <div class="trait-badges-list">
+                        {{#each actor.statsAndCombat.armorProfs as |a|}}<span class="trait-badge">{{a}}</span>{{/each}}
+                    </div>
+                </div>
+                {{/if}}
+                {{#if actor.statsAndCombat.weaponProfs.length}}
+                <div class="trait-group">
+                    <span class="trait-group-label">Weapons</span>
+                    <div class="trait-badges-list">
+                        {{#each actor.statsAndCombat.weaponProfs as |w|}}<span class="trait-badge">{{w}}</span>{{/each}}
+                    </div>
+                </div>
+                {{/if}}
+                {{#if actor.statsAndCombat.languages.length}}
+                <div class="trait-group">
+                    <span class="trait-group-label">Languages</span>
+                    <div class="trait-badges-list">
+                        {{#each actor.statsAndCombat.languages as |l|}}<span class="trait-badge">{{l}}</span>{{/each}}
+                    </div>
+                </div>
+                {{/if}}
             </div>
         </div>
 
@@ -434,9 +648,124 @@
             </div>
         </div>
 
+        <!-- Biography -->
+        {{#if actor.biography.hasAnyBiography}}
+        <div class="section card">
+            <div class="section-title">Biography</div>
+            {{#with actor.biography}}
+            {{#if hasCharacterDetails}}
+            <div class="biography-grid">
+                {{#if race}}<div class="biography-field"><span class="biography-label">Race</span><span class="biography-value">{{race}}</span></div>{{/if}}
+                {{#if background}}<div class="biography-field"><span class="biography-label">Background</span><span class="biography-value">{{background}}</span></div>{{/if}}
+                {{#if size}}<div class="biography-field"><span class="biography-label">Size</span><span class="biography-value">{{size}}</span></div>{{/if}}
+            </div>
+            {{/if}}
+            {{#if hasPhysicalTraits}}
+            <div class="biography-grid">
+                {{#if eyes}}<div class="biography-field"><span class="biography-label">Eyes</span><span class="biography-value">{{eyes}}</span></div>{{/if}}
+                {{#if hair}}<div class="biography-field"><span class="biography-label">Hair</span><span class="biography-value">{{hair}}</span></div>{{/if}}
+                {{#if skin}}<div class="biography-field"><span class="biography-label">Skin</span><span class="biography-value">{{skin}}</span></div>{{/if}}
+                {{#if height}}<div class="biography-field"><span class="biography-label">Height</span><span class="biography-value">{{height}}</span></div>{{/if}}
+                {{#if weight}}<div class="biography-field"><span class="biography-label">Weight</span><span class="biography-value">{{weight}}</span></div>{{/if}}
+                {{#if age}}<div class="biography-field"><span class="biography-label">Age</span><span class="biography-value">{{age}}</span></div>{{/if}}
+                {{#if gender}}<div class="biography-field"><span class="biography-label">Gender</span><span class="biography-value">{{gender}}</span></div>{{/if}}
+                {{#if faith}}<div class="biography-field"><span class="biography-label">Faith</span><span class="biography-value">{{faith}}</span></div>{{/if}}
+            </div>
+            {{/if}}
+            {{#if trait}}
+            <div class="biography-block">
+                <div class="biography-block-label">Personality Traits</div>
+                <div class="biography-block-content">{{{trait}}}</div>
+            </div>
+            {{/if}}
+            {{#if ideal}}
+            <div class="biography-block">
+                <div class="biography-block-label">Ideals</div>
+                <div class="biography-block-content">{{{ideal}}}</div>
+            </div>
+            {{/if}}
+            {{#if bond}}
+            <div class="biography-block">
+                <div class="biography-block-label">Bonds</div>
+                <div class="biography-block-content">{{{bond}}}</div>
+            </div>
+            {{/if}}
+            {{#if flaw}}
+            <div class="biography-block">
+                <div class="biography-block-label">Flaws</div>
+                <div class="biography-block-content">{{{flaw}}}</div>
+            </div>
+            {{/if}}
+            {{#if biographyHtml}}
+            <div class="biography-block">
+                <div class="biography-block-label">Biography</div>
+                <div class="biography-block-content">{{{biographyHtml}}}</div>
+            </div>
+            {{/if}}
+            {{/with}}
+        </div>
+        {{/if}}
+
+        <!-- Weapons -->
+        {{#if actor.weapons.length}}
+        <div class="section card">
+            <div class="section-title">Weapons</div>
+            <div class="inventory-list">
+                {{#each actor.weapons as |item|}}
+                <div class="item-card" style="background: #fff; border: 1.5px solid #e0d8c3; border-radius: 12px; box-shadow: 0 2px 10px #0001; margin-bottom: 22px; padding: 0 0 14px 0; overflow: hidden;">
+                    <div style="height: 4px; background: linear-gradient(90deg, #e6c36b 0%, #f7e7b0 100%); border-radius: 10px 10px 0 0;"></div>
+                    <div style="display: flex; align-items: center; padding: 12px 18px 0 18px;">
+                        <img src="{{item.icon}}" alt="" class="item-icon" style="width: 32px; height: 32px; margin-right: 14px; border-radius: 6px; border: 1px solid #e0d8c3; background: #faf8f6;">
+                        <div style="flex: 1;">
+                            <div class="item-name" style="font-size: 1.1em; font-weight: bold; color: #7a3b2e;">{{item.name}}</div>
+                            <div class="item-type" style="font-size: 0.98em; color: #b08d57; text-transform: capitalize;">{{#if item.system.weaponType}}{{item.system.weaponType}}{{else}}{{#if item.system.category}}{{item.system.category}}{{else}}Weapon{{/if}}{{/if}}</div>
+                            <div class="item-stats-row" style="display: flex; gap: 18px; margin-top: 6px;">
+                                <div style="font-size: 0.97em; color: #444;"><span style="font-weight: bold; color: #7a3b2e;">Qty:</span> {{item.quantity}}</div>
+                                <div style="font-size: 0.97em; color: #444;"><span style="font-weight: bold; color: #7a3b2e;">Weight:</span> {{item.displayWeight}}</div>
+                                <div style="font-size: 0.97em; color: #444;"><span style="font-weight: bold; color: #7a3b2e;">Price:</span> {{item.price}}</div>
+                                {{#if item.charges}}
+                                <div style="font-size: 0.97em; color: #444;"><span style="font-weight: bold; color: #7a3b2e;">Charges:</span> {{item.charges}}</div>
+                                {{/if}}
+                                {{#if item.system.damage}}{{#if item.system.damage.parts}}
+                                <div style="font-size: 0.97em; color: #444;"><span style="font-weight: bold; color: #7a3b2e;">Damage:</span> {{#each item.system.damage.parts as |d|}}{{#unless @first}}; {{/unless}}{{d.formula}}{{#if d.damageType}} {{d.damageType}}{{/if}}{{/each}}</div>
+                                {{/if}}{{/if}}
+                            </div>
+                        </div>
+                    </div>
+                    {{#if item.mainDescription}}
+                    <div class="item-main-description" style="margin: 14px 18px 0 18px; padding: 10px 14px; background: none; border-radius: 6px; color: #333;">
+                        {{{item.mainDescription}}}
+                    </div>
+                    {{/if}}
+                    {{#if item.additionalDetails}}
+                    <div class="item-additional-details" style="margin: 14px 18px 0 18px; padding: 10px 14px; background: #f8f6f2; border-left: 4px solid #e6c36b; border-radius: 6px;">
+                        <span class="additional-details-label" style="font-size: 1em; font-weight: bold; color: #b08d57; display: block; margin-bottom: 4px;">Additional Details</span>
+                        <div class="additional-details-content" style="font-size: 0.98em; color: #444;">{{{item.additionalDetails}}}</div>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
         <!-- Inventory -->
         <div class="section card">
             <div class="section-title">Inventory</div>
+            {{#if actor.inventoryExtras.encumbrance}}
+            <div style="margin-bottom: 10px; font-size: 0.98em; color: #444;">
+                <span style="font-weight: bold; color: #7a3b2e;">Encumbrance:</span> {{actor.inventoryExtras.encumbrance}}
+            </div>
+            {{/if}}
+            {{#if actor.inventoryExtras.hasAnyCurrency}}
+            <div style="margin-bottom: 10px; font-size: 0.98em; color: #444; display: flex; flex-wrap: wrap; gap: 12px;">
+                {{#if actor.inventoryExtras.currency.pp}}<span><strong style="color: #7a3b2e;">PP:</strong> {{actor.inventoryExtras.currency.pp}}</span>{{/if}}
+                {{#if actor.inventoryExtras.currency.gp}}<span><strong style="color: #7a3b2e;">GP:</strong> {{actor.inventoryExtras.currency.gp}}</span>{{/if}}
+                {{#if actor.inventoryExtras.currency.ep}}<span><strong style="color: #7a3b2e;">EP:</strong> {{actor.inventoryExtras.currency.ep}}</span>{{/if}}
+                {{#if actor.inventoryExtras.currency.sp}}<span><strong style="color: #7a3b2e;">SP:</strong> {{actor.inventoryExtras.currency.sp}}</span>{{/if}}
+                {{#if actor.inventoryExtras.currency.cp}}<span><strong style="color: #7a3b2e;">CP:</strong> {{actor.inventoryExtras.currency.cp}}</span>{{/if}}
+            </div>
+            {{/if}}
             <div class="inventory-list">
                 {{#each actor.inventory as |item|}}
                 <div class="item-card" style="background: #fff; border: 1.5px solid #e0d8c3; border-radius: 12px; box-shadow: 0 2px 10px #0001; margin-bottom: 22px; padding: 0 0 14px 0; overflow: hidden;">

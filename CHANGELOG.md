@@ -11,8 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Quest Status Filter Buttons**: Quest tab now uses filter buttons (like Notes) to show one status at a time: Active, Available, Complete. Removed "All" option.
 - **Quest Subgroup Headers**: Complete section shows "Succeeded" and "Failed" as subgroup headers instead of expandable title bars.
-- **Quest/Objective Pin Resilience**: Added Blacksmith pin hooks (created/placed/unplaced/updated/deleted) to keep quest/objective flags in sync; added full reconcile utility for quest pins across scenes and unplaced pins.
-- **Objective Pin Context Menus**: Quest pins now register custom context menu actions (Complete Objective, Fail Objective, Toggle Objective Hidden, Toggle Quest Hidden, Delete Pin) with friendly pin-type labels.
 
 ### Changed
 - **Quest Status Labels**: Renamed "In Progress" → "Active", "Not Started" → "Available", "Completed" → "Complete". "Failed" unchanged.
@@ -20,16 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quest Complete Section**: Merged Failed into Complete; both appear under the Complete button with "Succeeded" and "Failed" subgroup headers. Replaced expandable Complete title bar with subgroup headers.
 - **Character Panel Search**: Search term is now persisted and re-applied when stacked panels (Favorites, Weapons, Spells, Features, Inventory) re-render (e.g. 30s cleanup, item drops). Added `reapplySearch()` to restore filtered view after panel refreshes.
 - **Quest Pin Sync**: Debounced quest-pin-sync handler (50ms) to reduce rapid successive panel refreshes.
-- **Pin Placement Flow**: Quest/objective pin placement now follows Blacksmith’s unplaced-first pattern; auto-creates/reuses unplaced pins, auto-unplaces stale placements, and updates flags from the API instead of trusting stored flags.
-- **Context Menu Visibility**: Module context items now filter by moduleId/type to avoid leaking into other modules’ pins; registration waits for `pins.whenReady()` and re-registers cleanly.
-- **Objective Icon States**: Objective pin icons now derive state from live Pins API (placed/unplaced) and dim/brighten correctly with CSS aligned to quest icons.
 
 ### Fixed
 - **Quest Panel Collapse/Expand**: Fixed quests becoming un-expandable after setting an objective active or placing a pin. Duplicate event listeners on re-render caused double-toggle (expand then collapse). Now uses `AbortController` to clear previous listeners before adding new ones.
 - **Quest Panel Redundant Renders**: Removed duplicate full re-renders after placing/unplacing quest and objective pins; sync hooks alone now trigger the refresh.
-- **Bulk Pin Clearing**: Clear-all quest pins now deletes placed and unplaced pins, reloads scenes, reconciles flags, and rerenders the panel so icons immediately reflect unplaced state.
-- **Stale Pin Flags**: Added reconcile pass to clean orphaned/stale quest/objective pin flags when pins are deleted from the canvas or via bulk deletes.
-- **Objective Pin Placement**: Placement/unplacement no longer gets stuck on missing pins; stale sceneId entries are cleared and placement resumes.
 
 ## [13.1.2]
 ### Added
