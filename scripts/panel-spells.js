@@ -141,7 +141,8 @@ export class SpellsPanel {
 
     _getSpellSlots() {
         if (!this.actor) return [];
-        const spellbook = this.actor.system.spells;
+        const spellbook = this.actor.system?.spells;
+        if (!spellbook) return [];
         
         // Convert spellbook data into array format
         const slots = [];
@@ -372,7 +373,7 @@ export class SpellsPanel {
                 
                 if (isNaN(level)) return;
                 
-                const spellLevel = this.actor.system.spells[`spell${level}`];
+                const spellLevel = this.actor.system?.spells?.[`spell${level}`];
                 if (!spellLevel) return;
                 
                 const maxSlots = spellLevel.override ?? spellLevel.max;
