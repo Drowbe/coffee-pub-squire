@@ -607,6 +607,15 @@ export class QuestPanel {
             if (timeout) clearTrackedTimeout(timeout);
         });
         this._notificationDebounceTimeouts = {};
+
+        // Ensure pin-placement mode listeners are removed.
+        this._clearQuestPinPlacement();
+
+        // Ensure container-level listeners are torn down.
+        if (this._questListenersAbort) {
+            this._questListenersAbort.abort();
+            this._questListenersAbort = null;
+        }
         
         this.element = null;
     }

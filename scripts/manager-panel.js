@@ -230,6 +230,9 @@ export class PanelManager {
                     await FavoritesPanel.initializeNpcFavorites(actor);
                 }
             }
+
+            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
+            if (!PanelManager.instance) return;
             
             // Restore window states from user flags
             const savedWindowStates = game.user.getFlag(MODULE.ID, 'windowStates') || {};
@@ -246,10 +249,13 @@ export class PanelManager {
                 if (token) {
                     PanelManager.instance.healthPanel.updateTokens([token]);
                 }
-            } else if (savedWindowStates.health && PanelManager.instance.healthPanel) {
+            } else if (savedWindowStates.health && PanelManager.instance?.healthPanel) {
                 // Restore from saved state
                 await PanelManager.instance.healthPanel._onPopOut();
             }
+
+            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
+            if (!PanelManager.instance) return;
 
             // Restore dice tray window state if it was open
             if (hadDiceTrayWindow && PanelManager.instance.dicetrayPanel) {
@@ -260,16 +266,22 @@ export class PanelManager {
                 DiceTrayPanel.activeWindow = PanelManager.instance.dicetrayPanel.window;
                 // Update the panel and window with the new actor
                 PanelManager.instance.dicetrayPanel.updateActor(actor);
-            } else if (savedWindowStates.diceTray && PanelManager.instance.dicetrayPanel) {
+            } else if (savedWindowStates.diceTray && PanelManager.instance?.dicetrayPanel) {
                 // Restore from saved state
                 await PanelManager.instance.dicetrayPanel._onPopOut();
             }
 
+            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
+            if (!PanelManager.instance) return;
+
             // Restore macros window state if it was open
-            if (savedWindowStates.macros && PanelManager.instance.macrosPanel) {
+            if (savedWindowStates.macros && PanelManager.instance?.macrosPanel) {
                 // Restore from saved state
                 await PanelManager.instance.macrosPanel._onPopOut();
             }
+
+            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
+            if (!PanelManager.instance) return;
 
             // Remove any existing trays first
             // v13: Use native DOM instead of jQuery
@@ -277,6 +289,9 @@ export class PanelManager {
             
             // Create the tray
             await PanelManager.instance.createTray();
+
+            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
+            if (!PanelManager.instance) return;
             
             // Initialize quest markers for the current scene
             if (PanelManager.instance.questMarkers) {

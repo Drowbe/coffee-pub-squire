@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Spells Panel - Undefined spellbook**: Fixed `TypeError: Cannot read properties of undefined (reading 'spell1')` when rendering the spells panel for actors without spell data (e.g. NPCs, loot, vehicles). Added guards for `actor.system.spells` in `_getSpellSlots()` and the spell slot pip click handler.
+- **Panel Manager - Token deletion race**: Fixed `TypeError: Cannot read properties of null (reading 'macrosPanel')` and `Cannot read properties of null (reading 'renderPanels')` when deleting a controlled token. Race between `controlToken` and `deleteToken` hooks caused null access. Added abort checks after each `await` in `PanelManager.initialize()` and null guard before `renderPanels` in the `deleteToken` callback.
+- **Spells Panel - Duplicate listeners on re-render**: Added `AbortController`-based listener lifecycle so delegated click handlers are torn down before rebind. Prevents stacked handlers, double actions, and gradual memory/performance degradation during frequent panel renders.
+- **Features Panel - Duplicate listeners on re-render**: Added `AbortController`-based listener cleanup and panel `destroy()` teardown to prevent listener accumulation and repeated callback execution after multiple renders.
+- **Favorites Panel - Duplicate listeners on re-render**: Added centralized listener abort/rebind flow for panel-level and cloned-control listeners, plus explicit `destroy()` cleanup (including context menu close) to prevent stale handlers and retained references.
+- **Quest Panel - Incomplete destroy teardown**: Updated `destroy()` to call `_clearQuestPinPlacement()` and abort `_questListenersAbort`, ensuring canvas/window listeners are removed when panel instances are replaced.
 
 ## [13.1.4]
 

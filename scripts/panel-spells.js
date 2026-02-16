@@ -8,6 +8,7 @@ export class SpellsPanel {
         this.actor = actor;
         this.spells = this._getSpells();
         this.showOnlyPrepared = game.settings.get(MODULE.ID, 'showOnlyPreparedSpells');
+        this._listenerController = null;
         // Don't set panelManager in constructor
     }
 
@@ -250,10 +251,10 @@ export class SpellsPanel {
     }
 
     _removeEventListeners(panel) {
-        if (!panel) return;
-        // v13: Native DOM doesn't support jQuery's .off() method
-        // Event listeners will be removed when elements are cloned in _activateListeners
-        // This method is kept for compatibility but does nothing in v13
+        if (this._listenerController) {
+            this._listenerController.abort();
+            this._listenerController = null;
+        }
     }
 
     _activateListeners(html) {
@@ -271,6 +272,8 @@ export class SpellsPanel {
 
         // Remove any existing listeners first
         this._removeEventListeners(panel);
+        this._listenerController = new AbortController();
+        const listenerSignal = this._listenerController.signal;
 
         // Category filter toggles - v13: Convert to native DOM event delegation
         // TODO: Convert panel.on() event delegation to native DOM addEventListener
@@ -281,7 +284,7 @@ export class SpellsPanel {
             if (categoryId) {
                 this.panelManager.toggleCategory(categoryId, panel);
             }
-        });
+        }, { signal: listenerSignal });
 
         // Add filter toggle handler
         // v13: Use native DOM event delegation
@@ -294,7 +297,7 @@ export class SpellsPanel {
             filterToggle.classList.toggle('active', this.showOnlyPrepared);
             filterToggle.classList.toggle('faded', !this.showOnlyPrepared);
             this._updateVisibility(nativeHtml);
-        });
+        }, { signal: listenerSignal });
 
         // Spell info click (feather icon)
         // v13: Use native DOM event delegation
@@ -309,7 +312,7 @@ export class SpellsPanel {
             if (spell) {
                 spell.sheet.render(true);
             }
-        });
+        }, { signal: listenerSignal });
 
         // Toggle favorite
         // v13: Use native DOM event delegation
@@ -322,7 +325,7 @@ export class SpellsPanel {
             const spellId = spellItem.dataset.spellId;
             await FavoritesPanel.manageFavorite(this.actor, spellId);
             // manageFavorite() already updates all panels, including this one
-        });
+        }, { signal: listenerSignal });
 
         // Cast spell (roll overlay)
         // v13: Use native DOM event delegation
@@ -337,7 +340,7 @@ export class SpellsPanel {
             if (spell) {
                 await spell.use({}, { event });
             }
-        });
+        }, { signal: listenerSignal });
 
         // Toggle prepared state (sun icon)
         // v13: Use native DOM event delegation
@@ -360,7 +363,7 @@ export class SpellsPanel {
                 // Update visibility in case we're filtering by prepared
                 this._updateVisibility(nativeHtml);
             }
-        });
+        }, { signal: listenerSignal });
 
         // Spell slot pip clicks (GM only)
         // v13: Use native DOM event delegation
@@ -398,7 +401,12 @@ export class SpellsPanel {
                 
                 // Refresh the spell slots display
                 this._updateSpellSlots(nativeHtml);
-            });
+            }, { signal: listenerSignal });
         }
     }
-} 
+
+    destroy() {
+        this._removeEventListeners(this.element);
+        this.element = null;
+    }
+}

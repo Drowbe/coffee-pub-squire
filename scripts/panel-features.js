@@ -12,6 +12,7 @@ export class FeaturesPanel {
     constructor(actor) {
         this.actor = actor;
         this.features = this._getFeatures();
+        this._listenerController = null;
         // Don't set panelManager in constructor
     }
 
@@ -178,10 +179,10 @@ export class FeaturesPanel {
     }
 
     _removeEventListeners(panel) {
-        if (!panel) return;
-        // v13: Native DOM doesn't support jQuery's .off() method
-        // Event listeners will be removed when elements are cloned in _activateListeners
-        // This method is kept for compatibility but does nothing in v13
+        if (this._listenerController) {
+            this._listenerController.abort();
+            this._listenerController = null;
+        }
     }
 
     _activateListeners(html) {
@@ -199,6 +200,8 @@ export class FeaturesPanel {
 
         // Remove any existing listeners first
         this._removeEventListeners(panel);
+        this._listenerController = new AbortController();
+        const listenerSignal = this._listenerController.signal;
 
         // Category filter toggles
         // v13: Use native DOM event delegation
@@ -209,7 +212,7 @@ export class FeaturesPanel {
             if (categoryId) {
                 this.panelManager.toggleCategory(categoryId, panel);
             }
-        });
+        }, { signal: listenerSignal });
 
         // Feature info click (feather icon)
         // v13: Use native DOM event delegation
@@ -232,7 +235,7 @@ export class FeaturesPanel {
                 console.error('Error rendering feature sheet:', error);
                 ui.notifications.error("Error displaying feature sheet.");
             }
-        });
+        }, { signal: listenerSignal });
 
         // Toggle favorite
         // v13: Use native DOM event delegation
@@ -245,7 +248,7 @@ export class FeaturesPanel {
             const featureId = featureItem.dataset.featureId;
             await FavoritesPanel.manageFavorite(this.actor, featureId);
             // manageFavorite() already updates all panels, including this one
-        });
+        }, { signal: listenerSignal });
 
         // Feature use click (image overlay)
         // v13: Use native DOM event delegation
@@ -260,6 +263,11 @@ export class FeaturesPanel {
             if (feature) {
                 await feature.use({}, { event });
             }
-        });
+        }, { signal: listenerSignal });
     }
-} 
+
+    destroy() {
+        this._removeEventListeners(this.element);
+        this.element = null;
+    }
+}

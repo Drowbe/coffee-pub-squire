@@ -331,6 +331,7 @@ export class FavoritesPanel {
     constructor(actor) {
         this.actor = actor;
         this.favorites = []; // Initialize empty, will be populated in render
+        this._listenerController = null;
         // Initialize filter states
         this.showSpells = game.settings.get(MODULE.ID, 'showSpellFavorites');
         this.showWeapons = game.settings.get(MODULE.ID, 'showWeaponFavorites');
@@ -552,7 +553,10 @@ export class FavoritesPanel {
     }
 
     _removeEventListeners(panel) {
-        if (!panel) return;
+        if (this._listenerController) {
+            this._listenerController.abort();
+            this._listenerController = null;
+        }
         
         // v13: Native DOM doesn't support jQuery's .off() method
         // Event listeners will be removed when elements are cloned in _activateListeners
@@ -648,6 +652,9 @@ export class FavoritesPanel {
 
         const panel = nativeHtml.querySelector('[data-panel="favorites"]');
         if (!panel) return;
+        this._removeEventListeners(panel);
+        this._listenerController = new AbortController();
+        const listenerSignal = this._listenerController.signal;
         const favoritesList = panel.querySelector('.favorites-list');
         
         // Always create a fresh context menu
@@ -665,7 +672,7 @@ export class FavoritesPanel {
                 event.preventDefault();
                 const itemId = favoriteItem.dataset.itemId;
                 // For now, just log - we can implement a custom context menu later
-            });
+            }, { signal: listenerSignal });
         }
         
         // Filter toggles
@@ -678,7 +685,7 @@ export class FavoritesPanel {
                 await this._toggleFilter('spells');
                 event.currentTarget.classList.toggle('active', this.showSpells);
                 event.currentTarget.classList.toggle('faded', !this.showSpells);
-            });
+            }, { signal: listenerSignal });
         }
 
         const weaponToggle = nativeHtml.querySelector('.favorites-weapon-toggle');
@@ -689,7 +696,7 @@ export class FavoritesPanel {
                 await this._toggleFilter('weapons');
                 event.currentTarget.classList.toggle('active', this.showWeapons);
                 event.currentTarget.classList.toggle('faded', !this.showWeapons);
-            });
+            }, { signal: listenerSignal });
         }
 
         const featuresToggle = nativeHtml.querySelector('.favorites-features-toggle');
@@ -700,7 +707,7 @@ export class FavoritesPanel {
                 await this._toggleFilter('features');
                 event.currentTarget.classList.toggle('active', this.showFeatures);
                 event.currentTarget.classList.toggle('faded', !this.showFeatures);
-            });
+            }, { signal: listenerSignal });
         }
 
         const inventoryToggle = nativeHtml.querySelector('.favorites-inventory-toggle');
@@ -711,7 +718,7 @@ export class FavoritesPanel {
                 await this._toggleFilter('inventory');
                 event.currentTarget.classList.toggle('active', this.showInventory);
                 event.currentTarget.classList.toggle('faded', !this.showInventory);
-            });
+            }, { signal: listenerSignal });
         }
 
         // Roll/Use item
@@ -731,7 +738,7 @@ export class FavoritesPanel {
                         await item.use({}, { event });
                     }
                 }
-            });
+            }, { signal: listenerSignal });
         });
 
         // View item details
@@ -749,7 +756,7 @@ export class FavoritesPanel {
                 if (item) {
                     item.sheet.render(true);
                 }
-            });
+            }, { signal: listenerSignal });
         });
 
         // Toggle favorite
@@ -774,7 +781,7 @@ export class FavoritesPanel {
             
             // Check state after toggle
             const isFavorite = FavoritesPanel.getPanelFavorites(this.actor).includes(itemId);
-        });
+        }, { signal: listenerSignal });
 
         // Toggle prepared state (sun icon)
         // v13: Use native DOM event delegation
@@ -809,7 +816,7 @@ export class FavoritesPanel {
                     await PanelManager.instance.updateHandle();
                 }
             }
-        });
+        }, { signal: listenerSignal });
 
         // Toggle equip state (shield icon)
         // v13: Use native DOM event delegation
@@ -857,7 +864,7 @@ export class FavoritesPanel {
                 // Handle favorites are now completely manual - no auto-syncing
                 await PanelManager.instance.updateHandle();
             }
-        });
+        }, { signal: listenerSignal });
 
         // Toggle handle favorite
         // v13: Use native DOM event delegation
@@ -890,7 +897,7 @@ export class FavoritesPanel {
             // Update the visual state of the dagger icon immediately
             const newState = FavoritesPanel.isHandleFavorite(this.actor, itemId);
             daggerButton.classList.toggle('faded', !newState);
-        });
+        }, { signal: listenerSignal });
 
         // Light source click (light icon)
         // v13: Use native DOM event delegation
@@ -939,7 +946,7 @@ export class FavoritesPanel {
                     lightIcon.dataset.processing = 'false';
                 }, 500);
             }
-        });
+        }, { signal: listenerSignal });
 
         // Add clear all button listener
         // v13: Use nativeHtml instead of html
@@ -949,8 +956,17 @@ export class FavoritesPanel {
             clearAllButton.parentNode?.replaceChild(newClearAllButton, clearAllButton);
             newClearAllButton.addEventListener('click', async () => {
                 await FavoritesPanel.clearFavorites(this.actor);
-            });
+            }, { signal: listenerSignal });
         }
+    }
+
+    destroy() {
+        this._removeEventListeners(this.element);
+        if (this._contextMenu) {
+            this._contextMenu.close();
+            this._contextMenu = null;
+        }
+        this.element = null;
     }
 
     // _syncHandleFavorites method removed - handle favorites are now manual

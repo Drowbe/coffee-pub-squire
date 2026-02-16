@@ -964,8 +964,10 @@ Hooks.once('ready', async () => {
                             
                             await panelManager.instance.updateHandle();
                             
-                            // Re-render all panels with the new actor data
-                            await panelManager.instance.renderPanels(panelManager.instance.element);
+                            // Re-render all panels (re-check instance - controlToken may have cleared it during await)
+                            if (panelManager.instance?.element) {
+                                await panelManager.instance.renderPanels(panelManager.instance.element);
+                            }
                             
                             // Add fade-in animation to tray panel wrapper after update if appropriate
                             if (panelManager.instance) {
