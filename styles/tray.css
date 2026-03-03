@@ -177,108 +177,97 @@
     border: none !important;
 }
 
+
+
+
+
 /* TRAY Panel Bottom Container */
 .squire-tray[data-position="left"] .panel-containers {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding-left: 2px;
-    padding-right: 2px;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    margin-top: 8px !important;
+    flex: 1;
+    overflow-y: auto;
+    border-radius: 6px 6px 6px 6px !important;
+    margin: 0px 0px 0px 0px;
+    padding: 2px;
 }
 
 .squire-tray[data-position="left"] .stacked {
-	background: #0000004d;
-    flex: 1;
-    overflow-y: auto;
-    border-top: 0px solid #444;
-	border-bottom: 2px solid #444;
-	border-left: 2px solid #444;
-	border-right: 2px solid #444;
-    border-radius: 0px 0px 6px 6px!important;
-    margin: 0px 0px 0px 0px;
-    padding-bottom: 8px;
-    padding-top: 8px;
+    gap: 28px;
 }
 
 
 
+/* --------------- SHARED PANEL STYLES --------------- */
 
-/* Shared Panel Styles */
+/* LIST CONTAINERS */
 
-
+.squire-tray[data-position="left"] .inventory-list,
+.squire-tray[data-position="left"] .features-list,
 .squire-tray[data-position="left"] .spells-list,
 .squire-tray[data-position="left"] .weapons-list,
 .squire-tray[data-position="left"] .favorites-list {
-    padding: 0 0.5rem;
+    padding: 0px;
 }
 
-/* TRAY Panel Section Headers */
+
+/* SECTION HEADERS */
+
 .squire-tray[data-position="left"] .section-header {
-    background: rgba(69, 29, 36, 0.6) !important;
-    color: #9f9275;
-    padding: 6px;
-    font-size: 1.2em;
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: rgba(159, 146, 117, 1.0);
+    padding: 8px;
+    font-size: 1.0em;
     font-weight: 900;
-    border-bottom: 0px solid #444;
-	border-top: 0px solid #444;
-    margin-bottom: 8px;
-	margin-left: 0px;
-	margin-right: 0px;
+    margin: 0px 0px 8px 0px;
     text-transform: uppercase;
     display: flex;
     justify-content: space-between;
     align-items: center;
-	border-radius: 4px 4px 4px 4px;
-}
-
-
-/* Section Header Icons for Left Position */
-.squire-tray[data-position="left"] .section-header i {
-    font-size: .85em;
-    margin-right: 4px;
-    padding-top: 3px;
+    border-radius: 6px;
 }
 
 .squire-tray[data-position="left"] .section-header .header-left {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
 }
 
-.squire-tray[data-position="left"] .section-header .header-left i {
-    color: #9f9275;
+.squire-tray[data-position="left"] .section-header i {
+    font-size: .85em;
+    margin-right: 4px;
+    padding-top: 3px;
+    color: rgba(159, 146, 117, 0.9);
 }
-
 .squire-tray[data-position="left"] .section-header .header-right {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     flex: 1;
     justify-content: flex-end;
 }
-
 .squire-tray[data-position="left"] .section-header .header-right i,
 .squire-tray[data-position="left"] .section-header .weapons-category-filter,
 .squire-tray[data-position="left"] .section-header .spell-level-filter,
 .squire-tray[data-position="left"] .section-header .inventory-category-filter,
 .squire-tray[data-position="left"] .section-header .features-category-filter {
-    color: #9f9275;
     cursor: pointer;
     transition: color 0.2s ease;
     font-size: 0.85em;
 }
-
 .squire-tray[data-position="left"] .section-header .header-right i:hover,
 .squire-tray[data-position="left"] .section-header .weapons-category-filter:hover,
 .squire-tray[data-position="left"] .section-header .spell-level-filter:hover,
 .squire-tray[data-position="left"] .section-header .inventory-category-filter:hover,
 .squire-tray[data-position="left"] .section-header .features-category-filter:hover {
-    color: #fff;
+    color: rgba(185, 38, 37, 1.0);
+    opacity: 1.0;
 }
-
+.squire-tray[data-position="left"] .section-header .filter-toggle.faded,
 .squire-tray[data-position="left"] .section-header .weapons-category-filter:not(.active),
 .squire-tray[data-position="left"] .section-header .spell-level-filter:not(.active),
 .squire-tray[data-position="left"] .section-header .inventory-category-filter:not(.active),
@@ -286,71 +275,24 @@
     opacity: 0.3;
 }
 
-/* Filter Toggle */
-.squire-tray[data-position="left"] .section-header .filter-toggle {
-    cursor: pointer;
-    color: #9f9275;
-    transition: color 0.2s ease;
-    border-left: 1px solid #444;
-    padding-left: 8px;
-    margin-left: 4px;
-}
+/* CATEGORY HEADERS */
 
-.squire-tray[data-position="left"] .section-header .filter-toggle:hover {
-    color: #fff;
-}
-
-.squire-tray[data-position="left"] .section-header .filter-toggle.faded {
-    opacity: 0.3;
-}
-
-.squire-tray[data-position="left"] .section-header .filter-toggle.active {
-    color: #9f9275;
-    opacity: 0.8;
-}
-
-.squire-tray[data-position="left"] .favorites-panel .section-header .filter-toggle {
-    border-left: none;
-    padding-left: 0;
-    margin-left: 0;
-}
-
-
-
-.squire-tray[data-position="left"] .section-header .favorites-clear-all {
-    cursor: pointer;
-    opacity: 1;
-    transition: color 0.2s ease;
-    color: #aaa;
-    border-right: 1px solid #444;
-    padding-right: 8px;
-    margin-right: 4px;
-}
-
-.squire-tray[data-position="left"] .section-header .favorites-clear-all:hover {
-    color: #ff4444;
-} 
-
-/* TRAY Secion Headers */
-.squire-tray[data-position="left"] .level-header {
-    background: #451d24;
+.squire-tray[data-position="left"] .category-header {
+    background: rgba(0, 0, 0, 0.4);
     padding: 4px 8px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 500;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-weight: 400;
+    font-size: 0.85em;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    color: #9f9275;
+    text-transform: uppercase;
+    border-radius: 6px;
 }
 
-
-/* Spell Slots */
-
-.squire-tray[data-position="left"] .level-header .slot-pips {
-    display: flex;
-    gap: 2px;
-}
+/* CATEGORY SPELL PIPS */
 
 .squire-tray[data-position="left"] .slot-pip {
     width: 8px;
@@ -372,27 +314,27 @@
     cursor: pointer;
 }
 
+/* ITEMS */
 
 
-
-
-
-
-/* Spell/Weapon Items in Left Position */
+.squire-tray[data-position="left"] .favorite-item,
+.squire-tray[data-position="left"] .feature-item,
 .squire-tray[data-position="left"] .spell-item,
 .squire-tray[data-position="left"] .weapon-item,
 .squire-tray[data-position="left"] .inventory-item {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.2);
     border: none;
-    border-radius: 0;
+    border-radius: 3px;
     padding: 0;
     margin-bottom: 2px;
 }
 
+.squire-tray[data-position="left"] .favorite-item:hover,
+.squire-tray[data-position="left"] .feature-item:hover,
 .squire-tray[data-position="left"] .spell-item:hover,
 .squire-tray[data-position="left"] .weapon-item:hover,
 .squire-tray[data-position="left"] .inventory-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(185, 84, 61, 0.2);
 }
 
 .squire-tray[data-position="left"] .spell-item.prepared,
@@ -401,6 +343,10 @@
     background: rgba(74, 144, 226, 0.1);
 }
 
+
+
+.squire-tray[data-position="left"] .feature-row,
+.squire-tray[data-position="left"] .favorite-row,
 .squire-tray[data-position="left"] .spell-row,
 .squire-tray[data-position="left"] .weapon-row,
 .squire-tray[data-position="left"] .inventory-row {
@@ -410,6 +356,12 @@
     align-items: center;
 }
 
+
+
+
+.feature-image-container,
+.inventory-image-container,
+.favorite-image-container,
 .spell-image-container,
 .weapon-image-container {
     position: relative;
@@ -419,6 +371,12 @@
     cursor: pointer;
 }
 
+
+
+
+.feature-image,
+.inventory-image,
+.favorite-image,
 .spell-image,
 .weapon-image {
     width: 100%;
@@ -427,6 +385,11 @@
     border-radius: 4px;
 }
 
+
+
+.weapon-name,
+.inventory-name,
+.favorite-name,
 .spell-name,
 .weapon-name {
     flex: 1;
@@ -436,30 +399,216 @@
 	font-weight: 100 !important;
 }
 
-.spell-level, .weapon-quantity {
+
+
+
+
+
+
+
+.weapon-roll-overlay,
+.inventory-roll-overlay,
+.feature-roll-overlay,
+.spell-roll-overlay,
+.favorite-roll-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: #4a90e2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+.weapon-image-container:hover .weapon-roll-overlay,
+.inventory-image-container:hover .inventory-roll-overlay,
+.feature-image-container:hover .feature-roll-overlay,
+.spell-image-container:hover .spell-roll-overlay,
+.favorite-image-container:hover .favorite-roll-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+
+
+
+
+.feature-uses,
+.inventory-quantity,
+.spell-level, 
+.weapon-quantity {
     color: #aaa;
     font-size: 0.9rem;
     min-width: 24px;
     text-align: center;
 }
 
-.spell-controls, .weapon-controls {
+
+
+
+
+.squire-tray[data-position="left"] .inventory-controls
+.squire-tray[data-position="left"] .spell-controls
+.squire-tray[data-position="left"] .weapon-controls {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
     display: flex;
-    gap: 0.25rem;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-.spell-controls i, .weapon-controls i {
+
+.squire-tray[data-position="left"] .spell-controls i, 
+.squire-tray[data-position="left"] .weapon-controls i {
     color: #aaa;
     transition: color 0.2s ease;
+    
+
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
 }
 
-.spell-controls i:hover, .weapon-controls i:hover {
+.squire-tray[data-position="left"] .spell-controls i:hover, 
+.squire-tray[data-position="left"] .weapon-controls i:hover {
     color: #fff;
 }
 
-.weapon-controls i.faded {
+.squire-tray[data-position="left"] .weapon-controls i.faded {
     opacity: 0.3;
 }
+
+
+
+
+
+/* Action Type Icons */
+.action-type {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 3px;
+}
+
+.action-type i {
+    font-size: 10px;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(120, 100, 82, 0.15);
+    color: #eee;
+}
+
+.action-type i.fa-circle-a { color: #4fc538; }
+.action-type i.fa-circle-b { color: #ccad32; }
+.action-type i.fa-circle-r { color: #439ce6; }
+.action-type i.fa-circle-s { color: #9c77f2; }
+
+.action-type i:hover {
+    background: rgba(120, 100, 82, 0.3);
+    transform: scale(1.15);
+    transition: all 0.2s ease;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* TRAY Section ContentButtons */
+.tray-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-right: 0px;
+}
+
+.tray-buttons i {
+    color: #9f9275;
+    transition: color 0.2s ease;
+    cursor: pointer;
+    padding: 0px;
+}
+
+.tray-buttons i:hover {
+    color: #fff;
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}
+
+.tray-buttons i.faded {
+    opacity: 0.3;
+}
+
+/* Light icon active state */
+.tray-buttons .fa-lightbulb.light-active {
+    color: #ffa500 !important;
+    text-shadow: 0 0 4px #ffa500;
+}
+
+.tray-buttons .fa-lightbulb.light-active:hover {
+    color: #ffd700 !important;
+    text-shadow: 0 0 6px #ffd700;
+}
+
+
+.tray-buttons .fa-heart {
+    color: #ff4444;
+}
+
+.tray-buttons .fa-heart:hover {
+    color: #ff2f2f;
+}
+
+.tray-buttons .fa-heart.active {
+    color: #ff4444;
+}
+
+.tray-buttons .fa-sun:not(.faded) {
+    color: #ff9129;
+}
+
+.tray-buttons .fa-shield-alt:not(.faded) {
+    color: #367ccc;
+}
+
+.tray-buttons .fa-dagger:not(.faded) {
+    color: #ff4444;
+}
+
+.tray-buttons .fa-dagger:not(.faded):hover {
+    color: #ff2f2f;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Scrollbar Styling */
 .panel-containers::-webkit-scrollbar {
@@ -483,6 +632,24 @@
 
 
 /* Panel - Control */
+
+
+.squire-tray[data-position="left"] [data-panel="control"] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: #000000;;
+    margin-bottom: 0px;
+    border: 2px solid #444;
+    border-radius: 6px 6px 0px 0px !important;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-icons {
     display: flex;
@@ -554,6 +721,10 @@
 
 
 
+
+
+
+
 /* Panel Visibility */
 .panel-containers.stacked .panel-container[data-panel] {
     display: none;
@@ -563,73 +734,7 @@
     display: block;
 }
 
-/* Add weapon controls styling to match other panels */
-.squire-tray[data-position="left"] .weapon-controls {
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
 
-
-
-
-/* TRAY Section ContentButtons */
-.tray-buttons {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-right: 0px;
-}
-
-.tray-buttons i {
-    color: #9f9275;
-    transition: color 0.2s ease;
-    cursor: pointer;
-    padding: 0px;
-}
-
-.tray-buttons i:hover {
-    color: #fff;
-}
-
-.tray-buttons i.faded {
-    opacity: 0.3;
-}
-
-/* TRAY Section Dice Overlays */
-.spell-roll-overlay,
-.weapon-roll-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    color: #4a90e2;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    border-radius: 2px;
-}
-
-.spell-image-container:hover .spell-roll-overlay,
-.weapon-image-container:hover .weapon-roll-overlay {
-    opacity: 1;
-}
-
-/* Search Controls in Left Position */
-.squire-tray[data-position="left"] .spell-controls {
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
 
 .squire-tray[data-position="left"] .search-container {
     position: relative;
@@ -653,10 +758,34 @@
     color: #fff;
 }
 
-/* Hide the separate spell slots section in left position */
-.squire-tray[data-position="left"] .spell-slots {
-    display: none;
+
+/* No Matches Message */
+
+.tray-title-small.no-matches {
+    display: none !important; /* Hide by default */
+    text-align: center;
+    padding: 10px;
+    color: #888;
+    font-style: italic;
 }
+
+.tray-title-small.no-matches.show {
+    display: block !important; /* Only show when explicitly enabled */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Tabs */
 .tray-tabs {
@@ -700,21 +829,6 @@
 
 
 
-/* category headers  (in sections) */
-
-.squire-tray[data-position="left"] .category-header {
-    background: rgba(0, 0, 0, 0.9);
-    padding: 4px 8px;
-    margin-top: 8px;
-	margin-bottom: 8px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-	color: #9f9275;
-	text-transform: uppercase;
-	border-radius: 4px 4px 4px 4px;
-}
 
 /* there are DUPLICATE/SIMILAR STYLES IN PANEL-SPELLS.CSS */
 .squire-tray[data-position="left"] .category-header .slot-pips {
@@ -732,6 +846,13 @@
     color: #ff4444 !important;
     filter: drop-shadow(0 0 2px #ff4444);
 }
+
+
+
+
+
+
+
 
 
 /* Party View Placeholder */

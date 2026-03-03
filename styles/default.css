@@ -9,14 +9,23 @@
 /* --- Structure ------------------- */
 
 @import "tray.css"; 
+
 @import "handle.css";
+
 @import "window-dicetray.css";
+
 @import "window-health.css";
+
 @import "window-macros.css";
+
 @import "window-descriptions.css";
+
 @import "window-transfer.css";
+
 @import "window-import-export.css";
+
 @import "window-characters.css";
+
 @import "window-users.css";
 
 /* --- PrimaryPanels ---------------------- */
@@ -35,7 +44,7 @@
 
 @import "panel-favorites.css"; 
 
-@import "panel-features.css"; 
+@import "panel-spells.css"; 
 
 @import "panel-health.css"; 
 
@@ -56,16 +65,12 @@
 /* --- Forms ---------------------- */
 
 @import "codex-form.css";
+
 @import "window-note.css";
+
 @import "notes-metadata-box.css";
 
-/* --- Stacked Panels ---------------------- */
-
-@import "panel-inventory.css"; 
-
-@import "panel-spells.css"; 
-
-@import "panel-weapons.css"; 
+/* --- Party Panels ---------------------- */
 
 @import "panel-party-stats.css";
 

@@ -78,6 +78,9 @@
   text-shadow: 0 0 8px var(--accent-color) !important;
 }
 
+
+/* ----- PANEL CONTAINER ----- */
+
 #squire-users-window .window-content .panel-container {
   flex: 1 1 auto !important;
   display: flex !important;
