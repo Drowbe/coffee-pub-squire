@@ -1652,8 +1652,8 @@ export class NotesPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
 
-        // Set journal button (GM only)
-        nativeHtml.querySelectorAll('.set-journal-button, .set-journal-button-large').forEach(button => {
+        // Set journal button - only the large button in no-journal state (titlebar Set Journal moved to menu)
+        nativeHtml.querySelectorAll('.set-journal-button-large').forEach(button => {
             const newButton = button.cloneNode(true);
             button.parentNode?.replaceChild(newButton, button);
             newButton.addEventListener('click', async (event) => {
@@ -1686,7 +1686,130 @@ export class NotesPanel {
             });
         });
 
-        // New Note button - opens NotesForm window
+        // Notes titlebar "..." context menu (Blacksmith) - all actions except New Note
+        const notesTitlebarMenuBtn = nativeHtml.querySelector('.notes-titlebar-menu');
+        if (notesTitlebarMenuBtn && getBlacksmith()?.uiContextMenu?.show) {
+            const newMenuBtn = notesTitlebarMenuBtn.cloneNode(true);
+            notesTitlebarMenuBtn.parentNode?.replaceChild(newMenuBtn, notesTitlebarMenuBtn);
+            newMenuBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const cardTheme = game.user?.getFlag(MODULE.ID, 'notesCardTheme') || 'dark';
+                const viewMode = game.user?.getFlag(MODULE.ID, 'notesViewMode') || 'cards';
+                const coreItems = [
+                    {
+                        name: 'Refresh',
+                        icon: 'fa-solid fa-sync-alt',
+                        callback: async () => {
+                            await this._refreshData();
+                            this.render(this.element);
+                            ui.notifications.info('Notes refreshed.');
+                        }
+                    },
+                    {
+                        name: cardTheme === 'light' ? 'Dark theme' : 'Light theme',
+                        icon: cardTheme === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun',
+                        callback: async () => {
+                            const next = cardTheme === 'light' ? 'dark' : 'light';
+                            await game.user?.setFlag(MODULE.ID, 'notesCardTheme', next);
+                            this.render(this.element);
+                        }
+                    },
+                    {
+                        name: viewMode === 'list' ? 'Card view' : 'List view',
+                        icon: viewMode === 'list' ? 'fa-solid fa-address-card' : 'fa-solid fa-list',
+                        callback: async () => {
+                            const next = viewMode === 'list' ? 'cards' : 'list';
+                            await game.user?.setFlag(MODULE.ID, 'notesViewMode', next);
+                            this.render(this.element);
+                        }
+                    }
+                ];
+                const gmItems = game.user.isGM ? [
+                    {
+                        name: 'Select Journal for Notes',
+                        icon: 'fa-solid fa-cog',
+                        callback: () => {
+                            showJournalPicker({
+                                title: 'Select Journal for Notes',
+                                getCurrentId: () => game.settings.get(MODULE.ID, 'notesJournal'),
+                                onSelect: async (journalId) => {
+                                    await game.settings.set(MODULE.ID, 'notesJournal', journalId);
+                                    if (journalId && journalId !== 'none') {
+                                        const journal = game.journal.get(journalId);
+                                        if (journal) {
+                                            const defaultPerm = journal.ownership.default;
+                                            if (defaultPerm < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+                                                ui.notifications.warn(`Warning: Notes journal "${journal.name}" should have "All Players = Observer" ownership to allow players to create notes.`);
+                                            } else {
+                                                ui.notifications.info(`Notes journal "${journal.name}" selected.`);
+                                            }
+                                        }
+                                    } else {
+                                        ui.notifications.info('Notes journal selection cleared.');
+                                    }
+                                },
+                                reRender: () => this.render(this.element),
+                                infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> This journal will be used for all player notes. Players can create notes if they have Observer access or better.</p><p style="color: #ddd;">Make sure the journal has "All Players = Observer" ownership to allow players to create notes.</p>',
+                                showRefreshButton: true
+                            });
+                        }
+                    },
+                    {
+                        name: 'Clean up missing pins',
+                        icon: 'fa-solid fa-broom',
+                        callback: async () => {
+                            const confirmed = await Dialog.confirm({
+                                title: 'Clean Up Missing Pins',
+                                content: '<p>Scan notes and clear pin flags when the pin no longer exists?</p>',
+                                yes: () => true,
+                                no: () => false,
+                                defaultYes: false
+                            });
+                            if (!confirmed) return;
+                            await this._cleanupMissingPins();
+                            ui.notifications.info('Pin cleanup complete.');
+                        }
+                    },
+                    {
+                        name: 'Delete all note pins',
+                        icon: 'fa-solid fa-trash-can',
+                        callback: async () => {
+                            const choice = await Dialog.wait({
+                                title: 'Delete Note Pins',
+                                content: '<p>Delete note pins for this scene, or all scenes?</p>',
+                                buttons: {
+                                    scene: { label: 'This Scene', callback: () => 'scene' },
+                                    all: { label: 'All Scenes', callback: () => 'all' },
+                                    cancel: { label: 'Cancel', callback: () => null }
+                                },
+                                default: 'cancel',
+                                close: () => null
+                            });
+                            if (!choice) return;
+                            const confirmed = await Dialog.confirm({
+                                title: 'Confirm Deletion',
+                                content: choice === 'scene' ? '<p>Delete all note pins for this scene?</p>' : '<p>Delete all note pins across all scenes?</p>',
+                                yes: () => true,
+                                no: () => false,
+                                defaultYes: false
+                            });
+                            if (!confirmed) return;
+                            await this._deleteAllPins(choice);
+                            ui.notifications.info('Note pins deleted.');
+                        }
+                    }
+                ] : [];
+                getBlacksmith().uiContextMenu.show({
+                    id: `${MODULE.ID}-notes-titlebar-menu`,
+                    x: event.clientX,
+                    y: event.clientY,
+                    zones: { core: coreItems, gm: gmItems }
+                });
+            });
+        }
+
+        // New Note button - opens NotesForm window (only action outside menu)
         nativeHtml.querySelectorAll('.new-note-button, .new-note-button-large').forEach(button => {
             const newButton = button.cloneNode(true);
             button.parentNode?.replaceChild(newButton, button);
@@ -1696,105 +1819,6 @@ export class NotesPanel {
                 form.render(true);
             });
         });
-
-        // Refresh button
-        const refreshButton = nativeHtml.querySelector('.refresh-notes-button');
-        if (refreshButton) {
-            const newButton = refreshButton.cloneNode(true);
-            refreshButton.parentNode?.replaceChild(newButton, refreshButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                await this._refreshData();
-                this.render(this.element);
-            });
-        }
-
-        const cleanupButton = nativeHtml.querySelector('.cleanup-notes-pins-button');
-        if (cleanupButton) {
-            const newButton = cleanupButton.cloneNode(true);
-            cleanupButton.parentNode?.replaceChild(newButton, cleanupButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const confirmed = await Dialog.confirm({
-                    title: 'Clean Up Missing Pins',
-                    content: '<p>Scan notes and clear pin flags when the pin no longer exists?</p>',
-                    yes: () => true,
-                    no: () => false,
-                    defaultYes: false
-                });
-                if (!confirmed) return;
-                await this._cleanupMissingPins();
-                ui.notifications.info('Pin cleanup complete.');
-            });
-        }
-
-        const deleteAllPinsButton = nativeHtml.querySelector('.delete-all-notes-pins-button');
-        if (deleteAllPinsButton) {
-            const newButton = deleteAllPinsButton.cloneNode(true);
-            deleteAllPinsButton.parentNode?.replaceChild(newButton, deleteAllPinsButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const choice = await Dialog.wait({
-                    title: 'Delete Note Pins',
-                    content: '<p>Delete note pins for this scene, or all scenes?</p>',
-                    buttons: {
-                        scene: {
-                            label: 'This Scene',
-                            callback: () => 'scene'
-                        },
-                        all: {
-                            label: 'All Scenes',
-                            callback: () => 'all'
-                        },
-                        cancel: {
-                            label: 'Cancel',
-                            callback: () => null
-                        }
-                    },
-                    default: 'cancel',
-                    close: () => null
-                });
-                if (!choice) return;
-                const confirmed = await Dialog.confirm({
-                    title: 'Confirm Deletion',
-                    content: choice === 'scene'
-                        ? '<p>Delete all note pins for this scene?</p>'
-                        : '<p>Delete all note pins across all scenes?</p>',
-                    yes: () => true,
-                    no: () => false,
-                    defaultYes: false
-                });
-                if (!confirmed) return;
-                await this._deleteAllPins(choice);
-                ui.notifications.info('Note pins deleted.');
-            });
-        }
-
-        const themeToggle = nativeHtml.querySelector('.notes-card-theme-toggle');
-        if (themeToggle) {
-            const newToggle = themeToggle.cloneNode(true);
-            themeToggle.parentNode?.replaceChild(newToggle, themeToggle);
-            newToggle.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const current = newToggle.dataset.theme || 'dark';
-                const next = current === 'light' ? 'dark' : 'light';
-                await game.user?.setFlag(MODULE.ID, 'notesCardTheme', next);
-                this.render(this.element);
-            });
-        }
-
-        const viewToggle = nativeHtml.querySelector('.notes-view-toggle');
-        if (viewToggle) {
-            const newToggle = viewToggle.cloneNode(true);
-            viewToggle.parentNode?.replaceChild(newToggle, viewToggle);
-            newToggle.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const current = newToggle.dataset.view || 'cards';
-                const next = current === 'list' ? 'cards' : 'list';
-                await game.user?.setFlag(MODULE.ID, 'notesViewMode', next);
-                this.render(this.element);
-            });
-        }
 
         // Search filter
         const searchInput = nativeHtml.querySelector('.notes-search-input');

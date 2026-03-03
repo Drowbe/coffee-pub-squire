@@ -1059,45 +1059,106 @@ export class CodexPanel {
             });
         }
 
-        // Journal selection
-        // v13: Use nativeHtml instead of html
-        const setJournalButton = nativeHtml.querySelector('.codex-set-journal');
-        if (setJournalButton) {
-            const newButton = setJournalButton.cloneNode(true);
-            setJournalButton.parentNode?.replaceChild(newButton, setJournalButton);
-            newButton.addEventListener('click', () => {
-                showJournalPicker({
-                    title: 'Select Codex Journal',
-                    mode: 'select',
-                    choices: (() => {
-                        const choices = { 'none': '- Select Journal -' };
-                        game.journal.contents.forEach(j => {
-                            choices[j.id] = j.name;
-                        });
-                        return choices;
-                    })(),
-                    selectedId: game.settings.get(MODULE.ID, 'codexJournal'),
-                    onSelect: async (journalId) => {
-                        await game.settings.set(MODULE.ID, 'codexJournal', journalId);
-                    },
-                    reRender: async () => {
-                        await this._refreshData();
-                        this.render(this.element);
+        // Codex titlebar "..." context menu (Blacksmith) - all actions except Add
+        const codexTitlebarMenuBtn = nativeHtml.querySelector('.codex-titlebar-menu');
+        if (codexTitlebarMenuBtn && getBlacksmith()?.uiContextMenu?.show) {
+            const newMenuBtn = codexTitlebarMenuBtn.cloneNode(true);
+            codexTitlebarMenuBtn.parentNode?.replaceChild(newMenuBtn, codexTitlebarMenuBtn);
+            newMenuBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const coreItems = [
+                    {
+                        name: 'Refresh Codex',
+                        icon: 'fa-solid fa-sync-alt',
+                        callback: async () => {
+                            await this._refreshData();
+                            this.render(this.element);
+                            ui.notifications.info('Codex refreshed.');
+                        }
                     }
+                ];
+                if (this.selectedJournal) {
+                    coreItems.unshift({
+                        name: 'Open Codex Journal',
+                        icon: 'fa-solid fa-feather',
+                        callback: () => this.selectedJournal.sheet.render(true)
+                    });
+                }
+                const gmItems = game.user.isGM ? [
+                    {
+                        name: 'Select Journal for Codex',
+                        icon: 'fa-solid fa-cog',
+                        callback: () => {
+                            showJournalPicker({
+                                title: 'Select Codex Journal',
+                                mode: 'select',
+                                choices: (() => {
+                                    const choices = { 'none': '- Select Journal -' };
+                                    game.journal.contents.forEach(j => {
+                                        choices[j.id] = j.name;
+                                    });
+                                    return choices;
+                                })(),
+                                selectedId: game.settings.get(MODULE.ID, 'codexJournal'),
+                                onSelect: async (journalId) => {
+                                    await game.settings.set(MODULE.ID, 'codexJournal', journalId);
+                                },
+                                reRender: async () => {
+                                    await this._refreshData();
+                                    this.render(this.element);
+                                }
+                            });
+                        }
+                    },
+                    {
+                        name: 'Auto-Discover from Party Inventories',
+                        icon: 'fa-solid fa-search-plus',
+                        callback: () => this._autoDiscoverFromInventories()
+                    },
+                    {
+                        name: 'Import Codex from JSON',
+                        icon: 'fa-solid fa-file-import',
+                        callback: () => this._openImportCodexDialog()
+                    },
+                    {
+                        name: 'Export Codex as JSON',
+                        icon: 'fa-solid fa-file-export',
+                        callback: () => this._openExportCodexDialog()
+                    }
+                ] : [];
+                getBlacksmith().uiContextMenu.show({
+                    id: `${MODULE.ID}-codex-titlebar-menu`,
+                    x: event.clientX,
+                    y: event.clientY,
+                    zones: { core: coreItems, gm: gmItems }
                 });
             });
         }
 
-        // Open selected journal from titlebar
+        // Add new codex entry button (only action outside menu)
         // v13: Use nativeHtml instead of html
-        const openJournalButton = nativeHtml.querySelector('.codex-open-journal');
-        if (openJournalButton) {
-            const newButton = openJournalButton.cloneNode(true);
-            openJournalButton.parentNode?.replaceChild(newButton, openJournalButton);
+        const addCodexButton = nativeHtml.querySelector('.add-codex-button');
+        if (addCodexButton) {
+            const newButton = addCodexButton.cloneNode(true);
+            addCodexButton.parentNode?.replaceChild(newButton, addCodexButton);
             newButton.addEventListener('click', () => {
-                if (this.selectedJournal) {
-                    this.selectedJournal.sheet.render(true);
+                if (!game.user.isGM) return;
+
+                const journalId = game.settings.get(MODULE.ID, 'codexJournal');
+                if (!journalId || journalId === 'none') {
+                    ui.notifications.warn("No codex journal selected. Use the … menu to select one.");
+                    return;
                 }
+
+                const journal = game.journal.get(journalId);
+                if (!journal) {
+                    ui.notifications.error("Could not find the codex journal.");
+                    return;
+                }
+
+                const codexForm = new CodexForm();
+                codexForm.render(true);
             });
         }
 
@@ -1226,478 +1287,6 @@ export class CodexPanel {
             });
         });
 
-        // Refresh button
-        // v13: Use nativeHtml instead of html
-        const refreshButton = nativeHtml.querySelector('.refresh-codex-button');
-        if (refreshButton) {
-            const newButton = refreshButton.cloneNode(true);
-            refreshButton.parentNode?.replaceChild(newButton, refreshButton);
-            newButton.addEventListener('click', async () => {
-                await this._refreshData();
-                this.render(this.element);
-            });
-        }
-
-        // Auto-discover button
-        // v13: Use nativeHtml instead of html
-        const autoDiscoverButton = nativeHtml.querySelector('.auto-discover-button');
-        if (autoDiscoverButton) {
-            const newButton = autoDiscoverButton.cloneNode(true);
-            autoDiscoverButton.parentNode?.replaceChild(newButton, autoDiscoverButton);
-            newButton.addEventListener('click', async () => {
-                if (!game.user.isGM) return;
-                
-                await this._autoDiscoverFromInventories();
-            });
-        }
-
-        // Add new codex entry button
-        // v13: Use nativeHtml instead of html
-        const addCodexButton = nativeHtml.querySelector('.add-codex-button');
-        if (addCodexButton) {
-            const newButton = addCodexButton.cloneNode(true);
-            addCodexButton.parentNode?.replaceChild(newButton, addCodexButton);
-            newButton.addEventListener('click', () => {
-                if (!game.user.isGM) return;
-                
-            const journalId = game.settings.get(MODULE.ID, 'codexJournal');
-            if (!journalId || journalId === 'none') {
-                ui.notifications.warn("No codex journal selected. Click the gear icon to select one.");
-                return;
-            }
-            
-            const journal = game.journal.get(journalId);
-            if (!journal) {
-                ui.notifications.error("Could not find the codex journal.");
-                return;
-            }
-            
-            const codexForm = new CodexForm();
-            codexForm.render(true);
-            });
-        }
-
-        // Import JSON button
-        // v13: Use nativeHtml instead of html
-        const importJsonButton = nativeHtml.querySelector('.import-json-button');
-        if (importJsonButton) {
-            const newButton = importJsonButton.cloneNode(true);
-            importJsonButton.parentNode?.replaceChild(newButton, importJsonButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                // Load the template from prompts/prompt-codex.txt
-                let template = '';
-                try {
-                    const response = await fetch('modules/coffee-pub-squire/prompts/prompt-codex.txt');
-                    if (response.ok) {
-                        template = await response.text();
-                    } else {
-                        template = 'Failed to load prompt-codex.txt.';
-                    }
-                } catch (e) {
-                    template = 'Failed to load prompt-codex.txt.';
-                }
-                new Dialog({
-                    title: 'Import Codex from JSON',
-                    width: 600,
-                    resizable: true,
-                    content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
-                        type: 'codex',
-                        isImport: true,
-                        isExport: false,
-                        jsonInputId: 'codex-import-json'
-                    }),
-                    buttons: {
-                        cancel: {
-                            icon: '<i class="fa-solid fa-times"></i>',
-                            label: 'Cancel Import'
-                        },
-                        import: {
-                            icon: '<i class="fa-solid fa-file-import"></i>',
-                            label: 'Import JSON',
-                            callback: async (html) => {
-                            ui.notifications.info('Importing Codex entries. This may take some time as entries are added, updated, indexed, and sorted. You will be notified when the process is complete.');
-                            
-                            // Set import flag to prevent panel refreshes during import
-                            this.isImporting = true;
-                            
-                            // Show progress bar
-                            this._showProgressBar();
-                            
-                            try {
-                                // v13: Detect and convert jQuery to native DOM if needed
-                                let nativeDlgHtml = html;
-                                if (html && (html.jquery || typeof html.find === 'function')) {
-                                    nativeDlgHtml = html[0] || html.get?.(0) || html;
-                                }
-                                const jsonInput = nativeDlgHtml.querySelector('#codex-import-json');
-                                const value = jsonInput?.value || '';
-                                const data = JSON.parse(value);
-                                if (!Array.isArray(data)) {
-                                    ui.notifications.error('Imported JSON must be an array of entries.');
-                                    return;
-                                }
-                                if (!this.selectedJournal) {
-                                    ui.notifications.error('No Codex journal selected.');
-                                    return;
-                                }
-                                
-                                // Update progress for validation phase
-                                this._updateProgressBar(10, 'Validating import data...');
-                                
-                                let added = 0;
-                                let updated = 0;
-                                let duplicatesMerged = 0;
-                                // Check for duplicate names in the import data itself
-                                const importNameCounts = {};
-                                const duplicateNames = [];
-                                data.forEach(entry => {
-                                    if (entry.name) {
-                                        importNameCounts[entry.name] = (importNameCounts[entry.name] || 0) + 1;
-                                        if (importNameCounts[entry.name] > 1 && !duplicateNames.includes(entry.name)) {
-                                            duplicateNames.push(entry.name);
-                                        }
-                                    }
-                                });
-                                
-                                if (duplicateNames.length > 0) {
-                                    ui.notifications.warn(`Warning: Import data contains duplicate entry names: ${duplicateNames.join(', ')}. These will be merged with existing entries.`);
-                                }
-                                
-                                // Update progress for processing phase
-                                this._updateProgressBar(20, `Processing ${data.length} entries...`);
-                                
-                                const totalEntries = data.length;
-                                for (let i = 0; i < data.length; i++) {
-                                    const entry = data[i];
-                                    
-                                    // Update progress for each entry
-                                    const entryProgress = 20 + ((i / totalEntries) * 60); // 20-80% range for entry processing
-                                    this._updateProgressBar(entryProgress, `Processing: ${entry.name}`);
-                                    
-                                    // Find existing page by UUID first (if available), then by name
-                                    let page = null;
-                                    if (entry.uuid) {
-                                        page = this.selectedJournal.pages.find(p => p.getFlag(MODULE.ID, 'codexUuid') === entry.uuid);
-                                    }
-                                    if (!page) {
-                                        page = this.selectedJournal.pages.find(p => p.name === entry.name);
-                                    }
-                                    if (page) {
-                                        // Update only description, tags, location, category, plotHook
-                                        let parser = new DOMParser();
-                                        let doc = parser.parseFromString(page.text.content, 'text/html');
-                                        // Remove all <p> with <strong> labels for fields we update
-                                        const pTags = Array.from(doc.querySelectorAll('p'));
-                                        for (const p of pTags) {
-                                            const strong = p.querySelector('strong');
-                                            if (!strong) continue;
-                                            const label = strong.textContent.trim().replace(/:$/, '').toUpperCase();
-                                            if (["CATEGORY","DESCRIPTION","PLOT HOOK","LOCATION","TAGS"].includes(label)) {
-                                                p.remove();
-                                            }
-                                        }
-                                        // Insert new/updated fields at the top
-                                        const newFields = [];
-                                        if (entry.category) newFields.push(`<p><strong>Category:</strong> ${entry.category}</p>`);
-                                        if (entry.description) newFields.push(`<p><strong>Description:</strong> ${entry.description}</p>`);
-                                        if (entry.plotHook) newFields.push(`<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`);
-                                        if (entry.location) newFields.push(`<p><strong>Location:</strong> ${entry.location}</p>`);
-                                        if (entry.tags && entry.tags.length) newFields.push(`<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`);
-                                        doc.body.innerHTML = newFields.join('\n') + doc.body.innerHTML;
-                                        await page.update({ 'text.content': doc.body.innerHTML });
-                                        updated++;
-                                        
-                                        // Track if this was a duplicate merge
-                                        if (entry.uuid && page.getFlag(MODULE.ID, 'codexUuid') !== entry.uuid) {
-                                            duplicatesMerged++;
-                                        }
-                                    } else {
-                                        // Create new page with all fields, formatted as expected
-                                        let html = '';
-                                        if (entry.img) html += `<img src="${entry.img}" alt="${entry.name}">`;
-                                        if (entry.category) html += `<p><strong>Category:</strong> ${entry.category}</p>`;
-                                        if (entry.description) html += `<p><strong>Description:</strong> ${entry.description}</p>`;
-                                        if (entry.plotHook) html += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`;
-                                        if (entry.location) html += `<p><strong>Location:</strong> ${entry.location}</p>`;
-                                        if (entry.link && entry.link.uuid && entry.link.label) html += `<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`;
-                                        if (entry.tags && entry.tags.length) html += `<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`;
-                                        const newPage = await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
-                                            name: entry.name,
-                                            type: 'text',
-                                            text: { content: html },
-                                            ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
-                                        }]);
-                                        
-                                        // Set the codexUuid flag for future deduplication
-                                        if (entry.uuid) {
-                                            await newPage[0].setFlag(MODULE.ID, 'codexUuid', entry.uuid);
-                                        }
-                                        
-                                        added++;
-                                    }
-                                    
-                                    // Small delay to make progress visible
-                                    if (i % 5 === 0) {
-                                        await moduleDelay(100);
-                                    }
-                                }
-                                
-                                // Update progress for sorting phase
-                                this._updateProgressBar(80, 'Sorting entries...');
-                                
-                                // Sort pages alphabetically by name
-                                const sorted = this.selectedJournal.pages.contents.slice().sort((a, b) => a.name.localeCompare(b.name));
-                                for (let i = 0; i < sorted.length; i++) {
-                                    await sorted[i].update({ sort: (i + 1) * 10 });
-                                }
-                                
-                                // Update progress for completion
-                                this._updateProgressBar(90, 'Finalizing import...');
-                                
-                                let message = `Codex import complete: ${added} added, ${updated} updated.`;
-                                if (duplicatesMerged > 0) {
-                                    message += ` ${duplicatesMerged} duplicates were merged.`;
-                                }
-                                ui.notifications.info(message);
-                                
-                                // Show completion message in progress bar
-                                this._updateProgressBar(100, 'Import complete!');
-                                
-                                // Keep completion message visible for a moment
-                                await moduleDelay(2000);
-                                
-                                // Hide progress bar
-                                this._hideProgressBar();
-                                
-                                // Clear import flag and refresh panel once at the end
-                                this.isImporting = false;
-                                await this._refreshData();
-                                this.render(this.element);
-                                
-                            } catch (e) {
-                                // Hide progress bar on error
-                                this._hideProgressBar();
-                                
-                                // Clear import flag on error
-                                this.isImporting = false;
-                                
-                                ui.notifications.error('Invalid JSON.');
-                            }
-                        }
-                    }
-                },
-                default: 'import',
-                render: (html) => {
-                    // v13: Detect and convert jQuery to native DOM if needed
-                    let nativeDlgHtml = html;
-                    if (html && (html.jquery || typeof html.find === 'function')) {
-                        nativeDlgHtml = html[0] || html.get?.(0) || html;
-                    }
-                    // Apply custom button classes
-                    const cancelButton = nativeDlgHtml.querySelector('[data-button="cancel"]');
-                    if (cancelButton) cancelButton.classList.add('squire-cancel-button');
-                    const importButton = nativeDlgHtml.querySelector('[data-button="import"]');
-                    if (importButton) importButton.classList.add('squire-submit-button');
-                    
-                    const copyTemplateButton = nativeDlgHtml.querySelector('.copy-template-button');
-                    if (copyTemplateButton) {
-                        copyTemplateButton.addEventListener('click', () => {
-                            let output = template;
-                            const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
-                            if (rulebooks && rulebooks.trim()) {
-                                output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
-                            }
-                            copyToClipboard(output);
-                            ui.notifications.info('Template copied to clipboard!');
-                        });
-                    }
-                    
-                    // Browse file button
-                    const browseFileButton = nativeDlgHtml.querySelector('.browse-file-button');
-                    if (browseFileButton) {
-                        browseFileButton.addEventListener('click', () => {
-                            const fileInput = nativeDlgHtml.querySelector('#import-file-input');
-                            if (fileInput) fileInput.click();
-                        });
-                    }
-                    
-                    // File input change handler
-                    const fileInput = nativeDlgHtml.querySelector('#import-file-input');
-                    if (fileInput) {
-                        fileInput.addEventListener('change', async (event) => {
-                            const file = event.target.files[0];
-                            if (!file) return;
-                            
-                            try {
-                                // Check file type
-                                if (!file.name.toLowerCase().endsWith('.json')) {
-                                    ui.notifications.error('Please select a JSON file.');
-                                    return;
-                                }
-                                
-                                // Read file content
-                                const text = await file.text();
-                                let importData;
-                                
-                                try {
-                                    importData = JSON.parse(text);
-                                } catch (e) {
-                                    ui.notifications.error('Invalid JSON in file: ' + e.message);
-                                    return;
-                                }
-                                
-                                // Validate format
-                                if (!Array.isArray(importData)) {
-                                    ui.notifications.error('Invalid file format: Must be an array of codex entries.');
-                                    return;
-                                }
-                                
-                                // Auto-populate the textarea with the file content
-                                const jsonInput = nativeDlgHtml.querySelector('#codex-import-json');
-                                if (jsonInput) {
-                                    jsonInput.value = text;
-                                }
-                                
-                                // Show success message
-                                ui.notifications.info(`File "${file.name}" loaded successfully! Review the content below and click Import when ready.`);
-                                
-                                // Reset file input
-                                event.target.value = '';
-                                
-                            } catch (error) {
-                                console.error('Error reading file:', error);
-                                ui.notifications.error(`Error reading file: ${error.message}`);
-                            }
-                        });
-                    }
-                }
-            }, {
-                classes: ['import-export-dialog'],
-                id: 'import-export-dialog-codex-import',
-            }).render(true);
-            });
-        }
-
-        // Export JSON button
-        // v13: Use nativeHtml instead of html
-        const exportJsonButton = nativeHtml.querySelector('.export-json-button');
-        if (exportJsonButton) {
-            const newButton = exportJsonButton.cloneNode(true);
-            exportJsonButton.parentNode?.replaceChild(newButton, exportJsonButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                // Collect all entries as a flat array (single journal format)
-                const exportData = [];
-                for (const cat of this.categories) {
-                    const entries = (this.data[cat] || []).map(entry => {
-                        const newEntry = { ...entry };
-                        if (newEntry.img && typeof newEntry.img === 'string') {
-                            // Remove site origin from img path if present
-                            const origin = window.location.origin + '/';
-                            if (newEntry.img.startsWith(origin)) {
-                                newEntry.img = newEntry.img.slice(origin.length);
-                            }
-                        }
-                        return newEntry;
-                    });
-                    exportData.push(...entries);
-                }
-                const jsonString = JSON.stringify(exportData, null, 2);
-                new Dialog({
-                    title: 'Export Codex as JSON',
-                    width: 600,
-                    resizable: true,
-                    content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
-                        type: 'codex',
-                        isImport: false,
-                        isExport: true,
-                        jsonOutputId: 'codex-export-json',
-                        exportData: jsonString,
-                        exportSummary: {
-                            totalItems: exportData.length,
-                            exportVersion: "1.0",
-                            timestamp: new Date().toLocaleString()
-                        }
-                    }),
-                    buttons: {
-                        close: {
-                            icon: '<i class="fa-solid fa-times"></i>',
-                            label: 'Cancel Export',
-                        },
-                        download: {
-                            icon: '<i class="fa-solid fa-download"></i>',
-                            label: 'Download JSON',
-                            callback: () => {
-                                try {
-                                    // Windows-safe filename sanitization
-                                    const sanitizeWindowsFilename = (name) => {
-                                        return name
-                                            .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
-                                            .replace(/\s+$/g, "")
-                                            .replace(/\.+$/g, "")
-                                            .slice(0, 150); // keep it reasonable
-                                    };
-                                    
-                                    // Build a Windows-safe filename
-                                    const stamp = new Date().toISOString().replace(/[:]/g, "-");
-                                    const filename = sanitizeWindowsFilename(`COFFEEPUB-SQUIRE-codex-export-${stamp}.json`);
-                                    
-                                    // Use Foundry's built-in helper (v10+) - this handles Blob creation + anchor download correctly
-                                    if (typeof saveDataToFile === 'function') {
-                                        saveDataToFile(jsonString, "application/json;charset=utf-8", filename);
-                                        ui.notifications.info(`Codex export saved as ${filename}`);
-                                    } else {
-                                        // Fallback: use the classic anchor approach with sanitized filename
-                                        const blob = new Blob([jsonString], { 
-                                            type: 'application/json;charset=utf-8' 
-                                        });
-                                        const url = URL.createObjectURL(blob);
-                                        
-                                        const a = document.createElement("a");
-                                        a.href = url;
-                                        a.download = filename;
-                                        a.style.display = 'none';
-                                        a.rel = "noopener"; // safety
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        a.remove();
-                                        
-                                        // Always revoke after a tick so the download starts
-                                        trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
-                                        
-                                        ui.notifications.info(`Codex export downloaded as ${filename}`);
-                                    }
-                                } catch (error) {
-                                    // Last resort: copy to clipboard
-                                    copyToClipboard(jsonString);
-                                    ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
-                                    console.error('Export download failed:', error);
-                                }
-                            }
-                        }
-                    },
-                    default: 'download'
-                },
-                {
-                    classes: ['import-export-dialog'],
-                    id: 'import-export-dialog-codex-export',
-                    render: (html) => {
-                        // v13: Detect and convert jQuery to native DOM if needed
-                        let nativeDlgHtml = html;
-                        if (html && (html.jquery || typeof html.find === 'function')) {
-                            nativeDlgHtml = html[0] || html.get?.(0) || html;
-                        }
-                        // Apply custom button classes
-                        const closeButton = nativeDlgHtml.querySelector('[data-button="close"]');
-                        if (closeButton) closeButton.classList.add('squire-cancel-button');
-                        const downloadButton = nativeDlgHtml.querySelector('[data-button="download"]');
-                        if (downloadButton) downloadButton.classList.add('squire-submit-button');
-                    }
-                }).render(true);
-            });
-        }
-
         // Toggle visibility (ownership) icon
         // v13: Use nativeHtml instead of html
         nativeHtml.querySelectorAll('.codex-entry-visibility').forEach(visibilityButton => {
@@ -1753,8 +1342,8 @@ export class CodexPanel {
         const nativeElement = getNativeElement(this.element);
         if (!nativeElement) return;
 
-        // Get the button element and show it's working
-        const button = nativeElement.querySelector('.auto-discover-button');
+        // Get the titlebar menu button for working state during scan
+        const button = nativeElement.querySelector('.codex-titlebar-menu');
         if (button) {
             button.classList.add('working');
             button.setAttribute('title', 'Scanning party inventories...');
@@ -2032,12 +1621,281 @@ export class CodexPanel {
                 }, 3000);
             }
         } finally {
-            // Reset button state
-            if (button) {
-                button.classList.remove('working');
-                button.setAttribute('title', 'Auto-Discover from Party Inventories');
+            // Reset button state (titlebar menu icon)
+            const menuBtn = nativeElement.querySelector('.codex-titlebar-menu');
+            if (menuBtn) {
+                menuBtn.classList.remove('working');
+                menuBtn.setAttribute('title', 'Codex options');
             }
         }
+    }
+
+    /**
+     * Open the Import Codex from JSON dialog (used from titlebar menu).
+     * @private
+     */
+    async _openImportCodexDialog() {
+        let template = '';
+        try {
+            const response = await fetch('modules/coffee-pub-squire/prompts/prompt-codex.txt');
+            if (response.ok) template = await response.text();
+            else template = 'Failed to load prompt-codex.txt.';
+        } catch (e) {
+            template = 'Failed to load prompt-codex.txt.';
+        }
+        new Dialog({
+            title: 'Import Codex from JSON',
+            width: 600,
+            resizable: true,
+            content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                type: 'codex',
+                isImport: true,
+                isExport: false,
+                jsonInputId: 'codex-import-json'
+            }),
+            buttons: {
+                cancel: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel Import' },
+                import: {
+                    icon: '<i class="fa-solid fa-file-import"></i>',
+                    label: 'Import JSON',
+                    callback: async (html) => {
+                        ui.notifications.info('Importing Codex entries. This may take some time as entries are added, updated, indexed, and sorted. You will be notified when the process is complete.');
+                        this.isImporting = true;
+                        this._showProgressBar();
+                        try {
+                            let nativeDlgHtml = html;
+                            if (html && (html.jquery || typeof html.find === 'function')) nativeDlgHtml = html[0] || html.get?.(0) || html;
+                            const jsonInput = nativeDlgHtml.querySelector('#codex-import-json');
+                            const value = jsonInput?.value || '';
+                            const data = JSON.parse(value);
+                            if (!Array.isArray(data)) {
+                                ui.notifications.error('Imported JSON must be an array of entries.');
+                                return;
+                            }
+                            if (!this.selectedJournal) {
+                                ui.notifications.error('No Codex journal selected.');
+                                return;
+                            }
+                            this._updateProgressBar(10, 'Validating import data...');
+                            let added = 0, updated = 0, duplicatesMerged = 0;
+                            const importNameCounts = {};
+                            const duplicateNames = [];
+                            data.forEach(entry => {
+                                if (entry.name) {
+                                    importNameCounts[entry.name] = (importNameCounts[entry.name] || 0) + 1;
+                                    if (importNameCounts[entry.name] > 1 && !duplicateNames.includes(entry.name)) duplicateNames.push(entry.name);
+                                }
+                            });
+                            if (duplicateNames.length > 0) ui.notifications.warn(`Warning: Import data contains duplicate entry names: ${duplicateNames.join(', ')}. These will be merged with existing entries.`);
+                            this._updateProgressBar(20, `Processing ${data.length} entries...`);
+                            const totalEntries = data.length;
+                            for (let i = 0; i < data.length; i++) {
+                                const entry = data[i];
+                                const entryProgress = 20 + ((i / totalEntries) * 60);
+                                this._updateProgressBar(entryProgress, `Processing: ${entry.name}`);
+                                let page = null;
+                                if (entry.uuid) page = this.selectedJournal.pages.find(p => p.getFlag(MODULE.ID, 'codexUuid') === entry.uuid);
+                                if (!page) page = this.selectedJournal.pages.find(p => p.name === entry.name);
+                                if (page) {
+                                    const parser = new DOMParser();
+                                    const doc = parser.parseFromString(page.text.content, 'text/html');
+                                    const pTags = Array.from(doc.querySelectorAll('p'));
+                                    for (const p of pTags) {
+                                        const strong = p.querySelector('strong');
+                                        if (!strong) continue;
+                                        const label = strong.textContent.trim().replace(/:$/, '').toUpperCase();
+                                        if (["CATEGORY","DESCRIPTION","PLOT HOOK","LOCATION","TAGS"].includes(label)) p.remove();
+                                    }
+                                    const newFields = [];
+                                    if (entry.category) newFields.push(`<p><strong>Category:</strong> ${entry.category}</p>`);
+                                    if (entry.description) newFields.push(`<p><strong>Description:</strong> ${entry.description}</p>`);
+                                    if (entry.plotHook) newFields.push(`<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`);
+                                    if (entry.location) newFields.push(`<p><strong>Location:</strong> ${entry.location}</p>`);
+                                    if (entry.tags && entry.tags.length) newFields.push(`<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`);
+                                    doc.body.innerHTML = newFields.join('\n') + doc.body.innerHTML;
+                                    await page.update({ 'text.content': doc.body.innerHTML });
+                                    updated++;
+                                    if (entry.uuid && page.getFlag(MODULE.ID, 'codexUuid') !== entry.uuid) duplicatesMerged++;
+                                } else {
+                                    let htmlContent = '';
+                                    if (entry.img) htmlContent += `<img src="${entry.img}" alt="${entry.name}">`;
+                                    if (entry.category) htmlContent += `<p><strong>Category:</strong> ${entry.category}</p>`;
+                                    if (entry.description) htmlContent += `<p><strong>Description:</strong> ${entry.description}</p>`;
+                                    if (entry.plotHook) htmlContent += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`;
+                                    if (entry.location) htmlContent += `<p><strong>Location:</strong> ${entry.location}</p>`;
+                                    if (entry.link && entry.link.uuid && entry.link.label) htmlContent += `<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`;
+                                    if (entry.tags && entry.tags.length) htmlContent += `<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`;
+                                    const newPage = await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
+                                        name: entry.name,
+                                        type: 'text',
+                                        text: { content: htmlContent },
+                                        ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
+                                    }]);
+                                    if (entry.uuid) await newPage[0].setFlag(MODULE.ID, 'codexUuid', entry.uuid);
+                                    added++;
+                                }
+                                if (i % 5 === 0) await moduleDelay(100);
+                            }
+                            this._updateProgressBar(80, 'Sorting entries...');
+                            const sorted = this.selectedJournal.pages.contents.slice().sort((a, b) => a.name.localeCompare(b.name));
+                            for (let i = 0; i < sorted.length; i++) await sorted[i].update({ sort: (i + 1) * 10 });
+                            this._updateProgressBar(90, 'Finalizing import...');
+                            let message = `Codex import complete: ${added} added, ${updated} updated.`;
+                            if (duplicatesMerged > 0) message += ` ${duplicatesMerged} duplicates were merged.`;
+                            ui.notifications.info(message);
+                            this._updateProgressBar(100, 'Import complete!');
+                            await moduleDelay(2000);
+                            this._hideProgressBar();
+                            this.isImporting = false;
+                            await this._refreshData();
+                            this.render(this.element);
+                        } catch (e) {
+                            this._hideProgressBar();
+                            this.isImporting = false;
+                            ui.notifications.error('Invalid JSON.');
+                        }
+                    }
+                }
+            },
+            default: 'import',
+            render: (html) => {
+                let nativeDlgHtml = html;
+                if (html && (html.jquery || typeof html.find === 'function')) nativeDlgHtml = html[0] || html.get?.(0) || html;
+                const cancelButton = nativeDlgHtml.querySelector('[data-button="cancel"]');
+                if (cancelButton) cancelButton.classList.add('squire-cancel-button');
+                const importButton = nativeDlgHtml.querySelector('[data-button="import"]');
+                if (importButton) importButton.classList.add('squire-submit-button');
+                const copyTemplateButton = nativeDlgHtml.querySelector('.copy-template-button');
+                if (copyTemplateButton) {
+                    copyTemplateButton.addEventListener('click', () => {
+                        let output = template;
+                        const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
+                        if (rulebooks && rulebooks.trim()) output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
+                        copyToClipboard(output);
+                        ui.notifications.info('Template copied to clipboard!');
+                    });
+                }
+                const browseFileButton = nativeDlgHtml.querySelector('.browse-file-button');
+                if (browseFileButton) {
+                    browseFileButton.addEventListener('click', () => {
+                        const fileInput = nativeDlgHtml.querySelector('#import-file-input');
+                        if (fileInput) fileInput.click();
+                    });
+                }
+                const fileInput = nativeDlgHtml.querySelector('#import-file-input');
+                if (fileInput) {
+                    fileInput.addEventListener('change', async (event) => {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        try {
+                            if (!file.name.toLowerCase().endsWith('.json')) {
+                                ui.notifications.error('Please select a JSON file.');
+                                return;
+                            }
+                            const text = await file.text();
+                            let importData;
+                            try {
+                                importData = JSON.parse(text);
+                            } catch (e) {
+                                ui.notifications.error('Invalid JSON in file: ' + e.message);
+                                return;
+                            }
+                            if (!Array.isArray(importData)) {
+                                ui.notifications.error('Invalid file format: Must be an array of codex entries.');
+                                return;
+                            }
+                            const jsonInput = nativeDlgHtml.querySelector('#codex-import-json');
+                            if (jsonInput) jsonInput.value = text;
+                            ui.notifications.info(`File "${file.name}" loaded successfully! Review the content below and click Import when ready.`);
+                            event.target.value = '';
+                        } catch (error) {
+                            console.error('Error reading file:', error);
+                            ui.notifications.error(`Error reading file: ${error.message}`);
+                        }
+                    });
+                }
+            }
+        }, { classes: ['import-export-dialog'], id: 'import-export-dialog-codex-import' }).render(true);
+    }
+
+    /**
+     * Open the Export Codex as JSON dialog (used from titlebar menu).
+     * @private
+     */
+    async _openExportCodexDialog() {
+        const exportData = [];
+        for (const cat of this.categories) {
+            const entries = (this.data[cat] || []).map(entry => {
+                const newEntry = { ...entry };
+                if (newEntry.img && typeof newEntry.img === 'string') {
+                    const origin = window.location.origin + '/';
+                    if (newEntry.img.startsWith(origin)) newEntry.img = newEntry.img.slice(origin.length);
+                }
+                return newEntry;
+            });
+            exportData.push(...entries);
+        }
+        const jsonString = JSON.stringify(exportData, null, 2);
+        new Dialog({
+            title: 'Export Codex as JSON',
+            width: 600,
+            resizable: true,
+            content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
+                type: 'codex',
+                isImport: false,
+                isExport: true,
+                jsonOutputId: 'codex-export-json',
+                exportData: jsonString,
+                exportSummary: { totalItems: exportData.length, exportVersion: "1.0", timestamp: new Date().toLocaleString() }
+            }),
+            buttons: {
+                close: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel Export' },
+                download: {
+                    icon: '<i class="fa-solid fa-download"></i>',
+                    label: 'Download JSON',
+                    callback: () => {
+                        try {
+                            const sanitizeWindowsFilename = (name) => name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_").replace(/\s+$/g, "").replace(/\.+$/g, "").slice(0, 150);
+                            const stamp = new Date().toISOString().replace(/[:]/g, "-");
+                            const filename = sanitizeWindowsFilename(`COFFEEPUB-SQUIRE-codex-export-${stamp}.json`);
+                            if (typeof saveDataToFile === 'function') {
+                                saveDataToFile(jsonString, "application/json;charset=utf-8", filename);
+                                ui.notifications.info(`Codex export saved as ${filename}`);
+                            } else {
+                                const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = filename;
+                                a.style.display = 'none';
+                                a.rel = "noopener";
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
+                                ui.notifications.info(`Codex export downloaded as ${filename}`);
+                            }
+                        } catch (error) {
+                            copyToClipboard(jsonString);
+                            ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
+                            console.error('Export download failed:', error);
+                        }
+                    }
+                }
+            },
+            default: 'download'
+        }, {
+            classes: ['import-export-dialog'],
+            id: 'import-export-dialog-codex-export',
+            render: (html) => {
+                let nativeDlgHtml = html;
+                if (html && (html.jquery || typeof html.find === 'function')) nativeDlgHtml = html[0] || html.get?.(0) || html;
+                const closeButton = nativeDlgHtml.querySelector('[data-button="close"]');
+                if (closeButton) closeButton.classList.add('squire-cancel-button');
+                const downloadButton = nativeDlgHtml.querySelector('[data-button="download"]');
+                if (downloadButton) downloadButton.classList.add('squire-submit-button');
+            }
+        }).render(true);
     }
 
     /**

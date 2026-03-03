@@ -2,15 +2,8 @@
     <div class="tray-title-small">
         <span>{{journalName}}</span>
         <div class="notes-controls">
-            {{#if isGM}}
-            <i class="fa-solid fa-cog set-journal-button" title="Set Journal"></i>
-            <i class="fa-solid fa-broom cleanup-notes-pins-button" title="Clean up missing pins"></i>
-            <i class="fa-solid fa-trash-can delete-all-notes-pins-button" title="Delete all note pins"></i>
-            {{/if}}
-            <i class="fa-solid fa-circle-plus new-note-button" title="New Note"></i>
-            <i class="fa-solid fa-sync-alt refresh-notes-button" title="Refresh"></i>
-            <i class="fa-solid {{#if (eq cardTheme 'light')}}fa-moon{{else}}fa-sun{{/if}} notes-card-theme-toggle {{#if (eq cardTheme 'light')}}light{{else}}dark{{/if}}" data-theme="{{cardTheme}}" title="Toggle card theme"></i>
-            <i class="fa-solid {{#if (eq viewMode 'list')}}fa-address-card{{else}}fa-list{{/if}} notes-view-toggle {{#if (eq viewMode 'list')}}list{{else}}cards{{/if}}" data-view="{{viewMode}}" title="Toggle card/list view"></i>
+            <i class="fa-solid fa-note-sticky new-note-button" data-tooltip="New Note"></i>
+            <i class="fa-solid fa-ellipsis-h notes-titlebar-menu" data-tooltip="Note options"></i>
         </div>
     </div>
 
@@ -271,7 +264,7 @@
         <div class="no-journal-selected">
             {{#if isGM}}
             <p>No journal has been selected for notes.</p>
-            <p>Click the <i class="fa-solid fa-cog"></i> icon to select a journal.</p>
+            <p>Click the <i class="fa-solid fa-ellipsis-h"></i> menu to select a journal.</p>
             <button class="set-journal-button-large">
                 <i class="fa-solid fa-book"></i> Select Journal
             </button>

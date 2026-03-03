@@ -4,17 +4,10 @@
             Codex
         </span>
         <div class="codex-toolbar">
-            {{#if hasJournal}}
-                <i class="fa-solid fa-feather codex-open-journal" title="Open Codex Journal"></i>
-            {{/if}}
-            <i class="fa-solid fa-sync-alt refresh-codex-button" title="Refresh Codex"></i>
-            <i class="fa-solid fa-search-plus auto-discover-button" title="Auto-Discover from Party Inventories"></i>
             {{#if isGM}}
-            <i class="fa-solid fa-plus add-codex-button" title="Add Codex Entry"></i>
-            <i class="fa-solid fa-cog codex-set-journal" title="Select Journal"></i>
-            <i class="fa-solid fa-file-import import-json-button" title="Import JSON"></i>
-            <i class="fa-solid fa-file-export export-json-button" title="Export JSON"></i>
+                <i class="fa-solid fa-bookmark add-codex-button" data-tooltip="Add Codex Entry"></i>
             {{/if}}
+            <i class="fa-solid fa-ellipsis-h codex-titlebar-menu" data-tooltip="Codex options"></i>
         </div>
     </div>
 

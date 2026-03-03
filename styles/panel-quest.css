@@ -610,27 +610,28 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 .squire-tray[data-position="left"] .quest-tag {
     background: rgba(255, 47, 47, 0.2);
-    border-color: rgba(255, 47, 47, 0.4);
+    border-color: rgba(255, 47, 47, 0.0);
     border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 0.9em;
-    color: #ddd;
+    padding: 2px 4px;
+    font-size: 0.65em;
+    color: rgba(255, 255, 255, 0.9);
     cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
 }
 .squire-tray[data-position="left"] .quest-tag:hover {
     background: rgba(255, 47, 47, 0.7);
-    border-color: rgba(255, 47, 47, 0.7);
+    border-color: rgba(255, 47, 47, 0.0);
 }
 
 .squire-tray[data-position="left"] .quest-tag.selected {
     background: rgba(50, 100, 150, 0.4);
-    border-color: rgba(50, 100, 150, 0.6);
-    color: #fff;
+    border-color: rgba(50, 100, 150, 0.0);
+    color: rgba(255, 255, 255, 0.9)
 }
 .squire-tray[data-position="left"] .quest-tag.selected:hover {
     background: rgba(50, 100, 150, 0.7);
-    border-color: rgba(100, 150, 200, 0.8);
+    border-color: rgba(100, 150, 200, 0.8)
 }
 
 /* Quest Status Tag Styling */
