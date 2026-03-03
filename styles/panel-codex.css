@@ -6,6 +6,7 @@
 
 /* CONTENT */
 
+
 .squire-tray[data-position="left"] .codex-content {
     flex: 1;
     overflow-y: auto;
@@ -16,7 +17,8 @@
     padding: 8px;
     border: 2px solid rgba(255, 255, 255, 0.2);
     color: #cccccc;
-    font-weight: 400;
+    font-weight: 200;
+    font-size: 1.0em;
 }
 
 .squire-tray[data-position="left"] .codex-entry-content {
@@ -41,12 +43,12 @@
     align-items: center;
     color: rgba(159, 146, 117, 0.9);
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
 }
 /* Control Icons */
 
 .squire-tray[data-position="left"] .codex-toolbar i {
-    font-size: 1.0em;
+    font-size: 0.7em;
     opacity: 1;
     cursor: pointer;
     display: flex;
@@ -60,8 +62,6 @@
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
-
-
 
 
 
@@ -297,13 +297,15 @@
     box-shadow: 0 0 5px rgba(200, 100, 121, 0.3);
 }
 
+
+
 .squire-tray[data-position="left"] .codex-entry-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     background: rgba(96, 54, 51, 0.0);
-    padding: 4px 2px 4px 0px;
+    padding: 0px 0px 0px 0px;
     border-radius: 4px;
 }
 .squire-tray[data-position="left"] .codex-entry-name {
@@ -311,13 +313,13 @@
     text-align: left;
     font-weight: 500;
     color: rgba(159, 146, 117, 0.9);
-    font-size: 1.2em;
+    font-size: 1.0em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .squire-tray[data-position="left"] .codex-entry-name i {
-    font-size: 0.85em;
+    font-size: 0.7em;
     margin-right: 2px;
 }
 .squire-tray[data-position="left"] .codex-entry-image {
@@ -337,6 +339,8 @@
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+
 
 .codex-entry-label {
     color: rgba(159, 146, 117, 0.9);

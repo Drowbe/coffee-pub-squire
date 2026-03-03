@@ -181,65 +181,79 @@
                             </div>
                         </div>
 
+
+
+
                         <!-- Note Content -->
                         <div class="note-content">
                             {{{content}}}
                         </div>
 
-                        <!-- Note Footer: author (left) | timestamp (right) -->
-                        <div class="note-footer">
-                            <span class="note-footer-left">
-                                <span class="note-visibility-badge {{visibility}}">
-                                    {{#if (eq visibility 'party')}}
-                                    <i class="fa-solid fa-users"></i>
-                                    {{else}}
-                                    <i class="fa-solid fa-lock"></i>
-                                    {{/if}}
-                                </span>
-                                <span class="note-author">
-                                    {{#if editorAvatars.length}}
-                                    <span class="note-editor-avatars">
-                                        {{#each editorAvatars}}
-                                        <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
-                                        {{/each}}
+                        <div class="note-footer-container">
+
+                            <!-- Note Footer: author (left) | timestamp (right) -->
+                            <div class="note-footer">
+                                <span class="note-footer-left">
+                                    <span class="note-visibility-badge {{visibility}}">
+                                        {{#if (eq visibility 'party')}}
+                                        <i class="fa-solid fa-users"></i>
+                                        {{else}}
+                                        <i class="fa-solid fa-lock"></i>
+                                        {{/if}}
                                     </span>
-                                    {{else}}
-                                    <i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}
-                                    {{/if}}
+                                    <span class="note-author">
+                                        {{#if editorAvatars.length}}
+                                        <span class="note-editor-avatars">
+                                            {{#each editorAvatars}}
+                                            <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
+                                            {{/each}}
+                                        </span>
+                                        {{else}}
+                                        <i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}
+                                        {{/if}}
+                                    </span>
                                 </span>
-                            </span>
-                            {{#if timestamp}}
-                            <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
+
+
+
+                                {{#if timestamp}}
+                                <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
+                                {{/if}}
+                            </div>
+
+
+
+                            <!-- Note Tags Section -->
+                            {{#if tags}}
+                            {{#if (isArray tags)}}
+                            {{#if tags.length}}
+                            <div class="note-tags-section">
+                                <div class="note-tags">
+                                    {{#each tags}}
+                                    <span class="note-tag" data-tag="{{toUpperCase this}}">{{toUpperCase this}}</span>
+                                    {{/each}}
+                                </div>
+                            </div>
+                            {{/if}}
+                            {{else}}
+                            <div class="note-tags-section">
+                                <div class="note-tags">
+                                    <span class="note-tag">{{tags}}</span>
+                                </div>
+                            </div>
+                            {{/if}}
+                            {{/if}}
+
+
+
+                            <!-- Note Location -->
+                            {{#if sceneName}}
+                            <div class="note-location-section" data-pin-id="{{pinId}}">
+                                <i class="fa-solid fa-location-dot"></i> {{sceneName}}
+                            </div>
                             {{/if}}
                         </div>
 
-                        <!-- Note Location -->
-                        {{#if sceneName}}
-                        <div class="note-location-section" data-pin-id="{{pinId}}">
-                            <i class="fa-solid fa-location-dot"></i> {{sceneName}}
-                        </div>
-                        {{/if}}
-
-                        <!-- Note Tags Section -->
-                        {{#if tags}}
-                        {{#if (isArray tags)}}
-                        {{#if tags.length}}
-                        <div class="note-tags-section">
-                            <div class="note-tags">
-                                {{#each tags}}
-                                <span class="note-tag" data-tag="{{toUpperCase this}}">{{toUpperCase this}}</span>
-                                {{/each}}
-                            </div>
-                        </div>
-                        {{/if}}
-                        {{else}}
-                        <div class="note-tags-section">
-                            <div class="note-tags">
-                                <span class="note-tag">{{tags}}</span>
-                            </div>
-                        </div>
-                        {{/if}}
-                        {{/if}}
                     </div>
                     {{/if}}
                     {{/each}}

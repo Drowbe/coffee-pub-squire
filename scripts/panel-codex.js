@@ -975,8 +975,12 @@ export class CodexPanel {
                 const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
                 for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                     if (collapsed) {
-                        // v13: Use native DOM methods
-                        const section = nativeHtml.querySelector(`.codex-section[data-category="${category}"]`);
+                        // Match by iterating to handle category values with newlines/whitespace
+                        const sections = nativeHtml.querySelectorAll('.codex-section[data-category]');
+                        const section = Array.from(sections).find(s => {
+                            const attrValue = s.getAttribute('data-category');
+                            return attrValue && attrValue.trim() === category.trim();
+                        });
                         if (section) {
                             section.classList.add('collapsed');
                         }
@@ -1022,7 +1026,12 @@ export class CodexPanel {
                     const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
                     for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                         if (collapsed) {
-                            const section = nativeHtml.querySelector(`.codex-section[data-category="${category}"]`);
+                            // Match by iterating to handle category values with newlines/whitespace
+                            const sections = nativeHtml.querySelectorAll('.codex-section[data-category]');
+                            const section = Array.from(sections).find(s => {
+                                const attrValue = s.getAttribute('data-category');
+                                return attrValue && attrValue.trim() === category.trim();
+                            });
                             if (section) {
                                 section.classList.add('collapsed');
                             }
