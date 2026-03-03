@@ -1,23 +1,25 @@
-
-
 /* TRAY HANDLE */
 
 .squire-tray[data-position="left"] .tray-handle {
-    height: 100%;
+    height: auto;
     width: var(--tray-handle-width); 
     flex: none;
     order: 2;
     /* Option 1: Subtle Dots */
     background-image: radial-gradient(#444 1px, transparent 1px);
     background-size: 2px 2px;
-    border: 1px dotted #444;
-    border-radius: 0 6px 6px 0;
-    margin-left: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0 8px 8px 0;
+    margin-right: -1px;
+    margin-left: 0px;
+    margin-top: -8px;
+    margin-bottom: -8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 8px;
-    padding-bottom: 0px;
+    padding-top: 4px;
+    padding-bottom: 4px;
     color: #aaa;
     box-shadow: 0 0 0 var(--color-shadow-dark);
     text-transform: uppercase;
@@ -76,28 +78,28 @@
     margin-bottom: 8px;
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-solid-thick {
-    border-top: 2px solid rgba(121, 121, 121, 0.4);
+    border-top: 2px solid rgba(121, 121, 121, 0.3);
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-solid-thin {
-    border-top: 1px solid rgba(121, 121, 121, 0.4);
+    border-top: 1px solid rgba(121, 121, 121, 0.3);
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thick {
-    border-top: 2px dotted rgba(121, 121, 121, 0.4);
+    border-top: 2px dotted rgba(121, 121, 121, 0.3);
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thin {
-    border-top: 1px dotted rgba(121, 121, 121, 0.4);
+    border-top: 1px dotted rgba(121, 121, 121, 0.3);
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-double-thick {
-    border-top: 5px double rgba(121, 121, 121, 0.4);
+    border-top: 5px double rgba(121, 121, 121, 0.3);
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-double-thin {
-    border-top: 3px double rgba(121, 121, 121, 0.4);
+    border-top: 3px double rgba(121, 121, 121, 0.3);
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thick {
-    border-top: 3px ridge rgba(121, 121, 121, 0.4);
+    border-top: 3px ridge rgba(121, 121, 121, 0.3);
 }
 .squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thin {
-    border-top: 2px ridge rgba(121, 121, 121, 0.4);
+    border-top: 2px ridge rgba(121, 121, 121, 0.3);
 }
 
 
@@ -119,6 +121,7 @@
     text-align: center;
     font-size: 0.85em;
     border-radius: 3px;
+    box-shadow: none !important;
 }
 
 .squire-tray[data-position="left"] .tray-handle-button-pin:hover,

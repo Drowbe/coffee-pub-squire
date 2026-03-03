@@ -1,7 +1,7 @@
 :root {
     --squire-tray-width: 400px;
-    --squire-tray-handle-width: 30px;
-    --squire-tray-handle-adjustment: 16px;
+    --squire-tray-handle-width: 26px;
+    --squire-tray-handle-adjustment: 8px;
     --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
     --squire-tray-top-offset: 70px;
     --squire-tray-bottom-offset: 300px;
@@ -81,9 +81,9 @@
     top: calc(var(--squire-tray-top-offset) + var(--blacksmith-menubar-interface-offset));
     left: 0px;
     height: calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset) - var(--blacksmith-menubar-interface-offset));
-    border-radius: 8px 8px 8px 8px;
+    border-radius: 0px 8px 8px 0px;
     display: flex;
-    padding: 8px;
+    padding: 8px 1px 8px 4px;
     transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
     transition: transform 0.5s ease-in-out;
 }

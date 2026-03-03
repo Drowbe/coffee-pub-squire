@@ -53,9 +53,9 @@ export const CSS_CLASSES = {
 }; 
 
 export const SQUIRE = {
-    TRAY_OFFSET_WIDTH: '10px',
-    TRAY_HANDLE_WIDTH: '30px',
-    TRAY_HANDLE_ADJUSTMENT: '16px'
+    TRAY_OFFSET_WIDTH: '6px',
+    TRAY_HANDLE_WIDTH: '25px',
+    TRAY_HANDLE_ADJUSTMENT: '8px'
 }; 
 
 export const HELPERS = {
