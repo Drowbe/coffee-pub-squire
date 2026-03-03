@@ -36,7 +36,6 @@ jobs:
             lang/ \
             images/ \
             prompts/ \
-            themes/ \
             -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
 
       # Create release

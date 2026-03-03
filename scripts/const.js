@@ -104,6 +104,5 @@ export const TEMPLATES = {
     WINDOW_NOTE: `modules/${MODULE.ID}/templates/window-note.hbs`,
     CHAT_CARD: `modules/${MODULE.ID}/templates/chat-cards.hbs`,
     PRINT_CHARACTER: `modules/${MODULE.ID}/templates/print-character.hbs`,
-    TOOLTIP_QUEST: `modules/${MODULE.ID}/templates/tooltip-pin-quests-objective.hbs`,
-    TOOLTIP_QUEST_PIN: `modules/${MODULE.ID}/templates/tooltip-pin-quests-quest.hbs`
+    TOOLTIP_QUEST: `modules/${MODULE.ID}/templates/tooltip-pin-quests-objective.hbs`
 };

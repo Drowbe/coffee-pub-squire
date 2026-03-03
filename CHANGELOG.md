@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Codex Panel - Invalid selector on restore**: Fixed `SyntaxError: Failed to execute 'querySelector' on 'Element'` when restoring collapsed category state. Category names stored in `codexCollapsedCategories` can include newlines/whitespace (e.g. from "Characters" / "Browse" UI), making attribute selectors like `[data-category="${category}"]` invalid. Replaced `querySelector` with the same safe approach used elsewhere: select all `.codex-section[data-category]` and find by matching trimmed `data-category` to the stored category.
 
+### Removed
+- **Quest pin legacy (Blacksmith migration)**: Removed unused quest pin tooltip template `tooltip-pin-quests-quest.hbs` (only objective tooltip is used, from the tray handle). Removed `themes/quest-pins.json` and `TEMPLATES.TOOLTIP_QUEST_PIN`; pin appearance is fully handled by Blacksmith and module settings.
+
 
 ## [13.1.5]
 

@@ -39,12 +39,10 @@ coffee-pub-squire/
 │   ├── window-*.hbs           # Window templates
 │   ├── partials/              # Reusable partials
 │   ├── chat-cards.hbs, print-character.hbs
-│   └── tooltip-pin-quests-*.hbs
+│   └── tooltip-pin-quests-objective.hbs
 ├── resources/
 │   ├── light-sources.json
 │   └── pin-icons.json
-├── themes/
-│   └── quest-pins.json
 └── documents/                 # Architecture and planning docs
 ```
 

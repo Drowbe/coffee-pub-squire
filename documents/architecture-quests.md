@@ -17,12 +17,10 @@ The Quest system provides structured adventure and task management for FoundryVT
 | `templates/quest-form.hbs` | Form template |
 | `templates/handle-quest.hbs` | Handle content for quest view (tray handle) |
 | `templates/partials/quest-entry.hbs` | Quest entry partial |
-| `templates/tooltip-pin-quests-objective.hbs` | Objective pin tooltip |
-| `templates/tooltip-pin-quests-quest.hbs` | Quest pin tooltip |
+| `templates/tooltip-pin-quests-objective.hbs` | Objective pin tooltip (tray handle hover) |
 | `styles/panel-quest.css` | Panel styles |
 | `styles/quest-form.css` | Form styles |
 | `styles/quest-markers.css` | Pin marker styles |
-| `themes/quest-pins.json` | Pin appearance configuration (TODO: wire to pins) |
 
 ## Core Design
 

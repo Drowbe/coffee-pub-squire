@@ -477,16 +477,8 @@ export async function showQuestTooltip(tooltipId, data, event, delay = 500, auto
         const timeoutId = trackModuleTimeout(async () => {
             try {
                 const tooltip = getOrCreateQuestTooltip(tooltipId);
-                
-                // Choose template based on tooltip ID
-                let template;
-                if (tooltipId.includes('quest-tooltip')) {
-                    template = TEMPLATES.TOOLTIP_QUEST_PIN;
-                } else {
-                    template = TEMPLATES.TOOLTIP_QUEST;
-                }
-                
-                // Render the tooltip using the appropriate Handlebars template
+                const template = TEMPLATES.TOOLTIP_QUEST;
+                // Render the tooltip using the Handlebars template
                 const html = await renderTemplate(template, data);
                 tooltip.innerHTML = html;
                 tooltip.style.display = 'block';
