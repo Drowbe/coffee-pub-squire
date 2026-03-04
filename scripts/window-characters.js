@@ -259,3 +259,4 @@ export class CharactersWindow extends Application {
         }
     }
 }
+

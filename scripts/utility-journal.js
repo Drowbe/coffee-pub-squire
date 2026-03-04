@@ -625,3 +625,4 @@ export function showPagePicker(journal, options = {}) {
     });
     dialog.render(true);
 }
+

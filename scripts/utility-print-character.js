@@ -573,3 +573,4 @@ export class PrintCharacterSheet {
         return SKILL_ICONS[skillKey.toLowerCase()] || PRINT_CONFIG.DEFAULT_ICON;
     }
 } 
+

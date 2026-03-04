@@ -133,7 +133,7 @@ export class FavoritesPanel {
                 // Clear the favorites list from DOM
                 if (PanelManager.instance.favoritesPanel.element) {
                     const $favoritesList = $(PanelManager.instance.favoritesPanel.element).find('.favorites-list');
-                    $favoritesList.find('.favorite-item').remove();
+                    $favoritesList.find('.panel-item').remove();
                     $favoritesList.append('<div class="tray-title-small" style="text-align: center; padding: 10px;">No favorites available</div>');
                 }
             }
@@ -505,7 +505,7 @@ export class FavoritesPanel {
         
         // Add equipped class and handle shield icon visibility for equipped items
         // v13: Use native DOM querySelectorAll instead of jQuery find().each()
-        favoritesPanel.querySelectorAll('.favorite-item').forEach(item => {
+        favoritesPanel.querySelectorAll('.panel-item').forEach(item => {
             const itemId = item.dataset.itemId;
             const favoriteItem = this.favorites.find(f => f.id === itemId);
             
@@ -578,7 +578,7 @@ export class FavoritesPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.favorite-item').forEach((item) => {
+        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
             const itemId = item.dataset.itemId;
             const favoriteItem = this.favorites.find(f => f.id === itemId);
             
@@ -622,7 +622,7 @@ export class FavoritesPanel {
         searchTerm = searchTerm.toLowerCase();
         
         // Get all favorite items
-        const favoriteItems = this.element.find('.favorite-item');
+        const favoriteItems = this.element.find('.panel-item');
         let visibleItems = 0;
         
         favoriteItems.each((_, item) => {
@@ -661,13 +661,13 @@ export class FavoritesPanel {
         // v13: Use namespaced API and opt out of jQuery
         try {
             const ContextMenu = getContextMenu();
-            this._contextMenu = new ContextMenu(favoritesList, '.favorite-item', this.menuOptions, { jQuery: false });
+            this._contextMenu = new ContextMenu(favoritesList, '.panel-item', this.menuOptions, { jQuery: false });
         } catch (error) {
             console.error('Error creating context menu:', error);
             // Fallback: use native context menu
             // v13: Use native DOM event delegation
             panel.addEventListener('contextmenu', (event) => {
-                const favoriteItem = event.target.closest('.favorite-item');
+                const favoriteItem = event.target.closest('.panel-item');
                 if (!favoriteItem) return;
                 event.preventDefault();
                 const itemId = favoriteItem.dataset.itemId;
@@ -730,7 +730,7 @@ export class FavoritesPanel {
                 if (event.target.classList.contains('favorite-roll-overlay')) {
                     event.preventDefault();
                     event.stopPropagation();
-                    const favoriteItem = event.currentTarget.closest('.favorite-item');
+                    const favoriteItem = event.currentTarget.closest('.panel-item');
                     if (!favoriteItem) return;
                     const itemId = favoriteItem.dataset.itemId;
                     const item = this.actor.items.get(itemId);
@@ -743,13 +743,13 @@ export class FavoritesPanel {
 
         // View item details
         // v13: Use native DOM event delegation
-        nativeHtml.querySelectorAll('.favorite-item .fa-feather').forEach(icon => {
+        nativeHtml.querySelectorAll('.panel-item .fa-feather').forEach(icon => {
             const newIcon = icon.cloneNode(true);
             icon.parentNode?.replaceChild(newIcon, icon);
             newIcon.addEventListener('click', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                const favoriteItem = event.currentTarget.closest('.favorite-item');
+                const favoriteItem = event.currentTarget.closest('.panel-item');
                 if (!favoriteItem) return;
                 const itemId = favoriteItem.dataset.itemId;
                 const item = this.actor.items.get(itemId);
@@ -767,7 +767,7 @@ export class FavoritesPanel {
             
             event.preventDefault();
             event.stopPropagation();
-            const favoriteItem = event.currentTarget.closest('.favorite-item') || heartButton.closest('.favorite-item');
+            const favoriteItem = event.currentTarget.closest('.panel-item') || heartButton.closest('.panel-item');
             if (!favoriteItem) return;
             const itemId = favoriteItem.dataset.itemId;
             if (!itemId) {
@@ -792,7 +792,7 @@ export class FavoritesPanel {
             event.preventDefault();
             event.stopPropagation();
             
-            const favoriteItem = sunButton.closest('.favorite-item');
+            const favoriteItem = sunButton.closest('.panel-item');
             if (!favoriteItem) return;
             const itemId = favoriteItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
@@ -827,7 +827,7 @@ export class FavoritesPanel {
             event.preventDefault();
             event.stopPropagation();
             
-            const favoriteItem = shieldButton.closest('.favorite-item');
+            const favoriteItem = shieldButton.closest('.panel-item');
             if (!favoriteItem) return;
             const itemId = favoriteItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
@@ -874,7 +874,7 @@ export class FavoritesPanel {
             
             event.preventDefault();
             event.stopPropagation();
-            const favoriteItem = daggerButton.closest('.favorite-item');
+            const favoriteItem = daggerButton.closest('.panel-item');
             if (!favoriteItem) return;
             const itemId = favoriteItem.dataset.itemId;
             if (!itemId) return;
@@ -913,7 +913,7 @@ export class FavoritesPanel {
             lightIcon.dataset.processing = 'true';
             
             try {
-                const favoriteItem = lightIcon.closest('.favorite-item');
+                const favoriteItem = lightIcon.closest('.panel-item');
                 if (!favoriteItem) return;
                 const itemId = favoriteItem.dataset.itemId;
                 const item = this.actor.items.get(itemId);
@@ -1083,4 +1083,5 @@ export class FavoritesPanel {
             }
         });
     }
-} 
+}
+

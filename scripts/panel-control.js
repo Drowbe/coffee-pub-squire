@@ -104,31 +104,21 @@ export class ControlPanel {
             inventory: 0
         };
 
-        // Map panel types to their item class names
-        const itemClassMap = {
-            favorites: 'favorite',
-            weapons: 'weapon',
-            spells: 'spell',
-            features: 'feature',
-            inventory: 'inventory'
-        };
-
         // Process each visible panel separately
         Object.keys(visibleCounts).forEach(panelType => {
             // v13: Use native DOM querySelector
             const panelElement = this.element.querySelector(`[data-panel="${panelType}"]`);
             if (!panelElement || !panelElement.classList.contains('visible')) return;
 
-            // Find all items in this panel using the correct class name
-            const itemClass = itemClassMap[panelType];
-            const items = panelElement.querySelectorAll(`.${itemClass}-item`);
+            // Find all items in this panel using the shared panel item class
+            const items = panelElement.querySelectorAll('.panel-item');
 
             let visibleItemsInPanel = 0;  // Initialize counter for this panel
 
             // Process items
             // v13: Use native DOM forEach
             items.forEach(item => {
-                const nameElement = item.querySelector(`.${itemClass}-name`);
+                const nameElement = item.querySelector('.panel-item-name, .favorite-name, .weapon-name, .spell-name, .feature-name, .inventory-name');
                 
                 // Skip if no name element found
                 if (!nameElement) {
@@ -159,7 +149,7 @@ export class ControlPanel {
                 
                 // Then only show headers that have visible items
                 // v13: Use native DOM querySelectorAll with :not([style*="display: none"])
-                const visibleItems = Array.from(panelElement.querySelectorAll(`.${itemClass}-item`))
+                const visibleItems = Array.from(panelElement.querySelectorAll('.panel-item'))
                     .filter(item => item.style.display !== 'none');
                 const visibleCategories = new Set();
                 
@@ -292,4 +282,5 @@ export class ControlPanel {
             });
         }
     }
-} 
+}
+

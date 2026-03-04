@@ -345,3 +345,4 @@ export class QuestParser {
         return entry;
     }
 } 
+

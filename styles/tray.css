@@ -317,11 +317,7 @@
 /* ITEMS */
 
 
-.squire-tray[data-position="left"] .favorite-item,
-.squire-tray[data-position="left"] .feature-item,
-.squire-tray[data-position="left"] .spell-item,
-.squire-tray[data-position="left"] .weapon-item,
-.squire-tray[data-position="left"] .inventory-item {
+.squire-tray[data-position="left"] .panel-item {
     background: rgba(0, 0, 0, 0.2);
     border: none;
     border-radius: 3px;
@@ -329,27 +325,17 @@
     margin-bottom: 2px;
 }
 
-.squire-tray[data-position="left"] .favorite-item:hover,
-.squire-tray[data-position="left"] .feature-item:hover,
-.squire-tray[data-position="left"] .spell-item:hover,
-.squire-tray[data-position="left"] .weapon-item:hover,
-.squire-tray[data-position="left"] .inventory-item:hover {
+.squire-tray[data-position="left"] .panel-item:hover {
     background: rgba(185, 84, 61, 0.2);
 }
 
-.squire-tray[data-position="left"] .spell-item.prepared,
-.squire-tray[data-position="left"] .weapon-item.prepared,
-.squire-tray[data-position="left"] .inventory-item.prepared {
+.squire-tray[data-position="left"] .panel-item.prepared {
     background: rgba(74, 144, 226, 0.1);
 }
 
 
 
-.squire-tray[data-position="left"] .feature-row,
-.squire-tray[data-position="left"] .favorite-row,
-.squire-tray[data-position="left"] .spell-row,
-.squire-tray[data-position="left"] .weapon-row,
-.squire-tray[data-position="left"] .inventory-row {
+.squire-tray[data-position="left"] .panel-item-row {
     gap: 4px;
     padding: 4px;
     display: flex;
@@ -359,11 +345,7 @@
 
 
 
-.feature-image-container,
-.inventory-image-container,
-.favorite-image-container,
-.spell-image-container,
-.weapon-image-container {
+.panel-item-image-container {
     position: relative;
     flex: 0 0 24px;
     width: 24px;
@@ -374,11 +356,7 @@
 
 
 
-.feature-image,
-.inventory-image,
-.favorite-image,
-.spell-image,
-.weapon-image {
+.panel-item-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -387,11 +365,7 @@
 
 
 
-.weapon-name,
-.inventory-name,
-.favorite-name,
-.spell-name,
-.weapon-name {
+.panel-item-name {
     flex: 1;
     color: #eee;
     font-size: .8rem;
@@ -406,11 +380,7 @@
 
 
 
-.weapon-roll-overlay,
-.inventory-roll-overlay,
-.feature-roll-overlay,
-.spell-roll-overlay,
-.favorite-roll-overlay {
+.panel-item-roll-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -426,11 +396,7 @@
     justify-content: center;
     font-size: 16px;
 }
-.weapon-image-container:hover .weapon-roll-overlay,
-.inventory-image-container:hover .inventory-roll-overlay,
-.feature-image-container:hover .feature-roll-overlay,
-.spell-image-container:hover .spell-roll-overlay,
-.favorite-image-container:hover .favorite-roll-overlay {
+.panel-item-image-container:hover .panel-item-roll-overlay {
     opacity: 1;
     pointer-events: auto;
 }
@@ -832,7 +798,7 @@
     margin-left: 8px;
 }
 
-.favorite-item .tray-buttons .fa-stars {
+.panel-item .tray-buttons .fa-stars {
     color: #ffd700;
     text-shadow: 0 0 3px #ffd700;
 }

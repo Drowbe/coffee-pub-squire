@@ -178,7 +178,7 @@ export class SpellsPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.spell-item').forEach((item) => {
+        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
             const spellId = item.dataset.spellId;
             const spell = this.spells.find(s => s.id === spellId);
             
@@ -278,7 +278,7 @@ export class SpellsPanel {
         // Category filter toggles - v13: Convert to native DOM event delegation
         // TODO: Convert panel.on() event delegation to native DOM addEventListener
         panel.addEventListener('click', (event) => {
-            const filter = event.target.closest('.spell-category-filter');
+            const filter = event.target.closest('.spell-level-filter');
             if (!filter) return;
             const categoryId = filter.dataset.filterId;
             if (categoryId) {
@@ -305,7 +305,7 @@ export class SpellsPanel {
             const featherIcon = event.target.closest('.tray-buttons .fa-feather');
             if (!featherIcon) return;
             
-            const spellItem = featherIcon.closest('.spell-item');
+            const spellItem = featherIcon.closest('.panel-item');
             if (!spellItem) return;
             const spellId = spellItem.dataset.spellId;
             const spell = this.actor.items.get(spellId);
@@ -320,7 +320,7 @@ export class SpellsPanel {
             const heartIcon = event.target.closest('.tray-buttons .fa-heart');
             if (!heartIcon) return;
             
-            const spellItem = heartIcon.closest('.spell-item');
+            const spellItem = heartIcon.closest('.panel-item');
             if (!spellItem) return;
             const spellId = spellItem.dataset.spellId;
             await FavoritesPanel.manageFavorite(this.actor, spellId);
@@ -333,7 +333,7 @@ export class SpellsPanel {
             const rollOverlay = event.target.closest('.spell-image-container .spell-roll-overlay');
             if (!rollOverlay) return;
             
-            const spellItem = rollOverlay.closest('.spell-item');
+            const spellItem = rollOverlay.closest('.panel-item');
             if (!spellItem) return;
             const spellId = spellItem.dataset.spellId;
             const spell = this.actor.items.get(spellId);
@@ -348,7 +348,7 @@ export class SpellsPanel {
             const sunIcon = event.target.closest('.tray-buttons .fa-sun');
             if (!sunIcon) return;
             
-            const spellItem = sunIcon.closest('.spell-item');
+            const spellItem = sunIcon.closest('.panel-item');
             if (!spellItem) return;
             const spellId = spellItem.dataset.spellId;
             const spell = this.actor.items.get(spellId);
@@ -410,3 +410,4 @@ export class SpellsPanel {
         this.element = null;
     }
 }
+

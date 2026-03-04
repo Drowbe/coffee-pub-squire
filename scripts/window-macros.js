@@ -246,3 +246,4 @@ export class MacrosWindow extends Application {
         this.render(false);
     }
 } 
+

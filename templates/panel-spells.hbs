@@ -49,13 +49,13 @@
                 </div>
                 {{#each spells as |spell|}}
                     {{#if (eq spell.system.method "atwill")}}
-                    <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-at-will">
-                        <div class="spell-row">
-                            <div class="spell-image-container">
-                                <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
-                                <i class="fa-solid fa-dice-d20 spell-roll-overlay"></i>
+                    <div class="panel-item spell-item prepared" data-item-id="{{spell.id}}" data-item-type="spell" data-spell-id="{{spell.id}}" data-category-id="category-spell-at-will">
+                        <div class="panel-item-row spell-row">
+                            <div class="panel-item-image-container spell-image-container">
+                                <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                                <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                             </div>
-                            <div class="spell-name">
+                            <div class="panel-item-name spell-name">
                                 {{spell.name}}
                                 <div class="spell-components">
                                     {{#each spell.system.properties}}
@@ -87,13 +87,13 @@
                 </div>
                 {{#each spells as |spell|}}
                     {{#if (eq spell.system.level 0)}}
-                    <div class="spell-item prepared" data-spell-id="{{spell.id}}" data-category-id="category-spell-level-0">
-                        <div class="spell-row">
-                            <div class="spell-image-container">
-                                <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
-                                <i class="fa-solid fa-dice-d20 spell-roll-overlay"></i>
+                    <div class="panel-item spell-item prepared" data-item-id="{{spell.id}}" data-item-type="spell" data-spell-id="{{spell.id}}" data-category-id="category-spell-level-0">
+                        <div class="panel-item-row spell-row">
+                            <div class="panel-item-image-container spell-image-container">
+                                <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                                <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                             </div>
-                            <div class="spell-name">
+                            <div class="panel-item-name spell-name">
                                 {{spell.name}}
                                 <div class="spell-components">
                                     {{#each spell.system.properties}}
@@ -127,15 +127,17 @@
                         </div>
                     </div>
                     {{#each (lookup ../spellsByLevel slot.level) as |spell|}}
-                        <div class="spell-item {{#if spell.system.prepared}}prepared{{/if}}" 
+                        <div class="panel-item spell-item {{#if spell.system.prepared}}prepared{{/if}}" 
+                             data-item-id="{{spell.id}}"
+                             data-item-type="spell"
                              data-spell-id="{{spell.id}}" 
                              data-category-id="category-spell-level-{{slot.level}}">
-                            <div class="spell-row">
-                                <div class="spell-image-container">
-                                    <img class="spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
-                                    <i class="fa-solid fa-dice-d20 spell-roll-overlay"></i>
+                            <div class="panel-item-row spell-row">
+                                <div class="panel-item-image-container spell-image-container">
+                                    <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                                    <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                                 </div>
-                                <div class="spell-name">
+                                <div class="panel-item-name spell-name">
                                     {{spell.name}}
                                     <div class="spell-components">
                                         {{#each spell.system.properties}}
@@ -164,13 +166,13 @@
         {{else}}
             {{!-- Bottom position: original flat list --}}
             {{#each spells}}
-            <div class="spell-item {{#if this.prepared}}prepared{{/if}}" data-spell-id="{{this.id}}">
-                <div class="spell-row">
-                    <div class="spell-image-container">
-                        <img class="spell-image" src="{{this.img}}" alt="{{this.name}}"/>
-                        <i class="fa-solid fa-dice-d20 spell-roll-overlay"></i>
+            <div class="panel-item spell-item {{#if this.prepared}}prepared{{/if}}" data-item-id="{{this.id}}" data-item-type="spell" data-spell-id="{{this.id}}">
+                <div class="panel-item-row spell-row">
+                    <div class="panel-item-image-container spell-image-container">
+                        <img class="panel-item-image spell-image" src="{{this.img}}" alt="{{this.name}}"/>
+                        <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                     </div>
-                    <div class="spell-name">{{this.name}}</div>
+                    <div class="panel-item-name spell-name">{{this.name}}</div>
                     <div class="spell-level">
                         {{#if (eq this.level 0)}}
                         C
@@ -191,9 +193,9 @@
 </div>
 
 {{#*inline "spell-item"}}
-<div class="spell-item" data-item-id="{{id}}">
-    <img src="{{img}}" alt="{{name}}" class="spell-icon">
-    <span class="spell-name">{{name}}</span>
+<div class="panel-item spell-item" data-item-id="{{id}}" data-item-type="spell">
+    <img src="{{img}}" alt="{{name}}" class="panel-item-image spell-icon">
+    <span class="panel-item-name spell-name">{{name}}</span>
     {{> "modules/coffee-pub-squire/templates/partials/action-type"}}
     <div class="spell-controls">
         <a class="spell-favorite {{#if isFavorite}}active{{/if}}"><i class="fa-solid fa-star"></i></a>

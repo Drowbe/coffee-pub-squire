@@ -113,3 +113,4 @@ export class PartyStatsPanel {
         this.element = null;
     }
 }
+

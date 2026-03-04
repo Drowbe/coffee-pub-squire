@@ -143,7 +143,7 @@ export class WeaponsPanel {
         
         // Reset all categories to visible initially
         if (this.panelManager) {
-            this.panelManager.resetCategories(weaponsPanel[0]);
+            this.panelManager.resetCategories(weaponsPanel);
         }
         
         this._activateListeners(this.element);
@@ -162,7 +162,7 @@ export class WeaponsPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.weapon-item').forEach((item) => {
+        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
             const weaponId = item.dataset.weaponId;
             const weapon = this.weapons.all.find(w => w.id === weaponId);
             
@@ -292,7 +292,7 @@ export class WeaponsPanel {
             const featherIcon = event.target.closest('.tray-buttons .fa-feather');
             if (!featherIcon) return;
             
-            const weaponItem = featherIcon.closest('.weapon-item');
+            const weaponItem = featherIcon.closest('.panel-item');
             if (!weaponItem) return;
             const weaponId = weaponItem.dataset.weaponId;
             const weapon = this.actor.items.get(weaponId);
@@ -309,7 +309,7 @@ export class WeaponsPanel {
             const heartIcon = event.target.closest('.tray-buttons .fa-heart');
             if (!heartIcon) return;
             
-            const weaponItem = heartIcon.closest('.weapon-item');
+            const weaponItem = heartIcon.closest('.panel-item');
             if (!weaponItem) return;
             const weaponId = weaponItem.dataset.weaponId;
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
@@ -332,7 +332,7 @@ export class WeaponsPanel {
             lightIcon.dataset.processing = 'true';
             
             try {
-                const weaponItem = lightIcon.closest('.weapon-item');
+                const weaponItem = lightIcon.closest('.panel-item');
                 if (!weaponItem) return;
                 const weaponId = weaponItem.dataset.weaponId;
                 const item = this.actor.items.get(weaponId);
@@ -369,7 +369,7 @@ export class WeaponsPanel {
             const rollOverlay = event.target.closest('.weapon-image-container .weapon-roll-overlay');
             if (!rollOverlay) return;
             
-            const weaponItem = rollOverlay.closest('.weapon-item');
+            const weaponItem = rollOverlay.closest('.panel-item');
             if (!weaponItem) return;
             const weaponId = weaponItem.dataset.weaponId;
             const weapon = this.actor.items.get(weaponId);
@@ -386,7 +386,7 @@ export class WeaponsPanel {
             const shieldIcon = event.target.closest('.tray-buttons .fa-shield-alt');
             if (!shieldIcon) return;
             
-            const weaponItem = shieldIcon.closest('.weapon-item');
+            const weaponItem = shieldIcon.closest('.panel-item');
             if (!weaponItem) return;
             const weaponId = weaponItem.dataset.weaponId;
             const weapon = this.actor.items.get(weaponId);
@@ -593,4 +593,5 @@ export class WeaponsPanel {
         
         return selectedQuantity;
     }
-} 
+}
+

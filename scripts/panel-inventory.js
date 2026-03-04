@@ -140,7 +140,7 @@ export class InventoryPanel {
         
         // Reset all categories to visible initially
         if (this.panelManager) {
-            this.panelManager.resetCategories(inventoryPanel[0]);
+            this.panelManager.resetCategories(inventoryPanel);
         }
         
         this._activateListeners(this.element);
@@ -159,7 +159,7 @@ export class InventoryPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.inventory-item').forEach((item) => {
+        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
             const itemId = item.dataset.itemId;
             const inventoryItem = this.items.all.find(i => i.id === itemId);
             
@@ -289,7 +289,7 @@ export class InventoryPanel {
             const featherIcon = event.target.closest('.tray-buttons .fa-feather');
             if (!featherIcon) return;
             
-            const inventoryItem = featherIcon.closest('.inventory-item');
+            const inventoryItem = featherIcon.closest('.panel-item');
             if (!inventoryItem) return;
             const itemId = inventoryItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
@@ -306,7 +306,7 @@ export class InventoryPanel {
             const heartIcon = event.target.closest('.tray-buttons .fa-heart');
             if (!heartIcon) return;
             
-            const inventoryItem = heartIcon.closest('.inventory-item');
+            const inventoryItem = heartIcon.closest('.panel-item');
             if (!inventoryItem) return;
             const itemId = inventoryItem.dataset.itemId;
             await FavoritesPanel.manageFavorite(this.actor, itemId);
@@ -321,7 +321,7 @@ export class InventoryPanel {
             const rollOverlay = event.target.closest('.inventory-image-container .inventory-roll-overlay');
             if (!rollOverlay) return;
             
-            const inventoryItem = rollOverlay.closest('.inventory-item');
+            const inventoryItem = rollOverlay.closest('.panel-item');
             if (!inventoryItem) return;
             const itemId = inventoryItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
@@ -338,7 +338,7 @@ export class InventoryPanel {
             const shieldIcon = event.target.closest('.tray-buttons .fa-shield-alt');
             if (!shieldIcon) return;
             
-            const inventoryItem = shieldIcon.closest('.inventory-item');
+            const inventoryItem = shieldIcon.closest('.panel-item');
             if (!inventoryItem) return;
             const itemId = inventoryItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
@@ -393,7 +393,7 @@ export class InventoryPanel {
             lightIcon.dataset.processing = 'true';
             
             try {
-                const inventoryItem = lightIcon.closest('.inventory-item');
+                const inventoryItem = lightIcon.closest('.panel-item');
                 if (!inventoryItem) return;
                 const itemId = inventoryItem.dataset.itemId;
                 const item = this.actor.items.get(itemId);
@@ -567,4 +567,5 @@ export class InventoryPanel {
         
         return selectedQuantity;
     }
-} 
+}
+

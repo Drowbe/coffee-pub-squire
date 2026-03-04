@@ -1,11 +1,11 @@
 {{#*inline "feature-item"}}
-<div class="feature-item" data-feature-id="{{id}}" data-category-id="{{categoryId}}">
-    <div class="feature-row">
-        <div class="feature-image-container">
-            <img class="feature-image" src="{{img}}" alt="{{name}}"/>
-            <i class="fa-solid fa-dice-d20 feature-roll-overlay"></i>
+<div class="panel-item feature-item" data-item-id="{{id}}" data-item-type="feat" data-feature-id="{{id}}" data-category-id="{{categoryId}}">
+    <div class="panel-item-row feature-row">
+        <div class="panel-item-image-container feature-image-container">
+            <img class="panel-item-image feature-image" src="{{img}}" alt="{{name}}"/>
+            <i class="fa-solid fa-dice-d20 panel-item-roll-overlay feature-roll-overlay"></i>
         </div>
-        <div class="feature-name">
+        <div class="panel-item-name feature-name">
             {{name}}
             {{#if actionType}}
             <span class="action-type">

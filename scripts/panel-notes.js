@@ -2433,3 +2433,4 @@ export class NotesPanel {
 }
 
 // NotesForm has been moved to window-note.js
+

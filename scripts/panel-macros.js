@@ -723,3 +723,4 @@ if (typeof Handlebars !== 'undefined' && !Handlebars.helpers.macrosOrPlaceholder
         return Array.from({ length: 5 }, (_, i) => macros[i] || { id: null, name: null, img: null });
     });
 } 
+

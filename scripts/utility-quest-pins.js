@@ -686,3 +686,4 @@ export async function reconcileQuestPins(opts = {}) {
         await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
     }
 }
+

@@ -1270,3 +1270,4 @@ export class NotesForm extends FormApplication {
         }
     }
 }
+

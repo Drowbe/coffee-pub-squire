@@ -1,7 +1,7 @@
 /* Favorites Panel */
 
 /* Drop indicator styles */
-.favorite-item.drop-above::before {
+.favorites-panel .panel-item.drop-above::before {
     content: '';
     position: absolute;
     top: -2px;
@@ -15,7 +15,7 @@
     z-index: 100;
 }
 
-.favorite-item.drop-below::after {
+.favorites-panel .panel-item.drop-below::after {
     content: '';
     position: absolute;
     bottom: -2px;

@@ -322,3 +322,4 @@ export class QuestForm extends FormApplication {
         }
     }
 } 
+

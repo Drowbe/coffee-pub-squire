@@ -110,3 +110,4 @@ export class NotesParser extends BaseParser {
         return note;
     }
 }
+

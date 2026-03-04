@@ -796,3 +796,4 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
         return null;
     }
 }
+

@@ -106,3 +106,4 @@ export const TEMPLATES = {
     PRINT_CHARACTER: `modules/${MODULE.ID}/templates/print-character.hbs`,
     TOOLTIP_QUEST: `modules/${MODULE.ID}/templates/tooltip-pin-quests-objective.hbs`
 };
+

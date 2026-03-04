@@ -190,3 +190,4 @@ export class CodexParser extends BaseParser {
         return BaseParser.extractTags(content);
     }
 } 
+

@@ -336,3 +336,4 @@ export class HealthWindow extends Application {
         this.render(false);
     }
 } 
+

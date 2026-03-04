@@ -200,3 +200,4 @@ export class DiceTrayWindow extends Application {
         this.render(false);
     }
 } 
+

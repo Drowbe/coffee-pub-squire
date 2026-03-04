@@ -121,7 +121,7 @@ export class FeaturesPanel {
         
         // Reset all categories to visible initially
         if (this.panelManager) {
-            this.panelManager.resetCategories(featuresPanel[0]);
+            this.panelManager.resetCategories(featuresPanel);
         }
         
         this._activateListeners(this.element);
@@ -139,7 +139,7 @@ export class FeaturesPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.feature-item').forEach((item) => {
+        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
             const featureId = item.dataset.featureId;
             const feature = this.features.all.find(f => f.id === featureId);
             
@@ -221,7 +221,7 @@ export class FeaturesPanel {
             if (!featherIcon) return;
             
             try {
-                const featureItem = featherIcon.closest('.feature-item');
+                const featureItem = featherIcon.closest('.panel-item');
                 if (!featureItem) return;
                 const featureId = featureItem.dataset.featureId;
                 const feature = this.actor.items.get(featureId);
@@ -243,7 +243,7 @@ export class FeaturesPanel {
             const heartIcon = event.target.closest('.tray-buttons .fa-heart');
             if (!heartIcon) return;
             
-            const featureItem = heartIcon.closest('.feature-item');
+            const featureItem = heartIcon.closest('.panel-item');
             if (!featureItem) return;
             const featureId = featureItem.dataset.featureId;
             await FavoritesPanel.manageFavorite(this.actor, featureId);
@@ -256,7 +256,7 @@ export class FeaturesPanel {
             const rollOverlay = event.target.closest('.feature-image-container .feature-roll-overlay');
             if (!rollOverlay) return;
             
-            const featureItem = rollOverlay.closest('.feature-item');
+            const featureItem = rollOverlay.closest('.panel-item');
             if (!featureItem) return;
             const featureId = featureItem.dataset.featureId;
             const feature = this.actor.items.get(featureId);
@@ -271,3 +271,4 @@ export class FeaturesPanel {
         this.element = null;
     }
 }
+

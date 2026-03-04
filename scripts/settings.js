@@ -1487,6 +1487,3 @@ export const registerSettings = function() {
 
 // None
 
-
-
-

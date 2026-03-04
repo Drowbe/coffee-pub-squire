@@ -632,3 +632,4 @@ export class CharacterPanel {
         this.element = null;
     }
 } 
+

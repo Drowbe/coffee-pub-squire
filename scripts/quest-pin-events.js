@@ -363,3 +363,4 @@ export function registerQuestPinSync() {
 
     questPinSyncRegistered = true;
 }
+

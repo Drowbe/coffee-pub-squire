@@ -140,3 +140,4 @@ export class BaseParser {
         throw new Error('parseSinglePage must be implemented by subclass');
     }
 }
+

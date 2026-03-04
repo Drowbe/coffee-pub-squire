@@ -1341,7 +1341,7 @@ export class PanelManager {
      * Update visibility of items based on search text
      * @param {string} searchText - The text to search for
      * @param {HTMLElement} panel - The panel element containing the items
-     * @param {string} itemSelector - The selector for items (e.g., '.spell-item', '.weapon-item')
+     * @param {string} itemSelector - The selector for items (e.g., '.panel-item')
      */
     updateSearchVisibility(searchText, panel, itemSelector) {
         const items = panel.querySelectorAll(itemSelector);
@@ -1349,7 +1349,7 @@ export class PanelManager {
         let hasVisibleItems = false;
 
         items.forEach(item => {
-            const name = item.querySelector('.weapon-name, .spell-name, .inventory-name')?.textContent.toLowerCase() || '';
+            const name = item.querySelector('.panel-item-name, .weapon-name, .spell-name, .inventory-name')?.textContent.toLowerCase() || '';
             const categoryId = item.dataset.categoryId;
             const matchesSearch = !normalizedSearch || name.includes(normalizedSearch);
             const categoryVisible = !this.hiddenCategories.has(categoryId);
@@ -1407,7 +1407,7 @@ export class PanelManager {
 
         if (hasVisibleItems === null) {
             // Calculate if there are visible items
-            const items = panel.querySelectorAll('.weapon-item, .spell-item, .inventory-item');
+            const items = panel.querySelectorAll('.panel-item');
             hasVisibleItems = Array.from(items).some(item => item.style.display !== 'none');
         }
 
@@ -2217,3 +2217,4 @@ PanelManager.trackInterval(globalCleanupInterval);
 
 
 // Note: createToken hook is now managed centrally by HookManager
+
