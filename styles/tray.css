@@ -404,22 +404,23 @@
 
 
 
-
+/* ITEM CONTEXT */
 
 .panel-item-context {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    margin-right: 4px;
+    margin-left: 4px;
     flex-shrink: 0;
+    vertical-align: middle;
 }
 
 .panel-item-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 12px;
-    height: 12px;
+    min-width: 14px;
+    height: 14px;
     padding: 0 3px;
     border-radius: 3px;
     font-size: 8px;
@@ -427,41 +428,37 @@
     line-height: 1;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    border: 1px solid rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .panel-item-badge.context-action {
-    background: rgba(120, 100, 82, 0.15);
-    color: #eee;
+    width: 14px;
+    min-width: 14px;
+    border-radius: 50%;
+    padding: 0;
+    background: rgba(120, 100, 82, 0.35);
+    color: #fff;
 }
 
-.panel-item-badge.action-action { color: #4fc538; }
-.panel-item-badge.action-bonus { color: #ccad32; }
-.panel-item-badge.action-reaction { color: #439ce6; }
-.panel-item-badge.action-special { color: #9c77f2; }
+.panel-item-badge.action-action { background: #4a8f3a; }
+.panel-item-badge.action-bonus { background: #9a7b2c; }
+.panel-item-badge.action-reaction { background: #2f6da8; }
+.panel-item-badge.action-special { background: #6f4b95; }
 
 .panel-item-badge.context-component {
-    background: rgba(8, 21, 27, 0.8);
-    color: rgba(203, 206, 218, 0.95);
+    color: #f0f3f7;
 }
 
-.panel-item-badge.component-c,
-.panel-item-badge.component-r {
-    color: #9fd1ff;
-}
+.panel-item-badge.component-v { background: #8f3a2f; }
+.panel-item-badge.component-s { background: #2c5a95; }
+.panel-item-badge.component-m { background: #6b5a2a; }
+.panel-item-badge.component-c { background: #2f7f6a; }
+.panel-item-badge.component-r { background: #74469b; }
 
 .panel-item-badge.context-count {
     background: rgba(40, 40, 40, 0.65);
     color: #aaa;
     min-width: 16px;
-}
-
-.feature-uses,
-.feature-quantity,
-.inventory-quantity,
-.spell-level,
-.weapon-quantity {
-    text-align: center;
 }
 
 

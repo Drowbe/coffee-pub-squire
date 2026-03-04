@@ -610,10 +610,14 @@ export function getQuestPinModuleVisibility() {
  * Reconcile quest/objective page flags with actual pins in the Pins API.
  * - Restores pinId/sceneId on pages when pins exist.
  * - Clears stale flags when pins were deleted or unplaced externally.
+ * Journal page writes require edit permission; only GMs run this to avoid
+ * "lacks permission to update JournalEntryPage" on player clients.
  * @param {object} [opts]
  * @param {string|string[]} [opts.sceneId] - Scene(s) to scope placed pin lookup; defaults to all scenes.
  */
 export async function reconcileQuestPins(opts = {}) {
+    if (!game.user.isGM) return;
+
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
 

@@ -16,12 +16,12 @@
             {{{name}}}
             {{#if (lookup ../newlyAddedItems id)}}<span class="new-tag">NEW</span>{{/if}}
             {{#if isNew}}<span class="new-tag">NEW</span>{{/if}}
-        </div>
-        <div class="panel-item-context">
-            {{> action-badge actionType=actionType}}
-            {{#if quantity}}
-            <span class="panel-item-badge context-count inventory-quantity" title="Quantity">x{{quantity}}</span>
-            {{/if}}
+            <span class="panel-item-context">
+                {{> action-badge actionType=actionType}}
+                {{#if quantity}}
+                <span class="panel-item-badge context-count inventory-quantity" title="Quantity">x{{quantity}}</span>
+                {{/if}}
+            </span>
         </div>
         <div class="tray-buttons">
             {{#if isLightSource}}

@@ -74,10 +74,12 @@
                                 <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                                 <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                             </div>
-                            <div class="panel-item-name spell-name">{{spell.name}}</div>
-                            <div class="panel-item-context">
-                                {{> action-badge actionType=spell.actionType}}
-                                {{> spell-components properties=spell.system.properties}}
+                            <div class="panel-item-name spell-name">
+                                {{spell.name}}
+                                <span class="panel-item-context">
+                                    {{> action-badge actionType=spell.actionType}}
+                                    {{> spell-components properties=spell.system.properties}}
+                                </span>
                             </div>
                             <div class="tray-buttons">
                                 <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
@@ -105,10 +107,12 @@
                                 <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                                 <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                             </div>
-                            <div class="panel-item-name spell-name">{{spell.name}}</div>
-                            <div class="panel-item-context">
-                                {{> action-badge actionType=spell.actionType}}
-                                {{> spell-components properties=spell.system.properties}}
+                            <div class="panel-item-name spell-name">
+                                {{spell.name}}
+                                <span class="panel-item-context">
+                                    {{> action-badge actionType=spell.actionType}}
+                                    {{> spell-components properties=spell.system.properties}}
+                                </span>
                             </div>
                             <div class="tray-buttons">
                                 <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
@@ -142,10 +146,12 @@
                                     <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                                     <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                                 </div>
-                                <div class="panel-item-name spell-name">{{spell.name}}</div>
-                                <div class="panel-item-context">
-                                    {{> action-badge actionType=spell.actionType}}
-                                    {{> spell-components properties=spell.system.properties}}
+                                <div class="panel-item-name spell-name">
+                                    {{spell.name}}
+                                    <span class="panel-item-context">
+                                        {{> action-badge actionType=spell.actionType}}
+                                        {{> spell-components properties=spell.system.properties}}
+                                    </span>
                                 </div>
                                 <div class="tray-buttons">
                                     <i class="fa-solid fa-sun {{#unless spell.system.prepared}}faded{{/unless}}" title="Prepared"></i>
@@ -170,12 +176,14 @@
                         <img class="panel-item-image spell-image" src="{{this.img}}" alt="{{this.name}}"/>
                         <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                     </div>
-                    <div class="panel-item-name spell-name">{{this.name}}</div>
-                    <div class="panel-item-context">
-                        {{> action-badge actionType=this.actionType}}
-                        {{> spell-components properties=this.system.properties}}
-                        <span class="panel-item-badge context-count spell-level" title="Spell Level">
-                            {{#if (eq this.level 0)}}C{{else}}{{this.level}}{{/if}}
+                    <div class="panel-item-name spell-name">
+                        {{this.name}}
+                        <span class="panel-item-context">
+                            {{> action-badge actionType=this.actionType}}
+                            {{> spell-components properties=this.system.properties}}
+                            <span class="panel-item-badge context-count spell-level" title="Spell Level">
+                                {{#if (eq this.level 0)}}C{{else}}{{this.level}}{{/if}}
+                            </span>
                         </span>
                     </div>
                     <div class="tray-buttons">
@@ -193,10 +201,12 @@
 {{#*inline "spell-item"}}
 <div class="panel-item spell-item" data-item-id="{{id}}" data-item-type="spell">
     <img src="{{img}}" alt="{{name}}" class="panel-item-image spell-icon">
-    <span class="panel-item-name spell-name">{{name}}</span>
-    <div class="panel-item-context">
-        {{> action-badge actionType=actionType}}
-    </div>
+    <span class="panel-item-name spell-name">
+        {{name}}
+        <span class="panel-item-context">
+            {{> action-badge actionType=actionType}}
+        </span>
+    </span>
     <div class="spell-controls">
         <a class="spell-favorite {{#if isFavorite}}active{{/if}}"><i class="fa-solid fa-star"></i></a>
         {{#if isPrepared}}<i class="fa-solid fa-book-open" title="Prepared"></i>{{/if}}

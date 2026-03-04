@@ -14,9 +14,9 @@
         </div>
         <div class="panel-item-name weapon-name">
             {{name}}
-        </div>
-        <div class="panel-item-context">
-            {{> action-badge actionType=actionType}}
+            <span class="panel-item-context">
+                {{> action-badge actionType=actionType}}
+            </span>
         </div>
         <div class="tray-buttons">
             {{#if isLightSource}}

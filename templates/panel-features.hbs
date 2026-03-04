@@ -14,14 +14,14 @@
         </div>
         <div class="panel-item-name feature-name">
             {{name}}
-        </div>
-        <div class="panel-item-context">
-            {{> action-badge actionType=actionType}}
-            {{#if uses}}
-            {{#if (or uses.max uses.value)}}
-                <span class="panel-item-badge context-count feature-uses" title="Uses">{{uses.value}}/{{uses.max}}</span>
-            {{/if}}
-            {{/if}}
+            <span class="panel-item-context">
+                {{> action-badge actionType=actionType}}
+                {{#if uses}}
+                {{#if (or uses.max uses.value)}}
+                    <span class="panel-item-badge context-count feature-uses" title="Uses">{{uses.value}}/{{uses.max}}</span>
+                {{/if}}
+                {{/if}}
+            </span>
         </div>
         <div class="tray-buttons">
             <i class="fa-solid fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
