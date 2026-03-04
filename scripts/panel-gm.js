@@ -18,11 +18,25 @@ export class GmPanel {
         if (!panel) return;
 
         const collapsed = !!game.settings.get(MODULE.ID, 'isGmPanelCollapsed');
+        const hasDetails = Boolean(
+            (details.resistances?.length ?? 0) ||
+            (details.immunities?.length ?? 0) ||
+            details.biographyHtmlRaw
+        );
+
+        // Hide the entire GM panel shell when there is no data.
+        panel.classList.toggle('hidden', !hasDetails);
+        if (!hasDetails) {
+            panel.innerHTML = '';
+            return;
+        }
+
         const templateData = {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             resistances: details.resistances ?? [],
             immunities: details.immunities ?? [],
             biographyHtmlRaw: details.biographyHtmlRaw ?? '',
+            hasDetails,
             isCollapsed: collapsed
         };
 

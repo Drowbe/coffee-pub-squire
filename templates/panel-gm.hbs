@@ -1,10 +1,13 @@
 {{#if (eq position "left")}}
 <div class="tray-title-small">
     <span>GM Details</span>
+    {{#if hasDetails}}
     <div class="gmdetails-controls">
         <i id="gm-toggle" class="fa-solid fa-chevron-down" title="Toggle GM Details Panel"></i>
     </div>
+    {{/if}}
 </div>
+{{#if hasDetails}}
 <div id="gm-content" class="tray-panel-content{{#if isCollapsed}} collapsed{{/if}}">
     {{#if resistances.length}}
         <div class="gm-row">
@@ -25,4 +28,5 @@
         </div>
     {{/if}}
 </div>
+{{/if}}
 {{/if}}
