@@ -1,4 +1,3 @@
-.squire-tray[data-position="left"] [data-panel="dicetray"],
 .squire-popout[data-position="left"] [data-panel="dicetray"] {
     display: flex;
     flex-direction: column;

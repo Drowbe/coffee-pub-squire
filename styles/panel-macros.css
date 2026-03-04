@@ -1,6 +1,5 @@
 /* ----- WINDOW ----- */
 
-.squire-tray[data-position="left"] [data-panel="macros"],
 .squire-popout[data-position="left"] [data-panel="macros"] {
     display: flex;
     flex-direction: column;

@@ -1,13 +1,4 @@
 /* Health Panel Styles - panel view */
-.squire-tray[data-position="left"] [data-panel="health"] {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
-    background: #000000;
-    border: 2px solid #444;
-    border-radius: 6px;
-}
 
 .squire-tray[data-position="left"] [data-panel="health"] .health-header {
     display: flex;
