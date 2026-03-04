@@ -6,9 +6,14 @@
         </div>
         <div class="panel-item-name feature-name">
             {{name}}
-            {{> "modules/coffee-pub-squire/templates/partials/action-type" actionType=actionType}}
+        </div>
+        <div class="panel-item-context">
+            {{#if (eq actionType "action")}}<span class="panel-item-badge context-action action-action" title="Action">A</span>
+            {{else if (eq actionType "bonus")}}<span class="panel-item-badge context-action action-bonus" title="Bonus Action">B</span>
+            {{else if (eq actionType "reaction")}}<span class="panel-item-badge context-action action-reaction" title="Reaction">R</span>
+            {{else if (eq actionType "special")}}<span class="panel-item-badge context-action action-special" title="Special">S</span>{{/if}}
             {{#if uses}}
-                <span class="feature-quantity">({{uses.value}}/{{uses.max}})</span>
+                <span class="panel-item-badge context-count feature-quantity" title="Uses">{{uses.value}}/{{uses.max}}</span>
             {{/if}}
         </div>
         <div class="tray-buttons">

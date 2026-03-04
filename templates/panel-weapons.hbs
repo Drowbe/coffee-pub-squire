@@ -1,3 +1,10 @@
+{{#*inline "action-badge"}}
+    {{#if (eq actionType "action")}}<span class="panel-item-badge context-action action-action" title="Action">A</span>
+    {{else if (eq actionType "bonus")}}<span class="panel-item-badge context-action action-bonus" title="Bonus Action">B</span>
+    {{else if (eq actionType "reaction")}}<span class="panel-item-badge context-action action-reaction" title="Reaction">R</span>
+    {{else if (eq actionType "special")}}<span class="panel-item-badge context-action action-special" title="Special">S</span>{{/if}}
+{{/inline}}
+
 {{#*inline "weapon-item"}}
 <div class="panel-item weapon-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="weapon" data-weapon-id="{{id}}" data-category-id="{{categoryId}}">
     <div class="panel-item-row weapon-row">
@@ -7,14 +14,9 @@
         </div>
         <div class="panel-item-name weapon-name">
             {{name}}
-            {{#if actionType}}
-            <span class="action-type">
-                {{#if (eq actionType "action")}}<i class="fa-solid fa-circle-a" title="Action"></i>
-                {{else if (eq actionType "bonus")}}<i class="fa-solid fa-circle-b" title="Bonus Action"></i>
-                {{else if (eq actionType "reaction")}}<i class="fa-solid fa-circle-r" title="Reaction"></i>
-                {{else if (eq actionType "special")}}<i class="fa-solid fa-circle-s" title="Special"></i>{{/if}}
-            </span>
-            {{/if}}
+        </div>
+        <div class="panel-item-context">
+            {{> action-badge actionType=actionType}}
         </div>
         <div class="tray-buttons">
             {{#if isLightSource}}

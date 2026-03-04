@@ -1,3 +1,22 @@
+{{#*inline "action-badge"}}
+    {{#if (eq actionType "action")}}<span class="panel-item-badge context-action action-action" title="Action">A</span>
+    {{else if (eq actionType "bonus")}}<span class="panel-item-badge context-action action-bonus" title="Bonus Action">B</span>
+    {{else if (eq actionType "reaction")}}<span class="panel-item-badge context-action action-reaction" title="Reaction">R</span>
+    {{else if (eq actionType "special")}}<span class="panel-item-badge context-action action-special" title="Special">S</span>{{/if}}
+{{/inline}}
+
+{{#*inline "spell-components"}}
+    {{#if properties}}
+        {{#each properties}}
+            {{#if (eq this "vocal")}}<span class="panel-item-badge context-component component-v" title="Vocal Component">V</span>{{/if}}
+            {{#if (eq this "somatic")}}<span class="panel-item-badge context-component component-s" title="Somatic Component">S</span>{{/if}}
+            {{#if (eq this "material")}}<span class="panel-item-badge context-component component-m" title="Material Component">M</span>{{/if}}
+            {{#if (eq this "concentration")}}<span class="panel-item-badge context-component component-c" title="Concentration Component">C</span>{{/if}}
+            {{#if (eq this "ritual")}}<span class="panel-item-badge context-component component-r" title="Ritual Component">R</span>{{/if}}
+        {{/each}}
+    {{/if}}
+{{/inline}}
+
 <div class="spells-panel">
     {{#if (eq position "left")}}
     <div class="section-header">
@@ -55,17 +74,10 @@
                                 <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                                 <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                             </div>
-                            <div class="panel-item-name spell-name">
-                                {{spell.name}}
-                                <div class="spell-components">
-                                    {{#each spell.system.properties}}
-                                        {{#if (eq this "vocal")}}<span class="component-icon" title="Vocal Component">V</span>{{/if}}
-                                        {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
-                                        {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
-                                        {{#if (eq this "concentration")}}<span class="component-icon" title="Concentration Component">C</span>{{/if}}
-                                        {{#if (eq this "ritual")}}<span class="component-icon" title="Concentration Component">R</span>{{/if}}
-                                    {{/each}}
-                                </div>
+                            <div class="panel-item-name spell-name">{{spell.name}}</div>
+                            <div class="panel-item-context">
+                                {{> action-badge actionType=spell.actionType}}
+                                {{> spell-components properties=spell.system.properties}}
                             </div>
                             <div class="tray-buttons">
                                 <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
@@ -93,17 +105,10 @@
                                 <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                                 <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                             </div>
-                            <div class="panel-item-name spell-name">
-                                {{spell.name}}
-                                <div class="spell-components">
-                                    {{#each spell.system.properties}}
-                                        {{#if (eq this "vocal")}}<span class="component-icon" title="Vocal Component">V</span>{{/if}}
-                                        {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
-                                        {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
-                                        {{#if (eq this "concentration")}}<span class="component-icon" title="Concentration Component">C</span>{{/if}}
-                                        {{#if (eq this "ritual")}}<span class="component-icon" title="Concentration Component">R</span>{{/if}}
-                                    {{/each}}
-                                </div>
+                            <div class="panel-item-name spell-name">{{spell.name}}</div>
+                            <div class="panel-item-context">
+                                {{> action-badge actionType=spell.actionType}}
+                                {{> spell-components properties=spell.system.properties}}
                             </div>
                             <div class="tray-buttons">
                                 <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
@@ -137,17 +142,10 @@
                                     <img class="panel-item-image spell-image" src="{{spell.img}}" alt="{{spell.name}}"/>
                                     <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                                 </div>
-                                <div class="panel-item-name spell-name">
-                                    {{spell.name}}
-                                    <div class="spell-components">
-                                        {{#each spell.system.properties}}
-                                            {{#if (eq this "vocal")}}<span class="component-icon" title="Vocal Component">V</span>{{/if}}
-                                            {{#if (eq this "somatic")}}<span class="component-icon" title="Somatic Component">S</span>{{/if}}
-                                            {{#if (eq this "material")}}<span class="component-icon" title="Material Component">M</span>{{/if}}
-                                            {{#if (eq this "concentration")}}<span class="component-icon" title="Concentration Component">C</span>{{/if}}
-                                            {{#if (eq this "ritual")}}<span class="component-icon" title="Concentration Component">R</span>{{/if}}
-                                        {{/each}}
-                                    </div>
+                                <div class="panel-item-name spell-name">{{spell.name}}</div>
+                                <div class="panel-item-context">
+                                    {{> action-badge actionType=spell.actionType}}
+                                    {{> spell-components properties=spell.system.properties}}
                                 </div>
                                 <div class="tray-buttons">
                                     <i class="fa-solid fa-sun {{#unless spell.system.prepared}}faded{{/unless}}" title="Prepared"></i>
@@ -173,12 +171,12 @@
                         <i class="fa-solid fa-dice-d20 panel-item-roll-overlay spell-roll-overlay"></i>
                     </div>
                     <div class="panel-item-name spell-name">{{this.name}}</div>
-                    <div class="spell-level">
-                        {{#if (eq this.level 0)}}
-                        C
-                        {{else}}
-                        {{this.level}}
-                        {{/if}}
+                    <div class="panel-item-context">
+                        {{> action-badge actionType=this.actionType}}
+                        {{> spell-components properties=this.system.properties}}
+                        <span class="panel-item-badge context-count spell-level" title="Spell Level">
+                            {{#if (eq this.level 0)}}C{{else}}{{this.level}}{{/if}}
+                        </span>
                     </div>
                     <div class="tray-buttons">
                         <i class="fa-solid fa-sun {{#unless this.prepared}}faded{{/unless}}" title="Prepared"></i>
@@ -196,7 +194,9 @@
 <div class="panel-item spell-item" data-item-id="{{id}}" data-item-type="spell">
     <img src="{{img}}" alt="{{name}}" class="panel-item-image spell-icon">
     <span class="panel-item-name spell-name">{{name}}</span>
-    {{> "modules/coffee-pub-squire/templates/partials/action-type"}}
+    <div class="panel-item-context">
+        {{> action-badge actionType=actionType}}
+    </div>
     <div class="spell-controls">
         <a class="spell-favorite {{#if isFavorite}}active{{/if}}"><i class="fa-solid fa-star"></i></a>
         {{#if isPrepared}}<i class="fa-solid fa-book-open" title="Prepared"></i>{{/if}}
