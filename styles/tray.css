@@ -674,12 +674,12 @@
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-icons {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
     background: rgba(0, 0, 0, 0.0);
     border: 0px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
-    padding: 6px;
+    border-radius: 0px;
+    padding: 0px;
 }
 
 .squire-tray[data-position="left"] [data-panel="control"] .control-toggle {
@@ -728,8 +728,9 @@
 
 /* SEARCH */
 
+
 .squire-tray[data-position="left"] [data-panel="control"] .control-search {
-    padding: 4px;
+    padding: 0px;
     position: relative;
 }
 
@@ -996,74 +997,43 @@
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* Tray GM Toolbar */
-.squire-tray .tray-gm-toolbar {
-    display: flex;
-    background: rgba(69, 29, 36, 0.6);
-    padding: 4px;
-    margin-bottom: 8px;
-    border-radius: 0 0 4px 4px;
-    gap: 4px;
-}
-
-.squire-tray .tray-gm-button {
-    flex: 1;
-    padding: 4px 8px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #9f9275;
-    border-radius: 3px;
-    color: #9f9275;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-    font-size: 0.85em;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.squire-tray .tray-gm-button:hover {
-    background: rgba(159, 146, 117, 0.2);
-    color: #fff;
-    border-color: #fff;
-}
-
-.squire-tray .tray-gm-button i {
-    margin-right: 5px;
-}
-
 
 
 /* Tray Tools Toolbar (for all users) */
+
 .squire-tray .tray-tools-toolbar {
     display: flex;
-    background: rgba(42, 42, 42, 0.6);
+    background: rgba(42, 42, 42, 0.0);
     padding: 4px;
     margin-bottom: 8px;
     border-radius: 0 0 4px 4px;
     gap: 4px;
 }
 
+.squire-tray .tray-gm-button,
 .squire-tray .tray-tools-button {
     flex: 1;
     padding: 4px 8px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #9f9275;
-    border-radius: 3px;
-    color: #9f9275;
+    background: rgba(92, 84, 66, 0.9);
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: center;
     font-size: 0.85em;
     font-weight: bold;
     text-transform: uppercase;
+    outline: none;
+    box-shadow: none;
 }
-
+.squire-tray .tray-gm-button:hover,
 .squire-tray .tray-tools-button:hover {
-    background: rgba(159, 146, 117, 0.2);
-    color: #fff;
-    border-color: #fff;
+    background: rgba(194, 86, 61, 1.0);
+    color: rgba(255, 255, 255, 1.0);
+    border-color: rgba(194, 86, 61, 1.0);
 }
-
+.squire-tray .tray-gm-button i,
 .squire-tray .tray-tools-button i {
     margin-right: 5px;
 }
@@ -1085,7 +1055,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background: rgba(0,0,0,0.85);
-    color: #fff;
+    color: rgb(255, 255, 255);
     padding: 0.5em 1.5em;
     border-radius: 1em;
     font-size: 1.5em;

@@ -35,8 +35,8 @@
 /* ------------------------------------ */
 
 .mvp-panel {
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(159, 146, 117, 0.35);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(159, 146, 117, 0.0);
     border-radius: 6px;
     display: flex;
     flex-direction: column;
@@ -44,9 +44,9 @@
 }
 
 .mvp-panel__header {
-    background: rgba(69, 29, 36, 0.6);
-    color: #9f9275;
-    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.9);
+    color: rgba(159, 146, 117, 0.9);
+    font-size: 0.9em;
     font-weight: 700;
     padding: 8px 10px;
     text-transform: uppercase;
@@ -56,9 +56,9 @@
 }
 
 .mvp-panel__header i {
-    color: #9f9275;
-}
+    color: rgba(159, 146, 117, 0.9);
 
+}
 
 /* ------------------------------------ */
 /* MVP TABLE LAYOUT (TABLE MODE)       */
