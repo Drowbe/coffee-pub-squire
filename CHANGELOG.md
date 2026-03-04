@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [13.1.7]
+
+### Changed
+- **Tray panels - shared item structure and styling**: Unified stacked tray item markup and selectors across Favorites, Weapons, Spells, Features, and Inventory to use shared classes (`panel-item`, `panel-item-row`, `panel-item-name`, `panel-item-image-container`, `panel-item-roll-overlay`) and shared `data-item-id` targeting.
+- **Item context badges**: Normalized action/components/count display to `panel-item-context` + `panel-item-badge` variants. Action badges are round and color-coded, spell component badges are square and color-coded, and count/use/level values use shared `context-count`.
+- **Top panel shells**: Consolidated duplicated tray shell styles for Health, Experience, Abilities, Attributes, GM, Global Filters, Dice Tray, and Macros into one shared rule in `styles/tray.css`.
+
+### Fixed
+- **Quest pins – journal permission on reconcile**: Fixed "User lacks permission to update JournalEntryPage" when a player triggered quest pin reconcile (e.g. double-click gather pin flow). `reconcileQuestPins` was writing `pinId`, `sceneId`, and `objectivePins` flags to journal pages on the client; those writes require edit permission. Reconcile now runs only for GMs (`if (!game.user.isGM) return`), so player-triggered reconcile no-ops without throwing.
+- **GM Details empty state spacing**: Removed empty header/content gap by hiding the entire GM details panel when no resistances, immunities, or biography data exist.
+
+### Removed
+- **Legacy tray item hooks/classes**: Removed unused per-panel item/count class hooks and legacy inline/partial remnants that duplicated shared tray item behavior.
+
+
 ## [13.1.6]
 
 ### Changed
