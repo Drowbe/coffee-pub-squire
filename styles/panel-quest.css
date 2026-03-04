@@ -229,11 +229,20 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 
+
+
+
+
+
+
+
+
+
 /* SEARCH & FILTER BAR */
 
 .squire-tray[data-position="left"] .quest-filters {
     padding: 10px 8px 6px 8px;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.3);
     border-bottom: 0px solid rgba(255, 255, 255, 0.1);
     border-radius: 0px 0px 6px 6px;
 }
@@ -258,7 +267,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 .squire-tray[data-position="left"] .quest-search .clear-search {
     position: absolute;
-    right: 36px; /* Adjusted to be more visible */
+    right: 28px; 
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
@@ -294,16 +303,16 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     align-items: center;
     justify-content: center;
 }
+.squire-tray[data-position="left"] .quest-search .toggle-tags-button.active {
+    color: rgba(159, 146, 117, 0.9);
+    opacity: 1;
+}
 .squire-tray[data-position="left"] .quest-search .toggle-tags-button:hover,
 .squire-tray[data-position="left"] .quest-search .clear-search:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
 }
 
-.squire-tray[data-position="left"] .quest-search .toggle-tags-button.active {
-    color: rgba(159, 146, 117, 0.9);
-    opacity: 1;
-}
 
 .squire-tray[data-position="left"] .quest-tag-filter select {
     width: 100%;
@@ -314,12 +323,25 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding: 4px;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* QUEST STATUS FILTER BUTTONS */
 
 .squire-tray[data-position="left"] .quest-status-section {
     display: flex;
     justify-content: center;
-    padding: 6px 0px 0px;
+    margin: 0px;
 }
 
 .squire-tray[data-position="left"] .quest-status-buttons {
@@ -327,7 +349,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     gap: 6px;
     width: 100%;
     background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 0px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
     padding: 6px;
 }
@@ -335,7 +357,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 .squire-tray[data-position="left"] .quest-status-button {
     flex: 1;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 4px;
     color: rgba(235, 233, 225, 1);
     cursor: pointer;
@@ -350,17 +372,21 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     letter-spacing: 0.03em;
 }
 
-.squire-tray[data-position="left"] .quest-status-button:hover {
-    border-color: rgba(255, 100, 0, 0.6);
-    color: #fff;
-}
-
 .squire-tray[data-position="left"] .quest-status-button.active {
     background: rgba(145, 133, 107, 0.4);
-    border-color: rgba(145, 133, 107, 0.9);
-    color: #fff;
+    border-color: rgba(145, 133, 107, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+    box-shadow: rgba(201, 89, 63, 0.8) 0px 0px 4px 0px;
+    outline: 2px solid rgba(183, 81, 58, 0.2);
 }
 
+.squire-tray[data-position="left"] .quest-status-button.active:hover,
+.squire-tray[data-position="left"] .quest-status-button:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(183, 82, 58, 0.9);
+    opacity: 1.0 !important;
+}
 
 /* CATEGORY HEADERS */
 

@@ -7,20 +7,28 @@
     gap: 4px;
 }
 
+
+
+
 .tray-title-small {
     color: #9f9275;
     font-size: 1.0em;
     text-transform: uppercase;
     letter-spacing: 0.2px;
     font-weight: 800;
-    margin: 0px 0px 6px 0px;
-    padding: 3px 3px 3px 3px;
+    margin: 0px 0px 0px 0px;
+    padding: 0px 0px 0px 0px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
     line-height: 1;
 }
+
+
+
+
+
 
 .new-tag {
     background-color: rgb(194, 23, 0);

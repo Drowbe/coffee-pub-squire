@@ -1,11 +1,9 @@
-/* Character Wrapper */
-
 .character-panel {
-    background: rgba(0, 0, 0, 0.3);
-    color: #9f9275;
+    background: rgba(0, 0, 0, 0.4);
+    color: rgba(159, 146, 117, 0.9);
     padding: 3px;
-    font-size: 1.4em;
-    border: 2px solid #444;
+    font-size: 1.0em;
+    border: 0px solid #444;
     margin-bottom: 0px;
     display: flex;
     justify-content: space-between;
@@ -22,7 +20,7 @@
 }
 
 .squire-tray[data-position="left"] .character-panel .header-right {
-	display: flex;
+    display: flex;
     align-items: center;
     gap: 2px;
     flex: 1;
@@ -80,15 +78,15 @@
 /* Icons */
 
 .squire-tray[data-position="left"] .character-panel .header-right i {
-    color: #9f9275;
     cursor: pointer;
     transition: color 0.2s ease;
-    font-size: 0.85em;
-	margin-right: 8px;
+    font-size: 0.8em;
+    margin-right: 8px;
 }
 
 .squire-tray[data-position="left"] .character-panel .header-right i:hover {
-    color: #fff;
+    color: rgba(181, 80, 57, 1.0);
+    
 }
 
 @keyframes spin {
@@ -105,7 +103,7 @@
 
 .squire-tray[data-position="left"] .character-name {
     display: block;
-    font-size: 1.0em;
+    font-size: 1.2em;
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -114,17 +112,17 @@
 
 .squire-tray[data-position="left"] .character-details {
     display: block;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .squire-tray[data-position="left"] .details-secondary,
 .squire-tray[data-position="left"] .details-primary {
     text-transform: uppercase;
-    font-size: 0.6em;
-    font-weight: 700;
-    margin: 2px 0px 2px 0px;
-    padding: 4px 2px 4px 2px;
-    border-top: 1px dotted rgba(155, 142, 114, 0.5);
+    font-size: 0.85em;
+    font-weight: 400;
+    margin: 2px 0px 0px 0px;
+    padding: 0px;
+    border-top: 0px dotted rgba(155, 142, 114, 0.5);
 }
 
 
@@ -140,8 +138,6 @@
     border-radius: 4px;
     margin: 10px 0;
 }
-
-
 
 
 
