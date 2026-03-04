@@ -419,12 +419,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 14px;
-    height: 14px;
+    min-width: 12px;
+    height: 12px;
     padding: 0 3px;
     border-radius: 3px;
-    font-size: 8px;
-    font-weight: 900;
+    font-size: 0.65em;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -432,41 +432,41 @@
 }
 
 .panel-item-badge.context-action {
-    width: 14px;
-    min-width: 14px;
+    width: 12px;
+    min-width: 12px;
     border-radius: 50%;
     padding: 0;
     background: rgba(120, 100, 82, 0.35);
-    color: #fff;
+    color: rgba(255, 255, 255, 0.8);
+    margin-right: 6px;
 }
 
-.panel-item-badge.action-action { background: #4a8f3a; }
-.panel-item-badge.action-bonus { background: #9a7b2c; }
-.panel-item-badge.action-reaction { background: #2f6da8; }
-.panel-item-badge.action-special { background: #6f4b95; }
+.panel-item-badge.action-action { background: rgba(74, 143, 58, 0.6); }
+.panel-item-badge.action-bonus { background: rgba(154, 123, 44, 0.6); }
+.panel-item-badge.action-reaction { background: rgba(47, 109, 168, 0.6); }
+.panel-item-badge.action-special { background: rgba(111, 75, 149, 0.6); }
 
 .panel-item-badge.context-component {
-    color: #f0f3f7;
+    color: rgba(255, 255, 255, 0.8);
 }
 
-.panel-item-badge.component-v { background: #8f3a2f; }
-.panel-item-badge.component-s { background: #2c5a95; }
-.panel-item-badge.component-m { background: #6b5a2a; }
-.panel-item-badge.component-c { background: #2f7f6a; }
-.panel-item-badge.component-r { background: #74469b; }
+.panel-item-badge.component-v { background: rgba(143, 58, 47, 0.6); }
+.panel-item-badge.component-s { background: rgba(44, 90, 149, 0.6); }
+.panel-item-badge.component-m { background: rgba(107, 90, 42, 0.6); }
+.panel-item-badge.component-c { background: rgba(47, 127, 106, 0.6); }
+.panel-item-badge.component-r { background: rgba(116, 70, 155, 0.6); }
 
 .panel-item-badge.context-count {
-    background: rgba(40, 40, 40, 0.65);
-    color: #aaa;
-    min-width: 16px;
+    background: rgba(0, 0, 0, 0.65);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 2px 4px 2px 4px;
 }
 
 
 
 
-
-.squire-tray[data-position="left"] .inventory-controls
-.squire-tray[data-position="left"] .spell-controls
+.squire-tray[data-position="left"] .inventory-controls,
+.squire-tray[data-position="left"] .spell-controls,
 .squire-tray[data-position="left"] .weapon-controls {
     padding: 8px;
     background: rgba(0, 0, 0, 0.2);

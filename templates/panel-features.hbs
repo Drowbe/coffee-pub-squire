@@ -6,19 +6,19 @@
 {{/inline}}
 
 {{#*inline "feature-item"}}
-<div class="panel-item feature-item" data-item-id="{{id}}" data-item-type="feat" data-feature-id="{{id}}" data-category-id="{{categoryId}}">
-    <div class="panel-item-row feature-row">
-        <div class="panel-item-image-container feature-image-container">
-            <img class="panel-item-image feature-image" src="{{img}}" alt="{{name}}"/>
-            <i class="fa-solid fa-dice-d20 panel-item-roll-overlay feature-roll-overlay"></i>
+<div class="panel-item" data-item-id="{{id}}" data-item-type="feat" data-category-id="{{categoryId}}">
+    <div class="panel-item-row">
+        <div class="panel-item-image-container">
+            <img class="panel-item-image" src="{{img}}" alt="{{name}}"/>
+            <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
         </div>
-        <div class="panel-item-name feature-name">
+        <div class="panel-item-name">
             {{name}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
                 {{#if uses}}
                 {{#if (or uses.max uses.value)}}
-                    <span class="panel-item-badge context-count feature-uses" title="Uses">{{uses.value}}/{{uses.max}}</span>
+                    <span class="panel-item-badge context-count" title="Uses">{{uses.value}}/{{uses.max}}</span>
                 {{/if}}
                 {{/if}}
             </span>
@@ -129,3 +129,5 @@
         {{/if}}
     </div>
 </div> 
+
+

@@ -318,7 +318,7 @@ export class InventoryPanel {
         // Item use click (image overlay)
         // v13: Use native DOM event delegation
         const rollOverlayHandler = async (event) => {
-            const rollOverlay = event.target.closest('.inventory-image-container .inventory-roll-overlay');
+            const rollOverlay = event.target.closest('.panel-item-image-container .panel-item-roll-overlay');
             if (!rollOverlay) return;
             
             const inventoryItem = rollOverlay.closest('.panel-item');
@@ -568,4 +568,5 @@ export class InventoryPanel {
         return selectedQuantity;
     }
 }
+
 

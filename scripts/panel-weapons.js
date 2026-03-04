@@ -163,7 +163,7 @@ export class WeaponsPanel {
         }
         
         nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
-            const weaponId = item.dataset.weaponId;
+            const weaponId = item.dataset.itemId;
             const weapon = this.weapons.all.find(w => w.id === weaponId);
             
             if (!weapon) return;
@@ -191,7 +191,7 @@ export class WeaponsPanel {
         if (!nativeElement) return;
         
         this.weapons.all.forEach(weapon => {
-            const heartIcon = nativeElement.querySelector(`[data-weapon-id="${weapon.id}"] .fa-heart`);
+            const heartIcon = nativeElement.querySelector(`[data-item-id="${weapon.id}"] .fa-heart`);
             if (heartIcon) {
                 if (weapon.isFavorite) {
                     heartIcon.classList.remove('faded');
@@ -217,7 +217,7 @@ export class WeaponsPanel {
         this.weapons.all.forEach(weapon => {
             if (!weapon.isLightSource) return;
             
-            const lightIcon = nativeElement.querySelector(`[data-weapon-id="${weapon.id}"] .fa-lightbulb`);
+            const lightIcon = nativeElement.querySelector(`[data-item-id="${weapon.id}"] .fa-lightbulb`);
             if (lightIcon) {
                 if (weapon.isLightActive) {
                     lightIcon.classList.remove('faded');
@@ -294,7 +294,7 @@ export class WeaponsPanel {
             
             const weaponItem = featherIcon.closest('.panel-item');
             if (!weaponItem) return;
-            const weaponId = weaponItem.dataset.weaponId;
+            const weaponId = weaponItem.dataset.itemId;
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
                 weapon.sheet.render(true);
@@ -311,7 +311,7 @@ export class WeaponsPanel {
             
             const weaponItem = heartIcon.closest('.panel-item');
             if (!weaponItem) return;
-            const weaponId = weaponItem.dataset.weaponId;
+            const weaponId = weaponItem.dataset.itemId;
             await FavoritesPanel.manageFavorite(this.actor, weaponId);
             // manageFavorite() already updates all panels, including this one
         };
@@ -334,7 +334,7 @@ export class WeaponsPanel {
             try {
                 const weaponItem = lightIcon.closest('.panel-item');
                 if (!weaponItem) return;
-                const weaponId = weaponItem.dataset.weaponId;
+                const weaponId = weaponItem.dataset.itemId;
                 const item = this.actor.items.get(weaponId);
                 if (!item) return;
 
@@ -366,12 +366,12 @@ export class WeaponsPanel {
         // Weapon use click (image overlay)
         // v13: Use native DOM event delegation
         const rollOverlayHandler = async (event) => {
-            const rollOverlay = event.target.closest('.weapon-image-container .weapon-roll-overlay');
+            const rollOverlay = event.target.closest('.panel-item-image-container .panel-item-roll-overlay');
             if (!rollOverlay) return;
             
             const weaponItem = rollOverlay.closest('.panel-item');
             if (!weaponItem) return;
-            const weaponId = weaponItem.dataset.weaponId;
+            const weaponId = weaponItem.dataset.itemId;
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
                 await weapon.use({}, { event });
@@ -388,7 +388,7 @@ export class WeaponsPanel {
             
             const weaponItem = shieldIcon.closest('.panel-item');
             if (!weaponItem) return;
-            const weaponId = weaponItem.dataset.weaponId;
+            const weaponId = weaponItem.dataset.itemId;
             const weapon = this.actor.items.get(weaponId);
             if (weapon) {
                 const newEquipped = !weapon.system.equipped;
@@ -594,4 +594,6 @@ export class WeaponsPanel {
         return selectedQuantity;
     }
 }
+
+
 

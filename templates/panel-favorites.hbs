@@ -18,14 +18,14 @@
     <div class="favorites-list">
         {{#if favorites}}
         {{#each favorites}}
-        <div class="panel-item favorite-item" 
+        <div class="panel-item" 
              data-item-id="{{this.id}}" data-item-type="{{this.type}}">
-            <div class="panel-item-row favorite-row">
-                <div class="panel-item-image-container favorite-image-container">
-                    <img class="panel-item-image favorite-image" src="{{this.img}}" alt="{{this.name}}"/>
-                    <i class="fa-solid fa-dice-d20 panel-item-roll-overlay favorite-roll-overlay"></i>
+            <div class="panel-item-row">
+                <div class="panel-item-image-container">
+                    <img class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
+                    <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
                 </div>
-                <div class="panel-item-name favorite-name">{{this.name}}</div>
+                <div class="panel-item-name">{{this.name}}</div>
                 <div class="tray-buttons">
                     {{#if this.isLightSource}}
                     <i class="fa-solid fa-lightbulb {{#unless this.isLightActive}}faded{{/unless}} {{#if this.isLightActive}}light-active{{/if}}" title="Toggle Light"></i>
@@ -50,3 +50,4 @@
         {{/if}}
     </div>
 </div> 
+

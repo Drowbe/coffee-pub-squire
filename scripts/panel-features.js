@@ -140,7 +140,7 @@ export class FeaturesPanel {
         }
         
         nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
-            const featureId = item.dataset.featureId;
+            const featureId = item.dataset.itemId;
             const feature = this.features.all.find(f => f.id === featureId);
             
             if (!feature) return;
@@ -167,7 +167,7 @@ export class FeaturesPanel {
         if (!nativeElement) return;
         
         this.features.all.forEach(feature => {
-            const heartIcon = nativeElement.querySelector(`[data-feature-id="${feature.id}"] .fa-heart`);
+            const heartIcon = nativeElement.querySelector(`[data-item-id="${feature.id}"] .fa-heart`);
             if (heartIcon) {
                 if (feature.isFavorite) {
                     heartIcon.classList.remove('faded');
@@ -223,7 +223,7 @@ export class FeaturesPanel {
             try {
                 const featureItem = featherIcon.closest('.panel-item');
                 if (!featureItem) return;
-                const featureId = featureItem.dataset.featureId;
+                const featureId = featureItem.dataset.itemId;
                 const feature = this.actor.items.get(featureId);
                 if (!feature) {
                     console.error('Feature not found:', featureId);
@@ -245,7 +245,7 @@ export class FeaturesPanel {
             
             const featureItem = heartIcon.closest('.panel-item');
             if (!featureItem) return;
-            const featureId = featureItem.dataset.featureId;
+            const featureId = featureItem.dataset.itemId;
             await FavoritesPanel.manageFavorite(this.actor, featureId);
             // manageFavorite() already updates all panels, including this one
         }, { signal: listenerSignal });
@@ -253,12 +253,12 @@ export class FeaturesPanel {
         // Feature use click (image overlay)
         // v13: Use native DOM event delegation
         panel.addEventListener('click', async (event) => {
-            const rollOverlay = event.target.closest('.feature-image-container .feature-roll-overlay');
+            const rollOverlay = event.target.closest('.panel-item-image-container .panel-item-roll-overlay');
             if (!rollOverlay) return;
             
             const featureItem = rollOverlay.closest('.panel-item');
             if (!featureItem) return;
-            const featureId = featureItem.dataset.featureId;
+            const featureId = featureItem.dataset.itemId;
             const feature = this.actor.items.get(featureId);
             if (feature) {
                 await feature.use({}, { event });
@@ -271,4 +271,6 @@ export class FeaturesPanel {
         this.element = null;
     }
 }
+
+
 

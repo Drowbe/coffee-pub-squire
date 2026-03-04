@@ -6,20 +6,20 @@
 {{/inline}}
 
 {{#*inline "inventory-item"}}
-<div class="panel-item inventory-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="{{type}}" data-category-id="{{categoryId}}">
-    <div class="panel-item-row inventory-row">
-        <div class="panel-item-image-container inventory-image-container">
-            <img class="panel-item-image inventory-image" src="{{img}}" alt="{{name}}"/>
-            <i class="fa-solid fa-dice-d20 panel-item-roll-overlay inventory-roll-overlay"></i>
+<div class="panel-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="{{type}}" data-category-id="{{categoryId}}">
+    <div class="panel-item-row">
+        <div class="panel-item-image-container">
+            <img class="panel-item-image" src="{{img}}" alt="{{name}}"/>
+            <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
         </div>
-        <div class="panel-item-name inventory-name">
+        <div class="panel-item-name">
             {{{name}}}
             {{#if (lookup ../newlyAddedItems id)}}<span class="new-tag">NEW</span>{{/if}}
             {{#if isNew}}<span class="new-tag">NEW</span>{{/if}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
                 {{#if quantity}}
-                <span class="panel-item-badge context-count inventory-quantity" title="Quantity">x{{quantity}}</span>
+                <span class="panel-item-badge context-count" title="Quantity">x{{quantity}}</span>
                 {{/if}}
             </span>
         </div>
@@ -161,3 +161,4 @@
         {{/if}}
     </div>
 </div> 
+

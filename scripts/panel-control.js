@@ -118,7 +118,7 @@ export class ControlPanel {
             // Process items
             // v13: Use native DOM forEach
             items.forEach(item => {
-                const nameElement = item.querySelector('.panel-item-name, .favorite-name, .weapon-name, .spell-name, .feature-name, .inventory-name');
+                const nameElement = item.querySelector('.panel-item-name');
                 
                 // Skip if no name element found
                 if (!nameElement) {

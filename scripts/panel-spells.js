@@ -179,7 +179,7 @@ export class SpellsPanel {
         }
         
         nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
-            const spellId = item.dataset.spellId;
+            const spellId = item.dataset.itemId;
             const spell = this.spells.find(s => s.id === spellId);
             
             if (!spell) return;
@@ -210,7 +210,7 @@ export class SpellsPanel {
         if (!nativeElement) return;
         
         this.spells.forEach(spell => {
-            const heartIcon = nativeElement.querySelector(`[data-spell-id="${spell.id}"] .fa-heart`);
+            const heartIcon = nativeElement.querySelector(`[data-item-id="${spell.id}"] .fa-heart`);
             if (heartIcon) {
                 if (spell.isFavorite) {
                     heartIcon.classList.remove('faded');
@@ -307,7 +307,7 @@ export class SpellsPanel {
             
             const spellItem = featherIcon.closest('.panel-item');
             if (!spellItem) return;
-            const spellId = spellItem.dataset.spellId;
+            const spellId = spellItem.dataset.itemId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 spell.sheet.render(true);
@@ -322,7 +322,7 @@ export class SpellsPanel {
             
             const spellItem = heartIcon.closest('.panel-item');
             if (!spellItem) return;
-            const spellId = spellItem.dataset.spellId;
+            const spellId = spellItem.dataset.itemId;
             await FavoritesPanel.manageFavorite(this.actor, spellId);
             // manageFavorite() already updates all panels, including this one
         }, { signal: listenerSignal });
@@ -330,12 +330,12 @@ export class SpellsPanel {
         // Cast spell (roll overlay)
         // v13: Use native DOM event delegation
         panel.addEventListener('click', async (event) => {
-            const rollOverlay = event.target.closest('.spell-image-container .spell-roll-overlay');
+            const rollOverlay = event.target.closest('.panel-item-image-container .panel-item-roll-overlay');
             if (!rollOverlay) return;
             
             const spellItem = rollOverlay.closest('.panel-item');
             if (!spellItem) return;
-            const spellId = spellItem.dataset.spellId;
+            const spellId = spellItem.dataset.itemId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 await spell.use({}, { event });
@@ -350,7 +350,7 @@ export class SpellsPanel {
             
             const spellItem = sunIcon.closest('.panel-item');
             if (!spellItem) return;
-            const spellId = spellItem.dataset.spellId;
+            const spellId = spellItem.dataset.itemId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
                 const newPrepared = !spell.system.prepared;
@@ -410,4 +410,6 @@ export class SpellsPanel {
         this.element = null;
     }
 }
+
+
 

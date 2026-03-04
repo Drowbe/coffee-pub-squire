@@ -6,13 +6,13 @@
 {{/inline}}
 
 {{#*inline "weapon-item"}}
-<div class="panel-item weapon-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="weapon" data-weapon-id="{{id}}" data-category-id="{{categoryId}}">
-    <div class="panel-item-row weapon-row">
-        <div class="panel-item-image-container weapon-image-container">
-            <img class="panel-item-image weapon-image" src="{{img}}" alt="{{name}}"/>
-            <i class="fa-solid fa-dice-d20 panel-item-roll-overlay weapon-roll-overlay"></i>
+<div class="panel-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="weapon" data-category-id="{{categoryId}}">
+    <div class="panel-item-row">
+        <div class="panel-item-image-container">
+            <img class="panel-item-image" src="{{img}}" alt="{{name}}"/>
+            <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
         </div>
-        <div class="panel-item-name weapon-name">
+        <div class="panel-item-name">
             {{name}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
@@ -140,3 +140,5 @@
         {{/if}}
     </div>
 </div>
+
+

@@ -627,7 +627,7 @@ export class FavoritesPanel {
         
         favoriteItems.each((_, item) => {
             const $item = $(item);
-            const itemName = $item.find('.favorite-name').text().toLowerCase();
+            const itemName = $item.find('.panel-item-name').text().toLowerCase();
             
             if (searchTerm === '' || itemName.includes(searchTerm)) {
                 $item.show();
@@ -723,11 +723,11 @@ export class FavoritesPanel {
 
         // Roll/Use item
         // v13: Use native DOM event delegation
-        nativeHtml.querySelectorAll('.favorite-image-container').forEach(container => {
+        nativeHtml.querySelectorAll('.panel-item-image-container').forEach(container => {
             const newContainer = container.cloneNode(true);
             container.parentNode?.replaceChild(newContainer, container);
             newContainer.addEventListener('click', async (event) => {
-                if (event.target.classList.contains('favorite-roll-overlay')) {
+                if (event.target.classList.contains('panel-item-roll-overlay')) {
                     event.preventDefault();
                     event.stopPropagation();
                     const favoriteItem = event.currentTarget.closest('.panel-item');
@@ -1084,4 +1084,5 @@ export class FavoritesPanel {
         });
     }
 }
+
 

@@ -1349,7 +1349,7 @@ export class PanelManager {
         let hasVisibleItems = false;
 
         items.forEach(item => {
-            const name = item.querySelector('.panel-item-name, .weapon-name, .spell-name, .inventory-name')?.textContent.toLowerCase() || '';
+            const name = item.querySelector('.panel-item-name')?.textContent.toLowerCase() || '';
             const categoryId = item.dataset.categoryId;
             const matchesSearch = !normalizedSearch || name.includes(normalizedSearch);
             const categoryVisible = !this.hiddenCategories.has(categoryId);
