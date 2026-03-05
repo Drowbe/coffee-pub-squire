@@ -10,8 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Macros icon**: Replaced macros icon with `fa-solid fa-code` in the tray handle and in the Blacksmith menubar tool registration.
+- **Unfavorited heart icon**: Unfavorited (dimmed) heart in Favorites/Character tab now uses the same neutral color and dimness as the prepared and shield icons (`#9f9275` at 0.3 opacity) instead of dimmed red.
+- **Icon hover color**: Tray, party panel, and handle icon mouseover color set to `rgba(231, 91, 1, 1.0)` (tray buttons, spell/weapon controls, search clear, party card actions, handle pin/viewcycle/toggle, chevron, pinned quest name).
+- **Shield icon hover**: Equipped (non-dimmed) shield icon now uses the same orange hover color instead of staying blue.
+- **Dimmed icon hover**: Tray and spell/weapon control icons in dimmed (faded) state now go to full opacity on hover so the hover color is visible.
 
-## [13.1.7]
+### Fixed
+- **Party panel – portrait and open-sheet clicks**: "Click to share portrait with all players" and "Open character sheet" (feather icon) did nothing when clicked. Listener setup order was corrected so card replacement no longer removes those handlers; portrait and open-sheet listeners are now attached after card replacement.
+
+
 
 ### Changed
 - **Tray panels - shared item structure and styling**: Unified stacked tray item markup and selectors across Favorites, Weapons, Spells, Features, and Inventory to use shared classes (`panel-item`, `panel-item-row`, `panel-item-name`, `panel-item-image-container`, `panel-item-roll-overlay`) and shared `data-item-id` targeting.

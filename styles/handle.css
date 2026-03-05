@@ -128,7 +128,7 @@
 .squire-tray[data-position="left"] .tray-handle-button-viewcycle:hover,
 .squire-tray[data-position="left"] .tray-handle-button-toggle:hover {
     background: rgba(255, 255, 255, 0.05);
-    color: #fff;
+    color: rgba(231, 91, 1, 1.0);
     border: none !important;      /* ensures no border is drawn */
     outline: none !important;     /* removes focus ring/outline */
     box-shadow: none !important;  /* kills subtle UA shadows */
@@ -172,7 +172,7 @@
 }
 
 .squire-tray[data-position="left"] .tray-handle:hover i.fa-chevron-right {
-    color: #fff;
+    color: rgba(231, 91, 1, 1.0);
     filter: brightness(1.2);
 }
 
@@ -181,7 +181,7 @@
 }
 
 .squire-tray[data-position="left"].expanded .tray-handle:hover i.fa-chevron-right {
-    color: #fff;
+    color: rgba(231, 91, 1, 1.0);
     filter: brightness(1.2);
 }
 
@@ -271,7 +271,7 @@
 }
 
 .squire-tray[data-position="left"] .handle-pinned-quest-name:hover {
-    color: #ffffff;
+    color: rgba(231, 91, 1, 1.0);
 }
 
 

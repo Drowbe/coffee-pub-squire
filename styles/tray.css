@@ -554,11 +554,16 @@
 
 .squire-tray[data-position="left"] .spell-controls i:hover, 
 .squire-tray[data-position="left"] .weapon-controls i:hover {
-    color: #fff;
+    color: rgba(231, 91, 1, 1.0);
 }
 
 .squire-tray[data-position="left"] .weapon-controls i.faded {
     opacity: 0.3;
+}
+
+.squire-tray[data-position="left"] .spell-controls i.faded:hover,
+.squire-tray[data-position="left"] .weapon-controls i.faded:hover {
+    opacity: 1;
 }
 
 
@@ -578,18 +583,22 @@
 
 .tray-buttons i {
     color: #9f9275;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, opacity 0.2s ease;
     cursor: pointer;
     padding: 0px;
 }
 
 .tray-buttons i:hover {
-    color: #fff;
+    color: rgba(231, 91, 1, 1.0);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 .tray-buttons i.faded {
     opacity: 0.3;
+}
+
+.tray-buttons i.faded:hover {
+    opacity: 1;
 }
 
 /* Light icon active state */
@@ -613,7 +622,7 @@
 }
 
 .tray-buttons .fa-heart:hover {
-    color: #ff2f2f;
+    color: rgba(231, 91, 1, 1.0);
 }
 
 .tray-buttons .fa-heart.active {
@@ -628,12 +637,16 @@
     color: #367ccc;
 }
 
+.tray-buttons .fa-shield-alt:hover {
+    color: rgba(231, 91, 1, 1.0);
+}
+
 .tray-buttons .fa-dagger:not(.faded) {
     color: #ff4444;
 }
 
 .tray-buttons .fa-dagger:not(.faded):hover {
-    color: #ff2f2f;
+    color: rgba(231, 91, 1, 1.0);
 }
 
 
@@ -810,7 +823,7 @@
 }
 
 .squire-tray[data-position="left"] .search-container .search-clear:hover {
-    color: #fff;
+    color: rgba(231, 91, 1, 1.0);
 }
 
 
