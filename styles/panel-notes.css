@@ -903,10 +903,12 @@ body.squire-notes-pin-placement * {
     border-color: rgba(255, 255, 255, 0.1);
 }
 
+.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-content {
+    color: rgba(255, 255, 255, 0.8);
+}
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-title,
-.squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-content,
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-date {
-    color: rgba(159, 146, 117, 0.9);
+    color: rgba(186, 168, 137, 0.9);
 }
 
 .squire-tray[data-position="left"] .notes-list.notes-view--cards.notes-theme--dark .note-location-section {

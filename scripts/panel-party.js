@@ -125,7 +125,33 @@ export class PartyPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        // Handle character sheet button clicks
+        // Handle character card clicks for token selection (first, so card clone doesn't remove other listeners)
+        const clickableCards = nativeHtml.querySelectorAll('.party-card.party-card-clickable');
+        clickableCards.forEach(card => {
+            // Clone to remove existing listeners
+            const newCard = card.cloneNode(true);
+            card.parentNode?.replaceChild(newCard, card);
+            
+            newCard.addEventListener('click', async (event) => {
+                // Don't handle clicks if they originated from the open-sheet button or portrait
+                // v13: Use native DOM methods
+                const clickedElement = event.target.closest('.open-sheet, .party-card-image.party-card-clickable');
+                if (clickedElement) return;
+
+                const tokenId = event.currentTarget.dataset.tokenId;
+                const token = canvas.tokens.placeables.find(t => t.id === tokenId);
+                if (token) {
+                    // Check ownership - only allow selection of tokens the user owns
+                    if (!token.actor.isOwner) return;
+                    
+                    // Multi-select with shift+click, single select without shift
+                    const releaseOthers = !event.shiftKey;
+                    token.control({releaseOthers});
+                }
+            });
+        });
+
+        // Handle character sheet button clicks (after card replacement so listeners are not lost)
         const openSheetButtons = nativeHtml.querySelectorAll('.open-sheet');
         openSheetButtons.forEach(button => {
             // Clone to remove existing listeners
@@ -148,7 +174,7 @@ export class PartyPanel {
             });
         });
 
-        // Handle portrait clicks
+        // Handle portrait clicks (after card replacement so listeners are not lost)
         const portraitButtons = nativeHtml.querySelectorAll('.party-card-image.party-card-clickable');
         portraitButtons.forEach(button => {
             // Clone to remove existing listeners
@@ -169,32 +195,6 @@ export class PartyPanel {
                         uuid: token.actor.uuid
                     });
                     imagePopout.render(true);
-                }
-            });
-        });
-
-        // Handle character card clicks for token selection
-        const clickableCards = nativeHtml.querySelectorAll('.party-card.party-card-clickable');
-        clickableCards.forEach(card => {
-            // Clone to remove existing listeners
-            const newCard = card.cloneNode(true);
-            card.parentNode?.replaceChild(newCard, card);
-            
-            newCard.addEventListener('click', async (event) => {
-                // Don't handle clicks if they originated from the open-sheet button or portrait
-                // v13: Use native DOM methods
-                const clickedElement = event.target.closest('.open-sheet, .party-card-image.party-card-clickable');
-                if (clickedElement) return;
-
-                const tokenId = event.currentTarget.dataset.tokenId;
-                const token = canvas.tokens.placeables.find(t => t.id === tokenId);
-                if (token) {
-                    // Check ownership - only allow selection of tokens the user owns
-                    if (!token.actor.isOwner) return;
-                    
-                    // Multi-select with shift+click, single select without shift
-                    const releaseOthers = !event.shiftKey;
-                    token.control({releaseOthers});
                 }
             });
         });
