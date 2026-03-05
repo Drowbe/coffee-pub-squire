@@ -1981,7 +1981,7 @@ Hooks.once('ready', async function() {
         const { openMacros } = await import('./panel-macros.js');
         
         const success = blacksmith.registerMenubarTool('squire-macros', {
-            icon: "fa-solid fa-sun",
+            icon: "fa-solid fa-code",
             name: "squire-macros",
             title: null,
             tooltip: "Macro window",
