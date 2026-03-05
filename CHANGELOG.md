@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.1.8]
 
+### Changed
+- **Macros icon**: Replaced macros icon with `fa-solid fa-code` in the tray handle and in the Blacksmith menubar tool registration.
 
 ## [13.1.7]
 

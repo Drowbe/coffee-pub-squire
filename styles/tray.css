@@ -608,6 +608,10 @@
     color: #ff4444;
 }
 
+.tray-buttons .fa-heart.faded {
+    color: #9f9275;
+}
+
 .tray-buttons .fa-heart:hover {
     color: #ff2f2f;
 }
