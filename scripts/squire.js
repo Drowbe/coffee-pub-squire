@@ -1941,111 +1941,6 @@ Hooks.once('ready', async function() {
         );
     }
 
-
-    // Register dice tray with Blacksmith menubar
-    try {
-        const { openDiceTray } = await import('./panel-dicetray.js');
-        
-        const success = blacksmith.registerMenubarTool('squire-dice-tray', {
-            icon: "fa-solid fa-dice-d20",
-            name: "squire-dice-tray",
-            title: null,
-            tooltip: "Dice Tray",
-            onClick: openDiceTray,
-            zone: "left",
-            group: "general",
-            groupOrder: null,
-            order: 200,
-            moduleId: MODULE.ID,  
-            gmOnly: false,
-            leaderOnly: false,
-            visible: true,
-            toggleable: false,
-            active: false,
-            iconColor: null,
-            buttonNormalTint: null,
-            buttonSelectedTint: null
-        });
-
-        if (success) {
-            // Successfully registered dice tray with Blacksmith menubar
-        } else {
-            console.error('Coffee Pub Squire | Failed to register dice tray with Blacksmith menubar');
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error registering dice tray with Blacksmith menubar:', error);
-    }
-
-    // Register macros with Blacksmith menubar
-    try {
-        const { openMacros } = await import('./panel-macros.js');
-        
-        const success = blacksmith.registerMenubarTool('squire-macros', {
-            icon: "fa-solid fa-code",
-            name: "squire-macros",
-            title: null,
-            tooltip: "Macro window",
-            onClick: openMacros,
-            zone: "left",
-            group: "general",
-            groupOrder: null,
-            order: 201,
-            moduleId: MODULE.ID,  
-            gmOnly: false,
-            leaderOnly: false,
-            visible: true,
-            toggleable: false,
-            active: false,
-            iconColor: null,
-            buttonNormalTint: null,
-            buttonSelectedTint: null
-        });
-
-        if (success) {
-            // Successfully registered macros with Blacksmith menubar
-        } else {
-            console.error('Coffee Pub Squire | Failed to register macros with Blacksmith menubar');
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error registering macros with Blacksmith menubar:', error);
-    }
-
-    // Register quick note with Blacksmith menubar
-    try {
-        const openQuickNote = () => {
-            const form = new NotesForm(null, {});
-            form.render(true);
-        };
-
-        const success = blacksmith.registerMenubarTool('squire-quick-note', {
-            icon: "fa-solid fa-note-sticky",
-            name: "squire-quick-note",
-            title: null,
-            tooltip: "Quick Note",
-            onClick: openQuickNote,
-            zone: "left",
-            group: "general",
-            groupOrder: null,
-            order: 202,
-            moduleId: MODULE.ID,
-            gmOnly: false,
-            leaderOnly: false,
-            visible: true,
-            toggleable: false,
-            active: false,
-            iconColor: "rgba(205, 200, 117, 0.9)",
-            buttonNormalTint: null,
-            buttonSelectedTint: null
-        });
-
-        if (!success) {
-            console.error('Coffee Pub Squire | Failed to register quick note with Blacksmith menubar');
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error registering quick note with Blacksmith menubar:', error);
-    }
-
-
     // Check if current user is excluded - with safety check for setting registration
     let excludedUsers = [];
     try {
@@ -2081,6 +1976,102 @@ Hooks.once('ready', async function() {
         document.head.appendChild(style);
         return;
     }
+
+    // Menubar tools (require tray / PanelManager — register only for non-excluded users)
+    try {
+        const { openDiceTray } = await import('./panel-dicetray.js');
+
+        const diceOk = blacksmith.registerMenubarTool('squire-dice-tray', {
+            icon: "fa-solid fa-dice-d20",
+            name: "squire-dice-tray",
+            title: null,
+            tooltip: "Dice Tray",
+            onClick: openDiceTray,
+            zone: "left",
+            group: "general",
+            groupOrder: 999,
+            order: 200,
+            moduleId: MODULE.ID,
+            gmOnly: false,
+            leaderOnly: false,
+            visible: true,
+            toggleable: false,
+            active: false,
+            iconColor: null,
+            buttonNormalTint: null,
+            buttonSelectedTint: null
+        });
+        if (!diceOk) {
+            console.error('Coffee Pub Squire | Failed to register dice tray with Blacksmith menubar');
+        }
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering dice tray with Blacksmith menubar:', error);
+    }
+
+    try {
+        const { openMacros } = await import('./panel-macros.js');
+
+        const macrosOk = blacksmith.registerMenubarTool('squire-macros', {
+            icon: "fa-solid fa-code",
+            name: "squire-macros",
+            title: null,
+            tooltip: "Macro window",
+            onClick: openMacros,
+            zone: "left",
+            group: "general",
+            groupOrder: 999,
+            order: 201,
+            moduleId: MODULE.ID,
+            gmOnly: false,
+            leaderOnly: false,
+            visible: true,
+            toggleable: false,
+            active: false,
+            iconColor: null,
+            buttonNormalTint: null,
+            buttonSelectedTint: null
+        });
+        if (!macrosOk) {
+            console.error('Coffee Pub Squire | Failed to register macros with Blacksmith menubar');
+        }
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering macros with Blacksmith menubar:', error);
+    }
+
+    try {
+        const openQuickNote = () => {
+            const form = new NotesForm(null, {});
+            form.render(true);
+        };
+
+        const noteOk = blacksmith.registerMenubarTool('squire-quick-note', {
+            icon: "fa-solid fa-note-sticky",
+            name: "squire-quick-note",
+            title: null,
+            tooltip: "Quick Note",
+            onClick: openQuickNote,
+            zone: "left",
+            group: "general",
+            groupOrder: 999,
+            order: 202,
+            moduleId: MODULE.ID,
+            gmOnly: false,
+            leaderOnly: false,
+            visible: true,
+            toggleable: false,
+            active: false,
+            iconColor: "rgba(205, 200, 117, 0.9)",
+            buttonNormalTint: null,
+            buttonSelectedTint: null
+        });
+        if (!noteOk) {
+            console.error('Coffee Pub Squire | Failed to register quick note with Blacksmith menubar');
+        }
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering quick note with Blacksmith menubar:', error);
+    }
+
+    blacksmith.renderMenubar?.(true);
 
     // Set up tray for non-excluded users
     const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');

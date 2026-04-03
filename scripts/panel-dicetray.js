@@ -11,11 +11,15 @@ function getBlacksmith() {
 // Function to open dice tray from menubar
 export async function openDiceTray() {
   try {
-    // Get the current actor from PanelManager
-    const actor = PanelManager.instance?.actor;
-    
-    // Create or get the dice tray panel
-    let dicetrayPanel = PanelManager.instance?.dicetrayPanel;
+    const ready = await PanelManager.ensureReadyForMenubar();
+    if (!ready || !PanelManager.instance) {
+      ui.notifications.warn('Coffee Pub Squire tray is not available (excluded user or still loading).');
+      return;
+    }
+
+    const actor = PanelManager.instance.actor;
+
+    let dicetrayPanel = PanelManager.instance.dicetrayPanel;
     if (!dicetrayPanel) {
       dicetrayPanel = new DiceTrayPanel({ actor });
       PanelManager.instance.dicetrayPanel = dicetrayPanel;

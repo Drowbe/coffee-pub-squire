@@ -94,6 +94,49 @@ export class PanelManager {
         this.handleManager = new HandleManager(this);
     }
 
+    /**
+     * Actor to use when opening tray panels from the menubar before normal tray init completes.
+     */
+    static actorForMenubarFallback() {
+        const controlled = canvas?.tokens?.controlled?.find(t => t.actor?.isOwner);
+        if (controlled?.actor) return controlled.actor;
+        const placeables = canvas?.tokens?.placeables;
+        if (placeables?.length) {
+            const firstOwned = placeables.find(t => t.actor?.isOwner);
+            if (firstOwned?.actor) return firstOwned.actor;
+        }
+        return game.user?.character ?? null;
+    }
+
+    /**
+     * Ensure {@link PanelManager.instance} exists. Menubar onClick can run before the delayed
+     * tray bootstrap or while another initialize() is in flight.
+     */
+    static async ensureReadyForMenubar() {
+        if (PanelManager.instance) return true;
+
+        const actor = PanelManager.actorForMenubarFallback();
+        await PanelManager.initialize(actor);
+
+        let spins = 0;
+        while (!PanelManager.instance && PanelManager._initializationInProgress && spins < 120) {
+            await new Promise(r => setTimeout(r, 50));
+            spins++;
+        }
+        if (PanelManager.instance) return true;
+
+        await new Promise(r => setTimeout(r, 150));
+        await PanelManager.initialize(actor);
+
+        spins = 0;
+        while (!PanelManager.instance && PanelManager._initializationInProgress && spins < 120) {
+            await new Promise(r => setTimeout(r, 50));
+            spins++;
+        }
+
+        return !!PanelManager.instance;
+    }
+
     static async initialize(actor = null) {
         // Check if user is excluded - with safety check for setting registration
         let excludedUsers = [];

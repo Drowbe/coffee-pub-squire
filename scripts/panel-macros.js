@@ -30,11 +30,15 @@ export function updateHotbarVisibility() {
 // Function to open macros window from menubar
 export async function openMacros() {
   try {
-    // Get the current actor from PanelManager
-    const actor = PanelManager.instance?.actor;
-    
-    // Create or get the macros panel
-    let macrosPanel = PanelManager.instance?.macrosPanel;
+    const ready = await PanelManager.ensureReadyForMenubar();
+    if (!ready || !PanelManager.instance) {
+      ui.notifications.warn('Coffee Pub Squire tray is not available (excluded user or still loading).');
+      return;
+    }
+
+    const actor = PanelManager.instance.actor;
+
+    let macrosPanel = PanelManager.instance.macrosPanel;
     if (!macrosPanel) {
       macrosPanel = new MacrosPanel({ actor });
       PanelManager.instance.macrosPanel = macrosPanel;
