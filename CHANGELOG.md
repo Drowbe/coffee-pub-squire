@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.1.9]
+
+### Added
+- **PanelManager – menubar readiness**: `ensureReadyForMenubar()` and `actorForMenubarFallback()` so Blacksmith menubar actions can bootstrap the tray when `PanelManager.instance` is not ready yet (same actor resolution as delayed init: controlled owned token, first owned token, then assigned character).
+
+### Changed
+- **Blacksmith menubar registration**: Dice tray, macros, and quick note tools are registered only after the excluded-user check (they depend on the tray). Explicit `groupOrder: 999` on those tools per Blacksmith menubar API guidance. Calls `renderMenubar(true)` after registration so the bar picks up tools when registration runs later in `ready`.
+
+### Fixed
+- **Blacksmith menubar – macros and dice tray**: Fixed `TypeError: Cannot set properties of null (setting 'macrosPanel')` / equivalent dice tray failure when opening from the menubar before delayed tray init or while another `initialize()` was in flight. `openMacros` and `openDiceTray` now await `ensureReadyForMenubar()` and show a clear warning if the tray is unavailable (e.g. excluded user).
+
 ## [13.1.8]
 
 ### Changed
