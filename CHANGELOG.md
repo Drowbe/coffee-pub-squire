@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.1.10]
+
+### Fixed
+- **Blacksmith bootstrap order**: When Squire’s `ready` ran before Blacksmith finished wiring window globals, `BlacksmithModuleManager.registerModule` and `BlacksmithHookManager.registerHook` could throw on `null`. Squire now `await`s `BlacksmithAPI.waitForReady()` when Blacksmith is active, registers via `game.modules.get('coffee-pub-blacksmith').api.registerModule` with a `BlacksmithModuleManager` fallback, and routes hook registration through `api.HookManager` (with global fallback). The delayed tray `trackModuleTimeout` callback also waits for Blacksmith before registering `controlToken`. See [API: Core Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Core-Blacksmith).
+
 ## [13.1.9]
 
 ### Added

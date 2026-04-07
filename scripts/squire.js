@@ -152,12 +152,24 @@ function ensureSelectObjectsWrapper() {
 
 Hooks.once('ready', async () => {
     try {
-        // Register your module with Blacksmith
-        BlacksmithModuleManager.registerModule(MODULE.ID, {
-            name: MODULE.NAME,
-            version: MODULE.VERSION
-        });
-        // Module registered with Blacksmith successfully
+        await waitForBlacksmithWhenActive();
+
+        const blacksmithApi = getBlacksmith();
+        if (typeof blacksmithApi?.registerModule === 'function') {
+            blacksmithApi.registerModule(MODULE.ID, {
+                name: MODULE.NAME,
+                version: MODULE.VERSION
+            });
+        } else if (typeof globalThis.BlacksmithModuleManager?.registerModule === 'function') {
+            globalThis.BlacksmithModuleManager.registerModule(MODULE.ID, {
+                name: MODULE.NAME,
+                version: MODULE.VERSION
+            });
+        } else {
+            console.error(
+                'Coffee Pub Squire | Failed to register SQUIRE with Blacksmith: registerModule not available (is coffee-pub-blacksmith active?)'
+            );
+        }
 
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
@@ -375,7 +387,12 @@ Hooks.once('ready', async () => {
         });
         
         // Register all hooks after Blacksmith is ready
-        const renderActorSheet5eHookId = BlacksmithHookManager.registerHook({
+        if (!getBlacksmithHookManager()?.registerHook) {
+            throw new Error(
+                'Blacksmith HookManager not available after waitForReady. Ensure coffee-pub-blacksmith is enabled and updated.'
+            );
+        }
+        const renderActorSheet5eHookId = getBlacksmithHookManager().registerHook({
             name: 'renderActorSheet5e',
             description: 'Coffee Pub Squire: Initialize tray when character sheet is rendered',
             context: MODULE.ID,
@@ -394,7 +411,7 @@ Hooks.once('ready', async () => {
         // REMOVED: PIXI container creation - Blacksmith handles all rendering now
         // Legacy canvasInit and canvasReady hooks for squirePins container have been deleted
         
-        const canvasReadyHookId = BlacksmithHookManager.registerHook({
+        const canvasReadyHookId = getBlacksmithHookManager().registerHook({
             name: 'canvasReady',
             description: 'Coffee Pub Squire: Handle canvas ready (quest pin events and selection monitoring)',
             context: MODULE.ID,
@@ -410,7 +427,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const disableModuleHookId = BlacksmithHookManager.registerHook({
+        const disableModuleHookId = getBlacksmithHookManager().registerHook({
             name: 'disableModule',
             description: 'Coffee Pub Squire: Clean up when module is disabled',
             context: MODULE.ID,
@@ -432,7 +449,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const closeGameHookId = BlacksmithHookManager.registerHook({
+        const closeGameHookId = getBlacksmithHookManager().registerHook({
             name: 'closeGame',
             description: 'Coffee Pub Squire: Clean up when game closes',
             context: MODULE.ID,
@@ -443,7 +460,7 @@ Hooks.once('ready', async () => {
         });
         
         // Register all remaining hooks from manager-hooks.js
-        const journalHookId = BlacksmithHookManager.registerHook({
+        const journalHookId = getBlacksmithHookManager().registerHook({
             name: "updateJournalEntryPage",
             description: "Coffee Pub Squire: Handle journal entry page updates for codex, quest, notes, and quest pins",
             context: MODULE.ID,
@@ -460,7 +477,7 @@ Hooks.once('ready', async () => {
         });
 
         // Hook for creating journal pages (for notes)
-        const createJournalPageHookId = BlacksmithHookManager.registerHook({
+        const createJournalPageHookId = getBlacksmithHookManager().registerHook({
             name: "createJournalEntryPage",
             description: "Coffee Pub Squire: Handle journal entry page creation for notes panel",
             context: MODULE.ID,
@@ -472,7 +489,7 @@ Hooks.once('ready', async () => {
         });
 
         // Hook for deleting journal pages (for notes)
-        const deleteJournalPageHookId = BlacksmithHookManager.registerHook({
+        const deleteJournalPageHookId = getBlacksmithHookManager().registerHook({
             name: "deleteJournalEntryPage",
             description: "Coffee Pub Squire: Handle journal entry page deletion for notes panel",
             context: MODULE.ID,
@@ -485,7 +502,7 @@ Hooks.once('ready', async () => {
 
         // Hook to embed note metadata box in journal entry page sheet
         // Try multiple hook names for compatibility
-        const renderJournalPageSheetHookId = BlacksmithHookManager.registerHook({
+        const renderJournalPageSheetHookId = getBlacksmithHookManager().registerHook({
             name: "renderJournalPageSheet",
             description: "Coffee Pub Squire: Embed note metadata box in journal entry page sheet",
             context: MODULE.ID,
@@ -496,7 +513,7 @@ Hooks.once('ready', async () => {
         });
         
         // Also try renderApplication hook with filter
-        const renderApplicationHookId = BlacksmithHookManager.registerHook({
+        const renderApplicationHookId = getBlacksmithHookManager().registerHook({
             name: "renderApplication",
             description: "Coffee Pub Squire: Embed note metadata box in journal entry page sheet (via renderApplication)",
             context: MODULE.ID,
@@ -511,7 +528,7 @@ Hooks.once('ready', async () => {
 
         
         // Character Panel Hooks
-        const characterActorHookId = BlacksmithHookManager.registerHook({
+        const characterActorHookId = getBlacksmithHookManager().registerHook({
             name: "updateActor",
             description: "Coffee Pub Squire: Handle actor updates for character panel",
             context: MODULE.ID,
@@ -525,7 +542,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const characterTokenHookId = BlacksmithHookManager.registerHook({
+        const characterTokenHookId = getBlacksmithHookManager().registerHook({
             name: "updateToken",
             description: "Coffee Pub Squire: Handle token updates for character panel",
             context: MODULE.ID,
@@ -540,7 +557,7 @@ Hooks.once('ready', async () => {
         });
         
         // Party Panel Hooks
-        const partyTokenHookId = BlacksmithHookManager.registerHook({
+        const partyTokenHookId = getBlacksmithHookManager().registerHook({
             name: "updateToken",
             description: "Coffee Pub Squire: Handle token updates for party panel",
             context: MODULE.ID,
@@ -554,7 +571,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const partyActorHookId = BlacksmithHookManager.registerHook({
+        const partyActorHookId = getBlacksmithHookManager().registerHook({
             name: "updateActor",
             description: "Coffee Pub Squire: Handle actor updates for party panel",
             context: MODULE.ID,
@@ -568,7 +585,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const partyControlTokenHookId = BlacksmithHookManager.registerHook({
+        const partyControlTokenHookId = getBlacksmithHookManager().registerHook({
             name: "controlToken",
             description: "Coffee Pub Squire: Handle token control for party panel",
             context: MODULE.ID,
@@ -582,7 +599,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const partyRenderChatMessageHookId = BlacksmithHookManager.registerHook({
+        const partyRenderChatMessageHookId = getBlacksmithHookManager().registerHook({
             name: "renderChatMessage",
             description: "Coffee Pub Squire: Handle chat message rendering for party panel transfer buttons",
             context: MODULE.ID,
@@ -597,7 +614,7 @@ Hooks.once('ready', async () => {
         });
         
         // Macros Panel Hooks
-        const macrosReadyHookId = BlacksmithHookManager.registerHook({
+        const macrosReadyHookId = getBlacksmithHookManager().registerHook({
             name: "ready",
             description: "Coffee Pub Squire: Handle ready event for macros panel",
             context: MODULE.ID,
@@ -611,7 +628,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const macrosRenderSettingsConfigHookId = BlacksmithHookManager.registerHook({
+        const macrosRenderSettingsConfigHookId = getBlacksmithHookManager().registerHook({
             name: "renderSettingsConfig",
             description: "Coffee Pub Squire: Handle settings config rendering for macros panel",
             context: MODULE.ID,
@@ -626,7 +643,7 @@ Hooks.once('ready', async () => {
         });
         
         // Party Stats Panel Hooks
-        const partyStatsUpdateCombatHookId = BlacksmithHookManager.registerHook({
+        const partyStatsUpdateCombatHookId = getBlacksmithHookManager().registerHook({
             name: "updateCombat",
             description: "Coffee Pub Squire: Handle combat updates for party stats panel",
             context: MODULE.ID,
@@ -640,7 +657,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const partyStatsUpdateActorHookId = BlacksmithHookManager.registerHook({
+        const partyStatsUpdateActorHookId = getBlacksmithHookManager().registerHook({
             name: "updateActor",
             description: "Coffee Pub Squire: Handle actor updates for party stats panel",
             context: MODULE.ID,
@@ -654,7 +671,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const partyStatsCreateChatMessageHookId = BlacksmithHookManager.registerHook({
+        const partyStatsCreateChatMessageHookId = getBlacksmithHookManager().registerHook({
             name: "createChatMessage",
             description: "Coffee Pub Squire: Handle chat message creation for party stats panel",
             context: MODULE.ID,
@@ -674,7 +691,7 @@ Hooks.once('ready', async () => {
         let _lastSelectionTime = 0;
         let _selectionCount = 0;
         
-        const globalControlTokenHookId = BlacksmithHookManager.registerHook({
+        const globalControlTokenHookId = getBlacksmithHookManager().registerHook({
             name: "controlToken",
             description: "Coffee Pub Squire: Handle global token control for selection display",
             context: MODULE.ID,
@@ -688,7 +705,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalCreateItemHookId = BlacksmithHookManager.registerHook({
+        const globalCreateItemHookId = getBlacksmithHookManager().registerHook({
             name: "createItem",
             description: "Coffee Pub Squire: Handle global item creation for tray updates and auto-favoriting",
             context: MODULE.ID,
@@ -723,7 +740,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalUpdateItemHookId = BlacksmithHookManager.registerHook({
+        const globalUpdateItemHookId = getBlacksmithHookManager().registerHook({
             name: "updateItem",
             description: "Coffee Pub Squire: Handle global item updates for tray updates and auto-favoriting",
             context: MODULE.ID,
@@ -787,7 +804,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalDeleteItemHookId = BlacksmithHookManager.registerHook({
+        const globalDeleteItemHookId = getBlacksmithHookManager().registerHook({
             name: "deleteItem",
             description: "Coffee Pub Squire: Handle global item deletion for tray updates",
             context: MODULE.ID,
@@ -829,7 +846,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalCreateActiveEffectHookId = BlacksmithHookManager.registerHook({
+        const globalCreateActiveEffectHookId = getBlacksmithHookManager().registerHook({
             name: "createActiveEffect",
             description: "Coffee Pub Squire: Handle global active effect creation for handle updates",
             context: MODULE.ID,
@@ -850,7 +867,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalDeleteActiveEffectHookId = BlacksmithHookManager.registerHook({
+        const globalDeleteActiveEffectHookId = getBlacksmithHookManager().registerHook({
             name: "deleteActiveEffect",
             description: "Coffee Pub Squire: Handle global active effect deletion for handle updates",
             context: MODULE.ID,
@@ -871,7 +888,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalUpdateActorHookId = BlacksmithHookManager.registerHook({
+        const globalUpdateActorHookId = getBlacksmithHookManager().registerHook({
             name: "updateActor",
             description: "Coffee Pub Squire: Handle global actor updates",
             context: MODULE.ID,
@@ -922,7 +939,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalDeleteTokenHookId = BlacksmithHookManager.registerHook({
+        const globalDeleteTokenHookId = getBlacksmithHookManager().registerHook({
             name: "deleteToken",
             description: "Coffee Pub Squire: Handle global token deletion",
             context: MODULE.ID,
@@ -985,7 +1002,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalPauseGameHookId = BlacksmithHookManager.registerHook({
+        const globalPauseGameHookId = getBlacksmithHookManager().registerHook({
             name: "pauseGame",
             description: "Coffee Pub Squire: Handle global game pause/unpause",
             context: MODULE.ID,
@@ -1006,7 +1023,7 @@ Hooks.once('ready', async () => {
         // REMOVED: questPinUpdateSceneHookId - No longer needed with Blacksmith API
         // Blacksmith automatically handles scene flag updates
         
-        const questPinUpdateTokenHookId = BlacksmithHookManager.registerHook({
+        const questPinUpdateTokenHookId = getBlacksmithHookManager().registerHook({
             name: "updateToken",
             description: "Coffee Pub Squire: Handle quest pin token updates",
             context: MODULE.ID,
@@ -1017,7 +1034,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const questPinCreateTokenHookId = BlacksmithHookManager.registerHook({
+        const questPinCreateTokenHookId = getBlacksmithHookManager().registerHook({
             name: "createToken",
             description: "Coffee Pub Squire: Handle quest pin token creation",
             context: MODULE.ID,
@@ -1028,7 +1045,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const globalCreateTokenHookId = BlacksmithHookManager.registerHook({
+        const globalCreateTokenHookId = getBlacksmithHookManager().registerHook({
             name: "createToken",
             description: "Coffee Pub Squire: Handle global token creation",
             context: MODULE.ID,
@@ -1049,7 +1066,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const questPinDeleteTokenHookId = BlacksmithHookManager.registerHook({
+        const questPinDeleteTokenHookId = getBlacksmithHookManager().registerHook({
             name: "deleteToken",
             description: "Coffee Pub Squire: Handle quest pin token deletion",
             context: MODULE.ID,
@@ -1060,7 +1077,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const questPinRenderQuestPanelHookId = BlacksmithHookManager.registerHook({
+        const questPinRenderQuestPanelHookId = getBlacksmithHookManager().registerHook({
             name: "renderQuestPanel",
             description: "Coffee Pub Squire: Handle quest pin quest panel rendering",
             context: MODULE.ID,
@@ -1071,7 +1088,7 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const questPinSightRefreshHookId = BlacksmithHookManager.registerHook({
+        const questPinSightRefreshHookId = getBlacksmithHookManager().registerHook({
             name: "sightRefresh",
             description: "Coffee Pub Squire: Handle quest pin sight refresh",
             context: MODULE.ID,
@@ -1435,6 +1452,32 @@ async function _routeToQuestPins(page, changes, options, userId) {
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
+/**
+ * Prefer HookManager from module.api (available once Blacksmith assigns api); fall back to window global
+ * after {@link waitForBlacksmithWhenActive} (markReadyForConsumers).
+ */
+function getBlacksmithHookManager() {
+  const api = getBlacksmith();
+  return api?.HookManager ?? api?.hookManager ?? globalThis.BlacksmithHookManager ?? null;
+}
+
+/**
+ * When Blacksmith is active, wait until consumer wiring (globals, asset phase) is safe.
+ * See https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Core-Blacksmith
+ */
+async function waitForBlacksmithWhenActive() {
+  const mod = game.modules.get('coffee-pub-blacksmith');
+  if (!mod?.active) return;
+  const bridge = typeof BlacksmithAPI !== 'undefined' ? BlacksmithAPI : globalThis.BlacksmithAPI;
+  try {
+    if (typeof bridge?.waitForReady === 'function') {
+      await bridge.waitForReady();
+    }
+  } catch (error) {
+    console.error('Coffee Pub Squire | Blacksmith waitForReady failed:', error);
+  }
 }
 
 let socket;
@@ -2104,6 +2147,12 @@ Hooks.once('ready', async function() {
 
     // Initialize Squire after settings are registered (with delay to ensure everything is ready)
     trackModuleTimeout(async () => {
+        await waitForBlacksmithWhenActive();
+        if (!getBlacksmithHookManager()?.registerHook) {
+            console.error('Coffee Pub Squire | Delayed tray init skipped: Blacksmith HookManager not available.');
+            return;
+        }
+
         // Hook management is now handled by Blacksmith HookManager
         // No need to initialize local HookManager
         
@@ -2131,7 +2180,7 @@ Hooks.once('ready', async function() {
         // REMOVED: loadPersistedPinsOnCanvasReady() - Quest pins now loaded via migration in canvasReady hook
         
         // Register the controlToken hook AFTER settings are registered
-        const controlTokenHookId = BlacksmithHookManager.registerHook({
+        const controlTokenHookId = getBlacksmithHookManager().registerHook({
             name: 'controlToken',
             description: 'Coffee Pub Squire: Handle token control for tray initialization',
             context: MODULE.ID,
