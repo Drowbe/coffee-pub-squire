@@ -640,24 +640,24 @@ export const registerSettings = function() {
         config: false,
         type: Object,
         default: {
-            size: { w: 50, h: 50 },
-            lockProportions: true,
-            shape: 'square',
+            size: { w: 60, h: 60 },
+            lockProportions: false,
+            shape: 'circle',
             style: {
                 fill: '#682008',
                 stroke: '#ffffff',
-                strokeWidth: 2,
+                strokeWidth: 5,
                 iconColor: '#ffffff'
             },
-            dropShadow: true,
+            dropShadow: false,
             text: '',
             textLayout: 'right',
             textDisplay: 'hover',
             textColor: '#ffffff',
-            textSize: 12,
-            textMaxLength: 0,
+            textSize: 10,
+            textMaxLength: 100,
             textMaxWidth: 30,
-            textScaleWithPin: true
+            textScaleWithPin: false
         }
     });
 
@@ -1477,13 +1477,6 @@ export const registerSettings = function() {
         config: false,
         type: Object,
         default: {}
-    });
-
-    game.settings.register(MODULE.ID, 'pinTypeMigrationV1', {
-        scope: 'world',
-        config: false,
-        type: Boolean,
-        default: false
     });
 
 };

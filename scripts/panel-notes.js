@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
+import { getSquirePinType, isSquirePinCategory, listSquirePinsByKind, enforceSquirePinTaxonomyType } from './utility-quest-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
 import {
@@ -45,8 +46,9 @@ const NOTE_PIN_ICON = 'fa-note-sticky';
 const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
 const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
 const NOTE_PIN_SIZE = { w: 60, h: 60 };
-const NOTE_PIN_DEFAULT_SETTING = 'notesPinDefaultDesign';
-const NOTE_PIN_TYPE = 'note-pin';
+/** Foundry `game.settings` key for client note-pin design defaults (not the same as Blacksmith `pin.type` taxonomy). */
+export const NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY = 'notesPinDefaultDesign';
+const NOTE_PIN_DEFAULT_SETTING = NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY;
 const NOTE_EDIT_LOCK_FLAG = 'editLock';
 
 /**
@@ -58,7 +60,7 @@ const NOTE_EDIT_LOCK_FLAG = 'editLock';
 function resolveNotePinTags(page) {
     const pins = getPinsApi();
     const taxonomyTags = (isPinsApiAvailable(pins) && typeof pins.getModuleTaxonomy === 'function')
-        ? (pins.getModuleTaxonomy(MODULE.ID)?.[NOTE_PIN_TYPE]?.tags ?? null)
+        ? (pins.getModuleTaxonomy(MODULE.ID)?.[getSquirePinType('note')]?.tags ?? null)
         : null;
     const tag = page.getFlag(MODULE.ID, 'visibility') === 'party' ? 'party' : 'personal';
     if (!taxonomyTags) return [tag];
@@ -166,7 +168,13 @@ export function getDefaultNotePinDesign() {
     try {
         const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
         if (pins?.getDefaultPinDesign) {
-            stored = pins.getDefaultPinDesign(MODULE.ID);
+            const raw = pins.getDefaultPinDesign(MODULE.ID, getSquirePinType('note')) || {};
+            if (raw && typeof raw === 'object') {
+                const { type: _t, id: _i, moduleId: _m, ...rest } = raw;
+                stored = rest;
+            } else {
+                stored = raw;
+            }
         }
     } catch (error) {
         stored = null;
@@ -780,7 +788,7 @@ function registerNotePinContextMenuItems(pins) {
             icon: '<i class="fa-solid fa-eye"></i>',
             moduleId: MODULE.ID,
             order: 10,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === NOTE_PIN_TYPE || pinData?.config?.noteUuid),
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (isSquirePinCategory(pinData?.type, 'note') || pinData?.config?.noteUuid),
             onClick: makeOpenHandler(true)
         }),
         pins.registerContextMenuItem(`${MODULE.ID}-edit-note`, {
@@ -788,7 +796,7 @@ function registerNotePinContextMenuItems(pins) {
             icon: '<i class="fa-solid fa-pen"></i>',
             moduleId: MODULE.ID,
             order: 20,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === NOTE_PIN_TYPE || pinData?.config?.noteUuid),
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (isSquirePinCategory(pinData?.type, 'note') || pinData?.config?.noteUuid),
             onClick: makeOpenHandler(false)
         }),
         pins.registerContextMenuItem(`${MODULE.ID}-delete-note`, {
@@ -796,7 +804,7 @@ function registerNotePinContextMenuItems(pins) {
             icon: '<i class="fa-solid fa-trash"></i>',
             moduleId: MODULE.ID,
             order: 40,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === NOTE_PIN_TYPE || pinData?.config?.noteUuid),
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (isSquirePinCategory(pinData?.type, 'note') || pinData?.config?.noteUuid),
             onClick: deleteHandler
         })
     ];
@@ -944,7 +952,7 @@ export async function createNotePinForPage(page, sceneId, x, y) {
         const pinPayload = {
             id: generateNotePinId(),
             moduleId: MODULE.ID,
-            type: NOTE_PIN_TYPE,
+            type: getSquirePinType('note'),
             tags: resolveNotePinTags(page),
             image: resolveNotePinImageValueFromPage(page),
             text: getNotePinTextForPage(page),
@@ -985,6 +993,15 @@ export async function createNotePinForPage(page, sceneId, x, y) {
             }
         }
 
+        if (pinData?.id) {
+            await enforceSquirePinTaxonomyType(
+                pins,
+                pinData.id,
+                'note',
+                hasPlacement ? { sceneId } : undefined
+            );
+        }
+
         if (hasPlacement && typeof pins.reload === 'function') {
             await pins.reload({ sceneId });
         }
@@ -1021,9 +1038,9 @@ export async function deleteNotePinForPage(page) {
         if (pinId) {
             await deletePin(pinId);
         } else if (pins.list) {
-            const matches = pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, sceneId })
+            const matches = listSquirePinsByKind(pins, 'note', { sceneId })
                 .filter(pin => pin?.config?.noteUuid === page.uuid);
-            const unplacedMatches = pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, unplacedOnly: true })
+            const unplacedMatches = listSquirePinsByKind(pins, 'note', { unplacedOnly: true })
                 .filter(pin => pin?.config?.noteUuid === page.uuid);
             const allMatches = [...matches, ...unplacedMatches];
             for (const pin of allMatches) {
@@ -1115,7 +1132,7 @@ export async function updateNotePinForPage(page) {
         textSize: getNotePinTextSizeForPage(page),
         textMaxLength: getNotePinTextMaxLengthForPage(page),
         textScaleWithPin: getNotePinTextScaleWithPinForPage(page),
-        type: NOTE_PIN_TYPE,
+        type: getSquirePinType('note'),
         tags: resolveNotePinTags(page),
         ownership: getNotePinOwnershipForPage(page),
         config: {
@@ -1549,7 +1566,7 @@ export class NotesPanel {
 
         const pinIndex = new Map();
         for (const sceneId of sceneIds) {
-            const scenePins = pins.list ? (pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, sceneId }) || []) : [];
+            const scenePins = pins.list ? listSquirePinsByKind(pins, 'note', { sceneId }) : [];
             for (const pin of scenePins) {
                 const noteUuid = pin?.config?.noteUuid;
                 if (!noteUuid) continue;
@@ -1557,7 +1574,7 @@ export class NotesPanel {
             }
         }
 
-        const unplacedPins = pins.list ? (pins.list({ moduleId: MODULE.ID, type: NOTE_PIN_TYPE, unplacedOnly: true }) || []) : [];
+        const unplacedPins = pins.list ? listSquirePinsByKind(pins, 'note', { unplacedOnly: true }) : [];
         for (const pin of unplacedPins) {
             const noteUuid = pin?.config?.noteUuid;
             if (!noteUuid) continue;
@@ -1636,7 +1653,13 @@ export class NotesPanel {
         if (!sceneIds.length) return;
 
         for (const sceneId of sceneIds) {
-            await pins.deleteAllByType(NOTE_PIN_TYPE, { sceneId, moduleId: MODULE.ID });
+            const noteType = getSquirePinType('note');
+            await pins.deleteAllByType(noteType, { sceneId, moduleId: MODULE.ID });
+            if (noteType !== 'note-pin') {
+                try {
+                    await pins.deleteAllByType('note-pin', { sceneId, moduleId: MODULE.ID });
+                } catch (_) {}
+            }
         }
 
         await this._cleanupMissingPins();

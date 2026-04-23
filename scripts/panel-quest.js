@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility, unplaceQuestPinForPage, unplaceObjectivePinForPage, QUEST_PIN_BACKGROUND, OBJECTIVE_PIN_BACKGROUND } from './utility-quest-pins.js';
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility, unplaceQuestPinForPage, unplaceObjectivePinForPage, QUEST_PIN_BACKGROUND, OBJECTIVE_PIN_BACKGROUND, isSquirePinCategory, listSquirePinsByKind } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -635,7 +635,7 @@ export class QuestPanel {
             }
             
             // Only clear this module's quest and objective pins (not Notes or other pin types)
-            const isQuestOrObjectivePin = (pin) => pin?.type === 'quest-pin' || pin?.type === 'objective-pin';
+            const isQuestOrObjectivePin = (pin) => isSquirePinCategory(pin?.type, 'quest') || isSquirePinCategory(pin?.type, 'objective');
 
             const clearPageFlagsForPins = async (questObjectivePinsList) => {
                 const questUuids = new Set((questObjectivePinsList || []).map(p => p?.config?.questUuid).filter(Boolean));
@@ -1368,10 +1368,11 @@ export class QuestPanel {
      * @param {string} strokeColor - Border stroke hex (status/state color)
      * @param {string} text - Label text (e.g. Q85)
      * @param {string} iconHtml - Icon HTML (e.g. <i class="fa-solid fa-scroll"></i>)
+     * @param {number} [strokeWidthPx=2] - CSS border width for preview ring
      * @returns {HTMLDivElement}
      * @private
      */
-    _createQuestPinPreviewElement(shape, sizePx, fillColor, strokeColor, text, iconHtml) {
+    _createQuestPinPreviewElement(shape, sizePx, fillColor, strokeColor, text, iconHtml, strokeWidthPx = 2) {
         const preview = document.createElement('div');
         preview.className = 'quest-pin-preview';
         preview.dataset.shape = shape;
@@ -1379,7 +1380,7 @@ export class QuestPanel {
         preview.style.setProperty('--quest-pin-height', `${sizePx}px`);
         preview.style.setProperty('--quest-pin-fill', fillColor);
         preview.style.setProperty('--quest-pin-stroke', strokeColor);
-        preview.style.setProperty('--quest-pin-stroke-width', '2px');
+        preview.style.setProperty('--quest-pin-stroke-width', `${strokeWidthPx}px`);
         preview.innerHTML = `
             <div class="quest-pin-preview-inner">
                 ${iconHtml || ''}
@@ -1433,12 +1434,13 @@ export class QuestPanel {
         const strokeColor = getQuestPinColor(questStatus || 'Not Started', questStateVal);
         const questNum = typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0);
         const previewEl = this._createQuestPinPreviewElement(
-            'square',
-            50,
+            'circle',
+            60,
             QUEST_PIN_BACKGROUND,
             strokeColor,
             `Q${questNum}`,
-            '<i class="fa-solid fa-flag"></i>'
+            '<i class="fa-solid fa-flag"></i>',
+            5
         );
         document.body.appendChild(previewEl);
 
@@ -1477,8 +1479,8 @@ export class QuestPanel {
 
             if (!pinId && typeof pins.list === 'function') {
                 const findExisting = () => {
-                    const unplaced = pins.list({ moduleId: MODULE.ID, type: 'quest-pin', unplacedOnly: true }) || [];
-                    const placed = pins.list({ moduleId: MODULE.ID, type: 'quest-pin' }) || [];
+                    const unplaced = listSquirePinsByKind(pins, 'quest', { unplacedOnly: true });
+                    const placed = listSquirePinsByKind(pins, 'quest', {});
                     return [...unplaced, ...placed].find(p => p?.config?.questUuid === questUuid);
                 };
                 const existing = findExisting();
@@ -1606,12 +1608,13 @@ export class QuestPanel {
         const strokeColor = getObjectivePinColor(objectiveState);
         const questNum = typeof questIndex === 'string' ? parseInt(questIndex, 10) || 0 : (questIndex ?? 0);
         const previewEl = this._createQuestPinPreviewElement(
-            'square',
-            30,
+            'circle',
+            50,
             OBJECTIVE_PIN_BACKGROUND,
             strokeColor,
             `Q${questNum}.${objectiveIndex + 1}`,
-            '<i class="fa-solid fa-bullseye"></i>'
+            '<i class="fa-solid fa-bullseye"></i>',
+            5
         );
         document.body.appendChild(previewEl);
 
@@ -1654,8 +1657,8 @@ export class QuestPanel {
 
             if (!pinId && typeof pins.list === 'function') {
                 const match = (p) => p?.config?.questUuid === questUuid && Number(p?.config?.objectiveIndex) === objectiveIndex;
-                const unplaced = pins.list({ moduleId: MODULE.ID, type: 'objective-pin', unplacedOnly: true }) || [];
-                const placed = pins.list({ moduleId: MODULE.ID, type: 'objective-pin' }) || [];
+                const unplaced = listSquirePinsByKind(pins, 'objective', { unplacedOnly: true });
+                const placed = listSquirePinsByKind(pins, 'objective', {});
                 const existing = [...unplaced, ...placed].find(match);
                 if (existing?.id) pinId = existing.id;
             }
@@ -1926,7 +1929,7 @@ export class QuestPanel {
                                     // If current scene has a placed objective pin for this quest/index, trust the API
                                     const pins = getPinsApi();
                                     if (!task.hasPinOnScene && pins?.list && canvas.scene?.id) {
-                                        const placed = pins.list({ moduleId: MODULE.ID, type: 'objective-pin', sceneId: canvas.scene.id }) || [];
+                                        const placed = listSquirePinsByKind(pins, 'objective', { sceneId: canvas.scene.id });
                                         const match = placed.find(p => p?.config?.questUuid === page.uuid && Number(p?.config?.objectiveIndex) === index);
                                         if (match) task.hasPinOnScene = true;
                                     }

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.1.12]
+
+### Changed
+- **Quest / objective pin styling**: Merges Blacksmith **`pins.getDefaultPinDesign(MODULE.ID, 'quest' | 'objective')`** (Configure Pin “Default for [type]”) into quest design resolution before module setting and page flags. Squire’s legacy brown fill + status stroke is applied **only** when the merged style has **no** `fill` and **no** `stroke`; otherwise appearance is left to the pin tool / defaults. **`updateQuestPinStylesForPage`** no longer overwrites `style` when the pin already has a configured fill or stroke (still updates `config`, `text`, and `tags`). Objective pin creation now respects type defaults for size, shape, image, text options, and style when present. On **`pins.create`**, type defaults also supply **`eventAnimations`**, **`allowDuplicatePins`**, **`lockProportions`**, and **`iconText`** when saved for that type (PinData fields Squire did not previously forward).
+- **Objective pin Squire baseline**: When Blacksmith has no saved default for the **`objective`** pin type, new pins use **50×50 circle**, **#8c2d0d** fill, **5px** white border (state-colored stroke on updates), no drop shadow, text below / hover / 100 max chars / 25 chars per line, scale-with-pin off, **event animations** (ripple + `interface-pop-01` on hover; scale-small + `book-open-02` on click; fade + `interface-pop-03` on delete). **`pins.getDefaultPinDesign`** still overrides any of these when the user sets “Default for objective pin”. Quest placement preview uses the same circle size and border width.
+- **Pin type migrations removed**: Dropped **`pinTypeMigrationV1`**, **`pinTypeMigrationTaxonomyV2`**, and **`pinTypeMigrationTaxonomyV3`** world settings and all **`ready`** migration loops; creation relies on correct **`pin.type`** plus **`enforceSquirePinTaxonomyType`** when needed.
+- **Note “Use as default” + Foundry settings**: **`NotesForm`** **`pins.configure`** calls pass **`defaultSettingKey: notesPinDefaultDesign`** (via **`NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY`**) so Blacksmith’s default-for-type flow lines up with Squire’s **`game.settings`** key, matching the quest panel’s **`questPinDefaultDesign`** pattern.
+
+### Fixed
+- **Pin `type` vs Blacksmith taxonomy**: `pin.type` for Squire pins uses the same keys as Blacksmith’s module taxonomy JSON — **`quest`**, **`objective`**, **`note`**, **`codex`** — not `*-pin` suffixes. **`pins.create`**, **`getDefaultPinDesign`**, **`getModuleTaxonomy`**, **`registerPinType`**, list filters, context menus, and note flows use **`getSquirePinType()`** (validated against **`getModuleTaxonomy(MODULE.ID)`** when available) plus **`isSquirePinCategory`** / **`listSquirePinsByKind`** so pins still stored with legacy **`quest-pin`** / **`objective-pin`** / **`note-pin`** strings are still recognized where needed.
+- **Pin `type` showing “Quest Pin” / “Objective Pin”**: Saved **`getDefaultPinDesign`** blobs could carry **`type`** as a **display label**; Blacksmith **`pins.create`** can merge that over Squire’s **`quest` / `objective`** key. **`getPinTypeDefaultDesign`** strips **`type`**, **`id`**, and **`moduleId`** from defaults; objective structural merge omits **`type`**; **`enforceSquirePinTaxonomyType`** runs after quest/objective/note **`pins.create`**; internal **`SQUIRE_PIN_TYPE_FIX_MAP`** maps label and legacy strings to taxonomy keys for that enforcement path.
+
 ## [13.1.11]
 
 ### Changed

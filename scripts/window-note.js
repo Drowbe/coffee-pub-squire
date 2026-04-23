@@ -25,6 +25,7 @@ import {
     getNotePinTextSizeForNote,
     getNotePinTextMaxLengthForNote,
     getNotePinTextScaleWithPinForNote,
+    NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
     normalizePinSize,
     normalizePinStyle,
     normalizePinShape,
@@ -921,6 +922,7 @@ export class NotesForm extends FormApplication {
                             sceneId: sceneId || undefined,
                             moduleId: MODULE.ID,
                             useAsDefault: true,
+                            defaultSettingKey: NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
                             onSelect: async (config) => {
                                 const icon = config?.icon || null;
                                 this.note.noteIcon = icon;
@@ -991,6 +993,7 @@ export class NotesForm extends FormApplication {
                                         sceneId: sceneId || undefined,
                                         moduleId: MODULE.ID,
                                         useAsDefault: true,
+                                        defaultSettingKey: NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
                                         onSelect: async (config) => {
                                             const icon = config?.icon || null;
                                             this.note.noteIcon = icon;

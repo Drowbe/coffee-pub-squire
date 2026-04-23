@@ -10,7 +10,7 @@ import { QuestParser } from './utility-quest-parser.js';
 // import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 
 // New Blacksmith API-based quest pins
-import { isPinsApiAvailable } from './utility-quest-pins.js';
+import { isPinsApiAvailable, getSquirePinType } from './utility-quest-pins.js';
 import { registerQuestPinEvents } from './quest-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
@@ -1939,34 +1939,10 @@ Hooks.once('ready', async function() {
     // we read it back at runtime via pins.getModuleTaxonomy() rather than re-declaring it here.
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
     if (pins?.isAvailable()) {
-        pins.registerPinType(MODULE.ID, 'quest-pin',     'Quest Pin');
-        pins.registerPinType(MODULE.ID, 'objective-pin', 'Objective Pin');
-        pins.registerPinType(MODULE.ID, 'note-pin',      'Note Pin');
-        pins.registerPinType(MODULE.ID, 'codex-pin',     'Codex Pin');
-
-        // One-time migration: rename old type strings to the new taxonomy keys
-        const alreadyMigrated = game.settings.get(MODULE.ID, 'pinTypeMigrationV1') ?? false;
-        if (!alreadyMigrated && game.user.isGM) {
-            const typeMap = {
-                'quest':                          'quest-pin',
-                'objective':                      'objective-pin',
-                'coffee-pub-squire-sticky-notes': 'note-pin'
-            };
-            for (const [oldType, newType] of Object.entries(typeMap)) {
-                const placed = pins.list({ moduleId: MODULE.ID, type: oldType }) ?? [];
-                for (const pin of placed) {
-                    try { await pins.update(pin.id, { type: newType }, pin.sceneId ? { sceneId: pin.sceneId } : undefined); } catch (_) {}
-                }
-            }
-            const unplaced = pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) ?? [];
-            for (const pin of unplaced) {
-                const newType = typeMap[pin.type];
-                if (newType) {
-                    try { await pins.update(pin.id, { type: newType }); } catch (_) {}
-                }
-            }
-            await game.settings.set(MODULE.ID, 'pinTypeMigrationV1', true);
-        }
+        pins.registerPinType(MODULE.ID, getSquirePinType('quest'), 'Quest Pin');
+        pins.registerPinType(MODULE.ID, getSquirePinType('objective'), 'Objective Pin');
+        pins.registerPinType(MODULE.ID, getSquirePinType('note'), 'Note Pin');
+        pins.registerPinType(MODULE.ID, getSquirePinType('codex'), 'Codex Pin');
     }
 
     // Register socket handler for GM ownership sync on notes
