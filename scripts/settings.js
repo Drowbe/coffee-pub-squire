@@ -1479,6 +1479,13 @@ export const registerSettings = function() {
         default: {}
     });
 
+    game.settings.register(MODULE.ID, 'pinTypeMigrationV1', {
+        scope: 'world',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
 };
 
 // ***************************

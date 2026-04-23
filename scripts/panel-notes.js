@@ -46,8 +46,24 @@ const NOTE_PIN_CURSOR_CLASS = 'squire-notes-pin-placement';
 const NOTE_PIN_CANVAS_CURSOR_CLASS = 'squire-notes-pin-placement-canvas';
 const NOTE_PIN_SIZE = { w: 60, h: 60 };
 const NOTE_PIN_DEFAULT_SETTING = 'notesPinDefaultDesign';
-const NOTE_PIN_TYPE = 'coffee-pub-squire-sticky-notes';
+const NOTE_PIN_TYPE = 'note-pin';
 const NOTE_EDIT_LOCK_FLAG = 'editLock';
+
+/**
+ * Derive taxonomy-driven tags for a note pin from Blacksmith, with fallback.
+ * Maps note visibility ('party' → 'party', anything else → 'personal').
+ * @param {JournalEntryPage} page
+ * @returns {string[]}
+ */
+function resolveNotePinTags(page) {
+    const pins = getPinsApi();
+    const taxonomyTags = (isPinsApiAvailable(pins) && typeof pins.getModuleTaxonomy === 'function')
+        ? (pins.getModuleTaxonomy(MODULE.ID)?.[NOTE_PIN_TYPE]?.tags ?? null)
+        : null;
+    const tag = page.getFlag(MODULE.ID, 'visibility') === 'party' ? 'party' : 'personal';
+    if (!taxonomyTags) return [tag];
+    return taxonomyTags.includes(tag) ? [tag] : (taxonomyTags.length ? [taxonomyTags[0]] : [tag]);
+}
 const NOTE_EDIT_LOCK_TTL_MS = 30 * 60 * 1000;
 
 // Export helper functions for use in window-note.js
@@ -276,17 +292,6 @@ export function getNotePinTextScaleWithPinForNote(note) {
     return stored ?? getDefaultNotePinDesign().textScaleWithPin;
 }
 
-function logPinPackage(label, payload) {
-    const logger = getBlacksmith()?.utils?.postConsoleAndNotification;
-    if (typeof logger !== 'function') return;
-    let serialized = payload;
-    try {
-        serialized = JSON.stringify(payload);
-    } catch (error) {
-        serialized = String(payload);
-    }
-    logger(`NOTE | PINS PIN PACKAGE ${label}`, serialized);
-}
 
 let notePinClickDisposer = null;
 let notePinHandlerController = null;
@@ -940,6 +945,7 @@ export async function createNotePinForPage(page, sceneId, x, y) {
             id: generateNotePinId(),
             moduleId: MODULE.ID,
             type: NOTE_PIN_TYPE,
+            tags: resolveNotePinTags(page),
             image: resolveNotePinImageValueFromPage(page),
             text: getNotePinTextForPage(page),
             size: getNotePinSizeForPage(page),
@@ -963,7 +969,6 @@ export async function createNotePinForPage(page, sceneId, x, y) {
             pinPayload.x = x;
             pinPayload.y = y;
         }
-        logPinPackage('CREATE', pinPayload);
 
         let pinData;
         try {
@@ -1111,6 +1116,7 @@ export async function updateNotePinForPage(page) {
         textMaxLength: getNotePinTextMaxLengthForPage(page),
         textScaleWithPin: getNotePinTextScaleWithPinForPage(page),
         type: NOTE_PIN_TYPE,
+        tags: resolveNotePinTags(page),
         ownership: getNotePinOwnershipForPage(page),
         config: {
             noteUuid: page.uuid,
@@ -1148,13 +1154,10 @@ export async function updateNotePinForPage(page) {
         }
     }
 
-    logPinPackage('UPDATE', { pinId, sceneId, ...patch });
-
     try {
         let updated;
         try {
             if (!game.user.isGM && !sceneId && typeof pins.requestGM === 'function') {
-                logPinPackage('UPDATE REQUESTGM (UNPLACED)', { pinId, sceneId, ...patch });
                 updated = await pins.requestGM('update', { pinId, patch });
             } else {
                 updated = await pins.update(pinId, patch, sceneId ? { sceneId } : undefined);

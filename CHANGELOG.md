@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.1.11]
+
+### Changed
+- **Pin taxonomy – Blacksmith-owned**: Removed all hardcoded pin tag lists from Squire. Taxonomy (types + tags) is now owned entirely by Blacksmith's global JSON and read at runtime via `pins.getModuleTaxonomy(MODULE.ID)`. Squire no longer calls `registerPinTaxonomy`.
+- **Pin type names**: Renamed pin type strings to match Blacksmith's taxonomy keys — `'quest'` → `'quest-pin'`, `'objective'` → `'objective-pin'`, `'coffee-pub-squire-sticky-notes'` → `'note-pin'`. Updated across all creation, filtering, and event-handler code (`utility-quest-pins.js`, `panel-notes.js`, `panel-quest.js`, `quest-pin-events.js`).
+- **Pin tags – quest and objective pins**: Quest and objective pins now carry taxonomy-driven tags derived from `questCategory` at creation and on style refresh. `'Main Quest'` → `['quest', 'main']`, `'Side Quest'` → `['quest', 'side']`, etc. Tags are validated against the live Blacksmith taxonomy and fall back gracefully if unavailable.
+- **Pin tags – note pins**: Note pins now carry a taxonomy-driven tag derived from the note's visibility flag (`'party'` → `'party'`, `'private'` → `'personal'`), sourced from `getModuleTaxonomy` with fallback. Tag is kept in sync on pin update.
+- **Pin taxonomy registration**: Added `registerPinType` calls for all four Squire pin types (`quest-pin`, `objective-pin`, `note-pin`, `codex-pin`) so Blacksmith's UI labels them correctly. `codex-pin` is registered but has no creation code yet.
+
+### Fixed
+- **Existing pin migration**: One-time GM-only migration runs on `ready` to rename existing world pins from old type strings to new taxonomy keys. Guarded by a `pinTypeMigrationV1` world setting so it runs exactly once per world.
+- **Note pin console spam**: Removed `logPinPackage` debug logging function and all three of its call sites from `panel-notes.js`.
 
 ## [13.1.10]
 

@@ -33,6 +33,44 @@ const OBJECTIVE_STATE_COLORS = {
     hidden: '#a3a3a3'
 };
 
+/** Quest category display name → taxonomy tag key (application mapping logic, not hard-wired tag literals). */
+const QUEST_CATEGORY_TAG_MAP = {
+    'Main Quest': 'main',
+    'Side Quest': 'side',
+    'Optional':   'optional',
+    'Backstory':  'backstory'
+};
+
+/**
+ * Read the live taxonomy tags for a pin type from Blacksmith.
+ * Returns null if the API or method is unavailable (triggers fallback in callers).
+ * @param {string} type - e.g. 'quest-pin', 'objective-pin'
+ * @returns {string[]|null}
+ */
+function getModuleTaxonomyTags(type) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins) || typeof pins.getModuleTaxonomy !== 'function') return null;
+    return pins.getModuleTaxonomy(MODULE.ID)?.[type]?.tags ?? null;
+}
+
+/**
+ * Derive pin taxonomy tags from a quest category string, validated against live taxonomy.
+ * @param {string}        baseTag      - 'quest' or 'objective'
+ * @param {string}        category     - questCategory display name (e.g. 'Main Quest')
+ * @param {string[]|null} taxonomyTags - Live tags from getModuleTaxonomyTags(); null triggers fallback
+ * @returns {string[]}
+ */
+function questCategoryToPinTags(baseTag, category, taxonomyTags) {
+    const extra = QUEST_CATEGORY_TAG_MAP[category];
+    if (!taxonomyTags) {
+        return extra ? [baseTag, extra] : [baseTag];
+    }
+    const tags = [];
+    if (taxonomyTags.includes(baseTag)) tags.push(baseTag);
+    if (extra && taxonomyTags.includes(extra)) tags.push(extra);
+    return tags.length ? tags : [baseTag];
+}
+
 function getQuestNumber(questUuid) {
     if (!questUuid || typeof questUuid !== 'string') return 1;
     let hash = 0;
@@ -196,11 +234,13 @@ export async function createQuestPin(opts) {
 
     const questTitle = (page?.name || 'Quest').trim();
     const pinTitle = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
+    const questTaxonomyTags = getModuleTaxonomyTags('quest-pin');
 
     const pinData = {
         id: crypto.randomUUID(),
         moduleId: MODULE.ID,
-        type: 'quest',
+        type: 'quest-pin',
+        tags: questCategoryToPinTags('quest', questCategory, questTaxonomyTags),
         shape: design.shape,
         text: pinTitle,
         image,
@@ -273,11 +313,13 @@ export async function createObjectivePin(opts) {
     const objNum = String((objectiveIndex ?? 0) + 1).padStart(2, '0');
     const objectiveText = (objective?.text || 'Objective').trim();
     const pinTitle = `Quest ${questNum}.${objNum}: ${objectiveText}${objectiveText.endsWith('.') ? '' : '.'}`;
+    const objectiveTaxonomyTags = getModuleTaxonomyTags('objective-pin');
 
     const pinData = {
         id: crypto.randomUUID(),
         moduleId: MODULE.ID,
-        type: 'objective',
+        type: 'objective-pin',
+        tags: questCategoryToPinTags('objective', questCategory, objectiveTaxonomyTags),
         shape: 'square',
         text: pinTitle,
         image: OBJECTIVE_ICON,
@@ -502,7 +544,7 @@ export async function updateQuestPinVisibility(questUuid, sceneId) {
     const forQuest = list.filter(p => p.config?.questUuid === questUuid);
 
     for (const pin of forQuest) {
-        const objective = pin.type === 'objective' && typeof pin.config?.objectiveIndex === 'number'
+        const objective = pin.type === 'objective-pin' && typeof pin.config?.objectiveIndex === 'number'
             ? tasks[pin.config.objectiveIndex]
             : null;
         const ownership = calculateQuestPinOwnership(page, objective);
@@ -546,10 +588,12 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
     const questState = page.getFlag(MODULE.ID, 'visible') === false ? 'hidden' : 'visible';
     const questNum = getQuestNumber(page.uuid);
     const questTitle = (page?.name || 'Quest').trim();
+    const questPinTaxTags = getModuleTaxonomyTags('quest-pin');
+    const objectivePinTaxTags = getModuleTaxonomyTags('objective-pin');
 
     for (const pin of forQuest) {
         const patch = {};
-        if (pin.type === 'quest') {
+        if (pin.type === 'quest-pin') {
             patch.style = {
                 ...(pin.style || {}),
                 fill: QUEST_PIN_BACKGROUND,
@@ -558,8 +602,9 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
                 iconColor: '#ffffff'
             };
             patch.config = { ...(pin.config || {}), questStatus, questState };
+            patch.tags = questCategoryToPinTags('quest', pin.config?.questCategory, questPinTaxTags);
             patch.text = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
-        } else if (pin.type === 'objective' && typeof pin.config?.objectiveIndex === 'number') {
+        } else if (pin.type === 'objective-pin' && typeof pin.config?.objectiveIndex === 'number') {
             const obj = quest.tasks[pin.config.objectiveIndex];
             const objState = obj?.state || 'active';
             patch.style = {
@@ -570,6 +615,7 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
                 iconColor: '#ffffff'
             };
             patch.config = { ...(pin.config || {}), objectiveState: objState, objectiveText: (obj?.text || '').trim() };
+            patch.tags = questCategoryToPinTags('objective', pin.config?.questCategory, objectivePinTaxTags);
             const objNum = String((pin.config.objectiveIndex ?? 0) + 1).padStart(2, '0');
             const objectiveText = (obj?.text || 'Objective').trim();
             patch.text = `Quest ${questNum}.${objNum}: ${objectiveText}${objectiveText.endsWith('.') ? '' : '.'}`;
@@ -680,7 +726,7 @@ export async function reconcileQuestPins(opts = {}) {
         }
 
         // Add/refresh entries from live pins
-        const questPinsForPage = allPins.filter(p => p.config.questUuid === qid && p.type === 'objective');
+        const questPinsForPage = allPins.filter(p => p.config.questUuid === qid && p.type === 'objective-pin');
         for (const pin of questPinsForPage) {
             const idx = pin.config.objectiveIndex;
             if (typeof idx !== 'number') continue;

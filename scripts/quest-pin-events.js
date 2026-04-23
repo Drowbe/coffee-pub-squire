@@ -134,7 +134,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 10,
             gmOnly: true,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective-pin',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 const objectiveIndex = pinData?.config?.objectiveIndex;
@@ -160,7 +160,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 20,
             gmOnly: true,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective-pin',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 const objectiveIndex = pinData?.config?.objectiveIndex;
@@ -181,7 +181,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 30,
             gmOnly: true,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'quest',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'quest-pin',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 if (!questUuid) return;
@@ -198,7 +198,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 32,
             gmOnly: true,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective',
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && pinData?.type === 'objective-pin',
             onClick: async (pinData) => {
                 const questUuid = pinData?.config?.questUuid;
                 const objectiveIndex = pinData?.config?.objectiveIndex;
@@ -221,7 +221,7 @@ function registerQuestPinContextMenuItems(pins) {
             moduleId: MODULE.ID,
             order: 40,
             gmOnly: true,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === 'quest' || pinData?.type === 'objective'),
+            visible: (pinData) => pinData?.moduleId === MODULE.ID && (pinData?.type === 'quest-pin' || pinData?.type === 'objective-pin'),
             onClick: async (pinData) => {
                 const pinId = pinData?.id;
                 if (!pinId) return;
@@ -250,8 +250,8 @@ export async function registerQuestPinEvents() {
     // Register friendly names for pin types (helps menus/tools label correctly)
     if (typeof pins.registerPinType === 'function') {
         try {
-            pins.registerPinType(MODULE.ID, 'quest', 'Quest Pin');
-            pins.registerPinType(MODULE.ID, 'objective', 'Objective Pin');
+            pins.registerPinType(MODULE.ID, 'quest-pin',     'Quest Pin');
+            pins.registerPinType(MODULE.ID, 'objective-pin', 'Objective Pin');
         } catch (_) {}
     }
 

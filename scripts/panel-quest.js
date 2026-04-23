@@ -635,7 +635,7 @@ export class QuestPanel {
             }
             
             // Only clear this module's quest and objective pins (not Notes or other pin types)
-            const isQuestOrObjectivePin = (pin) => pin?.type === 'quest' || pin?.type === 'objective';
+            const isQuestOrObjectivePin = (pin) => pin?.type === 'quest-pin' || pin?.type === 'objective-pin';
 
             const clearPageFlagsForPins = async (questObjectivePinsList) => {
                 const questUuids = new Set((questObjectivePinsList || []).map(p => p?.config?.questUuid).filter(Boolean));
@@ -1477,8 +1477,8 @@ export class QuestPanel {
 
             if (!pinId && typeof pins.list === 'function') {
                 const findExisting = () => {
-                    const unplaced = pins.list({ moduleId: MODULE.ID, type: 'quest', unplacedOnly: true }) || [];
-                    const placed = pins.list({ moduleId: MODULE.ID, type: 'quest' }) || [];
+                    const unplaced = pins.list({ moduleId: MODULE.ID, type: 'quest-pin', unplacedOnly: true }) || [];
+                    const placed = pins.list({ moduleId: MODULE.ID, type: 'quest-pin' }) || [];
                     return [...unplaced, ...placed].find(p => p?.config?.questUuid === questUuid);
                 };
                 const existing = findExisting();
@@ -1654,8 +1654,8 @@ export class QuestPanel {
 
             if (!pinId && typeof pins.list === 'function') {
                 const match = (p) => p?.config?.questUuid === questUuid && Number(p?.config?.objectiveIndex) === objectiveIndex;
-                const unplaced = pins.list({ moduleId: MODULE.ID, type: 'objective', unplacedOnly: true }) || [];
-                const placed = pins.list({ moduleId: MODULE.ID, type: 'objective' }) || [];
+                const unplaced = pins.list({ moduleId: MODULE.ID, type: 'objective-pin', unplacedOnly: true }) || [];
+                const placed = pins.list({ moduleId: MODULE.ID, type: 'objective-pin' }) || [];
                 const existing = [...unplaced, ...placed].find(match);
                 if (existing?.id) pinId = existing.id;
             }
@@ -1926,7 +1926,7 @@ export class QuestPanel {
                                     // If current scene has a placed objective pin for this quest/index, trust the API
                                     const pins = getPinsApi();
                                     if (!task.hasPinOnScene && pins?.list && canvas.scene?.id) {
-                                        const placed = pins.list({ moduleId: MODULE.ID, type: 'objective', sceneId: canvas.scene.id }) || [];
+                                        const placed = pins.list({ moduleId: MODULE.ID, type: 'objective-pin', sceneId: canvas.scene.id }) || [];
                                         const match = placed.find(p => p?.config?.questUuid === page.uuid && Number(p?.config?.objectiveIndex) === index);
                                         if (match) task.hasPinOnScene = true;
                                     }

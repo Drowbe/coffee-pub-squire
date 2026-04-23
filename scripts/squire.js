@@ -1934,12 +1934,39 @@ Hooks.once('ready', async function() {
     // Register module settings
     registerSettings();
 
-    // Register pin types with friendly names (Blacksmith uses these for context menus, tools, etc.)
+    // Register pin type friendly names with Blacksmith.
+    // Taxonomy (types + tags) is owned and shipped by Blacksmith in its global JSON;
+    // we read it back at runtime via pins.getModuleTaxonomy() rather than re-declaring it here.
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
     if (pins?.isAvailable()) {
-        pins.registerPinType(MODULE.ID, 'quest', 'Quest');
-        pins.registerPinType(MODULE.ID, 'objective', 'Objective');
-        pins.registerPinType(MODULE.ID, 'coffee-pub-squire-sticky-notes', 'Squire Notes');
+        pins.registerPinType(MODULE.ID, 'quest-pin',     'Quest Pin');
+        pins.registerPinType(MODULE.ID, 'objective-pin', 'Objective Pin');
+        pins.registerPinType(MODULE.ID, 'note-pin',      'Note Pin');
+        pins.registerPinType(MODULE.ID, 'codex-pin',     'Codex Pin');
+
+        // One-time migration: rename old type strings to the new taxonomy keys
+        const alreadyMigrated = game.settings.get(MODULE.ID, 'pinTypeMigrationV1') ?? false;
+        if (!alreadyMigrated && game.user.isGM) {
+            const typeMap = {
+                'quest':                          'quest-pin',
+                'objective':                      'objective-pin',
+                'coffee-pub-squire-sticky-notes': 'note-pin'
+            };
+            for (const [oldType, newType] of Object.entries(typeMap)) {
+                const placed = pins.list({ moduleId: MODULE.ID, type: oldType }) ?? [];
+                for (const pin of placed) {
+                    try { await pins.update(pin.id, { type: newType }, pin.sceneId ? { sceneId: pin.sceneId } : undefined); } catch (_) {}
+                }
+            }
+            const unplaced = pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) ?? [];
+            for (const pin of unplaced) {
+                const newType = typeMap[pin.type];
+                if (newType) {
+                    try { await pins.update(pin.id, { type: newType }); } catch (_) {}
+                }
+            }
+            await game.settings.set(MODULE.ID, 'pinTypeMigrationV1', true);
+        }
     }
 
     // Register socket handler for GM ownership sync on notes
