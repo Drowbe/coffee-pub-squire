@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.1.14]
+
+### Added
+- **Codex pin lifecycle utilities**: Added dedicated codex pin utilities and sync handling (`scripts/utility-codex-pins.js`) to keep codex page pin flags aligned with Blacksmith pin create/update/place/unplace/delete events.
+- **Codex linked-document field**: Codex entry form now supports a **Link UUID** field (`templates/codex-form.hbs`), and codex entries render that link in the panel for quick navigation to related documents.
+
+### Changed
+- **Codex pin open interaction**: Codex pins now open/navigate the Codex entry on **single click** (`scripts/codex-pin-events.js`) instead of requiring double-click.
+- **Codex panel UX and layout**: Updated codex panel markup and styling (`templates/panel-codex.hbs`, `styles/panel-codex.css`, `scripts/panel-codex.js`) for improved entry readability, toolbar actions, and category/entry visibility behavior.
+- **GM visibility controls in entries**: Added direct per-entry visibility eye toggles in Codex and Quest entry toolbars (`templates/panel-codex.hbs`, `templates/partials/quest-entry.hbs`) with supporting panel logic.
+
+### Fixed
+- **Codex pin navigation reliability**: Codex pin handlers now consistently switch to the Codex tray view, render the panel, and focus/highlight the matching entry after click.
+
 
 ## [13.1.13]
 
