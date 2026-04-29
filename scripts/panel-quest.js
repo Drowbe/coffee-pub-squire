@@ -2852,6 +2852,19 @@ export class QuestPanel {
             });
         });
 
+        // Visibility toggle (quest-level) - GM only; direct eye/eye-slash icon in toolbar
+        nativeHtml.querySelectorAll('.quest-visibility-toggle').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode?.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const uuid = newBtn.dataset.uuid;
+                if (!uuid) return;
+                await this._toggleQuestVisibility(uuid);
+            });
+        });
+
         // Pin to Scene (objective-level) - GM only; click dim = place, click not-dim = unplace (like Notes)
         nativeHtml.querySelectorAll('.objective-pin-to-scene').forEach(btn => {
             const newBtn = btn.cloneNode(true);
@@ -3605,13 +3618,6 @@ export class QuestPanel {
                                 icon: 'fa-solid fa-palette',
                                 callback: async () => {
                                     await this._configureQuestPin(uuid);
-                                }
-                            },
-                            {
-                                name: visible ? 'Hide from players' : 'Show to players',
-                                icon: visible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye',
-                                callback: async () => {
-                                    await this._toggleQuestVisibility(uuid);
                                 }
                             },
                             {

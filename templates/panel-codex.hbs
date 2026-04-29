@@ -59,6 +59,9 @@
                                            data-category="{{entry.category}}"
                                            data-has-pin-on-scene="{{entry.hasPinOnScene}}"
                                            title="{{#if entry.hasPinOnScene}}Unplace pin from scene{{else}}Pin to scene{{/if}}"></i>
+                                        <i class="fa-solid {{#if (gte entry.ownership.default 2)}}fa-eye codex-entry-visibility visible{{else}}fa-eye-slash codex-entry-visibility{{/if}}"
+                                           data-uuid="{{entry.uuid}}"
+                                           title="{{#if (gte entry.ownership.default 2)}}Hide from Players{{else}}Show to Players{{/if}}"></i>
                                         <i class="fa-solid fa-ellipsis-h codex-entry-menu"
                                            data-uuid="{{entry.uuid}}"
                                            data-visible="{{gte entry.ownership.default 2}}"

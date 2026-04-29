@@ -1376,20 +1376,6 @@ export class CodexPanel {
                                     if (doc) doc.sheet.render(true);
                                 }
                             },
-                            {
-                                name: isVisible ? 'Hide from Players' : 'Show to Players',
-                                icon: isVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye',
-                                callback: async () => {
-                                    const page = await fromUuid(uuid);
-                                    if (!page) return;
-                                    const current      = page.ownership?.default ?? 0;
-                                    const newPermission = current >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
-                                        ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
-                                        : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-                                    await page.update({ 'ownership.default': newPermission });
-                                    await updateCodexPinVisibility(uuid);
-                                }
-                            },
                             ...(hasPinId ? [{
                                 name: 'Configure Pin',
                                 icon: 'fa-solid fa-palette',
@@ -1427,6 +1413,27 @@ export class CodexPanel {
                         ]
                     }
                 });
+            });
+        });
+
+        // Per-entry visibility toggle (GM only): direct eye/eye-slash icon in toolbar
+        nativeHtml.querySelectorAll('.codex-entry-visibility').forEach(visBtn => {
+            const newBtn = visBtn.cloneNode(true);
+            visBtn.parentNode?.replaceChild(newBtn, visBtn);
+            newBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!game.user.isGM) return;
+                const uuid = newBtn.dataset.uuid;
+                if (!uuid) return;
+                const page = await fromUuid(uuid);
+                if (!page) return;
+                const current      = page.ownership?.default ?? 0;
+                const newPermission = current >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
+                    ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
+                    : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+                await page.update({ 'ownership.default': newPermission });
+                await updateCodexPinVisibility(uuid);
             });
         });
 
