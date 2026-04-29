@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Quest tab vs pin status**: Fix for when the panel was on e.g. **Complete** but the pin’s quest lived under **Active** — the code previously treated a quest as “found” if its DOM node existed, even when that status section was hidden. Visibility is now based on the parent **`.quest-section`**, and the handler falls back across status filters until the quest is actually shown.
+- **Quest status button switching from pin open**: Double-click pin open now resolves the destination tab from live quest data (`entry.status`) instead of relying only on pin config, then applies the same UI path as clicking a status button (`_applyStatusFilter` + `.quest-status-button.active` sync). This fixes cases where the quest list stayed on the wrong tab even though scroll/highlight logic ran.
 
 ## [13.1.12]
 
