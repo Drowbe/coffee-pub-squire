@@ -1985,6 +1985,45 @@ export class QuestPanel {
     }
 
     /**
+     * Map a loaded quest entry's status to the quest panel status filter (Active / Available / Complete).
+     * Uses current `this.data` — call after refresh (e.g. `render`).
+     * @param {string} questUuid - Journal page UUID
+     * @returns {'active'|'available'|'complete'|null}
+     */
+    resolveStatusFilterForQuestUuid(questUuid) {
+        if (!questUuid) return null;
+        for (const category of this.categories) {
+            const entry = (this.data[category] || []).find(e => e?.uuid === questUuid);
+            if (!entry) continue;
+            const status = entry.status || 'Not Started';
+            if (status === 'Complete' || status === 'Failed') return 'complete';
+            if (status === 'In Progress') return 'active';
+            return 'available';
+        }
+        return null;
+    }
+
+    /**
+     * Switch the quest status tab (Active / Available / Complete) and sync section visibility + button active state.
+     * Does not reload journal data — same path as clicking the status buttons (`_applyStatusFilter` + `.active` toggles).
+     * @param {'active'|'available'|'complete'} filter
+     */
+    applyQuestStatusFilter(filter) {
+        const allowed = ['active', 'available', 'complete'];
+        if (!allowed.includes(filter)) return;
+        this.filters.statusFilter = filter;
+        if (!this.element) return;
+        const questContainer = this.element.querySelector('[data-panel="panel-quest"]');
+        if (!questContainer) return;
+        const nativeHtml = getNativeElement(questContainer);
+        if (!nativeHtml) return;
+        this._applyStatusFilter(nativeHtml);
+        nativeHtml.querySelectorAll('.quest-status-button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.statusFilter === filter);
+        });
+    }
+
+    /**
      * Apply current filters to entries
      * @private
      */

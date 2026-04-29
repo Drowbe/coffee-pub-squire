@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [13.1.13]
+
+### Changed
+- **Quest / objective pins – tray navigation**: Double-clicking a quest or objective pin (Blacksmith **`doubleClick`**) opens the Squire tray on the **Quests** view, switches the **quest status filter** (Active / Available / Complete) so the target quest is in a **visible** section, then scrolls to the entry and applies the existing highlight behavior. Pin handling no longer relies on a strict **`moduleId`** match when the pin is clearly a Squire quest/objective pin (type or **`config.questUuid`**).
+
+### Fixed
+- **Quest tab vs pin status**: Fix for when the panel was on e.g. **Complete** but the pin’s quest lived under **Active** — the code previously treated a quest as “found” if its DOM node existed, even when that status section was hidden. Visibility is now based on the parent **`.quest-section`**, and the handler falls back across status filters until the quest is actually shown.
+
 ## [13.1.12]
 
 ### Changed

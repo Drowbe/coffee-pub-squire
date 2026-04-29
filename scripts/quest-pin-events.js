@@ -1,7 +1,7 @@
 /**
  * Quest Pin Event Handlers for Blacksmith Pin API
  *
- * Registers left-click (open quest tab, scroll, flash) and context menu items
+ * Registers double-click (open Quests tray, correct status tab, scroll, flash) and context menu items
  * (complete, fail, toggle hidden, delete) for quest pins.
  */
 
@@ -319,22 +319,24 @@ export async function registerQuestPinEvents() {
             if (panelManager.element && !panelManager.element.classList.contains('expanded')) {
                 panelManager.element.classList.add('expanded');
             }
-            if (panelManager.questPanel?.render && panelManager.element) {
-                await panelManager.questPanel.render(panelManager.element);
+            const qp = panelManager.questPanel;
+            if (qp?.render && panelManager.element) {
+                await qp.render(panelManager.element);
             }
 
-            // Ensure the correct quest status tab is selected so the target quest is visible.
-            const preferredFilter = mapQuestStatusToFilter(config.questStatus);
-            const filterSearchOrder = preferredFilter
-                ? [preferredFilter, 'active', 'available', 'complete']
-                : ['active', 'available', 'complete'];
-            const uniqueFilters = [...new Set(filterSearchOrder)];
-            for (const filter of uniqueFilters) {
-                if (hasQuestEntryInDom(questUuid)) break;
-                if (!panelManager.questPanel?.filters) break;
-                panelManager.questPanel.filters.statusFilter = filter;
-                if (panelManager.questPanel?.render && panelManager.element) {
-                    await panelManager.questPanel.render(panelManager.element);
+            // Switch Active / Available / Complete using live journal data (pin config can be stale).
+            const pinGuess = mapQuestStatusToFilter(config.questStatus);
+            let targetFilter = qp?.resolveStatusFilterForQuestUuid?.(questUuid) ?? pinGuess ?? 'active';
+            if (typeof qp?.applyQuestStatusFilter === 'function') {
+                qp.applyQuestStatusFilter(targetFilter);
+            }
+            if (!hasQuestEntryInDom(questUuid)) {
+                const order = pinGuess
+                    ? [...new Set([pinGuess, 'active', 'available', 'complete'])]
+                    : ['active', 'available', 'complete'];
+                for (const f of order) {
+                    if (hasQuestEntryInDom(questUuid)) break;
+                    qp?.applyQuestStatusFilter?.(f);
                 }
             }
 
