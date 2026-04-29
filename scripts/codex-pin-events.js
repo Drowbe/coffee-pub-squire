@@ -1,9 +1,9 @@
 /**
  * Codex Pin Event Handlers for Blacksmith Pin API
  *
- * Registers a double-click handler that opens the Codex panel and scrolls to
+ * Registers a left-click handler that opens the Codex panel and scrolls to
  * the matching entry. Right-click uses Blacksmith's default context menu
- * (no custom items registered).
+ * (no custom items registered here).
  */
 
 import { MODULE } from './const.js';
@@ -12,7 +12,7 @@ import { reconcileCodexPins } from './utility-codex-pins.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 let codexPinEventsRegistered  = false;
-let codexPinDblClickDisposer  = null;
+let codexPinClickDisposer     = null;
 let codexPinHandlerController = null;
 let codexPinSyncRegistered    = false;
 let codexPinSceneSyncHookId   = null;
@@ -28,8 +28,8 @@ let codexPinSyncDebounceTimer = null;
  * @returns {boolean} True if the entry element was found
  */
 function focusCodexEntryInDom(entryUuid) {
-    // NOTE: data-uuid attribute value is a plain string — do NOT use CSS.escape() here,
-    // which would incorrectly escape dots in Foundry UUIDs and break the selector.
+    // NOTE: data-uuid is a plain attribute value string — do NOT use CSS.escape() here;
+    // it would incorrectly escape dots in Foundry UUIDs and break the selector.
     const entry = document.querySelector(`.codex-entry[data-uuid="${entryUuid}"]`);
     if (!entry) return false;
 
@@ -54,7 +54,8 @@ function focusCodexEntryInDom(entryUuid) {
 // ---------------------------------------------------------------------------
 
 /**
- * Register double-click handler for codex pins.
+ * Register left-click handler for codex pins.
+ * A single left click opens the Codex panel and navigates to the entry.
  * Call once per canvas-ready event.
  */
 export async function registerCodexPinEvents() {
@@ -69,8 +70,8 @@ export async function registerCodexPinEvents() {
     codexPinHandlerController = new AbortController();
     const signal = codexPinHandlerController.signal;
 
-    codexPinDblClickDisposer = pins.on(
-        'doubleClick',
+    codexPinClickDisposer = pins.on(
+        'click',
         async (evt) => {
             try {
                 let pin = evt?.pin ?? evt?.pinData;
@@ -80,7 +81,7 @@ export async function registerCodexPinEvents() {
                 if (!pin) return;
                 if (pin.moduleId != null && pin.moduleId !== MODULE.ID) return;
 
-                // Key off config.codexUuid — only codex entry pins have this field
+                // Key off config.codexUuid — only codex entry pins carry this field
                 const codexUuid = pin.config?.codexUuid;
                 if (!codexUuid) return;
 
@@ -92,7 +93,7 @@ export async function registerCodexPinEvents() {
                     panelManager.element.classList.add('expanded');
                 }
 
-                // Switch to codex tab; always render the codex panel afterward so entries are in DOM
+                // Switch to codex tab; always render afterward so entries are in the DOM
                 if (typeof panelManager.setViewMode === 'function') {
                     await panelManager.setViewMode('codex');
                 }
@@ -107,7 +108,7 @@ export async function registerCodexPinEvents() {
                 trackModuleTimeout(tryFocus, 500);
                 trackModuleTimeout(tryFocus, 1000);
             } catch (err) {
-                console.error('Coffee Pub Squire | codex pin double-click handler:', err);
+                console.error('Coffee Pub Squire | codex pin click handler:', err);
             }
         },
         { moduleId: MODULE.ID, signal }
@@ -124,9 +125,9 @@ export function unregisterCodexPinEvents() {
         codexPinHandlerController.abort();
         codexPinHandlerController = null;
     }
-    if (codexPinDblClickDisposer && typeof codexPinDblClickDisposer === 'function') {
-        codexPinDblClickDisposer();
-        codexPinDblClickDisposer = null;
+    if (codexPinClickDisposer && typeof codexPinClickDisposer === 'function') {
+        codexPinClickDisposer();
+        codexPinClickDisposer = null;
     }
     codexPinEventsRegistered = false;
 }
@@ -143,7 +144,6 @@ export function registerCodexPinSync() {
     const doSync = async (payload = {}) => {
         if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
         await reconcileCodexPins({ sceneId: payload.sceneId });
-        // Re-render the codex panel so pin state icons refresh
         const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (panelManager?.codexPanel?.render && panelManager.element) {
             await panelManager.codexPanel.render(panelManager.element);
