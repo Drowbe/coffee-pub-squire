@@ -57,6 +57,37 @@ function focusQuestEntryInDom(questUuid, objectiveIndex = null) {
 }
 
 /**
+ * Check whether the quest entry is currently present in rendered DOM.
+ * @param {string} questUuid
+ * @returns {boolean}
+ */
+function hasQuestEntryInDom(questUuid) {
+    const entry = document.querySelector(`.quest-entry[data-quest-uuid="${questUuid}"]`);
+    if (!entry) return false;
+    const section = entry.closest('.quest-section[data-status]');
+    if (!section) return true;
+    return section.style.display !== 'none';
+}
+
+/**
+ * Map quest status text to quest panel status filter id.
+ * @param {string|null|undefined} questStatus
+ * @returns {'active'|'available'|'complete'|null}
+ */
+function mapQuestStatusToFilter(questStatus) {
+    if (typeof questStatus !== 'string') return null;
+    switch (questStatus) {
+        case 'In Progress': return 'active';
+        case 'Not Started': return 'available';
+        case 'Complete':
+        case 'Failed':
+            return 'complete';
+        default:
+            return null;
+    }
+}
+
+/**
  * Update objective state in journal content (complete, fail, or hidden)
  * @param {JournalEntryPage} page - Quest journal page
  * @param {number} objectiveIndex - Task index
@@ -263,15 +294,18 @@ export async function registerQuestPinEvents() {
     const signal = questPinHandlerController.signal;
 
     questPinClickDisposer = pins.on(
-        'click',
+        'doubleClick',
         async (evt) => {
             let pin = evt?.pin ?? evt?.pinData;
             if (!pin && evt?.pinId && typeof pins.get === 'function') {
                 pin = pins.get(evt.pinId, evt.sceneId ? { sceneId: evt.sceneId } : undefined);
             }
             if (!pin) return;
-            if (pin.moduleId != null && pin.moduleId !== MODULE.ID) return;
             const config = pin.config || {};
+            const isQuestOrObjectivePin = isSquirePinCategory(pin.type, 'quest')
+                || isSquirePinCategory(pin.type, 'objective')
+                || !!config.questUuid;
+            if (!isQuestOrObjectivePin) return;
             const questUuid = config.questUuid;
             if (!questUuid) return;
             const objectiveIndex = config.objectiveIndex;
@@ -287,6 +321,21 @@ export async function registerQuestPinEvents() {
             }
             if (panelManager.questPanel?.render && panelManager.element) {
                 await panelManager.questPanel.render(panelManager.element);
+            }
+
+            // Ensure the correct quest status tab is selected so the target quest is visible.
+            const preferredFilter = mapQuestStatusToFilter(config.questStatus);
+            const filterSearchOrder = preferredFilter
+                ? [preferredFilter, 'active', 'available', 'complete']
+                : ['active', 'available', 'complete'];
+            const uniqueFilters = [...new Set(filterSearchOrder)];
+            for (const filter of uniqueFilters) {
+                if (hasQuestEntryInDom(questUuid)) break;
+                if (!panelManager.questPanel?.filters) break;
+                panelManager.questPanel.filters.statusFilter = filter;
+                if (panelManager.questPanel?.render && panelManager.element) {
+                    await panelManager.questPanel.render(panelManager.element);
+                }
             }
 
             const tryFocus = () => focusQuestEntryInDom(questUuid, objectiveIndex);
