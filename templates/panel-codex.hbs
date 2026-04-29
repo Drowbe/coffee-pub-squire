@@ -40,7 +40,11 @@
                 </div>
                 <div class="codex-entries">
                     {{#each cat.entries as |entry|}}
-                        <div class="codex-entry collapsed" data-ownership-default="{{entry.ownership.default}}">
+                        <div class="codex-entry collapsed"
+                             data-uuid="{{entry.uuid}}"
+                             data-ownership-default="{{entry.ownership.default}}"
+                             data-pin-id="{{entry.pinId}}"
+                             data-pin-on-scene="{{entry.hasPinOnScene}}">
 
                             <!-- ENTRY HEADER -->
                             <div class="codex-entry-header">
@@ -49,13 +53,16 @@
                                 </div>
                                 <div class="codex-toolbar">
                                     {{#if @root.isGM}}
-                                        <i class="fa-solid fa-feather codex-entry-feather" data-uuid="{{entry.uuid}}" title="Open this journal page (GM)"></i>
-                                        <i class="fa-solid fa-trash codex-entry-delete" data-uuid="{{entry.uuid}}" title="Delete this entry"></i>
-                                        {{#if (gte entry.ownership.default 2)}}
-                                            <i class="fa-solid fa-eye codex-entry-visibility visible" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
-                                        {{else}}
-                                            <i class="fa-solid fa-eye-slash codex-entry-visibility" data-uuid="{{entry.uuid}}" title="Toggle visibility"></i>
-                                        {{/if}}
+                                        <i class="fa-solid fa-location-dot codex-entry-pin quest-pin-icon {{#if entry.hasPinOnScene}}quest-pin-active{{else}}quest-pin-dim{{/if}}"
+                                           data-uuid="{{entry.uuid}}"
+                                           data-name="{{entry.name}}"
+                                           data-category="{{entry.category}}"
+                                           data-has-pin-on-scene="{{entry.hasPinOnScene}}"
+                                           title="{{#if entry.hasPinOnScene}}Unplace pin from scene{{else}}Pin to scene{{/if}}"></i>
+                                        <i class="fa-solid fa-ellipsis-h codex-entry-menu"
+                                           data-uuid="{{entry.uuid}}"
+                                           data-visible="{{gte entry.ownership.default 2}}"
+                                           title="Entry options"></i>
                                     {{else}}
                                         <i class="fa-solid fa-feather codex-entry-feather-user" data-uuid="{{entry.uuid}}" title="Open this journal page"></i>
                                     {{/if}}
@@ -92,21 +99,21 @@
                                     {{/if}}
                                 {{/if}}
 
+                                <!-- LINK (above location per design) -->
+                                {{#if entry.linkHtml}}
+                                    <div class="codex-entry-link">
+                                        <span class="codex-entry-label">Link</span> {{{entry.linkHtml}}}
+                                    </div>
+                                {{else if entry.link}}
+                                    <div class="codex-entry-link">
+                                        <span class="codex-entry-label">Link</span> <a href="#" class="codex-entry-link" data-uuid="{{entry.link.uuid}}">{{{entry.link.label}}}</a>
+                                    </div>
+                                {{/if}}
+
                                 <!-- LOCATION -->
                                 {{#if entry.location}}
                                     <div class="codex-entry-location">
                                         <span class="codex-entry-label">Location</span> {{{entry.location}}}
-                                    </div>
-                                {{/if}}
-
-                                <!-- LINK -->
-                                {{#if entry.linkHtml}}
-                                    <div class="codex-entry-link">
-                                        <span class="codex-entry-label">Link:</span> {{{entry.linkHtml}}}
-                                    </div>
-                                {{else if entry.link}}
-                                    <div class="codex-entry-link">
-                                        <span class="codex-entry-label">Link:</span> <a href="#" class="codex-entry-link" data-uuid="{{entry.link.uuid}}">{{{entry.link.label}}}</a>
                                     </div>
                                 {{/if}}
 

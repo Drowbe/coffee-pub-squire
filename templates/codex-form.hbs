@@ -49,6 +49,14 @@
         </div>
 
         <div class="form-group">
+            <label for="link">Link UUID <span class="form-label-optional">(optional)</span></label>
+            <input type="text" id="link" name="link"
+                   value="{{#if entry.link}}{{entry.link.uuid}}{{/if}}"
+                   placeholder="e.g. JournalEntry.abc123 or Actor.def456">
+            <small class="form-hint">UUID of a related journal entry, actor, or item.</small>
+        </div>
+
+        <div class="form-group">
             <label for="location">Location</label>
             <select id="location" name="location"class="form-group-select" >
                 <option value="">Select Location</option>

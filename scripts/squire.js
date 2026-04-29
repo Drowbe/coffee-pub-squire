@@ -12,6 +12,7 @@ import { QuestParser } from './utility-quest-parser.js';
 // New Blacksmith API-based quest pins
 import { isPinsApiAvailable, getSquirePinType } from './utility-quest-pins.js';
 import { registerQuestPinEvents } from './quest-pin-events.js';
+import { registerCodexPinEvents } from './codex-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { NotesForm } from './window-note.js';
 import {
@@ -421,6 +422,11 @@ Hooks.once('ready', async () => {
                 await registerQuestPinEvents();
                 // Keep quest/objective flags in sync with Blacksmith pins
                 import('./quest-pin-events.js').then(mod => mod.registerQuestPinSync?.()).catch(() => {});
+
+                // Register codex pin double-click handler
+                await registerCodexPinEvents();
+                // Keep codex pin flags in sync with Blacksmith pins
+                import('./codex-pin-events.js').then(mod => mod.registerCodexPinSync?.()).catch(() => {});
 
                 // Monitor canvas selection changes for bulk selection support
                 ensureSelectObjectsWrapper();

@@ -3,6 +3,13 @@ import { CodexParser } from './utility-codex-parser.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
+import {
+    createCodexPin,
+    deleteCodexPin,
+    beginCodexPinPlacement,
+    unplaceCodexPin,
+    updateCodexPinVisibility
+} from './utility-codex-pins.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -191,7 +198,14 @@ class CodexForm extends FormApplication {
         if (entry.plotHook) {
             content += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>\n\n`;
         }
-        
+
+        if (entry.link) {
+            const linkUuid = typeof entry.link === 'string' ? entry.link.trim() : (entry.link.uuid || '').trim();
+            if (linkUuid) {
+                content += `<p><strong>Link:</strong> @UUID[${linkUuid}]{Link}</p>\n\n`;
+            }
+        }
+
         if (entry.location) {
             content += `<p><strong>Location:</strong> ${entry.location}</p>\n\n`;
         }
@@ -257,7 +271,8 @@ class CodexForm extends FormApplication {
             if (key === 'img' && !value) continue;
             if (key === 'location' && !value) continue;
             if (key === 'plotHook' && !value) continue;
-            
+            if (key === 'link' && !value) continue;
+
             entry[key] = value;
         }
         
@@ -799,6 +814,11 @@ export class CodexPanel {
                         if (entry) {
                             // Add ownership info for visibility icon
                             entry.ownership = page.ownership;
+
+                            // Pin state flags
+                            entry.pinId        = page.getFlag(MODULE.ID, 'codexPinId')   ?? null;
+                            entry.pinSceneId   = page.getFlag(MODULE.ID, 'codexSceneId') ?? null;
+                            entry.hasPinOnScene = !!(entry.pinId && entry.pinSceneId && entry.pinSceneId === canvas?.scene?.id);
                             
                             // Extract "Discovered By" information from the enriched content
                             const doc = new DOMParser().parseFromString(enriched, 'text/html');
@@ -1162,23 +1182,7 @@ export class CodexPanel {
             });
         }
 
-        // Feather icon opens the current journal page (GM)
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.codex-entry-feather').forEach(feather => {
-            const newFeather = feather.cloneNode(true);
-            feather.parentNode?.replaceChild(newFeather, feather);
-            newFeather.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const uuid = event.currentTarget.dataset.uuid;
-                if (uuid) {
-                    const doc = await fromUuid(uuid);
-                    if (doc) doc.sheet.render(true);
-                }
-            });
-        });
-        
-        // Feather icon opens the current journal page (User)
-        // v13: Use nativeHtml instead of html
+        // Feather icon opens the current journal page (Player / non-GM)
         nativeHtml.querySelectorAll('.codex-entry-feather-user').forEach(feather => {
             const newFeather = feather.cloneNode(true);
             feather.parentNode?.replaceChild(newFeather, feather);
@@ -1193,14 +1197,12 @@ export class CodexPanel {
                 }
             });
         });
-        
-        // Link clicks
-        // v13: Use nativeHtml instead of html
+
+        // Link clicks (old-style data-uuid links; enriched @UUID links are handled by Foundry)
         nativeHtml.querySelectorAll('.codex-entry-link').forEach(link => {
             const newLink = link.cloneNode(true);
             link.parentNode?.replaceChild(newLink, link);
             newLink.addEventListener('click', async (event) => {
-                // Only handle old-style links with data-uuid attribute
                 const uuid = event.currentTarget.dataset.uuid;
                 if (uuid) {
                     event.preventDefault();
@@ -1210,53 +1212,121 @@ export class CodexPanel {
                         page.parent.sheet.render(true, { pageId: page.id });
                     }
                 }
-                // Otherwise, let Foundry's default handler process the click
             });
         });
 
-        // Delete entry button
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.codex-entry-delete').forEach(deleteButton => {
-            const newButton = deleteButton.cloneNode(true);
-            deleteButton.parentNode?.replaceChild(newButton, deleteButton);
-            newButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const uuid = event.currentTarget.dataset.uuid;
-            if (!uuid) return;
-            
-            // Confirm deletion
-            const confirmed = await new Dialog({
-                title: 'Delete Entry',
-                content: 'Are you sure you want to delete this entry? This cannot be undone.',
-                buttons: {
-                    yes: {
-                        icon: '<i class="fa-solid fa-trash"></i>',
-                        label: 'Delete',
-                        callback: async () => {
-                            const page = await fromUuid(uuid);
-                            if (page) {
-                                await page.delete();
-                                return true;
+        // Per-entry "..." context menu (GM only)
+        nativeHtml.querySelectorAll('.codex-entry-menu').forEach(menuBtn => {
+            const newBtn = menuBtn.cloneNode(true);
+            menuBtn.parentNode?.replaceChild(newBtn, menuBtn);
+            newBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!game.user.isGM) return;
+
+                const uuid      = newBtn.dataset.uuid;
+                const entryEl   = newBtn.closest('.codex-entry');
+                const isVisible = entryEl?.dataset?.ownershipDefault >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
+                    || parseInt(entryEl?.dataset?.ownershipDefault ?? '0') >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+                const hasPinId  = !!(entryEl?.dataset?.pinId);
+
+                const ctxMenu = getBlacksmith()?.uiContextMenu;
+                if (!ctxMenu?.show) return;
+
+                ctxMenu.show({
+                    id: `${MODULE.ID}-codex-entry-menu`,
+                    x: event.clientX,
+                    y: event.clientY,
+                    zones: {
+                        gm: [
+                            {
+                                name: 'Open Journal Page',
+                                icon: 'fa-solid fa-feather',
+                                callback: async () => {
+                                    const doc = await fromUuid(uuid);
+                                    if (doc) doc.sheet.render(true);
+                                }
+                            },
+                            {
+                                name: isVisible ? 'Hide from Players' : 'Show to Players',
+                                icon: isVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye',
+                                callback: async () => {
+                                    const page = await fromUuid(uuid);
+                                    if (!page) return;
+                                    const current      = page.ownership?.default ?? 0;
+                                    const newPermission = current >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
+                                        ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
+                                        : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+                                    await page.update({ 'ownership.default': newPermission });
+                                    await updateCodexPinVisibility(uuid);
+                                }
+                            },
+                            ...(hasPinId ? [{
+                                name: 'Configure Pin',
+                                icon: 'fa-solid fa-palette',
+                                callback: async () => {
+                                    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+                                    const pinId = entryEl?.dataset?.pinId;
+                                    if (pins?.configure && pinId) {
+                                        await pins.configure(pinId);
+                                    }
+                                }
+                            },
+                            {
+                                name: 'Clear Pin',
+                                icon: 'fa-solid fa-eraser',
+                                callback: async () => {
+                                    await deleteCodexPin(uuid);
+                                    await this._refreshData();
+                                    this.render(this.element);
+                                }
+                            }] : []),
+                            {
+                                name: 'Delete Entry',
+                                icon: 'fa-solid fa-trash',
+                                callback: async () => {
+                                    const confirmed = await Dialog.confirm({
+                                        title: 'Delete Entry',
+                                        content: '<p>Delete this codex entry? This cannot be undone.</p>'
+                                    });
+                                    if (!confirmed) return;
+                                    if (hasPinId) await deleteCodexPin(uuid);
+                                    const page = await fromUuid(uuid);
+                                    if (page) await page.delete();
+                                }
                             }
-                            return false;
-                        }
-                    },
-                    no: {
-                        icon: '<i class="fa-solid fa-times"></i>',
-                        label: 'Cancel'
+                        ]
                     }
-                },
-                default: 'no'
-            }).render(true);
-
-            if (confirmed) {
-                await this._refreshData();
-                this.render(this.element);
-            }
+                });
             });
         });
-        
+
+        // Per-entry pin button (GM only): place on scene or unplace
+        nativeHtml.querySelectorAll('.codex-entry-pin').forEach(pinBtn => {
+            const newBtn = pinBtn.cloneNode(true);
+            pinBtn.parentNode?.replaceChild(newBtn, pinBtn);
+            newBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!game.user.isGM) return;
+
+                const uuid         = newBtn.dataset.uuid;
+                const name         = newBtn.dataset.name;
+                const category     = newBtn.dataset.category;
+                const hasPinOnScene = newBtn.dataset.hasPinOnScene === 'true';
+
+                if (hasPinOnScene) {
+                    // Unplace from scene (keep pin data); sync hooks re-render the panel
+                    await unplaceCodexPin(uuid);
+                    await this._refreshData();
+                    this.render(this.element);
+                } else {
+                    // Enter canvas placement mode; sync hooks re-render when pin lands
+                    await beginCodexPinPlacement(uuid, name, category);
+                }
+            });
+        });
+
         // Entry collapse/expand
         // v13: Use nativeHtml instead of html
         nativeHtml.querySelectorAll('.codex-entry-toggle').forEach(toggle => {
@@ -1287,26 +1357,6 @@ export class CodexPanel {
             });
         });
 
-        // Toggle visibility (ownership) icon
-        // v13: Use nativeHtml instead of html
-        nativeHtml.querySelectorAll('.codex-entry-visibility').forEach(visibilityButton => {
-            const newButton = visibilityButton.cloneNode(true);
-            visibilityButton.parentNode?.replaceChild(newButton, visibilityButton);
-            newButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const uuid = event.currentTarget.dataset.uuid;
-            if (!uuid) return;
-            const page = await fromUuid(uuid);
-            if (!page) return;
-            const current = page.ownership?.default ?? 0;
-            const newPermission = current >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
-                ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
-                : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-            await page.update({ 'ownership.default': newPermission });
-            // No need to refresh/render here; the updateJournalEntryPage hook will handle it.
-            });
-        });
 
         // On load, ensure all entries are visible if no filters are set
         trackModuleTimeout(() => {
@@ -1704,12 +1754,13 @@ export class CodexPanel {
                                         const strong = p.querySelector('strong');
                                         if (!strong) continue;
                                         const label = strong.textContent.trim().replace(/:$/, '').toUpperCase();
-                                        if (["CATEGORY","DESCRIPTION","PLOT HOOK","LOCATION","TAGS"].includes(label)) p.remove();
+                                        if (["CATEGORY","DESCRIPTION","PLOT HOOK","LINK","LOCATION","TAGS"].includes(label)) p.remove();
                                     }
                                     const newFields = [];
                                     if (entry.category) newFields.push(`<p><strong>Category:</strong> ${entry.category}</p>`);
                                     if (entry.description) newFields.push(`<p><strong>Description:</strong> ${entry.description}</p>`);
                                     if (entry.plotHook) newFields.push(`<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`);
+                                    if (entry.link?.uuid && entry.link?.label) newFields.push(`<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`);
                                     if (entry.location) newFields.push(`<p><strong>Location:</strong> ${entry.location}</p>`);
                                     if (entry.tags && entry.tags.length) newFields.push(`<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`);
                                     doc.body.innerHTML = newFields.join('\n') + doc.body.innerHTML;
