@@ -111,6 +111,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
 
     async getData() {
         const tagGroups = this._getSuggestedTagGroups();
+        const activeObjectiveIndex = await this._getActiveObjectiveIndexForWindow();
         return {
             appId: this.id,
             quest: this.quest,
@@ -122,10 +123,11 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             existingCategories: this._getExistingCategories(),
             existingLocations: this._getExistingLocations(),
             statusOptions: this._getStatusOptions(),
+            objectiveCards: this._getObjectiveCards(activeObjectiveIndex),
+            partyParticipants: this._getPartyParticipantsView(),
+            extraParticipants: this._getExtraParticipantsView(),
             suggestedTags: tagGroups.suggested,
             otherTags: tagGroups.other,
-            tasksText: this._serializeTasks(this.quest.tasks),
-            participantsText: this._serializeParticipants(this.quest.participants),
             treasureText: this._serializeTreasure(this.quest.reward?.treasure)
         };
     }
@@ -251,6 +253,77 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         };
     }
 
+    _getPartyActors() {
+        return game.actors
+            .filter(actor => actor?.type === 'character' && actor?.hasPlayerOwner)
+            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+    }
+
+    _getPartyParticipantsView() {
+        const selected = this._normalizeParticipants(this.quest.participants);
+        return this._getPartyActors().map(actor => {
+            const match = selected.find(participant =>
+                (participant.uuid && participant.uuid === actor.uuid)
+                || (!participant.uuid && participant.name && participant.name === actor.name)
+            );
+            return {
+                uuid: actor.uuid,
+                name: actor.name,
+                img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg',
+                selected: !!match
+            };
+        });
+    }
+
+    _getExtraParticipantsView() {
+        return this._getExtraParticipants(this.quest.participants).map((participant, index) => ({
+            index,
+            uuid: participant.uuid || '',
+            name: participant.name || 'Participant',
+            img: participant.img || ''
+        }));
+    }
+
+    _getExtraParticipants(participants = this.quest.participants) {
+        const partyActors = this._getPartyActors();
+        return this._normalizeParticipants(participants).filter(participant => {
+            return !partyActors.some(actor =>
+                (participant.uuid && participant.uuid === actor.uuid)
+                || (!participant.uuid && participant.name && participant.name === actor.name)
+            );
+        });
+    }
+
+    _getObjectiveCards(activeObjectiveIndex = null) {
+        return this._normalizeTaskArray(this.quest.tasks).map((task, index) => ({
+            index,
+            number: index + 1,
+            isCurrent: activeObjectiveIndex === index,
+            status: task.state || 'active',
+            description: task.text || '',
+            gmNote: task.gmHint || '',
+            treasure: Array.isArray(task.treasureUnlocks) ? task.treasureUnlocks.join(', ') : ''
+        }));
+    }
+
+    async _getActiveObjectiveIndexForWindow() {
+        if (!this.pageUuid) return null;
+        try {
+            const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
+            const activeData = activeObjectives.active;
+            if (activeData && typeof activeData === 'string') {
+                const [storedUuid, indexStr] = activeData.split('|');
+                if (storedUuid === this.pageUuid) {
+                    const index = Number.parseInt(indexStr, 10);
+                    return Number.isNaN(index) ? null : index;
+                }
+            }
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error getting active objective for quest window:', error);
+        }
+        return null;
+    }
+
     _decodeHtmlEntities(value) {
         const text = String(value || '').trim();
         if (!text) return '';
@@ -318,18 +391,20 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         const formData = new FormData(form);
         const quest = {};
         for (const [key, value] of formData.entries()) {
-            if ((key === 'img' || key === 'location' || key === 'plotHook' || key === 'participants' || key === 'reward.treasure' || key === 'timeframe.duration') && !value) {
-                continue;
-            }
-            quest[key] = value;
+            foundry.utils.setProperty(quest, key, value);
         }
-        quest.visible = form.querySelector('input[name="visible"]')?.checked ?? this.quest.visible;
+        quest.visible = !(form.querySelector('#quest-hidden-toggle')?.checked ?? !this.quest.visible);
+        quest.tasks = this._collectObjectivesFromForm(form);
+        quest.participants = this._collectParticipantsFromForm(form);
+        quest.activeObjectiveIndex = this._collectCurrentObjectiveIndex(form);
         return quest;
     }
 
     async _updateObject(_event, formData) {
         const wasEditing = this.isEditing;
-        const quest = foundry.utils.expandObject(formData);
+        const quest = (formData?.reward || formData?.timeframe || Array.isArray(formData?.tasks) || Array.isArray(formData?.participants))
+            ? foundry.utils.mergeObject({}, formData, { inplace: false })
+            : foundry.utils.expandObject(formData);
         quest.pageUuid = this.pageUuid || quest.pageUuid || null;
         quest.visible = quest.visible === true;
         quest.questUuid = String(quest.questUuid || this.quest.questUuid || foundry.utils.randomID()).trim();
@@ -339,15 +414,22 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         quest.plotHook = String(quest.plotHook || '').trim();
         quest.status = this._normalizeStatus(quest.status);
         quest.tags = this._normalizeTags(quest.tags);
-        quest.tasks = this._parseTasksInput(quest.tasks);
-        quest.participants = this._parseParticipantsInput(quest.participants);
+        quest.tasks = Array.isArray(quest.tasks)
+            ? this._normalizeTaskArray(quest.tasks)
+            : this._parseTasksInput(quest.tasks);
+        quest.participants = Array.isArray(quest.participants)
+            ? this._normalizeParticipants(quest.participants)
+            : this._parseParticipantsInput(quest.participants);
         quest.reward = quest.reward && typeof quest.reward === 'object' ? quest.reward : {};
         quest.reward.xp = Number(quest.reward.xp) || 0;
-        quest.reward.treasure = this._parseTreasureInput(quest.reward.treasure);
+        quest.reward.treasure = Array.isArray(quest.reward.treasure)
+            ? this._normalizeTreasure(quest.reward.treasure)
+            : this._parseTreasureInput(quest.reward.treasure);
         quest.timeframe = quest.timeframe && typeof quest.timeframe === 'object' ? quest.timeframe : {};
         quest.timeframe.duration = String(quest.timeframe.duration || '').trim();
         quest.img = quest.img ? String(quest.img).trim() : null;
         quest.originalCategory = this._resolveOriginalCategoryForSave(quest);
+        quest.activeObjectiveIndex = Number.isInteger(quest.activeObjectiveIndex) ? quest.activeObjectiveIndex : null;
 
         this.quest = this._normalizeQuest(foundry.utils.mergeObject(this.quest, quest, { inplace: false }));
 
@@ -416,6 +498,8 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
                     await page.setFlag(MODULE.ID, 'originalCategory', null);
                 }
             }
+
+            await this._applyActiveObjectiveSelection(page.uuid, quest.activeObjectiveIndex);
 
             ui.notifications.info(`Quest "${this.quest.name}" ${wasEditing ? 'updated' : 'saved'} successfully.`);
             await this._refreshQuestPanel();
@@ -528,6 +612,15 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             this._eventHandlers.push({ element: categorySelect, event: 'change', handler });
         }
 
+        const hiddenToggle = root.querySelector('#quest-hidden-toggle');
+        if (hiddenToggle) {
+            const handler = () => {
+                this.quest.visible = !hiddenToggle.checked;
+            };
+            hiddenToggle.addEventListener('change', handler);
+            this._eventHandlers.push({ element: hiddenToggle, event: 'change', handler });
+        }
+
         const locationSelect = root.querySelector('#location');
         const newLocationInput = root.querySelector('#new-location');
         const newLocationInputField = root.querySelector('.new-location-input-field');
@@ -564,6 +657,101 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             chip.addEventListener('click', handler);
             this._eventHandlers.push({ element: chip, event: 'click', handler });
         });
+
+        const addObjectiveButton = root.querySelector('.quest-add-objective');
+        if (addObjectiveButton) {
+            const handler = async () => {
+                this._syncFormStateFromDom();
+                const tasks = this._normalizeTaskArray(this.quest.tasks);
+                tasks.push({
+                    text: '',
+                    originalText: '',
+                    gmHint: null,
+                    treasureUnlocks: [],
+                    state: 'active',
+                    completed: false,
+                    objectiveNumber: tasks.length + 1,
+                    isDraft: true
+                });
+                this.quest.tasks = tasks;
+                await this.render(true);
+            };
+            addObjectiveButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: addObjectiveButton, event: 'click', handler });
+        }
+
+        root.querySelectorAll('.quest-objective-delete-btn').forEach(button => {
+            const handler = async () => {
+                const index = Number(button.dataset.objectiveIndex);
+                if (Number.isNaN(index)) return;
+                this._syncFormStateFromDom();
+                const tasks = this._normalizeTaskArray(this.quest.tasks);
+                tasks.splice(index, 1);
+                this.quest.tasks = tasks.map((task, taskIndex) => ({ ...task, objectiveNumber: taskIndex + 1 }));
+                await this.render(true);
+            };
+            button.addEventListener('click', handler);
+            this._eventHandlers.push({ element: button, event: 'click', handler });
+        });
+
+        root.querySelectorAll('.quest-objective-move-btn').forEach(button => {
+            const handler = async () => {
+                const index = Number(button.dataset.objectiveIndex);
+                const direction = String(button.dataset.moveDirection || '');
+                if (Number.isNaN(index) || !['up', 'down'].includes(direction)) return;
+                this._syncFormStateFromDom();
+                const tasks = this._normalizeTaskArray(this.quest.tasks);
+                const targetIndex = direction === 'up' ? index - 1 : index + 1;
+                if (targetIndex < 0 || targetIndex >= tasks.length) return;
+                [tasks[index], tasks[targetIndex]] = [tasks[targetIndex], tasks[index]];
+                this.quest.tasks = tasks.map((task, taskIndex) => ({ ...task, objectiveNumber: taskIndex + 1 }));
+                await this.render(true);
+            };
+            button.addEventListener('click', handler);
+            this._eventHandlers.push({ element: button, event: 'click', handler });
+        });
+
+        root.querySelectorAll('.quest-objective-current-btn').forEach(button => {
+            const handler = () => {
+                const alreadyCurrent = button.classList.contains('is-current');
+                root.querySelectorAll('.quest-objective-current-btn').forEach(other => {
+                    other.classList.remove('is-current');
+                    other.dataset.current = 'false';
+                    const span = other.querySelector('span');
+                    if (span) span.textContent = 'Set Current';
+                });
+                if (!alreadyCurrent) {
+                    button.classList.add('is-current');
+                    button.dataset.current = 'true';
+                    const span = button.querySelector('span');
+                    if (span) span.textContent = 'Current';
+                }
+            };
+            button.addEventListener('click', handler);
+            this._eventHandlers.push({ element: button, event: 'click', handler });
+        });
+
+        root.querySelectorAll('.quest-party-member-checkbox').forEach(checkbox => {
+            const handler = () => {
+                checkbox.closest('.quest-party-member')?.classList.toggle('is-selected', checkbox.checked);
+            };
+            checkbox.addEventListener('change', handler);
+            this._eventHandlers.push({ element: checkbox, event: 'change', handler });
+        });
+
+        root.querySelectorAll('.quest-extra-participant-remove').forEach(button => {
+            const handler = async () => {
+                const index = Number(button.dataset.extraIndex);
+                if (Number.isNaN(index)) return;
+                this._syncFormStateFromDom();
+                const extras = this._getExtraParticipants(this.quest.participants);
+                extras.splice(index, 1);
+                this.quest.participants = this._mergeParticipants(this._getSelectedPartyParticipantsFromQuest(), extras);
+                await this.render(true);
+            };
+            button.addEventListener('click', handler);
+            this._eventHandlers.push({ element: button, event: 'click', handler });
+        });
     }
 
     _syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField) {
@@ -594,6 +782,87 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             newLocationInput.removeAttribute('name');
             locationSelect.setAttribute('name', 'location');
         }
+    }
+
+    _syncFormStateFromDom() {
+        const form = this._getRoot()?.querySelector('form');
+        if (!form) return;
+        const draft = this._collectFormQuest(form);
+        this.quest = this._normalizeQuest(foundry.utils.mergeObject(this.quest, draft, { inplace: false }));
+    }
+
+    _collectObjectivesFromForm(form) {
+        return Array.from(form.querySelectorAll('.quest-objective-card')).map((card, index) => {
+            const status = String(card.querySelector('.quest-objective-status-input')?.value || 'active').trim();
+            const description = String(card.querySelector('.quest-objective-description-input')?.value || '').trim();
+            const gmNote = String(card.querySelector('.quest-objective-note-input')?.value || '').trim();
+            const treasureText = String(card.querySelector('.quest-objective-treasure-input')?.value || '').trim();
+            if (!description) return null;
+
+            const treasureUnlocks = this._tokenizeCommaSeparated(treasureText);
+            const originalText = this._buildObjectiveOriginalText(description, gmNote, treasureUnlocks);
+            return {
+                text: description,
+                originalText,
+                gmHint: gmNote || null,
+                treasureUnlocks,
+                state: ['completed', 'failed', 'hidden', 'active'].includes(status) ? status : 'active',
+                completed: status === 'completed',
+                objectiveNumber: index + 1
+            };
+        }).filter(Boolean);
+    }
+
+    _buildObjectiveOriginalText(description, gmNote, treasureUnlocks) {
+        const segments = [String(description || '').trim()];
+        if (gmNote) segments.push(`||${String(gmNote).trim()}||`);
+        for (const treasure of treasureUnlocks || []) {
+            if (treasure) segments.push(`((${treasure}))`);
+        }
+        return segments.filter(Boolean).join(' ').trim();
+    }
+
+    _collectParticipantsFromForm(form) {
+        const selectedParty = Array.from(form.querySelectorAll('.quest-party-member-checkbox:checked')).map(input => {
+            const actor = this._getPartyActors().find(entry => entry.uuid === input.value);
+            if (!actor) return null;
+            return {
+                uuid: actor.uuid,
+                name: actor.name,
+                img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
+            };
+        }).filter(Boolean);
+
+        const extras = Array.from(form.querySelectorAll('.quest-extra-participant')).map(element => ({
+            uuid: String(element.dataset.uuid || '').trim(),
+            name: String(element.dataset.name || '').trim(),
+            img: String(element.dataset.img || '').trim()
+        })).filter(participant => participant.uuid || participant.name);
+
+        return this._mergeParticipants(selectedParty, extras);
+    }
+
+    _collectCurrentObjectiveIndex(form) {
+        const currentButton = form.querySelector('.quest-objective-current-btn.is-current, .quest-objective-current-btn[data-current="true"]');
+        if (!currentButton) return null;
+        const index = Number(currentButton.dataset.objectiveIndex);
+        return Number.isNaN(index) ? null : index;
+    }
+
+    _getSelectedPartyParticipantsFromQuest() {
+        const selected = this._normalizeParticipants(this.quest.participants);
+        return this._getPartyActors().map(actor => {
+            const match = selected.find(participant =>
+                (participant.uuid && participant.uuid === actor.uuid)
+                || (!participant.uuid && participant.name && participant.name === actor.name)
+            );
+            if (!match) return null;
+            return {
+                uuid: actor.uuid,
+                name: actor.name,
+                img: actor.img || actor.thumbnail || 'icons/svg/mystery-man.svg'
+            };
+        }).filter(Boolean);
     }
 
     _setupImageManagement(root) {
@@ -646,59 +915,106 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
 
     _setupDragAndDrop(root) {
         const dragZone = root.querySelector('.quest-drag-zone');
-        if (!dragZone) return;
+        if (dragZone) {
+            const newDragZone = dragZone.cloneNode(true);
+            dragZone.parentNode?.replaceChild(newDragZone, dragZone);
 
-        const newDragZone = dragZone.cloneNode(true);
-        dragZone.parentNode?.replaceChild(newDragZone, dragZone);
+            const dragEnterHandler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                newDragZone.classList.add('drag-active');
+            };
+            const dragLeaveHandler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                newDragZone.classList.remove('drag-active');
+            };
+            const dragOverHandler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                event.dataTransfer.dropEffect = 'copy';
+            };
+            const dropHandler = async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                newDragZone.classList.remove('drag-active');
 
-        const dragEnterHandler = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            newDragZone.classList.add('drag-active');
-        };
-        const dragLeaveHandler = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            newDragZone.classList.remove('drag-active');
-        };
-        const dragOverHandler = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            event.dataTransfer.dropEffect = 'copy';
-        };
-        const dropHandler = async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            newDragZone.classList.remove('drag-active');
+                try {
+                    this._syncFormStateFromDom();
+                    const TextEditor = getTextEditor();
+                    const data = TextEditor?.getDragEventData?.(event)
+                        || JSON.parse(event.dataTransfer.getData('text/plain'));
 
-            try {
-                const TextEditor = getTextEditor();
-                const data = TextEditor?.getDragEventData?.(event)
-                    || JSON.parse(event.dataTransfer.getData('text/plain'));
-
-                if (data.type === 'Actor') {
-                    await this._handleActorDrop(data);
-                } else if (data.type === 'Item') {
-                    await this._handleItemDrop(data);
-                } else if (data.type === 'JournalEntry' || data.type === 'JournalEntryPage') {
-                    await this._handleJournalDrop(data);
+                    if (data.type === 'Actor') {
+                        await this._handleActorDrop(data);
+                    } else if (data.type === 'Item') {
+                        await this._handleItemDrop(data);
+                    } else if (data.type === 'JournalEntry' || data.type === 'JournalEntryPage') {
+                        await this._handleJournalDrop(data);
+                    }
+                } catch (error) {
+                    console.error('Coffee Pub Squire | Error processing dropped Quest entity:', error);
                 }
-            } catch (error) {
-                console.error('Coffee Pub Squire | Error processing dropped Quest entity:', error);
-            }
-        };
+            };
 
-        newDragZone.addEventListener('dragenter', dragEnterHandler);
-        newDragZone.addEventListener('dragleave', dragLeaveHandler);
-        newDragZone.addEventListener('dragover', dragOverHandler);
-        newDragZone.addEventListener('drop', dropHandler);
+            newDragZone.addEventListener('dragenter', dragEnterHandler);
+            newDragZone.addEventListener('dragleave', dragLeaveHandler);
+            newDragZone.addEventListener('dragover', dragOverHandler);
+            newDragZone.addEventListener('drop', dropHandler);
 
-        this._eventHandlers.push(
-            { element: newDragZone, event: 'dragenter', handler: dragEnterHandler },
-            { element: newDragZone, event: 'dragleave', handler: dragLeaveHandler },
-            { element: newDragZone, event: 'dragover', handler: dragOverHandler },
-            { element: newDragZone, event: 'drop', handler: dropHandler }
-        );
+            this._eventHandlers.push(
+                { element: newDragZone, event: 'dragenter', handler: dragEnterHandler },
+                { element: newDragZone, event: 'dragleave', handler: dragLeaveHandler },
+                { element: newDragZone, event: 'dragover', handler: dragOverHandler },
+                { element: newDragZone, event: 'drop', handler: dropHandler }
+            );
+        }
+
+        root.querySelectorAll('.quest-item-drop-target').forEach(target => {
+            const dragEnterHandler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                target.classList.add('drag-active');
+            };
+            const dragLeaveHandler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                target.classList.remove('drag-active');
+            };
+            const dragOverHandler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                event.dataTransfer.dropEffect = 'copy';
+            };
+            const dropHandler = async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                target.classList.remove('drag-active');
+
+                try {
+                    this._syncFormStateFromDom();
+                    const TextEditor = getTextEditor();
+                    const data = TextEditor?.getDragEventData?.(event)
+                        || JSON.parse(event.dataTransfer.getData('text/plain'));
+                    if (data.type !== 'Item') return;
+                    await this._handleTreasureFieldDrop(data, target);
+                } catch (error) {
+                    console.error('Coffee Pub Squire | Error processing treasure drop:', error);
+                }
+            };
+
+            target.addEventListener('dragenter', dragEnterHandler);
+            target.addEventListener('dragleave', dragLeaveHandler);
+            target.addEventListener('dragover', dragOverHandler);
+            target.addEventListener('drop', dropHandler);
+
+            this._eventHandlers.push(
+                { element: target, event: 'dragenter', handler: dragEnterHandler },
+                { element: target, event: 'dragleave', handler: dragLeaveHandler },
+                { element: target, event: 'dragover', handler: dragOverHandler },
+                { element: target, event: 'drop', handler: dropHandler }
+            );
+        });
     }
 
     async _handleActorDrop(data) {
@@ -726,7 +1042,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             actor.type
         ]);
 
-        this._updateFormFields();
+        await this.render(true);
         ui.notifications.info(`Added participant: ${actor.name}`);
     }
 
@@ -748,8 +1064,37 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             item.type
         ]);
 
-        this._updateFormFields();
+        await this.render(true);
         ui.notifications.info(`Added treasure: ${item.name}`);
+    }
+
+    async _handleTreasureFieldDrop(data, target) {
+        const item = await fromUuid(data.uuid || `Item.${data.id}`);
+        if (!item || !target) return;
+
+        const mode = target.dataset.dropMode;
+        if (mode === 'reward-treasure') {
+            this.quest.reward.treasure = this._mergeTreasure(this.quest.reward.treasure, [
+                {
+                    uuid: item.uuid,
+                    name: item.name
+                }
+            ]);
+            const rewardField = this._getRoot()?.querySelector('#reward-treasure');
+            if (rewardField) rewardField.value = this._serializeTreasure(this.quest.reward.treasure);
+            ui.notifications.info(`Added treasure reward: ${item.name}`);
+            return;
+        }
+
+        if (mode === 'objective-treasure') {
+            const current = String(target.value || '').trim();
+            const names = this._tokenizeCommaSeparated(current);
+            if (!names.some(name => name.toLowerCase() === item.name.toLowerCase())) {
+                names.push(item.name);
+            }
+            target.value = names.join(', ');
+            ui.notifications.info(`Added objective treasure: ${item.name}`);
+        }
     }
 
     async _handleJournalDrop(data) {
@@ -795,7 +1140,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
                     this.quest.reward.xp = this.quest.reward.xp || parsed.reward?.xp || 0;
                     this.quest.reward.treasure = this._mergeTreasure(this.quest.reward.treasure, parsed.reward?.treasure);
                     this.quest.tags = this._uniqueTags([...(this.quest.tags || []), ...(parsed.tags || []), 'Journal']);
-                    this._updateFormFields();
+                    await this.render(true);
                     ui.notifications.info(`Imported quest data from: ${page.name}`);
                     return;
                 }
@@ -808,7 +1153,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         if (!this.quest.name) this.quest.name = source.name || this.quest.name;
         this.quest.description = this._appendPlainText(this.quest.description, this._extractDocumentDescription(source));
         this.quest.tags = this._uniqueTags([...(this.quest.tags || []), 'Journal']);
-        this._updateFormFields();
+        await this.render(true);
         ui.notifications.info(`Added journal content from: ${source.name}`);
     }
 
@@ -824,12 +1169,6 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
 
         const plotHookTextarea = form.querySelector('textarea[name="plotHook"]');
         if (plotHookTextarea) plotHookTextarea.value = this.quest.plotHook || '';
-
-        const tasksTextarea = form.querySelector('textarea[name="tasks"]');
-        if (tasksTextarea) tasksTextarea.value = this._serializeTasks(this.quest.tasks);
-
-        const participantsTextarea = form.querySelector('textarea[name="participants"]');
-        if (participantsTextarea) participantsTextarea.value = this._serializeParticipants(this.quest.participants);
 
         const treasureTextarea = form.querySelector('textarea[name="reward.treasure"]');
         if (treasureTextarea) treasureTextarea.value = this._serializeTreasure(this.quest.reward?.treasure);
@@ -855,8 +1194,8 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         const questUuidInput = form.querySelector('input[name="questUuid"]');
         if (questUuidInput) questUuidInput.value = this.quest.questUuid || '';
 
-        const visibleInput = form.querySelector('input[name="visible"]');
-        if (visibleInput) visibleInput.checked = this.quest.visible === true;
+        const hiddenToggle = form.querySelector('#quest-hidden-toggle');
+        if (hiddenToggle) hiddenToggle.checked = this.quest.visible !== true;
 
         this._updateHeaderFields();
 
@@ -919,6 +1258,15 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             removeImageButton.classList.toggle('is-visible', !!this.quest.img);
         }
 
+        const selectedPartyUuids = new Set(this._getSelectedPartyParticipantsFromQuest().map(participant => participant.uuid));
+        form.querySelectorAll('.quest-party-member').forEach(card => {
+            const uuid = card.dataset.actorUuid;
+            const checked = !!uuid && selectedPartyUuids.has(uuid);
+            card.classList.toggle('is-selected', checked);
+            const checkbox = card.querySelector('.quest-party-member-checkbox');
+            if (checkbox) checkbox.checked = checked;
+        });
+
         this._updateTagChipStates(form);
     }
 
@@ -970,17 +1318,19 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             .map((task, index) => {
                 const raw = typeof task === 'string' ? { text: task } : (task || {});
                 const originalText = String(raw.originalText || raw.text || '').trim();
-                const text = String(raw.text || raw.originalText || '').trim();
-                if (!text && !originalText) return null;
+                const parsedMeta = this._parseTaskMetadata(originalText || raw.text || '');
+                const text = String(raw.text || parsedMeta.displayText || raw.originalText || '').trim();
+                if (!text && !originalText && !raw.isDraft) return null;
                 const state = ['completed', 'failed', 'hidden', 'active'].includes(raw.state) ? raw.state : (raw.completed ? 'completed' : 'active');
                 return {
                     text: text || originalText,
                     originalText: originalText || text,
-                    gmHint: raw.gmHint || null,
-                    treasureUnlocks: Array.isArray(raw.treasureUnlocks) ? raw.treasureUnlocks : [],
+                    gmHint: raw.gmHint || parsedMeta.gmHint || null,
+                    treasureUnlocks: Array.isArray(raw.treasureUnlocks) && raw.treasureUnlocks.length ? raw.treasureUnlocks : (parsedMeta.treasureUnlocks || []),
                     state,
                     completed: state === 'completed',
-                    objectiveNumber: index + 1
+                    objectiveNumber: index + 1,
+                    isDraft: !!raw.isDraft
                 };
             })
             .filter(Boolean);
@@ -1060,6 +1410,13 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             const prefix = task.state && task.state !== 'active' ? (TASK_PREFIXES[task.state] || '') : '';
             return prefix ? `${prefix} ${raw}` : raw;
         }).join('\n');
+    }
+
+    _tokenizeCommaSeparated(text) {
+        return String(text || '')
+            .split(',')
+            .map(token => token.trim())
+            .filter(Boolean);
     }
 
     _parseParticipantsInput(text) {
@@ -1282,6 +1639,63 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         questPanel.render(questPanel.element);
     }
 
+    async _applyActiveObjectiveSelection(pageUuid, activeObjectiveIndex) {
+        if (!pageUuid) return;
+        try {
+            const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
+            activeObjectives.active = (activeObjectiveIndex === null || activeObjectiveIndex === undefined)
+                ? null
+                : `${pageUuid}|${activeObjectiveIndex}`;
+            await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error saving current objective selection:', error);
+        }
+    }
+
+    async _deleteQuest() {
+        const page = this.page || (this.pageUuid ? await fromUuid(this.pageUuid) : null);
+        if (!page) {
+            ui.notifications.error('The quest you are trying to delete could not be found.');
+            return false;
+        }
+
+        const confirmed = await this._confirmDelete(page.name || this.quest.name || 'this quest');
+        if (!confirmed) return false;
+
+        try {
+            if (this.pageUuid) {
+                const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
+                const activeData = activeObjectives.active;
+                if (typeof activeData === 'string') {
+                    const [storedUuid] = activeData.split('|');
+                    if (storedUuid === this.pageUuid) {
+                        activeObjectives.active = null;
+                        await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
+                    }
+                }
+            }
+            await page.delete();
+            ui.notifications.info(`Quest "${page.name || this.quest.name}" deleted.`);
+            await this._refreshQuestPanel();
+            await this.close();
+            return true;
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error deleting quest:', error);
+            ui.notifications.error(`Failed to delete quest: ${error.message}`);
+            return false;
+        }
+    }
+
+    async _confirmDelete(name) {
+        if (globalThis.Dialog?.confirm) {
+            return Dialog.confirm({
+                title: 'Delete Quest',
+                content: `<p>Delete <strong>${this._escapeHtml(name)}</strong>?</p>`
+            });
+        }
+        return globalThis.confirm?.(`Delete "${name}"?`) ?? false;
+    }
+
     _clearEventHandlers() {
         for (const { element, event, handler } of this._eventHandlers) {
             try {
@@ -1309,11 +1723,19 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         event?.preventDefault?.();
         await instance.close();
     }
+
+    static async _actionDelete(event, _target) {
+        const instance = QuestWindow._ref;
+        if (!instance || !instance.isEditing || !instance.pageUuid) return;
+        event?.preventDefault?.();
+        await instance._deleteQuest();
+    }
 }
 
 QuestWindow.ACTION_HANDLERS = {
     save: QuestWindow._actionSave,
-    cancel: QuestWindow._actionCancel
+    cancel: QuestWindow._actionCancel,
+    delete: QuestWindow._actionDelete
 };
 
 export const QuestForm = QuestWindow;

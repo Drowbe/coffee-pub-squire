@@ -23,6 +23,13 @@
     justify-content: center;
 }
 
+.quest-window .blacksmith-window-template-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
 .quest-drag-section {
     padding: 10px 12px;
 }
@@ -153,17 +160,6 @@
     grid-column: 1 / -1;
 }
 
-.quest-form-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 1fr);
-    gap: 12px;
-    align-items: end;
-}
-
-.quest-form-row-select {
-    min-width: 0;
-}
-
 .new-category-input-field,
 .new-location-input-field {
     display: none;
@@ -237,20 +233,6 @@
     font-size: 0.95em;
 }
 
-.quest-toggle-field {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    cursor: pointer;
-}
-
-.quest-toggle-field input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-}
-
 .quest-tag-suggestions-wrap {
     margin-top: 2px;
 }
@@ -265,9 +247,261 @@
     color: rgba(172, 159, 129, 0.72);
 }
 
+.quest-objectives-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* OBJECTIVE CARD */
+
+.quest-objective-card {
+    padding: 10px;
+    border: 1px solid rgba(114, 49, 7, 0.3);
+    border-radius: 8px;
+    background: rgba(114, 49, 7, 0.3);
+}
+
+.quest-objective-card-title {
+    margin-bottom: 8px;
+    font-size: 0.76em;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(214, 208, 194, 0.78);
+}
+
+.quest-objective-card-grid {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-areas:
+        "description description"
+        "note note"
+        "status treasure"
+        "actions actions";
+    gap: 10px;
+    align-items: end;
+}
+
+.quest-objective-status {
+    grid-area: status;
+    width: max-content;
+}
+
+.quest-objective-description {
+    grid-area: description;
+}
+
+.quest-objective-note {
+    grid-area: note;
+}
+
+.quest-objective-treasure {
+    grid-area: treasure;
+    min-width: 0;
+}
+
+.quest-objective-card .quest-form-field input[type="text"],
+.quest-objective-card .quest-form-field select {
+    min-height: 34px;
+}
+
+.quest-objective-status .quest-objective-status-input {
+    width: auto;
+    min-width: 132px;
+}
+
+
+/* OBJECTIVE CARD - ACTIONS */
+
+
+.quest-objective-delete {
+    display: flex;
+}
+
+.quest-objective-delete-btn {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+}
+
+.quest-objective-actions {
+    grid-area: actions;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.quest-objective-actions-left,
+.quest-objective-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quest-objective-current-btn.is-current {
+    background: rgba(172, 159, 129, 0.2);
+    border-color: rgba(172, 159, 129, 0.45);
+    color: rgba(240, 236, 226, 0.96);
+}
+
+.quest-objective-move-btn,
+.quest-objective-current-btn,
+.quest-objective-delete-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.quest-objective-delete-btn {
+    width: auto;
+    gap: 6px;
+}
+
+.quest-objective-current-btn {
+    min-width: 122px;
+    gap: 6px;
+}
+
+.quest-objective-move-btn {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+}
+
+.quest-objectives-actions {
+    margin-top: 10px;
+}
+
+.quest-party-members {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+}
+
+.quest-party-member {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.22);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    min-width: 0;
+}
+
+.quest-party-member:hover {
+    border-color: rgba(255, 100, 0, 0.45);
+    box-shadow: 0 0 0 1px rgba(255, 100, 0, 0.1) inset;
+    transform: translateY(-1px);
+}
+
+.quest-party-member.is-selected {
+    border-color: rgba(172, 159, 129, 0.55);
+    background: rgba(172, 159, 129, 0.12);
+    box-shadow: 0 0 0 1px rgba(172, 159, 129, 0.15) inset;
+}
+
+.quest-party-member input {
+    display: none;
+}
+
+.quest-party-member img {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+.quest-party-member.is-selected img {
+    border-color: rgba(255, 100, 0, 0.55);
+}
+
+.quest-party-member span {
+    width: 100%;
+    text-align: center;
+    font-size: 0.8em;
+    line-height: 1.2;
+    color: rgba(240, 236, 226, 0.92);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quest-extra-participants {
+    margin-top: 10px;
+}
+
+.quest-extra-participant-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.quest-extra-participant {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(224, 224, 224, 0.92);
+    font-size: 0.8em;
+}
+
+.quest-extra-participant-remove {
+    border: none;
+    background: transparent;
+    color: rgba(214, 208, 194, 0.8);
+    cursor: pointer;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.quest-extra-participant-remove:hover {
+    color: #fff;
+}
+
+.quest-item-drop-target.drag-active {
+    border-color: rgba(255, 100, 0, 0.65) !important;
+    box-shadow: 0 0 0 1px rgba(255, 100, 0, 0.2);
+    background: rgba(255, 100, 0, 0.08) !important;
+}
+
 @media (max-width: 760px) {
-    .quest-form-grid-two,
-    .quest-form-row {
+    .quest-form-grid-two {
         grid-template-columns: 1fr;
+    }
+
+    .quest-objective-card-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "description"
+            "note"
+            "status"
+            "treasure"
+            "actions";
+    }
+
+    .quest-objective-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quest-objective-actions-left,
+    .quest-objective-actions-right {
+        justify-content: flex-end;
     }
 }
