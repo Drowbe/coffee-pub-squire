@@ -377,11 +377,6 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
-        // Calculate selection data for the template
-        const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-        const selectionCount = controlledTokens.length;
-        const showSelectionBox = selectionCount > 1;
-
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
@@ -408,9 +403,7 @@ export class PanelManager {
             isHealthPopped: HealthPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
-            favoriteMacros,
-            selectionCount,
-            showSelectionBox
+            favoriteMacros
         });
         // v13: Create native DOM element instead of jQuery
         const wrapper = document.createElement('div');
@@ -462,11 +455,6 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
-        // Calculate selection data for the template
-        const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-        const selectionCount = controlledTokens.length;
-        const showSelectionBox = selectionCount > 1;
-
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
             actor: this.actor,
             isGM: game.user.isGM,
@@ -490,9 +478,7 @@ export class PanelManager {
             showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
-            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
-            selectionCount,
-            showSelectionBox
+            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName')
         });
         // v13: Create native DOM element instead of jQuery
         const wrapper = document.createElement('div');
@@ -786,27 +772,6 @@ export class PanelManager {
             
             // Select all appropriate party tokens
             tokensToSelect.forEach(token => token.control({releaseOthers: false}));
-            
-            // Play sound
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (blacksmith) {
-                const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
-                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-            }
-            });
-        }
-
-        // Selection wrapper button handlers
-        // Clear selection button
-        const clearButton = nativeTray.querySelector('#button-clear');
-        if (clearButton) {
-            // Clone to remove existing listeners
-            const newButton = clearButton.cloneNode(true);
-            clearButton.parentNode?.replaceChild(newButton, clearButton);
-            
-            newButton.addEventListener('click', async (event) => {
-            // Deselect all currently selected tokens
-            canvas.tokens.releaseAll();
             
             // Play sound
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
@@ -2039,62 +2004,10 @@ async function initializeSquireAfterSettings() {
 // Helper function to update selection display
 export async function _updateSelectionDisplay() {
     if (!PanelManager.instance || !PanelManager.element) return;
-    
-    // Calculate selection data
-    const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-    const selectionCount = controlledTokens.length;
-    const showSelectionBox = selectionCount > 1;
-    
-    // Update the selection display
-    // v13: Use native DOM instead of jQuery
-    const selectionWrapper = PanelManager.element?.querySelector('.tray-selection-wrapper');
-    const selectionCountSpan = PanelManager.element?.querySelector('.tray-selection-count');
-    
-    if (showSelectionBox) {
-        // Show selection box if it doesn't exist
-        if (!selectionWrapper) {
-            // v13: Create native DOM elements instead of HTML string
-            const selectionWrapperDiv = document.createElement('div');
-            selectionWrapperDiv.className = 'tray-selection-wrapper';
-            
-            const countSpan = document.createElement('span');
-            countSpan.className = 'tray-selection-count';
-            countSpan.textContent = `${selectionCount} tokens selected`;
-            selectionWrapperDiv.appendChild(countSpan);
-            
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'tray-selection-actions';
-            actionsDiv.setAttribute('data-tooltip', 'Use Shift+Click to select multiple or modify selection');
-            
-            const clearButton = document.createElement('button');
-            clearButton.id = 'button-clear';
-            clearButton.className = 'tray-selection-button button-clear';
-            clearButton.setAttribute('data-tooltip', 'Clear all selections');
-            clearButton.textContent = 'Clear All';
-            actionsDiv.appendChild(clearButton);
-            
-            selectionWrapperDiv.appendChild(actionsDiv);
-            
-            // Insert after the party toolbar
-            const partyToolbar = PanelManager.element?.querySelector('.tray-tools-toolbar');
-            if (partyToolbar && partyToolbar.parentNode) {
-                partyToolbar.parentNode.insertBefore(selectionWrapperDiv, partyToolbar.nextSibling);
-            }
-            
-            // Re-attach event listeners for the new buttons
-            PanelManager.instance.activateListeners(PanelManager.element);
-        } else {
-            // Update existing selection count
-            if (selectionCountSpan) {
-                selectionCountSpan.textContent = `${selectionCount} tokens selected`;
-            }
-        }
-    } else {
-        // Hide selection box if it exists
-        if (selectionWrapper) {
-            selectionWrapper.remove();
-        }
-    }
+
+    // Legacy shared selection wrapper has been removed.
+    // Clean up any stale DOM from older renders.
+    PanelManager.element.querySelector('.tray-selection-wrapper')?.remove();
 }
 
 // Helper function to update health panel from current selection

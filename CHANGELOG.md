@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.1]
+
+### Changed
+- **Quest window – Blacksmith Application V2 migration**: Replaced the legacy Quest import/edit form path with a registered Blacksmith Window API / Application V2 window (`scripts/window-quest.js`, `templates/window-quest.hbs`, `styles/window-quest.css`). Quest create/edit now opens through the shared Blacksmith window system and follows the same shell, section, action bar, and button patterns as Codex.
+- **Quest window – structured editing workflow**: Rebuilt the quest editor around form-first sections instead of large text blocks. Objectives are now edited as individual cards, participants use selectable party portraits, the hidden flag uses the shared Blacksmith header switch, and the image area uses the same persistent preview/browse workflow as Codex.
+- **Quest window – identity and world layout**: Cleaned up the quest form layout by splitting information into clearer sections, putting `Category`, `Status`, and `Timeframe` on a single row, and tightening the location/category flows to reduce dead space in the form.
+- **Quest window – fixed taxonomy behavior**: Removed `+ New Category` from quests. Quest categories are now treated as fixed values in the quest window.
+- **Quest window – objective UX**: Objective cards now have a clearer stacked layout with numbered titles, compact status controls, field tooltips, reorder controls, explicit `Delete Objective` actions, and a separate `Current` / `Set Current` control.
+- **Quest tray – spacing and presentation**: Added visible spacing rhythm between quest cards so the quest list reads more like the Codex tray instead of appearing tightly stacked.
+- **Party tray – selection state cleanup**: Removed the old shared multi-select action bar path from the tray so the party tab now relies only on the working `tokens selected / Clear All` state instead of a second broken `Clear / Combat` bar.
+
+### Fixed
+- **Quest save/objective serialization**: Fixed a critical quest save bug where editing and saving objectives could serialize structured objective data back into broken `[object Object]` journal content instead of valid quest objective text.
+- **Quest objectives – add/reorder/delete behavior**: Fixed the `Add Objective` action and stabilized objective card state so blank draft objectives can be created, reordered, and deleted reliably before save.
+- **Quest objectives – active vs status semantics**: Fixed the quest window so `Active` is no longer treated as an objective status. “Current objective” is now tracked separately and synced to the same active-objective flag used by the quest tray.
+- **Quest treasure drop targets**: Added proper item drop support for both the main quest treasure area and per-objective treasure inputs so quest rewards can be populated directly from dragged items.
+- **Quest edit round-tripping**: Improved quest edit round-tripping for objectives, participants, treasure, and related parsed quest data so existing quest pages survive edits more faithfully.
+- **Codex startup/window compatibility**: Fixed early Codex window bootstrap issues during module load and completed follow-up compatibility fixes around save handling and HTML entity decoding for category/location values.
+
+### Removed
+- **Legacy Quest form assets**: Removed the old Quest form template and stylesheet (`templates/quest-form.hbs`, `styles/quest-form.css`) and their legacy load path after the Blacksmith window migration.
+- **Legacy tray selection wrapper**: Removed the unused shared selection-wrapper template, runtime wiring, and related styling for the broken `Clear / Combat` multi-select bar.
+
 ## [13.2.0]
 
 ### Changed
