@@ -76,17 +76,17 @@
                             <!-- ENTRY CONTENT -->
                             <div class="codex-entry-content">
 
+                                <!-- IMAGE -->
+                                {{#if entry.img}}
+                                    <div class="codex-entry-image">
+                                        <img src="{{entry.img}}" alt="{{entry.name}}">
+                                    </div>
+                                {{/if}}
+
                                 <!-- DESCRIPTION -->
                                 {{#if entry.description}}
                                     <div class="codex-entry-divider"></div>
                                     <div class="codex-entry-description">
-                                        <!-- IMAGE -->
-                                        {{#if entry.img}}
-                                        <div class="codex-entry-image">
-                                            <img src="{{entry.img}}" alt="{{entry.name}}">
-                                        </div>
-                                        {{/if}}
-
                                         <span class="codex-entry-label">Description</span> 
                                         <p>{{{entry.description}}}</p>
                                     </div>

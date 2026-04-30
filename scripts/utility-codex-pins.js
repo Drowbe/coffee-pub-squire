@@ -513,6 +513,45 @@ export async function updateCodexPinVisibility(entryUuid) {
 }
 
 /**
+ * Update codex pin metadata after the entry itself changes.
+ * Keeps pin text, category icon/tag mapping, and config in sync with the page.
+ * @param {string} entryUuid
+ * @param {object} opts
+ * @param {string} [opts.entryName]
+ * @param {string} [opts.entryCategory]
+ */
+export async function updateCodexPinForEntry(entryUuid, opts = {}) {
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins)) return;
+
+    const page = await fromUuid(entryUuid);
+    const pinId = page?.getFlag(MODULE.ID, 'codexPinId');
+    const sceneId = page?.getFlag(MODULE.ID, 'codexSceneId');
+    if (!pinId) return;
+
+    const pinType = getSquirePinType('codex');
+    const taxonomyTags = getModuleTaxonomyTags(pinType);
+    const entryName = String(opts.entryName || page?.name || '').trim();
+    const entryCategory = String(opts.entryCategory || '').trim();
+
+    const patch = {
+        text: entryName || page?.name || '',
+        image: getCodexPinImage(entryCategory),
+        tags: codexCategoryToPinTags(entryCategory, taxonomyTags),
+        config: {
+            codexUuid: entryUuid,
+            codexCategory: entryCategory
+        }
+    };
+
+    try {
+        await pins.update(pinId, patch, sceneId ? { sceneId } : undefined);
+    } catch (e) {
+        console.warn('Coffee Pub Squire | updateCodexPinForEntry:', e);
+    }
+}
+
+/**
  * Reconcile codex pin flags against the live Pins API. GM only.
  * Clears stale pinId/sceneId flags when pins have been deleted externally.
  * @param {object} [opts]

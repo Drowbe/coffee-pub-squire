@@ -21,6 +21,7 @@
 .codex-entry-window .window-content {
     background: none;
     padding: 0;
+    overflow: hidden;
 }
 
 /* Header styling */
@@ -63,6 +64,16 @@
 
 
 /* Codex Form - Properly Namespaced Styles */
+.codex-window-root {
+    height: 100%;
+}
+
+.codex-window-body.blacksmith-window-template-body {
+    height: 100%;
+    overflow-y: auto;
+    padding: 0;
+}
+
 .codex-form {
     /* Form container styles */
     padding: 10px;

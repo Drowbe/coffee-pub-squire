@@ -8,55 +8,139 @@ import {
     deleteCodexPin,
     beginCodexPinPlacement,
     unplaceCodexPin,
-    updateCodexPinVisibility
+    updateCodexPinVisibility,
+    updateCodexPinForEntry
 } from './utility-codex-pins.js';
 import { getPinsApi, isPinsApiAvailable } from './utility-quest-pins.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
-  return game.modules.get('coffee-pub-blacksmith')?.api;
+  return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
 }
 
-class CodexForm extends FormApplication {
+function resolveCodexWindowBase() {
+    const blacksmith = getBlacksmith();
+    const base = blacksmith?.BlacksmithWindowBaseV2 || blacksmith?.getWindowBaseV2?.();
+    if (base) return base;
+
+    const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+    return class extends HandlebarsApplicationMixin(ApplicationV2) {
+        static ROOT_CLASS = 'codex-window-root';
+
+        _getRoot() {
+            const byId = document.getElementById(this.id);
+            if (byId) return byId;
+            return document.querySelector(`.${this.constructor.ROOT_CLASS}`) ?? this.element ?? null;
+        }
+
+        async _prepareContext(options = {}) {
+            const baseContext = await super._prepareContext?.(options) ?? {};
+            const data = await this.getData(options);
+            return foundry.utils.mergeObject(baseContext, data);
+        }
+    };
+}
+
+const CodexWindowBase = resolveCodexWindowBase();
+
+class CodexForm extends CodexWindowBase {
+    static ROOT_CLASS = 'codex-window-root';
+
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(
+        foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
+        {
+            id: 'codex-entry-window',
+            classes: ['codex-entry-window', 'squire-window'],
+            position: { width: 700, height: 760 },
+            window: { title: 'Codex', resizable: true, minimizable: true },
+            windowSizeConstraints: { minWidth: 620, minHeight: 560 },
+            actions: {}
+        }
+    );
+
+    static PARTS = {
+        body: {
+            template: 'modules/coffee-pub-squire/templates/codex-form.hbs'
+        }
+    };
+
     constructor(entry = null, options = {}) {
-        super(entry, options);
-        this.entry = entry || this._getDefaultEntry();
+        const opts = foundry.utils.mergeObject({}, options);
+        opts.id = opts.id ?? `codex-entry-window-${foundry.utils.randomID().slice(0, 8)}`;
+        opts.position = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, CodexForm.DEFAULT_OPTIONS.position ?? {}),
+            opts.position || {}
+        );
+        opts.window = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, CodexForm.DEFAULT_OPTIONS.window ?? {}),
+            opts.window || {}
+        );
+        super(opts);
+        this.pageUuid = opts.pageUuid || null;
+        this.page = opts.page || null;
+        this.isEditing = !!this.pageUuid;
+        this.entry = foundry.utils.mergeObject(this._getDefaultEntry(), entry || {}, { inplace: false });
+        this.entry.pageUuid = this.pageUuid;
+        this.entry.link = this._normalizeLinkValue(this.entry.link, this.entry.linkLabel || this.entry.name || 'Link');
         this.dragActive = false;
-        // v13: Store event handlers for cleanup
         this._eventHandlers = [];
     }
 
-    /**
-     * Get native DOM element from this.element (handles jQuery conversion)
-     * @returns {HTMLElement|null} Native DOM element
-     */
+    static async open(options = {}) {
+        let windowInstance;
+        if (options.page) {
+            windowInstance = await CodexForm.fromPage(options.page, options);
+        } else {
+            windowInstance = new CodexForm(options.entry || null, options);
+        }
+        await windowInstance.render(true);
+        return windowInstance;
+    }
+
+    static async fromPage(page, options = {}) {
+        let entry = null;
+        try {
+            let content = '';
+            if (typeof page?.text?.content === 'string') {
+                content = page.text.content;
+            } else if (typeof page?.text === 'string') {
+                content = page.text;
+            } else if (page?.text?.content) {
+                content = await page.text.content;
+            }
+
+            const TextEditor = getTextEditor();
+            const enriched = await TextEditor.enrichHTML(content || '', {
+                secrets: game.user.isGM,
+                documents: true,
+                links: true,
+                rolls: true
+            });
+            entry = await CodexParser.parseSinglePage(page, enriched);
+        } catch (error) {
+            console.error('Error parsing codex page for edit:', error);
+        }
+
+        return new CodexForm(entry || { name: page?.name || '' }, {
+            ...options,
+            pageUuid: page?.uuid || options.pageUuid || null,
+            page
+        });
+    }
+
     _getNativeElement() {
         if (!this.element) return null;
-        // v13: Detect and convert jQuery to native DOM if needed
         if (this.element.jquery || typeof this.element.find === 'function') {
             return this.element[0] || this.element.get?.(0) || this.element;
         }
         return this.element;
     }
 
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: 'codex-entry-window',
-            classes: ['codex-entry-window'],
-            title: 'Add Codex Entry',
-            template: 'modules/coffee-pub-squire/templates/codex-form.hbs',
-            width: 700,
-            height: 'auto',
-            resizable: true,
-            closeOnSubmit: false,
-            submitOnClose: false,
-            submitOnChange: false
-        });
-    }
-
     getData() {
         return {
+            appId: this.id,
             entry: this.entry,
+            isEditing: this.isEditing,
             isGM: game.user.isGM,
             existingCategories: this._getExistingCategories(),
             existingLocations: this._getExistingLocations()
@@ -72,6 +156,8 @@ class CodexForm extends FormApplication {
             plotHook: '',
             location: '',
             link: null,
+            linkLabel: '',
+            pageUuid: null,
             tags: []
         };
     }
@@ -125,17 +211,12 @@ class CodexForm extends FormApplication {
 
     async _updateObject(event, formData) {
         const entry = expandObject(formData);
-        
+        entry.pageUuid = this.pageUuid || entry.pageUuid || null;
+        entry.link = await this._resolveLinkFromForm(entry.link, entry.linkLabel, entry.name);
+        entry.linkLabel = entry.link?.label || '';
+        entry.tags = this._normalizeTags(entry.tags);
+        this.entry = foundry.utils.mergeObject(this.entry, entry, { inplace: false });
 
-        
-        // Convert tags to array
-        if (typeof entry.tags === 'string') {
-            entry.tags = entry.tags.split(',').map(t => t.trim()).filter(t => t);
-        } else if (!entry.tags) {
-            entry.tags = [];
-        }
-
-        // Get the journal
         const journalId = game.settings.get(MODULE.ID, 'codexJournal');
         if (!journalId || journalId === 'none') {
             ui.notifications.error('No codex journal selected. Please select a journal in the codex panel settings.');
@@ -149,7 +230,6 @@ class CodexForm extends FormApplication {
         }
 
         try {
-            // Create the journal page
             const pageData = {
                 name: entry.name,
                 type: 'text',
@@ -158,21 +238,30 @@ class CodexForm extends FormApplication {
                 }
             };
 
-            // Create new page
-            const newPage = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-
-            // Show success notification
-            ui.notifications.info(`Codex entry "${entry.name}" saved successfully.`);
-            
-            // Explicitly close the form
-            this.close();
-            
-            // Refresh the codex panel if it exists
-            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.codexPanel) {
-                await game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel._refreshData();
-                game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel.render(game.modules.get('coffee-pub-squire').api.PanelManager.instance.codexPanel.element);
+            if (this.isEditing && this.pageUuid) {
+                const page = this.page || await fromUuid(this.pageUuid);
+                if (!page) {
+                    ui.notifications.error('The codex entry you are editing could not be found.');
+                    return false;
+                }
+                await page.update(pageData);
+                this.page = page;
+                await updateCodexPinForEntry(page.uuid, {
+                    entryName: entry.name,
+                    entryCategory: entry.category
+                });
+                ui.notifications.info(`Codex entry "${entry.name}" updated successfully.`);
+            } else {
+                const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                this.page = newPage || null;
+                this.pageUuid = newPage?.uuid || null;
+                this.isEditing = !!this.pageUuid;
+                this.entry.pageUuid = this.pageUuid;
+                ui.notifications.info(`Codex entry "${entry.name}" saved successfully.`);
             }
-            
+
+            await this._refreshCodexPanel();
+            await this.close();
             return true;
         } catch (error) {
             console.error('Error saving codex entry:', error);
@@ -182,8 +271,8 @@ class CodexForm extends FormApplication {
     }
 
     _generateJournalContent(entry) {
-        let content = "";
-        
+        let content = '';
+
         if (entry.img) {
             content += `<img src="${entry.img}" alt="${entry.name}">\n\n`;
         }
@@ -203,7 +292,10 @@ class CodexForm extends FormApplication {
         if (entry.link) {
             const linkUuid = typeof entry.link === 'string' ? entry.link.trim() : (entry.link.uuid || '').trim();
             if (linkUuid) {
-                content += `<p><strong>Link:</strong> @UUID[${linkUuid}]{Link}</p>\n\n`;
+                const linkLabel = typeof entry.link === 'string'
+                    ? (entry.linkLabel || entry.name || 'Link')
+                    : (entry.link.label || entry.linkLabel || entry.name || 'Link');
+                content += `<p><strong>Link:</strong> @UUID[${linkUuid}]{${linkLabel}}</p>\n\n`;
             }
         }
 
@@ -218,16 +310,15 @@ class CodexForm extends FormApplication {
         return content;
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
-        
-        // v13: Detect and convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-        
-        // Handle cancel button click
+    async _onRender(context, options) {
+        await super._onRender?.(context, options);
+        const nativeHtml = this._getNativeElement();
+        if (!nativeHtml) return;
+        this._clearEventHandlers();
+        this._attachLocalListeners(nativeHtml);
+    }
+
+    _attachLocalListeners(nativeHtml) {
         const cancelButton = nativeHtml.querySelector('button.cancel');
         if (cancelButton) {
             const handler = () => {
@@ -248,38 +339,24 @@ class CodexForm extends FormApplication {
             this._eventHandlers.push({ element: form, event: 'submit', handler });
         }
 
-        // Set up drag and drop zones
         this._setupDragAndDrop(nativeHtml);
-        
-        // Set up form field interactions
         this._setupFormInteractions(nativeHtml);
-        
-        // Set up image management
         this._setupImageManagement(nativeHtml);
+        this._updateFormFields();
     }
 
     async _handleFormSubmit(event) {
         event.preventDefault();
-        
-        // Get form data
-        const form = event.target;
+        const form = event.target.closest('form') || event.target;
         const formData = new FormData(form);
-        
-        // Convert FormData to object
         const entry = {};
         for (const [key, value] of formData.entries()) {
-            // Skip empty values for optional fields
             if (key === 'img' && !value) continue;
             if (key === 'location' && !value) continue;
             if (key === 'plotHook' && !value) continue;
             if (key === 'link' && !value) continue;
-
             entry[key] = value;
         }
-        
-        // Form submission logged
-        
-        // Call the original _updateObject method
         await this._updateObject(event, entry);
     }
 
@@ -355,8 +432,6 @@ class CodexForm extends FormApplication {
     }
 
     _setupImageManagement(html) {
-        // html is guaranteed native DOM (already converted in activateListeners)
-        // Show image section if we have an image
         if (this.entry.img) {
             const imgSection = html.querySelector('.codex-image-section');
             const imgPreview = html.querySelector('.codex-image-preview');
@@ -373,14 +448,7 @@ class CodexForm extends FormApplication {
         if (removeImageButton) {
             const handler = () => {
                 this.entry.img = null;
-                const imgSection = html.querySelector('.codex-image-section');
-                const imgPreview = html.querySelector('.codex-image-preview');
-                if (imgSection) {
-                    imgSection.style.display = 'none';
-                }
-                if (imgPreview) {
-                    imgPreview.setAttribute('src', '');
-                }
+                this._updateFormFields();
             };
             removeImageButton.addEventListener('click', handler);
             this._eventHandlers.push({ element: removeImageButton, event: 'click', handler });
@@ -388,17 +456,12 @@ class CodexForm extends FormApplication {
     }
 
     _setupDragAndDrop(html) {
-        // html is guaranteed native DOM (already converted in activateListeners)
-        // Main drag zone for any entity
         const mainDragZone = html.querySelector('.codex-drag-zone');
         if (!mainDragZone) return;
-        
-        // v13: Remove existing listeners by cloning (or store references for cleanup)
-        // For now, we'll clone to remove old listeners
+
         const newDragZone = mainDragZone.cloneNode(true);
         mainDragZone.parentNode?.replaceChild(newDragZone, mainDragZone);
-        
-        // v13: Use native DOM drag events
+
         const dragEnterHandler = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -421,16 +484,17 @@ class CodexForm extends FormApplication {
             e.preventDefault();
             e.stopPropagation();
             newDragZone.classList.remove('drag-active');
-            
+
             try {
-                const dataTransfer = e.dataTransfer.getData('text/plain');
-                const data = JSON.parse(dataTransfer);
-                
+                const TextEditor = getTextEditor();
+                const data = TextEditor?.getDragEventData?.(e)
+                    || JSON.parse(e.dataTransfer.getData('text/plain'));
+
                 if (data.type === 'Actor') {
                     await this._handleActorDrop(data);
                 } else if (data.type === 'Item') {
                     await this._handleItemDrop(data);
-                } else if (data.type === 'JournalEntry') {
+                } else if (data.type === 'JournalEntry' || data.type === 'JournalEntryPage') {
                     await this._handleJournalDrop(data);
                 }
             } catch (error) {
@@ -442,8 +506,7 @@ class CodexForm extends FormApplication {
         newDragZone.addEventListener('dragleave', dragLeaveHandler);
         newDragZone.addEventListener('dragover', dragOverHandler);
         newDragZone.addEventListener('drop', dropHandler);
-        
-        // Store handlers for cleanup
+
         this._eventHandlers.push(
             { element: newDragZone, event: 'dragenter', handler: dragEnterHandler },
             { element: newDragZone, event: 'dragleave', handler: dragLeaveHandler },
@@ -456,22 +519,26 @@ class CodexForm extends FormApplication {
         const actor = await fromUuid(data.uuid || `Actor.${data.id}`);
         if (!actor) return;
 
-        // Auto-populate fields for character
         this.entry.name = actor.name;
         this.entry.category = 'Characters';
         this.entry.img = actor.img;
-        
-        // Generate smart tags
-        const tags = ['Characters'];
-        if (actor.type) tags.push(actor.type);
-        if (actor.system?.race?.value) tags.push(actor.system.race.value);
-        if (actor.system?.class?.value) tags.push(actor.system.class.value);
-        
-        this.entry.tags = tags;
-        
-        // Update form
+        this.entry.description = this._appendPlainText(this.entry.description, this._extractDocumentDescription(actor));
+        this.entry.location = this._pickFirstString(actor, [
+            'system.details.location',
+            'system.details.birthplace',
+            'system.details.origin',
+            'system.details.home'
+        ]) || this.entry.location;
+        this.entry.link = this._buildDocumentLink(actor);
+        this.entry.linkLabel = this.entry.link?.label || '';
+        this.entry.tags = this._uniqueTags([
+            'Characters',
+            actor.type,
+            this._pickFirstString(actor, ['system.details.race', 'system.details.race.value', 'system.traits.race']),
+            this._pickFirstString(actor, ['system.details.class', 'system.class.name', 'system.class.value'])
+        ]);
+
         this._updateFormFields();
-        
         ui.notifications.info(`Added character: ${actor.name}`);
     }
 
@@ -479,133 +546,290 @@ class CodexForm extends FormApplication {
         const item = await fromUuid(data.uuid || `Item.${data.id}`);
         if (!item) return;
 
-        // Auto-populate fields for item
         this.entry.name = item.name;
         this.entry.category = 'Items';
         this.entry.img = item.img;
-        
-        // Generate smart tags
-        const tags = ['Items'];
-        if (item.type) tags.push(item.type);
-        if (item.system?.rarity?.value) tags.push(item.system.rarity.value);
-        if (item.system?.equipment?.type) tags.push(item.system.equipment.type);
-        
-        this.entry.tags = tags;
-        
-        // Update form
+        this.entry.description = this._appendPlainText(this.entry.description, this._extractDocumentDescription(item));
+        this.entry.link = this._buildDocumentLink(item);
+        this.entry.linkLabel = this.entry.link?.label || '';
+        this.entry.tags = this._uniqueTags([
+            'Items',
+            item.type,
+            this._pickFirstString(item, ['system.rarity', 'system.rarity.value']),
+            this._pickFirstString(item, ['system.equipment.type', 'system.type.value', 'system.category'])
+        ]);
+
         this._updateFormFields();
-        
         ui.notifications.info(`Added item: ${item.name}`);
     }
 
     async _handleJournalDrop(data) {
-        const journal = await fromUuid(data.uuid || `JournalEntry.${data.id}`);
-        if (!journal) return;
+        const dropped = await fromUuid(data.uuid || (data.type === 'JournalEntryPage' ? `JournalEntryPage.${data.id}` : `JournalEntry.${data.id}`));
+        if (!dropped) return;
 
-        // Auto-populate fields for journal entry
-        this.entry.name = journal.name;
-        this.entry.link = { uuid: journal.uuid, label: journal.name };
-        
-        // Try to extract category from journal content
-        if (journal.pages && journal.pages.contents.length > 0) {
-            const firstPage = journal.pages.contents[0];
-            const content = firstPage.text?.content || '';
-            const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]+)/);
-            if (categoryMatch) {
-                this.entry.category = categoryMatch[1].trim();
-            }
+        let page = null;
+        let journal = null;
+        if (dropped.documentName === 'JournalEntryPage') {
+            page = dropped;
+            journal = dropped.parent || null;
+        } else {
+            journal = dropped;
+            page = journal.pages?.contents?.[0] || null;
         }
-        
-        // Update form
+
+        this.entry.name = page?.name || journal?.name || dropped.name;
+        this.entry.link = this._buildDocumentLink(page || journal || dropped);
+        this.entry.linkLabel = this.entry.link?.label || '';
+        this.entry.category = this.entry.category || 'Books';
+
+        if (page) {
+            try {
+                const content = typeof page.text?.content === 'string' ? page.text.content : '';
+                const TextEditor = getTextEditor();
+                const enriched = await TextEditor.enrichHTML(content, {
+                    secrets: game.user.isGM,
+                    documents: true,
+                    links: true,
+                    rolls: true
+                });
+                const parsed = await CodexParser.parseSinglePage(page, enriched);
+                if (parsed?.category) this.entry.category = parsed.category;
+                if (parsed?.description) {
+                    this.entry.description = this._appendPlainText(this.entry.description, parsed.description);
+                }
+                if (parsed?.plotHook) this.entry.plotHook = parsed.plotHook;
+                if (parsed?.location) this.entry.location = parsed.location;
+                if (parsed?.img) this.entry.img = parsed.img;
+                if (Array.isArray(parsed?.tags) && parsed.tags.length) {
+                    this.entry.tags = parsed.tags;
+                } else {
+                    this.entry.tags = this._uniqueTags(['Books', 'Journal']);
+                }
+            } catch (error) {
+                console.warn('Error parsing dropped journal for codex entry:', error);
+                this.entry.description = this._appendPlainText(this.entry.description, this._extractDocumentDescription(page));
+                this.entry.tags = this._uniqueTags(['Books', 'Journal']);
+            }
+        } else {
+            this.entry.description = this._appendPlainText(this.entry.description, this._extractDocumentDescription(journal || dropped));
+            this.entry.tags = this._uniqueTags(['Books', 'Journal']);
+        }
+
         this._updateFormFields();
-        
-        ui.notifications.info(`Added journal entry: ${journal.name}`);
+
+        ui.notifications.info(`Added journal entry: ${this.entry.name}`);
     }
 
     _updateFormFields() {
-        // v13: Use native DOM instead of jQuery
         const element = this._getNativeElement();
         if (!element) return;
-        
+
         const form = element.querySelector('form');
         if (!form) return;
-        
-        // Update basic fields
+
         const nameInput = form.querySelector('input[name="name"]');
         if (nameInput) nameInput.value = this.entry.name || '';
-        
+
         const descriptionTextarea = form.querySelector('textarea[name="description"]');
         if (descriptionTextarea) descriptionTextarea.value = this.entry.description || '';
-        
+
         const plotHookTextarea = form.querySelector('textarea[name="plotHook"]');
         if (plotHookTextarea) plotHookTextarea.value = this.entry.plotHook || '';
-        
+
         const tagsInput = form.querySelector('input[name="tags"]');
         if (tagsInput) tagsInput.value = (this.entry.tags || []).join(', ');
-        
+
         const imgInput = form.querySelector('input[name="img"]');
         if (imgInput) imgInput.value = this.entry.img || '';
-        
-        // Update category dropdown
-        if (this.entry.category) {
-            const categorySelect = form.querySelector('#category');
-            const newCategoryInput = form.querySelector('#new-category');
-            
-            if (categorySelect && newCategoryInput) {
-                // Check if category exists in dropdown
+
+        const pageUuidInput = form.querySelector('input[name="pageUuid"]');
+        if (pageUuidInput) pageUuidInput.value = this.pageUuid || '';
+
+        const linkInput = form.querySelector('input[name="link"]');
+        if (linkInput) linkInput.value = this.entry.link?.uuid || '';
+
+        const linkLabelInput = form.querySelector('input[name="linkLabel"]');
+        if (linkLabelInput) linkLabelInput.value = this.entry.link?.label || this.entry.linkLabel || '';
+
+        const categorySelect = form.querySelector('#category');
+        const newCategoryInput = form.querySelector('#new-category');
+        if (categorySelect && newCategoryInput) {
+            if (this.entry.category) {
                 const existingOption = categorySelect.querySelector(`option[value="${this.entry.category}"]`);
                 if (existingOption) {
                     categorySelect.value = this.entry.category;
                     newCategoryInput.style.display = 'none';
+                    newCategoryInput.value = '';
                     newCategoryInput.removeAttribute('name');
                     categorySelect.setAttribute('name', 'category');
                 } else {
-                    // Set to "new" and populate the new category input
                     categorySelect.value = 'new';
                     newCategoryInput.style.display = '';
                     newCategoryInput.value = this.entry.category;
                     newCategoryInput.setAttribute('name', 'category');
                     categorySelect.removeAttribute('name');
                 }
+            } else {
+                categorySelect.value = '';
+                newCategoryInput.style.display = 'none';
+                newCategoryInput.value = '';
+                newCategoryInput.removeAttribute('name');
+                categorySelect.setAttribute('name', 'category');
             }
         }
-        
-        // Update location dropdown
-        if (this.entry.location) {
-            const locationSelect = form.querySelector('#location');
-            const newLocationInput = form.querySelector('#new-location');
-            
-            if (locationSelect && newLocationInput) {
-                // Check if location exists in dropdown
+
+        const locationSelect = form.querySelector('#location');
+        const newLocationInput = form.querySelector('#new-location');
+        if (locationSelect && newLocationInput) {
+            if (this.entry.location) {
                 const existingOption = locationSelect.querySelector(`option[value="${this.entry.location}"]`);
                 if (existingOption) {
                     locationSelect.value = this.entry.location;
                     newLocationInput.style.display = 'none';
+                    newLocationInput.value = '';
                     newLocationInput.removeAttribute('name');
                     locationSelect.setAttribute('name', 'location');
                 } else {
-                    // Set to "new" and populate the new location input
                     locationSelect.value = 'new';
                     newLocationInput.style.display = '';
                     newLocationInput.value = this.entry.location;
                     newLocationInput.setAttribute('name', 'location');
                     locationSelect.removeAttribute('name');
                 }
+            } else {
+                locationSelect.value = '';
+                newLocationInput.style.display = 'none';
+                newLocationInput.value = '';
+                newLocationInput.removeAttribute('name');
+                locationSelect.setAttribute('name', 'location');
             }
         }
-        
-        // Update image preview if exists
-        if (this.entry.img) {
-            const imgSection = form.querySelector('.codex-image-section');
-            const imgPreview = form.querySelector('.codex-image-preview');
-            
-            if (imgSection) {
-                imgSection.style.display = '';
-            }
-            if (imgPreview) {
-                imgPreview.setAttribute('src', this.entry.img);
+
+        const imgSection = form.querySelector('.codex-image-section');
+        const imgPreview = form.querySelector('.codex-image-preview');
+        if (imgSection) {
+            imgSection.style.display = this.entry.img ? '' : 'none';
+        }
+        if (imgPreview) {
+            imgPreview.setAttribute('src', this.entry.img || '');
+        }
+    }
+
+    _normalizeTags(tags) {
+        if (Array.isArray(tags)) return this._uniqueTags(tags);
+        if (typeof tags === 'string') return this._uniqueTags(tags.split(','));
+        return [];
+    }
+
+    _uniqueTags(tags) {
+        const values = [];
+        for (const tag of tags || []) {
+            if (tag === undefined || tag === null) continue;
+            const normalized = String(tag).trim();
+            if (!normalized) continue;
+            if (!values.some(existing => existing.toLowerCase() === normalized.toLowerCase())) {
+                values.push(normalized);
             }
         }
+        return values;
+    }
+
+    _buildDocumentLink(document) {
+        if (!document?.uuid) return null;
+        return {
+            uuid: document.uuid,
+            label: document.name || 'Link'
+        };
+    }
+
+    _normalizeLinkValue(link, fallbackLabel = 'Link') {
+        if (!link) return null;
+        if (typeof link === 'string') {
+            const uuid = link.trim();
+            if (!uuid) return null;
+            return { uuid, label: fallbackLabel || 'Link' };
+        }
+        if (typeof link === 'object') {
+            const uuid = String(link.uuid || '').trim();
+            if (!uuid) return null;
+            return {
+                uuid,
+                label: String(link.label || fallbackLabel || 'Link').trim() || 'Link'
+            };
+        }
+        return null;
+    }
+
+    async _resolveLinkFromForm(linkValue, linkLabel, fallbackLabel = 'Link') {
+        const normalized = this._normalizeLinkValue(linkValue, linkLabel || fallbackLabel);
+        if (!normalized) return null;
+        if (!linkLabel) {
+            try {
+                const document = await fromUuid(normalized.uuid);
+                if (document?.name) normalized.label = document.name;
+            } catch (_) {}
+        }
+        return normalized;
+    }
+
+    _pickFirstString(document, paths = []) {
+        for (const path of paths) {
+            const value = foundry.utils.getProperty(document, path);
+            if (typeof value === 'string' && value.trim()) return value.trim();
+        }
+        return '';
+    }
+
+    _extractDocumentDescription(document) {
+        const raw = this._pickFirstString(document, [
+            'system.description.value',
+            'system.description.chat',
+            'system.details.biography.value',
+            'system.details.appearance',
+            'system.details.notes.value',
+            'text.content'
+        ]);
+        if (!raw) return '';
+        const parsed = new DOMParser().parseFromString(raw, 'text/html');
+        return parsed.body?.textContent?.trim() || raw.trim();
+    }
+
+    _appendPlainText(existingText, incomingText) {
+        const normalize = (value) => String(value || '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+
+        const current = normalize(existingText);
+        const incoming = normalize(incomingText);
+
+        if (!incoming) return current;
+        if (!current) return incoming;
+        if (current === incoming) return current;
+
+        return `${current}\n\n${incoming}`;
+    }
+
+    async _refreshCodexPanel() {
+        const codexPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.codexPanel;
+        if (!codexPanel) return;
+        await codexPanel._refreshData();
+        codexPanel.render(codexPanel.element);
+    }
+
+    _clearEventHandlers() {
+        for (const { element, event, handler } of this._eventHandlers) {
+            try {
+                element?.removeEventListener?.(event, handler);
+            } catch (_) {}
+        }
+        this._eventHandlers = [];
+    }
+
+    async close(options = {}) {
+        this._clearEventHandlers();
+        return super.close(options);
     }
 }
 
@@ -1291,7 +1515,7 @@ export class CodexPanel {
         if (addCodexButton) {
             const newButton = addCodexButton.cloneNode(true);
             addCodexButton.parentNode?.replaceChild(newButton, addCodexButton);
-            newButton.addEventListener('click', () => {
+            newButton.addEventListener('click', async () => {
                 if (!game.user.isGM) return;
 
                 const journalId = game.settings.get(MODULE.ID, 'codexJournal');
@@ -1306,8 +1530,7 @@ export class CodexPanel {
                     return;
                 }
 
-                const codexForm = new CodexForm();
-                codexForm.render(true);
+                await CodexForm.open();
             });
         }
 
@@ -1344,6 +1567,37 @@ export class CodexPanel {
             });
         });
 
+        nativeHtml.querySelectorAll('.codex-entry-image img').forEach(image => {
+            const newImage = image.cloneNode(true);
+            image.parentNode?.replaceChild(newImage, image);
+            newImage.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const imgEl = event.currentTarget;
+                const src = imgEl.getAttribute('src');
+                if (!src) return;
+
+                const entryEl = imgEl.closest('.codex-entry');
+                const uuid = entryEl?.dataset?.uuid || null;
+                let title = imgEl.getAttribute('alt') || 'Codex Image';
+
+                if (uuid) {
+                    try {
+                        const page = await fromUuid(uuid);
+                        if (page?.name) title = page.name;
+                    } catch (_) {}
+                }
+
+                const imagePopout = new ImagePopout(src, {
+                    title,
+                    shareable: true,
+                    uuid
+                });
+                imagePopout.render(true);
+            });
+        });
+
         // Per-entry "..." context menu (GM only)
         nativeHtml.querySelectorAll('.codex-entry-menu').forEach(menuBtn => {
             const newBtn = menuBtn.cloneNode(true);
@@ -1374,6 +1628,15 @@ export class CodexPanel {
                                 callback: async () => {
                                     const doc = await fromUuid(uuid);
                                     if (doc) doc.sheet.render(true);
+                                }
+                            },
+                            {
+                                name: 'Edit Entry',
+                                icon: 'fa-solid fa-pen',
+                                callback: async () => {
+                                    const page = await fromUuid(uuid);
+                                    if (!page) return;
+                                    await CodexForm.open({ page });
                                 }
                             },
                             ...(hasPinId ? [{
@@ -1475,6 +1738,19 @@ export class CodexPanel {
             });
         });
 
+        nativeHtml.querySelectorAll('.codex-entry-name').forEach(title => {
+            const newTitle = title.cloneNode(true);
+            title.parentNode?.replaceChild(newTitle, title);
+            newTitle.addEventListener('click', function(e) {
+                const card = e.currentTarget.closest('.codex-entry');
+                if (card) {
+                    card.classList.toggle('collapsed');
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
         // Category collapse/expand
         // v13: Use nativeHtml instead of html
         nativeHtml.querySelectorAll('.codex-category .fa-chevron-down').forEach(chevron => {
@@ -1489,6 +1765,25 @@ export class CodexPanel {
                 collapsedCategories[category] = collapsed;
                 game.user.setFlag(MODULE.ID, 'codexCollapsedCategories', collapsedCategories);
                 
+                e.stopPropagation();
+            });
+        });
+
+        nativeHtml.querySelectorAll('.codex-category h3').forEach(title => {
+            const newTitle = title.cloneNode(true);
+            title.parentNode?.replaceChild(newTitle, title);
+            newTitle.addEventListener('click', function(e) {
+                const section = e.currentTarget.closest('.codex-section');
+                if (!section) return;
+                section.classList.toggle('collapsed');
+
+                const category = section.dataset.category;
+                const collapsed = section.classList.contains('collapsed');
+                const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+                collapsedCategories[category] = collapsed;
+                game.user.setFlag(MODULE.ID, 'codexCollapsedCategories', collapsedCategories);
+
+                e.preventDefault();
                 e.stopPropagation();
             });
         });
