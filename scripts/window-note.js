@@ -47,7 +47,7 @@ const NOTE_EDIT_LOCK_TOUCH_MIN_MS = 30 * 1000;
 
 /**
  * NotesForm - Lightweight form for quick note capture
- * Uses FormApplication for simplicity (like CodexForm)
+ * Uses FormApplication for simplicity.
  */
 export class NotesForm extends FormApplication {
     constructor(note = null, options = {}) {

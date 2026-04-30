@@ -21,7 +21,7 @@ coffee-pub-squire/
 │   ├── utility-quest-pins.js  # Quest pin creation, update, ownership
 │   ├── quest-pin-events.js    # Pin click handler, context menu
 │   ├── panel-*.js             # Panel classes (see Panels below)
-│   ├── window-*.js            # Window/form classes (Notes, Quest, etc.)
+│   ├── window-*.js            # Window classes (Notes, Quest, Codex, etc.)
 │   ├── utility-*-parser.js    # Parsers (codex, notes, quest, base)
 │   ├── utility-journal.js
 │   ├── utility-lights.js
@@ -31,7 +31,7 @@ coffee-pub-squire/
 │   ├── common.css, tray.css, handle.css
 │   ├── panel-*.css            # Panel-specific styles
 │   ├── window-*.css           # Window/form styles
-│   └── quest-markers.css, quest-form.css, codex-form.css, window-note.css, notes-metadata-box.css
+│   └── quest-markers.css, quest-form.css, window-codex.css, window-note.css, notes-metadata-box.css
 ├── templates/
 │   ├── tray.hbs               # Main tray layout (handle + content)
 │   ├── handle-*.hbs           # Handle content per view (player, party, notes, codex, quest)

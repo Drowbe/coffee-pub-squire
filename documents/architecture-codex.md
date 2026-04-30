@@ -14,14 +14,15 @@ The Codex system is a journal-based world-building and reference system. It orga
 
 | File | Class/Purpose |
 |------|---------------|
-| `scripts/panel-codex.js` | `CodexPanel` – main panel UI; `CodexForm` – FormApplication for creating entries |
+| `scripts/panel-codex.js` | `CodexPanel` – main panel UI and panel-side entry actions |
+| `scripts/window-codex.js` | `CodexWindow` – Blacksmith Window API / Application V2 entry create-edit window |
 | `scripts/utility-codex-parser.js` | `CodexParser` – extends `BaseParser`, parses HTML journal content to entry objects |
 | `scripts/utility-base-parser.js` | `BaseParser` – shared `extractFieldFromHTML`, `extractImage`, `extractTags`, `extractLink` |
 | `templates/panel-codex.hbs` | Panel template |
-| `templates/codex-form.hbs` | Form template (add entry) |
+| `templates/window-codex.hbs` | Blacksmith-style Codex window template |
 | `templates/handle-codex.hbs` | Handle content for codex view |
 | `styles/panel-codex.css` | Panel styles |
-| `styles/codex-form.css` | Form styles |
+| `styles/window-codex.css` | Codex window styles layered on Blacksmith shared window classes |
 | `prompts/prompt-codex.txt` | Optional AI-assisted import prompt text |
 
 ## Core Design Philosophy
@@ -51,7 +52,7 @@ This approach:
 ### 3. **Separation of Concerns**
 The system is divided into distinct components:
 - **Parser**: Extracts structured data from HTML
-- **Form**: Handles entry creation/editing
+- **Window**: Handles entry creation/editing
 - **Panel**: Displays and manages entries
 - **Storage**: Journal pages (via FoundryVTT API)
 
@@ -79,9 +80,9 @@ Extends **`BaseParser`** (`utility-base-parser.js`). Converts HTML journal conte
 - Link extraction: `@UUID[type.id]{label}` or `<a data-uuid="...">`
 - Graceful handling of missing fields
 
-### 2. CodexForm (`scripts/panel-codex.js`)
+### 2. CodexWindow (`scripts/window-codex.js`)
 
-`FormApplication` for **creating** codex entries (edit is done via journal sheet or “Open Journal”).
+`CodexWindow` is a Blacksmith-registered Application V2 window for **creating and editing** codex entries.
 
 #### Key Features
 
@@ -92,7 +93,7 @@ Extends **`BaseParser`** (`utility-base-parser.js`). Converts HTML journal conte
 - Category and location dropdowns built from existing entries (`_getExistingCategories`, `_getExistingLocations`); tag input comma-separated; image preview and remove.
 
 **Journal Integration**
-- Uses `codexJournal` setting; creates new journal pages via `journal.createEmbeddedDocuments('JournalEntryPage', [pageData])`; content from `_generateJournalContent(entry)` (img, category, description, plotHook, location, tags). Does not write a Link field.
+- Uses `codexJournal` setting; creates or updates journal pages via Foundry document APIs; content from `_generateJournalContent(entry)` (img, category, description, plotHook, link, location, tags).
 
 **After Save**
 - Closes form; refreshes `CodexPanel` (`_refreshData()` then `render(element)`).
@@ -158,7 +159,7 @@ Client-side DOM filtering: search (text across entry content), tag multi-select;
 ```
 1. User clicks "Add Codex Entry"
    ↓
-2. CodexForm opens with empty/default entry
+2. CodexWindow opens with empty/default entry
    ↓
 3. User fills form (optionally drags token/item/journal)
    ↓
@@ -269,7 +270,7 @@ Codex Panel
 - Collapsible sections with state persistence
 - Rich content rendering (HTML from enriched journal content)
 
-### Form Template (`templates/codex-form.hbs`)
+### Window Template (`templates/window-codex.hbs`)
 
 The form template provides:
 - Drag & drop zone for auto-population
@@ -353,7 +354,7 @@ if (typeof page.text?.content === 'string') {
 
 ## Extension Points
 
-- **Custom fields:** Add extraction in `CodexParser.parseSinglePage()`, form field in `codex-form.hbs`, display in panel template, and output in `CodexForm._generateJournalContent()`.
+- **Custom fields:** Add extraction in `CodexParser.parseSinglePage()`, window field in `window-codex.hbs`, display in panel template, and output in `CodexWindow._generateJournalContent()`.
 - **Category icons:** Extend `CodexPanel.getCategoryIcon(category)` map (e.g. `'Custom Category': 'fa-custom-icon'`; default `'fa-book'`).
 
 ## Technical Requirements

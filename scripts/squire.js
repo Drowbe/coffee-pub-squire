@@ -1898,6 +1898,14 @@ Hooks.once('init', async function() {
             const form = new NotesForm(null, options);
             form.render(true);
             return form;
+        },
+        openCodexWindow: (options = {}) => {
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (typeof blacksmith?.openWindow !== 'function') {
+                ui.notifications.warn('Codex window is not ready yet.');
+                return null;
+            }
+            return blacksmith.openWindow(`${MODULE.ID}-codex-window`, options);
         }
     };
     
@@ -1934,6 +1942,17 @@ Hooks.once('ready', async function() {
 
     // Register module settings
     registerSettings();
+
+    try {
+        const { registerCodexWindow, openCodexWindow, CodexWindow, CODEX_WINDOW_ID } = await import('./window-codex.js');
+        registerCodexWindow();
+        game.modules.get(MODULE.ID).api.openCodexWindow = openCodexWindow;
+        game.modules.get(MODULE.ID).api.CodexWindow = CodexWindow;
+        game.modules.get(MODULE.ID).api.CODEX_WINDOW_ID = CODEX_WINDOW_ID;
+        window.CodexWindow = CodexWindow;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register Codex window:', error);
+    }
 
     // Register pin type friendly names with Blacksmith.
     // Taxonomy (types + tags) is owned and shipped by Blacksmith in its global JSON;

@@ -1,0 +1,212 @@
+.codex-window {
+    --blacksmith-window-border-color: #444;
+    --blacksmith-window-accent-color: #ac9f81;
+    --blacksmith-window-background: #232323;
+    --blacksmith-window-header-bg: rgba(0, 0, 0, 0.7);
+    --blacksmith-window-banner-image-title: url('../images/backgrounds/background-skull-red.webp');
+}
+
+.codex-window .blacksmith-window-template-body {
+    padding: 14px;
+}
+
+.codex-window-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.codex-window .blacksmith-window-template-action-right .blacksmith-window-btn-primary,
+.codex-window .blacksmith-window-template-action-right .blacksmith-window-btn-secondary {
+    width: auto;
+    min-width: 136px;
+    justify-content: center;
+}
+
+.codex-window-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.45);
+    color: rgba(224, 224, 224, 0.82);
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.codex-drag-section {
+    padding: 10px 12px;
+}
+
+.codex-drop-callout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 0;
+    padding: 2px 0;
+}
+
+.codex-drop-callout i {
+    flex-shrink: 0;
+    font-size: 1.35em;
+    color: var(--blacksmith-window-accent-color);
+}
+
+.codex-drop-copy {
+    min-width: 0;
+}
+
+.codex-drop-title {
+    font-size: 0.95em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(240, 236, 226, 0.95);
+}
+
+.codex-drop-subtitle {
+    margin-top: 2px;
+    font-size: 0.85em;
+    color: rgba(214, 208, 194, 0.72);
+}
+
+.codex-window .codex-drag-zone {
+    border: 1px dashed rgba(172, 159, 129, 0.45);
+    background: rgba(0, 0, 0, 0.28);
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.codex-window .codex-drag-zone:hover,
+.codex-window .codex-drag-zone.drag-active {
+    border-color: rgba(255, 100, 0, 0.55);
+    background: rgba(255, 100, 0, 0.08);
+    box-shadow: 0 0 0 1px rgba(255, 100, 0, 0.15) inset;
+}
+
+.codex-image-section {
+    display: none;
+}
+
+.codex-image-preview-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.codex-image-preview {
+    display: block;
+    width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.codex-remove-image {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+}
+
+.codex-form-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.codex-form-grid-two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.codex-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.codex-form-field-full {
+    grid-column: 1 / -1;
+}
+
+.codex-form-field label {
+    color: rgba(240, 236, 226, 0.95);
+    font-size: 0.82em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.codex-form-label-optional {
+    color: rgba(214, 208, 194, 0.6);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.codex-form-field input[type="text"],
+.codex-form-field select,
+.codex-form-field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(240, 236, 226, 0.95);
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.codex-form-field input[type="text"]::placeholder,
+.codex-form-field textarea::placeholder {
+    color: rgba(214, 208, 194, 0.5);
+}
+
+.codex-form-field input[type="text"]:focus,
+.codex-form-field select:focus,
+.codex-form-field textarea:focus {
+    outline: none;
+    border-color: rgba(255, 100, 0, 0.6);
+    box-shadow: 0 0 0 1px rgba(255, 100, 0, 0.2);
+}
+
+.codex-form-field textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.45;
+}
+
+.codex-form-field select option {
+    background: #2a2a2a;
+    color: #f2f0e6;
+}
+
+.codex-form-hint {
+    color: rgba(214, 208, 194, 0.62);
+    font-size: 0.78em;
+    line-height: 1.35;
+}
+
+.new-category {
+    display: none;
+}
+
+@media (max-width: 720px) {
+    .codex-form-grid-two {
+        grid-template-columns: 1fr;
+    }
+
+    .codex-window .blacksmith-window-template-header-right {
+        display: none;
+    }
+}

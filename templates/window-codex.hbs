@@ -1,0 +1,142 @@
+<div class="blacksmith-window-template-root codex-window" id="{{appId}}">
+    <header class="blacksmith-window-template-header">
+        <div class="blacksmith-window-template-header-content">
+            <div class="blacksmith-window-template-header-icon">
+                <i class="fa-solid fa-book-open-cover"></i>
+            </div>
+            <div class="blacksmith-window-template-header-title-block">
+                <div class="blacksmith-window-template-header-title">{{windowTitle}}</div>
+                <div class="blacksmith-window-template-header-subtitle">{{subtitle}}</div>
+            </div>
+            <div class="blacksmith-window-template-header-right">
+                <span class="codex-window-status">{{#if isEditing}}Editing Existing Entry{{else}}New Entry{{/if}}</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="blacksmith-window-template-body">
+        <form class="codex-window-form" method="post">
+            <input type="hidden" name="img" value="{{entry.img}}">
+            <input type="hidden" name="pageUuid" value="{{entry.pageUuid}}">
+            <input type="hidden" name="linkLabel" value="{{entry.link.label}}">
+
+            <section class="blacksmith-window-section codex-drag-section codex-drag-zone">
+                <div class="codex-drop-callout">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <div class="codex-drop-copy">
+                        <div class="codex-drop-title">{{#if isEditing}}Update From Drop{{else}}Drag & Drop Here{{/if}}</div>
+                        <div class="codex-drop-subtitle">Drop actors, items, journal entries, or journal pages to auto-populate fields.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section codex-image-section" style="display: none;">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-image"></i>
+                    <span>Image</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="codex-image-preview-wrapper">
+                        <img class="codex-image-preview" src="" alt="Preview">
+                        <button type="button" class="codex-remove-image blacksmith-window-btn-critical" aria-label="Remove image">
+                        <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Basic Information</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="codex-form-grid codex-form-grid-two">
+                        <div class="codex-form-field codex-form-field-full">
+                            <label for="name">Name *</label>
+                            <input type="text" id="name" name="name" value="{{entry.name}}" required>
+                        </div>
+
+                        <div class="codex-form-field">
+                            <label for="category">Category *</label>
+                            <select id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                {{#each existingCategories}}
+                                <option value="{{this}}" {{#if (eq this ../entry.category)}}selected{{/if}}>{{this}}</option>
+                                {{/each}}
+                                <option value="new">+ New Category</option>
+                            </select>
+                            <input type="text" id="new-category" name="new-category" placeholder="Enter new category" class="new-category">
+                        </div>
+
+                        <div class="codex-form-field">
+                            <label for="location">Location</label>
+                            <select id="location" name="location">
+                                <option value="">Select Location</option>
+                                {{#each existingLocations}}
+                                <option value="{{this}}" {{#if (eq this ../entry.location)}}selected{{/if}}>{{this}}</option>
+                                {{/each}}
+                                <option value="new">+ New Location</option>
+                            </select>
+                            <input type="text" id="new-location" name="new-location" placeholder="Enter new location" class="new-category">
+                        </div>
+
+                        <div class="codex-form-field codex-form-field-full">
+                            <label for="link">Link UUID <span class="codex-form-label-optional">(optional)</span></label>
+                            <input
+                                type="text"
+                                id="link"
+                                name="link"
+                                value="{{#if entry.link}}{{entry.link.uuid}}{{/if}}"
+                                placeholder="e.g. JournalEntry.abc123 or Actor.def456"
+                            >
+                            <small class="codex-form-hint">UUID of a related journal entry, actor, or item.</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-scroll"></i>
+                    <span>Content</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="codex-form-field">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="7" placeholder="Describe what this is, where it's located, and any important details...">{{#if entry.description}}{{entry.description}}{{/if}}</textarea>
+                    </div>
+
+                    <div class="codex-form-field">
+                        <label for="plotHook">Plot Hook</label>
+                        <textarea id="plotHook" name="plotHook" rows="5" placeholder="How does this relate to the story? What might the party need from it?">{{#if entry.plotHook}}{{entry.plotHook}}{{/if}}</textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-tags"></i>
+                    <span>Tags</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="codex-form-field">
+                        <label for="tags">Tags (comma-separated)</label>
+                        <input type="text" id="tags" name="tags" value="{{#if entry.tags}}{{#if (isArray entry.tags)}}{{entry.tags.join ', '}}{{else}}{{entry.tags}}{{/if}}{{/if}}" placeholder="Enter tags separated by commas">
+                        <small class="codex-form-hint">Common tags: Characters, Items, Locations, Factions, Artifacts, Events</small>
+                    </div>
+                </div>
+            </section>
+        </form>
+    </div>
+
+    <section class="blacksmith-window-template-buttons">
+        <div class="blacksmith-window-template-action-bar">
+            <div class="blacksmith-window-template-action-left"></div>
+            <div class="blacksmith-window-template-action-right">
+                <button type="button" class="blacksmith-window-btn-secondary" data-action="cancel">Cancel</button>
+                <button type="button" class="blacksmith-window-btn-primary" data-action="save">{{#if isEditing}}Update Entry{{else}}Save Entry{{/if}}</button>
+            </div>
+        </div>
+    </section>
+</div>
