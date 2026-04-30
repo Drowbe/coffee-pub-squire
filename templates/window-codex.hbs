@@ -5,11 +5,10 @@
                 <i class="fa-solid fa-book-open-cover"></i>
             </div>
             <div class="blacksmith-window-template-header-title-block">
-                <div class="blacksmith-window-template-header-title">{{windowTitle}}</div>
-                <div class="blacksmith-window-template-header-subtitle">{{subtitle}}</div>
-            </div>
-            <div class="blacksmith-window-template-header-right">
-                <span class="codex-window-status">{{#if isEditing}}Editing Existing Entry{{else}}New Entry{{/if}}</span>
+                <div class="blacksmith-window-template-header-title codex-window-header-title">{{headerTitle}}</div>
+                {{#if subtitle}}
+                    <div class="blacksmith-window-template-header-subtitle">{{subtitle}}</div>
+                {{/if}}
             </div>
         </div>
     </header>
@@ -64,28 +63,42 @@
                             <input type="text" id="name" name="name" value="{{entry.name}}" required>
                         </div>
 
-                        <div class="codex-form-field">
-                            <label for="category">Category *</label>
-                            <select id="category" name="category" required>
-                                <option value="">Select Category</option>
-                                {{#each existingCategories}}
-                                <option value="{{this}}" {{#if (eq this ../entry.category)}}selected{{/if}}>{{this}}</option>
-                                {{/each}}
-                                <option value="new">+ New Category</option>
-                            </select>
-                            <input type="text" id="new-category" name="new-category" placeholder="Enter new category" class="new-category">
+                        <div class="codex-form-row codex-form-field-full">
+                            <div class="codex-form-field codex-form-row-select">
+                                <label for="category">Category *</label>
+                                <select id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="new">+ New Category</option>
+                                    {{#each existingCategories}}
+                                    <option value="{{this}}" {{#if (eq this ../entry.category)}}selected{{/if}}>{{this}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="codex-form-field new-category-input-field">
+                                <label for="new-category">New Category *</label>
+                                <input type="text" id="new-category" name="new-category" placeholder="Enter new category">
+                            </div>
+                            <div class="codex-form-field codex-form-field-icon new-category-icon-field">
+                                <label for="categoryIcon">Icon *</label>
+                                <input type="text" id="categoryIcon" name="categoryIcon" value="{{entry.categoryIcon}}" placeholder="fa-solid fa-map">
+                            </div>
                         </div>
 
-                        <div class="codex-form-field">
-                            <label for="location">Location</label>
-                            <select id="location" name="location">
-                                <option value="">Select Location</option>
-                                {{#each existingLocations}}
-                                <option value="{{this}}" {{#if (eq this ../entry.location)}}selected{{/if}}>{{this}}</option>
-                                {{/each}}
-                                <option value="new">+ New Location</option>
-                            </select>
-                            <input type="text" id="new-location" name="new-location" placeholder="Enter new location" class="new-category">
+                        <div class="codex-form-row codex-form-field-full">
+                            <div class="codex-form-field codex-form-row-select">
+                                <label for="location">Location</label>
+                                <select id="location" name="location">
+                                    <option value="">Select Location</option>
+                                    <option value="new">+ New Location</option>
+                                    {{#each existingLocations}}
+                                    <option value="{{this}}" {{#if (eq this ../entry.location)}}selected{{/if}}>{{this}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="codex-form-field new-location-input-field">
+                                <label for="new-location">New Location</label>
+                                <input type="text" id="new-location" name="new-location" placeholder="Enter new location">
+                            </div>
                         </div>
 
                         <div class="codex-form-field codex-form-field-full">
@@ -130,8 +143,18 @@
                     <div class="codex-form-field">
                         <label for="tags">Tags (comma-separated)</label>
                         <input type="text" id="tags" name="tags" value="{{#if entry.tags}}{{#if (isArray entry.tags)}}{{entry.tags.join ', '}}{{else}}{{entry.tags}}{{/if}}{{/if}}" placeholder="Enter tags separated by commas">
-                        <small class="codex-form-hint">Common tags: Characters, Items, Locations, Factions, Artifacts, Events</small>
+                        <small class="codex-form-hint">Click suggested tags to add or remove them.</small>
                     </div>
+                    {{#if suggestedTags.length}}
+                        <div class="codex-tag-suggestions-wrap">
+                            <div class="codex-tag-group-label">Suggested</div>
+                            <div class="blacksmith-tags" data-chip-type="tag">
+                                {{#each suggestedTags}}
+                                    <span class="blacksmith-tag codex-tag-chip {{#if (includes ../entry.tags this)}}active{{/if}}" data-tag-value="{{this}}">{{this}}</span>
+                                {{/each}}
+                            </div>
+                        </div>
+                    {{/if}}
                 </div>
             </section>
         </form>

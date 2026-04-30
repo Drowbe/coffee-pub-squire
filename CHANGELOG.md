@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.0]
+
+### Changed
+- **Codex window – Blacksmith Application V2 migration**: Replaced the legacy Codex add form path with a registered Blacksmith Window API / Application V2 window (`scripts/window-codex.js`, `templates/window-codex.hbs`, `styles/window-codex.css`). Codex now opens through `registerWindow` / `openWindow`, uses the shared Blacksmith window shell and section classes, and exposes `openCodexWindow` on the module API.
+- **Codex window – Blacksmith-aligned layout**: Rebuilt the window internals to match the shared Blacksmith window patterns instead of the older custom Codex chrome. Header, body, sections, action bar, and buttons now use the shared window template structure, and the oversized drag/drop hero was reduced to a compact callout.
+- **Codex window – create/edit workflow**: Codex now supports both creating and editing entries in the same window. The header title reflects the current entry name when editing and uses `New Codex Entry` when creating.
+- **Codex window – image workflow**: Added a persistent image section with preview, remove action, and native Foundry `FilePicker` browse action so entries can set artwork without drag/drop.
+- **Codex window – category/location UX**: Category and location controls now use dedicated rows. `+ New Category` and `+ New Location` appear as the second option in their dropdowns, and the conditional create-new inputs appear inline beside the dropdown when needed.
+- **Codex window – custom category icon**: New categories can now define a Font Awesome icon class (for example `fa-solid fa-map`) alongside the category name. The icon field is shown only when `+ New Category` is selected and is required together with the new category name.
+- **Codex window – suggested tags**: Added clickable suggested tag chips in the Tags section. Clicking a chip adds or removes it from the tags input, and manual edits in the input keep chip active state in sync.
+- **Codex tray – entry interactions**: Clicking an entry title now toggles the entry open/closed, and clicking a category title now toggles the category section. Entry images in the tray now open in Foundry’s native `ImagePopout`.
+- **Codex tray – image presentation**: Expanded Codex tray images now render full width and scale to entry width without the prior max-height clamp.
+- **Codex tray – edit action**: Added `Edit Entry` to the per-entry `...` menu so existing Codex pages can be loaded directly into the Codex window for editing.
+
+### Fixed
+- **Codex drag/drop field mapping**: Expanded drag/drop population for actors, items, journal entries, and journal pages so more Codex fields are filled consistently, including description text, link UUID/label data, and related metadata.
+- **Codex drag/drop descriptions**: Dropped descriptions now append plain text to the existing description instead of overwriting it, with normalization for line breaks and duplicate content.
+- **Codex drag/drop link persistence**: Fixed cases where dropped linked-document UUID data could be lost because the form state and rendered inputs were not fully synchronized.
+- **Codex category list normalization**: Category dropdown options are now normalized and deduplicated case-insensitively so values like `Artifacts` and `artifacts` do not appear as separate options.
+- **Codex new-category / new-location reveal**: Fixed the conditional new-category and new-location inputs so they actually appear when selected.
+- **Codex save action handler**: Fixed the Application V2 save action path after the Blacksmith migration (`_ref` resolution for `ACTION_HANDLERS`).
+- **Codex panel pointer affordance**: Added pointer cursor styling for clickable entry and category titles so hover feedback matches the new click behavior.
+
+### Removed
+- **Legacy Codex form assets**: Removed the old Codex form template and stylesheet (`templates/codex-form.hbs`, `styles/codex-form.css`) and their CSS import path after the Blacksmith window migration.
+
+
 ## [13.1.15]
   - **Codex Panel - Image display**: Codex entries now display their associated image in the panel if available.
   - **Codex Panel - Visibility toggle**: Codex entries now display their associated visibility toggle in the panel if available.

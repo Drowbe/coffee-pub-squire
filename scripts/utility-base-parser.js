@@ -34,7 +34,8 @@ export class BaseParser {
                     let afterStrong = container.innerHTML.split(strong.outerHTML)[1] || '';
                     afterStrong = afterStrong.trim();
                     if (afterStrong.startsWith(':')) afterStrong = afterStrong.slice(1);
-                    const value = afterStrong.replace(/^\s*/, '').replace(/<[^>]+>/g, '').trim();
+                    const valueDoc = parser.parseFromString(`<div>${afterStrong}</div>`, 'text/html');
+                    const value = valueDoc.body?.textContent?.replace(/^\s*/, '').trim() || '';
                     return value;
                 }
             }

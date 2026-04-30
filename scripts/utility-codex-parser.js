@@ -132,6 +132,7 @@ export class CodexParser extends BaseParser {
             name: page.name,
             img: '',
             category: '',  // Optional - will default to "No Category" if missing
+            categoryIcon: '',
             description: '',  // Optional
             plotHook: '',
             location: '',
@@ -149,6 +150,7 @@ export class CodexParser extends BaseParser {
         if (entry.category.length > 0) {
             entry.category = entry.category.charAt(0).toUpperCase() + entry.category.slice(1).toLowerCase();
         }
+        entry.categoryIcon = BaseParser.extractFieldFromHTML(enrichedHtml, 'Category Icon', 'p');
         
         entry.description = BaseParser.extractFieldFromHTML(enrichedHtml, 'Description', 'p');
         entry.plotHook = BaseParser.extractFieldFromHTML(enrichedHtml, 'Plot Hook', 'p');

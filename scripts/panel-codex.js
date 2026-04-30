@@ -309,19 +309,21 @@ export class CodexPanel {
      * @param {string} category
      * @returns {string} FontAwesome icon class
      */
-    getCategoryIcon(category) {
+    getCategoryIcon(category, customIcon = '') {
+        const normalizedCustomIcon = String(customIcon || '').trim();
+        if (normalizedCustomIcon) return normalizedCustomIcon;
         const map = {
-            'No Category': 'fa-question-circle',
-            'Artifacts': 'fa-gem',
-            'Characters': 'fa-user',
-            'Events': 'fa-calendar-star',
-            'Factions': 'fa-shield-cross',
-            'Items': 'fa-box',
-            'Locations': 'fa-location-pin',
-            'Maps': 'fa-map'
+            'No Category': 'fa-solid fa-question-circle',
+            'Artifacts': 'fa-solid fa-gem',
+            'Characters': 'fa-solid fa-user',
+            'Events': 'fa-solid fa-calendar-star',
+            'Factions': 'fa-solid fa-shield-cross',
+            'Items': 'fa-solid fa-box',
+            'Locations': 'fa-solid fa-location-pin',
+            'Maps': 'fa-solid fa-map'
             // Add more mappings as needed
         };
-        return map[category] || 'fa-book';
+        return map[category] || 'fa-solid fa-book';
     }
 
     /**
@@ -1674,6 +1676,7 @@ export class CodexPanel {
             }
             // Sort entries alphabetically by name
             entries = entries.slice().sort((a, b) => a.name.localeCompare(b.name));
+            const customCategoryIcon = entries.find(entry => String(entry.categoryIcon || '').trim())?.categoryIcon || '';
             // Enrich links for Foundry UUID handling
             for (const entry of entries) {
                 if (entry.link && entry.link.uuid && entry.link.label) {
@@ -1695,7 +1698,7 @@ export class CodexPanel {
             
             return {
                 name: category,
-                icon: this.getCategoryIcon(category),
+                icon: this.getCategoryIcon(category, customCategoryIcon),
                 entries,
                 collapsed: collapsedCategories[category] || false,
                 totalCount,

@@ -96,9 +96,11 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             isEditing: this.isEditing,
             isGM: game.user.isGM,
             windowTitle: 'Codex',
-            subtitle: this.isEditing ? 'Edit Codex Entry' : 'Create Codex Entry',
+            headerTitle: this._getHeaderTitle(),
+            subtitle: this.isEditing ? 'Edit Codex Entry' : '',
             existingCategories: this._getExistingCategories(),
-            existingLocations: this._getExistingLocations()
+            existingLocations: this._getExistingLocations(),
+            suggestedTags: this._getSuggestedTags()
         };
     }
 
@@ -132,6 +134,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             name: '',
             img: null,
             category: '',
+            categoryIcon: '',
             description: '',
             plotHook: '',
             location: '',
@@ -142,6 +145,53 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         };
     }
 
+    _getHeaderTitle() {
+        if (this.isEditing) {
+            return String(this.entry?.name || this.page?.name || 'Untitled Codex Entry').trim() || 'Untitled Codex Entry';
+        }
+        return 'New Codex Entry';
+    }
+
+    _normalizeCategoryValue(value) {
+        const text = String(value || '').trim();
+        if (!text) return '';
+        return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    }
+
+    _decodeHtmlEntities(value) {
+        const text = String(value || '').trim();
+        if (!text) return '';
+        try {
+            const parsed = new DOMParser().parseFromString(`<div>${text}</div>`, 'text/html');
+            return parsed.body?.textContent?.trim() || text;
+        } catch (_) {
+            return text;
+        }
+    }
+
+    _getSuggestedTags() {
+        return [
+            'Artifact',
+            'Book',
+            'Character',
+            'City',
+            'Dungeon',
+            'Event',
+            'Faction',
+            'History',
+            'Item',
+            'Location',
+            'Lore',
+            'Map',
+            'NPC',
+            'Organization',
+            'Quest',
+            'Region',
+            'Rumor',
+            'Settlement'
+        ];
+    }
+
     _getExistingCategories() {
         const journalId = game.settings.get(MODULE.ID, 'codexJournal');
         if (!journalId || journalId === 'none') return [];
@@ -149,17 +199,20 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         const journal = game.journal.get(journalId);
         if (!journal) return [];
 
-        const categories = new Set();
+        const categories = new Map();
         for (const page of journal.pages.contents) {
             try {
                 const content = page.text?.content || '';
                 const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]+)/);
                 if (categoryMatch) {
-                    categories.add(categoryMatch[1].trim());
+                    const normalized = this._normalizeCategoryValue(this._decodeHtmlEntities(categoryMatch[1]));
+                    if (normalized) {
+                        categories.set(normalized.toLowerCase(), normalized);
+                    }
                 }
             } catch (_) {}
         }
-        return Array.from(categories).sort();
+        return Array.from(categories.values()).sort((a, b) => a.localeCompare(b));
     }
 
     _getExistingLocations() {
@@ -175,8 +228,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                 const content = page.text?.content || '';
                 const locationMatch = content.match(/<strong>Location:<\/strong>\s*([^<]+)/);
                 if (locationMatch) {
-                    let location = locationMatch[1].trim();
-                    location = location.replace(/&gt;/g, '>');
+                    let location = this._decodeHtmlEntities(locationMatch[1]);
                     locations.add(location);
                 }
             } catch (_) {}
@@ -206,8 +258,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _updateObject(_event, formData) {
-        const entry = expandObject(formData);
+        const entry = foundry.utils.expandObject(formData);
         entry.pageUuid = this.pageUuid || entry.pageUuid || null;
+        entry.category = this._normalizeCategoryValue(entry.category);
+        entry.categoryIcon = String(entry.categoryIcon || '').trim();
         entry.link = await this._resolveLinkFromForm(entry.link, entry.linkLabel, entry.name);
         entry.linkLabel = entry.link?.label || '';
         entry.tags = this._normalizeTags(entry.tags);
@@ -275,6 +329,9 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         if (entry.category) {
             content += `<p><strong>Category:</strong> ${entry.category}</p>\n\n`;
         }
+        if (entry.categoryIcon) {
+            content += `<p><strong>Category Icon:</strong> ${entry.categoryIcon}</p>\n\n`;
+        }
         if (entry.description) {
             content += `<p><strong>Description:</strong> ${entry.description}</p>\n\n`;
         }
@@ -301,18 +358,44 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     _setupFormInteractions(root) {
+        const nameInput = root.querySelector('#name');
+        if (nameInput) {
+            const handler = () => {
+                this.entry.name = nameInput.value || '';
+                this._updateHeaderFields();
+            };
+            nameInput.addEventListener('input', handler);
+            this._eventHandlers.push({ element: nameInput, event: 'input', handler });
+        }
+
         const categorySelect = root.querySelector('#category');
         const newCategoryInput = root.querySelector('#new-category');
+        const categoryIconInput = root.querySelector('#categoryIcon');
+        const newCategoryInputField = root.querySelector('.new-category-input-field');
+        const categoryIconField = root.querySelector('.new-category-icon-field');
         if (categorySelect) {
             const handler = function() {
                 if (this.value === 'new') {
-                    newCategoryInput.style.display = '';
+                    if (newCategoryInputField) newCategoryInputField.style.display = 'flex';
                     newCategoryInput.focus();
                     newCategoryInput.setAttribute('name', 'category');
+                    newCategoryInput.required = true;
+                    if (categoryIconField) categoryIconField.style.display = 'flex';
+                    if (categoryIconInput) {
+                        categoryIconInput.setAttribute('name', 'categoryIcon');
+                        categoryIconInput.required = true;
+                    }
                     categorySelect.removeAttribute('name');
                 } else {
-                    newCategoryInput.style.display = 'none';
+                    if (newCategoryInputField) newCategoryInputField.style.display = 'none';
                     newCategoryInput.removeAttribute('name');
+                    newCategoryInput.required = false;
+                    if (categoryIconField) categoryIconField.style.display = 'none';
+                    if (categoryIconInput) {
+                        categoryIconInput.removeAttribute('name');
+                        categoryIconInput.required = false;
+                        categoryIconInput.value = '';
+                    }
                     categorySelect.setAttribute('name', 'category');
                 }
             };
@@ -322,15 +405,16 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
 
         const locationSelect = root.querySelector('#location');
         const newLocationInput = root.querySelector('#new-location');
+        const newLocationInputField = root.querySelector('.new-location-input-field');
         if (locationSelect) {
             const handler = function() {
                 if (this.value === 'new') {
-                    newLocationInput.style.display = '';
+                    if (newLocationInputField) newLocationInputField.style.display = 'flex';
                     newLocationInput.focus();
                     newLocationInput.setAttribute('name', 'location');
                     locationSelect.removeAttribute('name');
                 } else {
-                    newLocationInput.style.display = 'none';
+                    if (newLocationInputField) newLocationInputField.style.display = 'none';
                     newLocationInput.removeAttribute('name');
                     locationSelect.setAttribute('name', 'location');
                 }
@@ -360,6 +444,34 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             newLocationInput.addEventListener('input', handler);
             this._eventHandlers.push({ element: newLocationInput, event: 'input', handler });
         }
+
+        const tagsInput = root.querySelector('#tags');
+        if (tagsInput) {
+            const handler = () => {
+                this.entry.tags = this._normalizeTags(tagsInput.value);
+                this._updateTagChipStates(root);
+            };
+            tagsInput.addEventListener('input', handler);
+            this._eventHandlers.push({ element: tagsInput, event: 'input', handler });
+        }
+
+        root.querySelectorAll('.codex-tag-chip').forEach(chip => {
+            const handler = () => {
+                const value = String(chip.dataset.tagValue || '').trim();
+                if (!value) return;
+                const current = this._normalizeTags(tagsInput?.value || this.entry.tags || []);
+                const exists = current.some(tag => tag.toLowerCase() === value.toLowerCase());
+                this.entry.tags = exists
+                    ? current.filter(tag => tag.toLowerCase() !== value.toLowerCase())
+                    : [...current, value];
+                if (tagsInput) {
+                    tagsInput.value = this.entry.tags.join(', ');
+                }
+                this._updateTagChipStates(root);
+            };
+            chip.addEventListener('click', handler);
+            this._eventHandlers.push({ element: chip, event: 'click', handler });
+        });
     }
 
     _setupImageManagement(root) {
@@ -533,6 +645,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                 });
                 const parsed = await CodexParser.parseSinglePage(page, enriched);
                 if (parsed?.category) this.entry.category = parsed.category;
+                if (parsed?.categoryIcon) this.entry.categoryIcon = parsed.categoryIcon;
                 if (parsed?.description) {
                     this.entry.description = this._appendPlainText(this.entry.description, parsed.description);
                 }
@@ -586,54 +699,82 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         const linkLabelInput = form.querySelector('input[name="linkLabel"]');
         if (linkLabelInput) linkLabelInput.value = this.entry.link?.label || this.entry.linkLabel || '';
 
+        const categoryIconInput = form.querySelector('#categoryIcon');
+        if (categoryIconInput) categoryIconInput.value = this.entry.categoryIcon || '';
+
+        this._updateHeaderFields();
+
         const categorySelect = form.querySelector('#category');
         const newCategoryInput = form.querySelector('#new-category');
+        const newCategoryInputField = form.querySelector('.new-category-input-field');
+        const categoryIconField = form.querySelector('.new-category-icon-field');
         if (categorySelect && newCategoryInput) {
             if (this.entry.category) {
                 const existingOption = categorySelect.querySelector(`option[value="${this.entry.category}"]`);
                 if (existingOption) {
                     categorySelect.value = this.entry.category;
-                    newCategoryInput.style.display = 'none';
+                    if (newCategoryInputField) newCategoryInputField.style.display = 'none';
                     newCategoryInput.value = '';
                     newCategoryInput.removeAttribute('name');
+                    newCategoryInput.required = false;
+                    if (categoryIconField) categoryIconField.style.display = 'none';
+                    if (categoryIconInput) {
+                        categoryIconInput.removeAttribute('name');
+                        categoryIconInput.required = false;
+                        categoryIconInput.value = '';
+                    }
                     categorySelect.setAttribute('name', 'category');
                 } else {
                     categorySelect.value = 'new';
-                    newCategoryInput.style.display = '';
+                    if (newCategoryInputField) newCategoryInputField.style.display = 'flex';
                     newCategoryInput.value = this.entry.category;
                     newCategoryInput.setAttribute('name', 'category');
+                    newCategoryInput.required = true;
+                    if (categoryIconField) categoryIconField.style.display = 'flex';
+                    if (categoryIconInput) {
+                        categoryIconInput.setAttribute('name', 'categoryIcon');
+                        categoryIconInput.required = true;
+                    }
                     categorySelect.removeAttribute('name');
                 }
             } else {
                 categorySelect.value = '';
-                newCategoryInput.style.display = 'none';
+                if (newCategoryInputField) newCategoryInputField.style.display = 'none';
                 newCategoryInput.value = '';
                 newCategoryInput.removeAttribute('name');
+                newCategoryInput.required = false;
+                if (categoryIconField) categoryIconField.style.display = 'none';
+                if (categoryIconInput) {
+                    categoryIconInput.removeAttribute('name');
+                    categoryIconInput.required = false;
+                    categoryIconInput.value = '';
+                }
                 categorySelect.setAttribute('name', 'category');
             }
         }
 
         const locationSelect = form.querySelector('#location');
         const newLocationInput = form.querySelector('#new-location');
+        const newLocationInputField = form.querySelector('.new-location-input-field');
         if (locationSelect && newLocationInput) {
             if (this.entry.location) {
                 const existingOption = locationSelect.querySelector(`option[value="${this.entry.location}"]`);
                 if (existingOption) {
                     locationSelect.value = this.entry.location;
-                    newLocationInput.style.display = 'none';
+                    if (newLocationInputField) newLocationInputField.style.display = 'none';
                     newLocationInput.value = '';
                     newLocationInput.removeAttribute('name');
                     locationSelect.setAttribute('name', 'location');
                 } else {
                     locationSelect.value = 'new';
-                    newLocationInput.style.display = '';
+                    if (newLocationInputField) newLocationInputField.style.display = 'flex';
                     newLocationInput.value = this.entry.location;
                     newLocationInput.setAttribute('name', 'location');
                     locationSelect.removeAttribute('name');
                 }
             } else {
                 locationSelect.value = '';
-                newLocationInput.style.display = 'none';
+                if (newLocationInputField) newLocationInputField.style.display = 'none';
                 newLocationInput.value = '';
                 newLocationInput.removeAttribute('name');
                 locationSelect.setAttribute('name', 'location');
@@ -655,6 +796,25 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         }
         if (removeImageButton) {
             removeImageButton.classList.toggle('is-visible', !!this.entry.img);
+        }
+
+        this._updateTagChipStates(form);
+    }
+
+    _updateTagChipStates(root) {
+        const tags = this._normalizeTags(this.entry.tags || []);
+        root.querySelectorAll('.codex-tag-chip').forEach(chip => {
+            const value = String(chip.dataset.tagValue || '').trim().toLowerCase();
+            chip.classList.toggle('active', tags.some(tag => tag.toLowerCase() === value));
+        });
+    }
+
+    _updateHeaderFields() {
+        const root = this._getRoot();
+        if (!root) return;
+        const titleEl = root.querySelector('.codex-window-header-title');
+        if (titleEl) {
+            titleEl.textContent = this._getHeaderTitle();
         }
     }
 

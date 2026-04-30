@@ -86,7 +86,7 @@ export class QuestForm extends FormApplication {
     }
 
     async _updateObject(event, formData) {
-        const quest = expandObject(formData);
+        const quest = foundry.utils.expandObject(formData);
         
         // Ensure the status is set
         quest.status = quest.status || 'Not Started';
