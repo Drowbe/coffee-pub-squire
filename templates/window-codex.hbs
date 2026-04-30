@@ -30,16 +30,23 @@
                 </div>
             </section>
 
-            <section class="blacksmith-window-section codex-image-section" style="display: none;">
+            <section class="blacksmith-window-section codex-image-section">
                 <div class="blacksmith-window-section-header">
                     <i class="fa-solid fa-image"></i>
                     <span>Image</span>
                 </div>
                 <div class="blacksmith-window-section-body">
                     <div class="codex-image-preview-wrapper">
+                        <div class="codex-image-placeholder">No image selected. Drop a document with artwork to populate this section.</div>
                         <img class="codex-image-preview" src="" alt="Preview">
                         <button type="button" class="codex-remove-image blacksmith-window-btn-critical" aria-label="Remove image">
-                        <i class="fa-solid fa-times"></i>
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="codex-image-actions">
+                        <button type="button" class="blacksmith-window-btn-secondary codex-browse-image">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Browse Image</span>
                         </button>
                     </div>
                 </div>

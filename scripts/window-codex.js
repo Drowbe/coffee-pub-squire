@@ -363,6 +363,29 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     _setupImageManagement(root) {
+        const browseImageButton = root.querySelector('.codex-browse-image');
+        if (browseImageButton) {
+            const handler = async () => {
+                if (typeof FilePicker !== 'function') {
+                    ui.notifications.warn('Image browser is unavailable.');
+                    return;
+                }
+
+                const picker = new FilePicker({
+                    type: 'imagevideo',
+                    current: this.entry.img || '',
+                    callback: (path) => {
+                        this.entry.img = path || null;
+                        this._updateFormFields();
+                    }
+                });
+
+                picker.render(true);
+            };
+            browseImageButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: browseImageButton, event: 'click', handler });
+        }
+
         const removeImageButton = root.querySelector('.codex-remove-image');
         if (removeImageButton) {
             const handler = () => {
@@ -618,12 +641,20 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         }
 
         const imgSection = form.querySelector('.codex-image-section');
+        const imgPlaceholder = form.querySelector('.codex-image-placeholder');
         const imgPreview = form.querySelector('.codex-image-preview');
+        const removeImageButton = form.querySelector('.codex-remove-image');
         if (imgSection) {
-            imgSection.style.display = this.entry.img ? '' : 'none';
+            imgSection.style.display = '';
+        }
+        if (imgPlaceholder) {
+            imgPlaceholder.style.display = this.entry.img ? 'none' : '';
         }
         if (imgPreview) {
             imgPreview.setAttribute('src', this.entry.img || '');
+        }
+        if (removeImageButton) {
+            removeImageButton.classList.toggle('is-visible', !!this.entry.img);
         }
     }
 
@@ -745,14 +776,14 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     static async _actionSave(event, _target) {
-        const instance = this._ref;
+        const instance = CodexWindow._ref;
         if (!instance) return;
         event?.preventDefault?.();
         await instance._handleFormSubmit({ preventDefault() {}, target: instance._getRoot()?.querySelector('form') });
     }
 
     static async _actionCancel(event, _target) {
-        const instance = this._ref;
+        const instance = CodexWindow._ref;
         if (!instance) return;
         event?.preventDefault?.();
         await instance.close();

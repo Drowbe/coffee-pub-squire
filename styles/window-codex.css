@@ -86,18 +86,25 @@
     box-shadow: 0 0 0 1px rgba(255, 100, 0, 0.15) inset;
 }
 
-.codex-image-section {
-    display: none;
-}
-
 .codex-image-preview-wrapper {
     position: relative;
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    align-items: center;
+    min-height: 132px;
     padding: 8px;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(0, 0, 0, 0.28);
+}
+
+.codex-image-placeholder {
+    color: rgba(214, 208, 194, 0.62);
+    font-size: 0.82em;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 360px;
 }
 
 .codex-image-preview {
@@ -106,6 +113,11 @@
     max-height: 240px;
     object-fit: contain;
     border-radius: 6px;
+}
+
+.codex-image-preview:not([src]),
+.codex-image-preview[src=""] {
+    display: none;
 }
 
 .codex-remove-image {
@@ -117,6 +129,21 @@
     height: 34px;
     padding: 0;
     justify-content: center;
+}
+
+.codex-remove-image:not(.is-visible) {
+    display: none;
+}
+
+.codex-image-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.codex-image-actions .blacksmith-window-btn-secondary {
+    width: auto;
+    min-width: 0;
 }
 
 .codex-form-grid {
@@ -158,13 +185,23 @@
 .codex-form-field select,
 .codex-form-field textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 12px;
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 4px;
     background: rgba(0, 0, 0, 0.35);
     color: rgba(240, 236, 226, 0.95);
     font: inherit;
     box-sizing: border-box;
+}
+
+.codex-form-field input[type="text"],
+.codex-form-field select {
+    min-height: 36px;
+    line-height: 1.2;
+}
+
+.codex-form-field select {
+    padding-right: 30px;
 }
 
 .codex-form-field input[type="text"]::placeholder,
