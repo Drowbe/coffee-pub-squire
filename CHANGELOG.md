@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Codex window – Blacksmith-aligned layout**: Rebuilt the window internals to match the shared Blacksmith window patterns instead of the older custom Codex chrome. Header, body, sections, action bar, and buttons now use the shared window template structure, and the oversized drag/drop hero was reduced to a compact callout.
 - **Codex window – create/edit workflow**: Codex now supports both creating and editing entries in the same window. The header title reflects the current entry name when editing and uses `New Codex Entry` when creating.
 - **Codex window – image workflow**: Added a persistent image section with preview, remove action, and native Foundry `FilePicker` browse action so entries can set artwork without drag/drop.
-- **Codex window – category/location UX**: Category and location controls now use dedicated rows. `+ New Category` and `+ New Location` appear as the second option in their dropdowns, and the conditional create-new inputs appear inline beside the dropdown when needed.
+- **Codex window – category/location UX**: Category and location controls now use dedicated rows. `+ New Category` and `+ New Location` appear as the second option in their dropdowns, and the conditional create-new inputs appear inline beside the dropdown when needed (`[dropdown] [new value] [icon]` for category, `[dropdown] [new value]` for location).
 - **Codex window – custom category icon**: New categories can now define a Font Awesome icon class (for example `fa-solid fa-map`) alongside the category name. The icon field is shown only when `+ New Category` is selected and is required together with the new category name.
 - **Codex window – suggested tags**: Added clickable suggested tag chips in the Tags section. Clicking a chip adds or removes it from the tags input, and manual edits in the input keep chip active state in sync.
 - **Codex tray – entry interactions**: Clicking an entry title now toggles the entry open/closed, and clicking a category title now toggles the category section. Entry images in the tray now open in Foundry’s native `ImagePopout`.
@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Codex category list normalization**: Category dropdown options are now normalized and deduplicated case-insensitively so values like `Artifacts` and `artifacts` do not appear as separate options.
 - **Codex new-category / new-location reveal**: Fixed the conditional new-category and new-location inputs so they actually appear when selected.
 - **Codex save action handler**: Fixed the Application V2 save action path after the Blacksmith migration (`_ref` resolution for `ACTION_HANDLERS`).
+- **Codex save compatibility warning**: Replaced deprecated global `expandObject(...)` calls with `foundry.utils.expandObject(...)` in Codex and Quest window save paths.
+- **Codex category/location entity decoding**: Fixed category and location values containing HTML entities so characters like `&` round-trip correctly instead of reappearing as escaped entity text.
 - **Codex panel pointer affordance**: Added pointer cursor styling for clickable entry and category titles so hover feedback matches the new click behavior.
 
 ### Removed
