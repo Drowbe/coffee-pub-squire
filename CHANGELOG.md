@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.1.15]
+  - **Codex Panel - Image display**: Codex entries now display their associated image in the panel if available.
+  - **Codex Panel - Visibility toggle**: Codex entries now display their associated visibility toggle in the panel if available.
+  - **Codex Panel - Link display**: Codex entries now display their associated link in the panel if available.
+  - **Codex Panel - Discovered by display**: Codex entries now display their associated discovered by in the panel if available.
+  - **Codex Panel - Category display**: Codex entries now display their associated category in the panel if available.
+  - **Codex Panel - Name display**: Codex entries now display their associated name in the panel if available.
+  - **Codex Panel - Description display**: Codex entries now display their associated description in the panel if available.
+  - **Codex Panel - Tags display**: Codex entries now display their associated tags in the panel if available.
+
 ## [13.1.14]
 
 ### Added
