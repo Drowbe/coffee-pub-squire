@@ -1,0 +1,273 @@
+.quest-window {
+    --blacksmith-window-border-color: #444;
+    --blacksmith-window-accent-color: #ac9f81;
+    --blacksmith-window-background: #232323;
+    --blacksmith-window-header-bg: rgba(0, 0, 0, 0.7);
+    --blacksmith-window-banner-image-title: url('../images/backgrounds/background-skull-red.webp');
+}
+
+.quest-window .blacksmith-window-template-body {
+    padding: 14px;
+}
+
+.quest-window-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.quest-window .blacksmith-window-template-action-right .blacksmith-window-btn-primary,
+.quest-window .blacksmith-window-template-action-right .blacksmith-window-btn-secondary {
+    width: auto;
+    min-width: 136px;
+    justify-content: center;
+}
+
+.quest-drag-section {
+    padding: 10px 12px;
+}
+
+.quest-drop-callout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 0;
+    padding: 2px 0;
+}
+
+.quest-drop-callout i {
+    flex-shrink: 0;
+    font-size: 1.35em;
+    color: var(--blacksmith-window-accent-color);
+}
+
+.quest-drop-copy {
+    min-width: 0;
+}
+
+.quest-drop-title {
+    font-size: 0.95em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(240, 236, 226, 0.95);
+}
+
+.quest-drop-subtitle {
+    margin-top: 2px;
+    font-size: 0.85em;
+    color: rgba(214, 208, 194, 0.72);
+}
+
+.quest-window .quest-drag-zone {
+    border: 1px dashed rgba(172, 159, 129, 0.45);
+    background: rgba(0, 0, 0, 0.28);
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quest-window .quest-drag-zone:hover,
+.quest-window .quest-drag-zone.drag-active {
+    border-color: rgba(255, 100, 0, 0.55);
+    background: rgba(255, 100, 0, 0.08);
+    box-shadow: 0 0 0 1px rgba(255, 100, 0, 0.15) inset;
+}
+
+.quest-image-preview-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 132px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.quest-image-placeholder {
+    color: rgba(214, 208, 194, 0.62);
+    font-size: 0.82em;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 420px;
+}
+
+.quest-image-preview {
+    display: block;
+    width: 100%;
+    max-height: 260px;
+    object-fit: contain;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.quest-image-preview:not([src]),
+.quest-image-preview[src=""] {
+    display: none;
+}
+
+.quest-remove-image {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+}
+
+.quest-remove-image:not(.is-visible) {
+    display: none;
+}
+
+.quest-image-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.quest-image-actions .blacksmith-window-btn-secondary {
+    width: auto;
+    min-width: 0;
+}
+
+.quest-form-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.quest-form-grid-two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quest-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.quest-form-field-full {
+    grid-column: 1 / -1;
+}
+
+.quest-form-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 1fr);
+    gap: 12px;
+    align-items: end;
+}
+
+.quest-form-row-select {
+    min-width: 0;
+}
+
+.new-category-input-field,
+.new-location-input-field {
+    display: none;
+}
+
+.quest-form-field label {
+    color: rgba(240, 236, 226, 0.95);
+    font-size: 0.82em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.quest-form-field input[type="text"],
+.quest-form-field input[type="number"],
+.quest-form-field select,
+.quest-form-field textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(240, 236, 226, 0.95);
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.quest-form-field input[type="text"],
+.quest-form-field input[type="number"],
+.quest-form-field select {
+    min-height: 36px;
+    line-height: 1.2;
+}
+
+.quest-form-field select {
+    padding-right: 30px;
+}
+
+.quest-form-field input[type="text"]::placeholder,
+.quest-form-field textarea::placeholder {
+    color: rgba(214, 208, 194, 0.5);
+}
+
+.quest-form-field input[type="text"]:focus,
+.quest-form-field input[type="number"]:focus,
+.quest-form-field select:focus,
+.quest-form-field textarea:focus {
+    outline: none;
+    border-color: rgba(255, 100, 0, 0.6);
+    box-shadow: 0 0 0 1px rgba(255, 100, 0, 0.2);
+}
+
+.quest-form-field textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.45;
+}
+
+.quest-form-field select option {
+    background: #2a2a2a;
+    color: #f2f0e6;
+}
+
+.quest-form-hint {
+    color: rgba(214, 208, 194, 0.62);
+    font-size: 0.78em;
+    line-height: 1.35;
+}
+
+.quest-form-hint code {
+    font-size: 0.95em;
+}
+
+.quest-toggle-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.quest-toggle-field input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+.quest-tag-suggestions-wrap {
+    margin-top: 2px;
+}
+
+.quest-tag-group-label {
+    margin-top: 4px;
+    margin-bottom: 2px;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(172, 159, 129, 0.72);
+}
+
+@media (max-width: 760px) {
+    .quest-form-grid-two,
+    .quest-form-row {
+        grid-template-columns: 1fr;
+    }
+}

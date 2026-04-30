@@ -7,6 +7,8 @@ import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-ut
 import { showJournalPicker } from './utility-journal.js';
 import { registerQuestPinEvents, registerQuestPinSync } from './quest-pin-events.js';
 
+const QUEST_WINDOW_ID = `${MODULE.ID}-quest-window`;
+
 // Helper function to get quest number from UUID
 function getQuestNumber(questUuid) {
     let hash = 0;
@@ -20,6 +22,15 @@ function getQuestNumber(questUuid) {
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
+function openQuestWindow(options = {}) {
+    const blacksmith = getBlacksmith();
+    if (typeof blacksmith?.openWindow !== 'function') {
+        ui.notifications.warn('Quest window is not ready yet.');
+        return null;
+    }
+    return blacksmith.openWindow(QUEST_WINDOW_ID, options);
 }
 
 // --- Quest pin icon helpers (mirror notes pattern) ---
@@ -2168,8 +2179,7 @@ export class QuestPanel {
                     return;
                 }
                 
-                const questForm = new QuestForm();
-                questForm.render(true);
+                openQuestWindow();
             });
         }
 
@@ -3605,6 +3615,14 @@ export class QuestPanel {
                     const visible = entryEl?.dataset?.visible === 'true';
                     const zones = {
                         gm: [
+                            {
+                                name: 'Edit Quest',
+                                icon: 'fa-solid fa-pen-to-square',
+                                callback: async () => {
+                                    const page = await fromUuid(uuid);
+                                    if (page) await openQuestWindow({ page });
+                                }
+                            },
                             {
                                 name: 'Open Journal Page',
                                 icon: 'fa-solid fa-feather',

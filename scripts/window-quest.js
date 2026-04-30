@@ -1,325 +1,1344 @@
 import { MODULE } from './const.js';
-import { getNativeElement } from './helpers.js';
+import { QuestParser } from './utility-quest-parser.js';
+import { getTextEditor } from './helpers.js';
 
-// Helper function to safely get Blacksmith API
 function getBlacksmith() {
-  return game.modules.get('coffee-pub-blacksmith')?.api;
+    return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
 }
 
-export class QuestForm extends FormApplication {
+const BlacksmithWindowBaseV2 = getBlacksmith()?.BlacksmithWindowBaseV2 || getBlacksmith()?.getWindowBaseV2?.();
+if (!BlacksmithWindowBaseV2) {
+    throw new Error('Coffee Pub Squire | BlacksmithWindowBaseV2 is unavailable for QuestWindow');
+}
+
+export const QUEST_WINDOW_ID = `${MODULE.ID}-quest-window`;
+
+const TASK_PREFIXES = {
+    completed: '[x]',
+    failed: '[!]',
+    hidden: '[-]',
+    active: '[ ]'
+};
+
+export class QuestWindow extends BlacksmithWindowBaseV2 {
+    static ROOT_CLASS = 'quest-window';
+
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(
+        foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
+        {
+            id: QUEST_WINDOW_ID,
+            classes: ['quest-entry-window', 'quest-window', 'squire-window'],
+            position: { width: 860, height: 900 },
+            window: { title: 'Quest', resizable: true, minimizable: true },
+            windowSizeConstraints: { minWidth: 700, minHeight: 640 }
+        }
+    );
+
+    static PARTS = {
+        body: {
+            template: `modules/${MODULE.ID}/templates/window-quest.hbs`
+        }
+    };
+
+    static ACTION_HANDLERS = null;
+
     constructor(quest = null, options = {}) {
-        super(quest, options);
-        this.quest = quest || this._getDefaultQuest();
+        const opts = foundry.utils.mergeObject({}, options);
+        opts.id = opts.id ?? `${QUEST_WINDOW_ID}-${foundry.utils.randomID().slice(0, 8)}`;
+        opts.position = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, QuestWindow.DEFAULT_OPTIONS.position ?? {}),
+            opts.position || {}
+        );
+        opts.window = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, QuestWindow.DEFAULT_OPTIONS.window ?? {}),
+            opts.window || {}
+        );
+        super(opts);
+
+        this.pageUuid = opts.pageUuid || null;
+        this.page = opts.page || null;
+        this.isEditing = !!this.pageUuid;
+        this.quest = this._normalizeQuest(foundry.utils.mergeObject(this._getDefaultQuest(), quest || {}, { inplace: false }));
+        this.quest.pageUuid = this.pageUuid;
+        this._eventHandlers = [];
     }
 
-    /**
-     * Get native DOM element from this.element (handles jQuery conversion)
-     * @returns {HTMLElement|null} Native DOM element
-     */
-    _getNativeElement() {
-        if (!this.element) return null;
-        // v13: Detect and convert jQuery to native DOM if needed
-        if (this.element.jquery || typeof this.element.find === 'function') {
-            return this.element[0] || this.element.get?.(0) || this.element;
+    static async fromPage(page, options = {}) {
+        let quest = null;
+        try {
+            let content = '';
+            if (typeof page?.text?.content === 'string') {
+                content = page.text.content;
+            } else if (typeof page?.text === 'string') {
+                content = page.text;
+            } else if (page?.text?.content) {
+                content = await page.text.content;
+            }
+
+            const TextEditor = getTextEditor();
+            const enriched = await TextEditor.enrichHTML(content || '', {
+                secrets: game.user.isGM,
+                documents: true,
+                links: true,
+                rolls: true
+            });
+            quest = await QuestParser.parseSinglePage(page, enriched);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error parsing quest page for edit:', error);
         }
-        return this.element;
+
+        const pageQuestUuid = page?.getFlag?.(MODULE.ID, 'questUuid') || '';
+        const pageVisible = page?.getFlag?.(MODULE.ID, 'visible');
+        const originalCategory = page?.getFlag?.(MODULE.ID, 'originalCategory') || '';
+
+        return new QuestWindow(
+            foundry.utils.mergeObject(
+                quest || { name: page?.name || '' },
+                {
+                    questUuid: pageQuestUuid,
+                    originalCategory,
+                    visible: pageVisible !== false
+                },
+                { inplace: false }
+            ),
+            {
+                ...options,
+                pageUuid: page?.uuid || options.pageUuid || null,
+                page
+            }
+        );
     }
 
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: 'quest-form',
-            title: 'Add Quest',
-            template: 'modules/coffee-pub-squire/templates/quest-form.hbs',
-            width: 600,
-            height: 'auto',
-            resizable: true,
-            closeOnSubmit: true,
-            submitOnClose: false,
-            submitOnChange: false
-        });
-    }
-
-    getData() {
-        // Ensure participants is properly formatted for display
-        if (this.quest.participants && Array.isArray(this.quest.participants)) {
-            this.quest.participants = this.quest.participants.join(', ');
-        }
-        
+    async getData() {
+        const tagGroups = this._getSuggestedTagGroups();
         return {
+            appId: this.id,
             quest: this.quest,
-            categories: game.settings.get(MODULE.ID, 'questCategories'),
-            isGM: game.user.isGM
+            isEditing: this.isEditing,
+            isGM: game.user.isGM,
+            windowTitle: 'Quest',
+            headerTitle: this._getHeaderTitle(),
+            subtitle: this.isEditing ? 'Edit Quest' : '',
+            existingCategories: this._getExistingCategories(),
+            existingLocations: this._getExistingLocations(),
+            statusOptions: this._getStatusOptions(),
+            suggestedTags: tagGroups.suggested,
+            otherTags: tagGroups.other,
+            tasksText: this._serializeTasks(this.quest.tasks),
+            participantsText: this._serializeParticipants(this.quest.participants),
+            treasureText: this._serializeTreasure(this.quest.reward?.treasure)
         };
     }
 
+    async _onRender(context, options) {
+        await super._onRender?.(context, options);
+        const root = this._getRoot();
+        if (!root) return;
+        this._clearEventHandlers();
+        this._attachLocalListeners(root);
+    }
+
+    _attachLocalListeners(root) {
+        const form = root.querySelector('form');
+        if (form) {
+            const handler = (event) => {
+                event.preventDefault();
+                this._handleFormSubmit(event);
+            };
+            form.addEventListener('submit', handler);
+            this._eventHandlers.push({ element: form, event: 'submit', handler });
+        }
+
+        this._setupDragAndDrop(root);
+        this._setupFormInteractions(root);
+        this._setupImageManagement(root);
+        this._updateFormFields();
+    }
+
     _getDefaultQuest() {
-        // Get categories from settings, but filter out "Pinned"
-        const allCategories = game.settings.get(MODULE.ID, 'questCategories');
-        const filteredCategories = allCategories.filter(cat => cat !== "Pinned");
-        
-        // Set default category to "Main Quest" if it exists, otherwise first available
-        const defaultCategory = filteredCategories.includes("Main Quest") ? 
-            "Main Quest" : 
-            (filteredCategories.length > 0 ? filteredCategories[0] : "");
-            
+        const defaultCategory = this._getDefaultCategory();
         return {
             name: '',
-            img: '',
+            img: null,
             category: defaultCategory,
+            description: '',
+            plotHook: '',
+            location: '',
             timeframe: {
                 duration: ''
             },
-            description: '',
             tasks: [],
             reward: {
                 xp: 0,
                 treasure: []
             },
-            location: '',
-            plotHook: '',
+            participants: [],
             status: 'Not Started',
             tags: [],
-            participants: [],
-            uuid: '',
-            visible: false
+            visible: false,
+            questUuid: '',
+            originalCategory: '',
+            pageUuid: null
         };
     }
 
-    async _updateObject(event, formData) {
+    _getDefaultCategory() {
+        const categories = this._getExistingCategories().filter(category => category !== 'Pinned');
+        if (categories.includes('Main Quest')) return 'Main Quest';
+        if (categories.includes('Side Quest')) return 'Side Quest';
+        return categories[0] || '';
+    }
+
+    _normalizeQuest(quest) {
+        const normalized = foundry.utils.mergeObject(this._getDefaultQuest(), quest || {}, { inplace: false });
+        normalized.name = String(normalized.name || '').trim();
+        normalized.img = normalized.img ? String(normalized.img).trim() : null;
+        normalized.category = String(normalized.category || '').trim();
+        normalized.description = String(normalized.description || '').trim();
+        normalized.plotHook = String(normalized.plotHook || '').trim();
+        normalized.location = String(normalized.location || '').trim();
+        normalized.status = this._normalizeStatus(normalized.status);
+        normalized.tags = this._normalizeTags(normalized.tags);
+        normalized.tasks = this._normalizeTaskArray(normalized.tasks);
+        normalized.participants = this._normalizeParticipants(normalized.participants);
+        normalized.reward = normalized.reward && typeof normalized.reward === 'object' ? normalized.reward : {};
+        normalized.reward.xp = Number(normalized.reward.xp) || 0;
+        normalized.reward.treasure = this._normalizeTreasure(normalized.reward.treasure);
+        normalized.timeframe = normalized.timeframe && typeof normalized.timeframe === 'object' ? normalized.timeframe : {};
+        normalized.timeframe.duration = String(normalized.timeframe.duration || '').trim();
+        normalized.visible = normalized.visible === true;
+        normalized.questUuid = String(normalized.questUuid || '').trim();
+        normalized.originalCategory = String(normalized.originalCategory || '').trim();
+        normalized.pageUuid = normalized.pageUuid || this.pageUuid || null;
+        return normalized;
+    }
+
+    _getHeaderTitle() {
+        if (this.isEditing) {
+            return String(this.quest?.name || this.page?.name || 'Untitled Quest').trim() || 'Untitled Quest';
+        }
+        return 'New Quest';
+    }
+
+    _getStatusOptions() {
+        return ['Not Started', 'In Progress', 'Complete', 'Failed'];
+    }
+
+    _getSuggestedTagGroups() {
+        return {
+            suggested: [
+                'Main',
+                'Side',
+                'Urgent',
+                'Narrative',
+                'Exploration',
+                'Combat'
+            ],
+            other: [
+                'Artifact',
+                'Bounty',
+                'Dungeon',
+                'Escort',
+                'Faction',
+                'Investigation',
+                'Mystery',
+                'Party',
+                'Personal',
+                'Political',
+                'Social',
+                'Travel'
+            ]
+        };
+    }
+
+    _decodeHtmlEntities(value) {
+        const text = String(value || '').trim();
+        if (!text) return '';
+        try {
+            const parsed = new DOMParser().parseFromString(`<div>${text}</div>`, 'text/html');
+            return parsed.body?.textContent?.trim() || text;
+        } catch (_) {
+            return text;
+        }
+    }
+
+    _getExistingCategories() {
+        const storedCategories = game.settings.get(MODULE.ID, 'questCategories') || [];
+        const categories = [];
+        for (const category of storedCategories) {
+            const normalized = this._decodeHtmlEntities(category);
+            if (!normalized || normalized === 'Pinned') continue;
+            if (!categories.some(existing => existing.toLowerCase() === normalized.toLowerCase())) {
+                categories.push(normalized);
+            }
+        }
+
+        const currentCategory = String(this.quest?.category || '').trim();
+        if (currentCategory && !categories.some(category => category.toLowerCase() === currentCategory.toLowerCase())) {
+            categories.push(currentCategory);
+        }
+
+        return categories;
+    }
+
+    _getExistingLocations() {
+        const journalId = game.settings.get(MODULE.ID, 'questJournal');
+        if (!journalId || journalId === 'none') return [];
+
+        const journal = game.journal.get(journalId);
+        if (!journal) return [];
+
+        const locations = new Set();
+        for (const page of journal.pages.contents) {
+            try {
+                const content = page.text?.content || '';
+                const locationMatch = content.match(/<strong>Location:<\/strong>\s*([^<]+)/);
+                if (locationMatch) {
+                    const location = this._decodeHtmlEntities(locationMatch[1]);
+                    if (location) locations.add(location);
+                }
+            } catch (_) {}
+        }
+
+        const currentLocation = String(this.quest?.location || '').trim();
+        if (currentLocation) locations.add(currentLocation);
+
+        return Array.from(locations).sort((a, b) => a.localeCompare(b));
+    }
+
+    async _handleFormSubmit(event) {
+        event?.preventDefault?.();
+        const form = event?.target?.closest?.('form') || event?.target || this._getRoot()?.querySelector('form');
+        if (!form) return;
+        const quest = this._collectFormQuest(form);
+        await this._updateObject(event, quest);
+    }
+
+    _collectFormQuest(form) {
+        const formData = new FormData(form);
+        const quest = {};
+        for (const [key, value] of formData.entries()) {
+            if ((key === 'img' || key === 'location' || key === 'plotHook' || key === 'participants' || key === 'reward.treasure' || key === 'timeframe.duration') && !value) {
+                continue;
+            }
+            quest[key] = value;
+        }
+        quest.visible = form.querySelector('input[name="visible"]')?.checked ?? this.quest.visible;
+        return quest;
+    }
+
+    async _updateObject(_event, formData) {
+        const wasEditing = this.isEditing;
         const quest = foundry.utils.expandObject(formData);
-        
-        // Ensure the status is set
-        quest.status = quest.status || 'Not Started';
-        
-        // Convert string arrays back to arrays
-        if (typeof quest.tasks === 'string') {
-            quest.tasks = quest.tasks.split('\n').map(t => ({
-                text: t.trim(),
-                completed: false,
-                state: 'active'
-            })).filter(t => t.text);
-        }
-        
-        // Convert tags to array
-        if (typeof quest.tags === 'string') {
-            quest.tags = quest.tags.split(',').map(t => t.trim()).filter(t => t);
-        }
-
-        // Convert participants to array
-        if (typeof quest.participants === 'string') {
-            quest.participants = quest.participants.split(',').map(p => p.trim()).filter(p => p);
-        }
-
-        // Convert numeric values
+        quest.pageUuid = this.pageUuid || quest.pageUuid || null;
+        quest.visible = quest.visible === true;
+        quest.questUuid = String(quest.questUuid || this.quest.questUuid || foundry.utils.randomID()).trim();
+        quest.category = String(quest.category || '').trim();
+        quest.location = String(quest.location || '').trim();
+        quest.description = String(quest.description || '').trim();
+        quest.plotHook = String(quest.plotHook || '').trim();
+        quest.status = this._normalizeStatus(quest.status);
+        quest.tags = this._normalizeTags(quest.tags);
+        quest.tasks = this._parseTasksInput(quest.tasks);
+        quest.participants = this._parseParticipantsInput(quest.participants);
+        quest.reward = quest.reward && typeof quest.reward === 'object' ? quest.reward : {};
         quest.reward.xp = Number(quest.reward.xp) || 0;
-        
-        // Make sure reward.treasure is a string if it's a number
-        if (typeof quest.reward.treasure === 'number') {
-            quest.reward.treasure = String(quest.reward.treasure);
-        }
+        quest.reward.treasure = this._parseTreasureInput(quest.reward.treasure);
+        quest.timeframe = quest.timeframe && typeof quest.timeframe === 'object' ? quest.timeframe : {};
+        quest.timeframe.duration = String(quest.timeframe.duration || '').trim();
+        quest.img = quest.img ? String(quest.img).trim() : null;
+        quest.originalCategory = this._resolveOriginalCategoryForSave(quest);
 
-        // Generate UUID if new quest
-        if (!quest.uuid) {
-            quest.uuid = foundry.utils.randomID();
-        }
+        this.quest = this._normalizeQuest(foundry.utils.mergeObject(this.quest, quest, { inplace: false }));
 
-        // Get the journal
         const journalId = game.settings.get(MODULE.ID, 'questJournal');
         if (!journalId || journalId === 'none') {
             ui.notifications.error('No quest journal selected. Please select a journal in the quest panel settings.');
-            return;
+            return false;
         }
 
         const journal = game.journal.get(journalId);
         if (!journal) {
             ui.notifications.error('Selected quest journal not found.');
-            return;
+            return false;
         }
 
         try {
-            // Create or update the journal page
+            await this._ensureCategoryRegistered(this.quest.category);
+
             const pageData = {
-                name: quest.name,
+                name: this.quest.name,
                 type: 'text',
                 text: {
-                    content: this._generateJournalContent(quest)
+                    content: this._generateJournalContent(this.quest)
                 }
             };
 
-            let page;
-            if (this.quest.uuid) {
-                // Update existing page
-                page = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === this.quest.uuid);
-                if (page) {
-                    await page.update(pageData);
+            let page = this.page;
+            if (this.isEditing && this.pageUuid) {
+                page = page || await fromUuid(this.pageUuid);
+                if (!page) {
+                    ui.notifications.error('The quest you are editing could not be found.');
+                    return false;
                 }
+                await page.update(pageData);
             } else {
-                // Create new page
                 pageData.flags = {
                     [MODULE.ID]: {
-                        questUuid: quest.uuid
+                        questUuid: this.quest.questUuid
                     }
                 };
-                const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-                page = created[0];
+                const [createdPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                page = createdPage || null;
             }
 
-            // Set the visible flag
-            if (page) {
-                await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
+            if (!page) {
+                ui.notifications.error('Failed to save the quest page.');
+                return false;
             }
 
-            // Show success notification
-            ui.notifications.info(`Quest "${quest.name}" saved successfully.`);
-            
-            // Explicitly close the form
-            this.close();
-            
+            this.page = page;
+            this.pageUuid = page.uuid;
+            this.isEditing = true;
+            this.quest.pageUuid = page.uuid;
+
+            if (page.getFlag(MODULE.ID, 'questUuid') !== this.quest.questUuid) {
+                await page.setFlag(MODULE.ID, 'questUuid', this.quest.questUuid);
+            }
+            await page.setFlag(MODULE.ID, 'visible', this.quest.visible !== false);
+
+            if (this.quest.originalCategory) {
+                await page.setFlag(MODULE.ID, 'originalCategory', this.quest.originalCategory);
+            } else if (page.getFlag(MODULE.ID, 'originalCategory')) {
+                if (typeof page.unsetFlag === 'function') {
+                    await page.unsetFlag(MODULE.ID, 'originalCategory');
+                } else {
+                    await page.setFlag(MODULE.ID, 'originalCategory', null);
+                }
+            }
+
+            ui.notifications.info(`Quest "${this.quest.name}" ${wasEditing ? 'updated' : 'saved'} successfully.`);
+            await this._refreshQuestPanel();
+            await this.close();
             return true;
         } catch (error) {
-            console.error('Error saving quest:', error);
+            console.error('Coffee Pub Squire | Error saving quest:', error);
             ui.notifications.error(`Failed to save quest: ${error.message}`);
             return false;
         }
     }
 
+    _resolveOriginalCategoryForSave(quest) {
+        const originalFlag = this.page?.getFlag?.(MODULE.ID, 'originalCategory') || this.quest.originalCategory || '';
+        const category = String(quest.category || '').trim();
+        if (quest.status === 'Complete' || quest.status === 'Failed') {
+            if (category && !['Completed', 'Failed'].includes(category)) {
+                return category;
+            }
+            return originalFlag;
+        }
+        if (category && !['Completed', 'Failed'].includes(category)) {
+            return '';
+        }
+        return originalFlag;
+    }
+
     _generateJournalContent(quest) {
-        let content = "";
-        
+        let content = '';
+
         if (quest.img) {
-            content += `<img src="${quest.img}" alt="${quest.name}">\n\n`;
+            content += `<img src="${this._escapeAttribute(quest.img)}" alt="${this._escapeAttribute(quest.name)}">\n\n`;
         }
-
         if (quest.category) {
-            content += `<p><strong>Category:</strong> ${quest.category}</p>\n\n`;
+            content += `<p><strong>Category:</strong> ${this._renderInlineText(quest.category)}</p>\n\n`;
         }
-
         if (quest.description) {
-            content += `<p><strong>Description:</strong> ${quest.description}</p>\n\n`;
+            content += `<p><strong>Description:</strong> ${this._renderInlineText(quest.description)}</p>\n\n`;
         }
-        
         if (quest.location) {
-            content += `<p><strong>Location:</strong> ${quest.location}</p>\n\n`;
+            content += `<p><strong>Location:</strong> ${this._renderInlineText(quest.location)}</p>\n\n`;
         }
-
         if (quest.plotHook) {
-            content += `<p><strong>Plot Hook:</strong> ${quest.plotHook}</p>\n\n`;
+            content += `<p><strong>Plot Hook:</strong> ${this._renderInlineText(quest.plotHook)}</p>\n\n`;
         }
-
-        if (quest.tasks && quest.tasks.length) {
+        if (quest.tasks?.length) {
             content += `<p><strong>Tasks:</strong></p>\n<ul>\n`;
-            quest.tasks.forEach(t => {
-                if (typeof t === 'string') {
-                    content += `<li>${t}</li>\n`;
+            for (const task of quest.tasks) {
+                const rawText = this._escapeHtml(task.originalText || task.text || '');
+                if (!rawText) continue;
+                if (task.state === 'completed') {
+                    content += `<li><s>${rawText}</s></li>\n`;
+                } else if (task.state === 'failed') {
+                    content += `<li><code>${rawText}</code></li>\n`;
+                } else if (task.state === 'hidden') {
+                    content += `<li><em>${rawText}</em></li>\n`;
                 } else {
-                    content += `<li>${t.text}</li>\n`;
+                    content += `<li>${rawText}</li>\n`;
                 }
-            });
+            }
             content += `</ul>\n\n`;
         }
-
-        if (quest.reward) {
-            if (quest.reward.xp) {
-                content += `<p><strong>XP:</strong> ${quest.reward.xp}</p>\n\n`;
+        if (quest.reward?.xp) {
+            content += `<p><strong>XP:</strong> ${quest.reward.xp}</p>\n\n`;
+        }
+        if (quest.reward?.treasure?.length) {
+            content += `<p><strong>Treasure:</strong></p>\n<ul>\n`;
+            for (const treasure of quest.reward.treasure) {
+                const line = this._renderLinkableLine(treasure);
+                if (line) content += `<li>${line}</li>\n`;
             }
-            
-            if (quest.reward.treasure && typeof quest.reward.treasure === 'string' && quest.reward.treasure.trim() !== '') {
-                content += `<p><strong>Treasure:</strong> ${quest.reward.treasure}</p>\n\n`;
-            } else if (Array.isArray(quest.reward.treasure) && quest.reward.treasure.length > 0) {
-                content += `<p><strong>Treasure:</strong></p>\n<ul>\n`;
-                quest.reward.treasure.forEach(t => {
-                    if (typeof t === 'string') {
-                        content += `<li>${t}</li>\n`;
-                    } else if (t.uuid) {
-                        content += `<li>@UUID[${t.uuid}]{${t.name || 'Item'}}</li>\n`;
-                    } else {
-                        content += `<li>${t.text || t.name || ''}</li>\n`;
-                    }
-                });
-                content += `</ul>\n\n`;
-            }
+            content += `</ul>\n\n`;
         }
-
-        if (quest.timeframe && quest.timeframe.duration) {
-            content += `<p><strong>Duration:</strong> ${quest.timeframe.duration}</p>\n\n`;
+        if (quest.timeframe?.duration) {
+            content += `<p><strong>Duration:</strong> ${this._renderInlineText(quest.timeframe.duration)}</p>\n\n`;
         }
-
-        // Always include status, default to "Not Started" if not specified
-        content += `<p><strong>Status:</strong> ${quest.status || 'Not Started'}</p>\n\n`;
-
-        if (quest.tags && quest.tags.length) {
-            content += `<p><strong>Tags:</strong> ${quest.tags.join(', ')}</p>\n\n`;
+        content += `<p><strong>Status:</strong> ${this._renderInlineText(quest.status || 'Not Started')}</p>\n\n`;
+        if (quest.tags?.length) {
+            content += `<p><strong>Tags:</strong> ${this._renderInlineText(quest.tags.join(', '))}</p>\n\n`;
         }
-
-        // Add participants section if there are any
-        if (quest.participants && quest.participants.length) {
+        if (quest.participants?.length) {
             content += `<p><strong>Participants:</strong></p>\n<ul>\n`;
-            quest.participants.forEach(participant => {
-                if (participant.uuid) {
-                    content += `<li>@UUID[${participant.uuid}]{${participant.name || 'Unknown'}}</li>\n`;
-                } else {
-                    content += `<li>${participant.name || 'Unknown'}</li>\n`;
-                }
-            });
+            for (const participant of quest.participants) {
+                const line = this._renderLinkableLine(participant);
+                if (line) content += `<li>${line}</li>\n`;
+            }
             content += `</ul>\n\n`;
         }
 
         return content;
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
-
-        // v13: Use helper method for consistency
-        const nativeHtml = getNativeElement(html);
-        if (!nativeHtml) return;
-
-        // Handle image upload
-        const imageUpload = nativeHtml.querySelector('.quest-image-upload');
-        if (imageUpload) {
-            imageUpload.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const file = await new Promise(resolve => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = () => resolve(input.files[0]);
-                    input.click();
-                });
-
-                if (file) {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    const response = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await response.json();
-                    if (result.url) {
-                        this.quest.img = result.url;
-                        this.render();
-                    }
-                }
-            });
+    _setupFormInteractions(root) {
+        const nameInput = root.querySelector('#name');
+        if (nameInput) {
+            const handler = () => {
+                this.quest.name = nameInput.value || '';
+                this._updateHeaderFields();
+            };
+            nameInput.addEventListener('input', handler);
+            this._eventHandlers.push({ element: nameInput, event: 'input', handler });
         }
 
-        // Handle task completion toggling
-        const taskCompleteButtons = nativeHtml.querySelectorAll('.task-complete');
-        taskCompleteButtons.forEach(button => {
-            button.addEventListener('click', (event) => {
-                const index = event.currentTarget.dataset.index;
-                this.quest.tasks[index].completed = !this.quest.tasks[index].completed;
-                this.render();
-            });
+        const categorySelect = root.querySelector('#category');
+        const newCategoryInput = root.querySelector('#new-category');
+        const newCategoryInputField = root.querySelector('.new-category-input-field');
+        if (categorySelect) {
+            const handler = () => this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
+            categorySelect.addEventListener('change', handler);
+            this._eventHandlers.push({ element: categorySelect, event: 'change', handler });
+        }
+
+        const locationSelect = root.querySelector('#location');
+        const newLocationInput = root.querySelector('#new-location');
+        const newLocationInputField = root.querySelector('.new-location-input-field');
+        if (locationSelect) {
+            const handler = () => this._syncLocationFieldVisibility(locationSelect, newLocationInput, newLocationInputField);
+            locationSelect.addEventListener('change', handler);
+            this._eventHandlers.push({ element: locationSelect, event: 'change', handler });
+        }
+
+        const tagsInput = root.querySelector('#tags');
+        if (tagsInput) {
+            const handler = () => {
+                this.quest.tags = this._normalizeTags(tagsInput.value);
+                this._updateTagChipStates(root);
+            };
+            tagsInput.addEventListener('input', handler);
+            this._eventHandlers.push({ element: tagsInput, event: 'input', handler });
+        }
+
+        root.querySelectorAll('.quest-tag-chip').forEach(chip => {
+            const handler = () => {
+                const value = String(chip.dataset.tagValue || '').trim();
+                if (!value) return;
+                const current = this._normalizeTags(tagsInput?.value || this.quest.tags || []);
+                const exists = current.some(tag => tag.toLowerCase() === value.toLowerCase());
+                this.quest.tags = exists
+                    ? current.filter(tag => tag.toLowerCase() !== value.toLowerCase())
+                    : [...current, value];
+                if (tagsInput) {
+                    tagsInput.value = this.quest.tags.join(', ');
+                }
+                this._updateTagChipStates(root);
+            };
+            chip.addEventListener('click', handler);
+            this._eventHandlers.push({ element: chip, event: 'click', handler });
         });
-        
-        // Handle cancel button click
-        const cancelButton = nativeHtml.querySelector('button.cancel');
-        if (cancelButton) {
-            cancelButton.addEventListener('click', () => {
-                this.close();
-            });
+    }
+
+    _syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField) {
+        if (!categorySelect || !newCategoryInput) return;
+        if (categorySelect.value === 'new') {
+            if (newCategoryInputField) newCategoryInputField.style.display = 'flex';
+            newCategoryInput.setAttribute('name', 'category');
+            newCategoryInput.required = true;
+            categorySelect.removeAttribute('name');
+            newCategoryInput.focus();
+        } else {
+            if (newCategoryInputField) newCategoryInputField.style.display = 'none';
+            newCategoryInput.removeAttribute('name');
+            newCategoryInput.required = false;
+            categorySelect.setAttribute('name', 'category');
         }
     }
-} 
 
+    _syncLocationFieldVisibility(locationSelect, newLocationInput, newLocationInputField) {
+        if (!locationSelect || !newLocationInput) return;
+        if (locationSelect.value === 'new') {
+            if (newLocationInputField) newLocationInputField.style.display = 'flex';
+            newLocationInput.setAttribute('name', 'location');
+            locationSelect.removeAttribute('name');
+            newLocationInput.focus();
+        } else {
+            if (newLocationInputField) newLocationInputField.style.display = 'none';
+            newLocationInput.removeAttribute('name');
+            locationSelect.setAttribute('name', 'location');
+        }
+    }
+
+    _setupImageManagement(root) {
+        const browseImageButton = root.querySelector('.quest-browse-image');
+        if (browseImageButton) {
+            const handler = async () => {
+                if (typeof FilePicker !== 'function') {
+                    ui.notifications.warn('Image browser is unavailable.');
+                    return;
+                }
+
+                const picker = new FilePicker({
+                    type: 'imagevideo',
+                    current: this.quest.img || '',
+                    callback: (path) => {
+                        this.quest.img = path || null;
+                        this._updateFormFields();
+                    }
+                });
+                picker.render(true);
+            };
+            browseImageButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: browseImageButton, event: 'click', handler });
+        }
+
+        const removeImageButton = root.querySelector('.quest-remove-image');
+        if (removeImageButton) {
+            const handler = () => {
+                this.quest.img = null;
+                this._updateFormFields();
+            };
+            removeImageButton.addEventListener('click', handler);
+            this._eventHandlers.push({ element: removeImageButton, event: 'click', handler });
+        }
+
+        const preview = root.querySelector('.quest-image-preview');
+        if (preview) {
+            const handler = async () => {
+                if (!this.quest.img || typeof ImagePopout !== 'function') return;
+                const popout = new ImagePopout(this.quest.img, {
+                    title: this.quest.name || 'Quest Image',
+                    uuid: this.pageUuid || undefined
+                });
+                await popout.render(true);
+            };
+            preview.addEventListener('click', handler);
+            this._eventHandlers.push({ element: preview, event: 'click', handler });
+        }
+    }
+
+    _setupDragAndDrop(root) {
+        const dragZone = root.querySelector('.quest-drag-zone');
+        if (!dragZone) return;
+
+        const newDragZone = dragZone.cloneNode(true);
+        dragZone.parentNode?.replaceChild(newDragZone, dragZone);
+
+        const dragEnterHandler = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            newDragZone.classList.add('drag-active');
+        };
+        const dragLeaveHandler = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            newDragZone.classList.remove('drag-active');
+        };
+        const dragOverHandler = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = 'copy';
+        };
+        const dropHandler = async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            newDragZone.classList.remove('drag-active');
+
+            try {
+                const TextEditor = getTextEditor();
+                const data = TextEditor?.getDragEventData?.(event)
+                    || JSON.parse(event.dataTransfer.getData('text/plain'));
+
+                if (data.type === 'Actor') {
+                    await this._handleActorDrop(data);
+                } else if (data.type === 'Item') {
+                    await this._handleItemDrop(data);
+                } else if (data.type === 'JournalEntry' || data.type === 'JournalEntryPage') {
+                    await this._handleJournalDrop(data);
+                }
+            } catch (error) {
+                console.error('Coffee Pub Squire | Error processing dropped Quest entity:', error);
+            }
+        };
+
+        newDragZone.addEventListener('dragenter', dragEnterHandler);
+        newDragZone.addEventListener('dragleave', dragLeaveHandler);
+        newDragZone.addEventListener('dragover', dragOverHandler);
+        newDragZone.addEventListener('drop', dropHandler);
+
+        this._eventHandlers.push(
+            { element: newDragZone, event: 'dragenter', handler: dragEnterHandler },
+            { element: newDragZone, event: 'dragleave', handler: dragLeaveHandler },
+            { element: newDragZone, event: 'dragover', handler: dragOverHandler },
+            { element: newDragZone, event: 'drop', handler: dropHandler }
+        );
+    }
+
+    async _handleActorDrop(data) {
+        const actor = await fromUuid(data.uuid || `Actor.${data.id}`);
+        if (!actor) return;
+
+        this.quest.img = this.quest.img || actor.img || null;
+        this.quest.description = this._appendPlainText(this.quest.description, this._extractDocumentDescription(actor));
+        this.quest.location = this.quest.location || this._pickFirstString(actor, [
+            'system.details.location',
+            'system.details.birthplace',
+            'system.details.origin',
+            'system.details.home'
+        ]);
+        this.quest.participants = this._mergeParticipants(this.quest.participants, [
+            {
+                uuid: actor.uuid,
+                name: actor.name,
+                img: actor.img || 'icons/svg/mystery-man.svg'
+            }
+        ]);
+        this.quest.tags = this._uniqueTags([
+            ...this.quest.tags,
+            'Character',
+            actor.type
+        ]);
+
+        this._updateFormFields();
+        ui.notifications.info(`Added participant: ${actor.name}`);
+    }
+
+    async _handleItemDrop(data) {
+        const item = await fromUuid(data.uuid || `Item.${data.id}`);
+        if (!item) return;
+
+        this.quest.img = this.quest.img || item.img || null;
+        this.quest.description = this._appendPlainText(this.quest.description, this._extractDocumentDescription(item));
+        this.quest.reward.treasure = this._mergeTreasure(this.quest.reward.treasure, [
+            {
+                uuid: item.uuid,
+                name: item.name
+            }
+        ]);
+        this.quest.tags = this._uniqueTags([
+            ...this.quest.tags,
+            'Treasure',
+            item.type
+        ]);
+
+        this._updateFormFields();
+        ui.notifications.info(`Added treasure: ${item.name}`);
+    }
+
+    async _handleJournalDrop(data) {
+        const dropped = await fromUuid(data.uuid || (data.type === 'JournalEntryPage' ? `JournalEntryPage.${data.id}` : `JournalEntry.${data.id}`));
+        if (!dropped) return;
+
+        let page = null;
+        let journal = null;
+        if (dropped.documentName === 'JournalEntryPage') {
+            page = dropped;
+            journal = dropped.parent || null;
+        } else {
+            journal = dropped;
+            page = journal.pages?.contents?.[0] || null;
+        }
+
+        if (page) {
+            try {
+                const content = typeof page.text?.content === 'string' ? page.text.content : '';
+                const TextEditor = getTextEditor();
+                const enriched = await TextEditor.enrichHTML(content, {
+                    secrets: game.user.isGM,
+                    documents: true,
+                    links: true,
+                    rolls: true
+                });
+                const parsed = await QuestParser.parseSinglePage(page, enriched);
+                if (parsed) {
+                    if (!this.quest.name) this.quest.name = parsed.name || this.quest.name;
+                    this.quest.img = this.quest.img || parsed.img || null;
+                    if (!this.quest.category || this.quest.category === this._getDefaultCategory()) {
+                        this.quest.category = parsed.category || this.quest.category || this._getDefaultCategory();
+                    }
+                    this.quest.description = this._appendPlainText(this.quest.description, parsed.description);
+                    this.quest.plotHook = this._appendPlainText(this.quest.plotHook, parsed.plotHook);
+                    this.quest.location = this.quest.location || parsed.location || '';
+                    this.quest.timeframe.duration = this.quest.timeframe.duration || parsed.timeframe?.duration || '';
+                    if (this.quest.status === 'Not Started' && parsed.status) {
+                        this.quest.status = this._normalizeStatus(parsed.status);
+                    }
+                    this.quest.tasks = this._mergeTasks(this.quest.tasks, parsed.tasks);
+                    this.quest.participants = this._mergeParticipants(this.quest.participants, parsed.participants);
+                    this.quest.reward.xp = this.quest.reward.xp || parsed.reward?.xp || 0;
+                    this.quest.reward.treasure = this._mergeTreasure(this.quest.reward.treasure, parsed.reward?.treasure);
+                    this.quest.tags = this._uniqueTags([...(this.quest.tags || []), ...(parsed.tags || []), 'Journal']);
+                    this._updateFormFields();
+                    ui.notifications.info(`Imported quest data from: ${page.name}`);
+                    return;
+                }
+            } catch (error) {
+                console.warn('Coffee Pub Squire | Error parsing dropped journal for Quest entry:', error);
+            }
+        }
+
+        const source = page || journal || dropped;
+        if (!this.quest.name) this.quest.name = source.name || this.quest.name;
+        this.quest.description = this._appendPlainText(this.quest.description, this._extractDocumentDescription(source));
+        this.quest.tags = this._uniqueTags([...(this.quest.tags || []), 'Journal']);
+        this._updateFormFields();
+        ui.notifications.info(`Added journal content from: ${source.name}`);
+    }
+
+    _updateFormFields() {
+        const form = this._getRoot()?.querySelector('form');
+        if (!form) return;
+
+        const nameInput = form.querySelector('input[name="name"]');
+        if (nameInput) nameInput.value = this.quest.name || '';
+
+        const descriptionTextarea = form.querySelector('textarea[name="description"]');
+        if (descriptionTextarea) descriptionTextarea.value = this.quest.description || '';
+
+        const plotHookTextarea = form.querySelector('textarea[name="plotHook"]');
+        if (plotHookTextarea) plotHookTextarea.value = this.quest.plotHook || '';
+
+        const tasksTextarea = form.querySelector('textarea[name="tasks"]');
+        if (tasksTextarea) tasksTextarea.value = this._serializeTasks(this.quest.tasks);
+
+        const participantsTextarea = form.querySelector('textarea[name="participants"]');
+        if (participantsTextarea) participantsTextarea.value = this._serializeParticipants(this.quest.participants);
+
+        const treasureTextarea = form.querySelector('textarea[name="reward.treasure"]');
+        if (treasureTextarea) treasureTextarea.value = this._serializeTreasure(this.quest.reward?.treasure);
+
+        const tagsInput = form.querySelector('input[name="tags"]');
+        if (tagsInput) tagsInput.value = (this.quest.tags || []).join(', ');
+
+        const statusSelect = form.querySelector('select[name="status"]');
+        if (statusSelect) statusSelect.value = this._normalizeStatus(this.quest.status);
+
+        const xpInput = form.querySelector('input[name="reward.xp"]');
+        if (xpInput) xpInput.value = this.quest.reward?.xp || 0;
+
+        const durationInput = form.querySelector('input[name="timeframe.duration"]');
+        if (durationInput) durationInput.value = this.quest.timeframe?.duration || '';
+
+        const imgInput = form.querySelector('input[name="img"]');
+        if (imgInput) imgInput.value = this.quest.img || '';
+
+        const pageUuidInput = form.querySelector('input[name="pageUuid"]');
+        if (pageUuidInput) pageUuidInput.value = this.pageUuid || '';
+
+        const questUuidInput = form.querySelector('input[name="questUuid"]');
+        if (questUuidInput) questUuidInput.value = this.quest.questUuid || '';
+
+        const visibleInput = form.querySelector('input[name="visible"]');
+        if (visibleInput) visibleInput.checked = this.quest.visible === true;
+
+        this._updateHeaderFields();
+
+        const categorySelect = form.querySelector('#category');
+        const newCategoryInput = form.querySelector('#new-category');
+        const newCategoryInputField = form.querySelector('.new-category-input-field');
+        if (categorySelect && newCategoryInput) {
+            const hasExisting = this.quest.category
+                && Array.from(categorySelect.options).some(option => option.value === this.quest.category);
+            if (hasExisting) {
+                categorySelect.value = this.quest.category;
+                newCategoryInput.value = '';
+                this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
+            } else if (this.quest.category) {
+                categorySelect.value = 'new';
+                newCategoryInput.value = this.quest.category;
+                this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
+            } else {
+                categorySelect.value = '';
+                newCategoryInput.value = '';
+                this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
+            }
+        }
+
+        const locationSelect = form.querySelector('#location');
+        const newLocationInput = form.querySelector('#new-location');
+        const newLocationInputField = form.querySelector('.new-location-input-field');
+        if (locationSelect && newLocationInput) {
+            const hasExisting = this.quest.location
+                && Array.from(locationSelect.options).some(option => option.value === this.quest.location);
+            if (hasExisting) {
+                locationSelect.value = this.quest.location;
+                newLocationInput.value = '';
+                this._syncLocationFieldVisibility(locationSelect, newLocationInput, newLocationInputField);
+            } else if (this.quest.location) {
+                locationSelect.value = 'new';
+                newLocationInput.value = this.quest.location;
+                this._syncLocationFieldVisibility(locationSelect, newLocationInput, newLocationInputField);
+            } else {
+                locationSelect.value = '';
+                newLocationInput.value = '';
+                this._syncLocationFieldVisibility(locationSelect, newLocationInput, newLocationInputField);
+            }
+        }
+
+        const imgSection = form.querySelector('.quest-image-section');
+        const imgPlaceholder = form.querySelector('.quest-image-placeholder');
+        const imgPreview = form.querySelector('.quest-image-preview');
+        const removeImageButton = form.querySelector('.quest-remove-image');
+        if (imgSection) {
+            imgSection.style.display = '';
+        }
+        if (imgPlaceholder) {
+            imgPlaceholder.style.display = this.quest.img ? 'none' : '';
+        }
+        if (imgPreview) {
+            imgPreview.setAttribute('src', this.quest.img || '');
+        }
+        if (removeImageButton) {
+            removeImageButton.classList.toggle('is-visible', !!this.quest.img);
+        }
+
+        this._updateTagChipStates(form);
+    }
+
+    _updateTagChipStates(root) {
+        const tags = this._normalizeTags(this.quest.tags || []);
+        root.querySelectorAll('.quest-tag-chip').forEach(chip => {
+            const value = String(chip.dataset.tagValue || '').trim().toLowerCase();
+            chip.classList.toggle('active', tags.some(tag => tag.toLowerCase() === value));
+        });
+    }
+
+    _updateHeaderFields() {
+        const root = this._getRoot();
+        if (!root) return;
+        const titleEl = root.querySelector('.quest-window-header-title');
+        if (titleEl) {
+            titleEl.textContent = this._getHeaderTitle();
+        }
+    }
+
+    _normalizeStatus(status) {
+        const normalized = String(status || '').trim();
+        return this._getStatusOptions().includes(normalized) ? normalized : 'Not Started';
+    }
+
+    _normalizeTags(tags) {
+        if (Array.isArray(tags)) return this._uniqueTags(tags);
+        if (typeof tags === 'string') return this._uniqueTags(tags.split(','));
+        return [];
+    }
+
+    _uniqueTags(tags) {
+        const values = [];
+        for (const tag of tags || []) {
+            if (tag === undefined || tag === null) continue;
+            const normalized = String(tag).trim();
+            if (!normalized) continue;
+            if (!values.some(existing => existing.toLowerCase() === normalized.toLowerCase())) {
+                values.push(normalized);
+            }
+        }
+        return values;
+    }
+
+    _normalizeTaskArray(tasks) {
+        if (typeof tasks === 'string') return this._parseTasksInput(tasks);
+        if (!Array.isArray(tasks)) return [];
+        return tasks
+            .map((task, index) => {
+                const raw = typeof task === 'string' ? { text: task } : (task || {});
+                const originalText = String(raw.originalText || raw.text || '').trim();
+                const text = String(raw.text || raw.originalText || '').trim();
+                if (!text && !originalText) return null;
+                const state = ['completed', 'failed', 'hidden', 'active'].includes(raw.state) ? raw.state : (raw.completed ? 'completed' : 'active');
+                return {
+                    text: text || originalText,
+                    originalText: originalText || text,
+                    gmHint: raw.gmHint || null,
+                    treasureUnlocks: Array.isArray(raw.treasureUnlocks) ? raw.treasureUnlocks : [],
+                    state,
+                    completed: state === 'completed',
+                    objectiveNumber: index + 1
+                };
+            })
+            .filter(Boolean);
+    }
+
+    _parseTasksInput(tasksText) {
+        const lines = String(tasksText || '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .split('\n')
+            .map(line => line.trim())
+            .filter(Boolean);
+
+        return lines.map((line, index) => {
+            let state = 'active';
+            let text = line;
+
+            if (line.startsWith(TASK_PREFIXES.completed)) {
+                state = 'completed';
+                text = line.slice(TASK_PREFIXES.completed.length).trim();
+            } else if (line.startsWith(TASK_PREFIXES.failed)) {
+                state = 'failed';
+                text = line.slice(TASK_PREFIXES.failed.length).trim();
+            } else if (line.startsWith(TASK_PREFIXES.hidden)) {
+                state = 'hidden';
+                text = line.slice(TASK_PREFIXES.hidden.length).trim();
+            } else if (line.startsWith(TASK_PREFIXES.active)) {
+                text = line.slice(TASK_PREFIXES.active.length).trim();
+            }
+
+            const { displayText, gmHint, treasureUnlocks } = this._parseTaskMetadata(text);
+            return {
+                text: displayText,
+                originalText: text,
+                gmHint,
+                treasureUnlocks,
+                state,
+                completed: state === 'completed',
+                objectiveNumber: index + 1
+            };
+        }).filter(task => task.text);
+    }
+
+    _parseTaskMetadata(text) {
+        let displayText = String(text || '').trim();
+        let gmHint = null;
+        let treasureUnlocks = [];
+
+        const gmHintRegex = /\|\|([^|]+)\|\|/g;
+        const gmHints = [];
+        let gmHintMatch;
+        while ((gmHintMatch = gmHintRegex.exec(displayText)) !== null) {
+            gmHints.push(gmHintMatch[1].trim());
+        }
+        if (gmHints.length > 0) {
+            gmHint = gmHints.join(' ');
+            displayText = displayText.replace(gmHintRegex, '').trim();
+        }
+
+        const treasureRegex = /\(\(([^)]+)\)\)/g;
+        const treasures = [];
+        let treasureMatch;
+        while ((treasureMatch = treasureRegex.exec(displayText)) !== null) {
+            treasures.push(treasureMatch[1].trim());
+        }
+        if (treasures.length > 0) {
+            treasureUnlocks = treasures;
+            displayText = displayText.replace(treasureRegex, '').trim();
+        }
+
+        return { displayText, gmHint, treasureUnlocks };
+    }
+
+    _serializeTasks(tasks) {
+        return this._normalizeTaskArray(tasks).map(task => {
+            const raw = task.originalText || task.text || '';
+            const prefix = task.state && task.state !== 'active' ? (TASK_PREFIXES[task.state] || '') : '';
+            return prefix ? `${prefix} ${raw}` : raw;
+        }).join('\n');
+    }
+
+    _parseParticipantsInput(text) {
+        return this._tokenizeLineList(text).map(token => {
+            const match = token.match(/^@UUID\[([^\]]+)\]\{([^}]+)\}$/i);
+            if (match) {
+                return {
+                    uuid: match[1].trim(),
+                    name: match[2].trim()
+                };
+            }
+            return { name: token };
+        }).filter(participant => participant.uuid || participant.name);
+    }
+
+    _serializeParticipants(participants) {
+        return this._normalizeParticipants(participants).map(participant => {
+            if (participant.uuid) {
+                return `@UUID[${participant.uuid}]{${participant.name || 'Participant'}}`;
+            }
+            return participant.name || '';
+        }).filter(Boolean).join('\n');
+    }
+
+    _normalizeParticipants(participants) {
+        if (typeof participants === 'string') return this._parseParticipantsInput(participants);
+        if (!Array.isArray(participants)) return [];
+        return participants.map(participant => {
+            if (!participant) return null;
+            if (typeof participant === 'string') {
+                const name = participant.trim();
+                return name ? { name } : null;
+            }
+            const uuid = String(participant.uuid || '').trim();
+            const name = String(participant.name || '').trim();
+            const img = String(participant.img || '').trim();
+            if (!uuid && !name) return null;
+            return { uuid, name: name || 'Participant', img };
+        }).filter(Boolean);
+    }
+
+    _mergeParticipants(existing, incoming) {
+        const merged = [...this._normalizeParticipants(existing)];
+        for (const participant of this._normalizeParticipants(incoming)) {
+            const uuid = String(participant.uuid || '').trim().toLowerCase();
+            const name = String(participant.name || '').trim().toLowerCase();
+            const exists = merged.some(entry => {
+                const entryUuid = String(entry.uuid || '').trim().toLowerCase();
+                const entryName = String(entry.name || '').trim().toLowerCase();
+                return (uuid && entryUuid === uuid) || (!uuid && name && entryName === name);
+            });
+            if (!exists) merged.push(participant);
+        }
+        return merged;
+    }
+
+    _parseTreasureInput(text) {
+        return this._tokenizeLineList(text).map(token => {
+            const match = token.match(/^@UUID\[([^\]]+)\]\{([^}]+)\}$/i);
+            if (match) {
+                return {
+                    uuid: match[1].trim(),
+                    name: match[2].trim()
+                };
+            }
+            return { name: token };
+        }).filter(treasure => treasure.uuid || treasure.name);
+    }
+
+    _serializeTreasure(treasure) {
+        return this._normalizeTreasure(treasure).map(entry => {
+            if (entry.uuid) {
+                return `@UUID[${entry.uuid}]{${entry.name || 'Item'}}`;
+            }
+            return entry.name || entry.text || '';
+        }).filter(Boolean).join('\n');
+    }
+
+    _normalizeTreasure(treasure) {
+        if (typeof treasure === 'string') return this._parseTreasureInput(treasure);
+        if (!Array.isArray(treasure)) return [];
+        return treasure.map(entry => {
+            if (!entry) return null;
+            if (typeof entry === 'string') {
+                const name = entry.trim();
+                return name ? { name } : null;
+            }
+            const uuid = String(entry.uuid || '').trim();
+            const name = String(entry.name || '').trim();
+            const text = String(entry.text || '').trim();
+            if (!uuid && !name && !text) return null;
+            return { uuid, name, text };
+        }).filter(Boolean);
+    }
+
+    _mergeTreasure(existing, incoming) {
+        const merged = [...this._normalizeTreasure(existing)];
+        for (const treasure of this._normalizeTreasure(incoming)) {
+            const uuid = String(treasure.uuid || '').trim().toLowerCase();
+            const label = String(treasure.name || treasure.text || '').trim().toLowerCase();
+            const exists = merged.some(entry => {
+                const entryUuid = String(entry.uuid || '').trim().toLowerCase();
+                const entryLabel = String(entry.name || entry.text || '').trim().toLowerCase();
+                return (uuid && entryUuid === uuid) || (!uuid && label && entryLabel === label);
+            });
+            if (!exists) merged.push(treasure);
+        }
+        return merged;
+    }
+
+    _mergeTasks(existing, incoming) {
+        const merged = [...this._normalizeTaskArray(existing)];
+        for (const task of this._normalizeTaskArray(incoming)) {
+            const key = String(task.originalText || task.text || '').trim().toLowerCase();
+            if (!key) continue;
+            if (!merged.some(existingTask => String(existingTask.originalText || existingTask.text || '').trim().toLowerCase() === key)) {
+                merged.push(task);
+            }
+        }
+        return merged.map((task, index) => ({ ...task, objectiveNumber: index + 1 }));
+    }
+
+    _tokenizeLineList(text) {
+        const source = String(text || '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .trim();
+        if (!source) return [];
+
+        return source
+            .split('\n')
+            .flatMap(line => line.split(','))
+            .map(token => token.trim())
+            .filter(Boolean);
+    }
+
+    async _ensureCategoryRegistered(category) {
+        const normalized = String(category || '').trim();
+        if (!normalized) return;
+
+        const categories = game.settings.get(MODULE.ID, 'questCategories') || [];
+        if (categories.some(existing => String(existing || '').trim().toLowerCase() === normalized.toLowerCase())) {
+            return;
+        }
+
+        const updated = [...categories, normalized];
+        await game.settings.set(MODULE.ID, 'questCategories', updated);
+    }
+
+    _renderLinkableLine(entry) {
+        if (!entry) return '';
+        if (entry.uuid) {
+            const label = this._escapeHtml(entry.name || entry.text || 'Item');
+            return `@UUID[${this._escapeAttribute(entry.uuid)}]{${label}}`;
+        }
+        const text = entry.name || entry.text || '';
+        return this._escapeHtml(text);
+    }
+
+    _renderInlineText(text) {
+        return this._escapeHtml(String(text || '')).replace(/\n/g, '<br>');
+    }
+
+    _escapeHtml(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    _escapeAttribute(text) {
+        return this._escapeHtml(text).replace(/`/g, '&#96;');
+    }
+
+    _pickFirstString(document, paths = []) {
+        for (const path of paths) {
+            const value = foundry.utils.getProperty(document, path);
+            if (typeof value === 'string' && value.trim()) return value.trim();
+        }
+        return '';
+    }
+
+    _extractDocumentDescription(document) {
+        const raw = this._pickFirstString(document, [
+            'system.description.value',
+            'system.description.chat',
+            'system.details.biography.value',
+            'system.details.appearance',
+            'system.details.notes.value',
+            'text.content'
+        ]);
+        if (!raw) return '';
+        const parsed = new DOMParser().parseFromString(raw, 'text/html');
+        return parsed.body?.textContent?.trim() || raw.trim();
+    }
+
+    _appendPlainText(existingText, incomingText) {
+        const normalize = (value) => String(value || '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+
+        const current = normalize(existingText);
+        const incoming = normalize(incomingText);
+
+        if (!incoming) return current;
+        if (!current) return incoming;
+        if (current === incoming) return current;
+
+        return `${current}\n\n${incoming}`;
+    }
+
+    async _refreshQuestPanel() {
+        const questPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.questPanel;
+        if (!questPanel) return;
+        await questPanel._refreshData();
+        questPanel.render(questPanel.element);
+    }
+
+    _clearEventHandlers() {
+        for (const { element, event, handler } of this._eventHandlers) {
+            try {
+                element?.removeEventListener?.(event, handler);
+            } catch (_) {}
+        }
+        this._eventHandlers = [];
+    }
+
+    async close(options = {}) {
+        this._clearEventHandlers();
+        return super.close(options);
+    }
+
+    static async _actionSave(event, _target) {
+        const instance = QuestWindow._ref;
+        if (!instance) return;
+        event?.preventDefault?.();
+        await instance._handleFormSubmit({ preventDefault() {}, target: instance._getRoot()?.querySelector('form') });
+    }
+
+    static async _actionCancel(event, _target) {
+        const instance = QuestWindow._ref;
+        if (!instance) return;
+        event?.preventDefault?.();
+        await instance.close();
+    }
+}
+
+QuestWindow.ACTION_HANDLERS = {
+    save: QuestWindow._actionSave,
+    cancel: QuestWindow._actionCancel
+};
+
+export const QuestForm = QuestWindow;
+
+export async function openQuestWindow(options = {}) {
+    let windowInstance;
+    if (options.page) {
+        windowInstance = await QuestWindow.fromPage(options.page, options);
+    } else if (options.pageUuid) {
+        const page = await fromUuid(options.pageUuid);
+        windowInstance = page ? await QuestWindow.fromPage(page, options) : new QuestWindow(options.quest || null, options);
+    } else {
+        windowInstance = new QuestWindow(options.quest || null, options);
+    }
+    await windowInstance.render(true);
+    return windowInstance;
+}
+
+export function registerQuestWindow() {
+    const blacksmith = getBlacksmith();
+    if (!blacksmith?.registerWindow) return false;
+
+    return blacksmith.registerWindow(QUEST_WINDOW_ID, {
+        open: openQuestWindow,
+        title: 'Quest',
+        moduleId: MODULE.ID
+    });
+}

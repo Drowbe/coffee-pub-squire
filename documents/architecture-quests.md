@@ -9,17 +9,17 @@ The Quest system provides structured adventure and task management for FoundryVT
 | File | Class/Purpose |
 |------|---------------|
 | `scripts/panel-quest.js` | `QuestPanel` – Main panel UI, filtering, organization, Pin to Scene |
-| `scripts/window-quest.js` | `QuestForm` – FormApplication for quest create/edit |
+| `scripts/window-quest.js` | `QuestWindow` – Blacksmith Application V2 window for quest create/edit |
 | `scripts/utility-quest-parser.js` | `QuestParser` – Parses HTML journal content to JS objects |
 | `scripts/utility-quest-pins.js` | Quest pin utilities – create, update, delete, ownership, colors |
 | `scripts/quest-pin-events.js` | Click handler, context menu registration for quest pins |
 | `templates/panel-quest.hbs` | Panel template |
-| `templates/quest-form.hbs` | Form template |
+| `templates/window-quest.hbs` | Blacksmith V2 quest window template |
 | `templates/handle-quest.hbs` | Handle content for quest view (tray handle) |
 | `templates/partials/quest-entry.hbs` | Quest entry partial |
 | `templates/tooltip-pin-quests-objective.hbs` | Objective pin tooltip (tray handle hover) |
 | `styles/panel-quest.css` | Panel styles |
-| `styles/quest-form.css` | Form styles |
+| `styles/window-quest.css` | Quest window styles |
 | `styles/quest-markers.css` | Pin marker styles |
 
 ## Core Design
@@ -76,9 +76,9 @@ Converts HTML journal content into structured JavaScript objects.
 - Calculates quest progress based on completed tasks
 - Returns structured quest object or `null` if invalid
 
-### QuestForm (`window-quest.js`)
+### QuestWindow (`window-quest.js`)
 
-`FormApplication` for creating and editing quests.
+Blacksmith Application V2 window for creating and editing quests.
 
 **Key Features:**
 - All quest fields (name, category, status, description, plot hook, location, tasks, rewards, participants, tags, visibility)
@@ -171,7 +171,7 @@ Visual representation of quests and objectives on the canvas via `pins.create()`
 ## Data Flow
 
 ### Quest Creation
-1. User clicks "Add Quest" → `QuestForm` opens
+1. User clicks "Add Quest" → `QuestWindow` opens through Blacksmith
 2. User fills form → `_generateJournalContent()` creates HTML
 3. Form creates `JournalEntryPage` via `createEmbeddedDocuments()`
 4. Form sets quest UUID in page flags

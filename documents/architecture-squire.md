@@ -31,7 +31,7 @@ coffee-pub-squire/
 │   ├── common.css, tray.css, handle.css
 │   ├── panel-*.css            # Panel-specific styles
 │   ├── window-*.css           # Window/form styles
-│   └── quest-markers.css, quest-form.css, window-codex.css, window-note.css, notes-metadata-box.css
+│   └── quest-markers.css, window-codex.css, window-quest.css, window-note.css, notes-metadata-box.css
 ├── templates/
 │   ├── tray.hbs               # Main tray layout (handle + content)
 │   ├── handle-*.hbs           # Handle content per view (player, party, notes, codex, quest)
@@ -100,7 +100,7 @@ coffee-pub-squire/
 | Window | Script | Description |
 |--------|--------|-------------|
 | Notes | window-note.js | NotesForm – note editor, pin creation |
-| Quest | window-quest.js | QuestForm – quest create/edit |
+| Quest | window-quest.js | QuestWindow – Blacksmith V2 quest create/edit |
 | Characters | window-characters.js | Character picker |
 | Users | window-users.js | User picker |
 | Health | window-health.js | Health popout |

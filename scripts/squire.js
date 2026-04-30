@@ -4,7 +4,6 @@ import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers, renderTemplate } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
-import { QuestForm } from './window-quest.js';
 import { QuestParser } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
 // import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
@@ -1906,6 +1905,14 @@ Hooks.once('init', async function() {
                 return null;
             }
             return blacksmith.openWindow(`${MODULE.ID}-codex-window`, options);
+        },
+        openQuestWindow: (options = {}) => {
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (typeof blacksmith?.openWindow !== 'function') {
+                ui.notifications.warn('Quest window is not ready yet.');
+                return null;
+            }
+            return blacksmith.openWindow(`${MODULE.ID}-quest-window`, options);
         }
     };
     
@@ -1926,9 +1933,6 @@ Hooks.once('init', async function() {
         // ... existing code ...
     };
 
-    // Add quest form to Hooks
-    window.QuestForm = QuestForm;
-    
     // Add NotesForm to window for console access
     window.NotesForm = NotesForm;
 });
@@ -1952,6 +1956,19 @@ Hooks.once('ready', async function() {
         window.CodexWindow = CodexWindow;
     } catch (error) {
         console.error('Coffee Pub Squire | Failed to register Codex window:', error);
+    }
+
+    try {
+        const { registerQuestWindow, openQuestWindow, QuestWindow, QuestForm, QUEST_WINDOW_ID } = await import('./window-quest.js');
+        registerQuestWindow();
+        game.modules.get(MODULE.ID).api.openQuestWindow = openQuestWindow;
+        game.modules.get(MODULE.ID).api.QuestWindow = QuestWindow;
+        game.modules.get(MODULE.ID).api.QuestForm = QuestForm;
+        game.modules.get(MODULE.ID).api.QUEST_WINDOW_ID = QUEST_WINDOW_ID;
+        window.QuestWindow = QuestWindow;
+        window.QuestForm = QuestForm;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register Quest window:', error);
     }
 
     // Register pin type friendly names with Blacksmith.

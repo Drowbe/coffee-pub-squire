@@ -1,0 +1,231 @@
+<div class="blacksmith-window-template-root quest-window" id="{{appId}}">
+    <header class="blacksmith-window-template-header">
+        <div class="blacksmith-window-template-header-content">
+            <div class="blacksmith-window-template-header-icon">
+                <i class="fa-solid fa-flag"></i>
+            </div>
+            <div class="blacksmith-window-template-header-title-block">
+                <div class="blacksmith-window-template-header-title quest-window-header-title">{{headerTitle}}</div>
+                {{#if subtitle}}
+                    <div class="blacksmith-window-template-header-subtitle">{{subtitle}}</div>
+                {{/if}}
+            </div>
+        </div>
+    </header>
+
+    <div class="blacksmith-window-template-body">
+        <form class="quest-window-form" method="post">
+            <input type="hidden" name="img" value="{{quest.img}}">
+            <input type="hidden" name="pageUuid" value="{{quest.pageUuid}}">
+            <input type="hidden" name="questUuid" value="{{quest.questUuid}}">
+
+            <section class="blacksmith-window-section quest-drag-section quest-drag-zone">
+                <div class="quest-drop-callout">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <div class="quest-drop-copy">
+                        <div class="quest-drop-title">{{#if isEditing}}Update From Drop{{else}}Drag & Drop Here{{/if}}</div>
+                        <div class="quest-drop-subtitle">Drop actors, items, journal entries, or journal pages to populate participants, treasure, and quest details.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section quest-image-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-image"></i>
+                    <span>Image</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="quest-image-preview-wrapper">
+                        <div class="quest-image-placeholder">No image selected. Drop a document with artwork or browse for an image.</div>
+                        <img class="quest-image-preview" src="" alt="Preview">
+                        <button type="button" class="quest-remove-image blacksmith-window-btn-critical" aria-label="Remove image">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="quest-image-actions">
+                        <button type="button" class="blacksmith-window-btn-secondary quest-browse-image">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Browse Image</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Basic Information</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="quest-form-grid">
+                        <div class="quest-form-field quest-form-field-full">
+                            <label for="name">Name *</label>
+                            <input type="text" id="name" name="name" value="{{quest.name}}" required>
+                        </div>
+
+                        <div class="quest-form-row quest-form-field-full">
+                            <div class="quest-form-field quest-form-row-select">
+                                <label for="category">Category *</label>
+                                <select id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="new">+ New Category</option>
+                                    {{#each existingCategories}}
+                                        <option value="{{this}}" {{#if (eq this ../quest.category)}}selected{{/if}}>{{this}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="quest-form-field new-category-input-field">
+                                <label for="new-category">New Category *</label>
+                                <input type="text" id="new-category" name="new-category" placeholder="Enter new category">
+                            </div>
+                        </div>
+
+                        <div class="quest-form-grid quest-form-grid-two">
+                            <div class="quest-form-field">
+                                <label for="status">Status *</label>
+                                <select id="status" name="status" required>
+                                    {{#each statusOptions}}
+                                        <option value="{{this}}" {{#if (eq this ../quest.status)}}selected{{/if}}>{{this}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="quest-form-field">
+                                <label for="timeframe-duration">Timeframe</label>
+                                <input type="text" id="timeframe-duration" name="timeframe.duration" value="{{quest.timeframe.duration}}" placeholder="e.g. 3 Days">
+                            </div>
+                        </div>
+
+                        <div class="quest-form-row quest-form-field-full">
+                            <div class="quest-form-field quest-form-row-select">
+                                <label for="location">Location</label>
+                                <select id="location" name="location">
+                                    <option value="">Select Location</option>
+                                    <option value="new">+ New Location</option>
+                                    {{#each existingLocations}}
+                                        <option value="{{this}}" {{#if (eq this ../quest.location)}}selected{{/if}}>{{this}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="quest-form-field new-location-input-field">
+                                <label for="new-location">New Location</label>
+                                <input type="text" id="new-location" name="new-location" placeholder="Enter new location">
+                            </div>
+                        </div>
+
+                        {{#if isGM}}
+                            <div class="quest-form-field quest-form-field-full">
+                                <label class="quest-toggle-field" for="visible">
+                                    <span>Visible to Players</span>
+                                    <input type="checkbox" id="visible" name="visible" {{#if quest.visible}}checked{{/if}}>
+                                </label>
+                                <small class="quest-form-hint">Hidden quests remain GM-only until you mark them visible.</small>
+                            </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-scroll"></i>
+                    <span>Content</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="quest-form-field">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="6" placeholder="Describe the quest, what is at stake, and any important context...">{{quest.description}}</textarea>
+                    </div>
+
+                    <div class="quest-form-field">
+                        <label for="plotHook">Plot Hook</label>
+                        <textarea id="plotHook" name="plotHook" rows="4" placeholder="Why does the party care? What pushes this quest forward?">{{quest.plotHook}}</textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Objectives</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="quest-form-field">
+                        <label for="tasks">Tasks</label>
+                        <textarea id="tasks" name="tasks" rows="8" placeholder="One task per line. Prefix with [x] complete, [!] failed, or [-] hidden when editing existing objectives.">{{tasksText}}</textarea>
+                        <small class="quest-form-hint">GM notes and treasure unlock markers still work here: <code>||GM note||</code> and <code>((Treasure))</code>.</small>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                    <span>Rewards & Participants</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="quest-form-grid quest-form-grid-two">
+                        <div class="quest-form-field">
+                            <label for="reward-xp">Experience</label>
+                            <input type="number" id="reward-xp" name="reward.xp" value="{{quest.reward.xp}}" min="0" step="1">
+                        </div>
+                    </div>
+
+                    <div class="quest-form-field">
+                        <label for="reward-treasure">Treasure</label>
+                        <textarea id="reward-treasure" name="reward.treasure" rows="5" placeholder="One entry per line. Dropped items become @UUID links.">{{treasureText}}</textarea>
+                    </div>
+
+                    <div class="quest-form-field">
+                        <label for="participants">Participants</label>
+                        <textarea id="participants" name="participants" rows="5" placeholder="One participant per line. Dropped actors become @UUID links.">{{participantsText}}</textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-tags"></i>
+                    <span>Classification</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="quest-form-field">
+                        <label for="tags">Tags</label>
+                        <input type="text" id="tags" name="tags" value="{{#if quest.tags}}{{#if (isArray quest.tags)}}{{quest.tags.join ', '}}{{else}}{{quest.tags}}{{/if}}{{/if}}" placeholder="Enter tags separated by commas">
+                    </div>
+
+                    {{#if suggestedTags.length}}
+                        <div class="quest-tag-suggestions-wrap">
+                            <div class="quest-tag-group-label">Suggested</div>
+                            <div class="blacksmith-tags" data-chip-type="tag">
+                                {{#each suggestedTags}}
+                                    <span class="blacksmith-tag quest-tag-chip {{#if (includes ../quest.tags this)}}active{{/if}}" data-tag-value="{{this}}">{{this}}</span>
+                                {{/each}}
+                            </div>
+                        </div>
+                    {{/if}}
+
+                    {{#if otherTags.length}}
+                        <div class="quest-tag-suggestions-wrap">
+                            <div class="quest-tag-group-label">Other</div>
+                            <div class="blacksmith-tags" data-chip-type="tag">
+                                {{#each otherTags}}
+                                    <span class="blacksmith-tag quest-tag-chip {{#if (includes ../quest.tags this)}}active{{/if}}" data-tag-value="{{this}}">{{this}}</span>
+                                {{/each}}
+                            </div>
+                        </div>
+                    {{/if}}
+                </div>
+            </section>
+        </form>
+    </div>
+
+    <section class="blacksmith-window-template-buttons">
+        <div class="blacksmith-window-template-action-bar">
+            <div class="blacksmith-window-template-action-left"></div>
+            <div class="blacksmith-window-template-action-right">
+                <button type="button" class="blacksmith-window-btn-secondary" data-action="cancel">Cancel</button>
+                <button type="button" class="blacksmith-window-btn-primary" data-action="save">{{#if isEditing}}Update Quest{{else}}Save Quest{{/if}}</button>
+            </div>
+        </div>
+    </section>
+</div>
