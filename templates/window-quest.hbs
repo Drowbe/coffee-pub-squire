@@ -70,28 +70,22 @@
                 <div class="blacksmith-window-section-body">
                     <div class="quest-form-grid">
                         <div class="quest-form-field quest-form-field-full">
-                            <label for="name">Name *</label>
+                            <label for="name">Name (Required)</label>
                             <input type="text" id="name" name="name" value="{{quest.name}}" required>
                         </div>
 
-                        <div class="quest-form-field quest-form-field-full">
-                            <label for="category">Category *</label>
-                            <select id="category" name="category" required>
-                                <option value="">Select Category</option>
-                                <option value="new">+ New Category</option>
-                                {{#each existingCategories}}
-                                    <option value="{{this}}" {{#if (eq this ../quest.category)}}selected{{/if}}>{{this}}</option>
-                                {{/each}}
-                            </select>
-                        </div>
-                        <div class="quest-form-field quest-form-field-full new-category-input-field">
-                            <label for="new-category">New Category *</label>
-                            <input type="text" id="new-category" name="new-category" placeholder="Enter new category">
-                        </div>
-
-                        <div class="quest-form-grid quest-form-grid-two">
+                        <div class="quest-form-grid quest-form-grid-three">
                             <div class="quest-form-field">
-                                <label for="status">Status *</label>
+                                <label for="category">Category *</label>
+                                <select id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    {{#each existingCategories}}
+                                        <option value="{{this}}" {{#if (eq this ../quest.category)}}selected{{/if}}>{{this}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="quest-form-field">
+                                <label for="status">Status (Required)</label>
                                 <select id="status" name="status" required>
                                     {{#each statusOptions}}
                                         <option value="{{this}}" {{#if (eq this ../quest.status)}}selected{{/if}}>{{this}}</option>
@@ -140,12 +134,12 @@
                 <div class="blacksmith-window-section-body">
                     <div class="quest-form-field">
                         <label for="description">Description</label>
-                        <textarea id="description" name="description" rows="6" placeholder="Describe the quest, what is at stake, and any important context...">{{quest.description}}</textarea>
+                        <textarea id="description" name="description" rows="4" placeholder="Describe the quest, what is at stake, and any important context...">{{quest.description}}</textarea>
                     </div>
 
                     <div class="quest-form-field">
                         <label for="plotHook">Plot Hook</label>
-                        <textarea id="plotHook" name="plotHook" rows="4" placeholder="Why does the party care? What pushes this quest forward?">{{quest.plotHook}}</textarea>
+                        <textarea id="plotHook" name="plotHook" rows="2" placeholder="Why does the party care? What pushes this quest forward?">{{quest.plotHook}}</textarea>
                     </div>
                 </div>
             </section>
@@ -166,8 +160,8 @@
                                         <input type="text" class="quest-objective-description-input" value="{{description}}" placeholder="Objective description">
                                     </div>
                                     <div class="quest-form-field quest-objective-note">
-                                        <label data-tooltip="Optional GM-only context for this objective. This note is not shown to players.">GM Note</label>
-                                        <input type="text" class="quest-objective-note-input" value="{{gmNote}}" placeholder="Optional GM note">
+                                        <label data-tooltip="Optional GM-only context for this objective. This note is not shown to players and can be used for context or hints for the objective.">GM Note</label>
+                                        <input type="text" class="quest-objective-note-input" value="{{gmNote}}" placeholder="Optional GM note" data-tooltip="Optional GM-only context for this objective. This note is not shown to players and can be used for context or hints for the objective.">
                                     </div>
                                     <div class="quest-form-field quest-objective-status">
                                         <label data-tooltip="Controls whether the objective is active, complete, failed, or hidden from players.">Status</label>
@@ -180,7 +174,7 @@
                                     </div>
                                     <div class="quest-form-field quest-objective-treasure">
                                         <label data-tooltip="Optional reward names unlocked by this objective. If a name matches an entry in the Treasure section below, that reward can be treated as gated by completing this objective.">Treasure</label>
-                                        <input type="text" class="quest-objective-treasure-input quest-item-drop-target" value="{{treasure}}" placeholder="Item names or rewards unlocked" data-drop-mode="objective-treasure">
+                                        <input type="text" class="quest-objective-treasure-input quest-item-drop-target" value="{{treasure}}" data-tooltip="Drop items or type item names here to add them as linked treasure. If the name here martches the name of an item in the Treasure section below, that item can be treated as gated by completing this objective." placeholder="Item names or rewards unlocked" data-drop-mode="objective-treasure">
                                     </div>
                                     <div class="quest-objective-actions">
                                         <div class="quest-objective-actions-left">

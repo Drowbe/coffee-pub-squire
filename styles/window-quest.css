@@ -149,6 +149,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.quest-form-grid-three {
+    grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr) minmax(180px, 0.9fr);
+}
+
 .quest-form-field {
     display: flex;
     flex-direction: column;
@@ -160,7 +164,6 @@
     grid-column: 1 / -1;
 }
 
-.new-category-input-field,
 .new-location-input-field {
     display: none;
 }
@@ -263,12 +266,12 @@
 }
 
 .quest-objective-card-title {
-    margin-bottom: 8px;
-    font-size: 0.76em;
+    margin-bottom: 10px;
+    font-size: 1.2em;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(214, 208, 194, 0.78);
+    color: rgba(214, 208, 194, 0.8);
 }
 
 .quest-objective-card-grid {
@@ -380,6 +383,10 @@
     margin-top: 10px;
 }
 
+
+
+/* PARTY MEMBERS */
+
 .quest-party-members {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
@@ -407,8 +414,8 @@
 }
 
 .quest-party-member.is-selected {
-    border-color: rgba(172, 159, 129, 0.55);
-    background: rgba(172, 159, 129, 0.12);
+    border-color: rgba(193, 87, 1, 0.3);
+    background: rgba(193, 87, 1, 0.8);
     box-shadow: 0 0 0 1px rgba(172, 159, 129, 0.15) inset;
 }
 
@@ -425,7 +432,7 @@
 }
 
 .quest-party-member.is-selected img {
-    border-color: rgba(255, 100, 0, 0.55);
+    border-color: rgba(193, 87, 1, 0.55);
 }
 
 .quest-party-member span {
@@ -437,6 +444,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+
+
+
 
 .quest-extra-participants {
     margin-top: 10px;
@@ -482,6 +493,10 @@
 
 @media (max-width: 760px) {
     .quest-form-grid-two {
+        grid-template-columns: 1fr;
+    }
+
+    .quest-form-grid-three {
         grid-template-columns: 1fr;
     }
 

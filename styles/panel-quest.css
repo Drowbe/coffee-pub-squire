@@ -395,7 +395,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 .squire-tray[data-position="left"] .quest-section--no-titlebar .quest-entries {
-    margin-top: 0;
+    margin-top: 8px;
 }
 
 .squire-tray[data-position="left"] .quest-category {
@@ -441,7 +441,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 
 .squire-tray[data-position="left"] .quest-entries {
-    margin: 0px;
+    margin: 8px 0 0 0;
 }
 
 
@@ -450,7 +450,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
-    margin: 0px 0px 0px 0px;
+    margin: 0 0 4px 0;
     padding: 6px;
     transition: border-color 0.2s ease;
 }

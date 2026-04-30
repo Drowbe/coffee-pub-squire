@@ -8,3 +8,5 @@
   - Keep pins/state keyed by `questId` + `taskId`, with reconcile as recovery only.
   - Add import mode: "update definitions only" to protect live campaign progress during compendium/content updates.
   - Include migration from current HTML/flag state to new schema with backward compatibility.
+- Quest taxonomy management: create a way to manage quest locations and tags centrally, including migrating those changes to existing quests.
+- Leverage the Blacksmith tag system for quests instead of the local quest tag implementation, reusing the same tag model already used for pins.

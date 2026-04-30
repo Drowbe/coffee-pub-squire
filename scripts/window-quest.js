@@ -603,15 +603,6 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             this._eventHandlers.push({ element: nameInput, event: 'input', handler });
         }
 
-        const categorySelect = root.querySelector('#category');
-        const newCategoryInput = root.querySelector('#new-category');
-        const newCategoryInputField = root.querySelector('.new-category-input-field');
-        if (categorySelect) {
-            const handler = () => this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
-            categorySelect.addEventListener('change', handler);
-            this._eventHandlers.push({ element: categorySelect, event: 'change', handler });
-        }
-
         const hiddenToggle = root.querySelector('#quest-hidden-toggle');
         if (hiddenToggle) {
             const handler = () => {
@@ -752,22 +743,6 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
             button.addEventListener('click', handler);
             this._eventHandlers.push({ element: button, event: 'click', handler });
         });
-    }
-
-    _syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField) {
-        if (!categorySelect || !newCategoryInput) return;
-        if (categorySelect.value === 'new') {
-            if (newCategoryInputField) newCategoryInputField.style.display = 'flex';
-            newCategoryInput.setAttribute('name', 'category');
-            newCategoryInput.required = true;
-            categorySelect.removeAttribute('name');
-            newCategoryInput.focus();
-        } else {
-            if (newCategoryInputField) newCategoryInputField.style.display = 'none';
-            newCategoryInput.removeAttribute('name');
-            newCategoryInput.required = false;
-            categorySelect.setAttribute('name', 'category');
-        }
     }
 
     _syncLocationFieldVisibility(locationSelect, newLocationInput, newLocationInputField) {
@@ -1200,24 +1175,10 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         this._updateHeaderFields();
 
         const categorySelect = form.querySelector('#category');
-        const newCategoryInput = form.querySelector('#new-category');
-        const newCategoryInputField = form.querySelector('.new-category-input-field');
-        if (categorySelect && newCategoryInput) {
+        if (categorySelect) {
             const hasExisting = this.quest.category
                 && Array.from(categorySelect.options).some(option => option.value === this.quest.category);
-            if (hasExisting) {
-                categorySelect.value = this.quest.category;
-                newCategoryInput.value = '';
-                this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
-            } else if (this.quest.category) {
-                categorySelect.value = 'new';
-                newCategoryInput.value = this.quest.category;
-                this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
-            } else {
-                categorySelect.value = '';
-                newCategoryInput.value = '';
-                this._syncCategoryFieldVisibility(categorySelect, newCategoryInput, newCategoryInputField);
-            }
+            categorySelect.value = hasExisting ? this.quest.category : '';
         }
 
         const locationSelect = form.querySelector('#location');
