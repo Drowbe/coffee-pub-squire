@@ -1,140 +1,141 @@
-<form class="window-note {{#unless isEditMode}}window-note-view{{/unless}}" method="post">
-    <div class="window-note-header">
-        <div class="window-note-header-content">
-            <div class="window-note-header-icon">
+<div class="blacksmith-window-template-root note-window" id="{{appId}}">
+    <header class="blacksmith-window-template-header note-window-header-shell">
+        <div class="blacksmith-window-template-header-content">
+            <div class="blacksmith-window-template-header-icon note-window-header-icon" data-tooltip="Configure note pin design">
                 {{#if note.iconHtml}}
                     {{{note.iconHtml}}}
                 {{else}}
                     <i class="fa-solid fa-note-sticky"></i>
                 {{/if}}
             </div>
-            <div class="window-note-header-title">
+
+            <div class="blacksmith-window-template-header-title-block note-window-title-block">
                 {{#if isEditMode}}
-                    <input type="text" id="title" name="title" class="window-note-title-input" value="{{#if note.title}}{{note.title}}{{/if}}" placeholder="Note title" required>
+                    <input type="text" id="title" name="title" class="note-window-title-input" value="{{note.title}}" placeholder="Note title" form="note-window-form" required>
                 {{else}}
-                    <div class="window-note-title-text">{{#if note.title}}{{note.title}}{{else}}Untitled Note{{/if}}</div>
+                    <div class="blacksmith-window-template-header-title note-window-title-text">{{#if note.title}}{{note.title}}{{else}}Untitled Note{{/if}}</div>
                 {{/if}}
-                <div class="window-note-meta">
-                    <span class="window-note-meta-item window-note-authors">
+
+                <div class="note-window-meta">
+                    <span class="note-window-meta-item note-window-authors">
                         {{#if note.editorAvatars.length}}
-                        <span class="note-editor-avatars">
-                            {{#each note.editorAvatars}}
-                            <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
-                            {{/each}}
-                        </span>
+                            <span class="note-editor-avatars">
+                                {{#each note.editorAvatars}}
+                                    <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
+                                {{/each}}
+                            </span>
                         {{else}}
-                        <i class="fa-solid fa-user"></i> {{#if note.authorName}}{{note.authorName}}{{else}}Unknown{{/if}}
+                            <i class="fa-solid fa-user"></i> {{#if note.authorName}}{{note.authorName}}{{else}}Unknown{{/if}}
                         {{/if}}
                     </span>
                     {{#if note.sceneName}}
-                        <span class="window-note-meta-block">
-                            <span class="window-note-meta-location">
-                                <i class="fa-solid fa-location-dot window-note-meta-icon"></i>
+                        <span class="note-window-meta-block">
+                            <span class="note-window-meta-location">
+                                <i class="fa-solid fa-location-dot"></i>
                                 {{note.sceneName}}
                             </span>
                             {{#if note.timestamp}}
-                                <span class="window-note-meta-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
+                                <span class="note-window-meta-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
                             {{else}}
-                                <span class="window-note-meta-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
+                                <span class="note-window-meta-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
                             {{/if}}
                         </span>
                     {{else}}
                         {{#if note.timestamp}}
-                            <span class="window-note-meta-item window-note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
+                            <span class="note-window-meta-item"><i class="fa-solid fa-clock"></i> {{formatTimestamp note.timestamp}}</span>
                         {{else}}
-                            <span class="window-note-meta-item window-note-date"><i class="fa-solid fa-clock"></i> Not saved yet</span>
+                            <span class="note-window-meta-item"><i class="fa-solid fa-clock"></i> Not saved yet</span>
                         {{/if}}
                     {{/if}}
                 </div>
+
                 {{#if editLock}}
-                    <div class="window-note-editing-indicator" title="{{#if editLock.isSelf}}You are editing{{else}}{{editLock.userName}} is editing{{/if}}">
+                    <div class="note-window-editing-indicator" title="{{#if editLock.isSelf}}You are editing{{else}}{{editLock.userName}} is editing{{/if}}">
                         <i class="fa-solid fa-pen-to-square"></i>
                         <span>{{#if editLock.isSelf}}Editing{{else}}Editing: {{editLock.userName}}{{/if}}</span>
                     </div>
                 {{/if}}
             </div>
-            <div class="window-note-header-controls">
+
+            <div class="blacksmith-window-template-header-right note-window-header-right">
                 {{#if isEditing}}
-                <div class="notes-edit-toggle-container">
-                    <span class="notes-edit-toggle-label">Edit</span>
-                    <div class="notes-edit-toggle">
-                        <input type="checkbox" id="notes-edit-toggle" {{#if isEditMode}}checked{{/if}} {{#unless canEdit}}disabled{{/unless}}>
-                        <label for="notes-edit-toggle" class="notes-edit-toggle-slider"></label>
+                    <div class="blacksmith-toggle-row" data-tooltip="Toggle between read-only view and note editing.">
+                        <span class="blacksmith-toggle-label">Edit</span>
+                        <label class="blacksmith-toggle">
+                            <input type="checkbox" id="notes-edit-toggle" class="blacksmith-toggle-input" {{#if isEditMode}}checked{{/if}} {{#unless canEdit}}disabled{{/unless}}>
+                            <span class="blacksmith-toggle-slider"></span>
+                        </label>
                     </div>
-                </div>
                 {{/if}}
-                <div class="notes-visibility-toggle-container">
-                    <span class="notes-visibility-toggle-label">Private</span>
-                    <div class="notes-visibility-toggle">
-                        <input type="checkbox" name="visibilityPrivate" id="notes-visibility-private" {{#if (eq note.visibility 'private')}}checked{{/if}} {{#unless isEditMode}}disabled{{/unless}}>
-                        <label for="notes-visibility-private" class="notes-visibility-toggle-slider"></label>
-                    </div>
+                <div class="blacksmith-toggle-row" data-tooltip="Private notes remain restricted to the owner until you turn this off.">
+                    <span class="blacksmith-toggle-label">Private</span>
+                    <label class="blacksmith-toggle">
+                        <input type="checkbox" id="notes-visibility-private" class="blacksmith-toggle-input" {{#if (eq note.visibility 'private')}}checked{{/if}} {{#unless isEditMode}}disabled{{/unless}} form="note-window-form">
+                        <span class="blacksmith-toggle-slider"></span>
+                    </label>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div class="window-note-body">
-    <!-- Hidden fields -->
-    <input type="hidden" name="sceneId" value="{{#if note.sceneId}}{{note.sceneId}}{{/if}}">
-    <input type="hidden" name="x" value="{{#if note.x}}{{note.x}}{{/if}}">
-    <input type="hidden" name="y" value="{{#if note.y}}{{note.y}}{{/if}}">
+    <div class="blacksmith-window-template-body">
+        <form class="note-window-form" id="note-window-form" method="post">
+            <input type="hidden" name="sceneId" value="{{note.sceneId}}">
+            <input type="hidden" name="x" value="{{note.x}}">
+            <input type="hidden" name="y" value="{{note.y}}">
+            <input type="hidden" name="pageUuid" value="{{note.pageUuid}}">
 
-    <!-- Content -->
-    <div class="notes-section notes-section-editor">
-        <div class="notes-section-body">
-            {{#if isEditMode}}
-                {{#if page}}
-                    {{editor page.text.content document=page target="text.content" fieldName="text.content" button=false editable=true engine="prosemirror" collaborate=true}}
-                {{else}}
-                    {{editor note.content target="content" button=false editable=true engine="prosemirror"}}
-                {{/if}}
-            {{else}}
-                <div class="notes-view-content">{{{note.content}}}</div>
-            {{/if}}
-        </div>
-    </div>
-
-    <!-- Tags -->
-    <div class="notes-section">
-        <div class="notes-section-body">
-            {{#if isEditMode}}
-                <input type="text" id="tags" name="tags" class="notes-input" value="{{note.tagsText}}" placeholder="npc, phlan, informant">
-                <div class="tag-suggestions">
-                    {{#unless note.tagsText}}
-                        <small>Enter tags separated by commas...</small>
-                    {{/unless}}
-                </div>
-            {{else}}
-                <div class="notes-view-tags">
-                    {{#if note.tags.length}}
-                        {{#each note.tags}}
-                            <span class="notes-view-tag">{{this}}</span>
-                        {{/each}}
+            <div class="note-window-main">
+                <div class="note-window-content-panel">
+                    {{#if isEditMode}}
+                        <div class="note-editor-host"></div>
                     {{else}}
-                        <span class="notes-view-empty">No tags</span>
+                        <div class="note-view-content">{{{note.content}}}</div>
                     {{/if}}
                 </div>
-            {{/if}}
+
+                <div class="note-window-tags-panel">
+                    {{#if isEditMode}}
+                        <div class="note-form-field">
+                            <input type="text" id="tags" name="tags" class="note-window-tags-input" value="{{note.tagsText}}" placeholder="npc, phlan, informant">
+                            <small class="note-form-hint">Click common tags to add or remove them.</small>
+                        </div>
+                        {{#if commonTags.length}}
+                            <div class="note-tag-suggestions-wrap">
+                                <div class="note-tag-group-label">Common Tags</div>
+                                <div class="blacksmith-tags" data-chip-type="tag">
+                                    {{#each commonTags}}
+                                        <span class="blacksmith-tag note-tag-chip {{#if (includes ../note.tags this)}}active{{/if}}" data-tag-value="{{this}}">{{this}}</span>
+                                    {{/each}}
+                                </div>
+                            </div>
+                        {{/if}}
+                    {{else}}
+                        <div class="note-view-tags {{#unless note.tags.length}}is-empty{{/unless}}">
+                            {{#if note.tags.length}}
+                                {{#each note.tags}}
+                                    <span class="blacksmith-tag note-view-tag">{{this}}</span>
+                                {{/each}}
+                            {{else}}
+                                <span class="note-view-empty">No tags</span>
+                            {{/if}}
+                        </div>
+                    {{/if}}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <section class="blacksmith-window-template-buttons">
+        <div class="blacksmith-window-template-action-bar">
+            <div class="blacksmith-window-template-action-left"></div>
+            <div class="blacksmith-window-template-action-right">
+                <button type="button" class="blacksmith-window-btn-secondary" data-action="cancel">{{#if isEditMode}}Cancel{{else}}Close{{/if}}</button>
+                {{#if isEditMode}}
+                    <button type="button" class="blacksmith-window-btn-secondary" data-action="savePlace">Save and Place Pin</button>
+                    <button type="button" class="blacksmith-window-btn-primary" data-action="save">Save Note</button>
+                {{/if}}
+            </div>
         </div>
-    </div>
-
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="form-actions">
-        <button type="button" class="btn-secondary cancel">
-            <i class="fa-solid fa-times"></i> {{#if isEditMode}}Cancel{{else}}Close{{/if}}
-        </button>
-        {{#if isEditMode}}
-        {{#unless note.sceneId}}
-        <button type="submit" class="btn-secondary notes-save-place-pin" name="placePin" value="1" data-place-pin="true">
-            <i class="fa-solid fa-map-pin"></i> Save and Place Pin
-        </button>
-        {{/unless}}
-        <button type="submit" class="btn-primary">
-            <i class="fa-solid fa-save"></i> Save Note
-        </button>
-        {{/if}}
-    </div>
-</form>
+    </section>
+</div>

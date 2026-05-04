@@ -13,11 +13,19 @@ import {
 } from './utility-journal.js';
 import { NotesParser } from './utility-notes-parser.js';
 import { UsersWindow } from './window-users.js';
-import { NotesForm } from './window-note.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
+function openNoteWindow(options = {}) {
+    const blacksmith = getBlacksmith();
+    if (typeof blacksmith?.openWindow !== 'function') {
+        ui.notifications.warn('Note window is not ready yet.');
+        return null;
+    }
+    return blacksmith.openWindow(`${MODULE.ID}-note-window`, options);
 }
 
 function getPinsApi() {
@@ -745,8 +753,7 @@ function registerNotePinContextMenuItems(pins) {
 
         const noteData = buildNoteDataFromPage(page);
         if (!noteData) return;
-        const form = new NotesForm(noteData, { viewMode });
-        form.render(true);
+        await openNoteWindow({ note: noteData, page, pageUuid: page.uuid, pageId: page.id, viewMode });
     };
 
     const deleteHandler = async (pinData) => {
@@ -863,8 +870,7 @@ function registerNotePinHandlers() {
         const noteData = buildNoteDataFromPage(page);
         if (!noteData) return;
 
-        const form = new NotesForm(noteData, { viewMode: true });
-        form.render(true);
+        await openNoteWindow({ note: noteData, page, pageUuid: page.uuid, pageId: page.id, viewMode: true });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
 }
 
@@ -1835,14 +1841,13 @@ export class NotesPanel {
             });
         }
 
-        // New Note button - opens NotesForm window (only action outside menu)
+        // New Note button - opens Note window (only action outside menu)
         nativeHtml.querySelectorAll('.new-note-button, .new-note-button-large').forEach(button => {
             const newButton = button.cloneNode(true);
             button.parentNode?.replaceChild(newButton, button);
             newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
-                const form = new NotesForm();
-                form.render(true);
+                await openNoteWindow();
             });
         });
 
@@ -1951,8 +1956,7 @@ export class NotesPanel {
                     const noteData = buildNoteDataFromPage(page);
                     if (!noteData) return;
 
-                    const form = new NotesForm(noteData, { viewMode: false });
-                    form.render(true);
+                    await openNoteWindow({ note: noteData, page, pageUuid: page.uuid, pageId: page.id, viewMode: false });
                 } catch (error) {
                     console.error('Error opening note for editing:', error);
                     ui.notifications.error(`Failed to open note: ${error.message}`);
@@ -2045,8 +2049,7 @@ export class NotesPanel {
                 const noteData = buildNoteDataFromPage(page);
                 if (!noteData) return;
 
-                const form = new NotesForm(noteData, { viewMode: true });
-                form.render(true);
+                await openNoteWindow({ note: noteData, page, pageUuid: page.uuid, pageId: page.id, viewMode: true });
             });
         });
 

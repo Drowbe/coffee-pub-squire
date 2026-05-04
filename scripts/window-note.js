@@ -1,7 +1,4 @@
-import { MODULE, TEMPLATES } from './const.js';
-import { getNativeElement } from './helpers.js';
-
-// Import helper functions from panel-notes.js
+import { MODULE } from './const.js';
 import {
     buildNoteIconHtml,
     normalizeNoteIconFlag,
@@ -37,36 +34,111 @@ import {
     normalizePinTextScaleWithPin
 } from './panel-notes.js';
 
+function getBlacksmith() {
+    return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
+}
+
 function getPinsApi() {
-    return game.modules.get('coffee-pub-blacksmith')?.api?.pins || null;
+    return getBlacksmith()?.pins || null;
+}
+
+const BlacksmithWindowBaseV2 = getBlacksmith()?.BlacksmithWindowBaseV2
+    || getBlacksmith()?.getWindowBaseV2?.()
+    || (await import('/modules/coffee-pub-blacksmith/scripts/window-base.js')).BlacksmithWindowBaseV2;
+if (!BlacksmithWindowBaseV2) {
+    throw new Error('Coffee Pub Squire | BlacksmithWindowBaseV2 is unavailable for NoteWindow');
 }
 
 const NOTE_EDIT_LOCK_FLAG = 'editLock';
 const NOTE_EDIT_LOCK_TTL_MS = 30 * 60 * 1000;
 const NOTE_EDIT_LOCK_TOUCH_MIN_MS = 30 * 1000;
 
-/**
- * NotesForm - Lightweight form for quick note capture
- * Uses FormApplication for simplicity.
- */
-export class NotesForm extends FormApplication {
-    constructor(note = null, options = {}) {
-        super(note, options);
-        // If note has pageId/pageUuid, it's an existing note being edited
-        this.isEditing = !!(note?.pageId || note?.pageUuid);
-        this.pageId = note?.pageId || null;
-        this.pageUuid = note?.pageUuid || null;
-        this.note = note || this._getDefaultNote();
-        this.isViewMode = !!options.viewMode && this.isEditing;
-        if (!this.isEditing) {
-            this.isViewMode = false;
+export const NOTE_WINDOW_ID = `${MODULE.ID}-note-window`;
+
+function buildNoteFromPage(page) {
+    const authorId = page.getFlag(MODULE.ID, 'authorId');
+    const author = game.users.get(authorId) || game.users.find(u => u.id === authorId);
+    const content = typeof page?.text?.content === 'string'
+        ? page.text.content
+        : (typeof page?.text === 'string' ? page.text : '');
+
+    return {
+        title: page.name || '',
+        content,
+        authorId: authorId || null,
+        authorName: author?.name || page?.author?.name || 'Unknown',
+        timestamp: page.getFlag(MODULE.ID, 'timestamp') || null,
+        tags: Array.isArray(page.getFlag(MODULE.ID, 'tags')) ? page.getFlag(MODULE.ID, 'tags') : [],
+        visibility: page.getFlag(MODULE.ID, 'visibility') || 'private',
+        sceneId: page.getFlag(MODULE.ID, 'sceneId') || null,
+        x: page.getFlag(MODULE.ID, 'x') ?? null,
+        y: page.getFlag(MODULE.ID, 'y') ?? null,
+        pageId: page.id,
+        pageUuid: page.uuid,
+        pinId: page.getFlag(MODULE.ID, 'pinId') || null,
+        noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
+        notePinSize: page.getFlag(MODULE.ID, 'notePinSize') || getDefaultNotePinDesign().size,
+        notePinShape: page.getFlag(MODULE.ID, 'notePinShape') || getDefaultNotePinDesign().shape,
+        notePinStyle: page.getFlag(MODULE.ID, 'notePinStyle') || getDefaultNotePinDesign().style,
+        notePinDropShadow: page.getFlag(MODULE.ID, 'notePinDropShadow'),
+        notePinTextLayout: page.getFlag(MODULE.ID, 'notePinTextLayout') || getDefaultNotePinDesign().textLayout,
+        notePinTextDisplay: page.getFlag(MODULE.ID, 'notePinTextDisplay') || getDefaultNotePinDesign().textDisplay,
+        notePinTextColor: page.getFlag(MODULE.ID, 'notePinTextColor') || getDefaultNotePinDesign().textColor,
+        notePinTextSize: page.getFlag(MODULE.ID, 'notePinTextSize') || getDefaultNotePinDesign().textSize,
+        notePinTextMaxLength: page.getFlag(MODULE.ID, 'notePinTextMaxLength') ?? getDefaultNotePinDesign().textMaxLength,
+        notePinTextScaleWithPin: page.getFlag(MODULE.ID, 'notePinTextScaleWithPin'),
+        editorIds: Array.isArray(page.getFlag(MODULE.ID, 'editorIds')) ? page.getFlag(MODULE.ID, 'editorIds') : [],
+        iconHtml: resolveNoteIconHtmlFromContent(content, 'note-window-header-image')
+    };
+}
+
+export class NoteWindow extends BlacksmithWindowBaseV2 {
+    static ROOT_CLASS = 'note-window';
+
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(
+        foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
+        {
+            id: NOTE_WINDOW_ID,
+            classes: ['note-window', 'note-entry-window', 'squire-window'],
+            position: { width: 760, height: 860 },
+            window: { title: 'Note', resizable: true, minimizable: true },
+            windowSizeConstraints: { minWidth: 620, minHeight: 680 }
         }
+    );
+
+    static PARTS = {
+        body: {
+            template: `modules/${MODULE.ID}/templates/window-note.hbs`
+        }
+    };
+
+    static ACTION_HANDLERS = null;
+
+    constructor(note = null, options = {}) {
+        const opts = foundry.utils.mergeObject({}, options);
+        opts.id = opts.id ?? `${NOTE_WINDOW_ID}-${foundry.utils.randomID().slice(0, 8)}`;
+        opts.position = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, NoteWindow.DEFAULT_OPTIONS.position ?? {}),
+            opts.position || {}
+        );
+        opts.window = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, NoteWindow.DEFAULT_OPTIONS.window ?? {}),
+            opts.window || {}
+        );
+        super(opts);
+
+        this.page = opts.page || null;
+        this.pageId = opts.pageId || note?.pageId || null;
+        this.pageUuid = opts.pageUuid || note?.pageUuid || null;
+        this.isEditing = !!(this.pageId || this.pageUuid);
+        this.note = this._normalizeNote(foundry.utils.mergeObject(this._getDefaultNote(), note || {}, { inplace: false }));
+        this.note.pageId = this.pageId;
+        this.note.pageUuid = this.pageUuid;
+        this.isViewMode = !!opts.viewMode && this.isEditing;
+        if (!this.isEditing) this.isViewMode = false;
         this.isEditMode = !this.isViewMode;
-        this.dragActive = false;
-        this._eventHandlers = [];
-        this.page = null; // Store reference to page document for editor binding
-        this.usingCollabEditor = false; // Track if we're using collaborative editor
         this.isDraft = false;
+        this.usingCollabEditor = false;
         this._draftCreating = false;
         this._draftCreated = false;
         this._didSubmit = false;
@@ -75,202 +147,91 @@ export class NotesForm extends FormApplication {
         this._editLockExpiryTimeout = null;
         this._lockNoticeUserId = null;
         this._lastEditLockTouch = 0;
-        
-        // If options contain canvas location, pre-fill it
-        if (options.sceneId) {
-            this.note.sceneId = options.sceneId;
-            this.note.x = options.x || null;
-            this.note.y = options.y || null;
-        }
+        this._eventHandlers = [];
     }
 
-    static get defaultOptions() {
-        let saved = {};
-        try {
-            saved = game.settings.get(MODULE.ID, 'notesWindowPosition') || {};
-        } catch (e) {
-            saved = {};
-        }
-        const width = saved.width ?? 600;
-        const height = saved.height ?? 560;
-        const top = (typeof saved.top === 'number') ? saved.top : Math.max(0, (window.innerHeight - height) / 2);
-        const left = (typeof saved.left === 'number') ? saved.left : Math.max(0, (window.innerWidth - width) / 2);
-
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: 'notes-quick-form',
-            classes: ['window-note', 'squire-window'],
-            title: 'New Note', // Will be updated in getData if editing
-            template: TEMPLATES.WINDOW_NOTE,
-            width,
-            height,
-            top,
-            left,
-            resizable: true,
-            closeOnSubmit: true,
-            submitOnClose: false,
-            submitOnChange: false,
-            minimizable: true
+    static async fromPage(page, options = {}) {
+        const note = buildNoteFromPage(page);
+        return new NoteWindow(note, {
+            ...options,
+            page,
+            pageId: page?.id || options.pageId || null,
+            pageUuid: page?.uuid || options.pageUuid || null
         });
     }
-    
-    get title() {
-        if (this.isDraft || !this.isEditing) return 'New Note';
-        return this.isEditMode ? 'Edit Note' : 'View Note';
-    }
 
-    async getData() {
-        if (!this.isEditing) {
-            await this._ensureDraftNote();
-        }
-
-        // Update window title
-        if (this.isDraft || !this.isEditing) {
-            this.options.title = 'New Note';
-        } else {
-            this.options.title = this.isEditMode ? 'Edit Note' : 'View Note';
-        }
-
-        // For existing notes, load the page document so we can pull fresh content
-        if (this.isEditing && this.pageUuid && !this.page) {
-            try {
-                this.page = await foundry.utils.fromUuid(this.pageUuid);
-                // Set object immediately when we have the page - this is critical for collab editor
-                if (this.page) {
-                    this.object = this.page;
-                    
-                    // Ensure text field exists and is properly structured
-                    const hasTextObject = this.page?.text && typeof this.page.text === 'object';
-                    const hasContentField = hasTextObject && ('content' in this.page.text);
-                    
-                    if (!hasTextObject || !hasContentField) {
-                        // If text field doesn't exist or is malformed, try to ensure data is loaded
-                        if (typeof this.page.prepareData === 'function') {
-                            await this.page.prepareData();
-                        }
-                        // Re-check after prepareData
-                        const hasTextObjectAfter = this.page?.text && typeof this.page.text === 'object';
-                        const hasContentFieldAfter = hasTextObjectAfter && ('content' in this.page.text);
-                        if (!hasTextObjectAfter || !hasContentFieldAfter) {
-                            console.warn('Page text field not available or malformed, falling back to content string');
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading page for editor:', error);
-                this.page = null;
-            }
-        }
-
-        if (this.isEditing && this.page) {
-            await this._syncEditLockState();
-        }
-
-        const tagsText = Array.isArray(this.note.tags)
-            ? this.note.tags.join(', ')
-            : (typeof this.note.tags === 'string' ? this.note.tags : '');
-        // Extract pageContent first so we can use it for icon resolution
-        let pageContent = this.note.content || '';
-        if (this.isEditing && this.page) {
-            const pageText = this.page.text;
-            if (typeof pageText === 'string') {
-                pageContent = pageText;
-            } else if (pageText && typeof pageText === 'object' && 'content' in pageText) {
-                if (typeof pageText.content === 'string') {
-                    pageContent = pageText.content;
-                } else if (pageText.content !== undefined) {
-                    pageContent = String(pageText.content || '');
-                }
-            }
-        }
-        
-        this.note.content = pageContent;
-        const iconHtml = this.note.iconHtml ||
-            (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'window-note-header-image') : null) ||
-            resolveNoteIconHtmlFromContent(pageContent, 'window-note-header-image');
-        const editorIds = Array.isArray(this.note.editorIds) && this.note.editorIds.length
-            ? this.note.editorIds
-            : (this.note.authorId ? [this.note.authorId] : []);
-        const uniqueEditorIds = [...new Set(editorIds)];
-        const editorAvatars = uniqueEditorIds.map(id => {
-            const user = game.users.get(id) || game.users.find(u => u.id === id);
-            return {
-                id,
-                name: user?.name || id || 'Unknown',
-                img: user?.avatar || user?.img || 'icons/svg/mystery-man.svg'
-            };
-        });
-
-        // For collaborative editing, we need to ensure the page is properly loaded
-        // The editor helper needs the page document with its text field
-        // If page isn't available or text field is missing, fall back to content string
-        let usePageForEditor = false;
-        
-        if (this.isEditing && this.page) {
-            const pageText = this.page?.text;
-            const hasTextObject = pageText && typeof pageText === 'object';
-            const hasContentField = hasTextObject && ('content' in pageText);
-            if (hasTextObject && hasContentField) {
-                const contentValue = pageText.content;
-                if (contentValue !== undefined && contentValue !== null && typeof contentValue === 'string') {
-                    usePageForEditor = true;
-                } else {
-                    console.warn('Page text.content is not a valid string, falling back to content string', {
-                        type: typeof contentValue,
-                        value: contentValue
-                    });
-                }
-            } else if (typeof pageText !== 'string') {
-                console.warn('Page text field not available or wrong type, using content string instead', {
-                    hasText: !!pageText,
-                    textType: typeof pageText
-                });
-            }
-        }
-
-        // Collaborative editor requires the native JournalEntryPage sheet DOM.
-        // Disable it in this custom window to avoid ProseMirror step errors.
-        const allowCollabEditor = false;
-        usePageForEditor = usePageForEditor && allowCollabEditor;
-        if (!usePageForEditor) {
-            this.object = this.note;
-        }
-
-        // Track whether we're using collaborative editor for defensive save logic
-        this.usingCollabEditor = usePageForEditor && this.isEditMode;
-
-        // Debug logging to verify document setup
-        console.log("NotesForm getData", {
-            isEditing: this.isEditing,
-            isEditMode: this.isEditMode,
-            hasPage: !!this.page,
-            pageType: this.page?.constructor?.name,
-            objectType: this.object?.constructor?.name,
-            textType: typeof this.page?.text,
-            contentType: typeof this.page?.text?.content,
-            usePageForEditor: usePageForEditor
-        });
-
-        // Always provide content as fallback - editor will use page.text if available
+    _getDefaultNote() {
+        const defaults = getDefaultNotePinDesign();
         return {
-            note: {
-                ...this.note,
-                tagsText,
-                iconHtml,
-                editorAvatars,
-                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
-                content: pageContent // Use extracted content or fallback
-            },
-            editLock: this._editLock
-                ? { ...this._editLock, isSelf: this._editLock.userId === game.user.id }
-                : null,
-            canEdit: !this._editLock || this._editLock.userId === game.user.id,
-            isGM: game.user.isGM,
-            isEditing: this.isEditing,
-            isEditMode: this.isEditMode,
-            isViewMode: this.isViewMode,
-            sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name : null,
-            page: usePageForEditor ? this.page : null // Only pass page if we can use it for collaborative editing
+            title: '',
+            content: '',
+            authorId: game.user?.id || null,
+            authorName: game.user?.name || 'Unknown',
+            timestamp: null,
+            tags: [],
+            visibility: 'private',
+            sceneId: null,
+            x: null,
+            y: null,
+            pageId: null,
+            pageUuid: null,
+            pinId: null,
+            noteIcon: null,
+            notePinSize: defaults.size,
+            notePinShape: defaults.shape,
+            notePinStyle: defaults.style,
+            notePinDropShadow: defaults.dropShadow,
+            notePinTextLayout: defaults.textLayout,
+            notePinTextDisplay: defaults.textDisplay,
+            notePinTextColor: defaults.textColor,
+            notePinTextSize: defaults.textSize,
+            notePinTextMaxLength: defaults.textMaxLength,
+            notePinTextScaleWithPin: defaults.textScaleWithPin,
+            editorIds: []
         };
+    }
+
+    _normalizeNote(note) {
+        const normalized = foundry.utils.mergeObject(this._getDefaultNote(), note || {}, { inplace: false });
+        normalized.title = String(normalized.title || normalized.name || '').trim();
+        normalized.content = String(normalized.content || '').trim();
+        normalized.authorId = normalized.authorId || null;
+        normalized.authorName = String(normalized.authorName || 'Unknown').trim() || 'Unknown';
+        normalized.tags = Array.isArray(normalized.tags)
+            ? normalized.tags.map(tag => String(tag || '').trim()).filter(Boolean)
+            : (typeof normalized.tags === 'string'
+                ? normalized.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+                : []);
+        normalized.visibility = normalized.visibility === 'party' ? 'party' : 'private';
+        normalized.sceneId = normalized.sceneId || null;
+        normalized.x = normalized.x ?? null;
+        normalized.y = normalized.y ?? null;
+        normalized.pageId = normalized.pageId || this.pageId || null;
+        normalized.pageUuid = normalized.pageUuid || this.pageUuid || null;
+        normalized.pinId = normalized.pinId || null;
+        normalized.noteIcon = normalized.noteIcon || null;
+        normalized.notePinSize = getNotePinSizeForNote(normalized);
+        normalized.notePinShape = getNotePinShapeForNote(normalized);
+        normalized.notePinStyle = getNotePinStyleForNote(normalized);
+        normalized.notePinDropShadow = getNotePinDropShadowForNote(normalized);
+        normalized.notePinTextLayout = getNotePinTextLayoutForNote(normalized);
+        normalized.notePinTextDisplay = getNotePinTextDisplayForNote(normalized);
+        normalized.notePinTextColor = getNotePinTextColorForNote(normalized);
+        normalized.notePinTextSize = getNotePinTextSizeForNote(normalized);
+        normalized.notePinTextMaxLength = getNotePinTextMaxLengthForNote(normalized);
+        normalized.notePinTextScaleWithPin = getNotePinTextScaleWithPinForNote(normalized);
+        normalized.editorIds = Array.isArray(normalized.editorIds) ? normalized.editorIds.filter(Boolean) : [];
+        return normalized;
+    }
+
+    async _loadPageIfNeeded() {
+        if (this.page || !this.pageUuid) return;
+        try {
+            this.page = await foundry.utils.fromUuid(this.pageUuid);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Failed to load note page:', error);
+            this.page = null;
+        }
     }
 
     _normalizeEditLock(lock) {
@@ -326,16 +287,13 @@ export class NotesForm extends FormApplication {
         if (!lock) return;
         if (this._editLockExpiryTimeout) {
             clearTimeout(this._editLockExpiryTimeout);
-            this._editLockExpiryTimeout = null;
         }
         const remaining = NOTE_EDIT_LOCK_TTL_MS - (Date.now() - lock.at);
         if (remaining <= 0) {
             this._handleEditLockExpiry();
             return;
         }
-        this._editLockExpiryTimeout = setTimeout(() => {
-            this._handleEditLockExpiry();
-        }, remaining);
+        this._editLockExpiryTimeout = setTimeout(() => this._handleEditLockExpiry(), remaining);
     }
 
     async _touchEditLock() {
@@ -362,7 +320,7 @@ export class NotesForm extends FormApplication {
         await this._clearEditLock(this.page, game.user.id);
         this.isEditMode = false;
         this.isViewMode = true;
-        this.render(true);
+        await this.render(true);
     }
 
     async _syncEditLockState() {
@@ -387,7 +345,6 @@ export class NotesForm extends FormApplication {
         }
 
         this._lockNoticeUserId = null;
-
         if (this.isEditMode) {
             if (!currentLock) {
                 await this._setEditLock(page);
@@ -426,28 +383,21 @@ export class NotesForm extends FormApplication {
             return;
         }
 
-        const visibility = this.note?.visibility === 'party' ? 'party' : 'private';
-        const tags = Array.isArray(this.note?.tags) ? this.note.tags : [];
-        const sceneId = this.note?.sceneId || null;
-        const x = this.note?.x ?? null;
-        const y = this.note?.y ?? null;
-
+        const visibility = this.note.visibility === 'party' ? 'party' : 'private';
         const pageData = {
-            name: this.note?.title || 'Untitled Note',
+            name: this.note.title || 'Untitled Note',
             type: 'text',
-            text: {
-                content: this.note?.content || ''
-            },
+            text: { content: this.note.content || '' },
             flags: {
                 [MODULE.ID]: {
                     noteType: 'sticky',
-                    tags,
+                    tags: this.note.tags,
                     visibility,
                     editorIds: [game.user.id],
-                    sceneId,
-                    x: x !== undefined && x !== '' ? x : null,
-                    y: y !== undefined && y !== '' ? y : null,
-                    noteIcon: this.note?.noteIcon || null,
+                    sceneId: this.note.sceneId || null,
+                    x: this.note.x ?? null,
+                    y: this.note.y ?? null,
+                    noteIcon: this.note.noteIcon || null,
                     notePinSize: getNotePinSizeForNote(this.note),
                     notePinShape: getNotePinShapeForNote(this.note),
                     notePinStyle: getNotePinStyleForNote(this.note),
@@ -468,45 +418,39 @@ export class NotesForm extends FormApplication {
             const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
             if (!newPage) {
                 ui.notifications.error('Failed to create draft note.');
-                this._draftCreating = false;
                 return;
             }
 
             this.page = newPage;
-            this.pageUuid = newPage.uuid;
             this.pageId = newPage.id;
-            this.note.pageUuid = newPage.uuid;
-            this.note.pageId = newPage.id;
-            this.object = newPage;
+            this.pageUuid = newPage.uuid;
             this.isEditing = true;
             this.isDraft = true;
-            this.isViewMode = false;
-            this.isEditMode = true;
+            this.note = this._normalizeNote(foundry.utils.mergeObject(this.note, buildNoteFromPage(newPage), { inplace: false }));
+            this.note.pageId = newPage.id;
+            this.note.pageUuid = newPage.uuid;
 
             try {
-                const hasPlacement = !!sceneId && x !== null && y !== null;
+                const hasPlacement = !!this.note.sceneId && this.note.x !== null && this.note.y !== null;
                 const pinId = await createNotePinForPage(
                     newPage,
-                    hasPlacement ? sceneId : undefined,
-                    hasPlacement ? x : undefined,
-                    hasPlacement ? y : undefined
+                    hasPlacement ? this.note.sceneId : undefined,
+                    hasPlacement ? this.note.x : undefined,
+                    hasPlacement ? this.note.y : undefined
                 );
                 if (pinId) {
                     await newPage.setFlag(MODULE.ID, 'pinId', pinId);
                     this.note.pinId = pinId;
                 }
             } catch (error) {
-                const message = String(error?.message || error || '');
-                const proxyMessage = describePinsProxyError(message);
-                if (proxyMessage) {
-                    ui.notifications.error(proxyMessage);
-                } else {
-                    ui.notifications.warn('Draft note created, but pin creation failed.');
-                }
+                const proxyMessage = describePinsProxyError(String(error?.message || error || ''));
+                if (proxyMessage) ui.notifications.error(proxyMessage);
+                else ui.notifications.warn('Draft note created, but pin creation failed.');
             }
+
             await this._setEditLock(newPage);
         } catch (error) {
-            console.error('Error creating draft note:', error);
+            console.error('Coffee Pub Squire | Error creating draft note:', error);
             ui.notifications.error(`Failed to create draft note: ${error.message}`);
         } finally {
             this._draftCreated = true;
@@ -514,216 +458,474 @@ export class NotesForm extends FormApplication {
         }
     }
 
-    async _deleteDraftNote() {
-        if (!this.isDraft || !this.pageUuid) return;
-        try {
-            const page = this.page || await foundry.utils.fromUuid(this.pageUuid);
-            if (page) {
-                try {
-                    await deleteNotePinForPage(page);
-                } catch (error) {
-                    console.warn('Failed to delete draft pin:', error);
-                }
-                await page.delete();
-            }
-        } catch (error) {
-            console.warn('Failed to delete draft note:', error);
+    async getData() {
+        if (!this.isEditing) {
+            await this._ensureDraftNote();
+        } else {
+            await this._loadPageIfNeeded();
         }
-    }
 
-    _getDefaultNote() {
+        if (this.isEditing && this.page) {
+            await this._syncEditLockState();
+        }
+
+        const content = this._getPageContent();
+        this.note.content = content;
+        const iconHtml = (this.note.noteIcon ? buildNoteIconHtml(normalizeNoteIconFlag(this.note.noteIcon), 'note-window-header-image') : null)
+            || resolveNoteIconHtmlFromContent(content, 'note-window-header-image');
+        this.note.iconHtml = iconHtml;
+
         return {
-            title: '',
-            content: '',
-            authorName: game.user?.name || 'Unknown',
-            timestamp: null,
-            tags: [],
-            visibility: 'private',
-            sceneId: null,
-            x: null,
-            y: null,
-            noteIcon: null,
-            notePinSize: getDefaultNotePinDesign().size,
-            notePinShape: getDefaultNotePinDesign().shape,
-            notePinStyle: getDefaultNotePinDesign().style,
-            notePinDropShadow: getDefaultNotePinDesign().dropShadow,
-            notePinTextLayout: getDefaultNotePinDesign().textLayout,
-            notePinTextDisplay: getDefaultNotePinDesign().textDisplay,
-            notePinTextColor: getDefaultNotePinDesign().textColor,
-            notePinTextSize: getDefaultNotePinDesign().textSize,
-            notePinTextMaxLength: getDefaultNotePinDesign().textMaxLength,
-            notePinTextScaleWithPin: getDefaultNotePinDesign().textScaleWithPin,
-            editorIds: []
+            appId: this.id,
+            note: {
+                ...this.note,
+                tagsText: this.note.tags.join(', '),
+                content,
+                iconHtml,
+                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name || null : null,
+                editorAvatars: this._getEditorAvatars()
+            },
+            editLock: this._editLock ? { ...this._editLock, isSelf: this._editLock.userId === game.user.id } : null,
+            canEdit: !this._editLock || this._editLock.userId === game.user.id,
+            isGM: game.user.isGM,
+            isEditing: this.isEditing,
+            isEditMode: this.isEditMode,
+            isViewMode: this.isViewMode,
+            commonTags: this._getExistingTags(),
+            windowTitle: 'Note',
+            headerTitle: this.note.title || 'Untitled Note',
+            subtitle: this.isEditing ? (this.isEditMode ? 'Edit Note' : 'View Note') : 'New Note'
         };
     }
 
-    _buildNoteOwnership(visibility, authorId) {
-        return buildNoteOwnership(visibility, authorId);
+    _getPageContent() {
+        if (this.page) {
+            if (typeof this.page?.text?.content === 'string') return this.page.text.content;
+            if (typeof this.page?.text === 'string') return this.page.text;
+        }
+        return String(this.note.content || '');
     }
 
-    async _syncNoteOwnership(page, visibility, authorId) {
-        await syncNoteOwnership(page, visibility, authorId);
+    _getEditorAvatars() {
+        const editorIds = Array.isArray(this.note.editorIds) && this.note.editorIds.length
+            ? this.note.editorIds
+            : (this.note.authorId ? [this.note.authorId] : []);
+        return [...new Set(editorIds)].map(id => {
+            const user = game.users.get(id) || game.users.find(u => u.id === id);
+            return {
+                id,
+                name: user?.name || id || 'Unknown',
+                img: user?.avatar || user?.img || 'icons/svg/mystery-man.svg'
+            };
+        });
     }
 
-    setPosition(options={}) {
-        const minWidth = 550;
-        const minHeight = 650;
-        if (options.width && options.width < minWidth) options.width = minWidth;
-        if (options.height && options.height < minHeight) options.height = minHeight;
+    _getExistingTags() {
+        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
+        if (!journalId || journalId === 'none') return [];
+        const journal = game.journal.get(journalId);
+        if (!journal) return [];
 
-        if (options.top !== undefined || options.left !== undefined) {
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            const windowWidth = options.width || this.position.width || 600;
-            const windowHeight = options.height || this.position.height || 560;
-
-            if (options.left !== undefined) {
-                options.left = Math.max(0, Math.min(options.left, viewportWidth - windowWidth));
+        const tags = new Map();
+        for (const page of journal.pages.contents) {
+            const pageTags = page.getFlag(MODULE.ID, 'tags');
+            if (!Array.isArray(pageTags)) continue;
+            for (const tag of pageTags) {
+                const normalized = String(tag || '').trim().toUpperCase();
+                if (normalized) tags.set(normalized, normalized);
             }
-            if (options.top !== undefined) {
-                options.top = Math.max(0, Math.min(options.top, viewportHeight - windowHeight));
+        }
+        return Array.from(tags.values()).sort((a, b) => a.localeCompare(b)).slice(0, 24);
+    }
+
+    async _onRender(context, options) {
+        await super._onRender?.(context, options);
+        const root = this._getRoot();
+        if (!root) return;
+        this._clearEventHandlers();
+        this._attachLocalListeners(root);
+        if (this.isEditMode) {
+            this._mountEditor(root);
+        }
+    }
+
+    _mountEditor(root) {
+        const host = root.querySelector('.note-editor-host');
+        if (!host) return;
+        host.replaceChildren();
+        let editorValue = String(this.note.content || '');
+        if (!/<p[\s>]/i.test(editorValue.trim())) {
+            editorValue = `${editorValue}<p></p>`;
+        }
+        const editor = foundry.applications.elements.HTMLProseMirrorElement.create({
+            name: 'content',
+            value: editorValue,
+            compact: true
+        });
+        editor.classList.add('note-window-editor');
+        host.append(editor);
+    }
+
+    _attachLocalListeners(root) {
+        const form = root.querySelector('form');
+        if (form) {
+            const submitHandler = (event) => {
+                event.preventDefault();
+                this._handleFormSubmit(event);
+            };
+            form.addEventListener('submit', submitHandler);
+            this._eventHandlers.push({ element: form, event: 'submit', handler: submitHandler });
+        }
+
+        const headerIcon = root.querySelector('.note-window-header-icon');
+        if (headerIcon) {
+            const iconHandler = async (event) => {
+                event.preventDefault();
+                await this._openPinConfiguration(headerIcon);
+            };
+            headerIcon.addEventListener('click', iconHandler);
+            this._eventHandlers.push({ element: headerIcon, event: 'click', handler: iconHandler });
+        }
+
+        const editToggle = root.querySelector('#notes-edit-toggle');
+        if (editToggle) {
+            const toggleHandler = async (event) => {
+                event.preventDefault();
+                const checked = !!event.currentTarget?.checked;
+                if (this.isEditMode) {
+                    await this._captureFormState();
+                    await this._clearEditLock(this.page, game.user.id);
+                }
+                this.isEditMode = checked;
+                this.isViewMode = !this.isEditMode;
+                await this.render(true);
+            };
+            editToggle.addEventListener('change', toggleHandler);
+            this._eventHandlers.push({ element: editToggle, event: 'change', handler: toggleHandler });
+        }
+
+        const titleInput = root.querySelector('#title');
+        if (titleInput) {
+            const inputHandler = (event) => {
+                this.note.title = String(event.currentTarget.value || '').trim();
+            };
+            titleInput.addEventListener('input', inputHandler);
+            this._eventHandlers.push({ element: titleInput, event: 'input', handler: inputHandler });
+        }
+
+        if (this.isEditMode) {
+            const touchHandler = () => {
+                this._touchEditLock().catch(error => console.warn('Failed to refresh edit lock:', error));
+            };
+            root.addEventListener('keydown', touchHandler);
+            root.addEventListener('mousedown', touchHandler);
+            root.addEventListener('touchstart', touchHandler);
+            this._eventHandlers.push({ element: root, event: 'keydown', handler: touchHandler });
+            this._eventHandlers.push({ element: root, event: 'mousedown', handler: touchHandler });
+            this._eventHandlers.push({ element: root, event: 'touchstart', handler: touchHandler });
+        }
+
+        this._setupTagSuggestions(root);
+    }
+
+    _setupTagSuggestions(root) {
+        const tagsInput = root.querySelector('input[name="tags"]');
+        if (!tagsInput) return;
+
+        root.querySelectorAll('.note-tag-chip').forEach(tagChip => {
+            const handler = () => {
+                const tag = String(tagChip.dataset.tagValue || '').trim().toUpperCase();
+                if (!tag) return;
+                const current = (tagsInput.value || '')
+                    .split(',')
+                    .map(value => value.trim())
+                    .filter(Boolean)
+                    .map(value => value.toUpperCase());
+                const index = current.indexOf(tag);
+                if (index >= 0) current.splice(index, 1);
+                else current.push(tag);
+                tagsInput.value = current.join(', ');
+                tagChip.classList.toggle('active', index < 0);
+            };
+            tagChip.addEventListener('click', handler);
+            this._eventHandlers.push({ element: tagChip, event: 'click', handler });
+        });
+
+        const syncHandler = () => {
+            const active = new Set(
+                (tagsInput.value || '')
+                    .split(',')
+                    .map(value => value.trim().toUpperCase())
+                    .filter(Boolean)
+            );
+            root.querySelectorAll('.note-tag-chip').forEach(tagChip => {
+                const tag = String(tagChip.dataset.tagValue || '').trim().toUpperCase();
+                tagChip.classList.toggle('active', active.has(tag));
+            });
+        };
+        tagsInput.addEventListener('input', syncHandler);
+        this._eventHandlers.push({ element: tagsInput, event: 'input', handler: syncHandler });
+    }
+
+    _readEditorContent(root = this._getRoot()) {
+        const editor = root?.querySelector?.('prose-mirror[name="content"]');
+        if (!editor) return String(this.note.content || '');
+        return String(editor.value || '');
+    }
+
+    async _captureFormState() {
+        const root = this._getRoot();
+        const form = root?.querySelector('form');
+        if (!form) return;
+
+        const data = new FormData(form);
+        const title = data.get('title');
+        const tagsText = data.get('tags');
+        const visibilityToggle = form.querySelector('#notes-visibility-private');
+
+        if (typeof title === 'string') this.note.title = title;
+        this.note.content = this._readEditorContent(root);
+        if (typeof tagsText === 'string') {
+            this.note.tags = tagsText.split(',').map(tag => tag.trim()).filter(Boolean);
+        }
+        if (visibilityToggle) {
+            this.note.visibility = visibilityToggle.checked ? 'private' : 'party';
+        }
+    }
+
+    async _handleFormSubmit(event, { placePin = false } = {}) {
+        event?.preventDefault?.();
+        if (!this.isEditMode) return;
+
+        const root = this._getRoot();
+        const form = root?.querySelector('form');
+        if (!form) return;
+
+        this._placeAfterSave = placePin;
+        const formData = new FormData(form);
+        const data = {};
+        for (const [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        data.content = this._readEditorContent(root);
+        const visibilityToggle = form.querySelector('#notes-visibility-private');
+        data.visibility = visibilityToggle?.checked ? 'private' : 'party';
+
+        await this._updateObject(event, data);
+    }
+
+    async _persistPinFlags(page) {
+        if (!page) return;
+        await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
+        await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
+        await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
+    }
+
+    async _applyPinConfiguration(config, headerIcon) {
+        const defaults = getDefaultNotePinDesign();
+        const icon = config?.icon || null;
+        this.note.noteIcon = icon;
+        this.note.notePinSize = normalizePinSize(config?.pinSize) || defaults.size;
+        this.note.notePinStyle = normalizePinStyle(config?.pinStyle) || defaults.style;
+        this.note.notePinShape = normalizePinShape(config?.pinShape) || defaults.shape;
+        this.note.notePinDropShadow = typeof config?.pinDropShadow === 'boolean' ? config.pinDropShadow : defaults.dropShadow;
+        this.note.notePinTextLayout = normalizePinTextLayout(config?.pinTextConfig?.textLayout) || defaults.textLayout;
+        this.note.notePinTextDisplay = normalizePinTextDisplay(config?.pinTextConfig?.textDisplay) || defaults.textDisplay;
+        this.note.notePinTextColor = normalizePinTextColor(config?.pinTextConfig?.textColor) || defaults.textColor;
+        this.note.notePinTextSize = normalizePinTextSize(config?.pinTextConfig?.textSize) || defaults.textSize;
+        this.note.notePinTextMaxLength = normalizePinTextMaxLength(config?.pinTextConfig?.textMaxLength) ?? defaults.textMaxLength;
+        this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(config?.pinTextConfig?.textScaleWithPin) ?? defaults.textScaleWithPin;
+        this.note.iconHtml = buildNoteIconHtml(icon, 'note-window-header-image');
+        if (headerIcon) headerIcon.innerHTML = this.note.iconHtml;
+
+        if (this.page) {
+            await this._persistPinFlags(this.page);
+            await this._refreshNotesPanel();
+        }
+    }
+
+    async _openPinConfiguration(headerIcon) {
+        const pins = getPinsApi();
+        if (!pins?.configure) {
+            ui.notifications.warn('Blacksmith pins are not available.');
+            return;
+        }
+
+        let pinId = this.note?.pinId || this.page?.getFlag?.(MODULE.ID, 'pinId') || null;
+        const sceneId = this.note?.sceneId || this.page?.getFlag?.(MODULE.ID, 'sceneId') || null;
+
+        if (pinId && this.page) {
+            const pinExists = typeof pins.exists === 'function' ? pins.exists(pinId) : !!pins.get?.(pinId);
+            if (!pinExists) {
+                const recoveryPins = [];
+                if (typeof pins.list === 'function') {
+                    if (sceneId) recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, sceneId }) || []));
+                    recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || []));
+                }
+                const recovered = recoveryPins.find(candidate => candidate?.config?.noteUuid === this.page.uuid);
+                if (recovered?.id) {
+                    pinId = recovered.id;
+                    await this.page.setFlag(MODULE.ID, 'pinId', recovered.id);
+                    if (recovered.sceneId) {
+                        await this.page.setFlag(MODULE.ID, 'sceneId', recovered.sceneId);
+                        await this.page.setFlag(MODULE.ID, 'x', typeof recovered.x === 'number' ? recovered.x : null);
+                        await this.page.setFlag(MODULE.ID, 'y', typeof recovered.y === 'number' ? recovered.y : null);
+                    }
+                } else {
+                    await this.page.setFlag(MODULE.ID, 'pinId', null);
+                    pinId = null;
+                }
             }
         }
 
-        const pos = super.setPosition(options);
-        if (this.rendered) {
-            const { top, left, width, height } = this.position;
-            game.settings.set(MODULE.ID, 'notesWindowPosition', { top, left, width, height });
+        if (!pinId && this.page) {
+            try {
+                const createdPinId = await createNotePinForPage(this.page);
+                if (createdPinId) {
+                    pinId = createdPinId;
+                    await this.page.setFlag(MODULE.ID, 'pinId', createdPinId);
+                }
+            } catch (error) {
+                console.error('Coffee Pub Squire | Failed to create note pin:', error);
+                ui.notifications.error('Failed to create pin for this note.');
+                return;
+            }
         }
-        return pos;
+
+        if (!pinId) {
+            ui.notifications.warn('Create a pin for this note before configuring its design.');
+            return;
+        }
+
+        const openConfig = async (targetPinId) => {
+            await pins.configure(targetPinId, {
+                sceneId: sceneId || undefined,
+                moduleId: MODULE.ID,
+                useAsDefault: true,
+                defaultSettingKey: NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
+                onSelect: async (config) => this._applyPinConfiguration(config, headerIcon)
+            });
+        };
+
+        try {
+            await openConfig(pinId);
+        } catch (error) {
+            const message = String(error?.message || error || '').toLowerCase();
+            if (message.includes('permission denied') && this.page && typeof pins.requestGM === 'function') {
+                try {
+                    await pins.requestGM('update', {
+                        pinId,
+                        patch: { ownership: getNotePinOwnershipForPage(this.page) }
+                    });
+                    await openConfig(pinId);
+                    return;
+                } catch (retryError) {
+                    console.error('Coffee Pub Squire | Failed to update note pin ownership:', retryError);
+                }
+            }
+
+            if (message.includes('pin not found') && this.page) {
+                try {
+                    await this.page.setFlag(MODULE.ID, 'pinId', null);
+                    const recreatedId = await createNotePinForPage(this.page);
+                    if (recreatedId) {
+                        await this.page.setFlag(MODULE.ID, 'pinId', recreatedId);
+                        await openConfig(recreatedId);
+                        return;
+                    }
+                } catch (retryError) {
+                    console.error('Coffee Pub Squire | Failed to recover note pin:', retryError);
+                }
+            }
+
+            console.error('Coffee Pub Squire | Failed to open note pin configuration window:', error);
+            ui.notifications.error('Failed to open pin configuration window.');
+        }
+    }
+
+    async _refreshNotesPanel() {
+        const notesPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.notesPanel;
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (!notesPanel || !panelManager?.element) return;
+        await notesPanel._refreshData();
+        notesPanel.render(panelManager.element);
     }
 
     async _updateObject(event, formData) {
-        // Get selected journal from settings
         const journalId = game.settings.get(MODULE.ID, 'notesJournal');
         if (!journalId || journalId === 'none') {
             ui.notifications.error('No notes journal selected. Please select a journal in module settings.');
-            return;
+            return false;
         }
 
         const journal = game.journal.get(journalId);
         if (!journal) {
             ui.notifications.error('Selected notes journal not found.');
-            return;
+            return false;
         }
 
-        // Convert tags to array
-        let tags = [];
-        if (formData.tags) {
-            tags = formData.tags.split(',')
-                .map(t => t.trim())
-                .filter(t => t)
-                .map(t => t.toUpperCase());
-        }
-
-        // Ensure visibility is set - check form directly if not in formData
-        let visibility = formData.visibility;
-        if (!visibility || (visibility !== 'party' && visibility !== 'private')) {
-            // Try to get it from the form element directly
-            const form = getNativeElement(this.element)?.querySelector('form');
-            if (form) {
-                const visibilityToggle = form.querySelector('#notes-visibility-private');
-                if (visibilityToggle) {
-                    visibility = visibilityToggle.checked ? 'private' : 'party';
-                } else {
-                    const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
-                    if (visibilityRadio) {
-                        visibility = visibilityRadio.value;
-                    } else {
-                        visibility = 'private';
-                    }
-                }
-            } else {
-                visibility = 'private';
-            }
-        }
-        
-        // Final check - ensure it's either 'party' or 'private'
-        visibility = visibility === 'party' ? 'party' : 'private';
-
-        // Generate HTML content (note body only, no metadata)
+        const tags = String(formData.tags || '')
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(Boolean)
+            .map(tag => tag.toUpperCase());
+        const visibility = formData.visibility === 'party' ? 'party' : 'private';
         const content = this._generateNoteContent(formData);
 
         try {
-            let page;
-            
+            let page = this.page;
+
             if (this.isEditing && this.pageUuid) {
-                // Editing existing note - update it
-                try {
-                    page = await foundry.utils.fromUuid(this.pageUuid);
-                    if (!page) {
-                        ui.notifications.error('Note not found.');
-                        return false;
-                    }
-                    
-                    // Check permissions
-                    if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                        ui.notifications.error('You do not have permission to edit this note.');
-                        return false;
-                    }
-                    
-                    // When using collaborative editing (collaborate=true), the editor updates the document directly
-                    // However, we still update text.content defensively as a "last-write-wins" safety net
-                    // This ensures changes aren't lost if collab binding fails or user closes without proper save
-                    const updateData = {
-                        name: formData.title || 'Untitled Note'
-                    };
-                    
-                    // Only skip text.content update if we're definitely using collab editor
-                    // Otherwise, update it defensively to prevent data loss
-                    if (!this.usingCollabEditor) {
-                        updateData['text.content'] = content;
-                    }
-                    
-                    await page.update(updateData);
-                    
-                    // Update flags
-                    await page.setFlag(MODULE.ID, 'tags', tags);
-                    await page.setFlag(MODULE.ID, 'visibility', visibility);
-                    await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
-                    await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-                    await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
-                    let authorId = page.getFlag(MODULE.ID, 'authorId');
-                    if (!authorId) {
-                        authorId = game.user.id;
-                        await page.setFlag(MODULE.ID, 'authorId', authorId);
-                    }
-
-                    const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
-                    let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
-                    if (visibility === 'private') {
-                        editorIds = [authorId];
-                    }
-                    await page.setFlag(MODULE.ID, 'editorIds', editorIds);
-                    if (this.isDraft) {
-                        await page.setFlag(MODULE.ID, 'draft', false);
-                        this.isDraft = false;
-                    }
-                    if (formData.sceneId) {
-                        await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
-                        await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
-                        await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
-                    }
-
-                    await this._syncNoteOwnership(page, visibility, authorId);
-                    await updateNotePinForPage(page);
-                } catch (error) {
-                    console.error('Error updating note:', error);
-                    ui.notifications.error(`Failed to update note: ${error.message}`);
+                page = page || await foundry.utils.fromUuid(this.pageUuid);
+                if (!page) {
+                    ui.notifications.error('Note not found.');
                     return false;
                 }
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                    ui.notifications.error('You do not have permission to edit this note.');
+                    return false;
+                }
+
+                await page.update({
+                    name: formData.title || 'Untitled Note',
+                    'text.content': content
+                });
+
+                await page.setFlag(MODULE.ID, 'tags', tags);
+                await page.setFlag(MODULE.ID, 'visibility', visibility);
+                await this._persistPinFlags(page);
+
+                let authorId = page.getFlag(MODULE.ID, 'authorId');
+                if (!authorId) {
+                    authorId = game.user.id;
+                    await page.setFlag(MODULE.ID, 'authorId', authorId);
+                }
+
+                const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
+                let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
+                if (visibility === 'private') editorIds = [authorId];
+                await page.setFlag(MODULE.ID, 'editorIds', editorIds);
+                if (this.isDraft) {
+                    await page.setFlag(MODULE.ID, 'draft', false);
+                    this.isDraft = false;
+                }
+                if (formData.sceneId) {
+                    await page.setFlag(MODULE.ID, 'sceneId', formData.sceneId);
+                    await page.setFlag(MODULE.ID, 'x', formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null);
+                    await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
+                }
+
+                await this._syncNoteOwnership(page, visibility, authorId);
+                await updateNotePinForPage(page);
             } else {
-                // Creating new note
-                // Check if user has permission to create pages in this journal
-                // Users need at least OBSERVER permission to create embedded documents
                 if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {
                     ui.notifications.error('You do not have permission to create notes in this journal. Please contact your GM.');
                     return false;
@@ -731,19 +933,15 @@ export class NotesForm extends FormApplication {
 
                 const normalizedIcon = normalizeNoteIconFlag(this.note.noteIcon) || getDefaultNoteIconFlag();
                 this.note.noteIcon = normalizedIcon;
-
-                // Create journal page with flags
-                const pageData = {
+                const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [{
                     name: formData.title || 'Untitled Note',
                     type: 'text',
-                    text: {
-                        content: content
-                    },
+                    text: { content },
                     flags: {
                         [MODULE.ID]: {
                             noteType: 'sticky',
-                            tags: tags,
-                            visibility: visibility,
+                            tags,
+                            visibility,
                             editorIds: [game.user.id],
                             sceneId: formData.sceneId || null,
                             x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
@@ -763,20 +961,14 @@ export class NotesForm extends FormApplication {
                             timestamp: new Date().toISOString()
                         }
                     }
-                };
-
-                // Create journal page
-                const [newPage] = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+                }]);
                 page = newPage;
-
-                // Verify the flag was saved correctly
-                const savedVisibility = page.getFlag(MODULE.ID, 'visibility');
-
                 const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
                 await this._syncNoteOwnership(page, visibility, authorId);
             }
 
-            // Create pin data for new notes (unplaced by default; placed if scene coords provided)
+            this.page = page;
+
             if (!this.isEditing) {
                 try {
                     const hasPlacement = !!formData.sceneId && formData.x !== null && formData.y !== null;
@@ -790,19 +982,13 @@ export class NotesForm extends FormApplication {
                         await page.setFlag(MODULE.ID, 'pinId', pinId);
                     }
                 } catch (error) {
-                    const message = String(error?.message || error || '');
-                    const proxyMessage = describePinsProxyError(message);
+                    const proxyMessage = describePinsProxyError(String(error?.message || error || ''));
                     if (proxyMessage) {
                         ui.notifications.error(proxyMessage);
                         return false;
                     }
-                    if (message.toLowerCase().includes('permission denied')) {
-                        const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-                        if (hasPagePermission) {
-                            ui.notifications.error('Permission denied: Unable to create pin. The pin ownership may need to be synced. Try saving the note again or contact your GM.');
-                        } else {
-                            ui.notifications.error('Permission denied: You do not have Owner permission on this note.');
-                        }
+                    if (String(error?.message || error || '').toLowerCase().includes('permission denied')) {
+                        ui.notifications.error('Permission denied: Unable to create pin for this note.');
                     } else {
                         ui.notifications.warn('Could not create Blacksmith pin for this note.');
                     }
@@ -811,401 +997,48 @@ export class NotesForm extends FormApplication {
 
             const shouldPlace = this._placeAfterSave;
             this._placeAfterSave = false;
-            ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
             this._didSubmit = true;
-            await this._clearEditLock(this.page, game.user.id);
+            ui.notifications.info(`Note "${formData.title || 'Untitled Note'}" ${this.isEditing ? 'updated' : 'saved'} successfully.`);
+            await this._clearEditLock(page, game.user.id);
             await this.close();
 
             if (shouldPlace && page) {
-                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                const notesPanel = panelManager?.notesPanel;
+                const notesPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.notesPanel;
                 if (notesPanel?._beginNotePinPlacement) {
                     await notesPanel._beginNotePinPlacement(page);
                 } else {
                     ui.notifications.warn('Unable to place pin: Notes panel not available.');
                 }
             }
-            
-            // Refresh notes panel if it exists
-            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-            if (panelManager?.notesPanel && panelManager.element) {
-                await panelManager.notesPanel._refreshData();
-                panelManager.notesPanel.render(panelManager.element);
-            }
-            
+
+            await this._refreshNotesPanel();
             return true;
         } catch (error) {
-            console.error('Error saving note:', error);
+            console.error('Coffee Pub Squire | Error saving note:', error);
             ui.notifications.error(`Failed to save note: ${error.message}`);
             return false;
         }
     }
 
     _generateNoteContent(formData) {
-        return formData.content || '';
+        return String(formData.content || '');
     }
 
-    activateEditor(name, options = {}) {
-        // For collaborative editing, ensure document and fieldName are explicitly provided
-        if (this.usingCollabEditor && this.page && name === 'text.content') {
-            options.document = this.page;
-            options.fieldName = 'text.content';
-        }
-        return super.activateEditor(name, options);
+    _buildNoteOwnership(visibility, authorId) {
+        return buildNoteOwnership(visibility, authorId);
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
-        
-        // v13: Detect and convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-
-        const headerIcon = nativeHtml.querySelector('.window-note-header-icon');
-        if (headerIcon) {
-            const handler = async () => {
-                const pins = getPinsApi();
-                let pinId = this.note?.pinId || this.page?.getFlag?.(MODULE.ID, 'pinId') || null;
-                const sceneId = this.note?.sceneId || this.page?.getFlag?.(MODULE.ID, 'sceneId') || null;
-
-                if (pins?.configure) {
-                    const pinExists = pinId && (typeof pins.exists === 'function' ? pins.exists(pinId) : !!pins.get?.(pinId));
-                    if (pinId && !pinExists && this.page) {
-                        const recoveryPins = [];
-                        if (typeof pins.list === 'function') {
-                            if (sceneId) {
-                                recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, sceneId }) || []));
-                            }
-                            recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || []));
-                        }
-                        const recovered = recoveryPins.find(candidate => candidate?.config?.noteUuid === this.page.uuid);
-                        if (recovered?.id) {
-                            pinId = recovered.id;
-                            await this.page.setFlag(MODULE.ID, 'pinId', recovered.id);
-                            if (recovered.sceneId) {
-                                await this.page.setFlag(MODULE.ID, 'sceneId', recovered.sceneId);
-                                await this.page.setFlag(MODULE.ID, 'x', typeof recovered.x === 'number' ? recovered.x : null);
-                                await this.page.setFlag(MODULE.ID, 'y', typeof recovered.y === 'number' ? recovered.y : null);
-                            }
-                        } else {
-                            await this.page.setFlag(MODULE.ID, 'pinId', null);
-                            pinId = null;
-                        }
-                    }
-                    if (!pinId && this.page) {
-                        try {
-                            const createdPinId = await createNotePinForPage(this.page);
-                            if (createdPinId) {
-                                pinId = createdPinId;
-                                await this.page.setFlag(MODULE.ID, 'pinId', createdPinId);
-                            }
-                        } catch (error) {
-                            console.error('Failed to create unplaced pin:', error);
-                            ui.notifications.error('Failed to create pin for this note.');
-                            return;
-                        }
-                    }
-                }
-
-                if (pins?.configure && pinId) {
-                    const verifiedPin = typeof pins.get === 'function'
-                        ? pins.get(pinId)
-                        : (typeof pins.exists === 'function' ? (pins.exists(pinId) ? pinId : null) : pinId);
-                    if (!verifiedPin) {
-                        ui.notifications.error('Pin not found. This looks like a pins API issue with unplaced pins. Try refreshing or placing the pin once on a scene.');
-                        return;
-                    }
-                    const openConfig = async () => {
-                        await pins.configure(pinId, {
-                            sceneId: sceneId || undefined,
-                            moduleId: MODULE.ID,
-                            useAsDefault: true,
-                            defaultSettingKey: NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
-                            onSelect: async (config) => {
-                                const icon = config?.icon || null;
-                                this.note.noteIcon = icon;
-                                this.note.notePinSize = normalizePinSize(config?.pinSize) || getDefaultNotePinDesign().size;
-                                this.note.notePinStyle = normalizePinStyle(config?.pinStyle) || getDefaultNotePinDesign().style;
-                                this.note.notePinShape = normalizePinShape(config?.pinShape) || getDefaultNotePinDesign().shape;
-                                this.note.notePinDropShadow = typeof config?.pinDropShadow === 'boolean' ? config.pinDropShadow : getDefaultNotePinDesign().dropShadow;
-                                this.note.notePinTextLayout = normalizePinTextLayout(config?.pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
-                                this.note.notePinTextDisplay = normalizePinTextDisplay(config?.pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
-                                this.note.notePinTextColor = normalizePinTextColor(config?.pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
-                                this.note.notePinTextSize = normalizePinTextSize(config?.pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
-                                this.note.notePinTextMaxLength = normalizePinTextMaxLength(config?.pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
-                                this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(config?.pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
-                                this.note.iconHtml = buildNoteIconHtml(icon, 'window-note-header-image');
-                                headerIcon.innerHTML = this.note.iconHtml;
-
-                                if (this.isEditing && this.pageUuid) {
-                                    const page = await foundry.utils.fromUuid(this.pageUuid);
-                                    if (!page) return;
-                                    await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
-                                    await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-                                    await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
-
-                                    const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                                    if (panelManager?.notesPanel && panelManager.element) {
-                                        await panelManager.notesPanel._refreshData();
-                                        panelManager.notesPanel.render(panelManager.element);
-                                    }
-                                }
-                            }
-                        });
-                    };
-                    try {
-                        await openConfig();
-                        return;
-                    } catch (error) {
-                        const message = String(error?.message || error || '');
-                        const isNotFound = message.toLowerCase().includes('pin not found');
-                        const isPermission = message.toLowerCase().includes('permission denied');
-                        if (isPermission && this.page && typeof pins.requestGM === 'function') {
-                            try {
-                                await pins.requestGM('update', {
-                                    pinId,
-                                    patch: { ownership: getNotePinOwnershipForPage(this.page) }
-                                });
-                                await openConfig();
-                                return;
-                            } catch (retryError) {
-                                console.error('Failed to update pin ownership before configure:', retryError);
-                            }
-                        }
-                        if (isNotFound && this.page) {
-                            try {
-                                await this.page.setFlag(MODULE.ID, 'pinId', null);
-                                const recreatedId = await createNotePinForPage(this.page);
-                                if (recreatedId) {
-                                    pinId = recreatedId;
-                                    await this.page.setFlag(MODULE.ID, 'pinId', recreatedId);
-                                    await pins.configure(recreatedId, {
-                                        sceneId: sceneId || undefined,
-                                        moduleId: MODULE.ID,
-                                        useAsDefault: true,
-                                        defaultSettingKey: NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
-                                        onSelect: async (config) => {
-                                            const icon = config?.icon || null;
-                                            this.note.noteIcon = icon;
-                                            this.note.notePinSize = normalizePinSize(config?.pinSize) || getDefaultNotePinDesign().size;
-                                            this.note.notePinStyle = normalizePinStyle(config?.pinStyle) || getDefaultNotePinDesign().style;
-                                            this.note.notePinShape = normalizePinShape(config?.pinShape) || getDefaultNotePinDesign().shape;
-                                            this.note.notePinDropShadow = typeof config?.pinDropShadow === 'boolean' ? config.pinDropShadow : getDefaultNotePinDesign().dropShadow;
-                                            this.note.notePinTextLayout = normalizePinTextLayout(config?.pinTextConfig?.textLayout) || getDefaultNotePinDesign().textLayout;
-                                            this.note.notePinTextDisplay = normalizePinTextDisplay(config?.pinTextConfig?.textDisplay) || getDefaultNotePinDesign().textDisplay;
-                                            this.note.notePinTextColor = normalizePinTextColor(config?.pinTextConfig?.textColor) || getDefaultNotePinDesign().textColor;
-                                            this.note.notePinTextSize = normalizePinTextSize(config?.pinTextConfig?.textSize) || getDefaultNotePinDesign().textSize;
-                                            this.note.notePinTextMaxLength = normalizePinTextMaxLength(config?.pinTextConfig?.textMaxLength) ?? getDefaultNotePinDesign().textMaxLength;
-                                            this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(config?.pinTextConfig?.textScaleWithPin) ?? getDefaultNotePinDesign().textScaleWithPin;
-                                            this.note.iconHtml = buildNoteIconHtml(icon, 'window-note-header-image');
-                                            headerIcon.innerHTML = this.note.iconHtml;
-
-                                            if (this.isEditing && this.pageUuid) {
-                                                const page = await foundry.utils.fromUuid(this.pageUuid);
-                                                if (!page) return;
-                                                await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
-                                                await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-                                                await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
-
-                                                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                                                if (panelManager?.notesPanel && panelManager.element) {
-                                                    await panelManager.notesPanel._refreshData();
-                                                    panelManager.notesPanel.render(panelManager.element);
-                                                }
-                                            }
-                                        }
-                                    });
-                                    return;
-                                }
-                            } catch (retryError) {
-                                console.error('Failed to recover from missing pin:', retryError);
-                            }
-                        }
-
-                        console.error('Failed to open pin configuration window:', error);
-                        ui.notifications.error('Failed to open pin configuration window.');
-                        return;
-                    }
-                }
-                ui.notifications?.warn('Create a pin for this note before configuring its design.');
-            };
-            headerIcon.addEventListener('click', handler);
-            this._eventHandlers.push({ element: headerIcon, event: 'click', handler });
-        }
-
-
-        const editToggle = nativeHtml.querySelector('#notes-edit-toggle');
-        if (editToggle) {
-            const handler = async (event) => {
-                event.preventDefault();
-                if (this.isEditMode) {
-                    await this._captureFormState();
-                    await this._clearEditLock(this.page, game.user.id);
-                }
-                this.isEditMode = !!event.currentTarget.checked;
-                this.isViewMode = !this.isEditMode;
-                this.render(true);
-            };
-            editToggle.addEventListener('change', handler);
-            this._eventHandlers.push({ element: editToggle, event: 'change', handler });
-        }
-
-        // Handle cancel button
-        const cancelButton = nativeHtml.querySelector('button.cancel');
-        if (cancelButton) {
-            const handler = () => this.close();
-            cancelButton.addEventListener('click', handler);
-            this._eventHandlers.push({ element: cancelButton, event: 'click', handler });
-        }
-
-        // Handle form submission - prevent default FormApplication behavior
-        const form = nativeHtml.querySelector('form');
-        if (form) {
-            const handler = (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                this._handleFormSubmit(event);
-            };
-            form.addEventListener('submit', handler);
-            this._eventHandlers.push({ element: form, event: 'submit', handler });
-        }
-
-        const savePlaceButton = nativeHtml.querySelector('button.notes-save-place-pin');
-        if (savePlaceButton) {
-            const handler = () => {
-                this._placeAfterSave = true;
-                const form = nativeHtml.querySelector('form');
-                if (form) {
-                    form.dataset.placePin = 'true';
-                }
-            };
-            savePlaceButton.addEventListener('click', handler);
-            this._eventHandlers.push({ element: savePlaceButton, event: 'click', handler });
-        }
-
-        if (this.isEditMode) {
-            const touchHandler = () => {
-                this._touchEditLock().catch(error => {
-                    console.warn('Failed to refresh edit lock:', error);
-                });
-            };
-            nativeHtml.addEventListener('keydown', touchHandler);
-            nativeHtml.addEventListener('mousedown', touchHandler);
-            nativeHtml.addEventListener('touchstart', touchHandler);
-            this._eventHandlers.push({ element: nativeHtml, event: 'keydown', handler: touchHandler });
-            this._eventHandlers.push({ element: nativeHtml, event: 'mousedown', handler: touchHandler });
-            this._eventHandlers.push({ element: nativeHtml, event: 'touchstart', handler: touchHandler });
-        }
-
-        // Set up tag autocomplete (simple - just show existing tags)
-        this._setupTagAutocomplete(nativeHtml);
+    async _syncNoteOwnership(page, visibility, authorId) {
+        await syncNoteOwnership(page, visibility, authorId);
     }
 
-    async _captureFormState() {
-        const nativeHtml = getNativeElement(this.element);
-        const form = nativeHtml?.querySelector('form');
-        if (!form) return;
-
-        if (this._saveEditor) {
-            await this._saveEditor('content');
-        } else if (this._saveEditors) {
-            await this._saveEditors();
-        } else if (this.editors?.content?.save) {
-            await this.editors.content.save();
+    _clearEventHandlers() {
+        for (const { element, event, handler } of this._eventHandlers) {
+            try {
+                element?.removeEventListener?.(event, handler);
+            } catch (_) {}
         }
-
-        const data = new FormData(form);
-        const title = data.get('title');
-        const content = data.get('content');
-        const tagsText = data.get('tags');
-        const visibilityToggle = form.querySelector('#notes-visibility-private');
-
-        if (typeof title === 'string') {
-            this.note.title = title;
-        }
-        if (typeof content === 'string') {
-            this.note.content = content;
-        }
-        if (typeof tagsText === 'string') {
-            this.note.tags = tagsText
-                .split(',')
-                .map(t => t.trim())
-                .filter(t => t);
-        }
-        if (visibilityToggle) {
-            this.note.visibility = visibilityToggle.checked ? 'private' : 'party';
-        }
-    }
-
-    async _handleFormSubmit(event) {
-        event.preventDefault();
-        if (!this.isEditMode) return;
-
-        const form = event.target.closest('form') || event.target;
-        const submitter = event.submitter || form?.querySelector('button[type="submit"][data-place-pin=\"true\"]:focus');
-        this._placeAfterSave = submitter?.dataset?.placePin === 'true' || submitter?.name === 'placePin';
-
-        if (this._saveEditor) {
-            await this._saveEditor('content');
-        } else if (this._saveEditors) {
-            await this._saveEditors();
-        } else if (this.editors?.content?.save) {
-            await this.editors.content.save();
-        }
-        const formData = submitter && typeof FormData === 'function'
-            ? new FormData(form, submitter)
-            : new FormData(form);
-        
-        // Convert FormData to object
-        const data = {};
-        for (const [key, value] of formData.entries()) {
-            data[key] = value;
-        }
-        if (Object.prototype.hasOwnProperty.call(data, 'placePin')) {
-            this._placeAfterSave = String(data.placePin) === '1' || String(data.placePin).toLowerCase() === 'true';
-        }
-        if (!this._placeAfterSave && form?.dataset?.placePin === 'true') {
-            this._placeAfterSave = true;
-        }
-        if (form?.dataset) {
-            delete form.dataset.placePin;
-        }
-
-        const visibilityToggle = form.querySelector('#notes-visibility-private');
-        if (visibilityToggle) {
-            data.visibility = visibilityToggle.checked ? 'private' : 'party';
-        } else {
-            const visibilityRadio = form.querySelector('input[name="visibility"]:checked');
-            if (visibilityRadio) {
-                data.visibility = visibilityRadio.value;
-            } else {
-                const allRadios = form.querySelectorAll('input[name="visibility"]');
-                data.visibility = 'private';
-            }
-        }
-
-        // Debug: Log visibility value to help diagnose issues
-
-        // Call _updateObject
-        await this._updateObject(event, data);
+        this._eventHandlers = [];
     }
 
     async close(options = {}) {
@@ -1221,56 +1054,61 @@ export class NotesForm extends FormApplication {
             clearTimeout(this._editLockExpiryTimeout);
             this._editLockExpiryTimeout = null;
         }
-
+        this._clearEventHandlers();
         return super.close(options);
     }
 
-    _setupTagAutocomplete(html) {
-        // Simple tag autocomplete - just show existing tags from notes journal
-        const tagsInput = html.querySelector('input[name="tags"]');
-        if (!tagsInput) return;
+    static async _actionSave(event, _target) {
+        const instance = NoteWindow._ref;
+        if (!instance) return;
+        event?.preventDefault?.();
+        await instance._handleFormSubmit(event, { placePin: false });
+    }
 
-        // Get existing tags from notes journal
-        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-        if (!journalId || journalId === 'none') return;
+    static async _actionSavePlace(event, _target) {
+        const instance = NoteWindow._ref;
+        if (!instance) return;
+        event?.preventDefault?.();
+        await instance._handleFormSubmit(event, { placePin: true });
+    }
 
-        const journal = game.journal.get(journalId);
-        if (!journal) return;
-
-        const existingTags = new Set();
-        for (const page of journal.pages.contents) {
-            const flags = page.getFlag(MODULE.ID, 'tags');
-            if (Array.isArray(flags)) {
-                flags.forEach(tag => existingTags.add(tag));
-            }
-        }
-
-        // Show tag suggestions (simple - could be enhanced later)
-        const suggestionsDiv = html.querySelector('.tag-suggestions');
-        if (suggestionsDiv && existingTags.size > 0) {
-            const tagsArray = Array.from(existingTags).sort().slice(0, 20);
-            const tagChips = tagsArray.map(tag => `<span class="common-tag" data-tag="${tag}">${tag}</span>`).join('');
-            suggestionsDiv.innerHTML = `<small>Common Tags:</small><div class="common-tags">${tagChips}</div>`;
-
-            suggestionsDiv.querySelectorAll('.common-tag').forEach(tagEl => {
-                const handler = () => {
-                    const tag = tagEl.dataset.tag;
-                    if (!tag) return;
-                    const current = (tagsInput.value || '')
-                        .split(',')
-                        .map(t => t.trim())
-                        .filter(t => t);
-                    const exists = current.some(t => t.toLowerCase() === tag.toLowerCase());
-                    if (!exists) {
-                        current.push(tag);
-                        tagsInput.value = current.join(', ');
-                        tagsInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                };
-                tagEl.addEventListener('click', handler);
-                this._eventHandlers.push({ element: tagEl, event: 'click', handler });
-            });
-        }
+    static async _actionCancel(event, _target) {
+        const instance = NoteWindow._ref;
+        if (!instance) return;
+        event?.preventDefault?.();
+        await instance.close();
     }
 }
 
+NoteWindow.ACTION_HANDLERS = {
+    save: NoteWindow._actionSave,
+    savePlace: NoteWindow._actionSavePlace,
+    cancel: NoteWindow._actionCancel
+};
+
+export const NotesForm = NoteWindow;
+
+export async function openNotesWindow(options = {}) {
+    let windowInstance;
+    if (options.page) {
+        windowInstance = await NoteWindow.fromPage(options.page, options);
+    } else if (options.pageUuid) {
+        const page = await foundry.utils.fromUuid(options.pageUuid);
+        windowInstance = page ? await NoteWindow.fromPage(page, options) : new NoteWindow(options.note || null, options);
+    } else {
+        windowInstance = new NoteWindow(options.note || null, options);
+    }
+    await windowInstance.render(true);
+    return windowInstance;
+}
+
+export function registerNoteWindow() {
+    const blacksmith = getBlacksmith();
+    if (!blacksmith?.registerWindow) return false;
+
+    return blacksmith.registerWindow(NOTE_WINDOW_ID, {
+        open: openNotesWindow,
+        title: 'Note',
+        moduleId: MODULE.ID
+    });
+}

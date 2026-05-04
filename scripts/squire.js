@@ -12,7 +12,6 @@ import { QuestParser } from './utility-quest-parser.js';
 import { isPinsApiAvailable, getSquirePinType } from './utility-quest-pins.js';
 import { registerQuestPinEvents } from './quest-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { NotesForm } from './window-note.js';
 import {
     buildNoteOwnership,
     getDefaultNotePinDesign,
@@ -1889,15 +1888,9 @@ Hooks.once('init', async function() {
         Handlebars.registerPartial('handle-character-portrait', '{{!-- Character portrait partial failed to load --}}');
     }
     
-    // Set up API to expose PanelManager and NotesForm to other modules
+    // Set up API to expose PanelManager and window open helpers to other modules
     game.modules.get(MODULE.ID).api = {
         PanelManager,
-        NotesForm,
-        openNotesForm: (options = {}) => {
-            const form = new NotesForm(null, options);
-            form.render(true);
-            return form;
-        },
         openCodexWindow: (options = {}) => {
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
             if (typeof blacksmith?.openWindow !== 'function') {
@@ -1933,8 +1926,6 @@ Hooks.once('init', async function() {
         // ... existing code ...
     };
 
-    // Add NotesForm to window for console access
-    window.NotesForm = NotesForm;
 });
 
 Hooks.once('ready', async function() {
@@ -1946,6 +1937,20 @@ Hooks.once('ready', async function() {
 
     // Register module settings
     registerSettings();
+
+    try {
+        const { registerNoteWindow, openNotesWindow, NoteWindow, NotesForm, NOTE_WINDOW_ID } = await import('./window-note.js');
+        registerNoteWindow();
+        game.modules.get(MODULE.ID).api.openNotesWindow = openNotesWindow;
+        game.modules.get(MODULE.ID).api.openNotesForm = openNotesWindow;
+        game.modules.get(MODULE.ID).api.NoteWindow = NoteWindow;
+        game.modules.get(MODULE.ID).api.NotesForm = NotesForm;
+        game.modules.get(MODULE.ID).api.NOTE_WINDOW_ID = NOTE_WINDOW_ID;
+        window.NoteWindow = NoteWindow;
+        window.NotesForm = NotesForm;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register Note window:', error);
+    }
 
     try {
         const { registerCodexWindow, openCodexWindow, CodexWindow, CODEX_WINDOW_ID } = await import('./window-codex.js');
@@ -2123,8 +2128,12 @@ Hooks.once('ready', async function() {
 
     try {
         const openQuickNote = () => {
-            const form = new NotesForm(null, {});
-            form.render(true);
+            const api = game.modules.get(MODULE.ID)?.api;
+            if (typeof api?.openNotesWindow === 'function') {
+                return api.openNotesWindow({});
+            }
+            ui.notifications.warn('Note window is not ready yet.');
+            return null;
         };
 
         const noteOk = blacksmith.registerMenubarTool('squire-quick-note', {
