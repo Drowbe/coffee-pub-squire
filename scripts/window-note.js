@@ -99,7 +99,12 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
         foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
         {
             id: NOTE_WINDOW_ID,
+            tag: 'form',
             classes: ['note-window', 'note-entry-window', 'squire-window'],
+            form: {
+                submitOnChange: false,
+                closeOnSubmit: false
+            },
             position: { width: 760, height: 860 },
             window: { title: 'Note', resizable: true, minimizable: true },
             windowSizeConstraints: { minWidth: 620, minHeight: 680 }
@@ -475,12 +480,15 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             || resolveNoteIconHtmlFromContent(content, 'note-window-header-image');
         this.note.iconHtml = iconHtml;
 
+        const editorContent = this._getEditorContent(content);
+
         return {
             appId: this.id,
             note: {
                 ...this.note,
                 tagsText: this.note.tags.join(', '),
                 content,
+                editorContent,
                 iconHtml,
                 sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name || null : null,
                 editorAvatars: this._getEditorAvatars()
@@ -549,25 +557,82 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
         }
     }
 
+    _getForm(root = this._getRoot()) {
+        if (root?.matches?.('form')) return root;
+        const closest = root?.closest?.('form');
+        if (closest) return closest;
+        const nested = root?.querySelector?.('form');
+        if (nested) return nested;
+        if (this.element?.matches?.('form')) return this.element;
+        return this.element?.querySelector?.('form') || null;
+    }
+
+    _getEditorContent(content = this._getPageContent()) {
+        const html = String(content || '').trim();
+        if (!html) return '';
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        const blockTags = new Set([
+            'address', 'article', 'aside', 'blockquote', 'details', 'div', 'dl', 'fieldset', 'figcaption',
+            'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'main', 'nav',
+            'ol', 'p', 'pre', 'section', 'table', 'ul'
+        ]);
+
+        const hasBlockRoot = Array.from(wrapper.childNodes).some(node =>
+            (node.nodeType === Node.ELEMENT_NODE) && blockTags.has(node.tagName.toLowerCase())
+        );
+
+        if (hasBlockRoot) return html;
+        return `<p>${html}</p>`;
+    }
+
     _mountEditor(root) {
         const host = root.querySelector('.note-editor-host');
         if (!host) return;
-        host.replaceChildren();
-        let editorValue = String(this.note.content || '');
-        if (!/<p[\s>]/i.test(editorValue.trim())) {
-            editorValue = `${editorValue}<p></p>`;
-        }
-        const editor = foundry.applications.elements.HTMLProseMirrorElement.create({
+
+        const config = {
             name: 'content',
-            value: editorValue,
+            value: this._getEditorContent(this.note.content),
             compact: true
-        });
+        };
+        if (this.note.pageUuid) config.documentUUID = this.note.pageUuid;
+
+        const editor = foundry.applications.elements.HTMLProseMirrorElement.create(config);
         editor.classList.add('note-window-editor');
-        host.append(editor);
+        editor.disabled = false;
+        editor.removeAttribute('readonly');
+        editor.addEventListener('open', () => {
+            editor.disabled = false;
+            editor.removeAttribute('readonly');
+            requestAnimationFrame(() => {
+                const content = editor.querySelector('.editor-content');
+                content?.setAttribute('contenteditable', 'true');
+                content?.focus();
+                if (!content) {
+                    console.warn('Coffee Pub Squire | Note editor opened without an .editor-content element.', {
+                        pageUuid: this.note.pageUuid,
+                        title: this.note.title
+                    });
+                    return;
+                }
+                if (editor.disabled || editor.matches(':disabled') || content.getAttribute('contenteditable') !== 'true') {
+                    console.warn('Coffee Pub Squire | Note editor may be non-editable after mount.', {
+                        pageUuid: this.note.pageUuid,
+                        title: this.note.title,
+                        editorDisabled: editor.disabled,
+                        editorMatchesDisabled: editor.matches(':disabled'),
+                        contentEditable: content.getAttribute('contenteditable'),
+                        contentChildCount: content.childNodes.length
+                    });
+                }
+            });
+        }, { once: true });
+        host.replaceChildren(editor);
     }
 
     _attachLocalListeners(root) {
-        const form = root.querySelector('form');
+        const form = this._getForm(root);
         if (form) {
             const submitHandler = (event) => {
                 event.preventDefault();
@@ -619,7 +684,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             };
             root.addEventListener('keydown', touchHandler);
             root.addEventListener('mousedown', touchHandler);
-            root.addEventListener('touchstart', touchHandler);
+            root.addEventListener('touchstart', touchHandler, { passive: true });
             this._eventHandlers.push({ element: root, event: 'keydown', handler: touchHandler });
             this._eventHandlers.push({ element: root, event: 'mousedown', handler: touchHandler });
             this._eventHandlers.push({ element: root, event: 'touchstart', handler: touchHandler });
@@ -675,7 +740,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
 
     async _captureFormState() {
         const root = this._getRoot();
-        const form = root?.querySelector('form');
+        const form = this._getForm(root);
         if (!form) return;
 
         const data = new FormData(form);
@@ -698,7 +763,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
         if (!this.isEditMode) return;
 
         const root = this._getRoot();
-        const form = root?.querySelector('form');
+        const form = this._getForm(root);
         if (!form) return;
 
         this._placeAfterSave = placePin;

@@ -167,12 +167,18 @@
 
 .note-window prose-mirror.editor,
 .note-window .note-window-editor {
-    display: block;
+    display: flex;
+    flex-direction: column;
     min-height: 480px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.28);
-    overflow: hidden;
+    overflow: visible;
+}
+
+.note-window prose-mirror .editor-container {
+    flex: 1 1 auto;
+    min-height: 430px;
 }
 
 .note-window prose-mirror .editor-menu,
@@ -194,11 +200,15 @@
 .note-window prose-mirror .editor-content,
 .note-window prose-mirror .ProseMirror,
 .note-window prose-mirror .prosemirror {
-    min-height: 430px;
     padding: 14px;
     background: rgba(0, 0, 0, 0.08);
     color: rgba(240, 236, 226, 0.96);
     line-height: 1.55;
+}
+
+.note-window prose-mirror.editing-source code-mirror.source-editor {
+    flex: 1 1 auto;
+    min-height: 430px;
 }
 
 .note-window prose-mirror .editor-content:focus,
@@ -209,6 +219,11 @@
 
 .note-window prose-mirror .ProseMirror p:last-child {
     min-height: 1.5em;
+}
+
+.note-window prose-mirror img {
+    max-width: 100%;
+    height: auto;
 }
 
 .note-view-content {

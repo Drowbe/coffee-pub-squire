@@ -1,4 +1,4 @@
-<div class="blacksmith-window-template-root note-window" id="{{appId}}">
+<div class="blacksmith-window-template-root note-window" data-app-id="{{appId}}">
     <header class="blacksmith-window-template-header note-window-header-shell">
         <div class="blacksmith-window-template-header-content">
             <div class="blacksmith-window-template-header-icon note-window-header-icon" data-tooltip="Configure note pin design">
@@ -11,7 +11,7 @@
 
             <div class="blacksmith-window-template-header-title-block note-window-title-block">
                 {{#if isEditMode}}
-                    <input type="text" id="title" name="title" class="note-window-title-input" value="{{note.title}}" placeholder="Note title" form="note-window-form" required>
+                    <input type="text" id="title" name="title" class="note-window-title-input" value="{{note.title}}" placeholder="Note title" required>
                 {{else}}
                     <div class="blacksmith-window-template-header-title note-window-title-text">{{#if note.title}}{{note.title}}{{else}}Untitled Note{{/if}}</div>
                 {{/if}}
@@ -70,7 +70,7 @@
                 <div class="blacksmith-toggle-row" data-tooltip="Private notes remain restricted to the owner until you turn this off.">
                     <span class="blacksmith-toggle-label">Private</span>
                     <label class="blacksmith-toggle">
-                        <input type="checkbox" id="notes-visibility-private" class="blacksmith-toggle-input" {{#if (eq note.visibility 'private')}}checked{{/if}} {{#unless isEditMode}}disabled{{/unless}} form="note-window-form">
+                        <input type="checkbox" id="notes-visibility-private" class="blacksmith-toggle-input" {{#if (eq note.visibility 'private')}}checked{{/if}} {{#unless isEditMode}}disabled{{/unless}}>
                         <span class="blacksmith-toggle-slider"></span>
                     </label>
                 </div>
@@ -79,7 +79,7 @@
     </header>
 
     <div class="blacksmith-window-template-body">
-        <form class="note-window-form" id="note-window-form" method="post">
+        <section class="note-window-form">
             <input type="hidden" name="sceneId" value="{{note.sceneId}}">
             <input type="hidden" name="x" value="{{note.x}}">
             <input type="hidden" name="y" value="{{note.y}}">
@@ -123,7 +123,7 @@
                     {{/if}}
                 </div>
             </div>
-        </form>
+        </section>
     </div>
 
     <section class="blacksmith-window-template-buttons">
