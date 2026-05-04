@@ -8,13 +8,17 @@
 
 .note-window .blacksmith-window-template-body {
     padding: 14px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .note-window-form {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     gap: 14px;
-    min-height: 100%;
+    min-height: 0;
 }
 
 .note-window-header-shell {
@@ -148,12 +152,15 @@
 .note-window-main {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     gap: 12px;
-    min-height: 100%;
+    min-height: 0;
 }
 
 .note-window-content-panel {
     flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
     min-height: 0;
 }
 
@@ -162,6 +169,7 @@
 }
 
 .note-editor-host {
+    flex: 1 1 auto;
     min-height: 480px;
 }
 
@@ -227,6 +235,7 @@
 }
 
 .note-view-content {
+    flex: 1 1 auto;
     min-height: 280px;
     padding: 0 2px;
     color: rgba(240, 236, 226, 0.94);

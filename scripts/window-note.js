@@ -499,6 +499,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             isEditing: this.isEditing,
             isEditMode: this.isEditMode,
             isViewMode: this.isViewMode,
+            suggestedTags: this._getSuggestedTags(),
             commonTags: this._getExistingTags(),
             windowTitle: 'Note',
             headerTitle: this.note.title || 'Untitled Note',
@@ -544,6 +545,23 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             }
         }
         return Array.from(tags.values()).sort((a, b) => a.localeCompare(b)).slice(0, 24);
+    }
+
+    _getSuggestedTags() {
+        return [
+            'NPC',
+            'Location',
+            'Faction',
+            'Quest',
+            'Clue',
+            'Rumor',
+            'Loot',
+            'Shop',
+            'Tavern',
+            'Dungeon',
+            'Travel',
+            'Party'
+        ];
     }
 
     async _onRender(context, options) {

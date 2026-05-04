@@ -100,6 +100,16 @@
                             <input type="text" id="tags" name="tags" class="note-window-tags-input" value="{{note.tagsText}}" placeholder="npc, phlan, informant">
                             <small class="note-form-hint">Click common tags to add or remove them.</small>
                         </div>
+                        {{#if suggestedTags.length}}
+                            <div class="note-tag-suggestions-wrap">
+                                <div class="note-tag-group-label">Suggested</div>
+                                <div class="blacksmith-tags" data-chip-type="tag">
+                                    {{#each suggestedTags}}
+                                        <span class="blacksmith-tag note-tag-chip {{#if (includes ../note.tags this)}}active{{/if}}" data-tag-value="{{this}}">{{this}}</span>
+                                    {{/each}}
+                                </div>
+                            </div>
+                        {{/if}}
                         {{#if commonTags.length}}
                             <div class="note-tag-suggestions-wrap">
                                 <div class="note-tag-group-label">Common Tags</div>
