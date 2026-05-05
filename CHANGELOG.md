@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.2]
+
+### Changed
+- **Notes window – Blacksmith Application V2 editor migration**: Reworked the sticky note window (`scripts/window-note.js`, `templates/window-note.hbs`, `styles/window-note.css`) to use a V13/Application V2-compatible ProseMirror mount path instead of the legacy helper/form behavior. Existing notes now round-trip through the shared Blacksmith window shell while preserving view/edit toggle behavior.
+- **Notes window – tag UX simplification**: Replaced the split `Suggested` / `Common Tags` note tag groups with a single clickable tag cloud below the tags input. Core note tags are shown first, then existing world note tags are appended after case-insensitive de-duplication.
+- **Notes window – tags panel presentation**: Wrapped the note tags area in a standard Blacksmith section so the note body stays visually open while the taxonomy controls match the Codex / Quest window treatment.
+
+### Fixed
+- **Notes window – ProseMirror content loading**: Fixed the migrated note editor so existing note HTML loads into edit mode correctly instead of opening with an empty ProseMirror document.
+- **Notes window – editor interactivity**: Fixed the note editor state so the rich text area and HTML source mode are actually editable in edit mode rather than rendering as a non-interactive surface.
+- **Notes window – editor layout sizing**: Fixed the note window flex/layout chain so the editor expands to fill the available vertical space down to the tags section instead of leaving a large dead gap below the note content.
+- **Notes window – tag active state consistency**: Fixed note tag chip highlighting to behave case-insensitively and align with the shared Blacksmith active-chip styling used by Codex and Quest.
+
 ## [13.2.1]
 
 ### Changed

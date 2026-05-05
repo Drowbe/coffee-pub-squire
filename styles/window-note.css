@@ -166,18 +166,23 @@
 
 .note-window-tags-panel {
     flex: 0 0 auto;
+    margin-top: 0;
 }
 
 .note-editor-host {
     flex: 1 1 auto;
-    min-height: 480px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .note-window prose-mirror.editor,
 .note-window .note-window-editor {
     display: flex;
     flex-direction: column;
-    min-height: 480px;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.28);
@@ -186,7 +191,7 @@
 
 .note-window prose-mirror .editor-container {
     flex: 1 1 auto;
-    min-height: 430px;
+    min-height: 0;
 }
 
 .note-window prose-mirror .editor-menu,
@@ -208,6 +213,7 @@
 .note-window prose-mirror .editor-content,
 .note-window prose-mirror .ProseMirror,
 .note-window prose-mirror .prosemirror {
+    min-height: 100%;
     padding: 14px;
     background: rgba(0, 0, 0, 0.08);
     color: rgba(240, 236, 226, 0.96);
@@ -216,7 +222,7 @@
 
 .note-window prose-mirror.editing-source code-mirror.source-editor {
     flex: 1 1 auto;
-    min-height: 430px;
+    min-height: 0;
 }
 
 .note-window prose-mirror .editor-content:focus,
@@ -293,22 +299,7 @@
 }
 
 .note-tag-suggestions-wrap {
-    margin-top: 10px;
-}
-
-.note-tag-group-label {
-    margin-bottom: 4px;
-    font-size: 0.72em;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(172, 159, 129, 0.72);
-}
-
-.note-tag-chip.active {
-    background: rgba(172, 159, 129, 0.2);
-    border-color: rgba(172, 159, 129, 0.45);
-    color: rgba(240, 236, 226, 0.96);
+    margin-top: 2px;
 }
 
 .note-view-tags {

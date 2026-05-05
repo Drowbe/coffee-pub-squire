@@ -499,8 +499,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             isEditing: this.isEditing,
             isEditMode: this.isEditMode,
             isViewMode: this.isViewMode,
-            suggestedTags: this._getSuggestedTags(),
-            commonTags: this._getExistingTags(),
+            tagChips: this._getTagChips(),
             windowTitle: 'Note',
             headerTitle: this.note.title || 'Untitled Note',
             subtitle: this.isEditing ? (this.isEditMode ? 'Edit Note' : 'View Note') : 'New Note'
@@ -550,18 +549,39 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
     _getSuggestedTags() {
         return [
             'NPC',
-            'Location',
-            'Faction',
-            'Quest',
-            'Clue',
-            'Rumor',
-            'Loot',
-            'Shop',
-            'Tavern',
-            'Dungeon',
-            'Travel',
-            'Party'
+            'LOCATION',
+            'FACTION',
+            'QUEST',
+            'CLUE',
+            'RUMOR',
+            'LOOT',
+            'SHOP',
+            'TAVERN',
+            'DUNGEON',
+            'TRAVEL',
+            'PARTY'
         ];
+    }
+
+    _getTagChips() {
+        const chips = [];
+        const seen = new Set();
+        const active = new Set((this.note.tags || []).map(tag => String(tag || '').trim().toUpperCase()).filter(Boolean));
+
+        const append = (value) => {
+            const normalized = String(value || '').trim().toUpperCase();
+            if (!normalized || seen.has(normalized)) return;
+            seen.add(normalized);
+            chips.push({
+                value: normalized,
+                label: normalized,
+                active: active.has(normalized)
+            });
+        };
+
+        for (const tag of this._getSuggestedTags()) append(tag);
+        for (const tag of this._getExistingTags()) append(tag);
+        return chips;
     }
 
     async _onRender(context, options) {

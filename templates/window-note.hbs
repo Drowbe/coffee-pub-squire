@@ -94,44 +94,44 @@
                     {{/if}}
                 </div>
 
-                <div class="note-window-tags-panel">
+                <section class="blacksmith-window-section note-window-tags-panel">
                     {{#if isEditMode}}
-                        <div class="note-form-field">
-                            <input type="text" id="tags" name="tags" class="note-window-tags-input" value="{{note.tagsText}}" placeholder="npc, phlan, informant">
-                            <small class="note-form-hint">Click common tags to add or remove them.</small>
+                        <div class="blacksmith-window-section-header">
+                            <i class="fa-solid fa-tags"></i>
+                            <span>Tags</span>
                         </div>
-                        {{#if suggestedTags.length}}
-                            <div class="note-tag-suggestions-wrap">
-                                <div class="note-tag-group-label">Suggested</div>
-                                <div class="blacksmith-tags" data-chip-type="tag">
-                                    {{#each suggestedTags}}
-                                        <span class="blacksmith-tag note-tag-chip {{#if (includes ../note.tags this)}}active{{/if}}" data-tag-value="{{this}}">{{this}}</span>
-                                    {{/each}}
-                                </div>
+                        <div class="blacksmith-window-section-body">
+                            <div class="note-form-field">
+                                <input type="text" id="tags" name="tags" class="note-window-tags-input" value="{{note.tagsText}}" placeholder="npc, phlan, informant">
                             </div>
-                        {{/if}}
-                        {{#if commonTags.length}}
-                            <div class="note-tag-suggestions-wrap">
-                                <div class="note-tag-group-label">Common Tags</div>
-                                <div class="blacksmith-tags" data-chip-type="tag">
-                                    {{#each commonTags}}
-                                        <span class="blacksmith-tag note-tag-chip {{#if (includes ../note.tags this)}}active{{/if}}" data-tag-value="{{this}}">{{this}}</span>
-                                    {{/each}}
+                            {{#if tagChips.length}}
+                                <div class="note-tag-suggestions-wrap">
+                                    <div class="blacksmith-tags" data-chip-type="tag">
+                                        {{#each tagChips}}
+                                            <span class="blacksmith-tag note-tag-chip {{#if active}}active{{/if}}" data-tag-value="{{value}}">{{label}}</span>
+                                        {{/each}}
+                                    </div>
                                 </div>
-                            </div>
-                        {{/if}}
-                    {{else}}
-                        <div class="note-view-tags {{#unless note.tags.length}}is-empty{{/unless}}">
-                            {{#if note.tags.length}}
-                                {{#each note.tags}}
-                                    <span class="blacksmith-tag note-view-tag">{{this}}</span>
-                                {{/each}}
-                            {{else}}
-                                <span class="note-view-empty">No tags</span>
                             {{/if}}
                         </div>
+                    {{else}}
+                        <div class="blacksmith-window-section-header">
+                            <i class="fa-solid fa-tags"></i>
+                            <span>Tags</span>
+                        </div>
+                        <div class="blacksmith-window-section-body">
+                            <div class="note-view-tags {{#unless note.tags.length}}is-empty{{/unless}}">
+                                {{#if note.tags.length}}
+                                    {{#each note.tags}}
+                                        <span class="blacksmith-tag note-view-tag">{{this}}</span>
+                                    {{/each}}
+                                {{else}}
+                                    <span class="note-view-empty">No tags</span>
+                                {{/if}}
+                            </div>
+                        </div>
                     {{/if}}
-                </div>
+                </section>
             </div>
         </section>
     </div>
