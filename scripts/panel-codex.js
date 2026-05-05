@@ -153,6 +153,21 @@ function registerCodexPinHandlers() {
     }, { moduleId: MODULE.ID, signal });
 }
 
+export function unregisterCodexPinHandlers() {
+    if (_codexPinHandlerController) {
+        _codexPinHandlerController.abort();
+        _codexPinHandlerController = null;
+    }
+    if (_codexPinClickDisposer && typeof _codexPinClickDisposer === 'function') {
+        _codexPinClickDisposer();
+        _codexPinClickDisposer = null;
+    }
+    if (_codexPinSceneSyncHookId !== null) {
+        Hooks.off('updateScene', _codexPinSceneSyncHookId);
+        _codexPinSceneSyncHookId = null;
+    }
+}
+
 // ---------------------------------------------------------------------------
 
 export class CodexPanel {
@@ -239,6 +254,7 @@ export class CodexPanel {
      * @public
      */
     destroy() {
+        unregisterCodexPinHandlers();
         this.element = null;
     }
 

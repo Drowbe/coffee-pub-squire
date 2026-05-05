@@ -582,10 +582,9 @@ export class PanelManager {
         }
     }
 
-    async renderPanels(element) {
+    async renderActorPanels(element) {
         if (!element) return;
 
-        // Render all panels
         if (this.actor) {
             this.characterPanel?.render(element);
             if (game.user.isGM) {
@@ -634,6 +633,12 @@ export class PanelManager {
                 PanelManager.removePanelDom(this.abilitiesPanel);
             }
         }
+    }
+
+    async renderPanels(element) {
+        if (!element) return;
+
+        await this.renderActorPanels(element);
 
         // These panels don't require an actor
         this.partyPanel?.render(element);
@@ -2037,29 +2042,25 @@ export async function _updateHealthPanelFromSelection() {
     // EARLY RETURN OPTIMIZATION: Skip expensive operations if nothing changed
     // This prevents lag during multi-select when selecting same-type tokens
     const actorUnchanged = PanelManager.currentActor?.id === actorToUse.id;
+    const actorChanged = !actorUnchanged;
+    const currentTokens = PanelManager.instance?.healthPanel?.tokens || [];
+    const currentTokenIds = currentTokens.map(t => t.id).sort();
+    const newTokenIds = controlledTokens.map(t => t.id).sort();
+    const tokensUnchanged = JSON.stringify(currentTokenIds) === JSON.stringify(newTokenIds);
     
     if (actorUnchanged) {
-        // Check if tokens actually changed by comparing IDs
-        const currentTokens = PanelManager.instance?.healthPanel?.tokens || [];
-        const currentTokenIds = currentTokens.map(t => t.id).sort();
-        const newTokenIds = controlledTokens.map(t => t.id).sort();
-        const tokensUnchanged = JSON.stringify(currentTokenIds) === JSON.stringify(newTokenIds);
-        
         if (tokensUnchanged) {
             // Nothing meaningful changed - skip all expensive operations
             return;
         }
     }
 
-    // Save the current view mode before initializing
-    const currentViewMode = PanelManager.viewMode;
-
     // Store the current tray state before initializing
     // v13: Use native DOM classList instead of jQuery hasClass
     const wasExpanded = PanelManager.element?.classList.contains('expanded') || false;
     
     // Check if we need to change actors
-    if (PanelManager.currentActor?.id !== actorToUse.id) {
+    if (actorChanged) {
         // Actor changed - update the instance without recreating the tray
         
         // Add fade-out animation to tray panel wrapper if appropriate
@@ -2082,8 +2083,8 @@ export async function _updateHealthPanelFromSelection() {
             if (PanelManager.instance.experiencePanel) PanelManager.instance.experiencePanel.actor = actorToUse;
             if (PanelManager.instance.statsPanel) PanelManager.instance.statsPanel.actor = actorToUse;
             if (PanelManager.instance.abilitiesPanel) PanelManager.instance.abilitiesPanel.actor = actorToUse;
-            if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.actor = actorToUse;
-            if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.actor = actorToUse;
+            if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.updateActor(actorToUse);
+            if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.updateActor(actorToUse);
             
             // Update the handle manager's actor reference
             if (PanelManager.instance.handleManager) {
@@ -2100,11 +2101,7 @@ export async function _updateHealthPanelFromSelection() {
     // Update health panel with all controlled tokens for bulk operations
     if (PanelManager.instance && PanelManager.instance.healthPanel) {
         // Only update if the tokens have actually changed
-        const currentTokens = PanelManager.instance.healthPanel.tokens || [];
-        const currentTokenIds = currentTokens.map(t => t.id).sort();
-        const newTokenIds = controlledTokens.map(t => t.id).sort();
-        
-        if (JSON.stringify(currentTokenIds) !== JSON.stringify(newTokenIds)) {
+        if (!tokensUnchanged) {
             PanelManager.instance.healthPanel.updateTokens(controlledTokens);
             // Only render if not popped out and health panel is enabled
             if (!PanelManager.instance.healthPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showHealthPanel')) {
@@ -2118,25 +2115,14 @@ export async function _updateHealthPanelFromSelection() {
         await PanelManager.instance.updateHandle();
     }
     
-    // Re-render all panels with the new actor data
-    if (PanelManager.instance && PanelManager.element) {
-        await PanelManager.instance.renderPanels(PanelManager.element);
+    // Re-render only actor-dependent panels with the new actor data.
+    if (actorChanged && PanelManager.instance && PanelManager.element) {
+        await PanelManager.instance.renderActorPanels(PanelManager.element);
     }
     
     // Add fade-in animation to tray panel wrapper after update if appropriate
     if (PanelManager.instance) {
         PanelManager.instance._applyFadeInAnimation();
-    }
-    
-    // Re-attach event listeners to ensure tray functionality works
-    if (PanelManager.instance && PanelManager.element) {
-        // Bind the instance to ensure proper 'this' context
-        PanelManager.instance.activateListeners.call(PanelManager.instance, PanelManager.element);
-    }
-    
-    // Restore the previous view mode after initializing
-    if (PanelManager.instance && PanelManager.element) {
-        await PanelManager.instance.setViewMode(currentViewMode);
     }
     
     // Only play sound and expand tray if it was previously expanded AND not pinned
@@ -2154,16 +2140,6 @@ export async function _updateHealthPanelFromSelection() {
 
 
 }
-
-
-// Set up periodic cleanup of newly added items
-const globalCleanupInterval = trackModuleInterval(() => {
-    if (PanelManager.instance) {
-        PanelManager.cleanupNewlyAddedItems();
-        // No need to recreate the entire tray for cleanup - just clean up data
-    }
-}, 60000); // Check every minute
-PanelManager.trackInterval(globalCleanupInterval);
 
 // Note: closeGame hook is now managed centrally by HookManager
 

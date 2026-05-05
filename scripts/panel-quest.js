@@ -5,7 +5,7 @@ import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, create
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
-import { registerQuestPinEvents, registerQuestPinSync } from './quest-pin-events.js';
+import { registerQuestPinEvents, registerQuestPinSync, unregisterQuestPinEvents, unregisterQuestPinSync } from './quest-pin-events.js';
 
 const QUEST_WINDOW_ID = `${MODULE.ID}-quest-window`;
 
@@ -627,6 +627,9 @@ export class QuestPanel {
             this._questListenersAbort.abort();
             this._questListenersAbort = null;
         }
+
+        unregisterQuestPinSync?.();
+        unregisterQuestPinEvents?.();
         
         this.element = null;
     }

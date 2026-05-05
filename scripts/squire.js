@@ -24,9 +24,12 @@ import {
     normalizePinTextLayout,
     normalizePinTextMaxLength,
     normalizePinTextScaleWithPin,
-    normalizePinTextSize
+    normalizePinTextSize,
+    unregisterNotePinHandlers
 } from './panel-notes.js';
-import { trackModuleTimeout, clearAllModuleTimers } from './timer-utils.js';
+import { unregisterCodexPinHandlers } from './panel-codex.js';
+import { unregisterQuestPinEvents, unregisterQuestPinSync } from './quest-pin-events.js';
+import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
 
@@ -41,6 +44,61 @@ let nativeSelectObjects = null;
 let wrappedSelectObjects = null;
 let selectionUpdateFrameId = null;
 let suppressNotesPanelRoute = false;
+let notesPanelRefreshTimeout = null;
+let notesPanelRefreshNeedsCleanup = false;
+const nativeHookRegistrations = [];
+
+function registerNativeHook(name, callback) {
+    const id = Hooks.on(name, callback);
+    nativeHookRegistrations.push({ name, id });
+    return id;
+}
+
+function unregisterNativeHooks() {
+    for (const { name, id } of nativeHookRegistrations) {
+        try {
+            Hooks.off(name, id);
+        } catch (_) {}
+    }
+    nativeHookRegistrations.length = 0;
+}
+
+function scheduleNotesPanelRefresh({ cleanupMissingPins = false } = {}) {
+    if (cleanupMissingPins) {
+        notesPanelRefreshNeedsCleanup = true;
+    }
+
+    if (notesPanelRefreshTimeout) {
+        clearTrackedTimeout(notesPanelRefreshTimeout);
+        notesPanelRefreshTimeout = null;
+    }
+
+    notesPanelRefreshTimeout = trackModuleTimeout(async () => {
+        notesPanelRefreshTimeout = null;
+
+        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+        if (!panelManager?.notesPanel || !panelManager.element) {
+            notesPanelRefreshNeedsCleanup = false;
+            return;
+        }
+
+        const notesPanel = panelManager.notesPanel;
+        const previousSuppress = notesPanel._suppressPinOwnershipSync;
+        notesPanel._suppressPinOwnershipSync = true;
+
+        try {
+            if (notesPanelRefreshNeedsCleanup) {
+                notesPanelRefreshNeedsCleanup = false;
+                await notesPanel._cleanupMissingPins();
+            } else {
+                await notesPanel._refreshData();
+                await notesPanel.render(panelManager.element);
+            }
+        } finally {
+            notesPanel._suppressPinOwnershipSync = previousSuppress;
+        }
+    }, 75);
+}
 
 function queueSelectionDisplayUpdate() {
     if (selectionUpdateFrameId !== null) {
@@ -171,19 +229,19 @@ Hooks.once('ready', async () => {
 
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
-        Hooks.on('userDisconnected', async (user) => {
+        registerNativeHook('userDisconnected', async (user) => {
             if (!user?.id) return;
             await clearNoteEditLocks({ userId: user.id });
         });
 
-        Hooks.on('blacksmith.pins.resolveOwnership', (context) => {
+        registerNativeHook('blacksmith.pins.resolveOwnership', (context) => {
             if (!context || context.moduleId !== MODULE.ID) return null;
             const visibility = context.metadata?.visibility || 'private';
             const authorId = context.metadata?.authorId || game.user?.id;
             return buildNoteOwnership(visibility, authorId);
         });
 
-        Hooks.on('blacksmith.pins.updated', async ({ pinId, sceneId, moduleId, pin }) => {
+        registerNativeHook('blacksmith.pins.updated', async ({ pinId, sceneId, moduleId, pin }) => {
             if (moduleId !== MODULE.ID) return;
             const noteUuid = pin?.config?.noteUuid;
             if (!noteUuid) return;
@@ -215,20 +273,13 @@ Hooks.once('ready', async () => {
                     notePinTextMaxLength: normalizePinTextMaxLength(pin?.textMaxLength) ?? defaultDesign.textMaxLength,
                     notePinTextScaleWithPin: normalizePinTextScaleWithPin(pin?.textScaleWithPin) ?? defaultDesign.textScaleWithPin
                 });
-
-                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                if (panelManager?.notesPanel && panelManager.element) {
-                    panelManager.notesPanel._suppressPinOwnershipSync = true;
-                    await panelManager.notesPanel._refreshData();
-                    panelManager.notesPanel.render(panelManager.element);
-                    panelManager.notesPanel._suppressPinOwnershipSync = false;
-                }
+                scheduleNotesPanelRefresh();
             } finally {
                 suppressNotesPanelRoute = false;
             }
         });
 
-        Hooks.on('blacksmith.pins.created', async ({ pinId, moduleId, pin, sceneId }) => {
+        registerNativeHook('blacksmith.pins.created', async ({ pinId, moduleId, pin, sceneId }) => {
             if (moduleId !== MODULE.ID) return;
             const noteUuid = pin?.config?.noteUuid;
             if (!noteUuid) return;
@@ -247,20 +298,13 @@ Hooks.once('ready', async () => {
                     x: pin?.x ?? null,
                     y: pin?.y ?? null
                 });
-
-                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                if (panelManager?.notesPanel && panelManager.element) {
-                    panelManager.notesPanel._suppressPinOwnershipSync = true;
-                    await panelManager.notesPanel._refreshData();
-                    panelManager.notesPanel.render(panelManager.element);
-                    panelManager.notesPanel._suppressPinOwnershipSync = false;
-                }
+                scheduleNotesPanelRefresh();
             } finally {
                 suppressNotesPanelRoute = false;
             }
         });
 
-        Hooks.on('blacksmith.pins.placed', async ({ pinId, sceneId, moduleId, pin }) => {
+        registerNativeHook('blacksmith.pins.placed', async ({ pinId, sceneId, moduleId, pin }) => {
             if (moduleId !== MODULE.ID) return;
             const noteUuid = pin?.config?.noteUuid;
             if (!noteUuid) return;
@@ -279,20 +323,13 @@ Hooks.once('ready', async () => {
                     x: pin?.x ?? page.getFlag(MODULE.ID, 'x'),
                     y: pin?.y ?? page.getFlag(MODULE.ID, 'y')
                 });
-
-                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                if (panelManager?.notesPanel && panelManager.element) {
-                    panelManager.notesPanel._suppressPinOwnershipSync = true;
-                    await panelManager.notesPanel._refreshData();
-                    panelManager.notesPanel.render(panelManager.element);
-                    panelManager.notesPanel._suppressPinOwnershipSync = false;
-                }
+                scheduleNotesPanelRefresh();
             } finally {
                 suppressNotesPanelRoute = false;
             }
         });
 
-        Hooks.on('blacksmith.pins.unplaced', async ({ pinId, moduleId, pin }) => {
+        registerNativeHook('blacksmith.pins.unplaced', async ({ pinId, moduleId, pin }) => {
             if (moduleId !== MODULE.ID) return;
             const noteUuid = pin?.config?.noteUuid;
             if (!noteUuid) return;
@@ -311,20 +348,13 @@ Hooks.once('ready', async () => {
                     x: null,
                     y: null
                 });
-
-                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                if (panelManager?.notesPanel && panelManager.element) {
-                    panelManager.notesPanel._suppressPinOwnershipSync = true;
-                    await panelManager.notesPanel._refreshData();
-                    panelManager.notesPanel.render(panelManager.element);
-                    panelManager.notesPanel._suppressPinOwnershipSync = false;
-                }
+                scheduleNotesPanelRefresh();
             } finally {
                 suppressNotesPanelRoute = false;
             }
         });
 
-        Hooks.on('blacksmith.pins.deleted', async ({ pinId, sceneId, moduleId, pin, config }) => {
+        registerNativeHook('blacksmith.pins.deleted', async ({ pinId, sceneId, moduleId, pin, config }) => {
             if (moduleId !== MODULE.ID) return;
             const noteUuid = config?.noteUuid || pin?.config?.noteUuid;
             if (!noteUuid) return;
@@ -347,41 +377,24 @@ Hooks.once('ready', async () => {
                     x: null,
                     y: null
                 });
-
-                const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-                if (panelManager?.notesPanel && panelManager.element) {
-                    panelManager.notesPanel._suppressPinOwnershipSync = true;
-                    await panelManager.notesPanel._refreshData();
-                    panelManager.notesPanel.render(panelManager.element);
-                    panelManager.notesPanel._suppressPinOwnershipSync = false;
-                }
+                scheduleNotesPanelRefresh();
             } finally {
                 suppressNotesPanelRoute = false;
             }
         });
 
-        Hooks.on('blacksmith.pins.deletedAll', async ({ moduleId }) => {
+        registerNativeHook('blacksmith.pins.deletedAll', async ({ moduleId }) => {
             if (moduleId && moduleId !== MODULE.ID) return;
-            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-            if (panelManager?.notesPanel && panelManager.element) {
-                suppressNotesPanelRoute = true;
-                panelManager.notesPanel._suppressPinOwnershipSync = true;
-                await panelManager.notesPanel._cleanupMissingPins();
-                panelManager.notesPanel._suppressPinOwnershipSync = false;
-                suppressNotesPanelRoute = false;
-            }
+            suppressNotesPanelRoute = true;
+            scheduleNotesPanelRefresh({ cleanupMissingPins: true });
+            suppressNotesPanelRoute = false;
         });
 
-        Hooks.on('blacksmith.pins.deletedAllByType', async ({ moduleId }) => {
+        registerNativeHook('blacksmith.pins.deletedAllByType', async ({ moduleId }) => {
             if (moduleId && moduleId !== MODULE.ID) return;
-            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-            if (panelManager?.notesPanel && panelManager.element) {
-                suppressNotesPanelRoute = true;
-                panelManager.notesPanel._suppressPinOwnershipSync = true;
-                await panelManager.notesPanel._cleanupMissingPins();
-                panelManager.notesPanel._suppressPinOwnershipSync = false;
-                suppressNotesPanelRoute = false;
-            }
+            suppressNotesPanelRoute = true;
+            scheduleNotesPanelRefresh({ cleanupMissingPins: true });
+            suppressNotesPanelRoute = false;
         });
         
         // Register all hooks after Blacksmith is ready
@@ -2207,12 +2220,12 @@ Hooks.once('ready', async function() {
         
         // Fallback: Direct hook registration for journal page sheet (in case Blacksmith doesn't support it)
         // Try multiple hook names for FoundryVTT v12/v13 compatibility
-        Hooks.on('renderJournalPageSheet', async (sheet, html, data) => {
+        registerNativeHook('renderJournalPageSheet', async (sheet, html, data) => {
             await _embedNoteMetadataBox(sheet, html, data);
         });
         
         // Also try renderApplication with filter
-        Hooks.on('renderApplication', async (app, html, data) => {
+        registerNativeHook('renderApplication', async (app, html, data) => {
             const className = app?.constructor?.name;
             const objectName = app?.object?.constructor?.name;
             if (className === 'JournalPageSheet' || className === 'JournalTextPageSheet' || objectName === 'JournalEntryPage') {
@@ -2221,7 +2234,7 @@ Hooks.once('ready', async function() {
         });
         
         // Also try the JournalEntrySheet hook (for the parent journal)
-        Hooks.on('renderJournalEntrySheet', async (sheet, html, data) => {
+        registerNativeHook('renderJournalEntrySheet', async (sheet, html, data) => {
             // This is for the journal itself, but we can check if a page is being viewed
             // The meta box hook should handle individual pages
         });
@@ -2483,10 +2496,16 @@ function getQuestNumber(questUuid) {
  */
 function cleanupModule() {
     try {
-        // Clean up HookManager
-        if (HookManager.cleanup) {
-            HookManager.cleanup();
+        const hookManager = getBlacksmithHookManager();
+        if (hookManager?.disposeByContext) {
+            hookManager.disposeByContext(MODULE.ID);
         }
+
+        unregisterNativeHooks();
+        unregisterNotePinHandlers?.();
+        unregisterCodexPinHandlers?.();
+        unregisterQuestPinSync?.();
+        unregisterQuestPinEvents?.();
 
         // Clean up PanelManager
         if (PanelManager.cleanup) {
@@ -2508,6 +2527,12 @@ function cleanupModule() {
             cancelAnimationFrame(selectionUpdateFrameId);
             selectionUpdateFrameId = null;
         }
+
+        if (notesPanelRefreshTimeout) {
+            clearTrackedTimeout(notesPanelRefreshTimeout);
+            notesPanelRefreshTimeout = null;
+        }
+        notesPanelRefreshNeedsCleanup = false;
 
         if (nativeSelectObjects && canvas?.selectObjects === wrappedSelectObjects) {
             canvas.selectObjects = nativeSelectObjects;

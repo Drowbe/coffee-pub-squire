@@ -310,6 +310,7 @@ export function getNotePinTextScaleWithPinForNote(note) {
 
 
 let notePinClickDisposer = null;
+let notePinDoubleClickDisposer = null;
 let notePinHandlerController = null;
 let notePinContextMenuRegistered = false;
 let notePinContextMenuDisposers = [];
@@ -861,7 +862,7 @@ function registerNotePinHandlers() {
         trackModuleTimeout(tryFocus, 1000);
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
 
-    pins.on('doubleClick', async (evt) => {
+    notePinDoubleClickDisposer = pins.on('doubleClick', async (evt) => {
         const noteUuid = evt?.pin?.config?.noteUuid;
         if (!noteUuid) return;
         const page = await foundry.utils.fromUuid(noteUuid);
@@ -872,6 +873,34 @@ function registerNotePinHandlers() {
 
         await openNoteWindow({ note: noteData, page, pageUuid: page.uuid, pageId: page.id, viewMode: true });
     }, { moduleId: MODULE.ID, signal: notePinHandlerController.signal });
+}
+
+export function unregisterNotePinHandlers() {
+    if (notePinHandlerController) {
+        notePinHandlerController.abort();
+        notePinHandlerController = null;
+    }
+    if (notePinClickDisposer && typeof notePinClickDisposer === 'function') {
+        notePinClickDisposer();
+    }
+    if (notePinDoubleClickDisposer && typeof notePinDoubleClickDisposer === 'function') {
+        notePinDoubleClickDisposer();
+    }
+    notePinClickDisposer = null;
+    notePinDoubleClickDisposer = null;
+
+    notePinContextMenuDisposers.forEach(disposer => {
+        try {
+            if (typeof disposer === 'function') disposer();
+        } catch (_) {}
+    });
+    notePinContextMenuDisposers = [];
+    notePinContextMenuRegistered = false;
+
+    if (notePinSceneSyncHookId !== null) {
+        Hooks.off('updateScene', notePinSceneSyncHookId);
+        notePinSceneSyncHookId = null;
+    }
 }
 
 export async function createNotePinForPage(page, sceneId, x, y) {
@@ -1279,6 +1308,7 @@ export class NotesPanel {
      */
     destroy() {
         this._clearNotePinPlacement();
+        unregisterNotePinHandlers();
         this.element = null;
     }
 

@@ -24,6 +24,7 @@ let questPinContextMenuDisposers = [];
 let questPinSyncRegistered = false;
 let questPinSceneSyncHookId = null;
 let questPinSyncDebounceTimer = null;
+let questPinSyncHookIds = [];
 
 /**
  * Focus and flash the quest entry in the quest panel
@@ -371,6 +372,31 @@ export function unregisterQuestPinEvents() {
     questPinEventsRegistered = false;
 }
 
+export function unregisterQuestPinSync() {
+    if (questPinSyncDebounceTimer) {
+        clearTimeout(questPinSyncDebounceTimer);
+        questPinSyncDebounceTimer = null;
+    }
+
+    for (const hookId of questPinSyncHookIds) {
+        Hooks.off('blacksmith.pins.deleted', hookId.deleted);
+        Hooks.off('blacksmith.pins.unplaced', hookId.unplaced);
+        Hooks.off('blacksmith.pins.placed', hookId.placed);
+        Hooks.off('blacksmith.pins.updated', hookId.updated);
+        Hooks.off('blacksmith.pins.created', hookId.created);
+        Hooks.off('blacksmith.pins.deletedAll', hookId.deletedAll);
+        Hooks.off('blacksmith.pins.deletedAllByType', hookId.deletedAllByType);
+    }
+    questPinSyncHookIds = [];
+
+    if (questPinSceneSyncHookId !== null) {
+        Hooks.off('updateScene', questPinSceneSyncHookId);
+        questPinSceneSyncHookId = null;
+    }
+
+    questPinSyncRegistered = false;
+}
+
 /**
  * Register sync hooks so quest/objective flags stay aligned with the Pins API.
  * Mirrors the Notes panel resilience: any external pin change triggers a reconcile.
@@ -398,13 +424,15 @@ export function registerQuestPinSync() {
         }, 50);
     };
 
-    Hooks.on('blacksmith.pins.deleted', handle);
-    Hooks.on('blacksmith.pins.unplaced', handle);
-    Hooks.on('blacksmith.pins.placed', handle);
-    Hooks.on('blacksmith.pins.updated', handle);
-    Hooks.on('blacksmith.pins.created', handle);
-    Hooks.on('blacksmith.pins.deletedAll', handle);
-    Hooks.on('blacksmith.pins.deletedAllByType', handle);
+    questPinSyncHookIds.push({
+        deleted: Hooks.on('blacksmith.pins.deleted', handle),
+        unplaced: Hooks.on('blacksmith.pins.unplaced', handle),
+        placed: Hooks.on('blacksmith.pins.placed', handle),
+        updated: Hooks.on('blacksmith.pins.updated', handle),
+        created: Hooks.on('blacksmith.pins.created', handle),
+        deletedAll: Hooks.on('blacksmith.pins.deletedAll', handle),
+        deletedAllByType: Hooks.on('blacksmith.pins.deletedAllByType', handle)
+    });
 
     // Scene flag changes can also desync after bulk deletes.
     if (!questPinSceneSyncHookId) {
