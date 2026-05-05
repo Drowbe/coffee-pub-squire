@@ -495,6 +495,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             },
             editLock: this._editLock ? { ...this._editLock, isSelf: this._editLock.userId === game.user.id } : null,
             canEdit: !this._editLock || this._editLock.userId === game.user.id,
+            canManageVisibility: !this.isEditing || !!this.page?.testUserPermission?.(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER),
             isGM: game.user.isGM,
             isEditing: this.isEditing,
             isEditMode: this.isEditMode,
@@ -707,6 +708,15 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             this._eventHandlers.push({ element: editToggle, event: 'change', handler: toggleHandler });
         }
 
+        const visibilityToggle = root.querySelector('#notes-visibility-private');
+        if (visibilityToggle) {
+            const visibilityHandler = async (event) => {
+                await this._handleVisibilityToggle(event);
+            };
+            visibilityToggle.addEventListener('change', visibilityHandler);
+            this._eventHandlers.push({ element: visibilityToggle, event: 'change', handler: visibilityHandler });
+        }
+
         const titleInput = root.querySelector('#title');
         if (titleInput) {
             const inputHandler = (event) => {
@@ -793,6 +803,66 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
         }
         if (visibilityToggle) {
             this.note.visibility = visibilityToggle.checked ? 'private' : 'party';
+        }
+    }
+
+    async _persistVisibility(page, visibility) {
+        await page.setFlag(MODULE.ID, 'visibility', visibility);
+
+        let authorId = page.getFlag(MODULE.ID, 'authorId');
+        if (!authorId) {
+            authorId = game.user.id;
+            await page.setFlag(MODULE.ID, 'authorId', authorId);
+        }
+
+        const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
+        let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
+        if (visibility === 'private') editorIds = [authorId];
+        await page.setFlag(MODULE.ID, 'editorIds', editorIds);
+
+        this.note.visibility = visibility;
+        this.note.authorId = authorId;
+        this.note.editorIds = editorIds;
+
+        await this._syncNoteOwnership(page, visibility, authorId);
+    }
+
+    async _handleVisibilityToggle(event) {
+        const toggle = event?.currentTarget;
+        if (!toggle) return;
+
+        const previousVisibility = this.note.visibility === 'party' ? 'party' : 'private';
+        const visibility = toggle.checked ? 'private' : 'party';
+        this.note.visibility = visibility;
+
+        if (this.isEditMode || !this.isEditing) return;
+
+        try {
+            const page = this.page || (this.pageUuid ? await foundry.utils.fromUuid(this.pageUuid) : null);
+            if (!page) {
+                toggle.checked = previousVisibility === 'private';
+                this.note.visibility = previousVisibility;
+                ui.notifications.error('Note not found.');
+                return;
+            }
+
+            if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+                toggle.checked = previousVisibility === 'private';
+                this.note.visibility = previousVisibility;
+                ui.notifications.error('You do not have permission to change this note visibility.');
+                return;
+            }
+
+            this.page = page;
+            await this._persistVisibility(page, visibility);
+            await updateNotePinForPage(page);
+            await this._refreshNotesPanel();
+            await this.render(true);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error updating note visibility:', error);
+            toggle.checked = previousVisibility === 'private';
+            this.note.visibility = previousVisibility;
+            ui.notifications.error(`Failed to update note visibility: ${error.message}`);
         }
     }
 
@@ -1003,19 +1073,8 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                 });
 
                 await page.setFlag(MODULE.ID, 'tags', tags);
-                await page.setFlag(MODULE.ID, 'visibility', visibility);
+                await this._persistVisibility(page, visibility);
                 await this._persistPinFlags(page);
-
-                let authorId = page.getFlag(MODULE.ID, 'authorId');
-                if (!authorId) {
-                    authorId = game.user.id;
-                    await page.setFlag(MODULE.ID, 'authorId', authorId);
-                }
-
-                const existingEditors = page.getFlag(MODULE.ID, 'editorIds') || [];
-                let editorIds = Array.isArray(existingEditors) ? [...new Set([...existingEditors, game.user.id])] : [game.user.id];
-                if (visibility === 'private') editorIds = [authorId];
-                await page.setFlag(MODULE.ID, 'editorIds', editorIds);
                 if (this.isDraft) {
                     await page.setFlag(MODULE.ID, 'draft', false);
                     this.isDraft = false;
@@ -1026,7 +1085,6 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                     await page.setFlag(MODULE.ID, 'y', formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null);
                 }
 
-                await this._syncNoteOwnership(page, visibility, authorId);
                 await updateNotePinForPage(page);
             } else {
                 if (!journal.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER)) {

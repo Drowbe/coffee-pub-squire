@@ -70,7 +70,7 @@
                 <div class="blacksmith-toggle-row" data-tooltip="Private notes remain restricted to the owner until you turn this off.">
                     <span class="blacksmith-toggle-label">Private</span>
                     <label class="blacksmith-toggle">
-                        <input type="checkbox" id="notes-visibility-private" class="blacksmith-toggle-input" {{#if (eq note.visibility 'private')}}checked{{/if}} {{#unless isEditMode}}disabled{{/unless}}>
+                        <input type="checkbox" id="notes-visibility-private" class="blacksmith-toggle-input" {{#if (eq note.visibility 'private')}}checked{{/if}} {{#unless canManageVisibility}}disabled{{/unless}}>
                         <span class="blacksmith-toggle-slider"></span>
                     </label>
                 </div>

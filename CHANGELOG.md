@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.3]
+
+### Changed
+- **Notes window – view-mode privacy control**: The note header `Private` switch is now available outside edit mode for users who own the note. Visibility changes persist immediately from the view state instead of requiring an edit/save cycle.
+
+### Fixed
+- **Notes window – visibility sync path**: Unified the note visibility update flow so the live header toggle and the normal save path both apply the same `visibility`, `editorIds`, and ownership synchronization logic.
+- **Notes window – long note view layout**: Fixed view mode so long note content scrolls inside the note body instead of pushing the tags panel and action bar out of place.
+
+
 ## [13.2.2]
 
 ### Changed
