@@ -177,14 +177,24 @@ They have been addressed in current code.
 
 ## Priority Order
 
+### Recommended Execution Plan
+1. Fix the duplicate `PanelManager` cleanup intervals first.
+2. Then do one combined hook-and-rerender pass for Notes, Codex, Quest, and tray selection flows:
+- migrate remaining long-lived native hooks to Blacksmith Hook Manager where practical
+- add explicit teardown where Hook Manager migration is not the right fit
+- debounce/coalesce noisy note pin lifecycle refreshes in `squire.js`
+- stop `_updateHealthPanelFromSelection()` from forcing unrelated panel rerenders
+3. After that pass is stable, tackle journal-scale optimization separately.
+
 ### Do Next
 1. Collapse the duplicate `PanelManager` cleanup intervals into one.
-2. Debounce note pin lifecycle refreshes in `squire.js`.
-3. Stop `_updateHealthPanelFromSelection()` from forcing full non-player panel rerenders.
+2. Combine hook lifecycle cleanup with performance cleanup in a single pass:
+- address quest/note/codex pin hook teardown or Hook Manager migration
+- debounce note pin lifecycle refreshes
+- narrow selection-driven rerenders to only the panels that actually need updates
 
 ### Do Soon
-1. Add teardown or HookManager migration for quest/note/codex pin sync hooks.
-2. Reduce full-journal rescans in Notes, Codex, and Quest by introducing entry-level invalidation.
+1. Reduce full-journal rescans in Notes, Codex, and Quest by introducing entry-level invalidation and cached parse results.
 
 ### Do Later
 1. Replace remaining Favorites DOM cloning with delegated listeners.
