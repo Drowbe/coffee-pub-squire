@@ -1,147 +1,201 @@
-# Performance and Memory Leak Review Plan
+# Performance and Memory Review
 
-## Findings
+Last reviewed: May 4, 2026
 
-### 1) High: Event listener accumulation in Spells panel
+This document replaces the earlier static review. Several of the original findings were already fixed during the Application V2 and panel cleanup work, so this version focuses on the current live risks in the codebase.
+
+## Already Addressed
+
+### Listener accumulation in Spells, Features, and Favorites panels
+- Status: fixed
 - File refs:
-`scripts/panel-spells.js:252`
-`scripts/panel-spells.js:277`
-`scripts/panel-spells.js:288`
-`scripts/panel-spells.js:301`
-`scripts/panel-spells.js:316`
-`scripts/panel-spells.js:329`
-`scripts/panel-spells.js:344`
-`scripts/panel-spells.js:368`
+`scripts/panel-spells.js:223`
+`scripts/panel-features.js:160`
+`scripts/panel-favorites.js:758`
+- Notes:
+All three panels now use `AbortController`-based teardown before rebinding listeners on render. The original “listeners pile up every render” finding is no longer current.
+
+### Quest panel destroy-time listener cleanup
+- Status: fixed
+- File refs:
+`scripts/panel-quest.js:615`
+`scripts/panel-quest.js:623`
+`scripts/panel-quest.js:626`
+- Notes:
+`QuestPanel.destroy()` now clears active pin-placement listeners and aborts container listeners.
+
+### Note window local event handler cleanup
+- Status: fixed
+- File refs:
+`scripts/window-note.js:592`
+`scripts/window-note.js:1197`
+`scripts/window-note.js:1205`
+- Notes:
+The note window now clears tracked DOM handlers on rerender and on close. The earlier leak concern here is no longer current.
+
+## Current Findings
+
+### 1) High: Duplicate cleanup intervals still run in PanelManager
+- File refs:
+`scripts/manager-panel.js:222`
+`scripts/manager-panel.js:2160`
 - Issue:
-`_removeEventListeners()` is a no-op, but `_activateListeners()` adds multiple delegated `click` handlers on each render.
+There are still two independent periodic cleanup loops for `cleanupNewlyAddedItems()`:
+- a 30s interval created from `PanelManager.initialize()`
+- a 60s global interval created at module load
 - Impact:
-Duplicate actions, growing memory retention, and degraded UI performance over time.
+Redundant wakeups, duplicate actor/item scans, and overlapping `unsetFlag()` work. This is not catastrophic, but it is unnecessary churn in a central manager that is always alive.
+- Recommendation:
+Keep a single interval. Prefer the instance-managed path and remove the global module-load interval.
 
-### 2) High: Event listener accumulation in Features panel
+### 2) High: Note pin lifecycle hooks trigger full notes refresh/render on every pin event
 - File refs:
-`scripts/panel-features.js:180`
-`scripts/panel-features.js:205`
-`scripts/panel-features.js:216`
-`scripts/panel-features.js:239`
-`scripts/panel-features.js:252`
+`scripts/squire.js:186`
+`scripts/squire.js:222`
+`scripts/squire.js:231`
+`scripts/squire.js:254`
+`scripts/squire.js:263`
+`scripts/squire.js:286`
+`scripts/squire.js:295`
+`scripts/squire.js:318`
+`scripts/squire.js:327`
+`scripts/squire.js:354`
 - Issue:
-Same pattern as Spells: listeners are repeatedly attached without teardown.
+Each note pin lifecycle hook (`updated`, `created`, `placed`, `unplaced`, `deleted`) resolves the page, writes flags, then does `notesPanel._refreshData()` and `notesPanel.render(...)`.
 - Impact:
-Duplicate behavior and increasing handler overhead.
+If pin updates are noisy, especially during move/update flows, the entire notes panel can be reloaded and rerendered repeatedly. This is the highest-probability UI churn issue still in the module.
+- Recommendation:
+Debounce panel refreshes for note pin lifecycle events and coalesce multiple pin updates into a single refresh pass.
 
-### 3) High: Event listener accumulation in Favorites panel
+### 3) High: Token selection changes still force a full tray panel rerender
 - File refs:
-`scripts/panel-favorites.js:554`
-`scripts/panel-favorites.js:757`
+`scripts/manager-panel.js:2014`
+`scripts/manager-panel.js:2123`
+`scripts/manager-panel.js:2139`
+- Issue:
+`_updateHealthPanelFromSelection()` still ends by calling:
+- `updateHandle()`
+- `renderPanels(PanelManager.element)`
+- `activateListeners(...)`
+- `setViewMode(currentViewMode)`
+Even though there is an early-return optimization, any real token-set change still forces a full tray rerender.
+- Impact:
+Selecting or multiselecting tokens can refresh every tray panel, including Notes, Codex, and Quest, even though those views are unrelated to token health/actor changes.
+- Recommendation:
+Split selection updates by concern. Health/handle updates should not automatically force full notes/codex/quest rerenders.
+
+### 4) High: Notes, Codex, and Quest panels fully rescan their journals on each render
+- File refs:
+`scripts/panel-notes.js:1296`
+`scripts/panel-notes.js:1351`
+`scripts/panel-codex.js:1654`
+`scripts/panel-codex.js:333`
+`scripts/panel-quest.js:4065`
+`scripts/panel-quest.js:1861`
+- Issue:
+Each panel render path starts with `_refreshData()`, and each `_refreshData()` walks the entire selected journal page collection. Quest and Codex also enrich/parse page HTML per page.
+- Impact:
+Any action that rerenders these panels scales with total journal size, not with the specific entry that changed. As notes/codex/quest journals grow, the UI cost of otherwise small actions will keep rising.
+- Recommendation:
+Move these panels toward incremental refresh:
+- cache parsed page data
+- invalidate by page UUID on relevant hooks
+- avoid full journal rescans for local UI-only changes
+
+### 5) Medium: Quest pin sync hooks have no unregister path
+- File refs:
+`scripts/quest-pin-events.js:378`
+`scripts/quest-pin-events.js:401`
+`scripts/quest-pin-events.js:411`
+- Issue:
+`registerQuestPinSync()` installs multiple `Hooks.on(...)` listeners and an `updateScene` hook, but only the click/context-menu handler path has an unregister function. The sync hooks do not.
+- Impact:
+In normal play this is mostly a lifecycle hygiene issue, not an immediate leak. But it makes teardown/reinit harder to reason about and increases the chance of duplicate sync if this code path is ever reused differently.
+- Recommendation:
+Either migrate these to Blacksmith HookManager with `context`/`key`, or store hook ids and remove them explicitly.
+
+### 6) Medium: Notes and Codex pin scene-sync hooks also lack teardown
+- File refs:
+`scripts/panel-notes.js:821`
+`scripts/panel-notes.js:827`
+`scripts/panel-codex.js:97`
+`scripts/panel-codex.js:104`
+`scripts/panel-codex.js:241`
+- Issue:
+Both Notes and Codex register module-scoped `updateScene` hooks for pin reconciliation. These are guarded against duplicate registration, but there is no matching `Hooks.off(...)` path.
+- Impact:
+This is lower-risk than per-render listener leaks, but still leaves global hook lifetime unmanaged. `CodexPanel.destroy()` in particular only nulls `this.element` and does not participate in pin-hook teardown.
+- Recommendation:
+Move these to Blacksmith HookManager or add explicit unregister functions parallel to the quest/codex pin event unregister pattern.
+
+### 7) Medium: Favorites panel still clones many nodes on every render
+- File refs:
+`scripts/panel-favorites.js:758`
 `scripts/panel-favorites.js:781`
 `scripts/panel-favorites.js:816`
 `scripts/panel-favorites.js:864`
 `scripts/panel-favorites.js:897`
 - Issue:
-Panel-level delegated handlers are reattached every render and not removed.
+The listener leak is fixed, but Favorites still uses repeated `cloneNode(true)` replacement for many controls and item sub-elements on every render.
 - Impact:
-Repeated callbacks and memory/perf degradation as rerenders accumulate.
+This is functionally safe, but it is still heavier than delegated binding on a stable container. On large favorites lists, it creates avoidable DOM churn.
+- Recommendation:
+Convert remaining direct per-node bindings to delegated container listeners where practical.
 
-### 4) High: Quest panel destroy misses cleanup for active listeners
+### 8) Medium: `cleanupNewlyAddedItems()` can perform repeated world writes during timer sweeps
 - File refs:
-`scripts/panel-quest.js:604`
-`scripts/panel-quest.js:1529`
-`scripts/panel-quest.js:1704`
-`scripts/panel-quest.js:1719`
-`scripts/panel-quest.js:2004`
+`scripts/manager-panel.js:1440`
+`scripts/manager-panel.js:2160`
 - Issue:
-`destroy()` does not call `_clearQuestPinPlacement()` and does not abort `_questListenersAbort`.
+The cleanup routine not only prunes `PanelManager.newlyAddedItems`, it also iterates actor items and calls `item.unsetFlag(...)` for stale `isNew` flags.
 - Impact:
-If panel switches while pin placement/listeners are active, window/canvas listeners can remain attached.
+Combined with the duplicate interval issue, this can create repeated document updates for bookkeeping cleanup, even when the tray is idle.
+- Recommendation:
+Fix the duplicate interval first. After that, consider only sweeping when `newlyAddedItems.size > 0` or when a tracked actor actually changed.
 
-### 5) Medium: Duplicate periodic cleanup intervals
+### 9) Low: `codex-pin-events.js` is dead duplicate pin-handler code
 - File refs:
-`scripts/manager-panel.js:178`
-`scripts/manager-panel.js:187`
-`scripts/manager-panel.js:2188`
-`scripts/manager-panel.js:2195`
+`scripts/codex-pin-events.js`
 - Issue:
-A 30s cleanup interval is created in `initialize()` and a second 60s global cleanup interval is created at module load.
+This file contains an alternate codex pin event/sync implementation, but it is not imported anywhere in the module. The live codex pin handler path is the one embedded in `panel-codex.js`.
 - Impact:
-Redundant wakeups and overlapping cleanup work.
+No runtime cost today, but it increases maintenance risk and makes future debugging harder because there are two implementations to compare.
+- Recommendation:
+Either remove it or explicitly migrate to it and delete the older embedded codex pin handler path.
 
-### 6) Medium: Quest pin sync hooks registered without teardown path
-- File refs:
-`scripts/quest-pin-events.js:348`
-`scripts/quest-pin-events.js:349`
-`scripts/quest-pin-events.js:350`
-`scripts/quest-pin-events.js:351`
-`scripts/quest-pin-events.js:352`
-`scripts/quest-pin-events.js:353`
-`scripts/quest-pin-events.js:354`
-`scripts/quest-pin-events.js:358`
-- Issue:
-`registerQuestPinSync()` installs multiple `Hooks.on(...)` handlers; `unregisterQuestPinEvents()` does not remove these sync hooks.
-- Impact:
-Stale listeners can persist across teardown/reinit flows.
+## No Longer Relevant From The Previous Plan
 
-### 7) Medium: Notes form tracks handlers but never clears them
-- File refs:
-`scripts/window-note.js:65`
-`scripts/window-note.js:1048`
-`scripts/window-note.js:1065`
-`scripts/window-note.js:1073`
-`scripts/window-note.js:1085`
-`scripts/window-note.js:1098`
-`scripts/window-note.js:1110`
-`scripts/window-note.js:1268`
-`scripts/window-note.js:1208`
-- Issue:
-`_eventHandlers` is appended to on activation, but not drained/removed in `close()`.
-- Impact:
-Detached DOM references can be retained longer than needed and grow across rerenders.
+These earlier findings should not drive current work:
 
-### 8) Medium (inference): Potential re-render storm on pin update path
-- File refs:
-`scripts/squire.js:176`
-`scripts/squire.js:212`
-`scripts/squire.js:213`
-- Issue:
-`blacksmith.pins.updated` can trigger notes data refresh and panel re-render on each event.
-- Impact:
-If updates are high-frequency (e.g. pin dragging), this may cause expensive UI churn.
+1. Spells panel listener accumulation
+2. Features panel listener accumulation
+3. Favorites panel listener accumulation as a leak
+4. Quest panel destroy missing active-listener cleanup
+5. Note window local `_eventHandlers` leak
 
-## Open Questions / Assumptions
-1. Assumes frequent panel rerenders (as indicated by changelog notes).
-2. This is static review only; runtime profiling in Foundry was not performed.
+They have been addressed in current code.
 
-## Proposed Next Steps
-1. Introduce consistent listener teardown in Spells/Features/Favorites (stored handler refs or `AbortController` with `{ signal }`).
-2. Update Quest panel `destroy()` to call `_clearQuestPinPlacement()` and abort `_questListenersAbort`.
-3. Consolidate to a single cleanup interval in `manager-panel.js`.
-4. Migrate remaining long-lived `Hooks.on(...)` registrations to `BlacksmithHookManager.registerHook(...)` with explicit `context` and `key` values.
-5. Clear and detach all tracked `window-note` handlers in `close()` before `super.close()`.
-6. Throttle/debounce notes panel render on pin-updated events in `squire.js`.
+## Priority Order
 
-## Hook Manager Migration Plan (Blacksmith API)
-Source reviewed: `API: Hook Manager` wiki page.
+### Do Next
+1. Collapse the duplicate `PanelManager` cleanup intervals into one.
+2. Debounce note pin lifecycle refreshes in `squire.js`.
+3. Stop `_updateHealthPanelFromSelection()` from forcing full non-player panel rerenders.
 
-### Migration Targets
-1. Move quest pin sync listeners in `scripts/quest-pin-events.js` (`blacksmith.pins.*` and `updateScene`) from native `Hooks.on(...)` to Hook Manager registrations.
-2. Move note scene sync listener in `scripts/panel-notes.js` (`updateScene`) to Hook Manager.
-3. Move direct pin lifecycle listeners in `scripts/squire.js` (`blacksmith.pins.updated/created/placed/unplaced/deleted/deletedAll/deletedAllByType`) to Hook Manager where possible.
-4. Keep `Hooks.once('init'|'ready'|'socketlib.ready')` only where required for boot order, but avoid adding new long-lived native `Hooks.on(...)`.
+### Do Soon
+1. Add teardown or HookManager migration for quest/note/codex pin sync hooks.
+2. Reduce full-journal rescans in Notes, Codex, and Quest by introducing entry-level invalidation.
 
-### Registration Standards
-1. Use `context` on every Hook Manager registration (for grouped disposal).
-2. Use stable `key` values for dedupe protection, especially in any code path that can run more than once.
-3. Set `priority` intentionally:
-- `1-2` for cleanup/integrity and core sync hooks.
-- `3` for default behavior.
-- `4-5` for non-critical UI-only reactions.
-4. Use `options.throttleMs` or `options.debounceMs` on noisy update hooks (`updateScene`, pin-updated flows) to reduce churn.
+### Do Later
+1. Replace remaining Favorites DOM cloning with delegated listeners.
+2. Remove or consolidate the unused `codex-pin-events.js` path.
 
-### Cleanup Strategy
-1. Prefer context cleanup on teardown: `BlacksmithHookManager.disposeByContext('<context>')`.
-2. Where granular teardown is needed, store callback IDs and call `BlacksmithHookManager.removeCallback(callbackId)`.
-3. Remove remaining manual `Hooks.off(...)` management for migrated hooks.
+## Suggested Verification
 
-### Verification Checklist
-1. Run `BlacksmithHookManager.showHooks()` and `BlacksmithHookManager.getStats()` after initialization; confirm no duplicate entries by `key`.
-2. Reinitialize panel/scene flows and confirm hook counts remain stable.
-3. Disable module / close game and confirm migrated contexts are disposed cleanly.
+1. Profile token multiselect with the Performance tab and verify whether selection still rerenders Notes/Codex/Quest.
+2. Drag or repeatedly update note pins and confirm whether notes panel refreshes collapse to one repaint.
+3. Test with large journals:
+- 100+ notes
+- 100+ codex entries
+- 50+ quests with many objectives
+4. After hook cleanup work, verify hook counts stay stable across actor switches, tray reinitialization, and module disable/enable flows.
