@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, setQuestPinModuleVisibility, getQuestPinModuleVisibility, unplaceQuestPinForPage, unplaceObjectivePinForPage, QUEST_PIN_BACKGROUND, OBJECTIVE_PIN_BACKGROUND, isSquirePinCategory, listSquirePinsByKind } from './utility-quest-pins.js';
+import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, unplaceQuestPinForPage, unplaceObjectivePinForPage, QUEST_PIN_BACKGROUND, OBJECTIVE_PIN_BACKGROUND, listAllModulePins, findLiveQuestPin, findLiveObjectivePin } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -649,19 +649,7 @@ export class QuestPanel {
             }
             
             // Only clear this module's quest and objective pins (not Notes or other pin types)
-            const isQuestOrObjectivePin = (pin) => isSquirePinCategory(pin?.type, 'quest') || isSquirePinCategory(pin?.type, 'objective');
-
-            const clearPageFlagsForPins = async (questObjectivePinsList) => {
-                const questUuids = new Set((questObjectivePinsList || []).map(p => p?.config?.questUuid).filter(Boolean));
-                for (const uuid of questUuids) {
-                    const page = await fromUuid(uuid);
-                    if (page) {
-                        await page.setFlag(MODULE.ID, 'pinId', null);
-                        await page.setFlag(MODULE.ID, 'sceneId', null);
-                        await page.setFlag(MODULE.ID, 'objectivePins', {});
-                    }
-                }
-            };
+            const isQuestOrObjectivePin = (pin) => !!pin?.config?.questUuid;
 
             const deletePinSafe = async (pin) => {
                 try {
@@ -674,35 +662,27 @@ export class QuestPanel {
             if (scope === 'thisScene') {
                 // Clear quest/objective pins from current scene only
                 if (canvas.scene) {
-                    const allPins = pins.list({ moduleId: MODULE.ID, sceneId: canvas.scene.id }) || [];
+                    const allPins = listAllModulePins(pins, { sceneId: canvas.scene.id });
                     const questObjectivePins = allPins.filter(isQuestOrObjectivePin);
                     const clearedCount = questObjectivePins.length;
                     
                     if (clearedCount > 0) {
                         for (const pin of questObjectivePins) await deletePinSafe(pin);
-                        await clearPageFlagsForPins(questObjectivePins);
                         ui.notifications.info(`Cleared ${clearedCount} quest pins from the current scene.`);
                     }
-                    // Also clear unplaced quest/objective pins
-                    const unplaced = pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || [];
-                    const questObjectiveUnplaced = unplaced.filter(isQuestOrObjectivePin);
-                    for (const pin of questObjectiveUnplaced) await deletePinSafe(pin);
-                    await clearPageFlagsForPins(questObjectiveUnplaced);
                 }
             } else if (scope === 'allScenes') {
                 // Clear quest/objective pins from all scenes
                 const allDeleted = [];
                 for (const scene of game.scenes.contents) {
-                    const scenePins = pins.list({ moduleId: MODULE.ID, sceneId: scene.id }) || [];
+                    const scenePins = listAllModulePins(pins, { sceneId: scene.id });
                     const questObjectivePins = scenePins.filter(isQuestOrObjectivePin);
                     for (const pin of questObjectivePins) { await deletePinSafe(pin); allDeleted.push(pin); }
                 }
                 // Unplaced as well
-                const unplaced = pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || [];
+                const unplaced = listAllModulePins(pins, { unplacedOnly: true });
                 const questObjectiveUnplaced = unplaced.filter(isQuestOrObjectivePin);
                 for (const pin of questObjectiveUnplaced) { await deletePinSafe(pin); allDeleted.push(pin); }
-
-                await clearPageFlagsForPins(allDeleted);
                 ui.notifications.info(`Cleared ${allDeleted.length} quest pins from all scenes.`);
             }
 
@@ -1156,6 +1136,9 @@ export class QuestPanel {
             
             // MIGRATED TO BLACKSMITH API
             await deleteQuestPins(questUuid, canvas.scene?.id);
+            const { reconcileQuestPins } = await import('./utility-quest-pins.js');
+            await reconcileQuestPins();
+            if (this.element) this.render(this.element);
             ui.notifications.info('Quest pins cleared from the current scene.');
         } catch (error) {
             console.error('Error clearing quest pins:', { error, questUuid });
@@ -1239,31 +1222,10 @@ export class QuestPanel {
         const page = await fromUuid(uuid);
         if (!page) return;
 
-        let pinId = page.getFlag(MODULE.ID, 'pinId');
-        let sceneId = page.getFlag(MODULE.ID, 'sceneId') || undefined;
-
-        if (pinId) {
-            const pinExists = typeof pins.exists === 'function' ? pins.exists(pinId) : !!pins.get?.(pinId);
-            if (!pinExists) {
-                const recoveryPins = [];
-                if (typeof pins.list === 'function') {
-                    if (sceneId) recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, sceneId }) || []));
-                    recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || []));
-                }
-                const recovered = recoveryPins.find(p => p?.config?.questUuid === uuid);
-                if (recovered?.id) {
-                    pinId = recovered.id;
-                    await page.setFlag(MODULE.ID, 'pinId', pinId);
-                    sceneId = recovered.sceneId ?? undefined;
-                    if (sceneId) await page.setFlag(MODULE.ID, 'sceneId', sceneId);
-                } else {
-                    await page.setFlag(MODULE.ID, 'pinId', null);
-                    await page.setFlag(MODULE.ID, 'sceneId', null);
-                    pinId = null;
-                    sceneId = undefined;
-                }
-            }
-        }
+        let livePin = findLiveQuestPin(uuid);
+        let pinId = livePin?.id ?? page.getFlag(MODULE.ID, 'pinId');
+        let sceneId = livePin?.sceneId;
+        if (sceneId == null) sceneId = page.getFlag(MODULE.ID, 'sceneId');
 
         if (!pinId) {
             const questState = page.getFlag(MODULE.ID, 'visible') === false ? 'hidden' : 'visible';
@@ -1276,7 +1238,8 @@ export class QuestPanel {
             });
             if (pin) {
                 pinId = pin.id;
-                await page.setFlag(MODULE.ID, 'pinId', pinId);
+                livePin = pin;
+                sceneId = pin.sceneId ?? undefined;
             } else {
                 ui.notifications.error('Failed to create pin for this quest.');
                 return;
@@ -1318,8 +1281,6 @@ export class QuestPanel {
         } catch (err) {
             const msg = String(err?.message || err || '').toLowerCase();
             if (msg.includes('pin not found')) {
-                await page.setFlag(MODULE.ID, 'pinId', null);
-                await page.setFlag(MODULE.ID, 'sceneId', null);
                 try {
                     const pin = await createQuestPin({
                         questUuid: uuid,
@@ -1329,7 +1290,6 @@ export class QuestPanel {
                         questState: page.getFlag(MODULE.ID, 'visible') === false ? 'hidden' : 'visible'
                     });
                     if (pin) {
-                        await page.setFlag(MODULE.ID, 'pinId', pin.id);
                         await pins.configure(pin.id, {
                             sceneId: undefined,
                             moduleId: MODULE.ID,
@@ -1404,6 +1364,35 @@ export class QuestPanel {
         return preview;
     }
 
+    async _syncQuestPinMirror(page, pin) {
+        if (!page) return;
+        const nextPinId = pin?.id ?? page.getFlag(MODULE.ID, 'pinId') ?? null;
+        const nextSceneId = pin?.sceneId ?? null;
+        if (page.getFlag(MODULE.ID, 'pinId') !== nextPinId) {
+            await page.setFlag(MODULE.ID, 'pinId', nextPinId);
+        }
+        if (page.getFlag(MODULE.ID, 'sceneId') !== nextSceneId) {
+            await page.setFlag(MODULE.ID, 'sceneId', nextSceneId);
+        }
+    }
+
+    async _syncObjectivePinMirror(page, objectiveIndex, pin) {
+        if (!page || !Number.isInteger(objectiveIndex)) return;
+        const current = page.getFlag(MODULE.ID, 'objectivePins') || {};
+        const next = { ...current };
+        const key = String(objectiveIndex);
+        const pinId = pin?.id ?? next[key]?.pinId ?? next[key] ?? null;
+        if (!pinId) {
+            delete next[key];
+        } else {
+            next[key] = {
+                pinId,
+                sceneId: pin?.sceneId ?? null
+            };
+        }
+        await page.setFlag(MODULE.ID, 'objectivePins', next);
+    }
+
     /**
      * Begin Pin to Scene placement for a quest-level pin. User clicks on canvas to place.
      * @param {string} questUuid - Quest journal page UUID
@@ -1424,17 +1413,18 @@ export class QuestPanel {
         }
         // Consistency with Notes: one pin per quest; if already pinned on a scene, must unpin first (like Notes)
         const page = await fromUuid(questUuid);
-        const storedSceneId = page?.getFlag(MODULE.ID, 'sceneId');
-        const storedPinId = page?.getFlag(MODULE.ID, 'pinId');
-        if (storedSceneId && storedPinId) {
+        const livePin = findLiveQuestPin(questUuid);
+        if (livePin?.sceneId) {
             const pins = getPinsApi();
-            const pinExists = typeof pins?.exists === 'function' ? pins.exists(storedPinId) : !!pins?.get?.(storedPinId);
+            const pinExists = typeof pins?.exists === 'function' ? pins.exists(livePin.id) : !!pins?.get?.(livePin.id);
             if (pinExists) {
-                ui.notifications.warn('This quest is already pinned. Unpin it first to place elsewhere.');
-                return;
+                try {
+                    await unplaceQuestPinForPage(page);
+                } catch (e) {
+                    console.warn('Coffee Pub Squire | Auto-unplace quest pin before re-place:', e);
+                    return;
+                }
             }
-            await page.setFlag(MODULE.ID, 'pinId', null);
-            await page.setFlag(MODULE.ID, 'sceneId', null);
         }
         if (this._questPinPlacement) this._clearQuestPinPlacement();
 
@@ -1484,22 +1474,27 @@ export class QuestPanel {
             }
 
             // Ensure pin exists (unplaced is normal case)
-            let pinId = page.getFlag(MODULE.ID, 'pinId') || null;
+            let pinId = findLiveQuestPin(questUuid)?.id;
+            if (pinId == null) pinId = page.getFlag(MODULE.ID, 'pinId') || null;
             if (pinId && typeof pins.exists === 'function' && !pins.exists(pinId)) {
                 pinId = null;
-                await page.setFlag(MODULE.ID, 'pinId', null);
-                await page.setFlag(MODULE.ID, 'sceneId', null);
             }
 
             if (!pinId && typeof pins.list === 'function') {
-                const findExisting = () => {
-                    const unplaced = listSquirePinsByKind(pins, 'quest', { unplacedOnly: true });
-                    const placed = listSquirePinsByKind(pins, 'quest', {});
-                    return [...unplaced, ...placed].find(p => p?.config?.questUuid === questUuid);
-                };
-                const existing = findExisting();
+                const existing = findLiveQuestPin(questUuid);
                 if (existing?.id) {
                     pinId = existing.id;
+                    if (existing.sceneId) {
+                        try {
+                            if (typeof pins.unplace === 'function') {
+                                await pins.unplace(pinId);
+                            } else if (typeof pins.update === 'function') {
+                                await pins.update(pinId, { unplace: true }, { sceneId: existing.sceneId });
+                            }
+                        } catch (e) {
+                            console.warn('Coffee Pub Squire | Auto-unplace recovered quest pin before place:', e);
+                        }
+                    }
                 }
             }
 
@@ -1522,17 +1517,17 @@ export class QuestPanel {
 
             try {
                 if (typeof pins.whenReady === 'function') await pins.whenReady();
+                let placedPin = null;
                 if (typeof pins.place === 'function') {
-                    await pins.place(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y });
+                    placedPin = await pins.place(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y });
                 } else if (typeof pins.update === 'function') {
-                    await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
+                    placedPin = await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
                 }
-                await page.setFlag(MODULE.ID, 'pinId', pinId);
-                await page.setFlag(MODULE.ID, 'sceneId', canvas.scene.id);
                 if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
+                await this._syncQuestPinMirror(page, placedPin || { id: pinId, sceneId: canvas.scene.id });
                 this._clearQuestPinPlacement();
                 ui.notifications.info('Quest pin placed.');
-                // Sync hooks (blacksmith.pins.placed) will trigger panel refresh; avoid duplicate render
+                if (this.element) await this.render(this.element);
             } catch (e) {
                 console.warn('Coffee Pub Squire | Place quest pin failed:', e);
                 this._clearQuestPinPlacement();
@@ -1587,12 +1582,10 @@ export class QuestPanel {
         }
         // Consistency with Notes: one pin per objective; if already pinned on a scene, must unpin first (like Notes)
         const page = await fromUuid(questUuid);
-        const objectivePins = page?.getFlag(MODULE.ID, 'objectivePins') || {};
-        const objPin = objectivePins[String(objectiveIndex)] ?? objectivePins[objectiveIndex];
-        const storedObjPinId = objPin?.pinId ?? objPin;
-        if (objPin?.sceneId && storedObjPinId) {
+        const liveObjectivePin = findLiveObjectivePin(questUuid, objectiveIndex);
+        if (liveObjectivePin?.sceneId && liveObjectivePin?.id) {
             const pins = getPinsApi();
-            const pinExists = typeof pins?.exists === 'function' ? pins.exists(storedObjPinId) : !!pins?.get?.(storedObjPinId);
+            const pinExists = typeof pins?.exists === 'function' ? pins.exists(liveObjectivePin.id) : !!pins?.get?.(liveObjectivePin.id);
             if (pinExists) {
                 // If it is already placed somewhere, unplace first so we can place anew.
                 try {
@@ -1601,12 +1594,6 @@ export class QuestPanel {
                     console.warn('Coffee Pub Squire | Auto-unplace objective pin before re-place:', e);
                     return;
                 }
-            } else {
-                // Stale sceneId; clear so placement can proceed.
-                const nextObjectivePins = { ...objectivePins };
-                delete nextObjectivePins[String(objectiveIndex)];
-                delete nextObjectivePins[objectiveIndex];
-                await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
             }
         }
         if (this._questPinPlacement) this._clearQuestPinPlacement();
@@ -1659,21 +1646,14 @@ export class QuestPanel {
 
             const objectivePinsFlag = page.getFlag(MODULE.ID, 'objectivePins') || {};
             const objEntry = objectivePinsFlag[String(objectiveIndex)] ?? objectivePinsFlag[objectiveIndex];
-            let pinId = objEntry?.pinId ?? objEntry ?? null;
+            let pinId = findLiveObjectivePin(questUuid, objectiveIndex)?.id ?? objEntry?.pinId ?? objEntry ?? null;
 
             if (pinId && typeof pins.exists === 'function' && !pins.exists(pinId)) {
                 pinId = null;
-                const next = { ...objectivePinsFlag };
-                delete next[String(objectiveIndex)];
-                delete next[objectiveIndex];
-                await page.setFlag(MODULE.ID, 'objectivePins', next);
             }
 
             if (!pinId && typeof pins.list === 'function') {
-                const match = (p) => p?.config?.questUuid === questUuid && Number(p?.config?.objectiveIndex) === objectiveIndex;
-                const unplaced = listSquirePinsByKind(pins, 'objective', { unplacedOnly: true });
-                const placed = listSquirePinsByKind(pins, 'objective', {});
-                const existing = [...unplaced, ...placed].find(match);
+                const existing = findLiveObjectivePin(questUuid, objectiveIndex);
                 if (existing?.id) pinId = existing.id;
             }
 
@@ -1697,18 +1677,17 @@ export class QuestPanel {
 
             try {
                 if (typeof pins.whenReady === 'function') await pins.whenReady();
+                let placedPin = null;
                 if (typeof pins.place === 'function') {
-                    await pins.place(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y });
+                    placedPin = await pins.place(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y });
                 } else if (typeof pins.update === 'function') {
-                    await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
+                    placedPin = await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
                 }
-                const objectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
-                objectivePins[String(objectiveIndex)] = { pinId, sceneId: canvas.scene.id };
-                await page.setFlag(MODULE.ID, 'objectivePins', objectivePins);
                 if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
+                await this._syncObjectivePinMirror(page, objectiveIndex, placedPin || { id: pinId, sceneId: canvas.scene.id });
                 this._clearQuestPinPlacement();
                 ui.notifications.info('Objective pin placed.');
-                // Sync hooks (blacksmith.pins.placed) will trigger panel refresh; avoid duplicate render
+                if (this.element) await this.render(this.element);
             } catch (e) {
                 console.warn('Coffee Pub Squire | Place objective pin failed:', e);
                 this._clearQuestPinPlacement();
@@ -1766,11 +1745,11 @@ export class QuestPanel {
         if (!page) return;
         try {
             await unplaceQuestPinForPage(page);
+            await this._syncQuestPinMirror(page, { id: page.getFlag(MODULE.ID, 'pinId'), sceneId: null });
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace quest pin:', e);
         }
-        await page.setFlag(MODULE.ID, 'sceneId', null);
-        // Sync hooks (blacksmith.pins.unplaced) will trigger panel refresh; avoid duplicate render
+        if (this.element) await this.render(this.element);
     }
 
     /**
@@ -1784,10 +1763,14 @@ export class QuestPanel {
         if (!page) return;
         try {
             await unplaceObjectivePinForPage(page, objectiveIndex);
+            await this._syncObjectivePinMirror(page, objectiveIndex, {
+                id: (page.getFlag(MODULE.ID, 'objectivePins') || {})[String(objectiveIndex)]?.pinId ?? null,
+                sceneId: null
+            });
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace objective pin:', e);
         }
-        // Sync hooks (blacksmith.pins.unplaced) will trigger panel refresh; avoid duplicate render
+        if (this.element) await this.render(this.element);
     }
 
     /**
@@ -1874,6 +1857,30 @@ export class QuestPanel {
 
         const journalId = game.settings.get(MODULE.ID, 'questJournal');
         this.selectedJournal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
+        const pins = getPinsApi();
+        const liveQuestPins = new Map();
+        const liveObjectivePins = new Map();
+
+        if (pins?.isAvailable()) {
+            const allQuestPins = listAllModulePins(pins);
+            for (const pin of allQuestPins) {
+                const questUuid = pin?.config?.questUuid;
+                if (typeof pin?.config?.objectiveIndex === 'number') continue;
+                if (!questUuid) continue;
+                const existing = liveQuestPins.get(questUuid);
+                if (!existing || (!existing.sceneId && pin.sceneId)) liveQuestPins.set(questUuid, pin);
+            }
+
+            const allObjectivePins = listAllModulePins(pins);
+            for (const pin of allObjectivePins) {
+                const questUuid = pin?.config?.questUuid;
+                const objectiveIndex = Number(pin?.config?.objectiveIndex);
+                if (!questUuid || !Number.isInteger(objectiveIndex)) continue;
+                const key = `${questUuid}|${objectiveIndex}`;
+                const existing = liveObjectivePins.get(key);
+                if (!existing || (!existing.sceneId && pin.sceneId)) liveObjectivePins.set(key, pin);
+            }
+        }
 
         if (this.selectedJournal) {
             for (const page of this.selectedJournal.pages.contents) {
@@ -1926,26 +1933,25 @@ export class QuestPanel {
                             }
                             
                             entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image');
-                            // Placed/unplaced like Notes: truthy sceneId = placed
-                            entry.hasPinOnScene = !!page.getFlag(MODULE.ID, 'sceneId');
+                            const storedQuestSceneId = page.getFlag(MODULE.ID, 'sceneId') || null;
+                            const liveQuestPin = liveQuestPins.get(page.uuid) || null;
+                            const liveQuestSceneId = liveQuestPin?.sceneId ?? storedQuestSceneId;
+                            entry.hasPinOnScene = !!liveQuestSceneId;
+                            entry.pinSceneId = liveQuestSceneId || null;
+                            entry.pinSceneName = entry.pinSceneId ? (game.scenes.get(entry.pinSceneId)?.name || null) : null;
                             const objectivePinsFlag = page.getFlag(MODULE.ID, 'objectivePins') || {};
                             if (entry.tasks && Array.isArray(entry.tasks)) {
                                 entry.tasks.forEach((task, index) => {
                                     const objPin = objectivePinsFlag[String(index)] ?? objectivePinsFlag[index];
-                                    task.hasPinOnScene = !!objPin?.sceneId;
+                                    const liveObjectivePin = liveObjectivePins.get(`${page.uuid}|${index}`) || null;
+                                    const liveObjectiveSceneId = liveObjectivePin?.sceneId
+                                        ?? (typeof objPin === 'object' ? (objPin?.sceneId ?? null) : null);
+                                    task.hasPinOnScene = !!liveObjectiveSceneId;
                                     const objPinId = objPin?.pinId ?? objPin;
-                                    // If flag says placed but pin no longer exists, clear it
-                                    if (task.hasPinOnScene && objPinId && getPinsApi()?.exists) {
-                                        const pins = getPinsApi();
+                                    // If flag says placed but pin no longer exists, clear the visual state.
+                                    if (task.hasPinOnScene && !liveObjectivePin && objPinId && pins?.exists) {
                                         const exists = pins.exists(objPinId, objPin?.sceneId ? { sceneId: objPin.sceneId } : undefined);
                                         if (!exists) task.hasPinOnScene = false;
-                                    }
-                                    // If current scene has a placed objective pin for this quest/index, trust the API
-                                    const pins = getPinsApi();
-                                    if (!task.hasPinOnScene && pins?.list && canvas.scene?.id) {
-                                        const placed = listSquirePinsByKind(pins, 'objective', { sceneId: canvas.scene.id });
-                                        const match = placed.find(p => p?.config?.questUuid === page.uuid && Number(p?.config?.objectiveIndex) === index);
-                                        if (match) task.hasPinOnScene = true;
                                     }
                                 });
                             }
@@ -2194,8 +2200,6 @@ export class QuestPanel {
             newTitlebarBtn.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                const pinsVisible = getQuestPinModuleVisibility();
-                const labelsVisible = game.settings.get(MODULE.ID, 'showQuestPinText');
                 const zones = {
                     core: [
                         {
@@ -2224,35 +2228,6 @@ export class QuestPanel {
                                     return;
                                 }
                                 journal.sheet.render(true);
-                            }
-                        },
-                        {
-                            name: labelsVisible ? 'Hide Quest Labels' : 'Show Quest Labels',
-                            icon: labelsVisible ? 'fa-solid fa-text-slash' : 'fa-solid fa-text',
-                            callback: async () => {
-                                const current = game.settings.get(MODULE.ID, 'showQuestPinText');
-                                const newVal = !current;
-                                await game.settings.set(MODULE.ID, 'showQuestPinText', newVal);
-                                const pins = getPinsApi();
-                                if (pins?.isAvailable()) await pins.reload({ moduleId: MODULE.ID });
-                                ui.notifications.info(`Quest pin labels ${newVal ? 'shown' : 'hidden'}.`);
-                                if (this.element) {
-                                    await this._refreshData();
-                                    this.render(this.element);
-                                }
-                            }
-                        },
-                        {
-                            name: pinsVisible ? 'Hide Quest Pins' : 'Show Quest Pins',
-                            icon: pinsVisible ? 'fa-solid fa-location-dot-slash' : 'fa-solid fa-location-dot',
-                            callback: async () => {
-                                const newVisible = !pinsVisible;
-                                await setQuestPinModuleVisibility(newVisible);
-                                ui.notifications.info(`Quest pins ${newVisible ? 'shown' : 'hidden'}.`);
-                                if (this.element) {
-                                    await this._refreshData();
-                                    this.render(this.element);
-                                }
                             }
                         }
                     ],
@@ -2855,7 +2830,7 @@ export class QuestPanel {
                 const category = newBtn.dataset.category;
                 const visible = newBtn.dataset.visible;
                 const questStatus = newBtn.dataset.questStatus;
-                const hasPinOnScene = newBtn.dataset.hasPinOnScene === 'true';
+                const hasPinOnScene = !!findLiveQuestPin(uuid)?.sceneId;
                 if (!uuid) return;
                 if (hasPinOnScene) {
                     await this._unplaceQuestPin(uuid);
@@ -2892,31 +2867,9 @@ export class QuestPanel {
                 const taskIndex = parseInt(newBtn.dataset.taskIndex, 10);
                 const taskState = newBtn.dataset.taskState || 'active';
                 const taskText = newBtn.dataset.taskText || '';
-                let hasPinOnScene = newBtn.dataset.hasPinOnScene === 'true';
+                const livePin = findLiveObjectivePin(questUuid, taskIndex);
+                let hasPinOnScene = !!livePin?.sceneId;
                 if (questUuid == null || isNaN(taskIndex)) return;
-
-                // Verify the stored pin actually exists on the scene; if not, clear sceneId so we fall into placement flow.
-                if (hasPinOnScene) {
-                    const pins = getPinsApi();
-                    if (pins?.isAvailable()) {
-                        const page = await fromUuid(questUuid);
-                        const objectivePinsFlag = page?.getFlag(MODULE.ID, 'objectivePins') || {};
-                        const objPin = objectivePinsFlag[String(taskIndex)] ?? objectivePinsFlag[taskIndex];
-                        const pinId = objPin?.pinId ?? objPin;
-                        const storedSceneId = typeof objPin === 'object' && objPin?.sceneId != null ? objPin.sceneId : undefined;
-                        const exists = pinId && (typeof pins.exists === 'function'
-                            ? pins.exists(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined)
-                            : !!pins.get?.(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined));
-                        if (!exists) {
-                            hasPinOnScene = false;
-                            const next = { ...objectivePinsFlag };
-                            if (pinId) next[String(taskIndex)] = { pinId };
-                            await page?.setFlag(MODULE.ID, 'objectivePins', next);
-                        }
-                    } else {
-                        hasPinOnScene = false;
-                    }
-                }
 
                 if (hasPinOnScene) {
                     await this._unplaceObjectivePin(questUuid, taskIndex);
@@ -2951,31 +2904,8 @@ export class QuestPanel {
                     const taskState = newButton.dataset.taskState || 'active';
                     const taskText = newButton.dataset.taskText || '';
                     const isActive = newButton.dataset.isActive === 'true';
-                    let hasPinOnScene = newButton.dataset.hasPinOnScene === 'true';
+                    let hasPinOnScene = !!findLiveObjectivePin(questUuid, taskIndex)?.sceneId;
                     if (!questUuid || isNaN(taskIndex)) return;
-
-                    // Re-verify pin existence so the menu reflects reality.
-                    if (hasPinOnScene) {
-                        const pins = getPinsApi();
-                        if (pins?.isAvailable()) {
-                            const page = await fromUuid(questUuid);
-                            const objectivePinsFlag = page?.getFlag(MODULE.ID, 'objectivePins') || {};
-                            const objPin = objectivePinsFlag[String(taskIndex)] ?? objectivePinsFlag[taskIndex];
-                            const pinId = objPin?.pinId ?? objPin;
-                            const storedSceneId = typeof objPin === 'object' && objPin?.sceneId != null ? objPin.sceneId : undefined;
-                            const exists = pinId && (typeof pins.exists === 'function'
-                                ? pins.exists(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined)
-                                : !!pins.get?.(pinId, storedSceneId ? { sceneId: storedSceneId } : undefined));
-                            if (!exists) {
-                                hasPinOnScene = false;
-                                const next = { ...objectivePinsFlag };
-                                if (pinId) next[String(taskIndex)] = { pinId };
-                                await page?.setFlag(MODULE.ID, 'objectivePins', next);
-                            }
-                        } else {
-                            hasPinOnScene = false;
-                        }
-                    }
 
                     const pinMenuEntry = hasPinOnScene
                         ? {
@@ -4265,35 +4195,6 @@ export class QuestPanel {
         }
         
         // Set initial state of pin visibility toggle for all users (Blacksmith getModuleVisibility)
-        const pinsVisible = getQuestPinModuleVisibility();
-        const toggleButton = questContainer.querySelector('.toggle-pin-visibility');
-        if (toggleButton) {
-            if (pinsVisible) {
-                toggleButton.classList.remove('fa-location-dot-slash');
-                toggleButton.classList.add('fa-location-dot');
-                toggleButton.setAttribute('title', 'Hide Quest Pins');
-            } else {
-                toggleButton.classList.remove('fa-location-dot');
-                toggleButton.classList.add('fa-location-dot-slash');
-                toggleButton.setAttribute('title', 'Show Quest Pins');
-            }
-        }
-        
-        // Set initial state of pin labels toggle for all users
-        const showQuestPinText = game.settings.get(MODULE.ID, 'showQuestPinText');
-        const labelsToggleButton = questContainer.querySelector('.toggle-pin-labels');
-        if (labelsToggleButton) {
-            if (showQuestPinText) {
-                labelsToggleButton.classList.remove('fa-text-slash');
-                labelsToggleButton.classList.add('fa-text');
-                labelsToggleButton.setAttribute('title', 'Hide Quest Labels');
-            } else {
-                labelsToggleButton.classList.remove('fa-text');
-                labelsToggleButton.classList.add('fa-text-slash');
-                labelsToggleButton.setAttribute('title', 'Show Quest Labels');
-            }
-        }
-        
         // Trigger hook for pin visibility updates
         Hooks.call('renderQuestPanel');
         

@@ -25,6 +25,144 @@ let questPinSyncRegistered = false;
 let questPinSceneSyncHookId = null;
 let questPinSyncDebounceTimer = null;
 let questPinSyncHookIds = [];
+let pendingQuestPinSyncEvents = [];
+
+function deepEqual(a, b) {
+    const fn = foundry?.utils?.deepEqual;
+    if (typeof fn === 'function') return fn(a, b);
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+
+async function updateQuestFlagsIfChanged(page, updates) {
+    if (!page || !updates) return;
+    const changes = {};
+    for (const [key, value] of Object.entries(updates)) {
+        const current = page.getFlag(MODULE.ID, key);
+        if (!deepEqual(current, value)) changes[key] = value;
+    }
+    if (Object.keys(changes).length) {
+        await page.update({ flags: { [MODULE.ID]: changes } });
+    }
+}
+
+async function syncQuestPinMirror(page, pinData, mode) {
+    const objectiveIndex = typeof pinData?.config?.objectiveIndex === 'number'
+        ? pinData.config.objectiveIndex
+        : null;
+    const pinId = pinData?.id ?? null;
+    const sceneId = pinData?.sceneId ?? null;
+
+    if (objectiveIndex === null) {
+        if (mode === 'deleted') {
+            await updateQuestFlagsIfChanged(page, { pinId: null, sceneId: null });
+            return;
+        }
+        if (mode === 'unplaced') {
+            await updateQuestFlagsIfChanged(page, { pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'), sceneId: null });
+            return;
+        }
+        await updateQuestFlagsIfChanged(page, {
+            pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
+            sceneId
+        });
+        return;
+    }
+
+    const currentObjectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
+    const nextObjectivePins = { ...currentObjectivePins };
+    if (mode === 'deleted') {
+        delete nextObjectivePins[String(objectiveIndex)];
+    } else if (mode === 'unplaced') {
+        const current = currentObjectivePins[String(objectiveIndex)] ?? currentObjectivePins[objectiveIndex];
+        const currentPinId = current?.pinId ?? current ?? pinId;
+        if (currentPinId) nextObjectivePins[String(objectiveIndex)] = { pinId: currentPinId };
+    } else {
+        const resolvedPinId = pinId ?? currentObjectivePins[String(objectiveIndex)]?.pinId ?? currentObjectivePins[objectiveIndex]?.pinId;
+        if (resolvedPinId) {
+            nextObjectivePins[String(objectiveIndex)] = { pinId: resolvedPinId, sceneId };
+        }
+    }
+
+    if (!deepEqual(currentObjectivePins, nextObjectivePins)) {
+        await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
+    }
+}
+
+async function resolveQuestPinPayload(payload = {}) {
+    const pins = getPinsApi();
+    const moduleId = payload.moduleId ?? payload.pin?.moduleId;
+    if (moduleId && moduleId !== MODULE.ID) return null;
+
+    const payloadPinId = payload.pinId ?? payload.pin?.id ?? null;
+    let pinData = payload.pin ?? null;
+    if (payloadPinId && typeof pins?.get === 'function') {
+        // Prefer the current live pin state from Blacksmith over the event snapshot.
+        pinData = pins.get(payloadPinId, payload.sceneId ? { sceneId: payload.sceneId } : undefined)
+            || pins.get(payloadPinId)
+            || pinData
+            || null;
+    }
+
+    const config = payload.config ?? pinData?.config ?? {};
+    const questUuid = config.questUuid;
+    if (!questUuid) return null;
+
+    return {
+        pin: {
+            id: pinData?.id ?? payloadPinId ?? null,
+            sceneId: pinData?.sceneId ?? payload.sceneId ?? null,
+            config,
+            moduleId: pinData?.moduleId ?? moduleId ?? MODULE.ID
+        },
+        questUuid
+    };
+}
+
+async function syncQuestPinEvent(payload = {}, mode = 'upsert') {
+    const resolved = await resolveQuestPinPayload(payload);
+    if (!resolved?.questUuid) return false;
+
+    const page = await fromUuid(resolved.questUuid);
+    if (!page) return false;
+    if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
+        return false;
+    }
+
+    await syncQuestPinMirror(page, resolved.pin, mode);
+    return true;
+}
+
+async function renderQuestPanelIfOpen() {
+    const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+    if (panelManager?.questPanel?.render && panelManager.element) {
+        await panelManager.questPanel.render(panelManager.element);
+    }
+}
+
+async function flushQuestPinSyncQueue() {
+    const queue = pendingQuestPinSyncEvents.splice(0, pendingQuestPinSyncEvents.length);
+    if (!queue.length) return;
+
+    let needsReconcile = false;
+    for (const { payload, mode } of queue) {
+        if ((payload.moduleId && payload.moduleId !== MODULE.ID) || (payload.pin?.moduleId && payload.pin.moduleId !== MODULE.ID)) {
+            continue;
+        }
+        if (mode === 'reconcile') {
+            needsReconcile = true;
+            continue;
+        }
+        const synced = await syncQuestPinEvent(payload, mode);
+        if (!synced && mode === 'deleted') {
+            needsReconcile = true;
+        }
+    }
+
+    if (needsReconcile) {
+        await reconcileQuestPins();
+    }
+    await renderQuestPanelIfOpen();
+}
 
 /**
  * Focus and flash the quest entry in the quest panel
@@ -377,6 +515,7 @@ export function unregisterQuestPinSync() {
         clearTimeout(questPinSyncDebounceTimer);
         questPinSyncDebounceTimer = null;
     }
+    pendingQuestPinSyncEvents = [];
 
     for (const hookId of questPinSyncHookIds) {
         Hooks.off('blacksmith.pins.deleted', hookId.deleted);
@@ -406,39 +545,31 @@ export function registerQuestPinSync() {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
 
-    const doSyncAndRender = async (payload = {}) => {
-        if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
-        await reconcileQuestPins({ sceneId: payload.sceneId });
-        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        if (panelManager?.questPanel?.render && panelManager.element) {
-            await panelManager.questPanel.render(panelManager.element);
-        }
-    };
-
-    const handle = (payload = {}) => {
-        if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
+    const queueHandle = (payload = {}, mode = 'upsert') => {
+        if ((payload.moduleId && payload.moduleId !== MODULE.ID) || (payload.pin?.moduleId && payload.pin.moduleId !== MODULE.ID)) return;
+        pendingQuestPinSyncEvents.push({ payload, mode });
         if (questPinSyncDebounceTimer) clearTimeout(questPinSyncDebounceTimer);
         questPinSyncDebounceTimer = trackModuleTimeout(() => {
             questPinSyncDebounceTimer = null;
-            doSyncAndRender(payload);
+            flushQuestPinSyncQueue();
         }, 50);
     };
 
     questPinSyncHookIds.push({
-        deleted: Hooks.on('blacksmith.pins.deleted', handle),
-        unplaced: Hooks.on('blacksmith.pins.unplaced', handle),
-        placed: Hooks.on('blacksmith.pins.placed', handle),
-        updated: Hooks.on('blacksmith.pins.updated', handle),
-        created: Hooks.on('blacksmith.pins.created', handle),
-        deletedAll: Hooks.on('blacksmith.pins.deletedAll', handle),
-        deletedAllByType: Hooks.on('blacksmith.pins.deletedAllByType', handle)
+        deleted: Hooks.on('blacksmith.pins.deleted', (payload = {}) => queueHandle(payload, 'deleted')),
+        unplaced: Hooks.on('blacksmith.pins.unplaced', (payload = {}) => queueHandle(payload, 'unplaced')),
+        placed: Hooks.on('blacksmith.pins.placed', (payload = {}) => queueHandle(payload, 'upsert')),
+        updated: Hooks.on('blacksmith.pins.updated', (payload = {}) => queueHandle(payload, 'upsert')),
+        created: Hooks.on('blacksmith.pins.created', (payload = {}) => queueHandle(payload, 'upsert')),
+        deletedAll: Hooks.on('blacksmith.pins.deletedAll', (payload = {}) => queueHandle(payload, 'reconcile')),
+        deletedAllByType: Hooks.on('blacksmith.pins.deletedAllByType', (payload = {}) => queueHandle(payload, 'reconcile'))
     });
 
     // Scene flag changes can also desync after bulk deletes.
     if (!questPinSceneSyncHookId) {
         questPinSceneSyncHookId = Hooks.on('updateScene', (scene, changes) => {
             if (!scene || !changes?.flags) return;
-            reconcileQuestPins({ sceneId: scene.id });
+            queueHandle({}, 'reconcile');
         });
     }
 

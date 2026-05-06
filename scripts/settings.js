@@ -1171,23 +1171,6 @@ export const registerSettings = function() {
         type: String,
     });
     
-    // Quest Pin Title Display
-    game.settings.register(MODULE.ID, 'showQuestPinText', {
-        name: 'Show Quest Pin Titles',
-        hint: 'Display quest and objective names as title text below the pins. When disabled, only the quest numbers (Q85, Q85.03) and icons are shown.',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: true,
-        onChange: () => {
-            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
-            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
-            if (pins?.isAvailable()) {
-                pins.reload({ moduleId: 'coffee-pub-squire' });
-            }
-        }
-    });
-    
     // Quest Pin Title Font Size
     game.settings.register(MODULE.ID, 'questPinTitleSize', {
         name: 'Quest Pin Title Font Size',

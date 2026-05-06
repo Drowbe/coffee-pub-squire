@@ -187,6 +187,11 @@
         <span class="quest-entry-label">Location</span> {{entry.location}}
       </div>
     {{/if}}
+    {{#if entry.pinSceneName}}
+      <div class="quest-entry-scene">
+        <span class="quest-entry-label">Scene</span> {{entry.pinSceneName}}
+      </div>
+    {{/if}}
     <!-- TIMEFRAME -->
     {{#if entry.timeframe}}
       {{#if entry.timeframe.duration}}
