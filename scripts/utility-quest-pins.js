@@ -446,6 +446,34 @@ export function listAllModulePins(pins, opts = {}) {
     return [...byId.values()];
 }
 
+export function listAllQuestPins(pins, opts = {}) {
+    if (!pins?.list) return [];
+
+    const collect = (list, byId, sceneId = null) => {
+        for (const pin of list || []) {
+            if (!pin?.id) continue;
+            if (!pin?.config?.questUuid) continue;
+            byId.set(pin.id, { ...pin, sceneId });
+        }
+    };
+
+    const byId = new Map();
+    if (opts.sceneId || opts.unplacedOnly) {
+        collect(
+            pins.list({ ...opts }) || [],
+            byId,
+            opts.unplacedOnly ? null : (opts.sceneId ?? null)
+        );
+        return [...byId.values()];
+    }
+
+    collect(pins.list({ unplacedOnly: true }) || [], byId, null);
+    for (const scene of game.scenes.contents) {
+        collect(pins.list({ sceneId: scene.id }) || [], byId, scene.id);
+    }
+    return [...byId.values()];
+}
+
 function listAllSquirePinsByKind(pins, kind) {
     if (!isPinsApiAvailable(pins)) return [];
     const unplaced = listSquirePinsByKind(pins, kind, { unplacedOnly: true });
@@ -459,7 +487,7 @@ function listAllSquirePinsByKind(pins, kind) {
 
 function listAllPinsForQuest(pins, questUuid) {
     if (!questUuid) return [];
-    return listAllModulePins(pins).filter(pin => pin?.config?.questUuid === questUuid);
+    return listAllQuestPins(pins).filter(pin => pin?.config?.questUuid === questUuid);
 }
 
 function pickPreferredLivePin(existing, candidate) {
@@ -473,7 +501,7 @@ export function findLiveQuestPin(questUuid) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins) || !questUuid) return null;
     let match = null;
-    for (const pin of listAllModulePins(pins)) {
+    for (const pin of listAllQuestPins(pins)) {
         if (pin?.config?.questUuid !== questUuid) continue;
         if (typeof pin?.config?.objectiveIndex === 'number') continue;
         match = pickPreferredLivePin(match, pin);
@@ -485,7 +513,7 @@ export function findLiveObjectivePin(questUuid, objectiveIndex) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins) || !questUuid || !Number.isInteger(objectiveIndex)) return null;
     let match = null;
-    for (const pin of listAllModulePins(pins)) {
+    for (const pin of listAllQuestPins(pins)) {
         if (pin?.config?.questUuid !== questUuid) continue;
         if (Number(pin?.config?.objectiveIndex) !== objectiveIndex) continue;
         match = pickPreferredLivePin(match, pin);
@@ -817,11 +845,10 @@ export async function unplaceQuestPinForPage(page) {
     if (!isPinsApiAvailable(pins)) return;
 
     const livePin = page?.uuid ? findLiveQuestPin(page.uuid) : null;
-    const pinId = livePin?.id ?? page?.getFlag(MODULE.ID, 'pinId');
+    const pinId = livePin?.id ?? null;
     if (!pinId) return;
     let sceneId = livePin?.sceneId;
-    if (sceneId == null) sceneId = page?.getFlag(MODULE.ID, 'sceneId');
-    if (sceneId == null) sceneId = canvas?.scene?.id;
+    if (sceneId == null) return;
 
     if (typeof pins.unplace === 'function') {
         try {
@@ -852,12 +879,9 @@ export async function unplaceObjectivePinForPage(page, objectiveIndex) {
     if (!isPinsApiAvailable(pins)) return;
 
     const livePin = page?.uuid ? findLiveObjectivePin(page.uuid, objectiveIndex) : null;
-    const objectivePins = page?.getFlag(MODULE.ID, 'objectivePins') || {};
-    const objPin = objectivePins[String(objectiveIndex)] ?? objectivePins[objectiveIndex];
-    const pinId = livePin?.id ?? objPin?.pinId ?? objPin;
+    const pinId = livePin?.id ?? null;
     let sceneId = livePin?.sceneId;
-    if (sceneId == null && typeof objPin === 'object' && objPin?.sceneId != null) sceneId = objPin.sceneId;
-    if (sceneId == null) sceneId = canvas?.scene?.id;
+    if (sceneId == null) return;
     if (!pinId) return;
 
     const pinExistsOnScene = typeof pins.exists === 'function'
@@ -1024,7 +1048,7 @@ export async function reconcileQuestPins() {
 
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
-    const allPins = listAllModulePins(pins).filter(p => p?.config?.questUuid);
+    const allPins = listAllQuestPins(pins);
 
     // Build lookup by questUuid + objectiveIndex (nullable).
     const byQuest = new Map();

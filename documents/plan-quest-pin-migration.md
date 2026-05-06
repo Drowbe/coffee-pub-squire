@@ -9,14 +9,15 @@
 
 ## Overview
 
-Quest pins were the original pin system and later became the foundation for the Blacksmith Pins API. The migration away from custom quest pin rendering is largely complete, but the codebase still carries legacy sync assumptions from the intermediate state.
+Quest pins were the original pin system and later became the foundation for the Blacksmith Pins API. The remaining work is not a rendering migration. It is the removal of Squire's legacy quest-side pin runtime.
 
-The remaining work is not a rendering migration. It is a **state-model cleanup**:
+The target model is now explicit:
 
-- Blacksmith must be the source of truth for pin existence and placement.
-- Quest/objective page flags must be treated as a lightweight mirror only.
-- Quest/objective pins must follow the same lifecycle pattern as Notes.
-- Reconciliation must be a repair tool, not the normal runtime engine.
+- Blacksmith is the only runtime source of truth for quest/objective canvas pin state.
+- Squire quest UI must identify live pins by `config.questUuid` and `config.objectiveIndex`.
+- Quest/objective page flags are optional mirror/repair data only.
+- Hook handlers should rerender quest UI, not reconstruct a second pin state machine.
+- Reconciliation is a repair tool, not part of ordinary placement/update/unplace behavior.
 
 ## What Is Already Done
 
@@ -32,9 +33,10 @@ The remaining bugs come from legacy quest-side state handling, not from the Blac
 Symptoms of the unfinished migration:
 
 - quest/objective pin state can drift after scene changes or reloads
-- panel state sometimes depends on the current scene instead of world-wide pin state
-- quest code still performs broad reconciliation to repair ordinary lifecycle changes
+- a placed pin can exist on the canvas while the quest panel shows it as unpinned
+- hook-driven flag sync can overwrite or disagree with live Blacksmith pin state
 - mirrored flags such as `pinId`, `sceneId`, and `objectivePins` still act too much like a second pin system
+- some helpers still assume module/type/scene constraints that are weaker than "this pin belongs to quest UUID X"
 
 ## Revised Target Model
 
@@ -46,6 +48,17 @@ Symptoms of the unfinished migration:
   - which scene it is on
   - the live pin payload and metadata
 
+### Runtime identification
+
+- A quest pin is any live Blacksmith pin with:
+  - `config.questUuid === page.uuid`
+  - no numeric `config.objectiveIndex`
+- An objective pin is any live Blacksmith pin with:
+  - `config.questUuid === page.uuid`
+  - `config.objectiveIndex === objectiveIndex`
+
+Runtime helpers should answer pin questions from those live pin records first.
+
 ### Mirrored quest flags
 
 Squire may still keep:
@@ -54,7 +67,7 @@ Squire may still keep:
 - `flags.coffee-pub-squire.sceneId`
 - `flags.coffee-pub-squire.objectivePins`
 
-But these are a **mirror/cache**, not the authority.
+But these are not runtime inputs for pinned/unpinned UI. They are a mirror/cache for repair, migration, or compatibility only.
 
 ### Lifecycle model
 
@@ -68,7 +81,8 @@ Quest/objective pins should behave like Notes:
 
 ### Sync model
 
-- ordinary pin lifecycle changes should update mirrored quest flags directly from Blacksmith pin events
+- ordinary pin lifecycle changes should trigger quest panel rerender from live Blacksmith state
+- mirrored quest flags should not be required for ordinary pin placement UI
 - full `reconcileQuestPins()` should only run for repair cases:
   - bulk delete
   - legacy cleanup
@@ -87,7 +101,7 @@ Notes is the reference implementation we are converging on:
 
 - unplaced pins are normal
 - place/unplace is explicit
-- pin lifecycle events update mirrored page flags directly
+- pin lifecycle events do not invent a second placement model
 - reconciliation is used for resilience, not as the main runtime path
 
 Quest/objective pins should preserve their quest-specific business logic while adopting that same lifecycle and sync discipline.
@@ -107,13 +121,15 @@ Quest/objective pins should preserve their quest-specific business logic while a
 - [x] Treat Blacksmith as the source of truth for quest/objective pin placement
 - [x] Stop scene-scoped reconciliation from clearing valid quest pin links
 - [x] Restore scene-name display from mirrored/live scene data
-- [ ] Remove remaining panel-side recovery code that exists only to compensate for stale mirrored flags
+- [ ] Remove remaining panel-side recovery and flag fallback code from normal runtime
+- [ ] Identify quest/objective pins by `config.questUuid` / `config.objectiveIndex` across all scenes and unplaced pins
 
 ### Phase 3: Event-Driven Sync
 **Status:** In Progress
 
-- [x] Register quest pin lifecycle sync on Blacksmith pin events
-- [x] Mirror quest/objective `pinId` and `sceneId` from live pin events instead of full rescans on every change
+- [x] Register quest pin lifecycle handlers on Blacksmith pin events
+- [ ] Reduce normal quest pin hook handling to rerender/refresh from live Blacksmith state
+- [ ] Remove quest hook-driven page-flag reconstruction from the normal runtime path
 - [x] Reserve `reconcileQuestPins()` for repair flows such as bulk delete or legacy drift
 - [ ] Add GM-proxy/error-path handling wherever quest pin operations still lag behind Notes
 
@@ -123,12 +139,13 @@ Quest/objective pins should preserve their quest-specific business logic while a
 - [x] Reconcile across all scenes plus unplaced pins
 - [x] Update visibility/style refresh helpers to operate across all scenes
 - [ ] Remove remaining current-scene-only assumptions from quest panel actions and helpers
+- [ ] Stop relying on module/type-only filters when quest config identity is the stronger key
 
 ### Phase 5: Simplification Cleanup
-**Status:** Not Started
+**Status:** In Progress
 
 - [ ] Reduce `objectivePins` to a mirrored reference cache, not a custom state machine
-- [ ] Remove duplicate recovery logic made unnecessary by direct lifecycle sync
+- [ ] Remove duplicate recovery logic made unnecessary by live Blacksmith-backed runtime
 - [ ] Review quest import/export paths for assumptions about old scene-flag persistence
 - [ ] Update comments and docs that still describe the intermediate migration state
 
@@ -162,5 +179,7 @@ Quest/objective pins should preserve their quest-specific business logic while a
 
 - Use unplaced pins for quests and objectives the same way Notes does.
 - Do not invent a second placement state machine in Squire.
-- Prefer direct lifecycle mirroring over broad reconciliation.
+- Runtime quest pin state must come from live Blacksmith pin records, not mirrored page flags.
+- Identify quest/objective pins by `config.questUuid` and `config.objectiveIndex`.
+- Prefer rerender-from-live-state over hook-driven state reconstruction.
 - When a repair pass is needed, derive from live Blacksmith pins across the whole world, not from the current scene.
