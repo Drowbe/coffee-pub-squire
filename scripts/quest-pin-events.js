@@ -28,13 +28,18 @@ let questPinSyncPending = false;
 
 async function renderQuestPanelIfOpen() {
     const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-    if (panelManager?.questPanel && panelManager.element) {
-        if (typeof panelManager.questPanel._refreshData === 'function') {
-            await panelManager.questPanel._refreshData();
-        }
-        if (typeof panelManager.questPanel.render === 'function') {
-            await panelManager.questPanel.render(panelManager.element);
-        }
+    if (!panelManager?.questPanel || !panelManager.element) return;
+
+    // pins.list() reads from Blacksmith's internal cache; reload it from scene flags
+    // so _refreshData() sees the current state after any pin deletion or placement.
+    const pins = getPinsApi();
+    const activeSceneId = canvas?.scene?.id;
+    if (isPinsApiAvailable(pins) && activeSceneId && typeof pins.reload === 'function') {
+        try { await pins.reload({ sceneId: activeSceneId }); } catch (_) {}
+    }
+
+    if (typeof panelManager.questPanel.render === 'function') {
+        await panelManager.questPanel.render(panelManager.element);
     }
 }
 
@@ -42,6 +47,11 @@ async function syncQuestForDeletedPins(sceneId) {
     if (!game.user?.isGM) return;
     const pins = getPinsApi();
     if (!sceneId || !isPinsApiAvailable(pins)) return;
+
+    // Reload the scene pin cache so pins.exists() reflects the current state.
+    if (typeof pins.reload === 'function') {
+        try { await pins.reload({ sceneId }); } catch (_) {}
+    }
 
     const journalId = game.settings.get(MODULE.ID, 'questJournal');
     if (!journalId || journalId === 'none') return;
@@ -500,7 +510,37 @@ export function registerQuestPinSync() {
     };
 
     questPinSyncHookIds.push({
-        deleted: Hooks.on('blacksmith.pins.deleted', (payload = {}) => queueHandle(payload)),
+        deleted: Hooks.on('blacksmith.pins.deleted', async (payload = {}) => {
+            // Use payload.pinId (always present) to clear objectivePins flags directly —
+            // no cache, no pins.exists(), no updateScene dependency.
+            const deletedPinId = payload.pinId;
+            if (deletedPinId && game.user?.isGM) {
+                const journalId = game.settings.get(MODULE.ID, 'questJournal');
+                const journal = journalId && journalId !== 'none' ? game.journal?.get(journalId) : null;
+                if (journal) {
+                    let anyCleared = false;
+                    for (const page of journal.pages.contents) {
+                        const objectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
+                        const next = {};
+                        let changed = false;
+                        for (const [key, value] of Object.entries(objectivePins)) {
+                            const pId = value?.pinId ?? value;
+                            if (pId === deletedPinId) {
+                                changed = true;
+                            } else {
+                                next[key] = value;
+                            }
+                        }
+                        if (changed) {
+                            await page.setFlag(MODULE.ID, 'objectivePins', next);
+                            anyCleared = true;
+                        }
+                    }
+                    if (anyCleared) await renderQuestPanelIfOpen();
+                }
+            }
+            queueHandle(payload);
+        }),
         unplaced: Hooks.on('blacksmith.pins.unplaced', (payload = {}) => queueHandle(payload)),
         placed: Hooks.on('blacksmith.pins.placed', (payload = {}) => queueHandle(payload)),
         updated: Hooks.on('blacksmith.pins.updated', (payload = {}) => queueHandle(payload)),

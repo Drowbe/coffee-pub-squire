@@ -1657,7 +1657,7 @@ export class QuestPanel {
                     placedPin = await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
                 }
                 if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
-                await this._syncObjectivePinMirror(page, objectiveIndex, placedPin || { id: pinId, sceneId: canvas.scene.id });
+                await this._syncObjectivePinMirror(page, objectiveIndex, { id: placedPin?.id ?? pinId, sceneId: canvas.scene.id });
                 this._clearQuestPinPlacement();
                 ui.notifications.info('Objective pin placed.');
                 if (this.element) await this.render(this.element);
@@ -1844,15 +1844,8 @@ export class QuestPanel {
                 if (!existing || (!existing.sceneId && pin.sceneId)) liveQuestPins.set(questUuid, pin);
             }
 
-            const allObjectivePins = listAllQuestPins(pins);
-            for (const pin of allObjectivePins) {
-                const questUuid = pin?.config?.questUuid;
-                const objectiveIndex = Number(pin?.config?.objectiveIndex);
-                if (!questUuid || !Number.isInteger(objectiveIndex)) continue;
-                const key = `${questUuid}|${objectiveIndex}`;
-                const existing = liveObjectivePins.get(key);
-                if (!existing || (!existing.sceneId && pin.sceneId)) liveObjectivePins.set(key, pin);
-            }
+            // liveObjectivePins intentionally left empty — task.hasPinOnScene is read
+            // directly from the objectivePins journal flag (see task loop below).
         }
 
         if (this.selectedJournal) {
@@ -1912,10 +1905,11 @@ export class QuestPanel {
                             entry.pinSceneId = liveQuestSceneId || null;
                             entry.pinSceneName = entry.pinSceneId ? (game.scenes.get(entry.pinSceneId)?.name || null) : null;
                             if (entry.tasks && Array.isArray(entry.tasks)) {
+                                const rawObjectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
                                 entry.tasks.forEach((task, index) => {
-                                    const liveObjectivePin = liveObjectivePins.get(`${page.uuid}|${index}`) || null;
-                                    const liveObjectiveSceneId = liveObjectivePin?.sceneId ?? null;
-                                    task.hasPinOnScene = !!liveObjectiveSceneId;
+                                    const flagEntry = rawObjectivePins[String(index)];
+                                    const flagSceneId = typeof flagEntry === 'object' ? (flagEntry?.sceneId ?? null) : null;
+                                    task.hasPinOnScene = !!flagSceneId;
                                 });
                             }
                             const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
