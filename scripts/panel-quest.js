@@ -1363,6 +1363,35 @@ export class QuestPanel {
         return preview;
     }
 
+    async _syncQuestPinMirror(page, pin) {
+        if (!page) return;
+        const nextPinId = pin?.id ?? page.getFlag(MODULE.ID, 'pinId') ?? null;
+        const nextSceneId = pin?.sceneId ?? null;
+        if (page.getFlag(MODULE.ID, 'pinId') !== nextPinId) {
+            await page.setFlag(MODULE.ID, 'pinId', nextPinId);
+        }
+        if (page.getFlag(MODULE.ID, 'sceneId') !== nextSceneId) {
+            await page.setFlag(MODULE.ID, 'sceneId', nextSceneId);
+        }
+    }
+
+    async _syncObjectivePinMirror(page, objectiveIndex, pin) {
+        if (!page || !Number.isInteger(objectiveIndex)) return;
+        const current = page.getFlag(MODULE.ID, 'objectivePins') || {};
+        const next = { ...current };
+        const key = String(objectiveIndex);
+        const pinId = pin?.id ?? next[key]?.pinId ?? next[key] ?? null;
+        if (!pinId) {
+            delete next[key];
+        } else {
+            next[key] = {
+                pinId,
+                sceneId: pin?.sceneId ?? null
+            };
+        }
+        await page.setFlag(MODULE.ID, 'objectivePins', next);
+    }
+
     /**
      * Begin Pin to Scene placement for a quest-level pin. User clicks on canvas to place.
      * @param {string} questUuid - Quest journal page UUID
@@ -1475,6 +1504,7 @@ export class QuestPanel {
                     placedPin = await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
                 }
                 if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
+                await this._syncQuestPinMirror(page, placedPin || { id: pinId, sceneId: canvas.scene.id });
                 this._clearQuestPinPlacement();
                 ui.notifications.info('Quest pin placed.');
                 if (this.element) await this.render(this.element);
@@ -1627,6 +1657,7 @@ export class QuestPanel {
                     placedPin = await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
                 }
                 if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
+                await this._syncObjectivePinMirror(page, objectiveIndex, placedPin || { id: pinId, sceneId: canvas.scene.id });
                 this._clearQuestPinPlacement();
                 ui.notifications.info('Objective pin placed.');
                 if (this.element) await this.render(this.element);
@@ -1687,6 +1718,7 @@ export class QuestPanel {
         if (!page) return;
         try {
             await unplaceQuestPinForPage(page);
+            await this._syncQuestPinMirror(page, { id: page.getFlag(MODULE.ID, 'pinId'), sceneId: null });
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace quest pin:', e);
         }
@@ -1704,6 +1736,10 @@ export class QuestPanel {
         if (!page) return;
         try {
             await unplaceObjectivePinForPage(page, objectiveIndex);
+            await this._syncObjectivePinMirror(page, objectiveIndex, {
+                id: (page.getFlag(MODULE.ID, 'objectivePins') || {})[String(objectiveIndex)]?.pinId ?? null,
+                sceneId: null
+            });
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace objective pin:', e);
         }
@@ -3917,6 +3953,11 @@ export class QuestPanel {
         if (!element) return;
         // v13: Convert jQuery to native DOM if needed
         this.element = getNativeElement(element);
+
+        // Retry pin hook registration from the live render path in case the panel
+        // was constructed before the Pins API finished initializing.
+        registerQuestPinEvents()?.catch?.(() => {});
+        registerQuestPinSync?.();
 
         const questContainer = this.element?.querySelector('[data-panel="panel-quest"]');
         if (!questContainer) return;

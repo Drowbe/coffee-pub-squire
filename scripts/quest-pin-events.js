@@ -28,8 +28,87 @@ let questPinSyncPending = false;
 
 async function renderQuestPanelIfOpen() {
     const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-    if (panelManager?.questPanel?.render && panelManager.element) {
-        await panelManager.questPanel.render(panelManager.element);
+    if (panelManager?.questPanel && panelManager.element) {
+        if (typeof panelManager.questPanel._refreshData === 'function') {
+            await panelManager.questPanel._refreshData();
+        }
+        if (typeof panelManager.questPanel.render === 'function') {
+            await panelManager.questPanel.render(panelManager.element);
+        }
+    }
+}
+
+async function syncQuestForDeletedPins(sceneId) {
+    if (!game.user?.isGM) return;
+    const pins = getPinsApi();
+    if (!sceneId || !isPinsApiAvailable(pins)) return;
+
+    const journalId = game.settings.get(MODULE.ID, 'questJournal');
+    if (!journalId || journalId === 'none') return;
+    const journal = game.journal.get(journalId);
+    if (!journal?.pages) return;
+
+    const pages = journal.pages.contents || journal.pages;
+    if (!pages?.length) return;
+
+    let changed = false;
+    for (const page of pages) {
+        if (!page?.id || typeof page.getFlag !== 'function') continue;
+
+        const pinId = page.getFlag(MODULE.ID, 'pinId');
+        const pageSceneId = page.getFlag(MODULE.ID, 'sceneId');
+        if (pinId && (!pageSceneId || pageSceneId === sceneId)) {
+            const pinExistsOnScene = typeof pins.exists === 'function'
+                ? pins.exists(pinId, { sceneId })
+                : !!pins.get?.(pinId, { sceneId });
+
+            if (!pinExistsOnScene) {
+                const pinExistsAnywhere = typeof pins.exists === 'function'
+                    ? pins.exists(pinId)
+                    : !!pins.get?.(pinId);
+                if (pinExistsAnywhere) {
+                    await page.setFlag(MODULE.ID, 'sceneId', null);
+                } else {
+                    await page.setFlag(MODULE.ID, 'pinId', null);
+                    await page.setFlag(MODULE.ID, 'sceneId', null);
+                }
+                changed = true;
+            }
+        }
+
+        const objectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
+        let nextObjectivePins = null;
+        for (const [key, value] of Object.entries(objectivePins)) {
+            const objectivePinId = value?.pinId ?? value;
+            const objectiveSceneId = typeof value === 'object' ? (value?.sceneId ?? null) : null;
+            if (!objectivePinId) continue;
+            if (objectiveSceneId && objectiveSceneId !== sceneId) continue;
+
+            const pinExistsOnScene = typeof pins.exists === 'function'
+                ? pins.exists(objectivePinId, { sceneId })
+                : !!pins.get?.(objectivePinId, { sceneId });
+
+            if (!pinExistsOnScene) {
+                const pinExistsAnywhere = typeof pins.exists === 'function'
+                    ? pins.exists(objectivePinId)
+                    : !!pins.get?.(objectivePinId);
+                nextObjectivePins ||= { ...objectivePins };
+                if (pinExistsAnywhere) {
+                    nextObjectivePins[key] = { pinId: objectivePinId, sceneId: null };
+                } else {
+                    delete nextObjectivePins[key];
+                }
+                changed = true;
+            }
+        }
+
+        if (nextObjectivePins) {
+            await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
+        }
+    }
+
+    if (changed) {
+        await renderQuestPanelIfOpen();
     }
 }
 
@@ -260,24 +339,6 @@ function registerQuestPinContextMenuItems(pins) {
         })
     );
 
-    // Delete Pin (GM only)
-    disposers.push(
-        pins.registerContextMenuItem(`${MODULE.ID}-quest-delete-pin`, {
-            name: 'Delete Pin',
-            icon: '<i class="fa-solid fa-trash"></i>',
-            moduleId: MODULE.ID,
-            order: 40,
-            gmOnly: true,
-            visible: (pinData) => pinData?.moduleId === MODULE.ID && (isSquirePinCategory(pinData?.type, 'quest') || isSquirePinCategory(pinData?.type, 'objective')),
-            onClick: async (pinData) => {
-                const pinId = pinData?.id;
-                if (!pinId) return;
-                const p = getPinsApi();
-                if (p) await p.delete(pinId);
-            }
-        })
-    );
-
     questPinContextMenuDisposers = disposers;
 }
 
@@ -451,8 +512,9 @@ export function registerQuestPinSync() {
     // Scene flag changes can also affect the live pin list after bulk operations.
     if (!questPinSceneSyncHookId) {
         questPinSceneSyncHookId = Hooks.on('updateScene', (scene, changes) => {
-            if (!scene || !changes?.flags) return;
-            queueRender();
+            if (!scene || scene.id !== canvas?.scene?.id) return;
+            if (!changes?.flags) return;
+            syncQuestForDeletedPins(scene.id);
         });
     }
 

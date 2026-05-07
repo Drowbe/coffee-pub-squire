@@ -684,6 +684,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* --- THESE ARE NEW AND DIFFERENT THN CODEX --- */
 
 .squire-tray[data-position="left"] .quest-entry-location,
+.squire-tray[data-position="left"] .quest-entry-scene,
 .squire-tray[data-position="left"] .quest-entry-timeframe,
 .squire-tray[data-position="left"] .quest-entry-tasks,
 .squire-tray[data-position="left"] .quest-entry-reward,
