@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [13.2.4]
+
+### Added
+- **Notes tray – sort control**: Added a sort toggle next to the filter icon in the notes tab search bar. Click to switch between **date added** (newest first, default) and **alphabetical** order by note title. The choice is saved per user (`notesSortMode`).
+
+### Fixed
+- **Quest panel – objective pin canvas deletion**: Deleting an objective pin directly from the canvas now correctly reflects in the quest panel without requiring a manual tray refresh. The `blacksmith.pins.deleted` hook now clears the matching `objectivePins` journal flag entry by pin ID directly, bypassing the Blacksmith cache (which does not reliably refresh objective-type pins via `pins.reload()`).
+- **Quest panel – objective pin state source of truth**: `_refreshData()` now reads `task.hasPinOnScene` from the `objectivePins` journal page flag instead of from the Blacksmith pin cache (`pins.list()`). This matches the flag-based pattern used by Notes and eliminates cache-staleness as a failure mode for objective pin display.
+- **Quest panel – objective pin placement flag**: The `objectivePins` flag is now written with an explicit `canvas.scene.id` on placement rather than relying on the sceneId returned by `pins.place()`, which may be absent depending on the Blacksmith version.
+
+
 ## [13.2.3]
 
 ### Changed

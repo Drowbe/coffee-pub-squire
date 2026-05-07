@@ -260,7 +260,7 @@ body.squire-notes-pin-placement * {
 
 .squire-tray[data-position="left"] .notes-search .clear-notes-search {
     position: absolute;
-    right: 36px;
+    right: 60px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
@@ -279,6 +279,7 @@ body.squire-notes-pin-placement * {
     pointer-events: auto;
 }
 
+.squire-tray[data-position="left"] .notes-search .toggle-notes-sort-button,
 .squire-tray[data-position="left"] .notes-search .toggle-notes-filters-button {
     cursor: pointer;
     transition: opacity 0.2s;
@@ -289,6 +290,7 @@ body.squire-notes-pin-placement * {
     justify-content: center;
 }
 
+.squire-tray[data-position="left"] .notes-search .toggle-notes-sort-button:hover,
 .squire-tray[data-position="left"] .notes-search .toggle-notes-filters-button:hover,
 .squire-tray[data-position="left"] .notes-search .clear-notes-search:hover {
     opacity: 1;

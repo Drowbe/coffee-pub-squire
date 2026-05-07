@@ -1291,6 +1291,8 @@ export class NotesPanel {
             visibility: 'all' // all, private, party
         };
         this.filtersOpen = false;
+        /** @type {'date'|'alpha'} */
+        this.sortMode = 'date';
         this.allTags = new Set();
         this.scenes = new Set();
         this._pinPlacement = null;
@@ -1321,6 +1323,11 @@ export class NotesPanel {
         const notesContainer = this.element?.querySelector('[data-panel="panel-notes"]');
         if (!notesContainer) return;
         const previousScrollTop = notesContainer.querySelector('.notes-content')?.scrollTop;
+
+        this.sortMode = (await game.user?.getFlag(MODULE.ID, 'notesSortMode')) || 'date';
+        if (this.sortMode !== 'date' && this.sortMode !== 'alpha') {
+            this.sortMode = 'date';
+        }
 
         // Refresh data (load notes)
         await this._refreshData();
@@ -1358,6 +1365,7 @@ export class NotesPanel {
             scenes: Array.from(this.scenes).sort(),
             filters: this.filters,
             filtersOpen: this.filtersOpen,
+            sortMode: this.sortMode,
             isGM: game.user.isGM,
             currentUserId: game.user.id,
             cardTheme,
@@ -1479,13 +1487,7 @@ export class NotesPanel {
             }
         }
 
-        // Sort notes by timestamp (newest first)
-        this.notes.sort((a, b) => {
-            if (!a.timestamp && !b.timestamp) return 0;
-            if (!a.timestamp) return 1;
-            if (!b.timestamp) return -1;
-            return new Date(b.timestamp) - new Date(a.timestamp);
-        });
+        this._applyNotesSort();
 
         if (game.user.isGM && !this._suppressPinOwnershipSync) {
             await this._syncPinnedNotesOwnership();
@@ -1931,6 +1933,18 @@ export class NotesPanel {
         });
 
         // Tag cloud toggle
+        const sortNotesButton = nativeHtml.querySelector('.toggle-notes-sort-button');
+        if (sortNotesButton) {
+            const newSortBtn = sortNotesButton.cloneNode(true);
+            sortNotesButton.parentNode?.replaceChild(newSortBtn, sortNotesButton);
+            newSortBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const next = this.sortMode === 'alpha' ? 'date' : 'alpha';
+                await game.user?.setFlag(MODULE.ID, 'notesSortMode', next);
+                await this.render(this.element);
+            });
+        }
+
         const toggleFiltersButton = nativeHtml.querySelector('.toggle-notes-filters-button');
         if (toggleFiltersButton) {
             const newToggle = toggleFiltersButton.cloneNode(true);
@@ -2381,6 +2395,27 @@ export class NotesPanel {
      * Apply filters to note cards (DOM-based filtering)
      * @private
      */
+    /**
+     * Order `this.notes` by current sort mode (date added vs alphabetical).
+     * @private
+     */
+    _applyNotesSort() {
+        const mode = this.sortMode === 'alpha' ? 'alpha' : 'date';
+        if (mode === 'alpha') {
+            this.notes.sort((a, b) => {
+                const na = String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
+                return na;
+            });
+            return;
+        }
+        this.notes.sort((a, b) => {
+            if (!a.timestamp && !b.timestamp) return 0;
+            if (!a.timestamp) return 1;
+            if (!b.timestamp) return -1;
+            return new Date(b.timestamp) - new Date(a.timestamp);
+        });
+    }
+
     _applyFilters(html) {
         const search = (this.filters.search || '').trim().toLowerCase();
         const selectedTags = (this.filters.tags || []).map(tag => tag.toUpperCase());

@@ -14,6 +14,7 @@
             <div class="notes-search">
                 <input type="text" class="notes-search-input" placeholder="Search notes..." value="{{filters.search}}">
                 <i class="fa-solid fa-times clear-notes-search {{#unless filters.search}}disabled{{/unless}}" title="Clear search"></i>
+                <i class="fa-solid {{#if (eq sortMode 'alpha')}}fa-arrow-down-a-z{{else}}fa-clock{{/if}} toggle-notes-sort-button" title="{{#if (eq sortMode 'alpha')}}Sort: A–Z. Click for date added.{{else}}Sort: date added (newest first). Click for A–Z.{{/if}}"></i>
                 <i class="fa-solid fa-filter toggle-notes-filters-button {{#if filtersOpen}}active{{/if}}" title="Toggle filters"></i>
             </div>
 
