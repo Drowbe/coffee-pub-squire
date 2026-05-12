@@ -9,7 +9,7 @@ import { QuestParser } from './utility-quest-parser.js';
 // import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 
 // New Blacksmith API-based quest pins
-import { isPinsApiAvailable, getSquirePinType } from './utility-quest-pins.js';
+import { isPinsApiAvailable, getSquirePinType, migrateSquireNotePinTypes } from './utility-quest-pins.js';
 import { registerQuestPinEvents } from './quest-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import {
@@ -227,6 +227,7 @@ Hooks.once('ready', async () => {
             );
         }
 
+        await migrateSquireNotePinTypes();
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
         registerNativeHook('userDisconnected', async (user) => {

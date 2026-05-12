@@ -405,6 +405,97 @@ export async function enforceSquirePinTaxonomyType(pins, pinId, kind, sceneOpt) 
     }
 }
 
+/**
+ * Rewrite existing Squire note pins that predate the canonical Blacksmith taxonomy key.
+ *
+ * Blacksmith's Manage Pins visibility filter intentionally uses taxonomy JSON as
+ * the source of truth, so persisted note pins must be stored as:
+ *   moduleId: coffee-pub-squire, type: note
+ *
+ * @returns {Promise<{checked: number, updated: number, failed: number}>}
+ */
+export async function migrateSquireNotePinTypes() {
+    const result = { checked: 0, updated: 0, failed: 0 };
+    if (!game.user?.isGM) return result;
+
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins) || typeof pins.list !== 'function' || typeof pins.update !== 'function') {
+        return result;
+    }
+
+    try {
+        if (typeof pins.whenReady === 'function') await pins.whenReady();
+    } catch (e) {
+        console.warn('Coffee Pub Squire | migrateSquireNotePinTypes: pins API not ready', e);
+        return result;
+    }
+
+    const canonicalType = getSquirePinType('note');
+    const legacyNoteTypes = new Set(
+        Object.entries(SQUIRE_PIN_TYPE_FIX_MAP)
+            .filter(([, mapped]) => mapped === canonicalType)
+            .map(([legacyType]) => legacyType)
+    );
+    const seen = new Set();
+    const reloadedSceneIds = new Set();
+
+    const migratePin = async (pin, sceneId = null) => {
+        if (!pin?.id) return;
+
+        const key = `${sceneId ?? 'unplaced'}:${pin.id}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        result.checked += 1;
+
+        const hasSquireNoteConfig = !!pin?.config?.noteUuid;
+        const hasLegacyNoteType = legacyNoteTypes.has(pin?.type);
+        const isSquireNotePin = hasSquireNoteConfig
+            && (pin?.moduleId === MODULE.ID || pin?.type === canonicalType || hasLegacyNoteType);
+        if (!isSquireNotePin) return;
+
+        const patch = {};
+        if (pin.moduleId !== MODULE.ID) patch.moduleId = MODULE.ID;
+        if (pin.type !== canonicalType && hasLegacyNoteType) patch.type = canonicalType;
+        if (!Object.keys(patch).length) return;
+
+        try {
+            await pins.update(pin.id, patch, sceneId ? { sceneId } : undefined);
+            result.updated += 1;
+            if (sceneId) reloadedSceneIds.add(sceneId);
+        } catch (e) {
+            result.failed += 1;
+            console.warn('Coffee Pub Squire | migrateSquireNotePinTypes:', e);
+        }
+    };
+
+    for (const pin of pins.list({ unplacedOnly: true }) || []) {
+        await migratePin(pin);
+    }
+
+    for (const scene of game.scenes?.contents || []) {
+        if (!scene?.id) continue;
+        for (const pin of pins.list({ sceneId: scene.id }) || []) {
+            await migratePin(pin, scene.id);
+        }
+    }
+
+    if (typeof pins.reload === 'function') {
+        for (const sceneId of reloadedSceneIds) {
+            try {
+                await pins.reload({ sceneId });
+            } catch (_) {}
+        }
+    }
+
+    if (result.updated || result.failed) {
+        console.info(
+            `Coffee Pub Squire | Note pin taxonomy migration checked ${result.checked}, updated ${result.updated}, failed ${result.failed}.`
+        );
+    }
+
+    return result;
+}
+
 export function listSquirePinsByKind(pins, kind, opts = {}) {
     if (!pins?.list) return [];
     const base = { moduleId: MODULE.ID, ...opts };

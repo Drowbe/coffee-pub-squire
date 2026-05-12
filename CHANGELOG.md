@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.5]
+
+### Fixed
+- **Blacksmith Manage Pins – Squire note pin taxonomy**: Legacy note pins stored with non-taxonomy `type` values (for example `note-pin`, `coffee-pub-squire-sticky-notes`, or display-style labels such as `Note Pin`) no longer break visibility filtering in Blacksmith’s Manage Pins window. On `ready`, the GM client runs a one-time migration (`migrateSquireNotePinTypes` in `scripts/utility-quest-pins.js`) that rewrites matching pins to the canonical `moduleId` / `type: note` keys expected by the pin taxonomy JSON. New note pins were already created with `type: note`; this corrects existing worlds only.
 
 ## [13.2.4]
 
