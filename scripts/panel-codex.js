@@ -384,7 +384,17 @@ export class CodexPanel {
                             // Pin state flags
                             entry.pinId        = page.getFlag(MODULE.ID, 'codexPinId')   ?? null;
                             entry.pinSceneId   = page.getFlag(MODULE.ID, 'codexSceneId') ?? null;
-                            entry.hasPinOnScene = !!(entry.pinId && entry.pinSceneId && entry.pinSceneId === canvas?.scene?.id);
+                            const activeSceneId = canvas?.scene?.id;
+                            entry.hasPinOnScene = !!(entry.pinId && entry.pinSceneId);
+                            entry.pinOnActiveScene = !!(
+                                entry.pinId
+                                && entry.pinSceneId
+                                && activeSceneId
+                                && entry.pinSceneId === activeSceneId
+                            );
+                            entry.pinSceneName = entry.pinSceneId
+                                ? (game.scenes.get(entry.pinSceneId)?.name?.trim() || 'Unknown scene')
+                                : '';
                             
                             // Extract "Discovered By" information from the enriched content
                             const doc = new DOMParser().parseFromString(enriched, 'text/html');

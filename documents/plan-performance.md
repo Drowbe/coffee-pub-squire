@@ -1,52 +1,32 @@
 # Performance and Memory Review
 
-Last reviewed: May 4, 2026
+Last reviewed: May 12, 2026
 
-This document replaces the earlier static review. Several of the original findings were already fixed during the Application V2 and panel cleanup work, so this version focuses on the current live risks in the codebase.
+This document tracks **remaining** performance and lifecycle risks. Listener teardown on Spells, Features, Favorites, Quest panel destroy, and the note window is already in place; the sections below are still open.
 
-## Already Addressed
+### Rollup
 
-### Listener accumulation in Spells, Features, and Favorites panels
-- Status: fixed
-- File refs:
-`scripts/panel-spells.js:223`
-`scripts/panel-features.js:160`
-`scripts/panel-favorites.js:758`
-- Notes:
-All three panels now use `AbortController`-based teardown before rebinding listeners on render. The original “listeners pile up every render” finding is no longer current.
+| # | Topic | Rank | Effort | Risk | Status |
+|---|--------|------|--------|------|--------|
+| 1 | `PanelManager` new-item cleanup interval hygiene | High | Small | Low | **Done** |
+| 2 | Note pin hooks → full notes refresh each event | High | Small–medium | Medium | Open |
+| 3 | Token selection forces full tray rerender | High | Large | High | Open |
+| 4 | Notes / Codex / Quest full journal rescan each render | High | Large | High | Open |
+| 5 | Quest pin sync hooks — no unregister | Medium | Medium | Medium | Open |
+| 6 | Notes & Codex pin `updateScene` hooks — no teardown | Medium | Medium | Medium | Open |
+| 7 | Favorites panel `cloneNode` churn on render | Medium | Medium | Medium | Open |
+| 8 | `cleanupNewlyAddedItems()` repeated world writes in sweeps | Medium | Small | Low | Open |
+| 9 | Dead `codex-pin-events.js` duplicate implementation | Low | Small | Low | Open |
 
-### Quest panel destroy-time listener cleanup
-- Status: fixed
-- File refs:
-`scripts/panel-quest.js:615`
-`scripts/panel-quest.js:623`
-`scripts/panel-quest.js:626`
-- Notes:
-`QuestPanel.destroy()` now clears active pin-placement listeners and aborts container listeners.
-
-### Note window local event handler cleanup
-- Status: fixed
-- File refs:
-`scripts/window-note.js:592`
-`scripts/window-note.js:1197`
-`scripts/window-note.js:1205`
-- Notes:
-The note window now clears tracked DOM handlers on rerender and on close. The earlier leak concern here is no longer current.
+**Rank** — impact if left unfixed (matches each finding’s severity). **Effort** — rough size of a good fix (Small ≈ localized; Large ≈ architectural or many call sites). **Risk** — chance of regressions or tricky edge cases when landing the change (selection flows, pin sync, journal refresh). **Status** — whether the rollup row has been addressed in code (Finding 1: single 30s timer; removed redundant `trackInterval` double-registration and redundant `clearInterval` after `clearTrackedInterval` in `cleanup()`; no separate 60s module-load loop exists in the current tree).
 
 ## Current Findings
 
-### 1) High: Duplicate cleanup intervals still run in PanelManager
-- File refs:
-`scripts/manager-panel.js:222`
-`scripts/manager-panel.js:2160`
-- Issue:
-There are still two independent periodic cleanup loops for `cleanupNewlyAddedItems()`:
-- a 30s interval created from `PanelManager.initialize()`
-- a 60s global interval created at module load
-- Impact:
-Redundant wakeups, duplicate actor/item scans, and overlapping `unsetFlag()` work. This is not catastrophic, but it is unnecessary churn in a central manager that is always alive.
-- Recommendation:
-Keep a single interval. Prefer the instance-managed path and remove the global module-load interval.
+### 1) ~~High: Duplicate cleanup intervals in `PanelManager`~~ **(addressed)**
+
+- **What was wrong:** The new-item sweep used `trackModuleInterval` *and* `trackInterval`, which registered the same interval id twice in timer bookkeeping, and `cleanup()` cleared it with `clearTrackedInterval` (via `_intervals`) *and* again with raw `clearInterval` on `_cleanupInterval`. A second 60s module-load timer described in older notes is **not** present in the current codebase.
+- **What we did:** Register the 30s sweep once (`trackModuleInterval` + `_intervals.add` only). On `PanelManager.cleanup()`, null `_cleanupInterval` after the shared `_intervals` pass—no second `clearInterval`.
+- File refs: `scripts/manager-panel.js` (`initialize` cleanup timer, `cleanup()`).
 
 ### 2) High: Note pin lifecycle hooks trigger full notes refresh/render on every pin event
 - File refs:
@@ -149,9 +129,9 @@ Convert remaining direct per-node bindings to delegated container listeners wher
 - Issue:
 The cleanup routine not only prunes `PanelManager.newlyAddedItems`, it also iterates actor items and calls `item.unsetFlag(...)` for stale `isNew` flags.
 - Impact:
-Combined with the duplicate interval issue, this can create repeated document updates for bookkeeping cleanup, even when the tray is idle.
+The cleanup routine can still perform document updates for bookkeeping during each sweep, even when the tray is idle.
 - Recommendation:
-Fix the duplicate interval first. After that, consider only sweeping when `newlyAddedItems.size > 0` or when a tracked actor actually changed.
+Consider only sweeping when `newlyAddedItems.size > 0` or when a tracked actor actually changed.
 
 ### 9) Low: `codex-pin-events.js` is dead duplicate pin-handler code
 - File refs:
@@ -163,42 +143,20 @@ No runtime cost today, but it increases maintenance risk and makes future debugg
 - Recommendation:
 Either remove it or explicitly migrate to it and delete the older embedded codex pin handler path.
 
-## No Longer Relevant From The Previous Plan
-
-These earlier findings should not drive current work:
-
-1. Spells panel listener accumulation
-2. Features panel listener accumulation
-3. Favorites panel listener accumulation as a leak
-4. Quest panel destroy missing active-listener cleanup
-5. Note window local `_eventHandlers` leak
-
-They have been addressed in current code.
-
 ## Priority Order
 
-### Recommended Execution Plan
-1. Fix the duplicate `PanelManager` cleanup intervals first.
-2. Then do one combined hook-and-rerender pass for Notes, Codex, Quest, and tray selection flows:
-- migrate remaining long-lived native hooks to Blacksmith Hook Manager where practical
-- add explicit teardown where Hook Manager migration is not the right fit
-- debounce/coalesce noisy note pin lifecycle refreshes in `squire.js`
-- stop `_updateHealthPanelFromSelection()` from forcing unrelated panel rerenders
-3. After that pass is stable, tackle journal-scale optimization separately.
+### Strong candidates before the next release
+1. **Finding 2 — debounce note pin lifecycle refreshes** — High user-visible payoff if pins move or sync often; `scheduleNotesPanelRefresh` already exists and could be extended/coalesced for pin hooks.
 
-### Do Next
-1. Collapse the duplicate `PanelManager` cleanup intervals into one.
-2. Combine hook lifecycle cleanup with performance cleanup in a single pass:
-- address quest/note/codex pin hook teardown or Hook Manager migration
-- debounce note pin lifecycle refreshes
-- narrow selection-driven rerenders to only the panels that actually need updates
+### Reasonable if time allows (otherwise next milestone)
+2. **Finding 9 — dead `codex-pin-events.js`** — Quick housekeeping; no runtime win, fewer wrong turns for maintainers.
+3. **Findings 5 and 6 — pin hook teardown** — Hygiene before bigger refactors; matters most if you expect module disable/reinit or duplicate-hook edge cases.
 
-### Do Soon
-1. Reduce full-journal rescans in Notes, Codex, and Quest by introducing entry-level invalidation and cached parse results.
-
-### Do Later
-1. Replace remaining Favorites DOM cloning with delegated listeners.
-2. Remove or consolidate the unused `codex-pin-events.js` path.
+### Larger refactors (usually after release unless you have a dedicated slice)
+4. **Finding 3 — selection-driven full tray rerender** — Touches core `manager-panel` flow; test multiselect and tray state carefully.
+5. **Finding 4 — full-journal rescans** — Architectural; biggest win for large campaigns but not a small patch.
+6. **Finding 7 — Favorites `cloneNode` churn** — Polish once hot paths above are stable.
+7. **Finding 8 — `cleanupNewlyAddedItems()` sweep cost** — Optional follow-up after monitoring idle worlds.
 
 ## Suggested Verification
 

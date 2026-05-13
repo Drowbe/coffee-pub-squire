@@ -220,6 +220,8 @@ export class PanelManager {
 
             // Set up cleanup interval if not already set
             if (!PanelManager._cleanupInterval) {
+                // One periodic sweep: `trackModuleInterval` already registers with timer-utils.
+                // Add only to `_intervals` so `cleanup()` clears it once via `clearTrackedInterval` (avoid duplicate register + double clearInterval).
                 const intervalId = trackModuleInterval(() => {
                     PanelManager.cleanupNewlyAddedItems();
                     // Force a re-render of the inventory panel if it exists
@@ -229,7 +231,7 @@ export class PanelManager {
                     }
                 }, 30000); // Check every 30 seconds
                 PanelManager._cleanupInterval = intervalId;
-                PanelManager.trackInterval(intervalId);
+                PanelManager._intervals.add(intervalId);
             }
 
             // Preserve window states from old instance
@@ -1734,11 +1736,8 @@ export class PanelManager {
         });
         PanelManager._eventListeners.clear();
 
-        // Clear the cleanup interval
-        if (PanelManager._cleanupInterval) {
-            clearInterval(PanelManager._cleanupInterval);
-            PanelManager._cleanupInterval = null;
-        }
+        // `_cleanupInterval` is cleared with the rest of `_intervals` above; only null the handle.
+        PanelManager._cleanupInterval = null;
 
         // Clear the newly added items map
         PanelManager.newlyAddedItems.clear();

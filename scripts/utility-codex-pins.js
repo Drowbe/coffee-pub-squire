@@ -151,6 +151,26 @@ function calculateCodexPinOwnership(page) {
     };
 }
 
+/**
+ * Find a codex pin for this entry that is currently placed on a scene (not only in the unplaced pool).
+ * @param {object} pins
+ * @param {string} entryUuid - Journal page UUID (`config.codexUuid`)
+ * @returns {{ pinId: string, sceneId: string }|null}
+ */
+function findPlacedCodexPinForEntry(pins, entryUuid) {
+    if (!isPinsApiAvailable(pins) || !entryUuid || !pins.list || !game.scenes?.contents) return null;
+    for (const scene of game.scenes.contents) {
+        if (!scene?.id) continue;
+        const list = listSquirePinsByKind(pins, 'codex', { sceneId: scene.id }) || [];
+        const hit = list.find(p => p?.config?.codexUuid === entryUuid);
+        if (hit?.id) {
+            const sid = hit.sceneId ?? scene.id;
+            if (sid) return { pinId: hit.id, sceneId: sid };
+        }
+    }
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -265,8 +285,14 @@ export async function deleteCodexPin(entryUuid) {
     if (!isPinsApiAvailable(pins)) return;
 
     const page = await fromUuid(entryUuid);
-    const pinId   = page?.getFlag(MODULE.ID, 'codexPinId');
-    const sceneId = page?.getFlag(MODULE.ID, 'codexSceneId');
+    let pinId   = page?.getFlag(MODULE.ID, 'codexPinId');
+    let sceneId = page?.getFlag(MODULE.ID, 'codexSceneId');
+
+    const placed = findPlacedCodexPinForEntry(pins, entryUuid);
+    if (placed?.pinId) {
+        pinId = placed.pinId;
+        sceneId = placed.sceneId ?? sceneId;
+    }
 
     if (pinId) {
         try {
@@ -339,20 +365,32 @@ export async function beginCodexPinPlacement(entryUuid, entryName, entryCategory
         return;
     }
 
-    // Guard: already pinned on a scene → must unpin first
+    // Guard: a placed pin on any scene blocks placement (page flags can disagree with the Pins API).
     const page = await fromUuid(entryUuid);
-    const storedSceneId = page?.getFlag(MODULE.ID, 'codexSceneId');
-    const storedPinId   = page?.getFlag(MODULE.ID, 'codexPinId');
+    if (!page) return;
+
+    const placed = findPlacedCodexPinForEntry(pins, entryUuid);
+    if (placed?.pinId && placed.sceneId) {
+        if (placed.sceneId === canvas.scene.id) {
+            ui.notifications.warn('This codex entry is already pinned on this scene. Unplace it first to move it.');
+        } else {
+            ui.notifications.warn(
+                'This codex entry is pinned on another scene. Use the map pin on the codex card to unplace it, then pin here if you want.'
+            );
+        }
+        return;
+    }
+
+    const storedSceneId = page.getFlag(MODULE.ID, 'codexSceneId');
+    const storedPinId   = page.getFlag(MODULE.ID, 'codexPinId');
     if (storedSceneId && storedPinId) {
         const pinExists = typeof pins.exists === 'function'
-            ? pins.exists(storedPinId)
-            : !!pins.get?.(storedPinId);
-        if (pinExists) {
-            ui.notifications.warn('This codex entry is already pinned. Unpin it first to place elsewhere.');
-            return;
+            ? pins.exists(storedPinId, { sceneId: storedSceneId })
+            : !!pins.get?.(storedPinId, { sceneId: storedSceneId });
+        if (!pinExists) {
+            await page.setFlag(MODULE.ID, 'codexPinId', null);
+            await page.setFlag(MODULE.ID, 'codexSceneId', null);
         }
-        await page.setFlag(MODULE.ID, 'codexPinId',   null);
-        await page.setFlag(MODULE.ID, 'codexSceneId', null);
     }
 
     if (_codexPinPlacement) _clearCodexPinPlacement();
@@ -466,23 +504,49 @@ export async function unplaceCodexPin(entryUuid) {
     const pins = getPinsApi();
     if (!isPinsApiAvailable(pins)) return;
 
-    const page    = await fromUuid(entryUuid);
-    const pinId   = page?.getFlag(MODULE.ID, 'codexPinId');
-    const sceneId = page?.getFlag(MODULE.ID, 'codexSceneId');
+    const page = await fromUuid(entryUuid);
+    if (!page) return;
+
+    let pinId = page.getFlag(MODULE.ID, 'codexPinId');
+    let sceneId = page.getFlag(MODULE.ID, 'codexSceneId') || null;
+
+    const placed = findPlacedCodexPinForEntry(pins, entryUuid);
+    if (placed?.pinId) {
+        pinId = placed.pinId;
+        sceneId = placed.sceneId ?? sceneId;
+    } else if (pinId && typeof pins.get === 'function') {
+        const live = pins.get(pinId, sceneId ? { sceneId } : undefined) ?? pins.get(pinId);
+        if (live?.sceneId != null) sceneId = live.sceneId;
+    }
 
     if (!pinId) return;
 
+    if (sceneId == null) {
+        await page.setFlag(MODULE.ID, 'codexSceneId', null);
+        return;
+    }
+
     try {
         if (typeof pins.unplace === 'function') {
-            await pins.unplace(pinId);
+            try {
+                await pins.unplace(pinId);
+            } catch (e) {
+                if (typeof pins.update === 'function') {
+                    await pins.update(pinId, { unplace: true }, { sceneId });
+                } else {
+                    throw e;
+                }
+            }
+        } else if (typeof pins.update === 'function') {
+            await pins.update(pinId, { unplace: true }, { sceneId });
         }
     } catch (e) {
         console.warn('Coffee Pub Squire | unplaceCodexPin:', e);
+        ui.notifications.warn('Could not unplace the codex pin from the scene. Check the console or try again on the scene where it appears.');
+        return;
     }
 
-    if (page) {
-        await page.setFlag(MODULE.ID, 'codexSceneId', null);
-    }
+    await page.setFlag(MODULE.ID, 'codexSceneId', null);
 
     if (sceneId && typeof pins.reload === 'function') {
         try { await pins.reload({ sceneId }); } catch (_) {}
