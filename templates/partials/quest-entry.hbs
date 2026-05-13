@@ -203,7 +203,7 @@
     <!-- STATUS -->
     {{#if entry.status}}
       <div class="quest-entry-progress">
-        <span class="quest-entry-label">Status</span> {{entry.status}}
+        <span class="quest-entry-label">Status</span> {{default entry.statusLabel entry.status}}
       </div>
     {{/if}}
     <!-- PARTICIPANTS -->

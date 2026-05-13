@@ -1,5 +1,5 @@
 import { MODULE } from './const.js';
-import { QuestParser } from './utility-quest-parser.js';
+import { QuestParser, getQuestStatusDisplayLabel } from './utility-quest-parser.js';
 import { getTextEditor } from './helpers.js';
 
 function getBlacksmith() {
@@ -223,7 +223,12 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     _getStatusOptions() {
-        return ['Not Started', 'In Progress', 'Complete', 'Failed'];
+        return [
+            { value: 'Not Started', label: 'Available' },
+            { value: 'In Progress', label: 'Active' },
+            { value: 'Complete', label: 'Succeeded' },
+            { value: 'Failed', label: 'Failed' }
+        ];
     }
 
     _getSuggestedTagGroups() {
@@ -576,7 +581,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         if (quest.timeframe?.duration) {
             content += `<p><strong>Duration:</strong> ${this._renderInlineText(quest.timeframe.duration)}</p>\n\n`;
         }
-        content += `<p><strong>Status:</strong> ${this._renderInlineText(quest.status || 'Not Started')}</p>\n\n`;
+            content += `<p><strong>Status:</strong> ${this._renderInlineText(getQuestStatusDisplayLabel(quest.status || 'Not Started'))}</p>\n\n`;
         if (quest.tags?.length) {
             content += `<p><strong>Tags:</strong> ${this._renderInlineText(quest.tags.join(', '))}</p>\n\n`;
         }
@@ -1250,7 +1255,8 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
 
     _normalizeStatus(status) {
         const normalized = String(status || '').trim();
-        return this._getStatusOptions().includes(normalized) ? normalized : 'Not Started';
+        const values = this._getStatusOptions().map(o => o.value);
+        return values.includes(normalized) ? normalized : 'Not Started';
     }
 
     _normalizeTags(tags) {

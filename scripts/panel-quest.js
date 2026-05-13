@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { QuestParser } from './utility-quest-parser.js';
+import { QuestParser, getQuestStatusDisplayLabel } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
 import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, getQuestPinColor, getObjectivePinColor, unplaceQuestPinForPage, unplaceObjectivePinForPage, QUEST_PIN_BACKGROUND, OBJECTIVE_PIN_BACKGROUND, listAllQuestPins, findLiveQuestPin, findLiveObjectivePin } from './utility-quest-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
@@ -1147,7 +1147,8 @@ export class QuestPanel {
     }
 
     /**
-     * Apply quest status change (Not Started, In Progress, Complete, Failed).
+     * Apply quest status change. Persisted journal values use canonical strings:
+     * `Not Started`, `In Progress`, `Complete`, `Failed` (UI labels: Available, Active, Succeeded, Failed).
      * @param {string} uuid - Quest journal page UUID
      * @param {string} newStatus - New status value
      * @private
@@ -3539,9 +3540,9 @@ export class QuestPanel {
                                 name: 'Change Status',
                                 icon: 'fa-solid fa-pen',
                                 submenu: [
-                                    { name: 'Not Started', icon: 'fa-solid fa-circle', callback: () => this._applyQuestStatus(uuid, 'Not Started') },
-                                    { name: 'In Progress', icon: 'fa-solid fa-spinner', callback: () => this._applyQuestStatus(uuid, 'In Progress') },
-                                    { name: 'Complete', icon: 'fa-solid fa-check', callback: () => this._applyQuestStatus(uuid, 'Complete') },
+                                    { name: 'Available', icon: 'fa-solid fa-circle', callback: () => this._applyQuestStatus(uuid, 'Not Started') },
+                                    { name: 'Active', icon: 'fa-solid fa-spinner', callback: () => this._applyQuestStatus(uuid, 'In Progress') },
+                                    { name: 'Succeeded', icon: 'fa-solid fa-check', callback: () => this._applyQuestStatus(uuid, 'Complete') },
                                     { name: 'Failed', icon: 'fa-solid fa-xmark', callback: () => this._applyQuestStatus(uuid, 'Failed') }
                                 ]
                             }
@@ -4082,6 +4083,7 @@ export class QuestPanel {
                 entry.timeframe = entry.timeframe || { duration: '' };
                 entry.progress = entry.progress || 0;
                 entry.status = entry.status || 'Not Started';
+                entry.statusLabel = getQuestStatusDisplayLabel(entry.status);
 
                 // Add active objective data to tasks
                 if (entry.tasks.length > 0) {
@@ -4477,7 +4479,7 @@ export class QuestPanel {
             content += `<p><strong>Duration:</strong> ${quest.timeframe.duration}</p>\n\n`;
         }
         if (quest.status) {
-            content += `<p><strong>Status:</strong> ${quest.status}</p>\n\n`;
+            content += `<p><strong>Status:</strong> ${getQuestStatusDisplayLabel(quest.status)}</p>\n\n`;
         }
         
         // --- AUTO ADD PARTY MEMBERS (JSON Import Only) ---

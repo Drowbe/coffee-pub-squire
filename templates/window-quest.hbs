@@ -88,7 +88,7 @@
                                 <label for="status">Status (Required)</label>
                                 <select id="status" name="status" required>
                                     {{#each statusOptions}}
-                                        <option value="{{this}}" {{#if (eq this ../quest.status)}}selected{{/if}}>{{this}}</option>
+                                        <option value="{{this.value}}" {{#if (eq this.value ../quest.status)}}selected{{/if}}>{{this.label}}</option>
                                     {{/each}}
                                 </select>
                             </div>

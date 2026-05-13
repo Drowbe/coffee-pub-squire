@@ -1,5 +1,5 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
-import { QuestParser } from './utility-quest-parser.js';
+import { QuestParser, getQuestStatusDisplayLabel } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 
@@ -721,10 +721,11 @@ export async function getQuestTooltipData(questPageUuid, pinQuestState = null) {
         // Get quest status and objectives info
         const totalObjectives = entry.tasks?.length || 0;
         const completedObjectives = entry.tasks?.filter(task => task.state === 'completed').length || 0;
-        const questStatus = entry.status || 'Not Started';
+        const questStatusRaw = entry.status || 'Not Started';
+        const questStatus = getQuestStatusDisplayLabel(questStatusRaw);
         
         // Convert quest status to CSS-friendly class name (spaces to hyphens, lowercase)
-        const questStatusClass = questStatus.toLowerCase().replace(/\s+/g, '-');
+        const questStatusClass = questStatusRaw.toLowerCase().replace(/\s+/g, '-');
         
         // Get participants info for portraits - use the already parsed data
         const participants = entry.participants || [];

@@ -344,5 +344,19 @@ export class QuestParser {
 
         return entry;
     }
-} 
+}
 
+/**
+ * User-facing label for quest status (tray tabs, menus, forms).
+ * Persisted journal / parsed values remain `Not Started`, `In Progress`, `Complete`, `Failed`.
+ * @param {string} [status]
+ * @returns {string}
+ */
+export function getQuestStatusDisplayLabel(status) {
+    const s = String(status || '').trim();
+    if (s === 'Not Started') return 'Available';
+    if (s === 'In Progress') return 'Active';
+    if (s === 'Complete') return 'Succeeded';
+    if (s === 'Failed') return 'Failed';
+    return s || 'Available';
+}
