@@ -38,6 +38,53 @@ jobs:
             prompts/ \
             -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
 
+      # GitHub release bodies are capped at 125000 characters; full CHANGELOG exceeds that.
+      - name: Prepare release notes
+        env:
+          RELEASE_VERSION: ${{ steps.get-version.outputs.version }}
+        run: |
+          python3 << 'PY'
+          import os, re, sys
+          from pathlib import Path
+
+          version = os.environ["RELEASE_VERSION"].strip()
+          repo = os.environ.get("GITHUB_REPOSITORY", "")
+          tag = os.environ.get("GITHUB_REF_NAME", f"v{version}")
+
+          with open("CHANGELOG.md", encoding="utf-8") as f:
+              lines = f.readlines()
+
+          heading = re.compile(rf"^##\s*\[{re.escape(version)}\]\s*$")
+
+          start = next((i for i, line in enumerate(lines) if heading.match(line.rstrip("\n"))), None)
+
+          if start is None:
+              link = f"https://github.com/{repo}/blob/{tag}/CHANGELOG.md" if repo else "CHANGELOG.md in the attached zip"
+              body = (
+                  f"See [{tag} CHANGELOG]({link}) for release notes.\n\n"
+                  f"_(No `## [{version}]` section found at the top of CHANGELOG.md.)_"
+              )
+              Path("release-body.md").write_text(body, encoding="utf-8")
+              sys.exit(0)
+
+          end = len(lines)
+          next_heading = re.compile(r"^##\s*\[")
+          for j in range(start + 1, len(lines)):
+              if next_heading.match(lines[j].rstrip("\n")):
+                  end = j
+                  break
+
+          section = "".join(lines[start:end]).strip()
+          max_len = 120_000
+          if len(section) > max_len:
+              section = (
+                  section[: max_len - 200]
+                  + "\n\n… _(truncated for GitHub release body limit; full file is in the zip.)_"
+              )
+
+          Path("release-body.md").write_text(section, encoding="utf-8")
+          PY
+
       # Create release
       - name: Create Release
         id: create_release
@@ -51,4 +98,4 @@ jobs:
           draft: false
           prerelease: false
           name: Version ${{ steps.get-version.outputs.version }}
-          body_path: CHANGELOG.md 
+          body_path: release-body.md

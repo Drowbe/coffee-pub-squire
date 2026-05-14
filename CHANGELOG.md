@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.7]
+
+### Fixed
+- **GitHub tag releases – release body size limit**: Tag builds no longer publish the entire `CHANGELOG.md` as the GitHub Release description (GitHub rejects bodies over 125,000 characters). The workflow now writes only the changelog section for the tagged version into `release-body.md` before `softprops/action-gh-release` runs, so releases succeed instead of failing with HTTP 422 and “Too many retries.” The release zip still includes the full `CHANGELOG.md`.
+
 ## [13.2.6]
 
 ### Fixed
