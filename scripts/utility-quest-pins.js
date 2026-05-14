@@ -59,26 +59,6 @@ const SQUIRE_PIN_TYPE_FIX_MAP = Object.freeze({
     'coffee-pub-squire-sticky-notes': 'note'
 });
 
-/**
- * True when the merged style has no fill and no stroke — Squire may apply its
- * bootstrap palette; otherwise defer to Blacksmith / Configure Pin / defaults.
- * @param {object|null|undefined} style
- * @returns {boolean}
- */
-function pinStyleUsesSquireBootstrap(style) {
-    if (!style || typeof style !== 'object') return true;
-    return !style.fill && !style.stroke;
-}
-
-/**
- * True when an existing pin already has a tool- or user-defined fill or stroke.
- * @param {object|null|undefined} style
- * @returns {boolean}
- */
-function pinHasConfiguredAppearance(style) {
-    if (!style || typeof style !== 'object') return false;
-    return !!(style.fill || style.stroke);
-}
 
 /**
  * Client default for a pin type from Blacksmith ("Default for [type]").
@@ -132,7 +112,7 @@ function applyPinTypeDefaultExtras(pinData, pinTypeDefault) {
 const SQUIRE_QUEST_PIN_DEFAULTS = {
     size: QUEST_PIN_SIZE,
     shape: 'circle',
-    dropShadow: false,
+    dropShadow: true,
     textLayout: 'right',
     textDisplay: 'hover',
     textColor: '#ffffff',
@@ -154,7 +134,7 @@ const SQUIRE_QUEST_PIN_DEFAULTS = {
 const SQUIRE_OBJECTIVE_PIN_DEFAULTS = {
     size: OBJECTIVE_PIN_SIZE,
     shape: 'circle',
-    dropShadow: false,
+    dropShadow: true,
     textLayout: 'under',
     textDisplay: 'hover',
     textColor: '#ffffff',
@@ -173,22 +153,6 @@ const SQUIRE_OBJECTIVE_PIN_DEFAULTS = {
     }
 };
 
-/** Quest status / state → border (stroke) color (hex). Background is fixed QUEST_PIN_BACKGROUND. */
-const QUEST_STATUS_COLORS = {
-    'Complete': '#0ea40e',
-    'Failed': '#d51301',
-    'In Progress': '#ffffff',
-    'Not Started': '#ffffff',
-    'hidden': '#a3a3a3'
-};
-
-/** Objective state → border (stroke) color (hex). Background is fixed OBJECTIVE_PIN_BACKGROUND. */
-const OBJECTIVE_STATE_COLORS = {
-    active: '#ffffff',
-    completed: '#0ea40e',
-    failed: '#d51301',
-    hidden: '#a3a3a3'
-};
 
 /** Quest category display name → taxonomy tag key (application mapping logic, not hard-wired tag literals). */
 const QUEST_CATEGORY_TAG_MAP = {
@@ -637,25 +601,6 @@ export function calculateQuestPinOwnership(page, objective = null) {
     return { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, users: gmUsers };
 }
 
-/**
- * Get border (stroke) color for a quest pin by status (or hidden state). Background is fixed.
- * @param {string} status - e.g. 'Not Started', 'In Progress', 'Complete', 'Failed'
- * @param {string} [questState] - 'visible' | 'hidden'; if 'hidden', returns hidden color
- * @returns {string} Hex color
- */
-export function getQuestPinColor(status, questState) {
-    if (questState === 'hidden') return QUEST_STATUS_COLORS.hidden ?? '#a3a3a3';
-    return QUEST_STATUS_COLORS[status] ?? QUEST_STATUS_COLORS['Not Started'];
-}
-
-/**
- * Get border (stroke) color for an objective pin by state. Background is fixed.
- * @param {string} state - 'active' | 'completed' | 'failed' | 'hidden'
- * @returns {string} Hex color
- */
-export function getObjectivePinColor(state) {
-    return OBJECTIVE_STATE_COLORS[state] ?? OBJECTIVE_STATE_COLORS.active;
-}
 
 /**
  * Create a quest-level pin and optionally place it on a scene.
@@ -682,18 +627,13 @@ export async function createQuestPin(opts) {
 
     const ownership = calculateQuestPinOwnership(page);
     const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
-    const strokeColor = getQuestPinColor(questStatus, questState);
     const design = getQuestPinDesignFromPage(page);
     const image = getQuestPinImageFromPage(page);
-    const style = pinStyleUsesSquireBootstrap(design.style)
-        ? {
-            ...design.style,
-            fill: QUEST_PIN_BACKGROUND,
-            stroke: strokeColor,
-            strokeWidth: design.style?.strokeWidth ?? QUEST_PIN_STROKE_WIDTH_DEFAULT,
-            iconColor: design.style?.iconColor ?? BOOTSTRAP_ICON_COLOR
-        }
-        : { ...design.style };
+    const style = {
+        ...design.style,
+        strokeWidth: design.style?.strokeWidth ?? QUEST_PIN_STROKE_WIDTH_DEFAULT,
+        iconColor: design.style?.iconColor ?? BOOTSTRAP_ICON_COLOR
+    };
 
     const questTitle = (page?.name || 'Quest').trim();
     const pinTitle = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
@@ -784,7 +724,6 @@ export async function createObjectivePin(opts) {
     const objState = objective.state || 'active';
     const ownership = calculateQuestPinOwnership(page, objective);
     const questNum = typeof questIndex === 'number' ? questIndex : getQuestNumber(questUuid);
-    const strokeColor = getObjectivePinColor(objState);
 
     const objNum = String((objectiveIndex ?? 0) + 1).padStart(2, '0');
     const objectiveText = (objective?.text || 'Objective').trim();
@@ -804,15 +743,11 @@ export async function createObjectivePin(opts) {
         {},
         { inplace: false }
     );
-    const style = pinStyleUsesSquireBootstrap(mergedStyle)
-        ? {
-            ...mergedStyle,
-            fill: OBJECTIVE_PIN_BACKGROUND,
-            stroke: strokeColor,
-            strokeWidth: mergedStyle.strokeWidth ?? OBJECTIVE_PIN_STROKE_WIDTH_DEFAULT,
-            iconColor: mergedStyle.iconColor ?? BOOTSTRAP_ICON_COLOR
-        }
-        : { ...mergedStyle };
+    const style = {
+        ...mergedStyle,
+        strokeWidth: mergedStyle.strokeWidth ?? OBJECTIVE_PIN_STROKE_WIDTH_DEFAULT,
+        iconColor: mergedStyle.iconColor ?? BOOTSTRAP_ICON_COLOR
+    };
 
     const size = structural.size && typeof structural.size.w === 'number' && typeof structural.size.h === 'number'
         ? structural.size
@@ -946,17 +881,17 @@ export async function unplaceQuestPinForPage(page) {
             await pins.unplace(pinId);
         } catch (e) {
             if (typeof pins.update === 'function') {
-                await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+                await pins.update(pinId, { unplace: true });
             } else {
                 throw e;
             }
         }
     } else if (typeof pins.update === 'function') {
-        await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+        await pins.update(pinId, { unplace: true });
     }
 
-    if (sceneId && typeof pins.reload === 'function') {
-        await pins.reload({ sceneId });
+    if (typeof pins.reload === 'function') {
+        await pins.reload({ sceneId: canvas.scene?.id });
     }
 }
 
@@ -971,33 +906,24 @@ export async function unplaceObjectivePinForPage(page, objectiveIndex) {
 
     const livePin = page?.uuid ? findLiveObjectivePin(page.uuid, objectiveIndex) : null;
     const pinId = livePin?.id ?? null;
-    let sceneId = livePin?.sceneId;
-    if (sceneId == null) return;
     if (!pinId) return;
-
-    const pinExistsOnScene = typeof pins.exists === 'function'
-        ? pins.exists(pinId, sceneId ? { sceneId } : undefined)
-        : !!pins.get?.(pinId, sceneId ? { sceneId } : undefined);
-    if (!pinExistsOnScene) {
-        return;
-    }
 
     if (typeof pins.unplace === 'function') {
         try {
             await pins.unplace(pinId);
         } catch (e) {
             if (typeof pins.update === 'function') {
-                await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+                await pins.update(pinId, { unplace: true });
             } else {
                 throw e;
             }
         }
     } else if (typeof pins.update === 'function') {
-        await pins.update(pinId, { unplace: true }, sceneId ? { sceneId } : undefined);
+        await pins.update(pinId, { unplace: true });
     }
 
-    if (sceneId && typeof pins.reload === 'function') {
-        await pins.reload({ sceneId });
+    if (typeof pins.reload === 'function') {
+        await pins.reload({ sceneId: canvas.scene?.id });
     }
 }
 
@@ -1084,17 +1010,6 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
             patch.config = { ...(pin.config || {}), questStatus, questState };
             patch.tags = questCategoryToPinTags('quest', pin.config?.questCategory, questPinTaxTags);
             patch.text = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
-            if (!pinHasConfiguredAppearance(pin.style)) {
-                patch.style = {
-                    ...(pin.style || {}),
-                    fill: QUEST_PIN_BACKGROUND,
-                    stroke: getQuestPinColor(questStatus, questState),
-                    strokeWidth: Number.isFinite(pin.style?.strokeWidth)
-                        ? pin.style.strokeWidth
-                        : QUEST_PIN_STROKE_WIDTH_DEFAULT,
-                    iconColor: BOOTSTRAP_ICON_COLOR
-                };
-            }
         } else if (typeof pin.config?.objectiveIndex === 'number') {
             const obj = quest.tasks[pin.config.objectiveIndex];
             const objState = obj?.state || 'active';
@@ -1103,17 +1018,6 @@ export async function updateQuestPinStylesForPage(page, sceneId) {
             const objNum = String((pin.config.objectiveIndex ?? 0) + 1).padStart(2, '0');
             const objectiveText = (obj?.text || 'Objective').trim();
             patch.text = `Quest ${questNum}.${objNum}: ${objectiveText}${objectiveText.endsWith('.') ? '' : '.'}`;
-            if (!pinHasConfiguredAppearance(pin.style)) {
-                patch.style = {
-                    ...(pin.style || {}),
-                    fill: OBJECTIVE_PIN_BACKGROUND,
-                    stroke: getObjectivePinColor(objState),
-                    strokeWidth: Number.isFinite(pin.style?.strokeWidth)
-                        ? pin.style.strokeWidth
-                        : OBJECTIVE_PIN_STROKE_WIDTH_DEFAULT,
-                    iconColor: BOOTSTRAP_ICON_COLOR
-                };
-            }
         }
         if (Object.keys(patch).length) {
             try {
@@ -1175,26 +1079,6 @@ export async function reconcileQuestPins() {
             }
         }
 
-        // Objective pins
-        const objectivePinsFlag = page.getFlag(MODULE.ID, 'objectivePins') || {};
-        const nextObjectivePins = { ...objectivePinsFlag };
-
-        // Clear stale entries
-        for (const [key, val] of Object.entries(objectivePinsFlag)) {
-            const pinId = val?.pinId ?? val;
-            const exists = pinId && pins.exists(pinId);
-            if (!exists) delete nextObjectivePins[key];
-        }
-
-        // Add/refresh entries from live pins
-        const questPinsForPage = allPins.filter(p => p.config.questUuid === qid && typeof p.config?.objectiveIndex === 'number');
-        for (const pin of questPinsForPage) {
-            const idx = pin.config.objectiveIndex;
-            if (typeof idx !== 'number') continue;
-            nextObjectivePins[String(idx)] = { pinId: pin.id, sceneId: pin.sceneId ?? null };
-        }
-
-        await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
     }
 }
 

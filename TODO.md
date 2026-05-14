@@ -1,5 +1,9 @@
 # TODO
 
+## Bugs
+
+- **Quest/objective pin legacy color data**: Pinning is broken and existing pins still render with colored borders. The code changes to stop forcing colors only affect new API calls — pins already stored in Blacksmith have fill/stroke colors baked into their style data from previous builds. Need to audit the full pin creation/update pipeline for any remaining color writes, and likely run a one-time GM migration to strip `fill` and `stroke` from all existing Squire quest/objective pins so they fall back to Blacksmith defaults.
+
 ## Critical
 
 - Quest persistence refactor: separate quest definition data (imported/updatable content) from quest runtime state (progress, status, visibility, active objective, pin bindings), and migrate to stable IDs.

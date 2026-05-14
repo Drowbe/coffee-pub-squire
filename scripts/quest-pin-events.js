@@ -38,6 +38,9 @@ async function renderQuestPanelIfOpen() {
         try { await pins.reload({ sceneId: activeSceneId }); } catch (_) {}
     }
 
+    if (typeof panelManager.questPanel._refreshData === 'function') {
+        await panelManager.questPanel._refreshData();
+    }
     if (typeof panelManager.questPanel.render === 'function') {
         await panelManager.questPanel.render(panelManager.element);
     }
@@ -86,35 +89,6 @@ async function syncQuestForDeletedPins(sceneId) {
             }
         }
 
-        const objectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
-        let nextObjectivePins = null;
-        for (const [key, value] of Object.entries(objectivePins)) {
-            const objectivePinId = value?.pinId ?? value;
-            const objectiveSceneId = typeof value === 'object' ? (value?.sceneId ?? null) : null;
-            if (!objectivePinId) continue;
-            if (objectiveSceneId && objectiveSceneId !== sceneId) continue;
-
-            const pinExistsOnScene = typeof pins.exists === 'function'
-                ? pins.exists(objectivePinId, { sceneId })
-                : !!pins.get?.(objectivePinId, { sceneId });
-
-            if (!pinExistsOnScene) {
-                const pinExistsAnywhere = typeof pins.exists === 'function'
-                    ? pins.exists(objectivePinId)
-                    : !!pins.get?.(objectivePinId);
-                nextObjectivePins ||= { ...objectivePins };
-                if (pinExistsAnywhere) {
-                    nextObjectivePins[key] = { pinId: objectivePinId, sceneId: null };
-                } else {
-                    delete nextObjectivePins[key];
-                }
-                changed = true;
-            }
-        }
-
-        if (nextObjectivePins) {
-            await page.setFlag(MODULE.ID, 'objectivePins', nextObjectivePins);
-        }
     }
 
     if (changed) {
@@ -125,6 +99,10 @@ async function syncQuestForDeletedPins(sceneId) {
 async function flushQuestPinSyncQueue() {
     if (!questPinSyncPending) return;
     questPinSyncPending = false;
+    const pins = getPinsApi();
+    if (canvas?.scene?.id && typeof pins?.reload === 'function') {
+        try { await pins.reload({ sceneId: canvas.scene.id }); } catch (_) {}
+    }
     await renderQuestPanelIfOpen();
 }
 
@@ -510,35 +488,7 @@ export function registerQuestPinSync() {
     };
 
     questPinSyncHookIds.push({
-        deleted: Hooks.on('blacksmith.pins.deleted', async (payload = {}) => {
-            // Use payload.pinId (always present) to clear objectivePins flags directly —
-            // no cache, no pins.exists(), no updateScene dependency.
-            const deletedPinId = payload.pinId;
-            if (deletedPinId && game.user?.isGM) {
-                const journalId = game.settings.get(MODULE.ID, 'questJournal');
-                const journal = journalId && journalId !== 'none' ? game.journal?.get(journalId) : null;
-                if (journal) {
-                    let anyCleared = false;
-                    for (const page of journal.pages.contents) {
-                        const objectivePins = page.getFlag(MODULE.ID, 'objectivePins') || {};
-                        const next = {};
-                        let changed = false;
-                        for (const [key, value] of Object.entries(objectivePins)) {
-                            const pId = value?.pinId ?? value;
-                            if (pId === deletedPinId) {
-                                changed = true;
-                            } else {
-                                next[key] = value;
-                            }
-                        }
-                        if (changed) {
-                            await page.setFlag(MODULE.ID, 'objectivePins', next);
-                            anyCleared = true;
-                        }
-                    }
-                    if (anyCleared) await renderQuestPanelIfOpen();
-                }
-            }
+        deleted: Hooks.on('blacksmith.pins.deleted', (payload = {}) => {
             queueHandle(payload);
         }),
         unplaced: Hooks.on('blacksmith.pins.unplaced', (payload = {}) => queueHandle(payload)),

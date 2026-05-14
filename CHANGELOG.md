@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.6]
+
+### Fixed
+- **Quest panel – objective pin state now reads from live API**: `_refreshData()` no longer reads `task.hasPinOnScene` from the `objectivePins` journal page flag (a manually-maintained mirror). A `liveObjectivePins` map is now built from `listAllQuestPins()` during the same pass that populates `liveQuestPins`, keyed by `questUuid|objectiveIndex`. Render-time objective pin state now matches the live Blacksmith pin store, eliminating the class of drift bugs where the flag and the store disagreed.
+- **Quest panel – canvas deletion not reflected in panel**: `renderQuestPanelIfOpen()` now calls `_refreshData()` before `render()`. Previously it only called `render()`, which repainted the UI from the existing (stale) `this.data` — the rebuilt live map never ran. Manual tray refresh called `_refreshData()` first, which is why it worked while the hook-triggered path did not.
+- **Quest panel – objective unplace silent failure**: Removed the `pins.exists({ sceneId })` pre-check in `unplaceObjectivePinForPage` that would bail out entirely if the stored `sceneId` was stale, leaving the pin on the canvas without error. Also stripped `sceneId` from the fallback `pins.update({ unplace: true })` paths in both objective and quest unplace functions, so the API resolves placement across all scenes rather than failing silently against the wrong scene.
+- **Quest panel – deletion hook no longer manually patches flags**: The `blacksmith.pins.deleted` handler and `syncQuestForDeletedPins` no longer read or write `objectivePins` flags. Single-delete, bulk-delete, and scene-sync paths now all trigger a re-render via `renderQuestPanelIfOpen()` and let the live API drive state, matching the pattern used for quest-level pins.
+- **Quest/objective pins – no longer override pin appearance on create or update**: Quest and objective pins no longer force `fill` or `stroke` colors when created or when quest content changes. `createQuestPin`, `createObjectivePin`, and `updateQuestPinStylesForPage` now only set layout defaults (`strokeWidth`, `iconColor`) and leave color entirely to Blacksmith pin tool defaults and user configuration. Status and objective state changes update `config`, `tags`, and `text` only — appearance is never touched.
+
+### Removed
+- **`_syncObjectivePinMirror` and `objectivePins` flag**: Removed the `_syncObjectivePinMirror` method, all flag writes to `objectivePins`, and the `objectivePins` reconciliation block in `reconcileQuestPins`. The flag was a stale mirror of placement state the Blacksmith API already owns; nothing reads it anymore.
+- **`getQuestPinColor`, `getObjectivePinColor`, `QUEST_STATUS_COLORS`, `OBJECTIVE_STATE_COLORS`**: Removed the status-to-color lookup maps and their exported functions. Color is no longer derived from or driven by quest/objective status.
+- **`pinStyleUsesSquireBootstrap`, `pinHasConfiguredAppearance`**: Removed both internal helpers that gated color application. No longer needed since Squire does not set pin colors.
+
 ## [13.2.5]
 
 ### Changed
