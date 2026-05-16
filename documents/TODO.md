@@ -1,5 +1,38 @@
 # Squire Tray TODO List
 
+## Tracking
+
+| Item | Priority | LOE | Status |
+|------|----------|-----|--------|
+| Macros: dedupe `panel-macros.css` / `window-macros.css` drop-target styles | Medium | M | Open |
+| Notes tab: shared note, character note, scratchpad | Medium | L | Open |
+| Codex: clicking a tag filters list by that tag | Medium | M | Open |
+| Codex: “new” flag on added items until client refresh | Medium | S | Open |
+| Codex: drag token to manual add fills description from bio | Medium | M | Open |
+| Codex: guard `canvas.selectObjects` override (no stacked wrappers per scene) | Medium | M | Open |
+| `cleanupModule`: replace zero-delay interval sweep with tracked timers | Medium | S | Open |
+| Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
+| Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
+| Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |
+| Code cleanup: remove legacy fix code | Low | M | Open |
+| Modularize `manager-panel.js` | Low | L | Open |
+| Review / reduce unnecessary `updateTray()` calls | Low | S | Open |
+| Party transfer refactor follow-up (`panel-party.js` vs `TransferUtils`) | Low | M | Open |
+| Break `HandleManager` ↔ `PanelManager` circular import | Low | M | Open |
+| Remove jQuery detection where DOM is native-only | Low | S | Open |
+| Perf: skip construction/data for disabled tray tabs | Medium | M | Open |
+| Perf: Phase 4 async in `CharacterPanel.render()` | Medium | L | Open |
+| Investigate expand animation (slide vs fade regression) | Medium | S | Open |
+| Init order tests / load-condition panel behavior | Medium | L | Open |
+| Integration tests with other Coffee Pub modules | Medium | M | Open |
+| Monitor init timing / event efficiency during load | Medium | M | Open |
+
+**Priority:** urgency scale from **Critical** down to **Low** (matches section intent below). Critical and High queues are empty right now.
+
+**LOE (level of effort):** `S` small (about a couple of hours), `M` medium (about half a day to a day), `L` large (multi-day), `XL` epic / many days.
+
+---
+
 ## CURRENT ISSUES (Fix First)
 - Nothing critical
 
