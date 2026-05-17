@@ -6,6 +6,32 @@ For the full method reference see [`api-pins.md`](../api/api-pins.md).
 
 ---
 
+## What changed in 13.7.6 (pin editing + pin visibility)
+
+> **Module authors (no repo access):** share **[Developer note — Pin editing & pin visibility](developer-note-pin-editing-visibility.md)** plus the public wiki **[API: Pins](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Pins)**. The note is self-contained; the wiki is the full API reference.
+
+| Area | Change |
+|------|--------|
+| UI labels | **Pin editing** (GM only / Owner / Everyone) replaces "Access". **Pin visibility** (Visible / Hidden) replaces "Player Visibility". |
+| `blacksmithAccess` | Still `gm` \| `private` \| `public` (schema v6). |
+| `blacksmithVisibility` | **`visible` \| `hidden` only** (schema v7). Legacy `owner` migrates to `visible`. |
+| Hidden behavior | **`hidden`** = marker **not drawn** for other players. **GM** sees a **50% opacity** canvas preview. Pin owners still see their hidden pins. |
+| Defaults | GM always sees all pins. Pin owners always see their own pins when hidden. |
+| Players | **Cannot** set pin visibility (journal toolbar toggle hidden). |
+| Module contract | Pin editing / pin visibility control the **marker only** — not journal, quest, or note behavior on click. |
+| World data | Pins auto-migrate to schema v7 on GM load (scene flags + unplaced); no module migration script required. |
+
+**Quick checklist**
+
+1. Stop using `blacksmithVisibility: 'owner'` — use `ownership.users` for solo markers.
+2. Do not assume hidden pins are dimmed for players — they are **off the map**.
+3. Gate **click** / document open in **your** handler; do not rely on pin visibility for journal/quest rights.
+4. For `blacksmithAccess: 'gm'`, still no-op clicks in your module when the linked content is GM-only.
+
+See [Pin editing and pin visibility](../api/api-pins.md#pin-editing-and-pin-visibility).
+
+---
+
 ## What changed in 13.6.3
 
 | Area | Change |
@@ -251,16 +277,15 @@ const tags = taxonomy?.tags ?? [];
 
 ---
 
-## 10. Player Visibility vs Ownership
-
-These are independent fields that control pin visibility for different reasons:
+## 10. Pin visibility vs ownership vs module behavior
 
 | Field | What it controls | Who sets it |
 |-------|-----------------|-------------|
-| `ownership.default` | Whether players can *see* the pin at all (based on document permission levels) | GM, in Configure Pin > Permissions |
-| `config.blacksmithVisibility` | Whether the pin is *shown on the map* right now (`'visible'` / `'hidden'`) | GM, in Configure Pin > Permissions or Browse view |
+| `ownership.default` | Foundry gate: can this user view/edit the pin record at all? | GM (Pin editing maps here) |
+| `config.blacksmithVisibility` | Is the marker drawn on the map for others? (`visible` / `hidden`) | **GM only** |
+| Module click handlers | What opens or runs when the pin is used | **Your module** |
 
-A pin can have `ownership.default = OBSERVER` (players can see it) but `blacksmithVisibility = 'hidden'` (hidden from the map). This lets the GM keep a pin "ready but not yet revealed."
+`blacksmithVisibility: 'hidden'` means other players **do not see the marker** (not a dimmed hint). GMs always see the pin; pin owners always see their own pins.
 
 ```javascript
 const OBSERVER = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
