@@ -1,7 +1,7 @@
 import { MODULE } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { getTextEditor } from './helpers.js';
-import { updateCodexPinForEntry } from './utility-codex-pins.js';
+import { updateCodexPin as updateCodexPinForEntry } from './manager-pins.js';
 
 function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;

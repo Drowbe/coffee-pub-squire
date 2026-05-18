@@ -4,43 +4,20 @@ import {
     normalizeNoteIconFlag,
     resolveNoteIconHtmlFromContent,
     getDefaultNoteIconFlag,
-    getDefaultNotePinDesign,
     buildNoteOwnership,
     describePinsProxyError,
     syncNoteOwnership,
     createNotePinForPage,
     deleteNotePinForPage,
     updateNotePinForPage,
-    getNotePinOwnershipForPage,
-    getNotePinSizeForNote,
-    getNotePinShapeForNote,
-    getNotePinStyleForNote,
-    getNotePinDropShadowForNote,
-    getNotePinTextLayoutForNote,
-    getNotePinTextDisplayForNote,
-    getNotePinTextColorForNote,
-    getNotePinTextSizeForNote,
-    getNotePinTextMaxLengthForNote,
-    getNotePinTextScaleWithPinForNote,
-    NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
-    normalizePinSize,
-    normalizePinStyle,
-    normalizePinShape,
-    normalizePinTextLayout,
-    normalizePinTextDisplay,
-    normalizePinTextColor,
-    normalizePinTextSize,
-    normalizePinTextMaxLength,
-    normalizePinTextScaleWithPin
+    getNotePinOwnershipForPage
 } from './panel-notes.js';
 
 function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
 }
 
-function getPinsApi() {
-    return getBlacksmith()?.pins || null;
-}
+function getPinsApi() { return getBlacksmith()?.pins || null; }
 
 const BlacksmithWindowBaseV2 = getBlacksmith()?.BlacksmithWindowBaseV2
     || getBlacksmith()?.getWindowBaseV2?.()
@@ -70,23 +47,10 @@ function buildNoteFromPage(page) {
         timestamp: page.getFlag(MODULE.ID, 'timestamp') || null,
         tags: Array.isArray(page.getFlag(MODULE.ID, 'tags')) ? page.getFlag(MODULE.ID, 'tags') : [],
         visibility: page.getFlag(MODULE.ID, 'visibility') || 'private',
-        sceneId: page.getFlag(MODULE.ID, 'sceneId') || null,
-        x: page.getFlag(MODULE.ID, 'x') ?? null,
-        y: page.getFlag(MODULE.ID, 'y') ?? null,
         pageId: page.id,
         pageUuid: page.uuid,
         pinId: page.getFlag(MODULE.ID, 'pinId') || null,
         noteIcon: page.getFlag(MODULE.ID, 'noteIcon') || null,
-        notePinSize: page.getFlag(MODULE.ID, 'notePinSize') || getDefaultNotePinDesign().size,
-        notePinShape: page.getFlag(MODULE.ID, 'notePinShape') || getDefaultNotePinDesign().shape,
-        notePinStyle: page.getFlag(MODULE.ID, 'notePinStyle') || getDefaultNotePinDesign().style,
-        notePinDropShadow: page.getFlag(MODULE.ID, 'notePinDropShadow'),
-        notePinTextLayout: page.getFlag(MODULE.ID, 'notePinTextLayout') || getDefaultNotePinDesign().textLayout,
-        notePinTextDisplay: page.getFlag(MODULE.ID, 'notePinTextDisplay') || getDefaultNotePinDesign().textDisplay,
-        notePinTextColor: page.getFlag(MODULE.ID, 'notePinTextColor') || getDefaultNotePinDesign().textColor,
-        notePinTextSize: page.getFlag(MODULE.ID, 'notePinTextSize') || getDefaultNotePinDesign().textSize,
-        notePinTextMaxLength: page.getFlag(MODULE.ID, 'notePinTextMaxLength') ?? getDefaultNotePinDesign().textMaxLength,
-        notePinTextScaleWithPin: page.getFlag(MODULE.ID, 'notePinTextScaleWithPin'),
         editorIds: Array.isArray(page.getFlag(MODULE.ID, 'editorIds')) ? page.getFlag(MODULE.ID, 'editorIds') : [],
         iconHtml: resolveNoteIconHtmlFromContent(content, 'note-window-header-image')
     };
@@ -166,7 +130,6 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
     }
 
     _getDefaultNote() {
-        const defaults = getDefaultNotePinDesign();
         return {
             title: '',
             content: '',
@@ -175,23 +138,10 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             timestamp: null,
             tags: [],
             visibility: 'private',
-            sceneId: null,
-            x: null,
-            y: null,
             pageId: null,
             pageUuid: null,
             pinId: null,
             noteIcon: null,
-            notePinSize: defaults.size,
-            notePinShape: defaults.shape,
-            notePinStyle: defaults.style,
-            notePinDropShadow: defaults.dropShadow,
-            notePinTextLayout: defaults.textLayout,
-            notePinTextDisplay: defaults.textDisplay,
-            notePinTextColor: defaults.textColor,
-            notePinTextSize: defaults.textSize,
-            notePinTextMaxLength: defaults.textMaxLength,
-            notePinTextScaleWithPin: defaults.textScaleWithPin,
             editorIds: []
         };
     }
@@ -208,23 +158,10 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                 ? normalized.tags.split(',').map(tag => tag.trim()).filter(Boolean)
                 : []);
         normalized.visibility = normalized.visibility === 'party' ? 'party' : 'private';
-        normalized.sceneId = normalized.sceneId || null;
-        normalized.x = normalized.x ?? null;
-        normalized.y = normalized.y ?? null;
         normalized.pageId = normalized.pageId || this.pageId || null;
         normalized.pageUuid = normalized.pageUuid || this.pageUuid || null;
         normalized.pinId = normalized.pinId || null;
         normalized.noteIcon = normalized.noteIcon || null;
-        normalized.notePinSize = getNotePinSizeForNote(normalized);
-        normalized.notePinShape = getNotePinShapeForNote(normalized);
-        normalized.notePinStyle = getNotePinStyleForNote(normalized);
-        normalized.notePinDropShadow = getNotePinDropShadowForNote(normalized);
-        normalized.notePinTextLayout = getNotePinTextLayoutForNote(normalized);
-        normalized.notePinTextDisplay = getNotePinTextDisplayForNote(normalized);
-        normalized.notePinTextColor = getNotePinTextColorForNote(normalized);
-        normalized.notePinTextSize = getNotePinTextSizeForNote(normalized);
-        normalized.notePinTextMaxLength = getNotePinTextMaxLengthForNote(normalized);
-        normalized.notePinTextScaleWithPin = getNotePinTextScaleWithPinForNote(normalized);
         normalized.editorIds = Array.isArray(normalized.editorIds) ? normalized.editorIds.filter(Boolean) : [];
         return normalized;
     }
@@ -399,20 +336,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                     tags: this.note.tags,
                     visibility,
                     editorIds: [game.user.id],
-                    sceneId: this.note.sceneId || null,
-                    x: this.note.x ?? null,
-                    y: this.note.y ?? null,
                     noteIcon: this.note.noteIcon || null,
-                    notePinSize: getNotePinSizeForNote(this.note),
-                    notePinShape: getNotePinShapeForNote(this.note),
-                    notePinStyle: getNotePinStyleForNote(this.note),
-                    notePinDropShadow: getNotePinDropShadowForNote(this.note),
-                    notePinTextLayout: getNotePinTextLayoutForNote(this.note),
-                    notePinTextDisplay: getNotePinTextDisplayForNote(this.note),
-                    notePinTextColor: getNotePinTextColorForNote(this.note),
-                    notePinTextSize: getNotePinTextSizeForNote(this.note),
-                    notePinTextMaxLength: getNotePinTextMaxLengthForNote(this.note),
-                    notePinTextScaleWithPin: getNotePinTextScaleWithPinForNote(this.note),
                     authorId: game.user.id,
                     timestamp: new Date().toISOString()
                 }
@@ -436,13 +360,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             this.note.pageUuid = newPage.uuid;
 
             try {
-                const hasPlacement = !!this.note.sceneId && this.note.x !== null && this.note.y !== null;
-                const pinId = await createNotePinForPage(
-                    newPage,
-                    hasPlacement ? this.note.sceneId : undefined,
-                    hasPlacement ? this.note.x : undefined,
-                    hasPlacement ? this.note.y : undefined
-                );
+                const pinId = await createNotePinForPage(newPage);
                 if (pinId) {
                     await newPage.setFlag(MODULE.ID, 'pinId', pinId);
                     this.note.pinId = pinId;
@@ -490,7 +408,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                 content,
                 editorContent,
                 iconHtml,
-                sceneName: this.note.sceneId ? game.scenes.get(this.note.sceneId)?.name || null : null,
+                sceneName: this.note.pinId ? (getPinsApi()?.get?.(this.note.pinId)?.sceneId ? game.scenes.get(getPinsApi().get(this.note.pinId).sceneId)?.name || null : null) : null,
                 editorAvatars: this._getEditorAvatars()
             },
             editLock: this._editLock ? { ...this._editLock, isSelf: this._editLock.userId === game.user.id } : null,
@@ -889,36 +807,16 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
 
     async _persistPinFlags(page) {
         if (!page) return;
+        // Only persist noteIcon — Blacksmith owns all other pin design fields.
         await page.setFlag(MODULE.ID, 'noteIcon', this.note.noteIcon || null);
-        await page.setFlag(MODULE.ID, 'notePinSize', getNotePinSizeForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinShape', getNotePinShapeForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinStyle', getNotePinStyleForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinDropShadow', getNotePinDropShadowForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinTextLayout', getNotePinTextLayoutForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinTextDisplay', getNotePinTextDisplayForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinTextColor', getNotePinTextColorForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinTextSize', getNotePinTextSizeForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinTextMaxLength', getNotePinTextMaxLengthForNote(this.note));
-        await page.setFlag(MODULE.ID, 'notePinTextScaleWithPin', getNotePinTextScaleWithPinForNote(this.note));
     }
 
     async _applyPinConfiguration(config, headerIcon) {
-        const defaults = getDefaultNotePinDesign();
+        // Update only the note icon from Configure Pin result — design fields belong to Blacksmith.
         const icon = config?.icon || null;
         this.note.noteIcon = icon;
-        this.note.notePinSize = normalizePinSize(config?.pinSize) || defaults.size;
-        this.note.notePinStyle = normalizePinStyle(config?.pinStyle) || defaults.style;
-        this.note.notePinShape = normalizePinShape(config?.pinShape) || defaults.shape;
-        this.note.notePinDropShadow = typeof config?.pinDropShadow === 'boolean' ? config.pinDropShadow : defaults.dropShadow;
-        this.note.notePinTextLayout = normalizePinTextLayout(config?.pinTextConfig?.textLayout) || defaults.textLayout;
-        this.note.notePinTextDisplay = normalizePinTextDisplay(config?.pinTextConfig?.textDisplay) || defaults.textDisplay;
-        this.note.notePinTextColor = normalizePinTextColor(config?.pinTextConfig?.textColor) || defaults.textColor;
-        this.note.notePinTextSize = normalizePinTextSize(config?.pinTextConfig?.textSize) || defaults.textSize;
-        this.note.notePinTextMaxLength = normalizePinTextMaxLength(config?.pinTextConfig?.textMaxLength) ?? defaults.textMaxLength;
-        this.note.notePinTextScaleWithPin = normalizePinTextScaleWithPin(config?.pinTextConfig?.textScaleWithPin) ?? defaults.textScaleWithPin;
         this.note.iconHtml = buildNoteIconHtml(icon, 'note-window-header-image');
         if (headerIcon) headerIcon.innerHTML = this.note.iconHtml;
-
         if (this.page) {
             await this._persistPinFlags(this.page);
             await this._refreshNotesPanel();
@@ -933,27 +831,21 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
         }
 
         let pinId = this.note?.pinId || this.page?.getFlag?.(MODULE.ID, 'pinId') || null;
-        const sceneId = this.note?.sceneId || this.page?.getFlag?.(MODULE.ID, 'sceneId') || null;
 
-        if (pinId && this.page) {
+        if (pinId) {
             const pinExists = typeof pins.exists === 'function' ? pins.exists(pinId) : !!pins.get?.(pinId);
             if (!pinExists) {
-                const recoveryPins = [];
-                if (typeof pins.list === 'function') {
-                    if (sceneId) recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, sceneId }) || []));
-                    recoveryPins.push(...(pins.list({ moduleId: MODULE.ID, unplacedOnly: true }) || []));
-                }
-                const recovered = recoveryPins.find(candidate => candidate?.config?.noteUuid === this.page.uuid);
+                // Try to recover by searching all note pins.
+                const recoveryPins = [
+                    ...(pins.list?.({ moduleId: MODULE.ID, unplacedOnly: true }) || []),
+                    ...game.scenes.contents.flatMap(s => pins.list?.({ moduleId: MODULE.ID, sceneId: s.id }) || [])
+                ];
+                const recovered = recoveryPins.find(p => p?.config?.noteUuid === this.page?.uuid);
                 if (recovered?.id) {
                     pinId = recovered.id;
-                    await this.page.setFlag(MODULE.ID, 'pinId', recovered.id);
-                    if (recovered.sceneId) {
-                        await this.page.setFlag(MODULE.ID, 'sceneId', recovered.sceneId);
-                        await this.page.setFlag(MODULE.ID, 'x', typeof recovered.x === 'number' ? recovered.x : null);
-                        await this.page.setFlag(MODULE.ID, 'y', typeof recovered.y === 'number' ? recovered.y : null);
-                    }
+                    await this.page?.setFlag(MODULE.ID, 'pinId', recovered.id);
                 } else {
-                    await this.page.setFlag(MODULE.ID, 'pinId', null);
+                    await this.page?.setFlag(MODULE.ID, 'pinId', null);
                     pinId = null;
                 }
             }
@@ -980,10 +872,8 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
 
         const openConfig = async (targetPinId) => {
             await pins.configure(targetPinId, {
-                sceneId: sceneId || undefined,
                 moduleId: MODULE.ID,
                 useAsDefault: true,
-                defaultSettingKey: NOTES_PIN_DEFAULT_DESIGN_SETTING_KEY,
                 onSelect: async (config) => this._applyPinConfiguration(config, headerIcon)
             });
         };
@@ -1104,20 +994,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                             tags,
                             visibility,
                             editorIds: [game.user.id],
-                            sceneId: formData.sceneId || null,
-                            x: formData.x !== undefined && formData.x !== '' ? parseFloat(formData.x) : null,
-                            y: formData.y !== undefined && formData.y !== '' ? parseFloat(formData.y) : null,
                             noteIcon: normalizedIcon,
-                            notePinSize: getNotePinSizeForNote(this.note),
-                            notePinShape: getNotePinShapeForNote(this.note),
-                            notePinStyle: getNotePinStyleForNote(this.note),
-                            notePinDropShadow: getNotePinDropShadowForNote(this.note),
-                            notePinTextLayout: getNotePinTextLayoutForNote(this.note),
-                            notePinTextDisplay: getNotePinTextDisplayForNote(this.note),
-                            notePinTextColor: getNotePinTextColorForNote(this.note),
-                            notePinTextSize: getNotePinTextSizeForNote(this.note),
-                            notePinTextMaxLength: getNotePinTextMaxLengthForNote(this.note),
-                            notePinTextScaleWithPin: getNotePinTextScaleWithPinForNote(this.note),
                             authorId: game.user.id,
                             timestamp: new Date().toISOString()
                         }
@@ -1132,13 +1009,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
 
             if (!this.isEditing) {
                 try {
-                    const hasPlacement = !!formData.sceneId && formData.x !== null && formData.y !== null;
-                    const pinId = await createNotePinForPage(
-                        page,
-                        hasPlacement ? formData.sceneId : undefined,
-                        hasPlacement ? parseFloat(formData.x) : undefined,
-                        hasPlacement ? parseFloat(formData.y) : undefined
-                    );
+                    const pinId = await createNotePinForPage(page);
                     if (pinId) {
                         await page.setFlag(MODULE.ID, 'pinId', pinId);
                     }

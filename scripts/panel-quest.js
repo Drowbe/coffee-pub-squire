@@ -1,11 +1,25 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { QuestParser, getQuestStatusDisplayLabel } from './utility-quest-parser.js';
-// REMOVED: import { QuestPin, loadPersistedPins } from './quest-pin.js'; - Migrated to Blacksmith API
-import { deleteQuestPins, reloadAllQuestPins, getPinsApi, createQuestPin, createObjectivePin, unplaceQuestPinForPage, unplaceObjectivePinForPage, QUEST_PIN_BACKGROUND, OBJECTIVE_PIN_BACKGROUND, listAllQuestPins, findLiveQuestPin, findLiveObjectivePin } from './utility-quest-pins.js';
+import {
+    getPinsApi,
+    isPinsApiAvailable,
+    deleteQuestPins,
+    reloadAllQuestPins,
+    createQuestPin,
+    createObjectivePin,
+    unplaceQuestPin,
+    unplaceObjectivePin,
+    listAllQuestPins,
+    findLiveQuestPin,
+    findLiveObjectivePin,
+    reconcileQuestPins
+} from './manager-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
-import { registerQuestPinEvents, registerQuestPinSync, unregisterQuestPinEvents, unregisterQuestPinSync } from './quest-pin-events.js';
+
+const QUEST_PIN_BACKGROUND     = '#682008';
+const OBJECTIVE_PIN_BACKGROUND = '#8c2d0d';
 
 const QUEST_WINDOW_ID = `${MODULE.ID}-quest-window`;
 
@@ -162,9 +176,7 @@ export class QuestPanel {
         this._notificationDebounceTimeouts = {}; // Debounce timeouts for notifications
         this._verifyAndUpdateCategories();
         this._setupHooks();
-        // Ensure pin events / context menus are registered (mirrors notes panel behavior)
-        registerQuestPinEvents()?.catch?.(() => {});
-        registerQuestPinSync?.();
+        // Pin events registered centrally by manager-pins.js initPinManager().
     }
 
     /**
@@ -628,9 +640,6 @@ export class QuestPanel {
             this._questListenersAbort = null;
         }
 
-        unregisterQuestPinSync?.();
-        unregisterQuestPinEvents?.();
-        
         this.element = null;
     }
 
@@ -697,7 +706,6 @@ export class QuestPanel {
                         }
                     }
                 }
-                const { reconcileQuestPins } = await import('./utility-quest-pins.js');
                 await reconcileQuestPins();
                 this.render(this.element);
             } catch (e) {
@@ -1136,7 +1144,6 @@ export class QuestPanel {
             
             // MIGRATED TO BLACKSMITH API
             await deleteQuestPins(questUuid, canvas.scene?.id);
-            const { reconcileQuestPins } = await import('./utility-quest-pins.js');
             await reconcileQuestPins();
             if (this.element) this.render(this.element);
             ui.notifications.info('Quest pins cleared from the current scene.');
@@ -1251,27 +1258,10 @@ export class QuestPanel {
                 sceneId,
                 moduleId: MODULE.ID,
                 useAsDefault: true,
-                defaultSettingKey: 'questPinDefaultDesign',
                 onSelect: async (config) => {
+                    // Only persist the icon — Blacksmith owns all other design fields.
                     if (config?.icon != null) await page.setFlag(MODULE.ID, 'questIcon', config.icon);
-                    if (config?.pinSize != null) await page.setFlag(MODULE.ID, 'questPinSize', config.pinSize);
-                    if (config?.pinShape != null) await page.setFlag(MODULE.ID, 'questPinShape', config.pinShape);
-                    if (config?.pinStyle != null) await page.setFlag(MODULE.ID, 'questPinStyle', config.pinStyle);
-                    if (typeof config?.pinDropShadow === 'boolean') await page.setFlag(MODULE.ID, 'questPinDropShadow', config.pinDropShadow);
-                    const textConfig = config?.pinTextConfig;
-                    if (textConfig) {
-                        if (textConfig.textLayout != null) await page.setFlag(MODULE.ID, 'questPinTextLayout', textConfig.textLayout);
-                        if (textConfig.textDisplay != null) await page.setFlag(MODULE.ID, 'questPinTextDisplay', textConfig.textDisplay);
-                        if (textConfig.textColor != null) await page.setFlag(MODULE.ID, 'questPinTextColor', textConfig.textColor);
-                        if (textConfig.textSize != null) await page.setFlag(MODULE.ID, 'questPinTextSize', textConfig.textSize);
-                        if (textConfig.textMaxLength != null) await page.setFlag(MODULE.ID, 'questPinTextMaxLength', textConfig.textMaxLength);
-                        if (textConfig.textMaxWidth != null) await page.setFlag(MODULE.ID, 'questPinTextMaxWidth', textConfig.textMaxWidth);
-                        if (typeof textConfig.textScaleWithPin === 'boolean') await page.setFlag(MODULE.ID, 'questPinTextScaleWithPin', textConfig.textScaleWithPin);
-                    }
-                    if (this.element) {
-                        await this._refreshData();
-                        this.render(this.element);
-                    }
+                    if (this.element) { await this._refreshData(); this.render(this.element); }
                 }
             });
         };
@@ -1291,30 +1281,11 @@ export class QuestPanel {
                     });
                     if (pin) {
                         await pins.configure(pin.id, {
-                            sceneId: undefined,
                             moduleId: MODULE.ID,
                             useAsDefault: true,
-                            defaultSettingKey: 'questPinDefaultDesign',
                             onSelect: async (config) => {
                                 if (config?.icon != null) await page.setFlag(MODULE.ID, 'questIcon', config.icon);
-                                if (config?.pinSize != null) await page.setFlag(MODULE.ID, 'questPinSize', config.pinSize);
-                                if (config?.pinShape != null) await page.setFlag(MODULE.ID, 'questPinShape', config.pinShape);
-                                if (config?.pinStyle != null) await page.setFlag(MODULE.ID, 'questPinStyle', config.pinStyle);
-                                if (typeof config?.pinDropShadow === 'boolean') await page.setFlag(MODULE.ID, 'questPinDropShadow', config.pinDropShadow);
-                                const textConfig = config?.pinTextConfig;
-                                if (textConfig) {
-                                    if (textConfig.textLayout != null) await page.setFlag(MODULE.ID, 'questPinTextLayout', textConfig.textLayout);
-                                    if (textConfig.textDisplay != null) await page.setFlag(MODULE.ID, 'questPinTextDisplay', textConfig.textDisplay);
-                                    if (textConfig.textColor != null) await page.setFlag(MODULE.ID, 'questPinTextColor', textConfig.textColor);
-                                    if (textConfig.textSize != null) await page.setFlag(MODULE.ID, 'questPinTextSize', textConfig.textSize);
-                                    if (textConfig.textMaxLength != null) await page.setFlag(MODULE.ID, 'questPinTextMaxLength', textConfig.textMaxLength);
-                                    if (textConfig.textMaxWidth != null) await page.setFlag(MODULE.ID, 'questPinTextMaxWidth', textConfig.textMaxWidth);
-                                    if (typeof textConfig.textScaleWithPin === 'boolean') await page.setFlag(MODULE.ID, 'questPinTextScaleWithPin', textConfig.textScaleWithPin);
-                                }
-                                if (this.element) {
-                                    await this._refreshData();
-                                    this.render(this.element);
-                                }
+                                if (this.element) { await this._refreshData(); this.render(this.element); }
                             }
                         });
                     }
@@ -1394,17 +1365,17 @@ export class QuestPanel {
             ui.notifications.warn('Quest pins require the Blacksmith module.');
             return;
         }
-        // Consistency with Notes: one pin per quest; if already pinned on a scene, must unpin first (like Notes)
         const page = await fromUuid(questUuid);
+        // Delete any existing quest-level pin before re-placing to avoid duplicates.
         const livePin = findLiveQuestPin(questUuid);
-        if (livePin?.sceneId) {
+        if (livePin?.id) {
             const pins = getPinsApi();
             const pinExists = typeof pins?.exists === 'function' ? pins.exists(livePin.id) : !!pins?.get?.(livePin.id);
             if (pinExists) {
                 try {
-                    await unplaceQuestPinForPage(page);
+                    await pins.delete(livePin.id, livePin.sceneId ? { sceneId: livePin.sceneId } : undefined);
                 } catch (e) {
-                    console.warn('Coffee Pub Squire | Auto-unplace quest pin before re-place:', e);
+                    console.warn('Coffee Pub Squire | Auto-delete quest pin before re-place:', e);
                     return;
                 }
             }
@@ -1449,53 +1420,31 @@ export class QuestPanel {
                 this._clearQuestPinPlacement();
                 return;
             }
-            const pins = getPinsApi();
             const page = await fromUuid(questUuid);
             if (!page) {
                 this._clearQuestPinPlacement();
                 return;
             }
 
-            // Ensure pin exists (unplaced is normal case)
-            let pinId = findLiveQuestPin(questUuid)?.id ?? null;
-            if (pinId && typeof pins.exists === 'function' && !pins.exists(pinId)) {
-                pinId = null;
-            }
-
-            if (!pinId) {
-                const created = await createQuestPin({
-                    questUuid,
-                    questIndex: questNum,
-                    questCategory: questCategory || 'Side Quest',
-                    questStatus: questStatus || 'Not Started',
-                    questState: questStateVal
-                });
-                pinId = created?.id || null;
-            }
-
-            if (!pinId) {
+            const created = await createQuestPin({
+                questUuid,
+                questIndex: questNum,
+                questCategory: questCategory || 'Side Quest',
+                questStatus: questStatus || 'Not Started',
+                questState: questStateVal,
+                sceneId: canvas.scene.id,
+                x: localPos.x,
+                y: localPos.y
+            });
+            if (!created?.id) {
                 ui.notifications.error('Failed to create quest pin.');
                 this._clearQuestPinPlacement();
                 return;
             }
-
-            try {
-                if (typeof pins.whenReady === 'function') await pins.whenReady();
-                let placedPin = null;
-                if (typeof pins.place === 'function') {
-                    placedPin = await pins.place(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y });
-                } else if (typeof pins.update === 'function') {
-                    placedPin = await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
-                }
-                if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
-                await this._syncQuestPinMirror(page, placedPin || { id: pinId, sceneId: canvas.scene.id });
-                this._clearQuestPinPlacement();
-                ui.notifications.info('Quest pin placed.');
-                if (this.element) await this.render(this.element);
-            } catch (e) {
-                console.warn('Coffee Pub Squire | Place quest pin failed:', e);
-                this._clearQuestPinPlacement();
-            }
+            await this._syncQuestPinMirror(page, { ...created, sceneId: canvas.scene.id });
+            this._clearQuestPinPlacement();
+            ui.notifications.info('Quest pin placed.');
+            if (this.element) await this.render(this.element);
         };
 
         const onContextMenu = (event) => {
@@ -1544,18 +1493,17 @@ export class QuestPanel {
             ui.notifications.warn('Quest pins require the Blacksmith module.');
             return;
         }
-        // Consistency with Notes: one pin per objective; if already pinned on a scene, must unpin first (like Notes)
         const page = await fromUuid(questUuid);
+        // Delete any existing objective pin before re-placing to avoid duplicates.
         const liveObjectivePin = findLiveObjectivePin(questUuid, objectiveIndex);
-        if (liveObjectivePin?.sceneId && liveObjectivePin?.id) {
+        if (liveObjectivePin?.id) {
             const pins = getPinsApi();
             const pinExists = typeof pins?.exists === 'function' ? pins.exists(liveObjectivePin.id) : !!pins?.get?.(liveObjectivePin.id);
             if (pinExists) {
-                // If it is already placed somewhere, unplace first so we can place anew.
                 try {
-                    await this._unplaceObjectivePin(questUuid, objectiveIndex);
+                    await pins.delete(liveObjectivePin.id, liveObjectivePin.sceneId ? { sceneId: liveObjectivePin.sceneId } : undefined);
                 } catch (e) {
-                    console.warn('Coffee Pub Squire | Auto-unplace objective pin before re-place:', e);
+                    console.warn('Coffee Pub Squire | Auto-delete objective pin before re-place:', e);
                     return;
                 }
             }
@@ -1600,53 +1548,25 @@ export class QuestPanel {
                 this._clearQuestPinPlacement();
                 return;
             }
-            const pins = getPinsApi();
-            const page = await fromUuid(questUuid);
-            if (!page) {
-                this._clearQuestPinPlacement();
-                return;
-            }
-
-            let pinId = findLiveObjectivePin(questUuid, objectiveIndex)?.id ?? null;
-
-            if (pinId && typeof pins.exists === 'function' && !pins.exists(pinId)) {
-                pinId = null;
-            }
-
-            if (!pinId) {
-                const created = await createObjectivePin({
-                    questUuid,
-                    questIndex: questNum,
-                    objectiveIndex,
-                    questCategory: questCategory || 'Side Quest',
-                    questState: questStateVal,
-                    objective: objective || { state: 'active', text: '' }
-                });
-                pinId = created?.id || null;
-            }
-
-            if (!pinId) {
+            const created = await createObjectivePin({
+                questUuid,
+                questIndex: questNum,
+                objectiveIndex,
+                questCategory: questCategory || 'Side Quest',
+                questState: questStateVal,
+                objective: objective || { state: 'active', text: '' },
+                sceneId: canvas.scene.id,
+                x: localPos.x,
+                y: localPos.y
+            });
+            if (!created?.id) {
                 ui.notifications.error('Failed to create objective pin.');
                 this._clearQuestPinPlacement();
                 return;
             }
-
-            try {
-                if (typeof pins.whenReady === 'function') await pins.whenReady();
-                let placedPin = null;
-                if (typeof pins.place === 'function') {
-                    placedPin = await pins.place(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y });
-                } else if (typeof pins.update === 'function') {
-                    placedPin = await pins.update(pinId, { sceneId: canvas.scene.id, x: localPos.x, y: localPos.y }, { sceneId: canvas.scene.id });
-                }
-                if (typeof pins.reload === 'function') await pins.reload({ sceneId: canvas.scene.id });
-                this._clearQuestPinPlacement();
-                ui.notifications.info('Objective pin placed.');
-                if (this.element) await this.render(this.element);
-            } catch (e) {
-                console.warn('Coffee Pub Squire | Place objective pin failed:', e);
-                this._clearQuestPinPlacement();
-            }
+            this._clearQuestPinPlacement();
+            ui.notifications.info('Objective pin placed.');
+            if (this.element) await this.render(this.element);
         };
 
         const onContextMenu = (event) => {
@@ -1699,7 +1619,7 @@ export class QuestPanel {
         const page = await fromUuid(questUuid);
         if (!page) return;
         try {
-            await unplaceQuestPinForPage(page);
+            await unplaceQuestPin(page);
             await this._syncQuestPinMirror(page, { id: page.getFlag(MODULE.ID, 'pinId'), sceneId: null });
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace quest pin:', e);
@@ -1717,7 +1637,7 @@ export class QuestPanel {
         const page = await fromUuid(questUuid);
         if (!page) return;
         try {
-            await unplaceObjectivePinForPage(page, objectiveIndex);
+            await unplaceObjectivePin(page, objectiveIndex);
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace objective pin:', e);
         }
@@ -3925,11 +3845,6 @@ export class QuestPanel {
         if (!element) return;
         // v13: Convert jQuery to native DOM if needed
         this.element = getNativeElement(element);
-
-        // Retry pin hook registration from the live render path in case the panel
-        // was constructed before the Pins API finished initializing.
-        registerQuestPinEvents()?.catch?.(() => {});
-        registerQuestPinSync?.();
 
         const questContainer = this.element?.querySelector('[data-panel="panel-quest"]');
         if (!questContainer) return;

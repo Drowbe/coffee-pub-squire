@@ -8,27 +8,15 @@ import { QuestParser } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
 // import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 
-// New Blacksmith API-based quest pins
-import { isPinsApiAvailable, getSquirePinType, migrateSquireNotePinTypes } from './utility-quest-pins.js';
-import { registerQuestPinEvents } from './quest-pin-events.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import {
+    initPinManager,
+    teardownPinManager,
+    migrateSquireNotePinTypes,
     buildNoteOwnership,
-    getDefaultNotePinDesign,
-    normalizeNoteIconFlag,
-    normalizePinShape,
-    normalizePinSize,
-    normalizePinStyle,
-    normalizePinTextColor,
-    normalizePinTextDisplay,
-    normalizePinTextLayout,
-    normalizePinTextMaxLength,
-    normalizePinTextScaleWithPin,
-    normalizePinTextSize,
-    unregisterNotePinHandlers
-} from './panel-notes.js';
-import { unregisterCodexPinHandlers } from './panel-codex.js';
-import { unregisterQuestPinEvents, unregisterQuestPinSync } from './quest-pin-events.js';
+    updateQuestPinVisibility,
+    updateQuestPinText
+} from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
@@ -43,9 +31,6 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 let nativeSelectObjects = null;
 let wrappedSelectObjects = null;
 let selectionUpdateFrameId = null;
-let suppressNotesPanelRoute = false;
-let notesPanelRefreshTimeout = null;
-let notesPanelRefreshNeedsCleanup = false;
 const nativeHookRegistrations = [];
 
 function registerNativeHook(name, callback) {
@@ -63,42 +48,6 @@ function unregisterNativeHooks() {
     nativeHookRegistrations.length = 0;
 }
 
-function scheduleNotesPanelRefresh({ cleanupMissingPins = false } = {}) {
-    if (cleanupMissingPins) {
-        notesPanelRefreshNeedsCleanup = true;
-    }
-
-    if (notesPanelRefreshTimeout) {
-        clearTrackedTimeout(notesPanelRefreshTimeout);
-        notesPanelRefreshTimeout = null;
-    }
-
-    notesPanelRefreshTimeout = trackModuleTimeout(async () => {
-        notesPanelRefreshTimeout = null;
-
-        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        if (!panelManager?.notesPanel || !panelManager.element) {
-            notesPanelRefreshNeedsCleanup = false;
-            return;
-        }
-
-        const notesPanel = panelManager.notesPanel;
-        const previousSuppress = notesPanel._suppressPinOwnershipSync;
-        notesPanel._suppressPinOwnershipSync = true;
-
-        try {
-            if (notesPanelRefreshNeedsCleanup) {
-                notesPanelRefreshNeedsCleanup = false;
-                await notesPanel._cleanupMissingPins();
-            } else {
-                await notesPanel._refreshData();
-                await notesPanel.render(panelManager.element);
-            }
-        } finally {
-            notesPanel._suppressPinOwnershipSync = previousSuppress;
-        }
-    }, 75);
-}
 
 function queueSelectionDisplayUpdate() {
     if (selectionUpdateFrameId !== null) {
@@ -113,26 +62,6 @@ function queueSelectionDisplayUpdate() {
             console.error('Coffee Pub Squire | Failed to update selection display:', error);
         }
     });
-}
-
-function normalizePinImageForNoteIcon(image) {
-    if (!image || typeof image !== 'string') return null;
-    const trimmed = image.trim();
-    if (!trimmed) return null;
-    if (trimmed.startsWith('<img')) {
-        const srcMatch = trimmed.match(/src=["']([^"']+)["']/i);
-        if (srcMatch?.[1]) {
-            return { type: 'img', value: srcMatch[1] };
-        }
-        return null;
-    }
-    if (trimmed.startsWith('<i') && trimmed.includes('fa-')) {
-        const classMatch = trimmed.match(/class=["']([^"']+)["']/i);
-        if (classMatch?.[1]) {
-            return { type: 'fa', value: classMatch[1] };
-        }
-    }
-    return normalizeNoteIconFlag(trimmed);
 }
 
 const NOTE_EDIT_LOCK_FLAG = 'editLock';
@@ -165,24 +94,6 @@ async function clearNoteEditLocks({ userId = null, clearExpired = false } = {}) 
     }
 }
 
-async function updateNoteFlagsIfChanged(page, updates) {
-    if (!page || !updates) return;
-    const changes = {};
-    const deepEqual = foundry?.utils?.deepEqual;
-    for (const [key, value] of Object.entries(updates)) {
-        const current = page.getFlag(MODULE.ID, key);
-        const isEqual = typeof deepEqual === 'function'
-            ? deepEqual(current, value)
-            : JSON.stringify(current) === JSON.stringify(value);
-        if (!isEqual) {
-            changes[key] = value;
-        }
-    }
-
-    if (Object.keys(changes).length) {
-        await page.update({ flags: { [MODULE.ID]: changes } });
-    }
-}
 
 function ensureSelectObjectsWrapper() {
     if (!canvas || typeof canvas.selectObjects !== 'function') {
@@ -227,6 +138,8 @@ Hooks.once('ready', async () => {
             );
         }
 
+        // Initialize unified pin manager (taxonomy, events, context menus, hooks).
+        await initPinManager();
         await migrateSquireNotePinTypes();
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
@@ -235,169 +148,6 @@ Hooks.once('ready', async () => {
             await clearNoteEditLocks({ userId: user.id });
         });
 
-        registerNativeHook('blacksmith.pins.resolveOwnership', (context) => {
-            if (!context || context.moduleId !== MODULE.ID) return null;
-            const visibility = context.metadata?.visibility || 'private';
-            const authorId = context.metadata?.authorId || game.user?.id;
-            return buildNoteOwnership(visibility, authorId);
-        });
-
-        registerNativeHook('blacksmith.pins.updated', async ({ pinId, sceneId, moduleId, pin }) => {
-            if (moduleId !== MODULE.ID) return;
-            const noteUuid = pin?.config?.noteUuid;
-            if (!noteUuid) return;
-
-            suppressNotesPanelRoute = true;
-            try {
-                const page = await foundry.utils.fromUuid(noteUuid);
-                if (!page) return;
-                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                    return;
-                }
-
-                const defaultDesign = getDefaultNotePinDesign();
-                const icon = normalizePinImageForNoteIcon(pin?.image);
-                await updateNoteFlagsIfChanged(page, {
-                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
-                    sceneId: sceneId ?? page.getFlag(MODULE.ID, 'sceneId'),
-                    x: pin?.x !== undefined ? pin.x : page.getFlag(MODULE.ID, 'x'),
-                    y: pin?.y !== undefined ? pin.y : page.getFlag(MODULE.ID, 'y'),
-                    noteIcon: icon || null,
-                    notePinSize: normalizePinSize(pin?.size) || defaultDesign.size,
-                    notePinShape: normalizePinShape(pin?.shape) || defaultDesign.shape,
-                    notePinStyle: normalizePinStyle(pin?.style) || defaultDesign.style,
-                    notePinDropShadow: typeof pin?.dropShadow === 'boolean' ? pin.dropShadow : defaultDesign.dropShadow,
-                    notePinTextLayout: normalizePinTextLayout(pin?.textLayout) || defaultDesign.textLayout,
-                    notePinTextDisplay: normalizePinTextDisplay(pin?.textDisplay) || defaultDesign.textDisplay,
-                    notePinTextColor: normalizePinTextColor(pin?.textColor) || defaultDesign.textColor,
-                    notePinTextSize: normalizePinTextSize(pin?.textSize) || defaultDesign.textSize,
-                    notePinTextMaxLength: normalizePinTextMaxLength(pin?.textMaxLength) ?? defaultDesign.textMaxLength,
-                    notePinTextScaleWithPin: normalizePinTextScaleWithPin(pin?.textScaleWithPin) ?? defaultDesign.textScaleWithPin
-                });
-                scheduleNotesPanelRefresh();
-            } finally {
-                suppressNotesPanelRoute = false;
-            }
-        });
-
-        registerNativeHook('blacksmith.pins.created', async ({ pinId, moduleId, pin, sceneId }) => {
-            if (moduleId !== MODULE.ID) return;
-            const noteUuid = pin?.config?.noteUuid;
-            if (!noteUuid) return;
-
-            suppressNotesPanelRoute = true;
-            try {
-                const page = await foundry.utils.fromUuid(noteUuid);
-                if (!page) return;
-                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                    return;
-                }
-
-                await updateNoteFlagsIfChanged(page, {
-                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
-                    sceneId: sceneId ?? null,
-                    x: pin?.x ?? null,
-                    y: pin?.y ?? null
-                });
-                scheduleNotesPanelRefresh();
-            } finally {
-                suppressNotesPanelRoute = false;
-            }
-        });
-
-        registerNativeHook('blacksmith.pins.placed', async ({ pinId, sceneId, moduleId, pin }) => {
-            if (moduleId !== MODULE.ID) return;
-            const noteUuid = pin?.config?.noteUuid;
-            if (!noteUuid) return;
-
-            suppressNotesPanelRoute = true;
-            try {
-                const page = await foundry.utils.fromUuid(noteUuid);
-                if (!page) return;
-                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                    return;
-                }
-
-                await updateNoteFlagsIfChanged(page, {
-                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
-                    sceneId: sceneId ?? page.getFlag(MODULE.ID, 'sceneId'),
-                    x: pin?.x ?? page.getFlag(MODULE.ID, 'x'),
-                    y: pin?.y ?? page.getFlag(MODULE.ID, 'y')
-                });
-                scheduleNotesPanelRefresh();
-            } finally {
-                suppressNotesPanelRoute = false;
-            }
-        });
-
-        registerNativeHook('blacksmith.pins.unplaced', async ({ pinId, moduleId, pin }) => {
-            if (moduleId !== MODULE.ID) return;
-            const noteUuid = pin?.config?.noteUuid;
-            if (!noteUuid) return;
-
-            suppressNotesPanelRoute = true;
-            try {
-                const page = await foundry.utils.fromUuid(noteUuid);
-                if (!page) return;
-                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                    return;
-                }
-
-                await updateNoteFlagsIfChanged(page, {
-                    pinId: pinId ?? page.getFlag(MODULE.ID, 'pinId'),
-                    sceneId: null,
-                    x: null,
-                    y: null
-                });
-                scheduleNotesPanelRefresh();
-            } finally {
-                suppressNotesPanelRoute = false;
-            }
-        });
-
-        registerNativeHook('blacksmith.pins.deleted', async ({ pinId, sceneId, moduleId, pin, config }) => {
-            if (moduleId !== MODULE.ID) return;
-            const noteUuid = config?.noteUuid || pin?.config?.noteUuid;
-            if (!noteUuid) return;
-
-            suppressNotesPanelRoute = true;
-            try {
-                const page = await foundry.utils.fromUuid(noteUuid);
-                if (!page) return;
-                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
-                    return;
-                }
-
-                if (pinId && page.getFlag(MODULE.ID, 'pinId') !== pinId) {
-                    return;
-                }
-
-                await updateNoteFlagsIfChanged(page, {
-                    pinId: null,
-                    sceneId: null,
-                    x: null,
-                    y: null
-                });
-                scheduleNotesPanelRefresh();
-            } finally {
-                suppressNotesPanelRoute = false;
-            }
-        });
-
-        registerNativeHook('blacksmith.pins.deletedAll', async ({ moduleId }) => {
-            if (moduleId && moduleId !== MODULE.ID) return;
-            suppressNotesPanelRoute = true;
-            scheduleNotesPanelRefresh({ cleanupMissingPins: true });
-            suppressNotesPanelRoute = false;
-        });
-
-        registerNativeHook('blacksmith.pins.deletedAllByType', async ({ moduleId }) => {
-            if (moduleId && moduleId !== MODULE.ID) return;
-            suppressNotesPanelRoute = true;
-            scheduleNotesPanelRefresh({ cleanupMissingPins: true });
-            suppressNotesPanelRoute = false;
-        });
-        
         // Register all hooks after Blacksmith is ready
         if (!getBlacksmithHookManager()?.registerHook) {
             throw new Error(
@@ -419,27 +169,18 @@ Hooks.once('ready', async () => {
                 await PanelManager.initialize(app.actor);
             }
         });
-        
-        // REMOVED: PIXI container creation - Blacksmith handles all rendering now
-        // Legacy canvasInit and canvasReady hooks for squirePins container have been deleted
-        
+
         const canvasReadyHookId = getBlacksmithHookManager().registerHook({
             name: 'canvasReady',
-            description: 'Coffee Pub Squire: Handle canvas ready (quest pin events and selection monitoring)',
+            description: 'Coffee Pub Squire: Handle canvas ready (selection monitoring)',
             context: MODULE.ID,
             priority: 2,
             callback: async () => {
-                // Register quest pin click and context menu handlers
-                await registerQuestPinEvents();
-                // Keep quest/objective flags in sync with Blacksmith pins
-                import('./quest-pin-events.js').then(mod => mod.registerQuestPinSync?.()).catch(() => {});
-
-
                 // Monitor canvas selection changes for bulk selection support
                 ensureSelectObjectsWrapper();
             }
         });
-        
+
         const disableModuleHookId = getBlacksmithHookManager().registerHook({
             name: 'disableModule',
             description: 'Coffee Pub Squire: Clean up when module is disabled',
@@ -1147,12 +888,7 @@ async function _routeToCodexPanel(page, changes, options, userId) {
                 return;
             }
             
-            // Always refresh the data first
-            await codexPanel._refreshData();
-            
-            // Trigger a refresh through the PanelManager if it's available
             if (panelManager?.instance && panelManager.element) {
-                // Re-render the codex panel specifically
                 codexPanel.render(panelManager.element);
             }
         }
@@ -1173,12 +909,7 @@ async function _routeToQuestPanel(page, changes, options, userId) {
             questPanel._isQuestEntry && 
             questPanel._isQuestEntry(page)) {
             
-            // Always refresh the data first
-            await questPanel._refreshData();
-            
-            // Trigger a refresh through the PanelManager if it's available
             if (panelManager?.instance && panelManager.element) {
-                // Re-render the quest panel specifically
                 questPanel.render(panelManager.element);
             }
         }
@@ -1191,8 +922,6 @@ async function _routeToNotesPanel(page, changes, options, userId) {
     const panelManager = getPanelManager();
     const notesPanel = panelManager?.instance?.notesPanel;
     if (!notesPanel) return;
-    if (suppressNotesPanelRoute) return;
-    
     try {
         // Check if this is a note (has noteType flag)
         const noteType = page.getFlag(MODULE.ID, 'noteType');
@@ -1211,9 +940,7 @@ async function _routeToNotesPanel(page, changes, options, userId) {
             return;
         }
         
-        // Refresh the notes panel
         if (panelManager?.instance && panelManager.element) {
-            await notesPanel._refreshData();
             notesPanel.render(panelManager.element);
         }
     } catch (error) {
@@ -1437,27 +1164,20 @@ async function _embedNoteMetadataBox(sheet, html, data) {
 }
 
 async function _routeToQuestPins(page, changes, options, userId) {
-    // MIGRATED TO BLACKSMITH API
     try {
-        const { updateQuestPinVisibility, updateQuestPinStylesForPage } = await import('./utility-quest-pins.js');
-        
-        // Handle quest visibility changes
-        if (changes.flags && changes.flags[MODULE.ID] && changes.flags[MODULE.ID].visible !== undefined) {
+        // Sync ownership/visibility when the quest visible flag changes.
+        if (changes.flags?.[MODULE.ID]?.visible !== undefined) {
             await updateQuestPinVisibility(page.uuid, canvas.scene?.id);
         }
-        
-        // Handle quest content changes (objective states, quest status) - sync pin styles
+        // Update pin text/tags when quest content changes (title, objective states).
         if (changes.text && Object.keys(changes.text).length) {
-            await updateQuestPinStylesForPage(page, canvas.scene?.id);
+            await updateQuestPinText(page, canvas.scene?.id);
             await updateQuestPinVisibility(page.uuid, canvas.scene?.id);
         }
     } catch (error) {
-        console.error('Error routing to quest pins:', error);
+        console.error('Coffee Pub Squire | Error routing to quest pins:', error);
     }
 }
-
-// REMOVED: _updateQuestPinObjectiveStates - No longer needed with Blacksmith API
-// Pin appearance updates will be handled via pins.update() when quest content changes
 
 
 
@@ -1990,16 +1710,7 @@ Hooks.once('ready', async function() {
         console.error('Coffee Pub Squire | Failed to register Quest window:', error);
     }
 
-    // Register pin type friendly names with Blacksmith.
-    // Taxonomy (types + tags) is owned and shipped by Blacksmith in its global JSON;
-    // we read it back at runtime via pins.getModuleTaxonomy() rather than re-declaring it here.
-    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
-    if (pins?.isAvailable()) {
-        pins.registerPinType(MODULE.ID, getSquirePinType('quest'), 'Quest Pin');
-        pins.registerPinType(MODULE.ID, getSquirePinType('objective'), 'Objective Pin');
-        pins.registerPinType(MODULE.ID, getSquirePinType('note'), 'Note Pin');
-        pins.registerPinType(MODULE.ID, getSquirePinType('codex'), 'Codex Pin');
-    }
+    // Pin type names and taxonomy registered by manager-pins.js initPinManager().
 
     // Register socket handler for GM ownership sync on notes
     try {
@@ -2503,10 +2214,7 @@ function cleanupModule() {
         }
 
         unregisterNativeHooks();
-        unregisterNotePinHandlers?.();
-        unregisterCodexPinHandlers?.();
-        unregisterQuestPinSync?.();
-        unregisterQuestPinEvents?.();
+        teardownPinManager();
 
         // Clean up PanelManager
         if (PanelManager.cleanup) {
@@ -2528,12 +2236,6 @@ function cleanupModule() {
             cancelAnimationFrame(selectionUpdateFrameId);
             selectionUpdateFrameId = null;
         }
-
-        if (notesPanelRefreshTimeout) {
-            clearTrackedTimeout(notesPanelRefreshTimeout);
-            notesPanelRefreshTimeout = null;
-        }
-        notesPanelRefreshNeedsCleanup = false;
 
         if (nativeSelectObjects && canvas?.selectObjects === wrappedSelectObjects) {
             canvas.selectObjects = nativeSelectObjects;

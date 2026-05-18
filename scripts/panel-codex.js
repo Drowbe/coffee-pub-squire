@@ -4,13 +4,14 @@ import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
 import {
+    getPinsApi,
+    isPinsApiAvailable,
     createCodexPin,
     deleteCodexPin,
     beginCodexPinPlacement,
     unplaceCodexPin,
     updateCodexPinVisibility
-} from './utility-codex-pins.js';
-import { getPinsApi, isPinsApiAvailable } from './utility-quest-pins.js';
+} from './manager-pins.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -29,145 +30,6 @@ function openCodexWindow(options = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Codex pin event registration (follows the same pattern as notes pins)
-// ---------------------------------------------------------------------------
-
-let _codexPinClickDisposer     = null;
-let _codexPinHandlerController = null;
-let _codexPinSceneSyncHookId   = null;
-
-/**
- * Sync codex page flags when pins are removed from a scene.
- * Mirrors syncNotesForDeletedPins in panel-notes.js exactly.
- * - Pin unplaced (exists elsewhere): clear codexSceneId only
- * - Pin deleted entirely: clear both codexPinId and codexSceneId
- * @param {string} sceneId
- */
-async function syncCodexForDeletedPins(sceneId) {
-    if (!game.user?.isGM) return;
-    const pins = getPinsApi();
-    if (!sceneId || !isPinsApiAvailable(pins)) return;
-
-    const journalId = game.settings.get(MODULE.ID, 'codexJournal');
-    if (!journalId || journalId === 'none') return;
-    const journal = game.journal.get(journalId);
-    if (!journal?.pages) return;
-
-    const pages = journal.pages.contents || journal.pages;
-    if (!pages?.length) return;
-
-    let changed = false;
-    for (const page of pages) {
-        if (!page?.id || typeof page.getFlag !== 'function') continue;
-        const pinId = page.getFlag(MODULE.ID, 'codexPinId');
-        if (!pinId) continue;
-        const pageSceneId = page.getFlag(MODULE.ID, 'codexSceneId');
-        if (pageSceneId && pageSceneId !== sceneId) continue;
-
-        const pinExistsOnScene = typeof pins.exists === 'function'
-            ? pins.exists(pinId, { sceneId })
-            : !!pins.get?.(pinId, { sceneId });
-
-        if (!pinExistsOnScene) {
-            const pinExistsAnywhere = typeof pins.exists === 'function'
-                ? pins.exists(pinId)
-                : !!pins.get?.(pinId);
-            if (pinExistsAnywhere) {
-                await page.setFlag(MODULE.ID, 'codexSceneId', null);
-            } else {
-                await page.setFlag(MODULE.ID, 'codexPinId',   null);
-                await page.setFlag(MODULE.ID, 'codexSceneId', null);
-            }
-            changed = true;
-        }
-    }
-
-    if (changed) {
-        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        if (panelManager?.codexPanel && panelManager.element) {
-            await panelManager.codexPanel._refreshData();
-            panelManager.codexPanel.render(panelManager.element);
-        }
-    }
-}
-
-/**
- * Register codex pin event handlers (doubleClick → open panel + focus entry).
- * Called from CodexPanel constructor, guarded against double-registration.
- * Follows the pattern of registerNotePinHandlers() in panel-notes.js.
- */
-function registerCodexPinHandlers() {
-    const pins = getPinsApi();
-    if (!pins?.on || !isPinsApiAvailable(pins)) return;
-
-    if (!_codexPinSceneSyncHookId) {
-        _codexPinSceneSyncHookId = Hooks.on('updateScene', (scene, changes) => {
-            if (!scene || scene.id !== canvas?.scene?.id) return;
-            if (!changes?.flags) return;
-            syncCodexForDeletedPins(scene.id);
-        });
-    }
-
-    if (_codexPinClickDisposer) return;
-
-    _codexPinHandlerController = new AbortController();
-    const signal = _codexPinHandlerController.signal;
-
-    // Double-click: open codex panel and navigate to the entry
-    _codexPinClickDisposer = pins.on('doubleClick', async (evt) => {
-        try {
-            const codexUuid = evt?.pin?.config?.codexUuid;
-            if (!codexUuid) return;
-
-            const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-            if (!panelManager) return;
-
-            if (panelManager.element && !panelManager.element.classList.contains('expanded')) {
-                panelManager.element.classList.add('expanded');
-            }
-            if (typeof panelManager.setViewMode === 'function') {
-                await panelManager.setViewMode('codex');
-            }
-            if (panelManager.codexPanel && typeof panelManager.codexPanel.render === 'function' && panelManager.element) {
-                await panelManager.codexPanel.render(panelManager.element);
-            }
-
-            const tryFocus = () => {
-                const entry = document.querySelector(`.codex-entry[data-uuid="${codexUuid}"]`);
-                if (!entry) return false;
-                const section = entry.closest('.codex-section');
-                if (section) section.classList.remove('collapsed');
-                entry.classList.remove('collapsed');
-                entry.classList.add('codex-highlighted');
-                entry.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                trackModuleTimeout(() => entry.classList.remove('codex-highlighted'), 2000);
-                return true;
-            };
-            tryFocus();
-            trackModuleTimeout(tryFocus, 200);
-            trackModuleTimeout(tryFocus, 500);
-            trackModuleTimeout(tryFocus, 1000);
-        } catch (err) {
-            console.error('Coffee Pub Squire | codex pin doubleClick handler:', err);
-        }
-    }, { moduleId: MODULE.ID, signal });
-}
-
-export function unregisterCodexPinHandlers() {
-    if (_codexPinHandlerController) {
-        _codexPinHandlerController.abort();
-        _codexPinHandlerController = null;
-    }
-    if (_codexPinClickDisposer && typeof _codexPinClickDisposer === 'function') {
-        _codexPinClickDisposer();
-        _codexPinClickDisposer = null;
-    }
-    if (_codexPinSceneSyncHookId !== null) {
-        Hooks.off('updateScene', _codexPinSceneSyncHookId);
-        _codexPinSceneSyncHookId = null;
-    }
-}
-
 // ---------------------------------------------------------------------------
 
 export class CodexPanel {
@@ -182,9 +44,9 @@ export class CodexPanel {
             category: "all"
         };
         this.allTags = new Set();
-        this.isImporting = false; // Flag to prevent panel refreshes during import
+        this.isImporting = false;
         this._setupHooks();
-        registerCodexPinHandlers();
+        // Pin events registered centrally by manager-pins.js initPinManager().
     }
 
     /**
@@ -254,7 +116,6 @@ export class CodexPanel {
      * @public
      */
     destroy() {
-        unregisterCodexPinHandlers();
         this.element = null;
     }
 
@@ -381,9 +242,9 @@ export class CodexPanel {
                             // Add ownership info for visibility icon
                             entry.ownership = page.ownership;
 
-                            // Pin state flags
-                            entry.pinId        = page.getFlag(MODULE.ID, 'codexPinId')   ?? null;
-                            entry.pinSceneId   = page.getFlag(MODULE.ID, 'codexSceneId') ?? null;
+                            // Pin state — get() now includes sceneId for placed pins (Blacksmith 13.7.6+).
+                            entry.pinId      = page.getFlag(MODULE.ID, 'pinId') ?? null;
+                            entry.pinSceneId = entry.pinId ? (getPinsApi()?.get?.(entry.pinId)?.sceneId ?? null) : null;
                             const activeSceneId = canvas?.scene?.id;
                             entry.hasPinOnScene = !!(entry.pinId && entry.pinSceneId);
                             entry.pinOnActiveScene = !!(
@@ -866,7 +727,7 @@ export class CodexPanel {
                                 name: 'Configure Pin',
                                 icon: 'fa-solid fa-palette',
                                 callback: async () => {
-                                    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+                                    const pins = getPinsApi();
                                     const pinId = entryEl?.dataset?.pinId;
                                     if (pins?.configure && pinId) {
                                         await pins.configure(pinId);

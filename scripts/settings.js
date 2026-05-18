@@ -612,54 +612,8 @@ export const registerSettings = function() {
         default: 'none'
     });
 
-    game.settings.register(MODULE.ID, 'notesPinDefaultDesign', {
-        scope: 'client',
-        config: false,
-        type: Object,
-        default: {
-            size: { w: 60, h: 60 },
-            lockProportions: true,
-            shape: 'circle',
-            style: {
-                stroke: '#ffffff',
-                strokeWidth: 2
-            },
-            dropShadow: true,
-            text: '',
-            textLayout: 'under',
-            textDisplay: 'always',
-            textColor: '#ffffff',
-            textSize: 12,
-            textMaxLength: 0,
-            textScaleWithPin: true
-        }
-    });
-
-    game.settings.register(MODULE.ID, 'questPinDefaultDesign', {
-        scope: 'client',
-        config: false,
-        type: Object,
-        default: {
-            size: { w: 60, h: 60 },
-            lockProportions: false,
-            shape: 'circle',
-            style: {
-                fill: '#682008',
-                stroke: '#ffffff',
-                strokeWidth: 5,
-                iconColor: '#ffffff'
-            },
-            dropShadow: false,
-            text: '',
-            textLayout: 'right',
-            textDisplay: 'hover',
-            textColor: '#ffffff',
-            textSize: 10,
-            textMaxLength: 100,
-            textMaxWidth: 30,
-            textScaleWithPin: false
-        }
-    });
+    // notesPinDefaultDesign and questPinDefaultDesign removed — initial defaults live in
+    // pin-defaults.json and the GM manages design via Blacksmith Configure Pin.
 
     // --------------------------------
     // --- Transfer Settings ---
@@ -1171,93 +1125,8 @@ export const registerSettings = function() {
         type: String,
     });
     
-    // Quest Pin Title Font Size
-    game.settings.register(MODULE.ID, 'questPinTitleSize', {
-        name: 'Quest Pin Title Font Size',
-        hint: 'Font size for quest pin titles (in pixels). Default: 30px',
-        scope: 'world',
-        config: true,
-        type: Number,
-        range: {
-            min: 12,
-            max: 90,
-            step: 1
-        },
-        default: 30,
-        onChange: () => {
-            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
-            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
-            if (pins?.isAvailable()) {
-                pins.reload({ moduleId: 'coffee-pub-squire' });
-            }
-        }
-    });
-    
-    // Quest Pin Title Max Width
-    game.settings.register(MODULE.ID, 'questPinTitleMaxWidth', {
-        name: 'Quest Pin Title Max Width',
-        hint: 'Maximum width for quest pin titles before text wraps to new lines (in pixels). Default: 200px',
-        scope: 'world',
-        config: true,
-        type: Number,
-        range: {
-            min: 100,
-            max: 500,
-            step: 10
-        },
-        default: 200,
-        onChange: () => {
-            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
-            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
-            if (pins?.isAvailable()) {
-                pins.reload({ moduleId: 'coffee-pub-squire' });
-            }
-        }
-    });
-    
-    // Quest Pin Title Vertical Offset
-    game.settings.register(MODULE.ID, 'questPinTitleOffset', {
-        name: 'Quest Pin Title Vertical Offset',
-        hint: 'Distance from pin center to text edge. Positive: below pin (to text top). Negative: above pin (to text bottom). Range: -300 to 300px. Default: 50px',
-        scope: 'world',
-        config: true,
-        type: Number,
-        range: {
-            min: -300,
-            max: 300,
-            step: 1
-        },
-        default: 50,
-        onChange: () => {
-            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
-            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
-            if (pins?.isAvailable()) {
-                pins.reload({ moduleId: 'coffee-pub-squire' });
-            }
-        }
-    });
-    
-    // Quest Pin Scale
-    game.settings.register(MODULE.ID, 'questPinScale', {
-        name: 'Quest Pin Scale',
-        hint: 'Scale multiplier for quest pins size. 0.5 = 50% size, 1.0 = normal size, 2.0 = double size. Default: 1.0',
-        scope: 'world',
-        config: true,
-        type: Number,
-        range: {
-            min: 0.5,
-            max: 2.0,
-            step: 0.1
-        },
-        default: 1.0,
-        onChange: () => {
-            // MIGRATED TO BLACKSMITH API: Reload pins when setting changes
-            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
-            if (pins?.isAvailable()) {
-                pins.reload({ moduleId: 'coffee-pub-squire' });
-            }
-        }
-    });
+    // questPinTitleSize, questPinTitleMaxWidth, questPinTitleOffset, questPinScale removed —
+    // GM adjusts quest pin design via Blacksmith Configure Pin > Update All Quest Pins.
 
 
 

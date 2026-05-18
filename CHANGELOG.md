@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.3.0]
+
+### Added
+- **Unified pin manager (`manager-pins.js`)**: All Blacksmith Pins API interaction is now routed through a single gateway module (`scripts/manager-pins.js`). Quest, objective, note, and codex pins share one consistent implementation for create, delete, update, event handling, context menus, taxonomy registration, ownership, reconciliation, and lifecycle hooks. Panels import from `manager-pins.js` and never call the Blacksmith API directly.
+- **Initial pin defaults (`PIN_DEFAULTS`)**: Per-type design defaults (size, shape, style, text layout, event animations, access/visibility config) are declared inline in `manager-pins.js`. These apply only on first create — all subsequent appearance changes are owned by the GM via Blacksmith's Configure Pin tool.
+
+### Changed
+- **Pin placement — single-step API create**: All pin placement (quest, objective, note, codex) now uses a single `pins.create({ ..., sceneId, x, y })` call instead of the previous two-step create-unplaced → `pins.place()` pattern. The two-step pattern was silently failing — pins showed a success notification but never appeared on the canvas. The fix matches the pattern used by Artificer and the Blacksmith API documentation.
+- **Pre-placement cleanup**: Before entering placement mode, any existing pin for the quest/objective/codex entry is now **deleted** (not unplaced). On pointer-down a fresh pin is created directly at the clicked position. This eliminates the accumulation of stale unplaced pins in the Blacksmith store.
+- **Flag contract enforcement**: Squire stores only `pinId` on journal page flags. Position (`x`, `y`, `sceneId`), design, and visibility are owned by Blacksmith and never cached in page flags or written back from Squire.
+- **Note pin placement preview**: The `_beginNotePinPlacement` preview element now uses hardcoded note defaults (`60×60`, `rgba(205,200,117,0.9)`, circle, drop-shadow) instead of calling deleted design-getter functions, eliminating a `ReferenceError` that crashed placement entirely.
+- **Permission model**: Quest and codex pins use `blacksmithAccess: 'gm'`; note pins use `blacksmithAccess: 'private'`. Visibility uses `blacksmithVisibility: 'visible' | 'hidden'` (schema v7 — `'owner'` removed).
+- **Tags replace group**: All pins use `tags[]` for classification. The legacy `group` field is no longer written.
+- **`module.json` esmodules**: Removed the four deleted legacy scripts and added `scripts/manager-pins.js`.
+
+### Removed
+- **`scripts/utility-quest-pins.js`** (~1,084 lines): Replaced by `manager-pins.js`.
+- **`scripts/quest-pin-events.js`** (~513 lines): Replaced by `manager-pins.js`.
+- **`scripts/utility-codex-pins.js`** (~648 lines): Replaced by `manager-pins.js`.
+- **`scripts/codex-pin-events.js`** (~178 lines): Replaced by `manager-pins.js`.
+- **Six pin design settings**: `notesPinDefaultDesign`, `questPinDefaultDesign`, `questPinTitleSize`, `questPinTitleMaxWidth`, `questPinTitleOffset`, `questPinScale` removed from `settings.js`. Initial appearance is now defined in `PIN_DEFAULTS`; the GM uses Blacksmith's Configure Pin (with "Use as Default" toggle) for persistent customization.
+- **`updateQuestPinStylesForPage`**: Removed entirely. Quest and objective pin updates now call `updateQuestPinText()` which only updates text, tags, and config — never style. All appearance decisions after initial create belong to Blacksmith.
+
 ## [13.2.7]
 
 ### Fixed
