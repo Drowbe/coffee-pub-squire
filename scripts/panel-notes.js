@@ -1040,10 +1040,7 @@ export class NotesPanel {
                     if (confirmed) {
                         const page = await foundry.utils.fromUuid(uuid);
                         if (page) {
-                            const sceneId = page.getFlag(MODULE.ID, 'sceneId');
-                            if (sceneId) {
-                                await this._unpinNote(page);
-                            }
+                            await deleteNotePin(page);
                             await page.delete();
                             if (this.element) {
                                 await this._refreshData();
@@ -1071,12 +1068,6 @@ export class NotesPanel {
 
                 if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
                     ui.notifications.warn('You do not have permission to pin this note.');
-                    return;
-                }
-
-                const pageSceneId = page.getFlag(MODULE.ID, 'sceneId');
-                if (!isUnpin && pageSceneId) {
-                    await this._unpinNote(page);
                     return;
                 }
 
@@ -1196,7 +1187,8 @@ export class NotesPanel {
             return;
         }
 
-        const existingSceneId = page.getFlag(MODULE.ID, 'sceneId');
+        const existingPinId = page.getFlag(MODULE.ID, 'pinId');
+        const existingSceneId = existingPinId ? getPinsApi()?.get?.(existingPinId)?.sceneId : null;
         if (existingSceneId) {
             ui.notifications.warn('This note is already pinned. Unpin it first to place a new pin.');
             return;
@@ -1298,10 +1290,7 @@ export class NotesPanel {
 
     async _createNotePin(page, sceneId, x, y) {
         try {
-            const pinId = await createNotePin(page, sceneId, x, y);
-            if (pinId) {
-                await page.setFlag(MODULE.ID, 'pinId', pinId);
-            }
+            await createNotePin(page, sceneId, x, y);
         } catch (error) {
             const message = String(error?.message || error || '');
             const proxyMessage = describePinsProxyError(message);
@@ -1310,7 +1299,6 @@ export class NotesPanel {
                 return;
             }
             if (message.toLowerCase().includes('permission denied')) {
-                // Check if user has permission on the page
                 const hasPagePermission = page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
                 if (hasPagePermission) {
                     ui.notifications.error('Permission denied: Unable to create pin. The pin ownership may need to be synced. Try again or contact your GM.');
@@ -1320,27 +1308,17 @@ export class NotesPanel {
             } else {
                 ui.notifications.error(`Failed to create pin: ${message}`);
             }
-            return;
         }
-
-        this._updateNoteCardPinState(page);
-        if (this.element) {
-            await this._refreshData();
-            this.render(this.element);
-        }
+        // createNotePin writes pinId flag → updateJournalEntryPage → render.
+        // created hook → _scheduleNotesPanelRefresh(). No explicit render needed.
     }
 
     async _unpinNote(page) {
         try {
             await unplaceNotePin(page);
-        } catch (error) {
-        }
-
+        } catch (error) {}
         this._updateNoteCardPinState(page);
-        if (this.element) {
-            await this._refreshData();
-            this.render(this.element);
-        }
+        // unplaced hook → _scheduleNotesPanelRefresh(). No explicit render needed.
     }
 
     async showNote(noteUuid) {

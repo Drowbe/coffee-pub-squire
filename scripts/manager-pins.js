@@ -934,6 +934,7 @@ export async function createNotePin(page, sceneId, x, y) {
     }
 
     if (hasPlacement && typeof pins.reload === 'function') await pins.reload({ sceneId });
+    if (pinData?.id) await page.setFlag(MODULE.ID, 'pinId', pinData.id);
     return pinData?.id || null;
 }
 
@@ -1503,7 +1504,6 @@ async function _migrateCodexPinFlags() {
 
 let _pinManagerController = null;
 let _contextMenuDisposers = [];
-let _syncHookIds          = [];
 let _sceneSyncHookId      = null;
 let _pinManagerInitialized = false;
 let _syncDebounceTimer    = null;
@@ -1864,154 +1864,85 @@ function _registerEventHandlers(pins) {
         trackModuleTimeout(tryFocus, 500);
         trackModuleTimeout(tryFocus, 1000);
     }, { moduleId: MODULE.ID, signal });
+
+    // ---- Lifecycle events -------------------------------------------------------
+
+    // deleted: clear pinId flag from note/codex page; refresh quest panel.
+    pins.on('deleted', (evt) => {
+        const noteUuid  = evt.pin?.config?.noteUuid  ?? evt.config?.noteUuid;
+        const codexUuid = evt.pin?.config?.codexUuid ?? evt.config?.codexUuid;
+        const questUuid = evt.pin?.config?.questUuid ?? evt.config?.questUuid;
+        if (noteUuid) {
+            fromUuid(noteUuid).then(page => {
+                if (!page) return;
+                if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) return;
+                const storedId = page.getFlag(MODULE.ID, 'pinId');
+                if (evt.pinId && storedId !== evt.pinId) return;
+                page.setFlag(MODULE.ID, 'pinId', null).then(() => _scheduleNotesPanelRefresh());
+            });
+        } else if (codexUuid) {
+            fromUuid(codexUuid).then(page => {
+                if (!page) return;
+                const storedId = page.getFlag(MODULE.ID, 'pinId');
+                if (evt.pinId && storedId !== evt.pinId) return;
+                page.setFlag(MODULE.ID, 'pinId', null).then(() => _scheduleCodexPanelRefresh());
+            });
+        } else if (questUuid) {
+            _scheduleQuestPanelRefresh();
+        }
+    }, { moduleId: MODULE.ID, signal });
+
+    // unplaced: refresh the relevant panel.
+    pins.on('unplaced', (evt) => {
+        const noteUuid  = evt.pin?.config?.noteUuid;
+        const codexUuid = evt.pin?.config?.codexUuid;
+        if (noteUuid)       _scheduleNotesPanelRefresh();
+        else if (codexUuid) _scheduleCodexPanelRefresh();
+        else                _scheduleQuestPanelRefresh();
+    }, { moduleId: MODULE.ID, signal });
+
+    // placed: sync pinId flag for codex; quest refresh; notes handle their own flag.
+    pins.on('placed', (evt) => {
+        const noteUuid  = evt.pin?.config?.noteUuid;
+        const codexUuid = evt.pin?.config?.codexUuid;
+        if (noteUuid) return; // createNotePin writes pinId flag itself
+        if (codexUuid) {
+            fromUuid(codexUuid).then(page => {
+                if (!page) return;
+                if (evt.pinId && page.getFlag(MODULE.ID, 'pinId') !== evt.pinId) {
+                    page.setFlag(MODULE.ID, 'pinId', evt.pinId).then(() => _scheduleCodexPanelRefresh());
+                } else {
+                    _scheduleCodexPanelRefresh();
+                }
+            });
+        } else {
+            _scheduleQuestPanelRefresh();
+        }
+    }, { moduleId: MODULE.ID, signal });
+
+    // updated: notes ignore (Blacksmith owns design); codex and quest refresh.
+    pins.on('updated', (evt) => {
+        const noteUuid  = evt.pin?.config?.noteUuid;
+        const codexUuid = evt.pin?.config?.codexUuid;
+        if (noteUuid) return;
+        if (codexUuid) _scheduleCodexPanelRefresh();
+        else           _scheduleQuestPanelRefresh();
+    }, { moduleId: MODULE.ID, signal });
+
+    // created: notes handle their own flag; codex and quest refresh.
+    pins.on('created', (evt) => {
+        const noteUuid  = evt.pin?.config?.noteUuid;
+        const codexUuid = evt.pin?.config?.codexUuid;
+        if (noteUuid) return; // createNotePin writes pinId flag; updateJournalEntryPage → render
+        if (codexUuid) _scheduleCodexPanelRefresh();
+        else           _scheduleQuestPanelRefresh();
+    }, { moduleId: MODULE.ID, signal });
+
+    // bulk deletes: refresh all panels.
+    pins.on('deletedAll',       () => { _scheduleNotesPanelRefresh(true); _scheduleCodexPanelRefresh(); _scheduleQuestPanelRefresh(); }, { moduleId: MODULE.ID, signal });
+    pins.on('deletedAllByType', () => { _scheduleNotesPanelRefresh(true); _scheduleCodexPanelRefresh(); _scheduleQuestPanelRefresh(); }, { moduleId: MODULE.ID, signal });
 }
 
-function _registerBlacksmithHooks() {
-    const isSquirePin = (payload = {}) => {
-        return payload.moduleId === MODULE.ID
-            || payload.pin?.moduleId === MODULE.ID
-            || !!payload.pin?.config?.questUuid
-            || !!payload.pin?.config?.noteUuid
-            || !!payload.pin?.config?.codexUuid
-            || !!payload.config?.questUuid
-            || !!payload.config?.noteUuid
-            || !!payload.config?.codexUuid;
-    };
-
-    // Quest sync hooks (queue debounced refresh)
-    const queueQuestHandle = (payload = {}) => {
-        if (!isSquirePin(payload)) return;
-        if (!payload.pin?.config?.questUuid && !payload.config?.questUuid) return;
-        _scheduleQuestPanelRefresh();
-    };
-
-    const hookIds = {
-        deleted:            Hooks.on('blacksmith.pins.deleted',            (payload = {}) => {
-            const noteUuid  = payload.config?.noteUuid || payload.pin?.config?.noteUuid;
-            const codexUuid = payload.pin?.config?.codexUuid;
-            const questUuid = payload.pin?.config?.questUuid || payload.config?.questUuid;
-            if (noteUuid && payload.moduleId === MODULE.ID) {
-                // Clear pinId flag from the note page.
-                fromUuid(noteUuid).then(page => {
-                    if (!page) return;
-                    if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) return;
-                    const storedId = page.getFlag(MODULE.ID, 'pinId');
-                    if (payload.pinId && storedId !== payload.pinId) return;
-                    page.setFlag(MODULE.ID, 'pinId', null).then(() => _scheduleNotesPanelRefresh());
-                });
-            } else if (codexUuid && payload.moduleId === MODULE.ID) {
-                fromUuid(codexUuid).then(page => {
-                    if (!page) return;
-                    const storedId = page.getFlag(MODULE.ID, 'pinId');
-                    if (payload.pinId && storedId !== payload.pinId) return;
-                    page.setFlag(MODULE.ID, 'pinId', null).then(() => _scheduleCodexPanelRefresh());
-                });
-            } else if (questUuid) {
-                queueQuestHandle(payload);
-            }
-        }),
-        unplaced:           Hooks.on('blacksmith.pins.unplaced',           (payload = {}) => {
-            if (!isSquirePin(payload)) return;
-            const noteUuid = payload.pin?.config?.noteUuid;
-            const codexUuid = payload.pin?.config?.codexUuid;
-            if (noteUuid) _scheduleNotesPanelRefresh();
-            else if (codexUuid) _scheduleCodexPanelRefresh();
-            else queueQuestHandle(payload);
-        }),
-        placed:             Hooks.on('blacksmith.pins.placed',             (payload = {}) => {
-            if (!isSquirePin(payload)) return;
-            const noteUuid  = payload.pin?.config?.noteUuid;
-            const codexUuid = payload.pin?.config?.codexUuid;
-            if (noteUuid) {
-                // Update pinId on note page from placed event.
-                fromUuid(noteUuid).then(page => {
-                    if (!page || !page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) return;
-                    if (payload.pinId && page.getFlag(MODULE.ID, 'pinId') !== payload.pinId) {
-                        page.setFlag(MODULE.ID, 'pinId', payload.pinId).then(() => _scheduleNotesPanelRefresh());
-                    } else {
-                        _scheduleNotesPanelRefresh();
-                    }
-                });
-            } else if (codexUuid) {
-                // Update pinId on codex page from placed event.
-                fromUuid(codexUuid).then(page => {
-                    if (!page) return;
-                    if (payload.pinId && page.getFlag(MODULE.ID, 'pinId') !== payload.pinId) {
-                        page.setFlag(MODULE.ID, 'pinId', payload.pinId).then(() => _scheduleCodexPanelRefresh());
-                    } else {
-                        _scheduleCodexPanelRefresh();
-                    }
-                });
-            } else {
-                queueQuestHandle(payload);
-            }
-        }),
-        updated:            Hooks.on('blacksmith.pins.updated',            (payload = {}) => {
-            if (!isSquirePin(payload)) return;
-            const noteUuid  = payload.pin?.config?.noteUuid;
-            const codexUuid = payload.pin?.config?.codexUuid;
-            if (noteUuid) {
-                // Sync noteIcon flag only — design is Blacksmith's domain.
-                fromUuid(noteUuid).then(async page => {
-                    if (!page || !page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) return;
-                    const image = payload.pin?.image;
-                    if (image) {
-                        const normalized = _normalizeImageToNoteIconFlag(image);
-                        if (normalized) await page.setFlag(MODULE.ID, 'noteIcon', normalized).catch(() => {});
-                    }
-                    _scheduleNotesPanelRefresh();
-                });
-            } else if (codexUuid) {
-                _scheduleCodexPanelRefresh();
-            } else {
-                queueQuestHandle(payload);
-            }
-        }),
-        created:            Hooks.on('blacksmith.pins.created',            (payload = {}) => {
-            if (!isSquirePin(payload)) return;
-            const noteUuid  = payload.pin?.config?.noteUuid;
-            const codexUuid = payload.pin?.config?.codexUuid;
-            if (noteUuid) {
-                // createNotePin already writes pinId flag; just schedule the refresh.
-                _scheduleNotesPanelRefresh();
-            } else if (codexUuid) {
-                // createCodexPin already writes pinId flag; just schedule the refresh.
-                _scheduleCodexPanelRefresh();
-            } else {
-                queueQuestHandle(payload);
-            }
-        }),
-        deletedAll:         Hooks.on('blacksmith.pins.deletedAll',         (payload = {}) => {
-            if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
-            _scheduleNotesPanelRefresh(true);
-            _scheduleCodexPanelRefresh();
-            _scheduleQuestPanelRefresh();
-        }),
-        deletedAllByType:   Hooks.on('blacksmith.pins.deletedAllByType',   (payload = {}) => {
-            if (payload.moduleId && payload.moduleId !== MODULE.ID) return;
-            _scheduleNotesPanelRefresh(true);
-            _scheduleCodexPanelRefresh();
-            _scheduleQuestPanelRefresh();
-        })
-    };
-    _syncHookIds.push(hookIds);
-
-    // Scene flag changes can also trigger stale-flag cleanup.
-    if (!_sceneSyncHookId) {
-        _sceneSyncHookId = Hooks.on('updateScene', (scene, changes) => {
-            if (!scene || scene.id !== canvas?.scene?.id || !changes?.flags) return;
-            _syncQuestForScene(scene.id);
-        });
-    }
-
-    // resolveOwnership hook: let Blacksmith ask Squire for note pin ownership.
-    Hooks.on('blacksmith.pins.resolveOwnership', (context) => {
-        if (!context || context.moduleId !== MODULE.ID) return null;
-        const visibility = context.metadata?.visibility || 'private';
-        const authorId   = context.metadata?.authorId   || game.user?.id;
-        return buildNoteOwnership(visibility, authorId);
-    });
-}
 
 /** Clean up stale quest pinId flags after a scene update. */
 async function _syncQuestForScene(sceneId) {
@@ -2153,7 +2084,22 @@ export async function initPinManager() {
     await _registerTaxonomy(pins);
     _registerEventHandlers(pins);
     _registerContextMenuItems(pins);
-    _registerBlacksmithHooks();
+
+    // Scene flag changes — no pins.on() equivalent; keep as Foundry Hook.
+    if (!_sceneSyncHookId) {
+        _sceneSyncHookId = Hooks.on('updateScene', (scene, changes) => {
+            if (!scene || scene.id !== canvas?.scene?.id || !changes?.flags) return;
+            _syncQuestForScene(scene.id);
+        });
+    }
+
+    // Ownership resolver — Blacksmith asks Squire for note pin ownership.
+    Hooks.on('blacksmith.pins.resolveOwnership', (context) => {
+        if (!context || context.moduleId !== MODULE.ID) return null;
+        const visibility = context.metadata?.visibility || 'private';
+        const authorId   = context.metadata?.authorId   || game.user?.id;
+        return buildNoteOwnership(visibility, authorId);
+    });
 
     // Run migrations (GM only).
     await _migrateCodexPinFlags();
@@ -2175,12 +2121,7 @@ export function teardownPinManager() {
     _contextMenuDisposers.forEach(d => { try { if (typeof d === 'function') d(); } catch (_) {} });
     _contextMenuDisposers = [];
 
-    for (const hookSet of _syncHookIds) {
-        for (const [event, id] of Object.entries(hookSet)) {
-            try { Hooks.off(`blacksmith.pins.${event}`, id); } catch (_) {}
-        }
-    }
-    _syncHookIds = [];
+    // All pins.on() lifecycle handlers are cleaned up by the AbortController above.
 
     if (_sceneSyncHookId !== null) {
         try { Hooks.off('updateScene', _sceneSyncHookId); } catch (_) {}

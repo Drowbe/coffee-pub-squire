@@ -362,7 +362,6 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             try {
                 const pinId = await createNotePinForPage(newPage);
                 if (pinId) {
-                    await newPage.setFlag(MODULE.ID, 'pinId', pinId);
                     this.note.pinId = pinId;
                 }
             } catch (error) {
@@ -856,7 +855,6 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                 const createdPinId = await createNotePinForPage(this.page);
                 if (createdPinId) {
                     pinId = createdPinId;
-                    await this.page.setFlag(MODULE.ID, 'pinId', createdPinId);
                 }
             } catch (error) {
                 console.error('Coffee Pub Squire | Failed to create note pin:', error);
@@ -900,7 +898,6 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
                     await this.page.setFlag(MODULE.ID, 'pinId', null);
                     const recreatedId = await createNotePinForPage(this.page);
                     if (recreatedId) {
-                        await this.page.setFlag(MODULE.ID, 'pinId', recreatedId);
                         await openConfig(recreatedId);
                         return;
                     }
@@ -1009,10 +1006,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
 
             if (!this.isEditing) {
                 try {
-                    const pinId = await createNotePinForPage(page);
-                    if (pinId) {
-                        await page.setFlag(MODULE.ID, 'pinId', pinId);
-                    }
+                    await createNotePinForPage(page);
                 } catch (error) {
                     const proxyMessage = describePinsProxyError(String(error?.message || error || ''));
                     if (proxyMessage) {

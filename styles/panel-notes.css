@@ -455,6 +455,8 @@ body.squire-notes-pin-placement * {
 
 .squire-tray[data-position="left"] .note-pin-icon.note-pin-active {
     opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 
