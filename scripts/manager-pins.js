@@ -21,44 +21,44 @@ const PIN_DEFAULTS = {
         size: { w: 60, h: 60 }, shape: 'circle',
         style: { fill: '#682008', stroke: '#ffffff', strokeWidth: 5, iconColor: '#ffffff' },
         dropShadow: false, textLayout: 'right', textDisplay: 'hover',
-        textColor: '#ffffff', textSize: 10, textMaxLength: 100, textMaxWidth: 30,
+        textColor: '#ffffff', textSize: 18, textMaxLength: 100, textMaxWidth: 30,
         textScaleWithPin: false, lockProportions: false, allowDuplicatePins: false,
         eventAnimations: {
-            hover: { animation: 'ripple', sound: 'interface-pop-01' },
-            click: { animation: 'scale-small', sound: 'book-open-02' },
-            doubleClick: { animation: null, sound: null },
-            add: { animation: null, sound: null },
-            delete: { animation: 'fade', sound: 'interface-error-01' }
+            hover:       { animation: 'ripple',      sound: 'interface-button-01' },
+            click:       { animation: null,          sound: null                  },
+            doubleClick: { animation: 'scale-large', sound: 'book-open-02'        },
+            add:         { animation: 'rotate',      sound: 'interface-pop-02'    },
+            delete:      { animation: 'fade',        sound: 'interface-error-07'  }
         },
         config: { blacksmithAccess: 'gm', blacksmithVisibility: 'visible' }
     },
     objective: {
         size: { w: 50, h: 50 }, shape: 'circle',
         style: { fill: '#8c2d0d', stroke: '#ffffff', strokeWidth: 5, iconColor: '#ffffff' },
-        dropShadow: false, textLayout: 'under', textDisplay: 'hover',
-        textColor: '#ffffff', textSize: 12, textMaxLength: 100, textMaxWidth: 25,
+        dropShadow: false, textLayout: 'right', textDisplay: 'hover',
+        textColor: '#ffffff', textSize: 18, textMaxLength: 100, textMaxWidth: 30,
         textScaleWithPin: false, lockProportions: false, allowDuplicatePins: false,
         eventAnimations: {
-            hover: { animation: 'ripple', sound: 'interface-pop-01' },
-            click: { animation: 'scale-small', sound: 'book-open-02' },
-            doubleClick: { animation: null, sound: null },
-            add: { animation: null, sound: null },
-            delete: { animation: 'fade', sound: 'interface-pop-03' }
+            hover:       { animation: 'ripple',      sound: 'interface-button-01' },
+            click:       { animation: null,          sound: null                  },
+            doubleClick: { animation: 'scale-large', sound: 'book-open-02'        },
+            add:         { animation: 'rotate',      sound: 'interface-pop-02'    },
+            delete:      { animation: 'fade',        sound: 'interface-error-07'  }
         },
         config: { blacksmithAccess: 'gm', blacksmithVisibility: 'visible' }
     },
     note: {
         size: { w: 60, h: 60 }, shape: 'circle',
-        style: { fill: 'rgba(205, 200, 117, 0.9)', stroke: '#ffffff', strokeWidth: 2, iconColor: '#555555' },
+        style: { fill: '#756c00', stroke: '#ffffff', strokeWidth: 5, iconColor: '#ffffff' },
         dropShadow: true, textLayout: 'under', textDisplay: 'always',
-        textColor: '#ffffff', textSize: 12, textMaxLength: 0, textMaxWidth: 0,
+        textColor: '#ffffff', textSize: 18, textMaxLength: 0, textMaxWidth: 40,
         textScaleWithPin: true, lockProportions: true, allowDuplicatePins: false,
         eventAnimations: {
-            hover: { animation: 'ripple', sound: null },
-            click: { animation: 'scale-small', sound: null },
-            doubleClick: { animation: null, sound: null },
-            add: { animation: null, sound: null },
-            delete: { animation: 'fade', sound: null }
+            hover:       { animation: 'ripple',      sound: 'interface-pop-03' },
+            click:       { animation: 'scale-small', sound: 'book-flip-01'     },
+            doubleClick: { animation: 'scale-large', sound: 'book-open-02'     },
+            add:         { animation: null,          sound: 'interface-pop-02' },
+            delete:      { animation: 'dissolve',    sound: 'interface-error-05' }
         },
         config: { blacksmithAccess: 'private', blacksmithVisibility: 'visible' }
     },
@@ -138,7 +138,7 @@ const CODEX_CATEGORY_ICON_MAP = {
 const QUEST_CATEGORY_TAG_MAP = {
     'Main Quest': 'main',
     'Side Quest': 'side',
-    'Optional':   'optional',
+    'Faction':    'faction',
     'Backstory':  'backstory'
 };
 
@@ -2035,11 +2035,11 @@ async function _registerTaxonomy(pins) {
             pinCategories: {
                 quest: {
                     label: 'Quest',
-                    tags:  ['quest', 'main', 'side', 'optional', 'backstory']
+                    tags:  ['quest', 'main', 'side', 'faction', 'backstory']
                 },
                 objective: {
                     label: 'Objective',
-                    tags:  ['objective']
+                    tags:  ['objective', 'main', 'side', 'faction', 'backstory']
                 },
                 note: {
                     label: 'Note',
