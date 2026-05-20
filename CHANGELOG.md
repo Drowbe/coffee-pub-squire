@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [13.3.1]
+
+### Added
+- **`pins.on()` lifecycle events**: All Blacksmith pin lifecycle handling migrated from raw Foundry Hooks (`Hooks.on('blacksmith.pins.*')`) to the `pins.on()` API, following the Blacksmith 13.7.6+ API update that added `'created'`, `'placed'`, `'unplaced'`, `'updated'`, `'deleted'`, `'deletedAll'`, and `'deletedAllByType'` lifecycle events. All handlers are now scoped by `moduleId` and cleaned up automatically via `AbortSignal`. The Foundry Hooks remain as legacy fallbacks in Blacksmith but are no longer used by Squire. The `_registerBlacksmithHooks()` function and `_syncHookIds` tracking array have been removed; teardown is handled entirely by `AbortController`.
+- **Dynamic codex category tags**: Codex pins no longer use a hardcoded `CODEX_CATEGORY_TAG_MAP` to assign tags. Tags are now derived dynamically from the entry's category name via slug normalization (`'Characters'` → `'characters'`, `'My Custom'` → `'my-custom'`). This means user-created categories automatically get a matching tag without any code changes.
+
+### Changed
+- **Notes: `blacksmith.pins.updated` no longer triggers panel re-renders**: Removed notes from the `updated` lifecycle handler entirely. Blacksmith owns pin design after initial create — syncing the `noteIcon` flag back on every pin update was wrong in principle and caused unbounded panel re-renders on hover (Blacksmith fires `updated` on animation state changes). Notes now correctly ignore `updated` events.
+- **Notes: `placed` and `created` lifecycle events are no-ops**: `createNotePin` writes the `pinId` flag itself; the resulting `updateJournalEntryPage` hook cascade drives the panel render. Listening to `placed`/`created` for notes was redundant and added extra renders.
+- **Notes: `createNotePin` writes `pinId` flag internally**: The flag is now written inside `manager-pins.js` (after `pins.reload()` so the canvas data is populated before the render fires), matching how `createCodexPin` works. `panel-notes.js` no longer calls `page.setFlag('pinId', ...)` after `createNotePin` — the double-write was causing a render cascade.
+- **Notes: removed explicit renders from `_createNotePin` and `_unpinNote`**: Both methods now delegate refresh entirely to the `created`/`unplaced` lifecycle hooks and the `updateJournalEntryPage` cascade. Removed the explicit `_refreshData()` + `render()` calls that were causing 4+ renders per pin operation.
+- **Notes: removed legacy `sceneId` flag checks**: `_beginNotePinPlacement`, the pin button click handler, and the delete handler all previously read `page.getFlag('sceneId')` — a flag that was never written by the new code. Replaced with live API checks (`pins.get(pinId)?.sceneId`) and `deleteNotePin()`.
+- **Notes: `window-note.js` no longer writes `pinId` flag after `createNotePinForPage`**: Four call sites that manually called `page.setFlag('pinId', pinId)` after `createNotePinForPage` have been cleaned up. The flag is written by `createNotePin` internally; the extra writes were causing redundant `updateJournalEntryPage` events.
+- **Codex pin visibility now sets `blacksmithVisibility`**: `updateCodexPinVisibility` and `createCodexPin` now update `config.blacksmithVisibility` (`'visible'`/`'hidden'`) in addition to `ownership`, matching the pattern quests use. Previously codex pins always created with `blacksmithVisibility: 'visible'` and never updated it, so hiding a codex entry had no effect on the canvas pin.
+- **Codex interaction changed from `click` to `doubleClick`**: The `pins.on('click')` handler for codex has been changed to `pins.on('doubleClick')`, matching the quest panel pattern.
+- **Pin defaults updated**: `PIN_DEFAULTS` updated for all four pin types (quest, objective, note, codex) with revised colors, text sizes, drop shadow, and event animations to reflect the agreed design language.
+- **Quest and objective taxonomy updated**: Quest and objective suggested tags changed from `['quest', 'main', 'side', 'optional', 'backstory']` to `['quest', 'main', 'side', 'faction', 'backstory']` and objective taxonomy expanded from `['objective']` to `['objective', 'main', 'side', 'faction', 'backstory']`. `QUEST_CATEGORY_TAG_MAP` updated accordingly (`'Optional'` → `'Faction'`).
+- **Notes pin active state style**: The `note-pin-active` CSS class now applies the same orange color and glow (`color: var(--color-border-highlight)`, `text-shadow`) as quest, objective, and codex pin active states.
+
+### Removed
+- **`_registerBlacksmithHooks()`**: Removed entirely. All lifecycle handling moved to `pins.on()` calls in `_registerEventHandlers()`.
+- **`_syncHookIds` array**: No longer needed; `AbortSignal` handles all `pins.on()` cleanup.
+- **`CODEX_CATEGORY_TAG_MAP`**: Replaced by the dynamic `_codexCategoryToTag()` normalizer.
+
 ## [13.3.0]
 
 ### Added

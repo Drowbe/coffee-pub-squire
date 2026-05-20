@@ -64,16 +64,16 @@ const PIN_DEFAULTS = {
     },
     codex: {
         size: { w: 50, h: 50 }, shape: 'circle',
-        style: { fill: '#022450', stroke: '#ffffff', strokeWidth: 4, iconColor: '#ffffff' },
-        dropShadow: false, textLayout: 'right', textDisplay: 'hover',
-        textColor: '#ffffff', textSize: 12, textMaxLength: 0, textMaxWidth: 30,
+        style: { fill: '#06387a', stroke: '#ffffff', strokeWidth: 5, iconColor: '#ffffff' },
+        dropShadow: true, textLayout: 'right', textDisplay: 'hover',
+        textColor: '#ffffff', textSize: 18, textMaxLength: 100, textMaxWidth: 30,
         textScaleWithPin: true, lockProportions: false, allowDuplicatePins: false,
         eventAnimations: {
-            hover: { animation: 'ripple', sound: 'interface-pop-01' },
-            click: { animation: 'scale-small', sound: 'book-open-02' },
-            doubleClick: { animation: null, sound: null },
-            add: { animation: null, sound: null },
-            delete: { animation: 'fade', sound: 'interface-error-01' }
+            hover:       { animation: 'ripple',      sound: 'interface-button-01' },
+            click:       { animation: null,          sound: null                  },
+            doubleClick: { animation: 'scale-large', sound: 'book-open-02'        },
+            add:         { animation: 'rotate',      sound: 'interface-pop-02'    },
+            delete:      { animation: 'fade',        sound: 'interface-error-07'  }
         },
         config: { blacksmithAccess: 'gm', blacksmithVisibility: 'visible' }
     }
@@ -109,17 +109,11 @@ const SQUIRE_PIN_TYPE_FIX_MAP = Object.freeze({
     'coffee-pub-squire-sticky-notes': 'note'
 });
 
-/** Codex category display name → taxonomy tag key. */
-const CODEX_CATEGORY_TAG_MAP = {
-    'Artifacts':  'artifact',
-    'Books':      'book',
-    'Characters': 'character',
-    'Events':     'event',
-    'Factions':   'faction',
-    'Locations':  'location',
-    'Items':      'item',
-    'Maps':       'map'
-};
+/** Normalize a codex category display name to a tag slug. Works for built-in and user-created categories. */
+function _codexCategoryToTag(category) {
+    if (!category || category === 'No Category') return null;
+    return category.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || null;
+}
 
 /** Codex category → FontAwesome icon class. */
 const CODEX_CATEGORY_ICON_MAP = {
@@ -394,12 +388,10 @@ function _questCategoryToPinTags(baseTag, category, taxonomyTags) {
     return tags.length ? tags : [baseTag];
 }
 
-/** Map codex category → taxonomy tags. */
-function _codexCategoryToPinTags(category, taxonomyTags) {
-    const tag = CODEX_CATEGORY_TAG_MAP[category] ?? null;
-    if (!taxonomyTags) return tag ? [tag] : [];
-    if (tag && taxonomyTags.includes(tag)) return [tag];
-    return [];
+/** Derive codex pin tags from the category name. Works for any category including user-created ones. */
+function _codexCategoryToPinTags(category) {
+    const tag = _codexCategoryToTag(category);
+    return tag ? [tag] : [];
 }
 
 /** Map codex category → Font Awesome icon HTML. */
@@ -1082,8 +1074,7 @@ export async function createCodexPin(opts) {
 
     const design     = _buildMergedDesign(pins, 'codex');
     const ownership  = _calculateCodexPinOwnership(page);
-    const taxonomyTags = _getModuleTaxonomyTags('codex');
-    const tags       = _codexCategoryToPinTags(entryCategory, taxonomyTags);
+    const tags       = _codexCategoryToPinTags(entryCategory);
     const image      = _codexCategoryToImage(entryCategory);
 
     const pinData = {
@@ -1110,7 +1101,7 @@ export async function createCodexPin(opts) {
         ownership,
         config: {
             blacksmithAccess:     PIN_DEFAULTS.codex.config.blacksmithAccess,
-            blacksmithVisibility: 'visible',
+            blacksmithVisibility: (page.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER ? 'visible' : 'hidden',
             codexUuid:     entryUuid,
             codexCategory: entryCategory
         }
@@ -1208,9 +1199,14 @@ export async function updateCodexPinVisibility(entryUuid) {
     const page  = await fromUuid(entryUuid);
     const pinId = page?.getFlag(MODULE.ID, 'pinId');
     if (!pinId) return;
-    const ownership = _calculateCodexPinOwnership(page);
+    const isVisible  = (page.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+    const ownership  = _calculateCodexPinOwnership(page);
+    const live       = pins.get?.(pinId);
     try {
-        await pins.update(pinId, { ownership });
+        await pins.update(pinId, {
+            ownership,
+            config: { ...(live?.config || {}), blacksmithVisibility: isVisible ? 'visible' : 'hidden' }
+        });
     } catch (e) {
         console.warn('Coffee Pub Squire | updateCodexPinVisibility:', e);
     }
@@ -1235,7 +1231,7 @@ export async function updateCodexPin(entryUuid, opts = {}) {
     const patch = {
         text:  entryName || page?.name || '',
         image: _codexCategoryToImage(entryCategory),
-        tags:  _codexCategoryToPinTags(entryCategory, taxonomyTags),
+        tags:  _codexCategoryToPinTags(entryCategory),
         config: { codexUuid: entryUuid, codexCategory: entryCategory }
     };
     try {
@@ -1836,8 +1832,8 @@ function _registerEventHandlers(pins) {
         }
     }, { moduleId: MODULE.ID, signal });
 
-    // Codex — click opens codex panel
-    pins.on('click', async (evt) => {
+    // Codex — doubleClick opens codex panel
+    pins.on('doubleClick', async (evt) => {
         const pin = evt?.pin;
         if (!pin) return;
         if (pin.moduleId != null && pin.moduleId !== MODULE.ID) return;
@@ -2047,7 +2043,7 @@ async function _registerTaxonomy(pins) {
                 },
                 codex: {
                     label: 'Codex Entry',
-                    tags:  ['artifact', 'book', 'character', 'event', 'faction', 'location', 'item', 'map']
+                    tags:  []
                 }
             }
         });
