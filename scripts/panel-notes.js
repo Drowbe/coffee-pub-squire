@@ -1134,6 +1134,7 @@ export class NotesPanel {
                             await page.setFlag(MODULE.ID, 'editorIds', [user.id]);
                             await syncNoteOwnership(page, visibility, user.id);
                             await updateNotePin(page);
+                            ui.notifications.info(`Note shared with ${user.name}.`);
                             this.render(this.element);
                         }
                     });

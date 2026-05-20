@@ -1038,7 +1038,8 @@ export async function updateNotePin(page) {
 export async function syncNoteOwnership(page, visibility, authorId) {
     if (!page) return;
     if (game.user.isGM) {
-        const ownership = buildNoteOwnership(visibility, authorId);
+        const built = buildNoteOwnership(visibility, authorId);
+        const ownership = { default: built.default, ...built.users };
         await page.update({ ownership });
         return;
     }

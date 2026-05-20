@@ -8,7 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.3.1]
 
+### Fixed
+- **Note sharing: ownership update now succeeds**: `syncNoteOwnership` was passing the nested `{ default, users: {...} }` structure returned by `buildNoteOwnership` directly to Foundry's `page.update()`. Foundry expects a flat mapping `{ default, userId: level }` — the `users` key was treated as a literal user ID, causing a validation error. The nested object is now flattened before the update call.
+
 ### Added
+- **Note sharing: success notification**: After successfully sharing a note with another player, a `ui.notifications.info` message confirms who the note was shared with.
 - **`pins.on()` lifecycle events**: All Blacksmith pin lifecycle handling migrated from raw Foundry Hooks (`Hooks.on('blacksmith.pins.*')`) to the `pins.on()` API, following the Blacksmith 13.7.6+ API update that added `'created'`, `'placed'`, `'unplaced'`, `'updated'`, `'deleted'`, `'deletedAll'`, and `'deletedAllByType'` lifecycle events. All handlers are now scoped by `moduleId` and cleaned up automatically via `AbortSignal`. The Foundry Hooks remain as legacy fallbacks in Blacksmith but are no longer used by Squire. The `_registerBlacksmithHooks()` function and `_syncHookIds` tracking array have been removed; teardown is handled entirely by `AbortController`.
 - **Dynamic codex category tags**: Codex pins no longer use a hardcoded `CODEX_CATEGORY_TAG_MAP` to assign tags. Tags are now derived dynamically from the entry's category name via slug normalization (`'Characters'` → `'characters'`, `'My Custom'` → `'my-custom'`). This means user-created categories automatically get a matching tag without any code changes.
 
