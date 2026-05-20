@@ -2027,26 +2027,10 @@ function _normalizeImageToNoteIconFlag(image) {
 async function _registerTaxonomy(pins) {
     if (!isPinsApiAvailable(pins) || typeof pins.registerPinTaxonomy !== 'function') return;
     try {
-        pins.registerPinTaxonomy(MODULE.ID, {
-            pinCategories: {
-                quest: {
-                    label: 'Quest',
-                    tags:  ['quest', 'main', 'side', 'faction', 'backstory']
-                },
-                objective: {
-                    label: 'Objective',
-                    tags:  ['objective', 'main', 'side', 'faction', 'backstory']
-                },
-                note: {
-                    label: 'Note',
-                    tags:  ['personal', 'party', 'gm-notes', 'reminder']
-                },
-                codex: {
-                    label: 'Codex Entry',
-                    tags:  []
-                }
-            }
-        });
+        pins.registerPinTaxonomy(MODULE.ID, getSquirePinType('quest'),     { label: 'Quest',       tags: ['quest', 'main', 'side', 'faction', 'backstory'] });
+        pins.registerPinTaxonomy(MODULE.ID, getSquirePinType('objective'), { label: 'Objective',   tags: ['objective', 'main', 'side', 'faction', 'backstory'] });
+        pins.registerPinTaxonomy(MODULE.ID, getSquirePinType('note'),      { label: 'Note',        tags: ['personal', 'party', 'gm-notes', 'reminder'] });
+        pins.registerPinTaxonomy(MODULE.ID, getSquirePinType('codex'),     { label: 'Codex Entry', tags: [] });
     } catch (e) {
         console.warn('Coffee Pub Squire | registerPinTaxonomy failed:', e);
     }
