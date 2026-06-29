@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.3]
+
+### Fixed
+- **Quests: panel no longer jumps to the top after pin/visibility actions**: `QuestPanel.render()` rebuilds the panel by replacing `questContainer.innerHTML`, which destroys and recreates the `.quest-content` scroll container at `scrollTop` 0. Placing/unplacing a quest or objective pin and toggling quest visibility all re-render, so the GM was thrown back to the top of the list each time. Collapse states were already restored from flags, but scroll position was not. `render()` now captures `.quest-content`'s scroll position before the `innerHTML` swap and restores it after all collapse/expand states are reapplied, so the panel stays where the GM left it. This covers every quest-panel re-render, not just pin clicks.
+
 ## [13.3.2]
 
 ### Fixed

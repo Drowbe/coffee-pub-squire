@@ -4031,6 +4031,11 @@ export class QuestPanel {
         // Deep clone to break references and ensure only primitives are passed
         const safeTemplateData = JSON.parse(JSON.stringify(templateData));
         const html = await renderTemplate(TEMPLATES.PANEL_QUEST, safeTemplateData);
+        // Preserve the scroll position across the re-render. Replacing innerHTML destroys
+        // the .quest-content scroll container and recreates it at scrollTop 0, so actions
+        // like placing/unplacing a pin or toggling visibility would otherwise jump the GM
+        // back to the top and force them to scroll back down to find their place.
+        const prevScrollTop = questContainer.querySelector('.quest-content')?.scrollTop ?? 0;
         // v13: Use native DOM innerHTML instead of jQuery html()
         questContainer.innerHTML = html;
 
@@ -4081,6 +4086,13 @@ export class QuestPanel {
                     section.classList.add('collapsed');
                 }
             }
+        }
+
+        // Restore the scroll position captured before the innerHTML swap, now that all
+        // collapse/expand states have been reapplied and the content height is final.
+        if (prevScrollTop > 0) {
+            const scrollContent = questContainer.querySelector('.quest-content');
+            if (scrollContent) scrollContent.scrollTop = prevScrollTop;
         }
     }
 
