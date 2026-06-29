@@ -13,6 +13,7 @@ import {
     initPinManager,
     teardownPinManager,
     migrateSquireNotePinTypes,
+    migrateSquirePinStyles,
     buildNoteOwnership,
     updateQuestPinVisibility,
     updateQuestPinText
@@ -141,6 +142,7 @@ Hooks.once('ready', async () => {
         // Initialize unified pin manager (taxonomy, events, context menus, hooks).
         await initPinManager();
         await migrateSquireNotePinTypes();
+        await migrateSquirePinStyles();
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
         registerNativeHook('userDisconnected', async (user) => {

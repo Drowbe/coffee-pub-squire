@@ -2,7 +2,7 @@
 
 ## Bugs
 
-- **Quest/objective pin legacy color data**: Pinning is broken and existing pins still render with colored borders. The code changes to stop forcing colors only affect new API calls — pins already stored in Blacksmith have fill/stroke colors baked into their style data from previous builds. Need to audit the full pin creation/update pipeline for any remaining color writes, and likely run a one-time GM migration to strip `fill` and `stroke` from all existing Squire quest/objective pins so they fall back to Blacksmith defaults.
+- ~~**Quest/objective pin legacy color data**: existing pins still render with colored borders.~~ **RESOLVED (13.3.3)**. Root cause was not a stray color write — the current create path writes a white stroke and update paths never touch style, and Blacksmith renders the border purely from `style.stroke` with no status-based logic. The colored borders were the pre-13.3.0 per-state ring colors (red/green/grey) baked into `style.stroke` by the 13.3.0 migration and frozen there. Fixed with the one-time `migrateSquirePinStyles` GM migration (gated by `pinStrokeMigrationDone`) that resets stroke on existing quest/objective pins to the current design. Note: the original "strip fill/stroke so pins fall back to Blacksmith defaults" plan was stale — the 13.3.1 design language deliberately assigns per-type colors, so the migration normalizes to those instead.
 
 ## Critical
 

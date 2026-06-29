@@ -585,7 +585,19 @@ export const registerSettings = function() {
             }
         }
     });
-    
+
+    // One-time guard: legacy quest/objective pin stroke normalization (see migrateSquirePinStyles).
+    // Pre-13.3.0 pins baked status ring colors (red=failed, green=completed) into style.stroke.
+    // Runs once to reset them to the current design; never again, so GM stroke tweaks persist.
+    game.settings.register(MODULE.ID, 'pinStrokeMigrationDone', {
+        name: 'Pin Stroke Migration Completed',
+        hint: 'Internal flag. Tracks whether the one-time legacy quest/objective pin stroke normalization has run.',
+        scope: 'world',
+        config: false,
+        type: Boolean,
+        default: false
+    });
+
     // GM's Selected Journal
     game.settings.register(MODULE.ID, 'notesGMJournal', {
         name: 'GM\'s Selected Journal',

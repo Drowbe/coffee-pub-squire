@@ -1473,6 +1473,84 @@ export async function migrateSquireNotePinTypes() {
 }
 
 /**
+ * One-time migration: clear legacy status-based stroke colors from quest/objective pins.
+ *
+ * The pre-13.3.0 quest-pin.js (since deleted) drew quest/objective rings with state colors
+ * (failed = red, completed = green, hidden = grey). The 13.3.0 Blacksmith migration baked
+ * each pin's then-current ring color into `style.stroke`, where it is now frozen. Blacksmith
+ * renders the border purely from `style.stroke` — it has no status-based border logic; the
+ * only status visual it owns is the visible/hidden opacity, which we deliberately leave alone.
+ *
+ * We are not adding or overriding any rendering: this is data hygiene on Squire-owned style.
+ * Each existing quest/objective pin's stroke (+ strokeWidth, iconColor) is reset to what the
+ * current create path writes today (via `_buildMergedDesign`, so a GM-saved "default for type"
+ * still wins). `fill`, `ownership`, and `blacksmithVisibility` are untouched.
+ *
+ * Gated by the world flag `pinStrokeMigrationDone` so it runs exactly once — afterward a GM's
+ * own stroke customizations persist. GM-only.
+ */
+export async function migrateSquirePinStyles() {
+    const result = { checked: 0, updated: 0, failed: 0 };
+    if (!game.user?.isGM) return result;
+    if (game.settings.get(MODULE.ID, 'pinStrokeMigrationDone')) return result;
+
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins) || typeof pins.list !== 'function' || typeof pins.update !== 'function') return result;
+    try {
+        if (typeof pins.whenReady === 'function') await pins.whenReady();
+    } catch (e) {
+        console.warn('Coffee Pub Squire | migrateSquirePinStyles: pins API not ready', e);
+        return result; // Do not set the flag — retry on a later load.
+    }
+
+    // Target stroke per kind = what a freshly created pin gets today (respects GM-saved defaults).
+    const targetStyle = {
+        quest:     _buildMergedDesign(pins, 'quest').style     ?? PIN_DEFAULTS.quest.style,
+        objective: _buildMergedDesign(pins, 'objective').style ?? PIN_DEFAULTS.objective.style
+    };
+
+    const reloadedSceneIds = new Set();
+    // listAllQuestPins covers quest AND objective pins (both carry config.questUuid),
+    // placed and unplaced, with a synthetic sceneId (null when unplaced).
+    for (const pin of listAllQuestPins(pins)) {
+        if (!pin?.id) continue;
+        result.checked++;
+        const kind = pin?.config?.objectiveIndex != null ? 'objective' : 'quest';
+        const want = targetStyle[kind];
+        const cur  = pin.style || {};
+        // Idempotent: skip pins whose stroke already matches the current design.
+        if (cur.stroke === want.stroke
+            && cur.strokeWidth === want.strokeWidth
+            && cur.iconColor === want.iconColor) continue;
+        const patch = {
+            style: { ...cur, stroke: want.stroke, strokeWidth: want.strokeWidth, iconColor: want.iconColor }
+        };
+        try {
+            const sceneId = pin.sceneId || undefined;
+            await pins.update(pin.id, patch, sceneId ? { sceneId } : undefined);
+            result.updated++;
+            if (sceneId) reloadedSceneIds.add(sceneId);
+        } catch (e) {
+            result.failed++;
+            console.warn('Coffee Pub Squire | migrateSquirePinStyles:', e);
+        }
+    }
+
+    for (const sceneId of reloadedSceneIds) {
+        try { await pins.reload?.({ sceneId }); } catch (_) {}
+    }
+
+    // Mark done only on a clean run, so a partial failure retries on the next load.
+    if (result.failed === 0) {
+        try { await game.settings.set(MODULE.ID, 'pinStrokeMigrationDone', true); } catch (_) {}
+    }
+    if (result.updated || result.failed) {
+        console.info(`Coffee Pub Squire | Quest/objective pin stroke migration: checked ${result.checked}, updated ${result.updated}, failed ${result.failed}.`);
+    }
+    return result;
+}
+
+/**
  * Migrate codex `codexPinId` flags → standardized `pinId`.
  * Also clears stale `codexSceneId` flags. GM-only, runs once on init.
  */

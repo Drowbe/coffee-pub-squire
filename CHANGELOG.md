@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.4]
+
+### Fixed
+- **Quest/objective pins: legacy status-colored borders cleared**: Pins created before the 13.3.0 Blacksmith migration had their old per-state ring color (failed = red, completed = green, hidden = grey) baked into `style.stroke` and frozen there — Blacksmith renders the border purely from `style.stroke` and has no status-based border logic, so those stale colors persisted indefinitely while newly-created pins correctly used the white design default. A new one-time GM migration (`migrateSquirePinStyles`) resets `style.stroke`/`strokeWidth`/`iconColor` on all existing quest and objective pins (placed and unplaced) to what the current create path writes, via `_buildMergedDesign` so any GM-saved "default for type" still wins. `fill`, ownership, and `blacksmithVisibility` are left untouched (Blacksmith continues to own visible/hidden rendering). The migration is idempotent and gated by the new world flag `pinStrokeMigrationDone`, so it runs exactly once and a GM's own later stroke customizations persist.
+
 ## [13.3.3]
 
 ### Fixed
