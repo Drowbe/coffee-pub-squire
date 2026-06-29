@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.2]
+
+### Fixed
+- **Codex: toggling entry visibility no longer collapses the panel**: Clicking the "Show to Players" / "Hide from Players" eye icon updated the page's `ownership.default`, which fired the `updateJournalEntryPage` hook and forced a full codex panel re-render. The re-render reset every entry's expand/collapse state and scroll position, so the GM had to scroll back down, re-expand the section, and find their place again. The visibility toggle now opts out of the re-render (via a `squireSkipCodexRender` update option that `_routeToCodexPanel` honors) and patches the eye icon, its title, and the sibling menu's `data-visible` attribute in place instead. The panel keeps its scroll position and expanded entries.
+
 ## [13.3.1]
 
 ### Fixed

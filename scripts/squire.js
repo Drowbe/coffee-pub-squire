@@ -875,7 +875,11 @@ async function _routeToCodexPanel(page, changes, options, userId) {
     const panelManager = getPanelManager();
     const codexPanel = panelManager?.instance?.codexPanel;
     if (!codexPanel) return;
-    
+
+    // The visibility toggle patches the codex icon in place and opts out of the full
+    // re-render here, so the panel keeps its scroll position and expanded entries.
+    if (options?.squireSkipCodexRender) return;
+
     try {
         // Check if this is a CODEX entry and belongs to the selected journal
         if (codexPanel._isPageInSelectedJournal && 

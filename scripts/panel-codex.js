@@ -779,8 +779,17 @@ export class CodexPanel {
                 const newPermission = current >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
                     ? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
                     : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-                await page.update({ 'ownership.default': newPermission });
+                const isVisible = newPermission >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+                // Skip the full panel re-render this ownership change would otherwise trigger
+                // (via the updateJournalEntryPage hook). A re-render collapses entries and resets
+                // scroll, forcing the GM to re-find their place. Instead we patch the icon in place.
+                await page.update({ 'ownership.default': newPermission }, { squireSkipCodexRender: true });
                 await updateCodexPinVisibility(uuid);
+                // Patch the visibility icon + sibling menu state in place.
+                newBtn.classList.toggle('visible', isVisible);
+                newBtn.setAttribute('title', isVisible ? 'Hide from Players' : 'Show to Players');
+                const menuIcon = newBtn.parentNode?.querySelector(`.codex-entry-menu[data-uuid="${uuid}"]`);
+                if (menuIcon) menuIcon.dataset.visible = String(isVisible);
             });
         });
 
