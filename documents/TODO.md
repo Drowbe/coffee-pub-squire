@@ -5,6 +5,7 @@
 | Item | Priority | LOE | Status |
 |------|----------|-----|--------|
 | Migrate 5 legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | L | Open |
+| Codex data model: custom `JournalEntryPage` subtype, no migration — re-import converts (see `plan-codex-datamodel.md`) | High | L | Planned |
 | Macros: dedupe `panel-macros.css` / `window-macros.css` drop-target styles | Medium | M | Open |
 | Notes tab: shared note, character note, scratchpad | Medium | L | Open |
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
@@ -42,7 +43,9 @@
   - Per window: rewrite template into the zone contract (no shared tray template), convert listeners to `data-action` delegation, register via `registerWindow` + `unregisterWindow` in the `disableModule` hook, drop hand-rolled position-saving where the framework covers it. Preserve the `actor.apps` registration/cleanup behavior added in 13.3.5.
 
 ## HIGH PRIORITY
-- None
+
+### CODEX DATA MODEL (custom page subtype)
+- [ ] **REFACTOR** Replace HTML-parsing of codex journal pages with a module-defined `JournalEntryPage` subtype (`coffee-pub-squire.codex`): structured fields in `page.system` via a `TypeDataModel` (schema validation, no parsing), Expanded Details in native `page.text.content`, custom page sheet for view/edit. **No migration** — content will be re-imported and re-pinned; import replaces legacy text pages with typed pages, making re-import the conversion path. Full design and phased plan in `documents/plan-codex-datamodel.md`. Notes and Quest panels adopt the same pattern afterward, in that order.
 
 ## MEDIUM PRIORITY
 

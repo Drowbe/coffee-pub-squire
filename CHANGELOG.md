@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.9]
+
+### Added
+- **Codex: Expanded Details**: Codex entries can now carry deep lore beyond the bite-size card. The journal page format is: codex field block at top, then a divider (`<hr>` + `<h2>Expanded Details</h2>`), then free rich text — headings, paragraphs, images, embeds, anything. The tray card stays bite-size and gains a **"Read more…"** link at the end of the summary (shown only when the entry actually has expanded content) that opens the journal page. GMs can author expanded details directly in the journal editor below the divider; the Edit Entry window and JSON import both preserve that section when rewriting the field block.
+- **Codex: Expanded Details in import/export**: The JSON schema gains an optional `expandedDetails` field (an HTML string). Export pulls it from the raw page content below the divider (so `@UUID` links survive a round trip); import writes it below the divider on create, and on update replaces the section only when the field is present in the JSON (absent/null preserves what's on the page). Export now also emits the clean import schema (name/img/category/summary/plotHook/location/link/tags/uuid/expandedDetails) instead of dumping internal panel state (pin/ownership fields). The AI prompt template (`prompt-codex.txt`) documents the new `summary` and optional `expandedDetails` fields.
+
+### Changed
+- **Codex: "Description" renamed to "Summary"**: The tray card label, the Edit Entry window field, the journal page field label (`<p><strong>Summary:</strong>`), the parser, and the import/export schema all use *summary* now. Fully backward compatible: the parser reads legacy `Description:` labels as the summary, import accepts JSON with either `summary` or `description`, and the import's update path cleans up both labels when rewriting — so existing entries keep working untouched and migrate to the new label the next time they're updated.
+
 ## [13.3.8]
 
 ### Fixed

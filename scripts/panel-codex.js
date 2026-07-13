@@ -642,6 +642,18 @@ export class CodexPanel {
             });
         }
 
+        // "Read more" opens the entry's journal page (full Expanded Details)
+        nativeHtml.querySelectorAll('.codex-read-more').forEach(link => {
+            link.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const uuid = event.currentTarget.dataset.uuid;
+                if (!uuid) return;
+                const page = await fromUuid(uuid);
+                if (page) page.sheet.render(true);
+            });
+        });
+
         // Feather icon opens the current journal page (Player / non-GM)
         nativeHtml.querySelectorAll('.codex-entry-feather-user').forEach(feather => {
             const newFeather = feather.cloneNode(true);
@@ -1294,32 +1306,41 @@ export class CodexPanel {
                                 let page = null;
                                 if (entry.uuid) page = this.selectedJournal.pages.find(p => p.getFlag(MODULE.ID, 'codexUuid') === entry.uuid);
                                 if (!page) page = this.selectedJournal.pages.find(p => p.name === entry.name);
+                                // Canonical field is `summary`; accept legacy `description` imports
+                                const summary = entry.summary ?? entry.description ?? '';
                                 if (page) {
+                                    // Split off Expanded Details so field rebuilding never touches it
+                                    const rawContent = typeof page.text?.content === 'string' ? page.text.content : '';
+                                    const { codexHtml, expandedHtml } = CodexParser.splitExpandedDetails(rawContent);
                                     const parser = new DOMParser();
-                                    const doc = parser.parseFromString(page.text.content, 'text/html');
+                                    const doc = parser.parseFromString(codexHtml, 'text/html');
                                     const pTags = Array.from(doc.querySelectorAll('p'));
                                     for (const p of pTags) {
                                         const strong = p.querySelector('strong');
                                         if (!strong) continue;
                                         const label = strong.textContent.trim().replace(/:$/, '').toUpperCase();
-                                        if (["CATEGORY","DESCRIPTION","PLOT HOOK","LINK","LOCATION","TAGS"].includes(label)) p.remove();
+                                        if (["CATEGORY","SUMMARY","DESCRIPTION","PLOT HOOK","LINK","LOCATION","TAGS"].includes(label)) p.remove();
                                     }
                                     const newFields = [];
                                     if (entry.category) newFields.push(`<p><strong>Category:</strong> ${entry.category}</p>`);
-                                    if (entry.description) newFields.push(`<p><strong>Description:</strong> ${entry.description}</p>`);
+                                    if (summary) newFields.push(`<p><strong>Summary:</strong> ${summary}</p>`);
                                     if (entry.plotHook) newFields.push(`<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`);
                                     if (entry.link?.uuid && entry.link?.label) newFields.push(`<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`);
                                     if (entry.location) newFields.push(`<p><strong>Location:</strong> ${entry.location}</p>`);
                                     if (entry.tags && entry.tags.length) newFields.push(`<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`);
-                                    doc.body.innerHTML = newFields.join('\n') + doc.body.innerHTML;
-                                    await page.update({ 'text.content': doc.body.innerHTML });
+                                    const updatedCodexHtml = newFields.join('\n') + doc.body.innerHTML;
+                                    // expandedDetails present in the import (even '') replaces; absent/null preserves
+                                    const newExpanded = (entry.expandedDetails !== undefined && entry.expandedDetails !== null)
+                                        ? entry.expandedDetails
+                                        : expandedHtml;
+                                    await page.update({ 'text.content': CodexParser.buildPageContent(updatedCodexHtml, newExpanded) });
                                     updated++;
                                     if (entry.uuid && page.getFlag(MODULE.ID, 'codexUuid') !== entry.uuid) duplicatesMerged++;
                                 } else {
                                     let htmlContent = '';
                                     if (entry.img) htmlContent += `<img src="${entry.img}" alt="${entry.name}">`;
                                     if (entry.category) htmlContent += `<p><strong>Category:</strong> ${entry.category}</p>`;
-                                    if (entry.description) htmlContent += `<p><strong>Description:</strong> ${entry.description}</p>`;
+                                    if (summary) htmlContent += `<p><strong>Summary:</strong> ${summary}</p>`;
                                     if (entry.plotHook) htmlContent += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`;
                                     if (entry.location) htmlContent += `<p><strong>Location:</strong> ${entry.location}</p>`;
                                     if (entry.link && entry.link.uuid && entry.link.label) htmlContent += `<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`;
@@ -1327,7 +1348,7 @@ export class CodexPanel {
                                     const newPage = await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
                                         name: entry.name,
                                         type: 'text',
-                                        text: { content: htmlContent },
+                                        text: { content: CodexParser.buildPageContent(htmlContent, entry.expandedDetails || '') },
                                         ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
                                     }]);
                                     if (entry.uuid) await newPage[0].setFlag(MODULE.ID, 'codexUuid', entry.uuid);
@@ -1424,15 +1445,36 @@ export class CodexPanel {
     async _openExportCodexDialog() {
         const exportData = [];
         for (const cat of this.categories) {
-            const entries = (this.data[cat] || []).map(entry => {
-                const newEntry = { ...entry };
-                if (newEntry.img && typeof newEntry.img === 'string') {
+            for (const entry of (this.data[cat] || [])) {
+                let img = (entry.img && typeof entry.img === 'string') ? entry.img : null;
+                if (img) {
                     const origin = window.location.origin + '/';
-                    if (newEntry.img.startsWith(origin)) newEntry.img = newEntry.img.slice(origin.length);
+                    if (img.startsWith(origin)) img = img.slice(origin.length);
                 }
-                return newEntry;
-            });
-            exportData.push(...entries);
+
+                // Pull Expanded Details from the RAW page content so @UUID links and
+                // embeds survive a round trip through export → import
+                let expandedDetails = null;
+                try {
+                    const page = await fromUuid(entry.uuid);
+                    const raw = typeof page?.text?.content === 'string' ? page.text.content : '';
+                    const { expandedHtml } = CodexParser.splitExpandedDetails(raw);
+                    if (expandedHtml.trim()) expandedDetails = expandedHtml;
+                } catch (_) { /* page unavailable — export without expanded details */ }
+
+                exportData.push({
+                    name: entry.name,
+                    img,
+                    category: entry.category || null,
+                    summary: entry.summary || '',
+                    plotHook: entry.plotHook || null,
+                    location: entry.location || null,
+                    link: entry.link || null,
+                    tags: entry.tags || [],
+                    uuid: entry.uuid,
+                    expandedDetails
+                });
+            }
         }
         const jsonString = JSON.stringify(exportData, null, 2);
         new Dialog({

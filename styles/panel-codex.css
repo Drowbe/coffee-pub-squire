@@ -372,6 +372,18 @@
     margin-bottom: 8px;
 }
 
+/* "Read more" link at the end of the summary — opens the journal page */
+.squire-tray[data-position="left"] .codex-read-more {
+    color: var(--color-border-highlight, #ff6400);
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 0.9em;
+}
+
+.squire-tray[data-position="left"] .codex-read-more:hover {
+    text-shadow: 0 0 6px rgba(255, 100, 0, 0.4);
+}
+
 .squire-tray[data-position="left"] .codex-entry-plothook {
     color: #aaa;
     margin-bottom: 8px;

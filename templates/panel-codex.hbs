@@ -83,12 +83,12 @@
                                     </div>
                                 {{/if}}
 
-                                <!-- DESCRIPTION -->
-                                {{#if entry.description}}
+                                <!-- SUMMARY -->
+                                {{#if entry.summary}}
                                     <div class="codex-entry-divider"></div>
                                     <div class="codex-entry-description">
-                                        <span class="codex-entry-label">Description</span> 
-                                        <p>{{{entry.description}}}</p>
+                                        <span class="codex-entry-label">Summary</span>
+                                        <p>{{{entry.summary}}}{{#if entry.hasExpandedDetails}} <a class="codex-read-more" data-uuid="{{entry.uuid}}" title="Open the journal page for expanded details">Read more&hellip;</a>{{/if}}</p>
                                     </div>
                                 {{/if}}
 

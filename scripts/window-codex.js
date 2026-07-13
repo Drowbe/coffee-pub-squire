@@ -294,6 +294,11 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     ui.notifications.error('The codex entry you are editing could not be found.');
                     return false;
                 }
+                // The form only edits the codex field block — preserve the page's
+                // Expanded Details section (everything below the divider) on save
+                const existingRaw = typeof page.text?.content === 'string' ? page.text.content : '';
+                const { expandedHtml } = CodexParser.splitExpandedDetails(existingRaw);
+                pageData.text.content = CodexParser.buildPageContent(pageData.text.content, expandedHtml);
                 await page.update(pageData);
                 this.page = page;
                 await updateCodexPinForEntry(page.uuid, {
@@ -333,7 +338,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             content += `<p><strong>Category Icon:</strong> ${entry.categoryIcon}</p>\n\n`;
         }
         if (entry.description) {
-            content += `<p><strong>Description:</strong> ${entry.description}</p>\n\n`;
+            content += `<p><strong>Summary:</strong> ${entry.description}</p>\n\n`;
         }
         if (entry.plotHook) {
             content += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>\n\n`;

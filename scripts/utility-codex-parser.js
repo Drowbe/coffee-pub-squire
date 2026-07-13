@@ -8,6 +8,67 @@ function getBlacksmith() {
 
 export class CodexParser extends BaseParser {
     /**
+     * Split a codex page's HTML into the codex field block and the Expanded Details
+     * section. The boundary is a top-level heading whose text is "Expanded Details"
+     * (case-insensitive); an <hr> immediately before it is treated as part of the
+     * module-owned divider. Pages without the marker have no expanded section.
+     * @param {string} html - Raw or enriched page HTML
+     * @returns {{codexHtml: string, expandedHtml: string}}
+     */
+    static splitExpandedDetails(html) {
+        if (!html || typeof html !== 'string') return { codexHtml: html || '', expandedHtml: '' };
+        try {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const children = Array.from(doc.body.children);
+            const markerIndex = children.findIndex(el =>
+                /^H[1-6]$/.test(el.tagName) && el.textContent.trim().toLowerCase() === 'expanded details');
+            if (markerIndex === -1) return { codexHtml: html, expandedHtml: '' };
+
+            const before = children.slice(0, markerIndex);
+            if (before.length && before[before.length - 1].tagName === 'HR') before.pop();
+            const after = children.slice(markerIndex + 1);
+
+            return {
+                codexHtml: before.map(el => el.outerHTML).join('\n'),
+                expandedHtml: after.map(el => el.outerHTML).join('\n')
+            };
+        } catch (_) {
+            return { codexHtml: html, expandedHtml: '' };
+        }
+    }
+
+    /**
+     * Assemble page content from the codex field block and an Expanded Details section.
+     * Emits the divider (<hr> + <h2>Expanded Details</h2>) only when there is expanded
+     * content, so simple entries stay simple.
+     * @param {string} codexHtml - The codex field block HTML
+     * @param {string} expandedHtml - The expanded details HTML ('' or null for none)
+     * @returns {string}
+     */
+    static buildPageContent(codexHtml, expandedHtml) {
+        const fields = (codexHtml || '').trim();
+        const expanded = (expandedHtml || '').trim();
+        if (!expanded) return fields;
+        return `${fields}\n<hr />\n<h2>Expanded Details</h2>\n${expanded}`;
+    }
+
+    /**
+     * Whether the page HTML contains a non-empty Expanded Details section.
+     * @param {string} html - Raw or enriched page HTML
+     * @returns {boolean}
+     */
+    static hasExpandedContent(html) {
+        const { expandedHtml } = this.splitExpandedDetails(html);
+        if (!expandedHtml.trim()) return false;
+        try {
+            const doc = new DOMParser().parseFromString(expandedHtml, 'text/html');
+            return !!(doc.body.textContent.trim() || doc.body.querySelector('img, table, ul, ol, figure'));
+        } catch (_) {
+            return false;
+        }
+    }
+
+    /**
      * Parse HTML content from a journal page into structured codex entries
      * @param {string} html - HTML content from page.renderContent()
      * @returns {Array} Array of parsed entries
@@ -152,7 +213,11 @@ export class CodexParser extends BaseParser {
         }
         entry.categoryIcon = BaseParser.extractFieldFromHTML(enrichedHtml, 'Category Icon', 'p');
         
-        entry.description = BaseParser.extractFieldFromHTML(enrichedHtml, 'Description', 'p');
+        // Summary is the canonical field name; Description is the legacy label
+        entry.summary = BaseParser.extractFieldFromHTML(enrichedHtml, 'Summary', 'p')
+            || BaseParser.extractFieldFromHTML(enrichedHtml, 'Description', 'p');
+        entry.description = entry.summary; // legacy alias for any remaining consumers
+        entry.hasExpandedDetails = CodexParser.hasExpandedContent(enrichedHtml);
         entry.plotHook = BaseParser.extractFieldFromHTML(enrichedHtml, 'Plot Hook', 'p');
         entry.location = BaseParser.extractFieldFromHTML(enrichedHtml, 'Location', 'p');
         entry.tags = BaseParser.extractTags(enrichedHtml, 'p');
