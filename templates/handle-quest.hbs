@@ -48,7 +48,9 @@
     </div>
     <span class="tray-handle-separator line-ridge-thin"></span>
 {{/if}}
-{{!-- NOTE: To display objectives in top-to-bottom order, reverse pinnedQuest.tasks in JS before passing to the template. --}}
+{{!-- NOTE: Objectives display 1→n top-to-bottom via `flex-direction: row-reverse` on
+     .handle-pinnedquests in handle.css, which cancels the content wrapper's 180° rotation.
+     Do NOT reverse the tasks array in JS — data-task-index must stay the original index. --}}
 
 
 

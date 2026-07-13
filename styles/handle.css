@@ -405,6 +405,12 @@
     border: 0;
 }
 
+/* Quest objectives read 1→n top-to-bottom: the content wrapper's 180° rotation
+   reverses visual order, so reverse the flex order here to cancel it out */
+.squire-tray[data-position="left"] .handle-pinnedquests {
+    flex-direction: row-reverse;
+}
+
 /* Icon Container */
 
 .squire-tray[data-position="left"] .handle-pinnedquest-icon,
