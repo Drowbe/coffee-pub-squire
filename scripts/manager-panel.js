@@ -1463,22 +1463,21 @@ export class PanelManager {
     }
 
     /**
-     * Characters the current (non-GM) user can switch the tray to.
-     * Shown when the user owns 2+ characters, or owns any while the tray has no actor
+     * Actors the current (non-GM) user can switch the tray to — any actor they own,
+     * including NPCs like pets/companions, not just characters. Sorted assigned
+     * character first, then characters, then the rest.
+     * Shown when the user owns 2+ actors, or owns any while the tray has no actor
      * (so the no-character state doubles as a recovery path). GMs are selection-driven.
      * @returns {Array<{id, name, img, active}>|null}
      */
     static getOwnedCharacters(currentActor = null) {
         if (game.user.isGM) return null;
-        const owned = game.actors.filter(a => a.type === 'character' && a.isOwner);
+        const owned = game.actors.filter(a => a.isOwner);
         if (!owned.length) return null;
         if (owned.length < 2 && currentActor) return null;
         const assignedId = game.user.character?.id;
-        owned.sort((a, b) => {
-            if (a.id === assignedId) return -1;
-            if (b.id === assignedId) return 1;
-            return a.name.localeCompare(b.name);
-        });
+        const rank = (a) => a.id === assignedId ? 0 : (a.type === 'character' ? 1 : 2);
+        owned.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
         return owned.map(a => ({ id: a.id, name: a.name, img: a.img, active: a.id === currentActor?.id }));
     }
 
@@ -1490,17 +1489,18 @@ export class PanelManager {
         const actor = game.actors.get(actorId);
         if (!actor || !actor.isOwner) return;
         try { await game.user.setFlag(MODULE.ID, 'lastCharacterId', actorId); } catch (_) {}
-        await PanelManager.initialize(actor, { force: true });
-        // Sync canvas selection to the explicit choice: select the character's token if it
-        // has one on the viewed scene (the controlToken echo no-ops via the same-actor
-        // guard); otherwise release the current selection so selection-driven updates
-        // don't fight the switch and drag the tray back to the previously selected token.
+        // Sync canvas selection BEFORE rebuilding: initialize() ends by aligning the tray
+        // to the current selection (_updateHealthPanelFromSelection), so a stale selection
+        // would snap the freshly built tray straight back to the previously selected token.
+        // Select the character's token if it has one on the viewed scene; otherwise release
+        // the current selection.
         const token = actor.getActiveTokens?.()?.[0];
         if (token?.control) {
             token.control({ releaseOthers: true });
         } else {
             canvas.tokens?.releaseAll?.();
         }
+        await PanelManager.initialize(actor, { force: true });
     }
 
     // Add this new method for cleanup

@@ -851,9 +851,10 @@ function getFallbackActor() {
     if (game.user.isGM) return null;
     const lastId = game.user.getFlag(MODULE.ID, 'lastCharacterId');
     const last = lastId ? game.actors.get(lastId) : null;
-    if (last?.isOwner && last.type === 'character') return last;
+    if (last?.isOwner) return last;
     return game.user.character
         ?? game.actors.find(a => a.type === 'character' && a.isOwner)
+        ?? game.actors.find(a => a.isOwner)
         ?? null;
 }
 
