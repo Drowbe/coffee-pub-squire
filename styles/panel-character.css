@@ -182,6 +182,21 @@
     border-color: var(--color-border-highlight, #ff6400);
 }
 
+/* Owned actors without a token on the current scene: grouped after the divider,
+   slightly desaturated but still clickable */
+.character-switcher-chip.off-scene img {
+    filter: saturate(0.55);
+}
+
+.character-switcher-divider {
+    width: 1px;
+    height: 22px;
+    flex: 0 0 auto;
+    background: rgba(255, 255, 255, 0.0);
+    border-left: 1px dotted rgba(255, 255, 255, 0.1);
+    margin: 0 6px;
+}
+
 /* Inside the no-character message: center the chips and restore normal casing */
 .no-character-switcher {
     justify-content: center;

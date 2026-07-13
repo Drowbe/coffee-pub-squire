@@ -1,7 +1,8 @@
 {{#if ownedCharacters}}
 <div class="character-switcher">
     {{#each ownedCharacters}}
-    <div class="character-switcher-chip{{#if active}} active{{/if}}" data-actor-id="{{id}}" title="{{name}}">
+    {{#if divider}}<div class="character-switcher-divider"></div>{{/if}}
+    <div class="character-switcher-chip{{#if active}} active{{/if}}{{#unless onScene}} off-scene{{/unless}}" data-actor-id="{{id}}" title="{{name}}{{#unless onScene}} (not on this scene){{/unless}}">
         <img src="{{img}}" alt="{{name}}">
     </div>
     {{/each}}

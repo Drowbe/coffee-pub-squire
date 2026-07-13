@@ -1477,8 +1477,21 @@ export class PanelManager {
         if (owned.length < 2 && currentActor) return null;
         const assignedId = game.user.character?.id;
         const rank = (a) => a.id === assignedId ? 0 : (a.type === 'character' ? 1 : 2);
-        owned.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
-        return owned.map(a => ({ id: a.id, name: a.name, img: a.img, active: a.id === currentActor?.id }));
+        const hasToken = (a) => (a.getActiveTokens?.()?.length ?? 0) > 0;
+        // Group on-canvas actors before off-canvas ones; assigned/characters/rest within each group
+        owned.sort((a, b) =>
+            (hasToken(b) - hasToken(a)) || (rank(a) - rank(b)) || a.name.localeCompare(b.name));
+        const chips = owned.map(a => ({
+            id: a.id,
+            name: a.name,
+            img: a.img,
+            active: a.id === currentActor?.id,
+            onScene: hasToken(a)
+        }));
+        // Divider renders before the first off-canvas chip (only when both groups exist)
+        const firstOff = chips.findIndex(c => !c.onScene);
+        if (firstOff > 0) chips[firstOff].divider = true;
+        return chips;
     }
 
     /**

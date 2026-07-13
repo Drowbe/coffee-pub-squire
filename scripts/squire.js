@@ -184,6 +184,13 @@ Hooks.once('ready', async () => {
                 // Scene changed — re-resolve the tray actor from the new canvas
                 // (players fall back to their character; GMs get the no-character tray)
                 await reinitializeTrayForCanvas();
+
+                // If the tray didn't rebuild (current actor still valid here), refresh the
+                // character panel so the switcher chips' on/off-scene states track the new scene
+                const pm = getPanelManager();
+                if (pm?.instance?.characterPanel && pm.element) {
+                    await pm.instance.characterPanel.render(pm.element);
+                }
             }
         });
 
