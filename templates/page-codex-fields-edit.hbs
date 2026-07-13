@@ -1,0 +1,51 @@
+<section class="squire-codex-page-fields squire-codex-page-edit">
+    <div class="form-group">
+        <label for="{{document.id}}-codex-summary">Summary</label>
+        <textarea id="{{document.id}}-codex-summary" name="system.summary" rows="4"
+            placeholder="The bite-size card text shown in the Squire tray.">{{system.summary}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="{{document.id}}-codex-category">Category</label>
+        <input type="text" id="{{document.id}}-codex-category" name="system.category" value="{{system.category}}"
+            placeholder="Characters, Locations, Items…">
+    </div>
+
+    <div class="form-group">
+        <label for="{{document.id}}-codex-location">Location</label>
+        <input type="text" id="{{document.id}}-codex-location" name="system.location" value="{{system.location}}"
+            placeholder="Phlan &gt; Thorne Island &gt; Aquatic Crypt">
+    </div>
+
+    <div class="form-group">
+        <label for="{{document.id}}-codex-plothook">Plot Hook (GM only)</label>
+        <textarea id="{{document.id}}-codex-plothook" name="system.plotHook" rows="2"
+            placeholder="How this relates to the plot.">{{system.plotHook}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="{{document.id}}-codex-link-uuid">Link UUID</label>
+        <input type="text" id="{{document.id}}-codex-link-uuid" name="system.link.uuid" value="{{system.link.uuid}}"
+            placeholder="JournalEntry.abc123.JournalEntryPage.def456">
+    </div>
+
+    <div class="form-group">
+        <label for="{{document.id}}-codex-link-label">Link Label</label>
+        <input type="text" id="{{document.id}}-codex-link-label" name="system.link.label" value="{{system.link.label}}">
+    </div>
+
+    <div class="form-group">
+        <label for="{{document.id}}-codex-tags">Tags</label>
+        <input type="text" id="{{document.id}}-codex-tags" name="system.tags" value="{{tagsString}}"
+            placeholder="comma, separated, tags">
+    </div>
+
+    <div class="form-group">
+        <label for="{{document.id}}-codex-img">Image Path</label>
+        <input type="text" id="{{document.id}}-codex-img" name="system.img" value="{{system.img}}"
+            placeholder="images/example.webp">
+    </div>
+
+    <hr class="codex-page-divider">
+    <p class="notes">Everything below is the entry's <strong>Expanded Details</strong> — free-form rich text shown on this journal page and reachable from the tray via "Read more".</p>
+</section>

@@ -19,6 +19,11 @@
   },
   "socket": true,
   "library": [],
+  "documentTypes": {
+    "JournalEntryPage": {
+      "codex": {}
+    }
+  },
 
   "authors": [
     {

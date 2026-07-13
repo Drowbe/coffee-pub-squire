@@ -71,19 +71,22 @@ Custom page sheet registered via `DocumentSheetConfig.registerSheet(JournalEntry
 
 ## Phases
 
-### Phase 1 — Model + Sheet
-- [ ] Confirm v13 page-sheet base class and registration pattern for module subtypes (only remaining research item)
-- [ ] `documentTypes` in module.json; localization strings
-- [ ] `CodexPageModel` + registration at `init`
-- [ ] `CodexPageSheet` view + edit templates and styles
-- [ ] "Add Page" in the codex journal produces a typed page with sane defaults
+### Phase 1 — Model + Sheet **(implemented July 13, 2026 — pending in-game verification)**
+- [x] Confirmed v13 base: `foundry.applications.sheets.journal.JournalEntryPageTextSheet` (AppV2, `VIEW_PARTS`/`EDIT_PARTS`) — extending the text sheet keeps stock ProseMirror editing for `text.content`
+- [x] `documentTypes` in module.json; `TYPES.JournalEntryPage.coffee-pub-squire.codex` localization
+- [x] `CodexPageModel` (`scripts/data/codex-page-model.js`) + registration at `init` (dataModels + `DocumentSheetConfig.registerSheet`, makeDefault)
+- [x] `CodexPageSheet` (`scripts/sheets/codex-page-sheet.js`) with `codexFields` part prepended to the text sheet's view/edit parts; templates `page-codex-fields-view/edit.hbs`; styles in panel-codex.css
+- [ ] Verify "Add Page" type picker shows "Codex Entry" and creates with sane defaults (in-game)
 
-### Phase 2 — Consumers
-- [ ] `_refreshData()` reads `page.system` (typed pages only + legacy-page GM notice)
-- [ ] Edit Entry window writes `system`; delete `_generateJournalContent`
-- [ ] Import creates/replaces typed pages (JSON schema unchanged); export serializes `system` + `text.content`
-- [ ] Auto-discovery → `system.discoveredBy` + ownership flip
-- [ ] Read more → typed page sheet (no behavior change needed)
+Model decisions: `img` and `link.uuid` are lenient `StringField`s (not `FilePathField`/`DocumentUUIDField`) so imported data with external URLs or dangling UUIDs can't fail schema validation; `hasExpandedDetails`/`linkData` are model getters.
+
+### Phase 2 — Consumers **(implemented July 13, 2026 — pending in-game verification)**
+- [x] `_refreshData()` reads `page.system` (typed pages only + one-time legacy-page GM notice); codex page-parse cache removed (system reads are cheap)
+- [x] Edit Entry window: prefills from `system` for typed pages, saves `{ name, system }` only (never touches `text.content`); `_generateJournalContent` deleted; refuses to save over a legacy page (directs to re-import)
+- [x] Import creates typed pages; legacy text page matched by name/codexUuid → **replaced** with a typed page (ownership + sort preserved); `expandedDetails` → `text.content` (present replaces, absent preserves)
+- [x] Export serializes the clean schema; `expandedDetails` = raw `page.text.content`
+- [x] Auto-discovery merges into `system.discoveredBy` (HTML paragraph injection deleted)
+- [x] Read more opens the typed page sheet (no change needed)
 
 ### Phase 3 — Verification
 - [ ] Round-trip: create typed entry via Edit window → tray card → Read more → journal sheet → export → wipe → import

@@ -493,3 +493,76 @@
     50%  { border-color: rgba(244, 221, 104, 1);   box-shadow: 0 0 12px rgba(244, 221, 104, 0.9); }
     100% { border-color: rgba(244, 221, 104, 0.2); box-shadow: 0 0 0 rgba(244, 221, 104, 0); }
 }
+
+/* ------------------------------------------------ */
+/* Codex journal PAGE (type coffee-pub-squire.codex) */
+/* Renders inside the journal sheet, not the tray    */
+/* ------------------------------------------------ */
+
+.squire-codex-page-fields {
+    margin-bottom: 12px;
+}
+
+.squire-codex-page-fields .codex-page-image {
+    max-width: 100%;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.squire-codex-page-fields .codex-page-summary {
+    font-size: 1.05em;
+    font-style: italic;
+    margin: 0 0 10px 0;
+}
+
+.squire-codex-page-fields .codex-page-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.squire-codex-page-fields .codex-page-field {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+}
+
+.squire-codex-page-fields .codex-page-label {
+    flex: 0 0 auto;
+    min-width: 110px;
+    font-weight: 700;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.75;
+}
+
+.squire-codex-page-fields .codex-page-plothook .codex-page-value {
+    background: rgba(128, 127, 112, 0.25);
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+.squire-codex-page-fields .codex-page-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.squire-codex-page-fields .codex-page-tag {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(155, 142, 114, 0.4);
+}
+
+.squire-codex-page-fields .codex-page-divider {
+    margin: 12px 0;
+}
+
+.squire-codex-page-edit .form-group {
+    margin-bottom: 8px;
+}

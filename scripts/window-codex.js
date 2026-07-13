@@ -1,5 +1,6 @@
 import { MODULE } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
+import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { getTextEditor } from './helpers.js';
 import { updateCodexPin as updateCodexPinForEntry } from './manager-pins.js';
 
@@ -61,23 +62,41 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     static async fromPage(page, options = {}) {
         let entry = null;
         try {
-            let content = '';
-            if (typeof page?.text?.content === 'string') {
-                content = page.text.content;
-            } else if (typeof page?.text === 'string') {
-                content = page.text;
-            } else if (page?.text?.content) {
-                content = await page.text.content;
-            }
+            if (page?.type === CODEX_PAGE_TYPE) {
+                // Typed page: fields come straight from system — no parsing
+                const sys = page.system;
+                entry = {
+                    name: page.name,
+                    img: sys.img || null,
+                    category: sys.category || '',
+                    categoryIcon: sys.categoryIcon || '',
+                    description: sys.summary || '',
+                    plotHook: sys.plotHook || '',
+                    location: sys.location || '',
+                    link: sys.linkData,
+                    linkLabel: sys.link?.label || '',
+                    tags: Array.from(sys.tags || [])
+                };
+            } else {
+                // Legacy text page: parse the old HTML format
+                let content = '';
+                if (typeof page?.text?.content === 'string') {
+                    content = page.text.content;
+                } else if (typeof page?.text === 'string') {
+                    content = page.text;
+                } else if (page?.text?.content) {
+                    content = await page.text.content;
+                }
 
-            const TextEditor = getTextEditor();
-            const enriched = await TextEditor.enrichHTML(content || '', {
-                secrets: game.user.isGM,
-                documents: true,
-                links: true,
-                rolls: true
-            });
-            entry = await CodexParser.parseSinglePage(page, enriched);
+                const TextEditor = getTextEditor();
+                const enriched = await TextEditor.enrichHTML(content || '', {
+                    secrets: game.user.isGM,
+                    documents: true,
+                    links: true,
+                    rolls: true
+                });
+                entry = await CodexParser.parseSinglePage(page, enriched);
+            }
         } catch (error) {
             console.error('Coffee Pub Squire | Error parsing codex page for edit:', error);
         }
@@ -202,13 +221,19 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         const categories = new Map();
         for (const page of journal.pages.contents) {
             try {
-                const content = page.text?.content || '';
-                const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]+)/);
-                if (categoryMatch) {
-                    const normalized = this._normalizeCategoryValue(this._decodeHtmlEntities(categoryMatch[1]));
-                    if (normalized) {
-                        categories.set(normalized.toLowerCase(), normalized);
-                    }
+                let raw = '';
+                if (page.type === CODEX_PAGE_TYPE) {
+                    // Typed page: category lives in system data
+                    raw = page.system?.category || '';
+                } else {
+                    // Legacy text page: scrape the old HTML field
+                    const content = page.text?.content || '';
+                    const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]+)/);
+                    raw = categoryMatch ? this._decodeHtmlEntities(categoryMatch[1]) : '';
+                }
+                const normalized = this._normalizeCategoryValue(raw);
+                if (normalized) {
+                    categories.set(normalized.toLowerCase(), normalized);
                 }
             } catch (_) {}
         }
@@ -225,12 +250,17 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         const locations = new Set();
         for (const page of journal.pages.contents) {
             try {
-                const content = page.text?.content || '';
-                const locationMatch = content.match(/<strong>Location:<\/strong>\s*([^<]+)/);
-                if (locationMatch) {
-                    let location = this._decodeHtmlEntities(locationMatch[1]);
-                    locations.add(location);
+                let location = '';
+                if (page.type === CODEX_PAGE_TYPE) {
+                    // Typed page: location lives in system data
+                    location = (page.system?.location || '').trim();
+                } else {
+                    // Legacy text page: scrape the old HTML field
+                    const content = page.text?.content || '';
+                    const locationMatch = content.match(/<strong>Location:<\/strong>\s*([^<]+)/);
+                    if (locationMatch) location = this._decodeHtmlEntities(locationMatch[1]);
                 }
+                if (location) locations.add(location);
             } catch (_) {}
         }
         return Array.from(locations).sort();
@@ -280,12 +310,24 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         }
 
         try {
+            // Structured fields live in page.system — the page's text.content
+            // (Expanded Details) is deliberately untouched by this form.
+            const systemData = {
+                summary: entry.description || '',
+                category: entry.category || '',
+                categoryIcon: entry.categoryIcon || '',
+                plotHook: entry.plotHook || '',
+                location: entry.location || '',
+                link: (entry.link?.uuid)
+                    ? { uuid: entry.link.uuid, label: entry.link.label || entry.linkLabel || entry.name || 'Link' }
+                    : { uuid: '', label: '' },
+                tags: entry.tags || [],
+                img: entry.img || ''
+            };
             const pageData = {
                 name: entry.name,
-                type: 'text',
-                text: {
-                    content: this._generateJournalContent(entry)
-                }
+                type: CODEX_PAGE_TYPE,
+                system: systemData
             };
 
             if (this.isEditing && this.pageUuid) {
@@ -294,12 +336,11 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     ui.notifications.error('The codex entry you are editing could not be found.');
                     return false;
                 }
-                // The form only edits the codex field block — preserve the page's
-                // Expanded Details section (everything below the divider) on save
-                const existingRaw = typeof page.text?.content === 'string' ? page.text.content : '';
-                const { expandedHtml } = CodexParser.splitExpandedDetails(existingRaw);
-                pageData.text.content = CodexParser.buildPageContent(pageData.text.content, expandedHtml);
-                await page.update(pageData);
+                if (page.type !== CODEX_PAGE_TYPE) {
+                    ui.notifications.error('This is a legacy codex page — re-import your codex JSON to convert it before editing.');
+                    return false;
+                }
+                await page.update({ name: pageData.name, system: pageData.system });
                 this.page = page;
                 await updateCodexPinForEntry(page.uuid, {
                     entryName: entry.name,
@@ -323,43 +364,6 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             ui.notifications.error(`Failed to save codex entry: ${error.message}`);
             return false;
         }
-    }
-
-    _generateJournalContent(entry) {
-        let content = '';
-
-        if (entry.img) {
-            content += `<img src="${entry.img}" alt="${entry.name}">\n\n`;
-        }
-        if (entry.category) {
-            content += `<p><strong>Category:</strong> ${entry.category}</p>\n\n`;
-        }
-        if (entry.categoryIcon) {
-            content += `<p><strong>Category Icon:</strong> ${entry.categoryIcon}</p>\n\n`;
-        }
-        if (entry.description) {
-            content += `<p><strong>Summary:</strong> ${entry.description}</p>\n\n`;
-        }
-        if (entry.plotHook) {
-            content += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>\n\n`;
-        }
-        if (entry.link) {
-            const linkUuid = typeof entry.link === 'string' ? entry.link.trim() : (entry.link.uuid || '').trim();
-            if (linkUuid) {
-                const linkLabel = typeof entry.link === 'string'
-                    ? (entry.linkLabel || entry.name || 'Link')
-                    : (entry.link.label || entry.linkLabel || entry.name || 'Link');
-                content += `<p><strong>Link:</strong> @UUID[${linkUuid}]{${linkLabel}}</p>\n\n`;
-            }
-        }
-        if (entry.location) {
-            content += `<p><strong>Location:</strong> ${entry.location}</p>\n\n`;
-        }
-        if (entry.tags && entry.tags.length) {
-            content += `<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>\n\n`;
-        }
-
-        return content;
     }
 
     _setupFormInteractions(root) {

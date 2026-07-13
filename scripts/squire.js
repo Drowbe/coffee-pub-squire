@@ -19,6 +19,8 @@ import {
     updateQuestPinText
 } from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
+import { CodexPageModel, CODEX_PAGE_TYPE } from './data/codex-page-model.js';
+import { CodexPageSheet } from './sheets/codex-page-sheet.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
 
@@ -1604,7 +1606,17 @@ Hooks.once('init', async function() {
         true,
         false
     );
-    
+
+    // Register the codex page subtype: data model + sheet
+    Object.assign(CONFIG.JournalEntryPage.dataModels, {
+        [CODEX_PAGE_TYPE]: CodexPageModel
+    });
+    foundry.applications.apps.DocumentSheetConfig.registerSheet(JournalEntryPage, MODULE.ID, CodexPageSheet, {
+        types: [CODEX_PAGE_TYPE],
+        makeDefault: true,
+        label: 'Squire Codex Entry'
+    });
+
     // Register module settings
     //registerSettings();
 

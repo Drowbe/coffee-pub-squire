@@ -1,0 +1,54 @@
+<section class="squire-codex-page-fields">
+    {{#if system.img}}
+        <img class="codex-page-image" src="{{system.img}}" alt="{{document.name}}">
+    {{/if}}
+
+    {{#if system.summary}}
+        <p class="codex-page-summary">{{system.summary}}</p>
+    {{/if}}
+
+    <div class="codex-page-meta">
+        {{#if system.category}}
+            <div class="codex-page-field">
+                <span class="codex-page-label">Category</span>
+                <span class="codex-page-value">{{system.category}}</span>
+            </div>
+        {{/if}}
+        {{#if system.location}}
+            <div class="codex-page-field">
+                <span class="codex-page-label">Location</span>
+                <span class="codex-page-value">{{system.location}}</span>
+            </div>
+        {{/if}}
+        {{#if linkHtml}}
+            <div class="codex-page-field">
+                <span class="codex-page-label">Link</span>
+                <span class="codex-page-value">{{{linkHtml}}}</span>
+            </div>
+        {{/if}}
+        {{#if isGM}}
+            {{#if system.plotHook}}
+                <div class="codex-page-field codex-page-plothook">
+                    <span class="codex-page-label">Plot Hook</span>
+                    <span class="codex-page-value">{{system.plotHook}}</span>
+                </div>
+            {{/if}}
+        {{/if}}
+        {{#if discoveredByString}}
+            <div class="codex-page-field">
+                <span class="codex-page-label">Discovered By</span>
+                <span class="codex-page-value">{{discoveredByString}}</span>
+            </div>
+        {{/if}}
+        {{#if system.tags.length}}
+            <div class="codex-page-field">
+                <span class="codex-page-label">Tags</span>
+                <span class="codex-page-value codex-page-tags">
+                    {{#each system.tags}}<span class="codex-page-tag">{{this}}</span>{{/each}}
+                </span>
+            </div>
+        {{/if}}
+    </div>
+
+    <hr class="codex-page-divider">
+</section>

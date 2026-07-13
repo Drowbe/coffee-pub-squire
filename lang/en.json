@@ -1,4 +1,5 @@
 {
+    "TYPES.JournalEntryPage.coffee-pub-squire.codex": "Codex Entry",
     "coffee-pub-squire": {
         "settings": {
             "defaultPanel": {

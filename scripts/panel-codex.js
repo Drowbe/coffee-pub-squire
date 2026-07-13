@@ -1,5 +1,6 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
+import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
@@ -38,10 +39,8 @@ export class CodexPanel {
         this.selectedJournal = null;
         this.categories = new Set();
         this.data = {};
-        // Parsed-page cache keyed by page UUID: { modifiedTime, entry }.
-        // Enrich+parse is skipped for unchanged pages; ownership/pin state is
-        // recomputed on every refresh (see _refreshData).
-        this._pageParseCache = new Map();
+        // One-time GM notice about legacy (pre-data-model) text pages in the journal
+        this._legacyNoticeShown = false;
         this.filters = {
             search: "",
             tags: [],
@@ -197,9 +196,11 @@ export class CodexPanel {
             'No Category': 'fa-solid fa-question-circle',
             'Artifacts': 'fa-solid fa-gem',
             'Characters': 'fa-solid fa-user',
+            'Establishments': 'fa-solid fa-shop',
             'Events': 'fa-solid fa-calendar-star',
             'Factions': 'fa-solid fa-shield-cross',
             'Items': 'fa-solid fa-box',
+            'Landmarks': 'fa-solid fa-monument',
             'Locations': 'fa-solid fa-location-pin',
             'Maps': 'fa-solid fa-map'
             // Add more mappings as needed
@@ -221,63 +222,37 @@ export class CodexPanel {
         this.selectedJournal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
 
         if (this.selectedJournal) {
-            // Prune cache entries for pages no longer in the journal
-            const validUuids = new Set(this.selectedJournal.pages.contents.map(p => p.uuid));
-            for (const key of [...this._pageParseCache.keys()]) {
-                if (!validUuids.has(key)) this._pageParseCache.delete(key);
-            }
+            // Typed pages only: fields come straight from page.system — no parsing.
+            // Legacy text pages are counted and surfaced to the GM once (re-import converts).
+            let legacyPageCount = 0;
 
             for (const page of this.selectedJournal.pages.contents) {
                 try {
-                    // Enrich+parse only when the page actually changed; any document update
-                    // (content, flags, ownership) bumps modifiedTime and invalidates.
-                    const modifiedTime = page._stats?.modifiedTime ?? 0;
-                    const cached = this._pageParseCache.get(page.uuid);
-                    let entry;
-                    if (cached && cached.modifiedTime === modifiedTime) {
-                        entry = cached.entry;
-                    } else {
-                        entry = null;
-                        let content = '';
-                        if (typeof page.text?.content === 'string') {
-                            content = page.text.content;
-                        } else if (typeof page.text === 'string') {
-                            content = page.text;
-                        } else if (page.text?.content) {
-                            content = await page.text.content;
-                        }
+                    if (page.type !== CODEX_PAGE_TYPE) {
+                        legacyPageCount++;
+                        continue;
+                    }
 
-                        if (content) {
-                            const TextEditor = getTextEditor();
-                            const enriched = await TextEditor.enrichHTML(content, {
-                                secrets: game.user.isGM,
-                                documents: true,
-                                links: true,
-                                rolls: true
-                            });
+                    const sys = page.system;
+                    const entry = {
+                        name: page.name,
+                        uuid: page.uuid,
+                        img: sys.img || '',
+                        category: sys.category || '',
+                        categoryIcon: sys.categoryIcon || '',
+                        summary: sys.summary || '',
+                        description: sys.summary || '', // legacy alias
+                        plotHook: sys.plotHook || '',
+                        location: sys.location || '',
+                        link: sys.linkData,
+                        tags: Array.from(sys.tags || []),
+                        hasExpandedDetails: sys.hasExpandedDetails,
+                        DiscoveredBy: (sys.discoveredBy || []).join(', '),
+                        pinId: page.getFlag(MODULE.ID, 'pinId') ?? null
+                    };
 
-                            entry = await CodexParser.parseSinglePage(page, enriched);
-                            if (entry) {
-                                // Extract "Discovered By" information from the enriched content
-                                const doc = new DOMParser().parseFromString(enriched, 'text/html');
-                                const pTags = Array.from(doc.querySelectorAll('p'));
-
-                                // Look for "Discovered By" paragraph by finding the strong tag with that text
-                                for (const p of pTags) {
-                                    const strong = p.querySelector('strong');
-                                    if (strong && strong.textContent.trim() === 'Discovered By:') {
-                                        const discovererText = p.textContent.replace('Discovered By:', '').trim();
-                                        if (discovererText) {
-                                            entry.DiscoveredBy = discovererText;
-                                        }
-                                        break;
-                                    }
-                                }
-
-                                entry.pinId = page.getFlag(MODULE.ID, 'pinId') ?? null;
-                            }
-                        }
-                        this._pageParseCache.set(page.uuid, { modifiedTime, entry });
+                    if (entry.category.length > 0) {
+                        entry.category = entry.category.charAt(0).toUpperCase() + entry.category.slice(1).toLowerCase();
                     }
 
                     if (entry) {
@@ -320,6 +295,12 @@ export class CodexPanel {
                 } catch (error) {
                     console.error('Error parsing codex entry:', error);
                 }
+            }
+
+            // Surface legacy (pre-data-model) text pages to the GM once per session
+            if (legacyPageCount > 0 && game.user.isGM && !this._legacyNoticeShown) {
+                this._legacyNoticeShown = true;
+                ui.notifications.warn(`Codex: ${legacyPageCount} legacy text page(s) in the codex journal are not shown. Re-import your codex JSON to convert them to codex pages.`);
             }
         }
     }
@@ -650,7 +631,11 @@ export class CodexPanel {
                 const uuid = event.currentTarget.dataset.uuid;
                 if (!uuid) return;
                 const page = await fromUuid(uuid);
-                if (page) page.sheet.render(true);
+                // Open the parent journal focused on the page — page.sheet.render(true)
+                // would open the page's standalone EDIT sheet, not the reading view
+                if (page?.parent) {
+                    page.parent.sheet.render(true, { pageId: page.id });
+                }
             });
         });
 
@@ -747,7 +732,9 @@ export class CodexPanel {
                                 icon: 'fa-solid fa-feather',
                                 callback: async () => {
                                     const doc = await fromUuid(uuid);
-                                    if (doc) doc.sheet.render(true);
+                                    // Journal reading view, not the page's standalone edit sheet
+                                    if (doc?.parent) doc.parent.sheet.render(true, { pageId: doc.id });
+                                    else if (doc) doc.sheet.render(true);
                                 }
                             },
                             {
@@ -1308,47 +1295,49 @@ export class CodexPanel {
                                 if (!page) page = this.selectedJournal.pages.find(p => p.name === entry.name);
                                 // Canonical field is `summary`; accept legacy `description` imports
                                 const summary = entry.summary ?? entry.description ?? '';
-                                if (page) {
-                                    // Split off Expanded Details so field rebuilding never touches it
-                                    const rawContent = typeof page.text?.content === 'string' ? page.text.content : '';
-                                    const { codexHtml, expandedHtml } = CodexParser.splitExpandedDetails(rawContent);
-                                    const parser = new DOMParser();
-                                    const doc = parser.parseFromString(codexHtml, 'text/html');
-                                    const pTags = Array.from(doc.querySelectorAll('p'));
-                                    for (const p of pTags) {
-                                        const strong = p.querySelector('strong');
-                                        if (!strong) continue;
-                                        const label = strong.textContent.trim().replace(/:$/, '').toUpperCase();
-                                        if (["CATEGORY","SUMMARY","DESCRIPTION","PLOT HOOK","LINK","LOCATION","TAGS"].includes(label)) p.remove();
-                                    }
-                                    const newFields = [];
-                                    if (entry.category) newFields.push(`<p><strong>Category:</strong> ${entry.category}</p>`);
-                                    if (summary) newFields.push(`<p><strong>Summary:</strong> ${summary}</p>`);
-                                    if (entry.plotHook) newFields.push(`<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`);
-                                    if (entry.link?.uuid && entry.link?.label) newFields.push(`<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`);
-                                    if (entry.location) newFields.push(`<p><strong>Location:</strong> ${entry.location}</p>`);
-                                    if (entry.tags && entry.tags.length) newFields.push(`<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`);
-                                    const updatedCodexHtml = newFields.join('\n') + doc.body.innerHTML;
+                                const systemData = {
+                                    summary,
+                                    category: entry.category || '',
+                                    plotHook: entry.plotHook || '',
+                                    location: entry.location || '',
+                                    link: (entry.link?.uuid)
+                                        ? { uuid: entry.link.uuid, label: entry.link.label || entry.link.uuid }
+                                        : { uuid: '', label: '' },
+                                    tags: Array.isArray(entry.tags) ? entry.tags : [],
+                                    img: entry.img || ''
+                                };
+
+                                if (page && page.type !== CODEX_PAGE_TYPE) {
+                                    // Legacy text page matched — re-import IS the conversion path:
+                                    // replace it with a typed page (preserving ownership and sort)
+                                    const ownership = foundry.utils.deepClone(page.ownership);
+                                    const sort = page.sort;
+                                    await page.delete();
+                                    const [newPage] = await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
+                                        name: entry.name,
+                                        type: CODEX_PAGE_TYPE,
+                                        system: systemData,
+                                        text: { content: entry.expandedDetails || '' },
+                                        ownership,
+                                        sort
+                                    }]);
+                                    if (entry.uuid) await newPage.setFlag(MODULE.ID, 'codexUuid', entry.uuid);
+                                    updated++;
+                                } else if (page) {
+                                    const patch = { system: systemData };
                                     // expandedDetails present in the import (even '') replaces; absent/null preserves
-                                    const newExpanded = (entry.expandedDetails !== undefined && entry.expandedDetails !== null)
-                                        ? entry.expandedDetails
-                                        : expandedHtml;
-                                    await page.update({ 'text.content': CodexParser.buildPageContent(updatedCodexHtml, newExpanded) });
+                                    if (entry.expandedDetails !== undefined && entry.expandedDetails !== null) {
+                                        patch['text.content'] = entry.expandedDetails;
+                                    }
+                                    await page.update(patch);
                                     updated++;
                                     if (entry.uuid && page.getFlag(MODULE.ID, 'codexUuid') !== entry.uuid) duplicatesMerged++;
                                 } else {
-                                    let htmlContent = '';
-                                    if (entry.img) htmlContent += `<img src="${entry.img}" alt="${entry.name}">`;
-                                    if (entry.category) htmlContent += `<p><strong>Category:</strong> ${entry.category}</p>`;
-                                    if (summary) htmlContent += `<p><strong>Summary:</strong> ${summary}</p>`;
-                                    if (entry.plotHook) htmlContent += `<p><strong>Plot Hook:</strong> ${entry.plotHook}</p>`;
-                                    if (entry.location) htmlContent += `<p><strong>Location:</strong> ${entry.location}</p>`;
-                                    if (entry.link && entry.link.uuid && entry.link.label) htmlContent += `<p><strong>Link:</strong> @UUID[${entry.link.uuid}]{${entry.link.label}}</p>`;
-                                    if (entry.tags && entry.tags.length) htmlContent += `<p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>`;
                                     const newPage = await this.selectedJournal.createEmbeddedDocuments('JournalEntryPage', [{
                                         name: entry.name,
-                                        type: 'text',
-                                        text: { content: CodexParser.buildPageContent(htmlContent, entry.expandedDetails || '') },
+                                        type: CODEX_PAGE_TYPE,
+                                        system: systemData,
+                                        text: { content: entry.expandedDetails || '' },
                                         ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE }
                                     }]);
                                     if (entry.uuid) await newPage[0].setFlag(MODULE.ID, 'codexUuid', entry.uuid);
@@ -1452,14 +1441,13 @@ export class CodexPanel {
                     if (img.startsWith(origin)) img = img.slice(origin.length);
                 }
 
-                // Pull Expanded Details from the RAW page content so @UUID links and
-                // embeds survive a round trip through export → import
+                // Expanded Details is the page's raw text content — exported raw so
+                // @UUID links and embeds survive a round trip through export → import
                 let expandedDetails = null;
                 try {
                     const page = await fromUuid(entry.uuid);
                     const raw = typeof page?.text?.content === 'string' ? page.text.content : '';
-                    const { expandedHtml } = CodexParser.splitExpandedDetails(raw);
-                    if (expandedHtml.trim()) expandedDetails = expandedHtml;
+                    if (raw.trim()) expandedDetails = raw;
                 } catch (_) { /* page unavailable — export without expanded details */ }
 
                 exportData.push({
@@ -1547,53 +1535,10 @@ export class CodexPanel {
      */
     async _addDiscoveredByInfo(page, discoverers) {
         try {
-            const TextEditor = getTextEditor();
-            const enrichedContent = await TextEditor.enrichHTML(page.text.content, {
-                secrets: game.user.isGM,
-                documents: true,
-                links: true,
-                rolls: true
-            });
-
-            const doc = new DOMParser().parseFromString(enrichedContent, 'text/html');
-            const pTags = Array.from(doc.querySelectorAll('p'));
-
-            // Find existing "Discovered By" paragraph by looking for the text content
-            let discoveredByParagraph = null;
-            let existingDiscoverers = [];
-            
-            for (let i = pTags.length - 1; i >= 0; i--) {
-                const p = pTags[i];
-                const strong = p.querySelector('strong');
-                if (strong && strong.textContent.trim() === 'Discovered By:') {
-                    discoveredByParagraph = p;
-                    // Extract existing discoverers from the paragraph text
-                    const discovererText = p.textContent.replace('Discovered By:', '').trim();
-                    if (discovererText) {
-                        existingDiscoverers = discovererText.split(',').map(d => d.trim());
-                    }
-                    break;
-                }
-            }
-
-            // Combine existing and new discoverers, removing duplicates
-            const allDiscoverers = [...new Set([...existingDiscoverers, ...discoverers])];
-            
-            // Create the "Discovered By" paragraph without the class attribute
-            const newDiscoveredByParagraph = document.createElement('p');
-            newDiscoveredByParagraph.innerHTML = `<strong>Discovered By:</strong> ${allDiscoverers.join(', ')}`;
-            
-            if (discoveredByParagraph) {
-                // Replace existing paragraph
-                discoveredByParagraph.replaceWith(newDiscoveredByParagraph);
-            } else {
-                // Add new paragraph at the end
-                doc.body.appendChild(newDiscoveredByParagraph);
-            }
-
-            // Update the page content
-            await page.update({ 'text.content': doc.body.innerHTML });
-            
+            // Typed pages: merge into system.discoveredBy — no HTML manipulation
+            const existing = Array.from(page.system?.discoveredBy || []);
+            const allDiscoverers = [...new Set([...existing, ...discoverers])];
+            await page.update({ 'system.discoveredBy': allDiscoverers });
         } catch (error) {
             console.error('Error updating "Discovered By" information:', error);
         }
