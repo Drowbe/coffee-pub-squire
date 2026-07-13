@@ -382,9 +382,10 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
-        const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
+        const trayHtml = await renderTemplate(TEMPLATES.TRAY, {
             actor: this.actor,
             isGM: game.user.isGM,
+            ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
             effects: this.actor?.effects?.map(e => ({
                 name: e.name,
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
@@ -460,9 +461,10 @@ export class PanelManager {
             return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
         }).filter(Boolean);
 
-        const trayHtml = await renderTemplate(TEMPLATES.TRAY, { 
+        const trayHtml = await renderTemplate(TEMPLATES.TRAY, {
             actor: this.actor,
             isGM: game.user.isGM,
+            ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
             effects: this.actor.effects?.map(e => ({
                 name: e.name,
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
@@ -672,6 +674,20 @@ export class PanelManager {
         }
         
         const handle = nativeTray.querySelector('.tray-handle');
+
+        // Character switcher chips — delegated, since chips re-render with the character
+        // panel and also appear in the no-character message. Guarded against re-binding
+        // (activateListeners can run again on the same tray element).
+        if (!nativeTray.dataset.characterSwitcherBound) {
+            nativeTray.dataset.characterSwitcherBound = 'true';
+            nativeTray.addEventListener('click', async (event) => {
+                const chip = event.target.closest('.character-switcher-chip');
+                if (!chip) return;
+                const actorId = chip.dataset.actorId;
+                if (!actorId || actorId === PanelManager.currentActor?.id) return;
+                await PanelManager.switchToCharacter(actorId);
+            });
+        }
 
         // View tab buttons
         const tabButtons = nativeTray.querySelectorAll('.tray-tab-button');
@@ -1444,6 +1460,41 @@ export class PanelManager {
             filter.classList.add('active');
             this.toggleCategory(filter.dataset.filterId, panel, true);
         });
+    }
+
+    /**
+     * Characters the current (non-GM) user can switch the tray to.
+     * Shown when the user owns 2+ characters, or owns any while the tray has no actor
+     * (so the no-character state doubles as a recovery path). GMs are selection-driven.
+     * @returns {Array<{id, name, img, active}>|null}
+     */
+    static getOwnedCharacters(currentActor = null) {
+        if (game.user.isGM) return null;
+        const owned = game.actors.filter(a => a.type === 'character' && a.isOwner);
+        if (!owned.length) return null;
+        if (owned.length < 2 && currentActor) return null;
+        const assignedId = game.user.character?.id;
+        owned.sort((a, b) => {
+            if (a.id === assignedId) return -1;
+            if (b.id === assignedId) return 1;
+            return a.name.localeCompare(b.name);
+        });
+        return owned.map(a => ({ id: a.id, name: a.name, img: a.img, active: a.id === currentActor?.id }));
+    }
+
+    /**
+     * Switch the tray to one of the user's owned characters (character switcher chips).
+     * Remembers the choice so canvas fallbacks (scene load, token deletion) prefer it.
+     */
+    static async switchToCharacter(actorId) {
+        const actor = game.actors.get(actorId);
+        if (!actor || !actor.isOwner) return;
+        try { await game.user.setFlag(MODULE.ID, 'lastCharacterId', actorId); } catch (_) {}
+        await PanelManager.initialize(actor, { force: true });
+        // If the character has a token on the viewed scene, select it so targeting/health follow.
+        // The resulting controlToken hook re-enters initialize() and no-ops via the same-actor guard.
+        const token = actor.getActiveTokens?.()?.[0];
+        token?.control?.({ releaseOthers: true });
     }
 
     // Add this new method for cleanup

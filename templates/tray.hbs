@@ -171,6 +171,15 @@
                     <div class="no-character-message">
                         <p>NO TOKEN SELECTED OR OWNED</p>
                         <p>Select an owned token to get started.</p>
+                        {{#if ownedCharacters}}
+                        <div class="character-switcher no-character-switcher">
+                            {{#each ownedCharacters}}
+                            <div class="character-switcher-chip{{#if active}} active{{/if}}" data-actor-id="{{id}}" title="{{name}}">
+                                <img src="{{img}}" alt="{{name}}">
+                            </div>
+                            {{/each}}
+                        </div>
+                        {{/if}}
                     </div>
                 {{/if}}
             </div>

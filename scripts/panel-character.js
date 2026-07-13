@@ -377,6 +377,7 @@ export class CharacterPanel {
 
             const template = await renderTemplate(TEMPLATES.PANEL_CHARACTER, {
                 actor: this.actor,
+                ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
                 displayName: this.displayName,
                 position: game.settings.get(MODULE.ID, 'trayPosition'),
                 isGM: game.user.isGM,

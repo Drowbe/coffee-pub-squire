@@ -844,10 +844,14 @@ function getPanelManager() {
 // Debounce timer for tray rebuilds triggered by token deletion (coalesces bursts)
 let _tokenDeletionRebuildTimer = null;
 
-// When no owned token is on the canvas: players fall back to their assigned character
-// (or any character they own); GMs get null so the tray shows its no-character state.
+// When no owned token is on the canvas: players fall back to the character they last
+// picked via the switcher, then their assigned character, then any character they own;
+// GMs get null so the tray shows its no-character state.
 function getFallbackActor() {
     if (game.user.isGM) return null;
+    const lastId = game.user.getFlag(MODULE.ID, 'lastCharacterId');
+    const last = lastId ? game.actors.get(lastId) : null;
+    if (last?.isOwner && last.type === 'character') return last;
     return game.user.character
         ?? game.actors.find(a => a.type === 'character' && a.isOwner)
         ?? null;

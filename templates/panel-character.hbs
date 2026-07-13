@@ -1,3 +1,12 @@
+{{#if ownedCharacters}}
+<div class="character-switcher">
+    {{#each ownedCharacters}}
+    <div class="character-switcher-chip{{#if active}} active{{/if}}" data-actor-id="{{id}}" title="{{name}}">
+        <img src="{{img}}" alt="{{name}}">
+    </div>
+    {{/each}}
+</div>
+{{/if}}
 <div class="character-panel">
     <!-- HEADER -->
     <div class="header-left">

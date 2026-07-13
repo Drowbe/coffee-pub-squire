@@ -139,6 +139,57 @@
     margin: 10px 0;
 }
 
+/* Character Switcher (owned-character chips above the identity block) */
+
+.character-switcher {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 3px;
+    margin-bottom: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+}
+
+.character-switcher-chip {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid #444;
+    opacity: 0.55;
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.character-switcher-chip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border: none;
+}
+
+.character-switcher-chip:hover {
+    opacity: 1;
+    border-color: #9f9275;
+}
+
+.character-switcher-chip.active {
+    opacity: 1;
+    cursor: default;
+    border-color: var(--color-border-highlight, #ff6400);
+}
+
+/* Inside the no-character message: center the chips and restore normal casing */
+.no-character-switcher {
+    justify-content: center;
+    background: none;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
 
 
 
