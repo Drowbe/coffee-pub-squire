@@ -18,6 +18,10 @@ export class CharacterPanel {
     constructor(actor) {
         this.actor = actor;
         this.displayName = actor?.name || '';
+
+        // Cleaned-biography cache keyed by the raw source string — this panel rerenders
+        // on every HP/effect/AC tick, but the biography itself rarely changes
+        this._bioCache = null;
         
         // Render cancellation tracking to prevent race conditions
         this._renderInProgress = false;
@@ -322,45 +326,46 @@ export class CharacterPanel {
             log(`CHARACTER DETAILS Resistances: ${JSON.stringify(resistances)}`, '', false, false);
             log(`CHARACTER DETAILS Immunities: ${JSON.stringify(immunities)}`, '', false, false);
 
-            // Prepare biography text (strip HTML/links)
+            // Prepare biography text — cleaned plain text only, no images/embeds.
+            // Enrich first so @UUID[...] links resolve to display names before stripping
+            // markup. Cached by the raw source string: this render runs on every
+            // HP/effect/AC change, but the biography rarely changes.
             const biographySource = sourceActor?.system?.details?.biography ?? {};
             const biographyHtml = biographySource.public || biographySource.value || '';
             let biography = '';
             let biographyHtmlSafe = '';
-            let biographyHtmlRaw = '';
             if (biographyHtml) {
-                try {
-                    const TextEditor = getTextEditor();
-                    if (TextEditor?.enrichHTML) {
-                        const enriched = await TextEditor.enrichHTML(biographyHtml, { async: true, secrets: false });
-                        biographyHtmlRaw = typeof enriched === 'string' ? enriched : '';
-                        biography = TextEditor?.getPlainText
-                            ? TextEditor.getPlainText(enriched, { secrets: false })?.trim() ?? ''
-                            : enriched.replace(/<[^>]+>/g, '').trim();
-                    } else if (TextEditor?.getPlainText) {
-                        biographyHtmlRaw = biographyHtml;
-                        biography = TextEditor.getPlainText(biographyHtml, { secrets: false })?.trim() ?? '';
-                    } else {
-                        biographyHtmlRaw = biographyHtml;
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(biographyHtml, 'text/html');
-                        biography = (doc.body.textContent || '').trim();
+                if (this._bioCache?.source === biographyHtml) {
+                    ({ biography, biographyHtmlSafe } = this._bioCache);
+                } else {
+                    try {
+                        const TextEditor = getTextEditor();
+                        let plainSource = biographyHtml;
+                        if (TextEditor?.enrichHTML) {
+                            const enriched = await TextEditor.enrichHTML(biographyHtml, { async: true, secrets: false });
+                            if (typeof enriched === 'string') plainSource = enriched;
+                        }
+                        if (TextEditor?.getPlainText) {
+                            biography = TextEditor.getPlainText(plainSource, { secrets: false })?.trim() ?? '';
+                        } else {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(plainSource, 'text/html');
+                            biography = (doc.body.textContent || '').trim();
+                        }
+                    } catch (error) {
+                        log(`CHARACTER DETAILS Biography parsing error: ${error}`, '', false, false);
                     }
-                } catch (error) {
-                    log(`CHARACTER DETAILS Biography parsing error: ${error}`, '', false, false);
+
+                    if (biography) {
+                        biographyHtmlSafe = biography
+                            .split(/\r?\n+/)
+                            .map(line => line.trim())
+                            .filter(Boolean)
+                            .join('<br>');
+                    }
+
+                    this._bioCache = { source: biographyHtml, biography, biographyHtmlSafe };
                 }
-            }
-
-            if (!biographyHtmlRaw && biographyHtml) {
-                biographyHtmlRaw = biographyHtml;
-            }
-
-            if (biography) {
-                biographyHtmlSafe = biography
-                    .split(/\r?\n+/)
-                    .map(line => line.trim())
-                    .filter(Boolean)
-                    .join('<br>');
             }
 
             log(`CHARACTER DETAILS Biography summary: ${biography ? biography.substring(0, 120) : 'none'}`, '', false, false);
@@ -370,8 +375,7 @@ export class CharacterPanel {
                     resistances,
                     immunities,
                     biography,
-                    biographyHtml: biographyHtmlSafe,
-                    biographyHtmlRaw
+                    biographyHtml: biographyHtmlSafe
                 });
             }
 
@@ -387,10 +391,9 @@ export class CharacterPanel {
                 resistances,
                 immunities,
                 biography,
-                biographyHtml: biographyHtmlSafe,
-                biographyHtmlRaw
+                biographyHtml: biographyHtmlSafe
             });
-            
+
             // Phase 1: Safety check after async operations - validate element is still valid
             // Check if this render was cancelled (another render started)
             if (this._renderCancellationToken !== currentToken) {

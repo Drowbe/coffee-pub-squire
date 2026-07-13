@@ -21,10 +21,10 @@
             {{#each immunities}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}
         </div>
     {{/if}}
-    {{#if biographyHtmlRaw}}
+    {{#if biographyHtml}}
         <div class="gm-row">
-            <h1 class="gm-row-title">BIOGRAPHY</h1> 
-            {{{biographyHtmlRaw}}}
+            <h1 class="gm-row-title">BIOGRAPHY</h1>
+            {{{biographyHtml}}}
         </div>
     {{/if}}
 </div>

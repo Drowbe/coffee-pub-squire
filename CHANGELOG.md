@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.8]
+
+### Fixed
+- **Journal/party tabs render lazily**: `renderPanels()` built and rendered the Notes, Codex, Quest, and Party panels on every full tray render even when their tabs were disabled in settings or simply not the active tab. Disabled tabs now never render; enabled-but-inactive tabs defer their first render until the tab is actually opened (or an event-driven refresh renders them), then stay warm. The persistent pinned-quest menubar notification — previously restored from the quest render path — is still established on load without paying for a full quest panel render.
+- **GM Details biography: cleaned text instead of raw HTML, cached**: The biography rendered as raw enriched HTML (images, embeds, and all) via `{{{biographyHtmlRaw}}}`, which displayed poorly in the narrow GM panel — and `CharacterPanel.render()` re-ran `TextEditor.enrichHTML` on it every render, which since 13.3.6 includes every AC/movement/effect tick. The GM panel now renders the cleaned plain-text version (enriched first so `@UUID` links resolve to display names, then stripped of all markup and images, paragraphs preserved), and the result is cached by the raw source string so the enrich cost is paid only when the biography actually changes. `biographyHtmlRaw` is removed from the data flow entirely.
+- **Quest pins: removed the write-only `sceneId` mirror flag**: `_syncQuestPinMirror` wrote a `sceneId` flag on quest pages after every pin place/unplace that no code ever read — quest scene resolution comes from live Blacksmith pin records per the pinId-only contract. Each write was a pointless world document update whose cascade also invalidated the new page-parse cache for that page. Only `pinId` is mirrored now; existing stale `sceneId` values on quest pages are inert. (Notes' own `sceneId` flag is unrelated note metadata and is untouched.)
+
 ## [13.3.7]
 
 ### Fixed

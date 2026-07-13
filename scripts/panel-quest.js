@@ -1341,13 +1341,13 @@ export class QuestPanel {
 
     async _syncQuestPinMirror(page, pin) {
         if (!page) return;
+        // pinId is the only mirrored flag (pinId-only contract) — scene resolution
+        // comes from live Blacksmith pin records. The old sceneId mirror write was
+        // read by nothing and each write was a world update that also invalidated
+        // the page-parse cache for this page.
         const nextPinId = pin?.id ?? page.getFlag(MODULE.ID, 'pinId') ?? null;
-        const nextSceneId = pin?.sceneId ?? null;
         if (page.getFlag(MODULE.ID, 'pinId') !== nextPinId) {
             await page.setFlag(MODULE.ID, 'pinId', nextPinId);
-        }
-        if (page.getFlag(MODULE.ID, 'sceneId') !== nextSceneId) {
-            await page.setFlag(MODULE.ID, 'sceneId', nextSceneId);
         }
     }
 

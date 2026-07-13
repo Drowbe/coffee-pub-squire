@@ -21,7 +21,7 @@ export class GmPanel {
         const hasDetails = Boolean(
             (details.resistances?.length ?? 0) ||
             (details.immunities?.length ?? 0) ||
-            details.biographyHtmlRaw
+            details.biographyHtml
         );
 
         // Hide the entire GM panel shell when there is no data.
@@ -35,7 +35,7 @@ export class GmPanel {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             resistances: details.resistances ?? [],
             immunities: details.immunities ?? [],
-            biographyHtmlRaw: details.biographyHtmlRaw ?? '',
+            biographyHtml: details.biographyHtml ?? '',
             hasDetails,
             isCollapsed: collapsed
         };

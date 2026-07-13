@@ -54,8 +54,7 @@ export class PanelManager {
         resistances: [],
         immunities: [],
         biography: '',
-        biographyHtml: '',
-        biographyHtmlRaw: ''
+        biographyHtml: ''
     };
 
     constructor(actor) {
@@ -647,16 +646,40 @@ export class PanelManager {
 
         await this.renderActorPanels(element);
 
-        // These panels don't require an actor
-        this.partyPanel?.render(element);
+        // These panels don't require an actor.
+        // Journal/party tabs render lazily: disabled tabs never render, and
+        // enabled-but-inactive tabs defer their first render until the tab is viewed
+        // (setViewMode) or an event-driven refresh renders them directly. Once
+        // rendered, they stay warm across subsequent renderPanels calls.
+        const lazyTabs = [
+            { view: 'party', setting: 'showTabParty',  panel: this.partyPanel },
+            { view: 'notes', setting: 'showTabNotes',  panel: this.notesPanel },
+            { view: 'codex', setting: 'showTabCodex',  panel: this.codexPanel },
+            { view: 'quest', setting: 'showTabQuests', panel: this.questPanel }
+        ];
+        for (const { view, setting, panel } of lazyTabs) {
+            if (!panel) continue;
+            if (!game.settings.get(MODULE.ID, setting)) continue;
+            if (PanelManager.viewMode !== view && !panel._hasRenderedOnce) {
+                // Deferred — but the persistent pinned-quest menubar notification is
+                // normally restored from the quest render path, so keep it working
+                // without paying for a full panel render
+                if (view === 'quest') panel._checkAndNotifyPinnedQuest?.();
+                continue;
+            }
+            panel._hasRenderedOnce = true;
+            panel.render(element);
+        }
+        // Party-stats lives inside the party tab — same lazy rules plus its own setting
         if (game.settings.get(MODULE.ID, 'showPartyStatsPanel')) {
-            this.partyStatsPanel?.render(element);
+            if (this.partyStatsPanel
+                && (PanelManager.viewMode === 'party' || this.partyStatsPanel._hasRenderedOnce)) {
+                this.partyStatsPanel._hasRenderedOnce = true;
+                this.partyStatsPanel.render(element);
+            }
         } else {
             PanelManager.removePanelDom(this.partyStatsPanel);
         }
-        this.notesPanel?.render(element);
-        this.codexPanel?.render(element);
-        this.questPanel?.render(element);
         if (game.settings.get(MODULE.ID, 'showMacrosPanel')) {
             if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
                 this.macrosPanel.render(element);
@@ -1267,6 +1290,27 @@ export class PanelManager {
         viewContents.forEach(vc => vc.classList.add('hidden'));
         const activeView = tray.querySelector(`.${mode}-view`);
         if (activeView) activeView.classList.remove('hidden');
+
+        // Lazy tabs: first view triggers the deferred initial render (renderPanels
+        // skips enabled-but-inactive journal/party tabs until they're actually opened)
+        const lazyPanelByMode = {
+            party: this.partyPanel,
+            notes: this.notesPanel,
+            codex: this.codexPanel,
+            quest: this.questPanel
+        };
+        const lazyPanel = lazyPanelByMode[mode];
+        if (lazyPanel && !lazyPanel._hasRenderedOnce) {
+            lazyPanel._hasRenderedOnce = true;
+            await lazyPanel.render(tray);
+        }
+        if (mode === 'party'
+            && this.partyStatsPanel
+            && !this.partyStatsPanel._hasRenderedOnce
+            && game.settings.get(MODULE.ID, 'showPartyStatsPanel')) {
+            this.partyStatsPanel._hasRenderedOnce = true;
+            await this.partyStatsPanel.render(tray);
+        }
         
         // Update tools toolbar visibility
         const toolsToolbar = tray.querySelector('.tray-tools-toolbar');
@@ -1790,8 +1834,7 @@ export class PanelManager {
             resistances: [],
             immunities: [],
             biography: '',
-            biographyHtml: '',
-            biographyHtmlRaw: ''
+            biographyHtml: ''
         };
     }
 
@@ -1898,8 +1941,7 @@ export class PanelManager {
             resistances: details?.resistances ?? [],
             immunities: details?.immunities ?? [],
             biography: details?.biography ?? '',
-            biographyHtml: details?.biographyHtml ?? '',
-            biographyHtmlRaw: details?.biographyHtmlRaw ?? ''
+            biographyHtml: details?.biographyHtml ?? ''
         };
 
         if (game.user.isGM && PanelManager.instance?.gmPanel?.element) {
