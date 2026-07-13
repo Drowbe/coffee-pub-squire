@@ -37,6 +37,23 @@ export class HealthPanel {
         return `squire-health-${this.actor?.id || 'multi'}`;
     }
 
+    destroy() {
+        // Unregister from actor.apps so Foundry stops rendering this panel after teardown
+        const id = this.id;
+        if (this.tokens && this.tokens.length > 0) {
+            this.tokens.forEach(token => {
+                if (token.actor) {
+                    delete token.actor.apps[id];
+                }
+            });
+        }
+        if (this.actor) {
+            delete this.actor.apps[id];
+        }
+        this.tokens = [];
+        this.element = null;
+    }
+
     // Method to update tokens for bulk operations
     updateTokens(tokens) {
         // Prevent infinite loops by checking if tokens have actually changed

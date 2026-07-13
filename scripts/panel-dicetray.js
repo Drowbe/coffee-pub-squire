@@ -63,6 +63,14 @@ export class DiceTrayPanel {
         return `squire-dicetray-${this.actor?.id || 'no-actor'}`;
     }
 
+    destroy() {
+        // Unregister from actor.apps so Foundry stops rendering this panel after teardown
+        if (this.actor) {
+            delete this.actor.apps[this.id];
+        }
+        this.element = null;
+    }
+
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "squire-dicetray",

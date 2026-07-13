@@ -180,6 +180,10 @@ Hooks.once('ready', async () => {
             callback: async () => {
                 // Monitor canvas selection changes for bulk selection support
                 ensureSelectObjectsWrapper();
+
+                // Scene changed — re-resolve the tray actor from the new canvas
+                // (players fall back to their character; GMs get the no-character tray)
+                await reinitializeTrayForCanvas();
             }
         });
 
@@ -466,11 +470,22 @@ Hooks.once('ready', async () => {
             description: "Coffee Pub Squire: Handle global item creation for tray updates and auto-favoriting",
             context: MODULE.ID,
             priority: 2,
-            callback: async (item) => {
+            callback: async (item, options, userId) => {
                 const panelManager = getPanelManager();
-                
+
                 // Check if this item belongs to an actor that the current user owns
                 if (item.parent && item.parent.isOwner) {
+                    // Mark the item as new for the NEW badge — only on the creating client
+                    // so multiple clients don't race to write the same flag
+                    if (userId === game.user.id && item.parent.documentName === 'Actor') {
+                        try {
+                            await item.setFlag(MODULE.ID, 'isNew', true);
+                            panelManager?.newlyAddedItems?.set(item.id, Date.now());
+                        } catch (error) {
+                            // Non-fatal: the badge just won't show for this item
+                        }
+                    }
+
                     // Check if this is an NPC/monster and trigger auto-favoring if needed
                     if (item.parent.type !== "character") {
                         // Check if actor is from a compendium before trying to modify it
@@ -677,18 +692,15 @@ Hooks.once('ready', async () => {
                 }
                 // For health, effects, and spell slot changes, update appropriately
                 else {
-                    // Handle health and effects changes
-                    if (changes.system?.attributes?.hp || changes.effects) {
-                        await panelManager.instance.updateHandle();
-                    }
                     // Handle spell slot changes
                     if (changes.system?.spells) {
                         // Re-render just the spells panel
                         if (panelManager.instance.spellsPanel?.element) {
                             await panelManager.instance.spellsPanel.render(panelManager.instance.spellsPanel.element);
                         }
-                    } else {
-                        // For other changes, just update the handle
+                    }
+                    // Handle health, effects, and other changes — update the handle at most once
+                    if (changes.system?.attributes?.hp || changes.effects || !changes.system?.spells) {
                         await panelManager.instance.updateHandle();
                     }
                 }
@@ -702,59 +714,16 @@ Hooks.once('ready', async () => {
             priority: 2,
             callback: async (token) => {
                 const panelManager = getPanelManager();
-                if (panelManager?.currentActor?.id === token.actor?.id) {
-                    // Try to find another token to display
-                    const nextToken = canvas.tokens?.placeables.find(t => t.actor?.isOwner);
-                    if (nextToken) {
-                        // Add fade-out animation to tray panel wrapper if appropriate
-                        if (panelManager.instance) {
-                            panelManager.instance._applyFadeOutAnimation();
-                        }
-                        
-                        // Update the actor without recreating the tray
-                        panelManager.currentActor = nextToken.actor;
-                        if (panelManager.instance) {
-                            panelManager.instance.actor = nextToken.actor;
-                            
-                            // Update the actor reference in all panel instances
-                            if (panelManager.instance.characterPanel) panelManager.instance.characterPanel.actor = nextToken.actor;
-                            if (panelManager.instance.controlPanel) panelManager.instance.controlPanel.actor = nextToken.actor;
-                            if (panelManager.instance.favoritesPanel) panelManager.instance.favoritesPanel.actor = nextToken.actor;
-                            if (panelManager.instance.spellsPanel) panelManager.instance.spellsPanel.actor = nextToken.actor;
-                            if (panelManager.instance.weaponsPanel) panelManager.instance.weaponsPanel.actor = nextToken.actor;
-                            if (panelManager.instance.inventoryPanel) panelManager.instance.inventoryPanel.actor = nextToken.actor;
-                            if (panelManager.instance.featuresPanel) panelManager.instance.featuresPanel.actor = nextToken.actor;
-                            if (panelManager.instance.experiencePanel) panelManager.instance.experiencePanel.actor = nextToken.actor;
-                            if (panelManager.instance.statsPanel) panelManager.instance.statsPanel.actor = nextToken.actor;
-                            if (panelManager.instance.abilitiesPanel) panelManager.instance.abilitiesPanel.actor = nextToken.actor;
-                            if (panelManager.instance.dicetrayPanel) panelManager.instance.dicetrayPanel.actor = nextToken.actor;
-                            if (panelManager.instance.macrosPanel) panelManager.instance.macrosPanel.actor = nextToken.actor;
-                            
-                            // Update the handle manager's actor reference
-                            if (panelManager.instance.handleManager) {
-                                panelManager.instance.handleManager.updateActor(nextToken.actor);
-                            }
-                            
-                            await panelManager.instance.updateHandle();
-                            
-                            // Re-render all panels (re-check instance - controlToken may have cleared it during await)
-                            if (panelManager.instance?.element) {
-                                await panelManager.instance.renderPanels(panelManager.instance.element);
-                            }
-                            
-                            // Add fade-in animation to tray panel wrapper after update if appropriate
-                            if (panelManager.instance) {
-                                panelManager.instance._applyFadeInAnimation();
-                            }
-                            
-                            // Re-attach event listeners to ensure tray functionality works
-                        }
-                    } else {
-                        // No more tokens, clear the instance
-                        panelManager.instance = null;
-                        panelManager.currentActor = null;
-                    }
-                }
+                if (panelManager?.currentActor?.id !== token.actor?.id) return;
+
+                // Coalesce deletion bursts (GM removing several tokens at once) into ONE rebuild.
+                // The old per-event path reassigned panel actors directly and raced against
+                // itself when two deletions landed back-to-back, leaving the tray half-updated.
+                if (_tokenDeletionRebuildTimer) clearTrackedTimeout(_tokenDeletionRebuildTimer);
+                _tokenDeletionRebuildTimer = trackModuleTimeout(async () => {
+                    _tokenDeletionRebuildTimer = null;
+                    await reinitializeTrayForCanvas();
+                }, 100);
             }
         });
         
@@ -870,6 +839,42 @@ Hooks.once('ready', async () => {
 // Helper function to get PanelManager dynamically to avoid circular dependencies
 function getPanelManager() {
     return game.modules.get('coffee-pub-squire')?.api?.PanelManager;
+}
+
+// Debounce timer for tray rebuilds triggered by token deletion (coalesces bursts)
+let _tokenDeletionRebuildTimer = null;
+
+// When no owned token is on the canvas: players fall back to their assigned character
+// (or any character they own); GMs get null so the tray shows its no-character state.
+function getFallbackActor() {
+    if (game.user.isGM) return null;
+    return game.user.character
+        ?? game.actors.find(a => a.type === 'character' && a.isOwner)
+        ?? null;
+}
+
+// Re-resolve which actor the tray should show from current canvas state. Shared by
+// scene load (canvasReady), token deletion, and world load so the rules stay in one place:
+// - current actor still has a token on this scene → leave the tray alone
+// - a controlled token wins (e.g. multi-select where one token was deleted)
+// - players: their token on this scene, else their assigned/owned character
+// - GMs: the no-character tray until they select a token (selection drives the GM tray)
+async function reinitializeTrayForCanvas() {
+    const pm = getPanelManager();
+    if (!pm) return;
+
+    const sceneHas = (t) => canvas.scene?.tokens.get(t.id);
+    const currentHasToken = pm.currentActor && canvas.tokens?.placeables.some(t =>
+        t.actor?.id === pm.currentActor.id && sceneHas(t));
+    if (currentHasToken) return;
+
+    const controlled = canvas.tokens?.controlled.find(t => t.actor?.isOwner && sceneHas(t));
+    const ownedOnScene = game.user.isGM ? null
+        : canvas.tokens?.placeables.find(t => t.actor?.isOwner && sceneHas(t));
+
+    // force: bypass the init debounce — controlToken release events during scene
+    // teardown / token deletion stamp it and would otherwise swallow this rebuild
+    await pm.initialize(controlled?.actor ?? ownedOnScene?.actor ?? getFallbackActor(), { force: true });
 }
 
 // Helper functions to route journal entry updates to appropriate panels
@@ -1968,7 +1973,11 @@ Hooks.once('ready', async function() {
             callback: async (token, controlled) => {
             // Only proceed if it's a GM or the token owner
             if (!game.user.isGM && !token.actor?.isOwner) return;
-            
+
+            // Ignore control released by token deletion — the deleteToken handler owns
+            // that transition (re-initializing here would resurrect the deleted actor)
+            if (!controlled && !canvas.scene?.tokens.get(token.id)) return;
+
             // Initialize panel manager if needed
             await PanelManager.initialize(token.actor);
             
@@ -1979,9 +1988,10 @@ Hooks.once('ready', async function() {
             }
     });
         
-        // Then initialize the main interface
-        const firstOwnedToken = canvas.tokens?.placeables.find(token => token.actor?.isOwner);
-        await PanelManager.initialize(firstOwnedToken?.actor || null);
+        // Then initialize the main interface via the shared canvas resolution — players with
+        // no owned token on the canvas fall back to their assigned/owned character; GMs get
+        // the no-character tray until they select a token
+        await reinitializeTrayForCanvas();
         
         // Clean up old favorite flags from all actors (one-time migration)
         if (game.user.isGM) {

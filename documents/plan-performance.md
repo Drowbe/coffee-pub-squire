@@ -10,9 +10,9 @@ Verified clean in the July 2026 audit (do not re-investigate): no Handlebars rec
 
 | # | Topic | Type | Rank | Effort | Risk | Status |
 |---|--------|------|------|--------|------|--------|
-| 1 | Double `updateHandle()` on every HP/effect change | Perf | High | Tiny | Low | Open |
-| 2 | `HealthPanel`/`DiceTrayPanel`/`MacrosPanel` strand `actor.apps` entries (no/incomplete `destroy()`) | Leak | High | Small | Low | Open |
-| 3 | `deleteToken` last-token path bypasses `PanelManager.cleanup()` | Leak | High | Small | Low | Open |
+| 1 | Double `updateHandle()` on every HP/effect change | Perf | High | Tiny | Low | **Done** |
+| 2 | `HealthPanel`/`DiceTrayPanel`/`MacrosPanel` strand `actor.apps` entries (no/incomplete `destroy()`) | Leak | High | Small | Low | **Done** |
+| 3 | `deleteToken` last-token path bypasses `PanelManager.cleanup()` | Leak | High | Small | Low | **Done** |
 | 4 | `updateHandle()` renders the entire tray template per call | Perf | High | Medium–large | Medium | Open |
 | 5 | Pinned quest re-enriched/re-parsed on every `updateHandle()` | Perf | High | Small–medium | Low | Open |
 | 6 | Party-stats full recompute on every chat message / actor update, undebounced | Perf | Medium–high | Small | Low | Open |
@@ -21,45 +21,28 @@ Verified clean in the July 2026 audit (do not re-investigate): no Handlebars rec
 | 9 | Notes / Codex / Quest full journal rescan each render | Perf | High | Large | High | Open |
 | 10 | Four separate `updateActor` hooks, no shared relevance gate; party panel undebounced | Perf | Medium | Medium | Medium | Open |
 | 11 | `blacksmith.pins.resolveOwnership` hook — no teardown, no duplicate guard | Leak | Medium | Small | Low | Open |
-| 12 | `deleteToken` fallback reassigns `panel.actor` without moving `actor.apps` | Leak | Low–medium | Small | Low | Open |
+| 12 | `deleteToken` fallback reassigns `panel.actor` without moving `actor.apps` | Leak | Low–medium | Small | Low | **Done** |
 | 13 | Favorites panel `cloneNode` churn on render | Perf | Medium | Medium | Medium | Open |
-| 14 | `cleanupNewlyAddedItems()` repeated world writes + unconditional inventory rerender | Perf | Medium | Small | Low | Open |
+| 14 | `cleanupNewlyAddedItems()` repeated world writes + unconditional inventory rerender | Perf | Medium | Small | Low | **Done** |
 
 **Rank** — impact if left unfixed. **Effort** — rough size of a good fix. **Risk** — chance of regressions when landing the change. Ordering favors payoff-per-effort: 1–3 are cheap, high-certainty wins; 4–8 are the combat-time hot path; 9 is the biggest architectural win for large campaigns; 10–14 are hygiene and polish.
 
 ## Current Findings
 
-### 1) High / Tiny: `updateHandle()` runs twice for every HP or effect change
-- File refs:
-`scripts/squire.js:681-693`
-- Issue:
-In the `globalUpdateActor` handler, HP/effect changes call `updateHandle()` at line 682, then fall into a separate `if (changes.system?.spells) ... else updateHandle()` at line 692. Any actor update without a spell-slot change (the common case: HP tick, condition applied) runs the full handle update **twice**.
-- Impact:
-Doubles the cost of finding 4 on the most frequent hook in combat.
-- Recommendation:
-Make the branches mutually exclusive (`else if`) so `updateHandle()` runs at most once per update. One-line fix.
+### 1) ~~High / Tiny: `updateHandle()` runs twice for every HP or effect change~~ **(addressed)**
+- **What was wrong:** In the `globalUpdateActor` handler, HP/effect changes called `updateHandle()`, then a separate `if (changes.system?.spells) ... else updateHandle()` ran it **again** for any update without a spell-slot change.
+- **What we did:** Restructured so the handle updates at most once per actor update (`hp || effects || !spells` → single call); spells-only updates still skip the handle and rerender just the spells panel.
+- File refs: `scripts/squire.js` (`globalUpdateActor` handler).
 
-### 2) High / Small: In-tray sub-panels strand `actor.apps` registrations on hard actor switch
-- File refs:
-`scripts/panel-health.js:31` (register; no `destroy()` method exists)
-`scripts/panel-dicetray.js:58` (register; no `destroy()` method exists)
-`scripts/panel-macros.js:79` (register), `scripts/panel-macros.js:716-720` (`destroy()` nulls `element` but never `delete this.actor.apps[this.id]`)
-- Issue:
-All three panels self-register via `actor.apps[this.id] = this` so Foundry rerenders them on actor updates. `HealthPanel` and `DiceTrayPanel` have **no `destroy()` at all**, so `_cleanupOldInstance()` (which only calls `destroy()` where it exists) never unregisters them; `MacrosPanel.destroy()` forgets the `apps` deletion. They clean up correctly on *soft* token/actor updates, but the hard `PanelManager.initialize()` path leaks.
-- Impact:
-Every hard actor switch strands a dead panel — holding detached DOM — on the previous actor's document, and **Foundry keeps invoking `render()` on those dead panels** on every future update of that actor. A GM cycling through NPC tokens accumulates one dead panel per actor per panel type. This is the module's clearest true memory leak.
-- Recommendation:
-Add `destroy()` to `HealthPanel` and `DiceTrayPanel` that does `delete this.actor.apps[this.id]` (and nulls `element`/`tokens`); add the `apps` deletion to `MacrosPanel.destroy()`. The popped-out window classes already do this correctly on `close()` — mirror that pattern.
+### 2) ~~High / Small: In-tray sub-panels strand `actor.apps` registrations on hard actor switch~~ **(addressed)**
+- **What was wrong:** `HealthPanel`, `DiceTrayPanel`, and `MacrosPanel` self-register via `actor.apps[this.id] = this`, but Health/DiceTray had no `destroy()` at all and `MacrosPanel.destroy()` never deleted the `apps` entry — so every hard actor switch stranded a dead panel (holding detached DOM) that Foundry kept rendering on the old actor's updates.
+- **What we did:** Added `destroy()` to `HealthPanel` (unregisters from all token actors + primary actor, clears `tokens`/`element`) and `DiceTrayPanel`; added the `apps` deletion to `MacrosPanel.destroy()`. `_cleanupOldInstance()` already invoked `destroy()` where present, so the existing teardown paths now release them.
+- File refs: `scripts/panel-health.js`, `scripts/panel-dicetray.js`, `scripts/panel-macros.js`.
 
-### 3) High / Small: `deleteToken` last-token path bypasses all cleanup
-- File refs:
-`scripts/squire.js:753-756`
-- Issue:
-When the current actor's last token is deleted and no fallback token exists, the handler does `panelManager.instance = null; panelManager.currentActor = null;` directly instead of calling `PanelManager.cleanup()`.
-- Impact:
-Skips tray DOM removal, tracked interval/timeout clearing (the 30s sweep keeps firing against a null instance), and panel destruction — so the `actor.apps` entries from finding 2 are never released even once fixed there.
-- Recommendation:
-Replace the direct nulling with the existing cleanup path.
+### 3) ~~High / Small: `deleteToken` last-token path bypasses all cleanup~~ **(addressed)**
+- **What was wrong:** When the current actor's last token was deleted with no fallback, the handler nulled `panelManager.instance`/`currentActor` directly — skipping tray DOM removal, timer clearing, and panel destruction. Separately, `PanelManager.cleanup()` only destroyed a subset of panels (missing health/dicetray and others).
+- **What we did:** The last-token path now calls `panelManager.initialize(getFallbackActor(), { force: true })` — players fall back to their assigned/owned character, GMs get the no-character tray. `initialize()` destroys the old instance's panels first (via `_cleanupOldInstance()`, releasing `actor.apps` registrations and listeners). `force` bypasses the 100ms init debounce, which the `controlToken` release event stamps just before `deleteToken` fires (this was silently swallowing the rebuild); the `controlToken` handler also now ignores releases for tokens that no longer exist in the scene, and the fallback-token search excludes the just-deleted token's placeable. `PanelManager.cleanup()` (module disable) also now delegates panel destruction to `_cleanupOldInstance()` so the full panel set, including the finding-2 `destroy()` methods, is torn down there too.
+- File refs: `scripts/squire.js` (`deleteToken` handler), `scripts/manager-panel.js` (`cleanup()`).
 
 ### 4) High / Medium–large: `updateHandle()` renders the entire tray template on every call
 - File refs:
@@ -147,15 +130,10 @@ Each module disable→re-enable cycle registers a duplicate resolver.
 - Recommendation:
 Store the hook ID and remove it in `teardownPinManager()`, mirroring the `_sceneSyncHookId` pattern.
 
-### 12) Low–medium / Small: `deleteToken` fallback reassigns `panel.actor` without moving `actor.apps` registrations
-- File refs:
-`scripts/squire.js:730-731`
-- Issue:
-When falling back to another token, `dicetrayPanel.actor` and `macrosPanel.actor` are set directly instead of via `updateActor()`, so the panels stay registered under the deleted actor's `apps` and are never registered on the new actor. `HealthPanel` isn't updated in this path at all.
-- Impact:
-Dangling `apps` entries on the deleted actor; sub-panels stop receiving render notifications for the new actor.
-- Recommendation:
-Call each panel's `updateActor()` (which handles the `apps` handoff) instead of assigning the field.
+### 12) ~~Low–medium / Small: `deleteToken` fallback reassigns `panel.actor` without moving `actor.apps` registrations~~ **(addressed)**
+- **What was wrong:** The `deleteToken` fallback branch set ~14 `panel.actor` fields directly (skipping `updateActor()`'s `actor.apps` handoff), and the per-event execution raced against itself when the GM deleted several tokens at once — leaving the tray half-updated across two actors.
+- **What we did:** Deleted the direct-reassignment branch entirely. The handler now coalesces deletion bursts with a 100ms debounce and performs ONE rebuild via `initialize(nextToken?.actor ?? getFallbackActor(), { force: true })` — a remaining owned token wins, then players fall back to their assigned/owned character, and GMs get the no-character tray. The rebuild re-checks canvas state when it fires (skipping if the current actor regained a token or the user selected something else meanwhile), and `initialize()` handles the full panel teardown/re-registration.
+- File refs: `scripts/squire.js` (`deleteToken` handler).
 
 ### 13) Medium / Medium: Favorites panel still clones many nodes on every render
 - File refs:
@@ -167,19 +145,14 @@ Functionally safe but heavier than delegated binding on a stable container; avoi
 - Recommendation:
 Convert remaining direct per-node bindings to delegated container listeners where practical.
 
-### 14) Medium / Small: `cleanupNewlyAddedItems()` performs world writes and an unconditional inventory rerender every 30s
-- File refs:
-`scripts/manager-panel.js:225` (30s sweep registration), `scripts/manager-panel.js:1447` (`cleanupNewlyAddedItems()`)
-- Issue:
-The 30s sweep prunes `PanelManager.newlyAddedItems` but also iterates all actor items calling `unsetFlag(...)` for stale `isNew` flags with no `newlyAddedItems.size > 0` guard, and force-renders the inventory panel every sweep regardless of change.
-- Impact:
-Document writes and panel rerenders for bookkeeping while the tray is idle; item iteration scales with NPC item counts.
-- Recommendation:
-Only sweep (and only rerender inventory) when `newlyAddedItems.size > 0` or a tracked actor actually changed.
+### 14) ~~Medium / Small: `cleanupNewlyAddedItems()` performs world writes and an unconditional inventory rerender every 30s~~ **(addressed)**
+- **What was wrong:** The 30s sweep iterated all actor items calling `unsetFlag(...)` with no idle guard, and force-rendered the inventory panel every sweep regardless of change.
+- **What we did:** `cleanupNewlyAddedItems()` now early-returns when the map is empty and the current actor's flags were already swept; the stray-`isNew`-flag scan runs once per actor (tracked via `_lastFlagSweepActorId` — flags persist across reloads while the map is in-memory, so the once-per-actor scan still clears stale flags after a reload); the method returns whether anything changed, and the interval only rerenders the inventory panel when it did.
+- File refs: `scripts/manager-panel.js` (sweep registration in `initialize`, `cleanupNewlyAddedItems()`).
 
 ## Suggested Batching
 
-- **Batch A — quick wins (1, 2, 3, 14):** small, low-risk fixes; findings 2+3 together eliminate the module's real memory leak. Ship in one patch release.
+- **Batch A — quick wins (1, 2, 3, 14):** ✅ **Done (July 12, 2026)** — needs in-game verification (steps 1, 2, 7 below).
 - **Batch B — combat hot path (4, 5, 6, 7, 8):** the handle rework (4) is the anchor; 5 rides along in the same file. 6–8 are independent hook-level fixes. Test HP ticks, ammo use, effect application, and multi-select during combat.
 - **Batch C — architectural (9, 10):** incremental journal refresh and the consolidated `updateActor` dispatcher. Largest payoff for big campaigns; needs a dedicated slice and careful regression testing.
 - **Batch D — hygiene/polish (11, 12, 13):** land opportunistically alongside nearby work.

@@ -44,6 +44,7 @@ export class PanelManager {
     static element = null;
     static newlyAddedItems = new Map();
     static _cleanupInterval = null;
+    static _lastFlagSweepActorId = null; // Last actor swept for stray isNew flags (flags persist; the map doesn't)
     static _initializationInProgress = false;
     static _lastInitTime = 0;
     static _eventListeners = new Map(); // Track event listeners for cleanup
@@ -137,7 +138,7 @@ export class PanelManager {
         return !!PanelManager.instance;
     }
 
-    static async initialize(actor = null) {
+    static async initialize(actor = null, { force = false } = {}) {
         // Check if user is excluded - with safety check for setting registration
         let excludedUsers = [];
         try {
@@ -165,9 +166,11 @@ export class PanelManager {
             return;
         }
 
-        // Debounce initialization - don't initialize more than once every 100ms
+        // Debounce initialization - don't initialize more than once every 100ms.
+        // `force` bypasses the debounce for deliberate rebuilds (e.g. last token deleted,
+        // where the controlToken release handler has just stamped _lastInitTime).
         const now = Date.now();
-        if (now - PanelManager._lastInitTime < 100) {
+        if (!force && now - PanelManager._lastInitTime < 100) {
             return;
         }
         PanelManager._lastInitTime = now;
@@ -223,9 +226,9 @@ export class PanelManager {
                 // One periodic sweep: `trackModuleInterval` already registers with timer-utils.
                 // Add only to `_intervals` so `cleanup()` clears it once via `clearTrackedInterval` (avoid duplicate register + double clearInterval).
                 const intervalId = trackModuleInterval(() => {
-                    PanelManager.cleanupNewlyAddedItems();
-                    // Force a re-render of the inventory panel if it exists
-                    if (PanelManager.instance?.inventoryPanel?.element) {
+                    const changed = PanelManager.cleanupNewlyAddedItems();
+                    // Re-render the inventory panel only when a "new" marker actually expired or was cleared
+                    if (changed && PanelManager.instance?.inventoryPanel?.element) {
                         PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
                         PanelManager.instance.controlPanel?.reapplySearch();
                     }
@@ -1444,35 +1447,45 @@ export class PanelManager {
     }
 
     // Add this new method for cleanup
+    // Returns true when anything expired or was cleared, so callers can skip rerenders on idle sweeps.
     static cleanupNewlyAddedItems() {
+        const actor = game.actors.get(PanelManager.currentActor?.id);
+        const actorNeedsFlagSweep = !!actor && PanelManager._lastFlagSweepActorId !== actor.id;
+
+        // Idle world: nothing tracked and the current actor's flags were already swept
+        if (PanelManager.newlyAddedItems.size === 0 && !actorNeedsFlagSweep) return false;
+
+        let changed = false;
         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000); // 5 minutes in milliseconds
-        
+
         // First clean up items in the Map
         for (const [itemId, timestamp] of PanelManager.newlyAddedItems) {
             if (timestamp < fiveMinutesAgo) {
                 PanelManager.newlyAddedItems.delete(itemId);
+                changed = true;
                 // Also clear the isNew flag
-                const actor = game.actors.get(PanelManager.currentActor?.id);
-                if (actor) {
-                    const item = actor.items.get(itemId);
-                    if (item) {
-                        item.unsetFlag(MODULE.ID, 'isNew');
-                    }
+                const item = actor?.items.get(itemId);
+                if (item) {
+                    item.unsetFlag(MODULE.ID, 'isNew');
                 }
             }
         }
 
-        // Then check for any items with the isNew flag that aren't in the Map
-        const actor = game.actors.get(PanelManager.currentActor?.id);
-        if (actor) {
+        // Then check for any items with the isNew flag that aren't in the Map.
+        // Flags persist across reloads while the Map is in-memory, so sweep once per actor.
+        if (actorNeedsFlagSweep) {
+            PanelManager._lastFlagSweepActorId = actor.id;
             for (const item of actor.items) {
                 const isNew = item.getFlag(MODULE.ID, 'isNew');
                 if (isNew && !PanelManager.newlyAddedItems.has(item.id)) {
                     // If the item has the flag but isn't in the Map, clear the flag
                     item.unsetFlag(MODULE.ID, 'isNew');
+                    changed = true;
                 }
             }
         }
+
+        return changed;
     }
 
     // Add this new method to mark an item as new
@@ -1742,38 +1755,8 @@ export class PanelManager {
         // Clear the newly added items map
         PanelManager.newlyAddedItems.clear();
 
-        // Destroy individual panels to clean up their hooks
-        if (PanelManager.instance) {
-            if (PanelManager.instance.notesPanel && typeof PanelManager.instance.notesPanel.destroy === 'function') {
-                PanelManager.instance.notesPanel.destroy();
-            }
-            if (PanelManager.instance.codexPanel && typeof PanelManager.instance.codexPanel.destroy === 'function') {
-                PanelManager.instance.codexPanel.destroy();
-            }
-            if (PanelManager.instance.questPanel && typeof PanelManager.instance.questPanel.destroy === 'function') {
-                PanelManager.instance.questPanel.destroy();
-            }
-            // Clean up CharacterPanel
-            if (PanelManager.instance.characterPanel && typeof PanelManager.instance.characterPanel.destroy === 'function') {
-                PanelManager.instance.characterPanel.destroy();
-            }
-            // Clean up MacrosPanel
-            if (PanelManager.instance.macrosPanel && typeof PanelManager.instance.macrosPanel.destroy === 'function') {
-                PanelManager.instance.macrosPanel.destroy();
-            }
-            // Clean up PartyPanel
-            if (PanelManager.instance.partyPanel && typeof PanelManager.instance.partyPanel.destroy === 'function') {
-                PanelManager.instance.partyPanel.destroy();
-            }
-            // Clean up PartyStatsPanel
-            if (PanelManager.instance.partyStatsPanel && typeof PanelManager.instance.partyStatsPanel.destroy === 'function') {
-                PanelManager.instance.partyStatsPanel.destroy();
-            }
-            // Clean up HandleManager
-            if (PanelManager.instance.handleManager && typeof PanelManager.instance.handleManager.destroy === 'function') {
-                PanelManager.instance.handleManager.destroy();
-            }
-        }
+        // Destroy all panels (including health/dicetray actor.apps registrations) and null the instance
+        PanelManager._cleanupOldInstance();
 
         // Remove the tray element
         if (PanelManager.element) {

@@ -715,7 +715,10 @@ export class MacrosPanel {
 
     destroy() {
         // Note: Hooks are now managed centrally by HookManager
-        // No need to manually remove hooks here anymore
+        // Unregister from actor.apps so Foundry stops rendering this panel after teardown
+        if (this.actor) {
+            delete this.actor.apps[this.id];
+        }
         this.element = null;
     }
 }
