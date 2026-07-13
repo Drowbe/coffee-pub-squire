@@ -33,3 +33,22 @@
     border-radius: 4px;
 
 }
+
+/* Biography blocks — one <p> per source block, headings kept distinct */
+
+.squire-tray[data-position="left"] [data-panel="gm"] .gm-row p.bio-text {
+    margin: 0 0 6px 0;
+    line-height: 1.4;
+}
+
+.squire-tray[data-position="left"] [data-panel="gm"] .gm-row p.bio-heading {
+    margin: 8px 0 4px 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgba(190, 176, 145, 0.95);
+}
+
+.squire-tray[data-position="left"] [data-panel="gm"] .gm-row p.bio-heading:first-child {
+    margin-top: 0;
+}

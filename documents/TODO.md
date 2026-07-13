@@ -100,9 +100,3 @@
 
 ### Performance Optimization
 - (Disabled-tab skip, lazy tab rendering, and CharacterPanel biography optimization shipped in 13.3.8)
-
-## Investigation Needed
-- [ ] Investigate why expand animation changed from sliding to fading
-- [ ] **INVESTIGATE** Add initialization order tests; verify panel behavior across different load conditions
-- [ ] **INVESTIGATE** Test integration with other Coffee Pub modules
-- [ ] **INVESTIGATE** Monitor initialization timing; track event handling efficiency; maintain responsive UI during loading

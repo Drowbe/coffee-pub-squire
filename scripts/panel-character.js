@@ -340,28 +340,65 @@ export class CharacterPanel {
                 } else {
                     try {
                         const TextEditor = getTextEditor();
-                        let plainSource = biographyHtml;
+                        let enrichedSource = biographyHtml;
                         if (TextEditor?.enrichHTML) {
                             const enriched = await TextEditor.enrichHTML(biographyHtml, { async: true, secrets: false });
-                            if (typeof enriched === 'string') plainSource = enriched;
+                            if (typeof enriched === 'string') enrichedSource = enriched;
                         }
-                        if (TextEditor?.getPlainText) {
-                            biography = TextEditor.getPlainText(plainSource, { secrets: false })?.trim() ?? '';
+
+                        // Block-aware text extraction: a flat getPlainText mashes headings
+                        // into the next sentence and collapses table rows into garbage.
+                        // Walk the block elements instead — one clean line per block, with
+                        // headings kept distinct, list items bulleted, and table cells joined.
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(enrichedSource, 'text/html');
+
+                        // Drop non-text content outright — media elements ONLY. Do not remove
+                        // <figure>: Foundry renders @Embed[...] content as
+                        // <figure class="content-embed"> wrapping the embedded page's entire
+                        // text (dnd5e 2024 monster descriptions arrive this way).
+                        doc.body.querySelectorAll('img, picture, video, audio, iframe, canvas, svg, style, script, button')
+                            .forEach(el => el.remove());
+
+                        const BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, caption, figcaption, tr, blockquote, dt, dd';
+                        const blocks = [];
+                        doc.body.querySelectorAll(BLOCK_SELECTOR).forEach(el => {
+                            // Skip containers whose block children will emit on their own
+                            // (e.g. an <li> wrapping a <p>)
+                            if (el.querySelector(BLOCK_SELECTOR)) return;
+
+                            let text;
+                            if (el.tagName === 'TR') {
+                                text = Array.from(el.cells ?? [])
+                                    .map(cell => cell.textContent.replace(/\s+/g, ' ').trim())
+                                    .filter(Boolean)
+                                    .join(' — ');
+                            } else {
+                                text = el.textContent.replace(/\s+/g, ' ').trim();
+                            }
+                            if (!text) return;
+
+                            const isHeading = /^H[1-6]$/.test(el.tagName);
+                            if (el.tagName === 'LI') text = `• ${text}`;
+                            blocks.push({ text, isHeading });
+                        });
+
+                        if (blocks.length) {
+                            biography = blocks.map(b => b.text).join('\n');
+                            const escape = (s) => Handlebars.escapeExpression(s);
+                            biographyHtmlSafe = blocks.map(b => b.isHeading
+                                ? `<p class="bio-heading">${escape(b.text)}</p>`
+                                : `<p class="bio-text">${escape(b.text)}</p>`
+                            ).join('');
                         } else {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(plainSource, 'text/html');
-                            biography = (doc.body.textContent || '').trim();
+                            // Bare-text biography with no block markup
+                            biography = (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+                            if (biography) {
+                                biographyHtmlSafe = `<p class="bio-text">${Handlebars.escapeExpression(biography)}</p>`;
+                            }
                         }
                     } catch (error) {
                         log(`CHARACTER DETAILS Biography parsing error: ${error}`, '', false, false);
-                    }
-
-                    if (biography) {
-                        biographyHtmlSafe = biography
-                            .split(/\r?\n+/)
-                            .map(line => line.trim())
-                            .filter(Boolean)
-                            .join('<br>');
                     }
 
                     this._bioCache = { source: biographyHtml, biography, biographyHtmlSafe };
