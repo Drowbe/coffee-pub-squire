@@ -17,9 +17,15 @@ export class HandleManager {
     constructor(panelManager) {
         this.panelManager = panelManager;
         this.actor = panelManager.actor;
-        
+
         // Resize listener will be set up after first successful updateHandle call
         this._resizeHandler = null;
+
+        // Handle element the delegated listeners are bound to (bind once per tray element)
+        this._boundHandleElement = null;
+
+        // Parsed pinned-quest cache: { uuid, modifiedTime, data }
+        this._pinnedQuestCache = null;
     }
 
     /**
@@ -213,21 +219,26 @@ export class HandleManager {
             handleData.otherPartyMembers = otherPartyMembers;
         }
 
-        // Use the tray template which includes the correct partial
+        // Render ONLY the view-specific handle template — not the whole tray.
+        // (Rendering TEMPLATES.TRAY here built every panel's markup just to slice out
+        // the handle wrapper, and this method runs on nearly every actor/item hook.)
         const trayData = {
             viewMode: PanelManager.viewMode,
             ...handleData
         };
 
+        const handleTemplates = {
+            player: TEMPLATES.HANDLE_PLAYER,
+            party: TEMPLATES.HANDLE_PARTY,
+            notes: TEMPLATES.HANDLE_NOTES,
+            codex: TEMPLATES.HANDLE_CODEX,
+            quest: TEMPLATES.HANDLE_QUEST
+        };
+        const handleContent = await renderTemplate(
+            handleTemplates[PanelManager.viewMode] ?? TEMPLATES.HANDLE_PLAYER,
+            trayData
+        );
 
-
-        const handleTemplate = await renderTemplate(TEMPLATES.TRAY, trayData);
-        
-        // Extract just the tray-handle-content-wrapper content from the rendered template
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = handleTemplate;
-        const handleContent = tempDiv.querySelector('.tray-handle-content-wrapper').innerHTML;
-        
         // Update the handle content
         // v13: Use native DOM instead of jQuery
         const handleLeft = PanelManager.element?.querySelector('.tray-handle-content-wrapper');
@@ -261,11 +272,13 @@ export class HandleManager {
         
         const handle = nativePanelManagerElement.querySelector('.tray-handle');
         if (!handle) return;
-        
-        // v13: Clone handle to remove existing listeners
-        const newHandle = handle.cloneNode(true);
-        handle.parentNode?.replaceChild(newHandle, handle);
-        const handleElement = newHandle;
+
+        // All handlers below are DELEGATED to the stable .tray-handle element, so they
+        // survive handle content re-renders (updateHandle only swaps the wrapper's
+        // innerHTML). Bind once per tray element — no clone-and-rebind per update.
+        if (this._boundHandleElement === handle) return;
+        this._boundHandleElement = handle;
+        const handleElement = handle;
 
         // Helper function to toggle tray expansion
         const toggleTray = () => {
@@ -294,19 +307,13 @@ export class HandleManager {
             return false;
         };
         
-        // Toggle button handling - dedicated handler
-        const toggleButton = handleElement.querySelector('.tray-handle-button-toggle');
-        if (toggleButton) {
-            // Clone to remove existing listeners
-            const newToggleButton = toggleButton.cloneNode(true);
-            toggleButton.parentNode?.replaceChild(newToggleButton, toggleButton);
-            
-            newToggleButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                return toggleTray();
-            });
-        }
+        // Toggle button handling - delegated
+        handleElement.addEventListener('click', (event) => {
+            if (!event.target.closest('.tray-handle-button-toggle')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            return toggleTray();
+        });
 
         // Handle click on character panel (for collapsing)
         handleElement.addEventListener('click', (event) => {
@@ -324,17 +331,13 @@ export class HandleManager {
             return toggleTray();
         });
 
-        // Pin button handling
-        const pinButton = handleElement.querySelector('.tray-handle-button-pin');
-        if (pinButton) {
-            // Clone to remove existing listeners
-            const newPinButton = pinButton.cloneNode(true);
-            pinButton.parentNode?.replaceChild(newPinButton, pinButton);
-            
-            newPinButton.addEventListener('click', async (event) => {
+        // Pin button handling - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('.tray-handle-button-pin')) return;
+            {
                 event.preventDefault();
                 event.stopPropagation();
-                
+
                 PanelManager.isPinned = !PanelManager.isPinned;
                 await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
                 
@@ -370,18 +373,15 @@ export class HandleManager {
                         uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                     }
                 }
-                
-                return false;
-            });
-        }
 
-        // View mode toggle button
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const viewCycleButton = handleElement.querySelector('.tray-handle-button-viewcycle');
-        if (viewCycleButton) {
-            const newButton = viewCycleButton.cloneNode(true);
-            viewCycleButton.parentNode?.replaceChild(newButton, viewCycleButton);
-            newButton.addEventListener('click', async (event) => {
+                return false;
+            }
+        });
+
+        // View mode toggle button - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('.tray-handle-button-viewcycle')) return;
+            {
                 event.preventDefault();
                 const currentMode = PanelManager.viewMode;
                 
@@ -403,53 +403,43 @@ export class HandleManager {
                 // Cycle to next enabled tab
                 const nextIndex = (currentIndex + 1) % enabledTabs.length;
                 const newMode = enabledTabs[nextIndex];
-                
+
                 await PanelManager.instance.setViewMode(newMode);
-            });
-        }
+            }
+        });
 
-        // Handle dice tray icon clicks
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const diceTrayButton = handleElement.querySelector('#dice-tray-button');
-        if (diceTrayButton) {
-            const newButton = diceTrayButton.cloneNode(true);
-            diceTrayButton.parentNode?.replaceChild(newButton, diceTrayButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isPoppedOut) {
-                    await PanelManager.instance.dicetrayPanel._onPopOut();
-                }
-            });
-        }
+        // Handle dice tray icon clicks - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('#dice-tray-button')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isPoppedOut) {
+                await PanelManager.instance.dicetrayPanel._onPopOut();
+            }
+        });
 
-        // Handle pinned quest clicks
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const pinnedQuestName = handleElement.querySelector('.handle-pinned-quest-name');
-        if (pinnedQuestName) {
-            const newElement = pinnedQuestName.cloneNode(true);
-            pinnedQuestName.parentNode?.replaceChild(newElement, pinnedQuestName);
-            newElement.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                // Get the pinned quest UUID from the current data
-                const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-                const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-                
-                if (pinnedQuestUuid) {
-                    try {
-                        const doc = await fromUuid(pinnedQuestUuid);
-                        if (doc) {
-                            doc.sheet.render(true);
-                        }
-                    } catch (error) {
-                        console.error('Error opening pinned quest:', error);
-                        ui.notifications.warn('Could not open pinned quest.');
+        // Handle pinned quest clicks - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('.handle-pinned-quest-name')) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Get the pinned quest UUID from the current data
+            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
+
+            if (pinnedQuestUuid) {
+                try {
+                    const doc = await fromUuid(pinnedQuestUuid);
+                    if (doc) {
+                        doc.sheet.render(true);
                     }
+                } catch (error) {
+                    console.error('Error opening pinned quest:', error);
+                    ui.notifications.warn('Could not open pinned quest.');
                 }
-            });
-        }
+            }
+        });
 
         // Handle health bar clicks
         // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
@@ -464,20 +454,15 @@ export class HandleManager {
             }
         });
 
-        // Handle health tray icon clicks (GM only)
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const healthTrayButton = handleElement.querySelector('#health-tray-button');
-        if (healthTrayButton) {
-            const newButton = healthTrayButton.cloneNode(true);
-            healthTrayButton.parentNode?.replaceChild(newButton, healthTrayButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (game.user.isGM && PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
-                    await PanelManager.instance.healthPanel._onPopOut();
-                }
-            });
-        }
+        // Handle health tray icon clicks (GM only) - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('#health-tray-button')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (game.user.isGM && PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
+                await PanelManager.instance.healthPanel._onPopOut();
+            }
+        });
 
         // Handle favorite item clicks
         // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
@@ -624,14 +609,10 @@ export class HandleManager {
             }
         });
 
-        // Handle conditions button clicks - PRIMARY IMPLEMENTATION
+        // Handle conditions button clicks - PRIMARY IMPLEMENTATION - delegated
         // (This opens the Add Condition dialog with grid of available conditions)
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const conditionsButton = handleElement.querySelector('#conditions-button');
-        if (conditionsButton) {
-            const newButton = conditionsButton.cloneNode(true);
-            conditionsButton.parentNode?.replaceChild(newButton, conditionsButton);
-            newButton.addEventListener('click', async (event) => {
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('#conditions-button')) return;
             event.preventDefault();
             event.stopPropagation();
             
@@ -841,23 +822,17 @@ export class HandleManager {
                 height: "auto"
             });
             dialog.render(true);
-            });
-        }
+        });
 
-        // Handle macros icon clicks
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const macrosButton = handleElement.querySelector('#macros-button');
-        if (macrosButton) {
-            const newButton = macrosButton.cloneNode(true);
-            macrosButton.parentNode?.replaceChild(newButton, macrosButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isPoppedOut) {
-                    await PanelManager.instance.macrosPanel._onPopOut();
-                }
-            });
-        }
+        // Handle macros icon clicks - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('#macros-button')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isPoppedOut) {
+                await PanelManager.instance.macrosPanel._onPopOut();
+            }
+        });
 
         // Add click handler for favorite macros in handle
         // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
@@ -887,69 +862,60 @@ export class HandleManager {
             }
         });
 
-        // Add click handler for party member health bars in the handle
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const partyHealthBars = handleElement.querySelectorAll('.handle-healthbar.party.clickable');
-        partyHealthBars.forEach(healthBar => {
-            const newHealthBar = healthBar.cloneNode(true);
-            healthBar.parentNode?.replaceChild(newHealthBar, healthBar);
-            
-            newHealthBar.addEventListener('click', async function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                // Get the actor ID directly from the clicked health bar element
-                const actorId = newHealthBar.dataset.actorId;
-                
-                if (!actorId) {
-                    return;
-                }
-                
-                const actor = game.actors.get(actorId);
-                if (!actor) {
-                    return;
-                }
-                
-                if (PanelManager.instance?.healthPanel) {
-                    // Control the token if it exists on canvas
-                    const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
-                    if (token) {
-                        token.control({releaseOthers: true});
-                        
-                        // Update PanelManager's current actor reference so the health panel shows the correct data
-                        PanelManager.currentActor = actor;
-                        
-                        // Update the health panel with the party member's token
-                        PanelManager.instance.healthPanel.updateTokens([token]);
-                        
-                        // If health panel is already popped out, update the window directly
-                        if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
-                            PanelManager.instance.healthPanel.window.updateTokens([token]);
-                        } else {
-                            // Pop out the health panel
-                            await PanelManager.instance.healthPanel._onPopOut();
-                        }
+        // Add click handler for party member health bars in the handle - delegated
+        handleElement.addEventListener('click', async function(event) {
+            const healthBarEl = event.target.closest('.handle-healthbar.party.clickable');
+            if (!healthBarEl) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Get the actor ID directly from the clicked health bar element
+            const actorId = healthBarEl.dataset.actorId;
+
+            if (!actorId) {
+                return;
+            }
+
+            const actor = game.actors.get(actorId);
+            if (!actor) {
+                return;
+            }
+
+            if (PanelManager.instance?.healthPanel) {
+                // Control the token if it exists on canvas
+                const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+                if (token) {
+                    token.control({releaseOthers: true});
+
+                    // Update PanelManager's current actor reference so the health panel shows the correct data
+                    PanelManager.currentActor = actor;
+
+                    // Update the health panel with the party member's token
+                    PanelManager.instance.healthPanel.updateTokens([token]);
+
+                    // If health panel is already popped out, update the window directly
+                    if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
+                        PanelManager.instance.healthPanel.window.updateTokens([token]);
+                    } else {
+                        // Pop out the health panel
+                        await PanelManager.instance.healthPanel._onPopOut();
                     }
                 }
-            });
+            }
         });
 
-        // Handle character portrait click in the handle
-        // v13: Use handleElement (the cloned handle that's actually in the DOM)
-        const characterIcon = handleElement.querySelector('.handle-character-icon');
-        if (characterIcon) {
-            const newIcon = characterIcon.cloneNode(true);
-            characterIcon.parentNode?.replaceChild(newIcon, characterIcon);
-            newIcon.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                // Use the actor from the handle context
-                const actor = this.actor || PanelManager.currentActor;
-                if (actor) {
-                    actor.sheet.render(true);
-                }
-            });
-        }
+        // Handle character portrait click in the handle - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('.handle-character-icon')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            // Use the actor from the handle context
+            const actor = this.actor || PanelManager.currentActor;
+            if (actor) {
+                actor.sheet.render(true);
+            }
+        });
 
         // Attach objective click handlers
         // v13: Pass handleElement (the cloned handle that's actually in the DOM)
@@ -965,6 +931,9 @@ export class HandleManager {
             window.removeEventListener('resize', this._resizeHandler);
             this._resizeHandler = null;
         }
+        // Delegated handle listeners die with the tray element; just drop the references
+        this._boundHandleElement = null;
+        this._pinnedQuestCache = null;
     }
 
     /**
@@ -1071,11 +1040,12 @@ export class HandleManager {
         });
 
         // Add enhanced tooltip functionality
-        // v13: Use native DOM event delegation
-        handle.addEventListener('mouseenter', async (event) => {
+        // mouseover/mouseout bubble (mouseenter/mouseleave don't), so delegation works;
+        // the relatedTarget check filters out moves between children of the same icon
+        handle.addEventListener('mouseover', async (event) => {
             const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
-            if (!objectiveIcon) return;
-            
+            if (!objectiveIcon || objectiveIcon.contains(event.relatedTarget)) return;
+
             const taskIndex = parseInt(objectiveIcon.dataset.taskIndex);
             // Get the pinned quest UUID from the current data
             const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
@@ -1093,9 +1063,9 @@ export class HandleManager {
         });
 
         // v13: Use native DOM event delegation
-        handle.addEventListener('mouseleave', (event) => {
+        handle.addEventListener('mouseout', (event) => {
             const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
-            if (!objectiveIcon) return;
+            if (!objectiveIcon || objectiveIcon.contains(event.relatedTarget)) return;
             hideQuestTooltip('squire-handle-objective-tooltip');
         });
     }
@@ -1117,11 +1087,20 @@ export class HandleManager {
             if (!doc) {
                 return null;
             }
-            
+
+            // Cache the parsed result — enrichHTML + QuestParser are heavyweight and this
+            // runs on every updateHandle() while a quest is pinned. Invalidate when the
+            // pinned quest changes or the page document is modified.
+            const modifiedTime = doc._stats?.modifiedTime ?? 0;
+            if (this._pinnedQuestCache?.uuid === pinnedQuestUuid
+                && this._pinnedQuestCache.modifiedTime === modifiedTime) {
+                return this._pinnedQuestCache.data;
+            }
+
             // Get the quest data from the journal entry
             const TextEditor = getTextEditor();
             const enrichedHtml = await TextEditor.enrichHTML(doc.text.content, { async: true });
-            
+
             const entry = await QuestParser.parseSinglePage(doc, enrichedHtml);
             
   
@@ -1142,6 +1121,7 @@ export class HandleManager {
                 uuid: pinnedQuestUuid,
                 tasks: entry.tasks && entry.tasks.length > 0 ? entry.tasks : fallbackTasks
             };
+            this._pinnedQuestCache = { uuid: pinnedQuestUuid, modifiedTime, data: result };
             return result;
         } catch (error) {
             console.error('Error getting pinned quest data:', error);

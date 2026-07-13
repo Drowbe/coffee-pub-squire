@@ -430,6 +430,8 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: (actor, change) => {
+                // Leaderboard only tracks player characters — ignore NPC/monster updates
+                if (actor?.type !== 'character' || !actor?.hasPlayerOwner) return;
                 // Route to party stats panel if it exists
                 const panelManager = getPanelManager();
                 if (panelManager?.instance?.partyStatsPanel && panelManager.instance.partyStatsPanel._boundUpdateHandler) {
@@ -444,6 +446,8 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: (message) => {
+                // MVP scores move on rolls, not table talk — skip plain chat messages
+                if (!message?.rolls?.length) return;
                 // Route to party stats panel if it exists
                 const panelManager = getPanelManager();
                 if (panelManager?.instance?.partyStatsPanel && panelManager.instance.partyStatsPanel._boundUpdateHandler) {
@@ -558,27 +562,40 @@ Hooks.once('ready', async () => {
                     }
                 }
                 
-                // Refresh relevant panels when items are updated
-                // Check if the update affects inventory/weapons (quantity, equipped status, etc.)
+                // Skip rerenders entirely when nothing visible changed (e.g. description edits)
+                const sys = changes.system ?? {};
+                const hasVisibleChange = ('name' in changes) || ('img' in changes) || ('sort' in changes)
+                    || sys.equipped !== undefined
+                    || sys.prepared !== undefined
+                    || sys.preparation !== undefined
+                    || sys.uses !== undefined
+                    || sys.quantity !== undefined
+                    || sys.weight !== undefined
+                    || sys.attunement !== undefined
+                    || changes.flags?.[MODULE.ID] !== undefined;
+                if (!hasVisibleChange) return;
+
+                // Refresh only the panels this item type appears in
                 const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type);
                 const affectsWeapons = item.type === 'weapon';
-                
-                if (affectsInventory || affectsWeapons) {
-                    // Refresh the appropriate panels
-                    if (affectsWeapons && panelManager.instance.weaponsPanel?.element) {
-                        await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
-                    }
-                    if (affectsInventory && panelManager.instance.inventoryPanel?.element) {
-                        await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
-                    }
-                    // Also update favorites panel if item favorite status might have changed
-                    if (panelManager.instance.favoritesPanel?.element) {
-                        await panelManager.instance.favoritesPanel.render(panelManager.instance.favoritesPanel.element);
-                    }
+
+                if (affectsWeapons && panelManager.instance.weaponsPanel?.element) {
+                    await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
                 }
-                
-                // Always update the handle to reflect any changes
-                await panelManager.instance.updateHandle();
+                if (affectsInventory && panelManager.instance.inventoryPanel?.element) {
+                    await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
+                }
+                // Favorites panel only shows favorited items — skip the rerender otherwise
+                if ((affectsInventory || affectsWeapons)
+                    && panelManager.instance.favoritesPanel?.element
+                    && FavoritesPanel.getPanelFavorites(item.parent).includes(item.id)) {
+                    await panelManager.instance.favoritesPanel.render(panelManager.instance.favoritesPanel.element);
+                }
+
+                // The handle only shows handle-favorited items — skip the full rebuild otherwise
+                if (FavoritesPanel.getHandleFavorites(item.parent).includes(item.id)) {
+                    await panelManager.instance.updateHandle();
+                }
             }
         });
         
@@ -683,18 +700,30 @@ Hooks.once('ready', async () => {
                     return;
                 }
                 
-                // Only handle major changes that require full re-initialization
+                // Only handle major identity changes with full re-initialization
                 const needsFullUpdate = changes.name || // Name change
                                        changes.img || // Image change
                                        changes.system?.attributes?.prof || // Proficiency change
-                                       changes.system?.details?.level || // Level change
-                                       changes.system?.attributes?.ac || // AC change
-                                       changes.system?.attributes?.movement; // Movement change
+                                       changes.system?.details?.level; // Level change
+
+                // AC and movement recompute constantly (active effects, conditions, mounts) —
+                // they only need the character/stats displays and the handle, not a full rebuild
+                const needsStatsUpdate = changes.system?.attributes?.ac ||
+                                         changes.system?.attributes?.movement;
 
                 if (needsFullUpdate) {
                     await panelManager.initialize(actor);
                     // Force a re-render of all panels
                     await panelManager.instance.renderPanels(panelManager.instance.element);
+                    await panelManager.instance.updateHandle();
+                }
+                else if (needsStatsUpdate) {
+                    if (panelManager.instance.characterPanel && panelManager.instance.element) {
+                        await panelManager.instance.characterPanel.render(panelManager.instance.element);
+                    }
+                    if (panelManager.instance.statsPanel && panelManager.instance.element) {
+                        await panelManager.instance.statsPanel.render(panelManager.instance.element);
+                    }
                     await panelManager.instance.updateHandle();
                 }
                 // For health, effects, and spell slot changes, update appropriately

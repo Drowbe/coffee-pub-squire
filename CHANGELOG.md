@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.6]
+
+### Fixed
+- **Handle no longer renders the entire tray template on every update**: `HandleManager.updateHandle()` rendered `TEMPLATES.TRAY` — the markup for every panel — into a temp div just to slice out the handle wrapper, on nearly every actor/item/effect hook (many times per second in combat). It now renders only the view-specific handle template (`handle-player`/`handle-party`/`handle-notes`/`handle-codex`/`handle-quest`) directly into the wrapper.
+- **Handle listeners bound once instead of clone-and-rebind per update**: `_attachHandleEventListeners()` cloned the whole `.tray-handle` (plus ~10 individual buttons) and re-attached ~15 listeners on every `updateHandle()`. All handle handlers are now delegated to the stable `.tray-handle` element and bound once per tray. This also fixes two silently broken handlers: the party-member portrait click was attached to the detached pre-clone element, and the pinned-quest objective tooltips used non-bubbling `mouseenter`/`mouseleave` with delegation (now `mouseover`/`mouseout` with a `relatedTarget` guard, so the tooltips actually work).
+- **Pinned quest no longer re-parsed on every handle update**: With a quest pinned, every `updateHandle()` ran `fromUuid` + `enrichHTML` + `QuestParser.parseSinglePage`. The parsed result is now cached by quest UUID + page `modifiedTime` and only re-parsed when the pinned quest changes or its journal page is actually edited.
+- **Party-stats leaderboard recompute debounced and filtered**: Every `updateActor`, `updateCombat`, and `createChatMessage` triggered an immediate full leaderboard recompute with one sequential `getStats` await per party member. Updates are now debounced (250ms trailing), stats fetch concurrently via `Promise.all`, NPC/monster actor updates are ignored, and plain chat messages (no rolls) no longer trigger a recompute at all.
+- **Item updates re-render less**: A single item change re-rendered weapons/inventory (already type-gated) plus the favorites panel plus a full handle rebuild regardless of what changed. Now: invisible changes (e.g. description edits) skip all re-renders; the favorites panel only re-renders when the changed item is actually favorited; and the handle only rebuilds when the item is a handle favorite (the handle displays nothing else item-derived).
+- **AC/movement changes no longer rebuild the whole tray**: `changes.system.attributes.ac`/`movement` were in the "major change" set that triggered full `PanelManager.initialize()` + `renderPanels()` — but both recompute constantly from active effects, conditions, and mounts. They now do a targeted character-panel + stats-panel render plus a handle update. Full re-initialization is reserved for name/image/proficiency/level changes.
+
 ## [13.3.5]
 
 ### Fixed

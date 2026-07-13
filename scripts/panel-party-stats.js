@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { renderTemplate, getNativeElement } from './helpers.js';
+import { trackModuleTimeout } from './timer-utils.js';
 
 function getBlacksmith() {
     return game.modules.get('coffee-pub-blacksmith')?.api;
@@ -9,6 +10,7 @@ export class PartyStatsPanel {
     constructor() {
         this.element = null;
         this._boundUpdateHandler = this._onStatsUpdate.bind(this);
+        this._updateTimer = null;
     }
 
     async getData() {
@@ -44,13 +46,14 @@ export class PartyStatsPanel {
 
         const playerActors = game.actors.filter((actor) => actor.type === 'character' && actor.hasPlayerOwner && !actor.isToken);
 
-        for (const actor of playerActors) {
+        // Fetch all members' stats concurrently instead of one sequential await per actor
+        const entries = await Promise.all(playerActors.map(async (actor) => {
             try {
                 const stats = await playerApi.getStats(actor.id);
                 const mvp = stats?.lifetime?.mvp;
-                if (!mvp || (mvp.combats ?? 0) <= 0) continue;
+                if (!mvp || (mvp.combats ?? 0) <= 0) return null;
 
-                payload.leaderboard.push({
+                return {
                     actorId: actor.id,
                     rank: 0,
                     name: actor.prototypeToken?.name ?? actor.name,
@@ -59,7 +62,7 @@ export class PartyStatsPanel {
                     combats: Number(mvp.combats ?? 0),
                     averageScore: Number(mvp.averageScore ?? 0),
                     bestScore: Number(mvp.highScore ?? 0)
-                });
+                };
             } catch (error) {
                 getBlacksmith()?.utils?.postConsoleAndNotification(
                     MODULE.NAME,
@@ -69,8 +72,10 @@ export class PartyStatsPanel {
                     false
                 );
                 console.error(`Error loading MVP stats for ${actor.name}:`, error);
+                return null;
             }
-        }
+        }));
+        payload.leaderboard.push(...entries.filter(Boolean));
 
         payload.leaderboard.sort((a, b) => b.totalScore - a.totalScore);
         payload.leaderboard.forEach((entry, index) => {
@@ -83,10 +88,15 @@ export class PartyStatsPanel {
         return payload;
     }
 
-    async _onStatsUpdate() {
-        if (this.element) {
-            await this._updateDisplay();
-        }
+    _onStatsUpdate() {
+        if (!this.element) return;
+        // Debounce: combat rounds and roll bursts fire several hooks back-to-back;
+        // one trailing recompute is enough for a leaderboard
+        if (this._updateTimer) clearTimeout(this._updateTimer);
+        this._updateTimer = trackModuleTimeout(async () => {
+            this._updateTimer = null;
+            if (this.element) await this._updateDisplay();
+        }, 250);
     }
 
     async render(element) {
@@ -110,6 +120,10 @@ export class PartyStatsPanel {
     }
 
     destroy() {
+        if (this._updateTimer) {
+            clearTimeout(this._updateTimer);
+            this._updateTimer = null;
+        }
         this.element = null;
     }
 }

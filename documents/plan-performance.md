@@ -13,11 +13,11 @@ Verified clean in the July 2026 audit (do not re-investigate): no Handlebars rec
 | 1 | Double `updateHandle()` on every HP/effect change | Perf | High | Tiny | Low | **Done** |
 | 2 | `HealthPanel`/`DiceTrayPanel`/`MacrosPanel` strand `actor.apps` entries (no/incomplete `destroy()`) | Leak | High | Small | Low | **Done** |
 | 3 | `deleteToken` last-token path bypasses `PanelManager.cleanup()` | Leak | High | Small | Low | **Done** |
-| 4 | `updateHandle()` renders the entire tray template per call | Perf | High | Medium–large | Medium | Open |
-| 5 | Pinned quest re-enriched/re-parsed on every `updateHandle()` | Perf | High | Small–medium | Low | Open |
-| 6 | Party-stats full recompute on every chat message / actor update, undebounced | Perf | Medium–high | Small | Low | Open |
-| 7 | One item change rerenders weapons + inventory + favorites + handle | Perf | Medium–high | Medium | Medium | Open |
-| 8 | AC/movement changes trigger full `initialize()` + `renderPanels()` | Perf | Medium | Small | Medium | Open |
+| 4 | `updateHandle()` renders the entire tray template per call | Perf | High | Medium–large | Medium | **Done** |
+| 5 | Pinned quest re-enriched/re-parsed on every `updateHandle()` | Perf | High | Small–medium | Low | **Done** |
+| 6 | Party-stats full recompute on every chat message / actor update, undebounced | Perf | Medium–high | Small | Low | **Done** |
+| 7 | One item change rerenders weapons + inventory + favorites + handle | Perf | Medium–high | Medium | Medium | **Done** |
+| 8 | AC/movement changes trigger full `initialize()` + `renderPanels()` | Perf | Medium | Small | Medium | **Done** |
 | 9 | Notes / Codex / Quest full journal rescan each render | Perf | High | Large | High | Open |
 | 10 | Four separate `updateActor` hooks, no shared relevance gate; party panel undebounced | Perf | Medium | Medium | Medium | Open |
 | 11 | `blacksmith.pins.resolveOwnership` hook — no teardown, no duplicate guard | Leak | Medium | Small | Low | Open |
@@ -44,58 +44,27 @@ Verified clean in the July 2026 audit (do not re-investigate): no Handlebars rec
 - **What we did:** Token deletion now routes through the shared `reinitializeTrayForCanvas()` resolver (debounced 100ms to coalesce deletion bursts), which rebuilds via `initialize(..., { force: true })` — players fall back to a remaining owned token, then their assigned/owned character; GMs get the no-character tray (selection-driven). The same resolver runs on `canvasReady` (scene load) and world load. `initialize()` destroys the old instance's panels first (via `_cleanupOldInstance()`, releasing `actor.apps` registrations and listeners); `force` bypasses the 100ms init debounce that the `controlToken` release event stamps just before `deleteToken` fires (this was silently swallowing the rebuild), and the `controlToken` handler ignores releases for tokens that no longer exist in the scene. `PanelManager.cleanup()` (module disable) also now delegates panel destruction to `_cleanupOldInstance()` so the full panel set, including the finding-2 `destroy()` methods, is torn down there too. **Verified in-game July 12, 2026.**
 - File refs: `scripts/squire.js` (`deleteToken` handler), `scripts/manager-panel.js` (`cleanup()`).
 
-### 4) High / Medium–large: `updateHandle()` renders the entire tray template on every call
-- File refs:
-`scripts/manager-handle.js:224-229` (full-tray render + slice)
-`scripts/manager-handle.js:184-194` (~13 `game.settings.get` per call)
-`scripts/manager-handle.js:108-147` (party context built unconditionally)
-- Issue:
-`updateHandle()` renders `TEMPLATES.TRAY` — the markup for **every** panel — into a temp div, extracts only `.tray-handle-content-wrapper`, and discards the rest. It then clones the handle element and re-binds ~15 listeners, re-reads ~13 settings, and builds `otherPartyMembers` (per-member health calc) even in player view where it's unused.
-- Impact:
-`updateHandle()` fires on nearly every hook: `updateItem`, `updateActor`, `createItem`, `deleteItem`, active-effect create/delete, `createToken`, and every `setViewMode`. During combat this runs many times per second (doubled until finding 1 lands). This is the single worst render hot spot in the module.
-- Recommendation:
-Render a dedicated handle-only template instead of the full tray; use delegated listeners on a stable handle container instead of clone+rebind; batch/cache the settings reads; only build party context when `viewMode === 'party'`.
+### 4) ~~High / Medium–large: `updateHandle()` renders the entire tray template on every call~~ **(addressed)**
+- **What was wrong:** `updateHandle()` rendered `TEMPLATES.TRAY` — every panel's markup — into a temp div just to slice out the handle wrapper, then cloned the whole `.tray-handle` (plus ~10 individual buttons) and re-bound ~15 listeners, on nearly every hook.
+- **What we did:** Renders only the view-specific handle template (`HANDLE_PLAYER`/`HANDLE_PARTY`/`HANDLE_NOTES`/`HANDLE_CODEX`/`HANDLE_QUEST`, added to `TEMPLATES`) directly into the wrapper. All handle handlers are now delegated to the stable `.tray-handle` element and bound once per tray (`_boundHandleElement` guard) — zero clone churn per update. Bonus fixes: the party-member portrait handler was attached to the detached pre-clone element (dead), and objective tooltips used non-bubbling `mouseenter`/`mouseleave` with delegation (dead) — both now work via `mouseover`/`mouseout` + `relatedTarget` guards. Not done (deemed not worth it): settings-read batching (`game.settings.get` is an in-memory lookup) and skipping party context in player view (the player handle shows party portraits).
+- File refs: `scripts/manager-handle.js` (`updateHandle`, `_attachHandleEventListeners`), `scripts/const.js`.
 
-### 5) High / Small–medium: Pinned quest re-enriched and re-parsed on every `updateHandle()`
-- File refs:
-`scripts/manager-handle.js:102-104`, `scripts/manager-handle.js:1107-1145`
-- Issue:
-When a quest is pinned, every `updateHandle()` call runs `fromUuid` + `TextEditor.enrichHTML` + `QuestParser.parseSinglePage` on the pinned quest page — heavyweight async work for data that rarely changes.
-- Impact:
-Adds enrich+parse cost to every HP tick / item update for the entire duration a quest is pinned (multiplied by findings 1 and 4).
-- Recommendation:
-Cache the parsed pinned-quest entry keyed by UUID + page `_stats.modifiedTime`; invalidate from the quest pin/journal hooks that already exist.
+### 5) ~~High / Small–medium: Pinned quest re-enriched and re-parsed on every `updateHandle()`~~ **(addressed)**
+- **What was wrong:** With a quest pinned, every `updateHandle()` ran `fromUuid` + `enrichHTML` + `QuestParser.parseSinglePage`.
+- **What we did:** `_getPinnedQuestData()` caches the parsed result keyed by quest UUID + page `_stats.modifiedTime`; re-parses only when the pinned quest changes or its page is edited (objective state changes edit page content, so they bump `modifiedTime` and invalidate naturally).
+- File refs: `scripts/manager-handle.js` (`_getPinnedQuestData`).
 
-### 6) Medium–high / Small: Party-stats panel recomputes the full leaderboard on every chat message, undebounced
-- File refs:
-`scripts/panel-party-stats.js:21-73`
-`scripts/squire.js:416-442` (hook wiring)
-- Issue:
-`_boundUpdateHandler` is attached without debounce to `updateActor`, `updateCombat`, **and** `createChatMessage`. Each fire awaits `BlacksmithAPI.waitForReady()`, then sequentially awaits `getStats(actor.id)` per party member, then does a full `innerHTML` replace.
-- Impact:
-Every chat message in the session triggers a full stats recompute scaling with party size.
-- Recommendation:
-Debounce the handler; parallelize with `Promise.all`; skip recompute on `createChatMessage` unless the message carries combat/score-relevant data.
+### 6) ~~Medium–high / Small: Party-stats recompute on every chat message, undebounced~~ **(addressed)**
+- **What we did:** `_onStatsUpdate` is debounced (250ms trailing, tracked timer cleared in `destroy()`); `getData()` fetches all members' stats concurrently via `Promise.all`; the `updateActor` hook ignores non-player-character actors; the `createChatMessage` hook skips messages without rolls.
+- File refs: `scripts/panel-party-stats.js`, `scripts/squire.js` (party-stats hook wiring).
 
-### 7) Medium–high / Medium: One item change rerenders three panels plus the handle
-- File refs:
-`scripts/squire.js:499-561`
-- Issue:
-`globalUpdateItem` on the current actor awaits full rerenders of the weapons, inventory, and favorites panels, then `updateHandle()`, regardless of which item fields changed. Ammo decrements and equip toggles — the most frequent combat item updates — pay the full cost.
-- Impact:
-Frequent multi-panel `innerHTML` rebuilds during combat.
-- Recommendation:
-Inspect `changes` and skip rerender when only non-visible fields changed; render only the panel(s) matching the item type; coalesce burst updates with a short debounce.
+### 7) ~~Medium–high / Medium: One item change rerenders three panels plus the handle~~ **(addressed)**
+- **What we did:** `globalUpdateItem` now short-circuits when no visible field changed (name/img/sort/equipped/prepared/uses/quantity/weight/attunement/module flags — description edits skip everything); weapons/inventory renders stay type-gated; the favorites panel only rerenders when the changed item is actually favorited; the handle only rebuilds when the item is a handle favorite (the handle displays nothing else item-derived).
+- File refs: `scripts/squire.js` (`globalUpdateItem`).
 
-### 8) Medium / Small: AC and movement changes trigger full `initialize()` + `renderPanels()`
-- File refs:
-`scripts/squire.js:664-677`
-- Issue:
-The `needsFullUpdate` set includes `changes.system?.attributes?.ac` and `...movement`. AC and movement recompute constantly (active effects, conditions, mounts), and each occurrence re-initializes the PanelManager and rerenders every panel plus the handle.
-- Impact:
-A "major change" path that actually fires on routine effect churn.
-- Recommendation:
-Drop `ac`/`movement` from the full-update set; route them to a targeted stats/handle update.
+### 8) ~~Medium / Small: AC and movement changes trigger full `initialize()` + `renderPanels()`~~ **(addressed)**
+- **What we did:** Removed `ac`/`movement` from the `needsFullUpdate` set (now name/img/proficiency/level only). AC/movement changes take a new `needsStatsUpdate` branch: targeted character-panel + stats-panel render plus a handle update — no re-initialization, no full-tray rerender.
+- File refs: `scripts/squire.js` (`globalUpdateActor`).
 
 ### 9) High / Large: Notes, Codex, and Quest panels fully rescan their journals on each render
 - File refs:
@@ -153,7 +122,7 @@ Convert remaining direct per-node bindings to delegated container listeners wher
 ## Suggested Batching
 
 - **Batch A — quick wins (1, 2, 3, 14):** ✅ **Done and verified in-game (July 12, 2026)** — plus finding 12 landed as part of the finding-3 rework. Shipped in 13.3.5 alongside the NEW-badge wiring and the tray actor fallback rules (see CHANGELOG).
-- **Batch B — combat hot path (4, 5, 6, 7, 8):** the handle rework (4) is the anchor; 5 rides along in the same file. 6–8 are independent hook-level fixes. Test HP ticks, ammo use, effect application, and multi-select during combat.
+- **Batch B — combat hot path (4, 5, 6, 7, 8):** ✅ **Done (July 12, 2026, targeted for 13.3.6)** — needs in-game verification (steps 1, 3, 4 below, plus a full handle interaction pass: pin/toggle/view-cycle buttons, dice tray/macros/conditions/health buttons, favorites, condition icons, party portraits and health bars, pinned-quest name and objective icons — every handle control was migrated to delegated listeners).
 - **Batch C — architectural (9, 10):** incremental journal refresh and the consolidated `updateActor` dispatcher. Largest payoff for big campaigns; needs a dedicated slice and careful regression testing.
 - **Batch D — hygiene/polish (11, 12, 13):** land opportunistically alongside nearby work.
 
