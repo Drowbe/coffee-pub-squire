@@ -558,9 +558,8 @@ export class FavoritesPanel {
             this._listenerController = null;
         }
         
-        // v13: Native DOM doesn't support jQuery's .off() method
-        // Event listeners will be removed when elements are cloned in _activateListeners
-        // This method is kept for compatibility but does nothing in v13
+        // All listeners are registered with this controller's signal, so aborting it
+        // above removes them — no element cloning needed.
         
         // Properly cleanup context menu
         // v13: Don't try to close the context menu during render - the DOM is about to be replaced
@@ -679,9 +678,7 @@ export class FavoritesPanel {
         // v13: Use nativeHtml instead of html, native DOM methods
         const spellToggle = nativeHtml.querySelector('.favorites-spell-toggle');
         if (spellToggle) {
-            const newSpellToggle = spellToggle.cloneNode(true);
-            spellToggle.parentNode?.replaceChild(newSpellToggle, spellToggle);
-            newSpellToggle.addEventListener('click', async (event) => {
+            spellToggle.addEventListener('click', async (event) => {
                 await this._toggleFilter('spells');
                 event.currentTarget.classList.toggle('active', this.showSpells);
                 event.currentTarget.classList.toggle('faded', !this.showSpells);
@@ -690,9 +687,7 @@ export class FavoritesPanel {
 
         const weaponToggle = nativeHtml.querySelector('.favorites-weapon-toggle');
         if (weaponToggle) {
-            const newWeaponToggle = weaponToggle.cloneNode(true);
-            weaponToggle.parentNode?.replaceChild(newWeaponToggle, weaponToggle);
-            newWeaponToggle.addEventListener('click', async (event) => {
+            weaponToggle.addEventListener('click', async (event) => {
                 await this._toggleFilter('weapons');
                 event.currentTarget.classList.toggle('active', this.showWeapons);
                 event.currentTarget.classList.toggle('faded', !this.showWeapons);
@@ -701,9 +696,7 @@ export class FavoritesPanel {
 
         const featuresToggle = nativeHtml.querySelector('.favorites-features-toggle');
         if (featuresToggle) {
-            const newFeaturesToggle = featuresToggle.cloneNode(true);
-            featuresToggle.parentNode?.replaceChild(newFeaturesToggle, featuresToggle);
-            newFeaturesToggle.addEventListener('click', async (event) => {
+            featuresToggle.addEventListener('click', async (event) => {
                 await this._toggleFilter('features');
                 event.currentTarget.classList.toggle('active', this.showFeatures);
                 event.currentTarget.classList.toggle('faded', !this.showFeatures);
@@ -712,52 +705,42 @@ export class FavoritesPanel {
 
         const inventoryToggle = nativeHtml.querySelector('.favorites-inventory-toggle');
         if (inventoryToggle) {
-            const newInventoryToggle = inventoryToggle.cloneNode(true);
-            inventoryToggle.parentNode?.replaceChild(newInventoryToggle, inventoryToggle);
-            newInventoryToggle.addEventListener('click', async (event) => {
+            inventoryToggle.addEventListener('click', async (event) => {
                 await this._toggleFilter('inventory');
                 event.currentTarget.classList.toggle('active', this.showInventory);
                 event.currentTarget.classList.toggle('faded', !this.showInventory);
             }, { signal: listenerSignal });
         }
 
-        // Roll/Use item
-        // v13: Use native DOM event delegation
-        nativeHtml.querySelectorAll('.panel-item-image-container').forEach(container => {
-            const newContainer = container.cloneNode(true);
-            container.parentNode?.replaceChild(newContainer, container);
-            newContainer.addEventListener('click', async (event) => {
-                if (event.target.classList.contains('panel-item-roll-overlay')) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const favoriteItem = event.currentTarget.closest('.panel-item');
-                    if (!favoriteItem) return;
-                    const itemId = favoriteItem.dataset.itemId;
-                    const item = this.actor.items.get(itemId);
-                    if (item) {
-                        await item.use({}, { event });
-                    }
-                }
-            }, { signal: listenerSignal });
-        });
+        // Roll/Use item — delegated to the panel (one listener regardless of list size)
+        panel.addEventListener('click', async (event) => {
+            if (!event.target.classList.contains('panel-item-roll-overlay')) return;
+            if (!event.target.closest('.panel-item-image-container')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const favoriteItem = event.target.closest('.panel-item');
+            if (!favoriteItem) return;
+            const itemId = favoriteItem.dataset.itemId;
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                await item.use({}, { event });
+            }
+        }, { signal: listenerSignal });
 
-        // View item details
-        // v13: Use native DOM event delegation
-        nativeHtml.querySelectorAll('.panel-item .fa-feather').forEach(icon => {
-            const newIcon = icon.cloneNode(true);
-            icon.parentNode?.replaceChild(newIcon, icon);
-            newIcon.addEventListener('click', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                const favoriteItem = event.currentTarget.closest('.panel-item');
-                if (!favoriteItem) return;
-                const itemId = favoriteItem.dataset.itemId;
-                const item = this.actor.items.get(itemId);
-                if (item) {
-                    item.sheet.render(true);
-                }
-            }, { signal: listenerSignal });
-        });
+        // View item details — delegated
+        panel.addEventListener('click', async (event) => {
+            const featherIcon = event.target.closest('.panel-item .fa-feather');
+            if (!featherIcon) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const favoriteItem = featherIcon.closest('.panel-item');
+            if (!favoriteItem) return;
+            const itemId = favoriteItem.dataset.itemId;
+            const item = this.actor.items.get(itemId);
+            if (item) {
+                item.sheet.render(true);
+            }
+        }, { signal: listenerSignal });
 
         // Toggle favorite
         // v13: Use native DOM event delegation on panel (from querySelector)
@@ -952,9 +935,7 @@ export class FavoritesPanel {
         // v13: Use nativeHtml instead of html
         const clearAllButton = nativeHtml.querySelector('.favorites-clear-all');
         if (clearAllButton) {
-            const newClearAllButton = clearAllButton.cloneNode(true);
-            clearAllButton.parentNode?.replaceChild(newClearAllButton, clearAllButton);
-            newClearAllButton.addEventListener('click', async () => {
+            clearAllButton.addEventListener('click', async () => {
                 await FavoritesPanel.clearFavorites(this.actor);
             }, { signal: listenerSignal });
         }

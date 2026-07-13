@@ -1580,6 +1580,7 @@ async function _migrateCodexPinFlags() {
 let _pinManagerController = null;
 let _contextMenuDisposers = [];
 let _sceneSyncHookId      = null;
+let _resolveOwnershipHookId = null;
 let _pinManagerInitialized = false;
 let _syncDebounceTimer    = null;
 let _syncPending          = false;
@@ -2153,12 +2154,15 @@ export async function initPinManager() {
     }
 
     // Ownership resolver — Blacksmith asks Squire for note pin ownership.
-    Hooks.on('blacksmith.pins.resolveOwnership', (context) => {
-        if (!context || context.moduleId !== MODULE.ID) return null;
-        const visibility = context.metadata?.visibility || 'private';
-        const authorId   = context.metadata?.authorId   || game.user?.id;
-        return buildNoteOwnership(visibility, authorId);
-    });
+    // Guarded + tracked so disable→re-enable cycles don't register duplicates.
+    if (!_resolveOwnershipHookId) {
+        _resolveOwnershipHookId = Hooks.on('blacksmith.pins.resolveOwnership', (context) => {
+            if (!context || context.moduleId !== MODULE.ID) return null;
+            const visibility = context.metadata?.visibility || 'private';
+            const authorId   = context.metadata?.authorId   || game.user?.id;
+            return buildNoteOwnership(visibility, authorId);
+        });
+    }
 
     // Run migrations (GM only).
     await _migrateCodexPinFlags();
@@ -2185,6 +2189,11 @@ export function teardownPinManager() {
     if (_sceneSyncHookId !== null) {
         try { Hooks.off('updateScene', _sceneSyncHookId); } catch (_) {}
         _sceneSyncHookId = null;
+    }
+
+    if (_resolveOwnershipHookId !== null) {
+        try { Hooks.off('blacksmith.pins.resolveOwnership', _resolveOwnershipHookId); } catch (_) {}
+        _resolveOwnershipHookId = null;
     }
 
     if (_syncDebounceTimer) { clearTimeout(_syncDebounceTimer); _syncDebounceTimer = null; }

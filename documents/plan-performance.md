@@ -20,9 +20,9 @@ Verified clean in the July 2026 audit (do not re-investigate): no Handlebars rec
 | 8 | AC/movement changes trigger full `initialize()` + `renderPanels()` | Perf | Medium | Small | Medium | **Done** |
 | 9 | Notes / Codex / Quest full journal rescan each render | Perf | High | Large | High | Open |
 | 10 | Four separate `updateActor` hooks, no shared relevance gate; party panel undebounced | Perf | Medium | Medium | Medium | Open |
-| 11 | `blacksmith.pins.resolveOwnership` hook — no teardown, no duplicate guard | Leak | Medium | Small | Low | Open |
+| 11 | `blacksmith.pins.resolveOwnership` hook — no teardown, no duplicate guard | Leak | Medium | Small | Low | **Done** |
 | 12 | `deleteToken` fallback reassigns `panel.actor` without moving `actor.apps` | Leak | Low–medium | Small | Low | **Done** |
-| 13 | Favorites panel `cloneNode` churn on render | Perf | Medium | Medium | Medium | Open |
+| 13 | Favorites panel `cloneNode` churn on render | Perf | Medium | Medium | Medium | **Done** |
 | 14 | `cleanupNewlyAddedItems()` repeated world writes + unconditional inventory rerender | Perf | Medium | Small | Low | **Done** |
 
 **Rank** — impact if left unfixed. **Effort** — rough size of a good fix. **Risk** — chance of regressions when landing the change. Ordering favors payoff-per-effort: 1–3 are cheap, high-certainty wins; 4–8 are the combat-time hot path; 9 is the biggest architectural win for large campaigns; 10–14 are hygiene and polish.
@@ -89,30 +89,19 @@ Redundant fan-out per actor update; multi-select bursts cause repeated full part
 - Recommendation:
 Consolidate into one `updateActor` dispatcher that computes relevance once and fans out only to affected panels; debounce party panel handlers; do a targeted healthbar update for the changed token instead of a full rebuild.
 
-### 11) Medium / Small: `blacksmith.pins.resolveOwnership` hook has no teardown and no duplicate guard
-- File refs:
-`scripts/manager-pins.js:2156` (registration), `scripts/manager-pins.js:2174-2199` (`teardownPinManager()` — only removes the `updateScene` hook)
-- Issue:
-Registered with a bare `Hooks.on(...)` in `initPinManager()`; the hook ID is never captured, `teardownPinManager()` never removes it, and unlike the sibling `_sceneSyncHookId` there is no idempotency guard.
-- Impact:
-Each module disable→re-enable cycle registers a duplicate resolver.
-- Recommendation:
-Store the hook ID and remove it in `teardownPinManager()`, mirroring the `_sceneSyncHookId` pattern.
+### 11) ~~Medium / Small: `blacksmith.pins.resolveOwnership` hook has no teardown and no duplicate guard~~ **(addressed)**
+- **What we did:** Hook ID stored in `_resolveOwnershipHookId` with an idempotency guard on registration; `teardownPinManager()` removes it via `Hooks.off` and nulls the ID, mirroring the `_sceneSyncHookId` pattern.
+- File refs: `scripts/manager-pins.js` (`initPinManager`, `teardownPinManager`).
 
 ### 12) ~~Low–medium / Small: `deleteToken` fallback reassigns `panel.actor` without moving `actor.apps` registrations~~ **(addressed)**
 - **What was wrong:** The `deleteToken` fallback branch set ~14 `panel.actor` fields directly (skipping `updateActor()`'s `actor.apps` handoff), and the per-event execution raced against itself when the GM deleted several tokens at once — leaving the tray half-updated across two actors.
 - **What we did:** Deleted the direct-reassignment branch entirely. The handler now coalesces deletion bursts with a 100ms debounce and performs ONE rebuild via `initialize(nextToken?.actor ?? getFallbackActor(), { force: true })` — a remaining owned token wins, then players fall back to their assigned/owned character, and GMs get the no-character tray. The rebuild re-checks canvas state when it fires (skipping if the current actor regained a token or the user selected something else meanwhile), and `initialize()` handles the full panel teardown/re-registration.
 - File refs: `scripts/squire.js` (`deleteToken` handler).
 
-### 13) Medium / Medium: Favorites panel still clones many nodes on every render
-- File refs:
-`scripts/panel-favorites.js` (7 `cloneNode(true)` call sites)
-- Issue:
-The listener leak is fixed, but Favorites still uses repeated `cloneNode(true)` replacement for many controls and item sub-elements on every render.
-- Impact:
-Functionally safe but heavier than delegated binding on a stable container; avoidable DOM churn on large favorites lists.
-- Recommendation:
-Convert remaining direct per-node bindings to delegated container listeners where practical.
+### 13) ~~Medium / Medium: Favorites panel still clones many nodes on every render~~ **(addressed)**
+- **What was wrong:** Seven `cloneNode(true)` + `replaceChild` sites per render. All listeners were already registered with an `AbortController` signal that `_activateListeners` aborts before rebinding — so the clones (the pre-signal listener-stripping mechanism) were pure redundant DOM churn.
+- **What we did:** Removed all seven clone sites. The four filter toggles and clear-all button bind directly (signal-scoped); the two per-item loops (roll/use overlay, feather detail icon) became single delegated listeners on the panel, so binding cost no longer scales with favorites-list size.
+- File refs: `scripts/panel-favorites.js` (`_activateListeners`, `_removeEventListeners`).
 
 ### 14) ~~Medium / Small: `cleanupNewlyAddedItems()` performs world writes and an unconditional inventory rerender every 30s~~ **(addressed)**
 - **What was wrong:** The 30s sweep iterated all actor items calling `unsetFlag(...)` with no idle guard, and force-rendered the inventory panel every sweep regardless of change.
@@ -124,7 +113,7 @@ Convert remaining direct per-node bindings to delegated container listeners wher
 - **Batch A — quick wins (1, 2, 3, 14):** ✅ **Done and verified in-game (July 12, 2026)** — plus finding 12 landed as part of the finding-3 rework. Shipped in 13.3.5 alongside the NEW-badge wiring and the tray actor fallback rules (see CHANGELOG).
 - **Batch B — combat hot path (4, 5, 6, 7, 8):** ✅ **Done (July 12, 2026, targeted for 13.3.6)** — needs in-game verification (steps 1, 3, 4 below, plus a full handle interaction pass: pin/toggle/view-cycle buttons, dice tray/macros/conditions/health buttons, favorites, condition icons, party portraits and health bars, pinned-quest name and objective icons — every handle control was migrated to delegated listeners).
 - **Batch C — architectural (9, 10):** incremental journal refresh and the consolidated `updateActor` dispatcher. Largest payoff for big campaigns; needs a dedicated slice and careful regression testing.
-- **Batch D — hygiene/polish (11, 12, 13):** land opportunistically alongside nearby work.
+- **Batch D — hygiene/polish (11, 12, 13):** ✅ **Done** — 12 shipped in 13.3.5; 11 and 13 landed with Batch B (targeted for 13.3.6). Only Batch C (findings 9, 10) remains.
 
 ## Suggested Verification
 
