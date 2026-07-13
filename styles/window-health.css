@@ -102,6 +102,17 @@
     border-radius: 6px !important;
 }
 
+/* In the popped-out window, the content must NOT be its own scrollbox — common.css
+   gives .tray-panel-content a 200px max-height + overflow-y:auto (sized for the tray),
+   which nested a scrollbar inside the window's own scrolling .window-content on
+   multiselect. Let the list grow and leave scrolling to the window. (Mirrors the
+   .squire-tray override in panel-health.css.) */
+.squire-popout[data-position="left"] [data-panel="health"] .tray-panel-content,
+.squire-window-health[data-position="left"] [data-panel="health"] .tray-panel-content {
+    max-height: none;
+    overflow: visible;
+}
+
 /* Window-specific health bar styling */
 .squire-window-health[data-position="left"] [data-panel="health"] .hp-bar {
     height: 30px !important; /* Slightly taller for window */

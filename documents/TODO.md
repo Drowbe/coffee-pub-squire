@@ -4,6 +4,7 @@
 
 | Item | Priority | LOE | Status |
 |------|----------|-----|--------|
+| Migrate 5 legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | L | Open |
 | Macros: dedupe `panel-macros.css` / `window-macros.css` drop-target styles | Medium | M | Open |
 | Notes tab: shared note, character note, scratchpad | Medium | L | Open |
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
@@ -27,14 +28,23 @@
 | Integration tests with other Coffee Pub modules | Medium | M | Open |
 | Monitor init timing / event efficiency during load | Medium | M | Open |
 
-**Priority:** urgency scale from **Critical** down to **Low** (matches section intent below). Critical and High queues are empty right now.
+**Priority:** urgency scale from **Critical** down to **Low** (matches section intent below).
 
 **LOE (level of effort):** `S` small (about a couple of hours), `M` medium (about half a day to a day), `L` large (multi-day), `XL` epic / many days.
 
 ---
 
 ## CURRENT ISSUES (Fix First)
-- Nothing critical
+
+### LEGACY V1 WINDOW MIGRATION → BLACKSMITH WINDOW FRAMEWORK
+- [ ] **REFACTOR (Critical)** Migrate the five remaining legacy `Application` (V1) windows to the Blacksmith window framework (`registerWindow`/`openWindow`, base `HandlebarsApplicationMixin(ApplicationV2)`, five-zone layout — see https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Window). The notes/codex/quest windows are already on the framework; these are the holdouts:
+  - `window-health.js` (`HealthWindow`) — **do first**; used mid-combat. Carries a `_activateCoreListeners()` override hack to suppress a V1 form-handling crash, hand-rolled position persistence (`healthWindowPosition` setting), and shares `panel-health.hbs` with the in-tray panel via `position`/`isHealthPopped` branching — the migration should split the window template out (body zone = the one scroll region, which structurally prevents the nested-scrollbox class of bug patched in CSS for 13.3.6).
+  - `window-dicetray.js` (`DiceTrayWindow`)
+  - `window-macros.js` (`MacrosWindow`)
+  - `window-characters.js` (`CharactersWindow`)
+  - `window-users.js` (`UsersWindow`)
+  - Why critical: V1 `Application` is deprecated and on Foundry's removal path — this becomes forced breakage at a future core update; migrating now is on our schedule, later is on Foundry's. Also unifies Squire on one window stack (framework handles positioning, sizing constraints, theming, `data-action` delegation) and lets us delete the V1 workaround code.
+  - Per window: rewrite template into the zone contract (no shared tray template), convert listeners to `data-action` delegation, register via `registerWindow` + `unregisterWindow` in the `disableModule` hook, drop hand-rolled position-saving where the framework covers it. Preserve the `actor.apps` registration/cleanup behavior added in 13.3.5.
 
 ## HIGH PRIORITY
 - None
