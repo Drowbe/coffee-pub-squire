@@ -1982,8 +1982,12 @@ Hooks.once('ready', async function() {
             // that transition (re-initializing here would resurrect the deleted actor)
             if (!controlled && !canvas.scene?.tokens.get(token.id)) return;
 
-            // Initialize panel manager if needed
-            await PanelManager.initialize(token.actor);
+            // Only initialize on control GAIN. A release event must never re-initialize
+            // the tray to the released actor — releaseOthers during a character-switcher
+            // click was re-initializing the old actor and swallowing the switch.
+            if (controlled) {
+                await PanelManager.initialize(token.actor);
+            }
             
             // Update health panel with current selection (works for both selection and deselection)
             if (PanelManager.instance) {

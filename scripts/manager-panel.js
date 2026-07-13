@@ -1491,10 +1491,16 @@ export class PanelManager {
         if (!actor || !actor.isOwner) return;
         try { await game.user.setFlag(MODULE.ID, 'lastCharacterId', actorId); } catch (_) {}
         await PanelManager.initialize(actor, { force: true });
-        // If the character has a token on the viewed scene, select it so targeting/health follow.
-        // The resulting controlToken hook re-enters initialize() and no-ops via the same-actor guard.
+        // Sync canvas selection to the explicit choice: select the character's token if it
+        // has one on the viewed scene (the controlToken echo no-ops via the same-actor
+        // guard); otherwise release the current selection so selection-driven updates
+        // don't fight the switch and drag the tray back to the previously selected token.
         const token = actor.getActiveTokens?.()?.[0];
-        token?.control?.({ releaseOthers: true });
+        if (token?.control) {
+            token.control({ releaseOthers: true });
+        } else {
+            canvas.tokens?.releaseAll?.();
+        }
     }
 
     // Add this new method for cleanup
