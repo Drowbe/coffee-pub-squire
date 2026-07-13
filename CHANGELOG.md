@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.7]
+
+### Fixed
+- **Notes/Codex/Quest panels no longer re-parse the entire journal on every render**: Each panel's `_refreshData()` re-enriched (`TextEditor.enrichHTML`) and re-parsed every page of its journal on every refresh — cost scaled with total journal size, not with what changed (the quest panel calls `_refreshData()` from ~10 sites). All three panels now cache parsed page data keyed by page UUID + `_stats.modifiedTime`: unchanged pages skip enrich+parse entirely, and any document update (content, flags like `pinId`/`visible`, ownership) invalidates exactly that page. Volatile state is still recomputed on every refresh — live pin/scene lookups, codex ownership and active-scene pin flags, quest numbers, notes editor avatars — so nothing canvas- or Blacksmith-dependent is served stale. Caches prune against the journal's current pages, which also handles switching journals. With a 100-entry journal, editing one note now costs one enrich+parse instead of one hundred.
+- **Party panel renders debounced and gated**: The panel re-rendered fully on every token movement step, every HP tick, and once per token during multi-select (`controlToken` fires per token). The three handlers now coalesce through a 100ms debounced render, and the hook wiring ignores tokens/actors without player owners — NPC movement and NPC updates no longer touch the party panel at all. With this, all four of Squire's `updateActor` hook registrations (character, party, party-stats, global) cheap-exit on irrelevant updates.
+
+
 ## [13.3.6]
 
 ### Fixed

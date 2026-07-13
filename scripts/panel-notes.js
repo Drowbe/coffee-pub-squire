@@ -365,6 +365,10 @@ export class NotesPanel {
     constructor() {
         this.element = null;
         this.notes = [];
+        // Parsed-page cache keyed by page UUID: { modifiedTime, note }.
+        // Enrich+parse is skipped for unchanged pages; live pin/scene state is
+        // recomputed on every refresh (see _refreshData).
+        this._pageParseCache = new Map();
         this.filters = {
             search: '',
             tags: [],
@@ -480,6 +484,12 @@ export class NotesPanel {
         const canViewJournal = game.user.isGM || journal.testUserPermission(game.user, PERMISSION_LEVELS.OBSERVER);
         if (!canViewJournal) return;
 
+        // Prune cache entries for pages no longer in the journal
+        const validUuids = new Set(journal.pages.contents.map(p => p.uuid));
+        for (const key of [...this._pageParseCache.keys()]) {
+            if (!validUuids.has(key)) this._pageParseCache.delete(key);
+        }
+
         // Process all pages in the journal
         for (const page of journal.pages.contents) {
             try {
@@ -500,35 +510,72 @@ export class NotesPanel {
                     }
                 }
 
-                // Get page content
-                const content = await getJournalPageContent(page);
-                
-                // Enrich content
-                const enriched = await enrichJournalContent(content, {
-                    secrets: game.user.isGM,
-                    documents: true,
-                    links: true,
-                    rolls: true
-                });
+                // Enrich+parse only when the page actually changed; any document update
+                // (content, flags, ownership) bumps modifiedTime and invalidates.
+                const modifiedTime = page._stats?.modifiedTime ?? 0;
+                const cached = this._pageParseCache.get(page.uuid);
+                let note;
+                if (cached && cached.modifiedTime === modifiedTime) {
+                    note = cached.note;
+                } else {
+                    // Get page content
+                    const content = await getJournalPageContent(page);
 
-                // Parse the note
-                const note = await NotesParser.parseSinglePage(page, enriched);
-                
-                if (note) {
-                    if (!note.sceneId) {
-                        const storedSceneId = page.getFlag(MODULE.ID, 'sceneId');
-                        if (storedSceneId) {
-                            note.sceneId = storedSceneId;
-                            note.sceneName = game.scenes?.get(storedSceneId)?.name || note.sceneName || null;
+                    // Enrich content
+                    const enriched = await enrichJournalContent(content, {
+                        secrets: game.user.isGM,
+                        documents: true,
+                        links: true,
+                        rolls: true
+                    });
+
+                    // Parse the note
+                    note = await NotesParser.parseSinglePage(page, enriched);
+
+                    if (note) {
+                        if (!note.sceneId) {
+                            const storedSceneId = page.getFlag(MODULE.ID, 'sceneId');
+                            if (storedSceneId) {
+                                note.sceneId = storedSceneId;
+                                note.sceneName = game.scenes?.get(storedSceneId)?.name || note.sceneName || null;
+                            }
                         }
-                    }
-                    // Ensure authorName is always set (fallback to user ID if name lookup failed)
-                    if (!note.authorName && note.authorId) {
-                        note.authorName = note.authorId;
+                        // Ensure authorName is always set (fallback to user ID if name lookup failed)
+                        if (!note.authorName && note.authorId) {
+                            note.authorName = note.authorId;
+                        }
+
+                        if (!Array.isArray(note.editorIds)) {
+                            note.editorIds = [];
+                        }
+
+                        // Ensure tags is always an array (even if empty)
+                        if (!Array.isArray(note.tags)) {
+                            note.tags = [];
+                        }
+                        note.tags = note.tags.map(tag => String(tag).toUpperCase());
+                        note.pinId = page.getFlag(MODULE.ID, 'pinId') || null;
+                        note.iconHtml = resolveNoteIconHtmlFromPage(page, 'note-icon-image');
+
+                        // Remember the parse-time scene so per-refresh live-pin overrides
+                        // below don't permanently overwrite the cached note
+                        note._baseSceneId = note.sceneId || null;
+                        note._baseSceneName = note.sceneName || null;
                     }
 
-                    if (!Array.isArray(note.editorIds)) {
-                        note.editorIds = [];
+                    this._pageParseCache.set(page.uuid, { modifiedTime, note });
+                }
+
+                if (note) {
+                    // Volatile per refresh: live pin state and editor avatars
+                    note.sceneId = note._baseSceneId;
+                    note.sceneName = note._baseSceneName;
+                    // get() now includes sceneId for placed pins (Blacksmith 13.7.6+).
+                    const livePinSceneId = note.pinId ? (getPinsApi()?.get?.(note.pinId)?.sceneId ?? null) : null;
+                    note.hasPinOnScene = !!(note.pinId && livePinSceneId);
+                    if (livePinSceneId) {
+                        note.sceneId = livePinSceneId;
+                        note.sceneName = game.scenes?.get(livePinSceneId)?.name || note.sceneName || null;
                     }
 
                     const editorIds = [...new Set(note.editorIds.length ? note.editorIds : (note.authorId ? [note.authorId] : []))];
@@ -540,28 +587,14 @@ export class NotesPanel {
                             img: user?.avatar || user?.img || 'icons/svg/mystery-man.svg'
                         };
                     });
-                    
-                    // Ensure tags is always an array (even if empty)
-                    if (!Array.isArray(note.tags)) {
-                        note.tags = [];
-                    }
-                    note.tags = note.tags.map(tag => String(tag).toUpperCase());
-                    note.pinId = page.getFlag(MODULE.ID, 'pinId') || null;
-                    // get() now includes sceneId for placed pins (Blacksmith 13.7.6+).
-                    const livePinSceneId = note.pinId ? (getPinsApi()?.get?.(note.pinId)?.sceneId ?? null) : null;
-                    note.hasPinOnScene = !!(note.pinId && livePinSceneId);
-                    if (livePinSceneId) {
-                        note.sceneId = livePinSceneId;
-                        note.sceneName = game.scenes?.get(livePinSceneId)?.name || note.sceneName || null;
-                    }
-                    note.iconHtml = resolveNoteIconHtmlFromPage(page, 'note-icon-image');
+
                     this.notes.push(note);
-                    
+
                     // Collect tags
                     if (note.tags && Array.isArray(note.tags)) {
                         note.tags.forEach(tag => this.allTags.add(tag));
                     }
-                    
+
                     // Collect scenes
                     if (note.sceneId && note.sceneName) {
                         this.scenes.add(note.sceneName);

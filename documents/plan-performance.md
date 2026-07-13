@@ -18,8 +18,8 @@ Verified clean in the July 2026 audit (do not re-investigate): no Handlebars rec
 | 6 | Party-stats full recompute on every chat message / actor update, undebounced | Perf | Medium–high | Small | Low | **Done** |
 | 7 | One item change rerenders weapons + inventory + favorites + handle | Perf | Medium–high | Medium | Medium | **Done** |
 | 8 | AC/movement changes trigger full `initialize()` + `renderPanels()` | Perf | Medium | Small | Medium | **Done** |
-| 9 | Notes / Codex / Quest full journal rescan each render | Perf | High | Large | High | Open |
-| 10 | Four separate `updateActor` hooks, no shared relevance gate; party panel undebounced | Perf | Medium | Medium | Medium | Open |
+| 9 | Notes / Codex / Quest full journal rescan each render | Perf | High | Large | High | **Done** |
+| 10 | Four separate `updateActor` hooks, no shared relevance gate; party panel undebounced | Perf | Medium | Medium | Medium | **Done** |
 | 11 | `blacksmith.pins.resolveOwnership` hook — no teardown, no duplicate guard | Leak | Medium | Small | Low | **Done** |
 | 12 | `deleteToken` fallback reassigns `panel.actor` without moving `actor.apps` | Leak | Low–medium | Small | Low | **Done** |
 | 13 | Favorites panel `cloneNode` churn on render | Perf | Medium | Medium | Medium | **Done** |
@@ -66,28 +66,14 @@ Verified clean in the July 2026 audit (do not re-investigate): no Handlebars rec
 - **What we did:** Removed `ac`/`movement` from the `needsFullUpdate` set (now name/img/proficiency/level only). AC/movement changes take a new `needsStatsUpdate` branch: targeted character-panel + stats-panel render plus a handle update — no re-initialization, no full-tray rerender.
 - File refs: `scripts/squire.js` (`globalUpdateActor`).
 
-### 9) High / Large: Notes, Codex, and Quest panels fully rescan their journals on each render
-- File refs:
-`scripts/panel-notes.js:468`
-`scripts/panel-codex.js:210`
-`scripts/panel-quest.js:1718`
-- Issue:
-Each panel render path starts with `_refreshData()`, which clears cached state and walks the entire selected journal page collection, enriching/parsing page HTML per page. The quest panel calls `_refreshData()` from roughly ten sites.
-- Impact:
-Any action that rerenders these panels scales with total journal size, not with the entry that changed. The debounced pin-event refreshes in `manager-pins.js` fixed refresh *frequency*, but each refresh still pays this full-rescan cost. Biggest win for large campaigns.
-- Recommendation:
-Move to incremental refresh: cache parsed page data, invalidate by page UUID on relevant hooks, avoid full rescans for local UI-only changes.
+### 9) ~~High / Large: Notes, Codex, and Quest panels fully rescan their journals on each render~~ **(addressed)**
+- **What was wrong:** Each panel's `_refreshData()` cleared state and re-enriched/re-parsed every journal page on every render, scaling with total journal size rather than what changed.
+- **What we did:** All three panels now hold a `_pageParseCache` keyed by page UUID → `{ modifiedTime, entry }`. `_refreshData()` still iterates pages (cheap in-memory walk for grouping/tag collection) but skips `enrichHTML` + parser for any page whose `_stats.modifiedTime` is unchanged — so a refresh costs O(pages) map lookups plus enrich/parse for only the pages that actually changed. Any document update (content, flags like `pinId`/`visible`, ownership) bumps `modifiedTime` and invalidates that one page. Volatile state is deliberately recomputed on every refresh from the cached entry: live pin/scene lookups (Blacksmith pins aren't document state), codex `ownership` reference and `pinOnActiveScene` (canvas-dependent), quest numbers (user flag), notes editor avatars; notes also restore `_baseSceneId`/`_baseSceneName` before applying live-pin overrides so overrides don't stick in the cache. Caches are pruned against the journal's current page UUIDs each refresh (also handles journal switches).
+- File refs: `scripts/panel-notes.js`, `scripts/panel-codex.js`, `scripts/panel-quest.js` (constructors + `_refreshData`).
 
-### 10) Medium / Medium: Four separate `updateActor` hooks with no shared relevance gate; party panel undebounced
-- File refs:
-`scripts/squire.js:287` (character), `scripts/squire.js:330` (party), `scripts/squire.js:416` (party-stats), `scripts/squire.js:647` (global)
-`scripts/panel-party.js:560-586` (`_onTokenUpdate`/`_onActorUpdate`/`_onControlToken`)
-- Issue:
-A single actor HP change dispatches four independent Squire callbacks: targeted character-panel update (fine — good model to copy), full party panel rebuild, party-stats recompute (finding 6), and the global handler (findings 1/8). The party panel's handlers rerender the whole panel per event — `_onControlToken` fires once per token during multi-select — scanning all `canvas.tokens.placeables` and reading health-threshold settings per token each time.
-- Impact:
-Redundant fan-out per actor update; multi-select bursts cause repeated full party renders.
-- Recommendation:
-Consolidate into one `updateActor` dispatcher that computes relevance once and fans out only to affected panels; debounce party panel handlers; do a targeted healthbar update for the changed token instead of a full rebuild.
+### 10) ~~Medium / Medium: Four separate `updateActor` hooks with no shared relevance gate; party panel undebounced~~ **(addressed)**
+- **What we did (gates + debounce rather than a single-dispatcher rewrite):** The party panel's three handlers (`_onTokenUpdate`/`_onActorUpdate`/`_onControlToken`) now route through a 100ms debounced `_scheduleRender()` (timer cleared in `destroy()`), so multi-select bursts, token movement steps, and HP storms coalesce into one render. The party `updateToken`/`updateActor` hook wiring in squire.js gates on `hasPlayerOwner`, so NPC/monster movement and updates no longer touch the party panel at all. Combined with the Batch B gates (party-stats: player characters + rolls only; global: relevance-branched), each of the four `updateActor` registrations now cheap-exits when irrelevant — achieving the dispatcher's goal without the higher-risk hook-plumbing rewrite. Deferred as follow-up polish: a targeted single-healthbar DOM update instead of a full (now-debounced) panel render.
+- File refs: `scripts/panel-party.js`, `scripts/squire.js` (party hook wiring).
 
 ### 11) ~~Medium / Small: `blacksmith.pins.resolveOwnership` hook has no teardown and no duplicate guard~~ **(addressed)**
 - **What we did:** Hook ID stored in `_resolveOwnershipHookId` with an idempotency guard on registration; `teardownPinManager()` removes it via `Hooks.off` and nulls the ID, mirroring the `_sceneSyncHookId` pattern.
@@ -112,7 +98,9 @@ Consolidate into one `updateActor` dispatcher that computes relevance once and f
 
 - **Batch A — quick wins (1, 2, 3, 14):** ✅ **Done and verified in-game (July 12, 2026)** — plus finding 12 landed as part of the finding-3 rework. Shipped in 13.3.5 alongside the NEW-badge wiring and the tray actor fallback rules (see CHANGELOG).
 - **Batch B — combat hot path (4, 5, 6, 7, 8):** ✅ **Done (July 12, 2026, targeted for 13.3.6)** — needs in-game verification (steps 1, 3, 4 below, plus a full handle interaction pass: pin/toggle/view-cycle buttons, dice tray/macros/conditions/health buttons, favorites, condition icons, party portraits and health bars, pinned-quest name and objective icons — every handle control was migrated to delegated listeners).
-- **Batch C — architectural (9, 10):** incremental journal refresh and the consolidated `updateActor` dispatcher. Largest payoff for big campaigns; needs a dedicated slice and careful regression testing.
+- **Batch C — architectural (9, 10):** ✅ **Done (July 12, 2026, targeted for 13.3.7)** — needs in-game verification (step 5 below, plus a full notes/codex/quest content pass: edit pages, toggle visibility, place/remove pins, switch scenes and journals, and confirm panels reflect every change — the parse cache must never serve stale data).
+
+**All 14 findings are now addressed.** Remaining verification only.
 - **Batch D — hygiene/polish (11, 12, 13):** ✅ **Done** — 12 shipped in 13.3.5; 11 and 13 landed with Batch B (targeted for 13.3.6). Only Batch C (findings 9, 10) remains.
 
 ## Suggested Verification

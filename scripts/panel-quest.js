@@ -161,6 +161,10 @@ export class QuestPanel {
         this.element = null;
         this.categories = game.settings.get(MODULE.ID, 'questCategories') || ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"];
         this.data = {};
+        // Parsed-page cache keyed by page UUID: { modifiedTime, entry }.
+        // Enrich+parse is skipped for unchanged pages; quest number and live pin
+        // state are recomputed on every refresh (see _refreshData).
+        this._pageParseCache = new Map();
         for (const category of this.categories) {
             this.data[category] = [];
         }
@@ -1749,74 +1753,95 @@ export class QuestPanel {
         }
 
         if (this.selectedJournal) {
+            // Prune cache entries for pages no longer in the journal
+            const validUuids = new Set(this.selectedJournal.pages.contents.map(p => p.uuid));
+            for (const key of [...this._pageParseCache.keys()]) {
+                if (!validUuids.has(key)) this._pageParseCache.delete(key);
+            }
+
             for (const page of this.selectedJournal.pages.contents) {
                 try {
-                    let content = '';
-                    if (typeof page.text?.content === 'string') {
-                        content = page.text.content;
-                    } else if (typeof page.text === 'string') {
-                        content = page.text;
-                    } else if (page.text?.content) {
-                        content = await page.text.content;
+                    // Enrich+parse only when the page actually changed; any document update
+                    // (content, flags like `visible`/`pinId`, ownership) bumps modifiedTime
+                    // and invalidates.
+                    const modifiedTime = page._stats?.modifiedTime ?? 0;
+                    const cached = this._pageParseCache.get(page.uuid);
+                    let entry;
+                    if (cached && cached.modifiedTime === modifiedTime) {
+                        entry = cached.entry;
+                    } else {
+                        entry = null;
+                        let content = '';
+                        if (typeof page.text?.content === 'string') {
+                            content = page.text.content;
+                        } else if (typeof page.text === 'string') {
+                            content = page.text;
+                        } else if (page.text?.content) {
+                            content = await page.text.content;
+                        }
+                        if (content) {
+                            const TextEditor = getTextEditor();
+                            const enriched = await TextEditor.enrichHTML(content, {
+                                secrets: game.user.isGM,
+                                documents: true,
+                                links: true,
+                                rolls: true
+                            });
+                            // Each page is a single quest entry
+                            entry = await QuestParser.parseSinglePage(page, enriched);
+                            if (entry) {
+                                // Set visible from flag, default true
+                                let visible = await page.getFlag(MODULE.ID, 'visible');
+                                if (typeof visible === 'undefined') visible = true;
+                                entry.visible = visible;
+
+                                // Ensure all required properties exist
+                                entry.tasks = entry.tasks || [];
+                                entry.reward = entry.reward || { xp: 0, treasure: [] };
+                                entry.participants = entry.participants || [];
+                                entry.tags = entry.tags || [];
+                                entry.timeframe = entry.timeframe || { duration: '' };
+                                entry.progress = entry.progress || 0;
+
+                                // Add objective numbers to tasks
+                                if (entry.tasks && Array.isArray(entry.tasks)) {
+                                    entry.tasks.forEach((task, index) => {
+                                        task.objectiveNumber = String(index + 1).padStart(2, '0');
+                                        // Ensure task properties exist
+                                        task.text = task.text || '';
+                                        task.completed = task.completed || false;
+                                        task.state = task.state || 'active';
+                                        task.treasureUnlocks = task.treasureUnlocks || [];
+                                    });
+                                }
+
+                                entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image');
+                            }
+                        }
+                        this._pageParseCache.set(page.uuid, { modifiedTime, entry });
                     }
-                    if (content) {
-                        const TextEditor = getTextEditor();
-                        const enriched = await TextEditor.enrichHTML(content, {
-                            secrets: game.user.isGM,
-                            documents: true,
-                            links: true,
-                            rolls: true
-                        });
-                        // Each page is a single quest entry
-                        const entry = await QuestParser.parseSinglePage(page, enriched);
-                        if (entry) {
-                            // Set visible from flag, default true
-                            let visible = await page.getFlag(MODULE.ID, 'visible');
-                            if (typeof visible === 'undefined') visible = true;
-                            entry.visible = visible;
-                            
-                            // Add quest number
-                            entry.questNumber = getQuestNumber(page.uuid);
-                            
-                            // Ensure all required properties exist
-                            entry.tasks = entry.tasks || [];
-                            entry.reward = entry.reward || { xp: 0, treasure: [] };
-                            entry.participants = entry.participants || [];
-                            entry.tags = entry.tags || [];
-                            entry.timeframe = entry.timeframe || { duration: '' };
-                            entry.progress = entry.progress || 0;
-                            
-                            // Add objective numbers to tasks
-                            if (entry.tasks && Array.isArray(entry.tasks)) {
-                                entry.tasks.forEach((task, index) => {
-                                    task.objectiveNumber = String(index + 1).padStart(2, '0');
-                                    // Ensure task properties exist
-                                    task.text = task.text || '';
-                                    task.completed = task.completed || false;
-                                    task.state = task.state || 'active';
-                                    task.treasureUnlocks = task.treasureUnlocks || [];
-                                });
-                            }
-                            
-                            entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image');
-                            const liveQuestPin = liveQuestPins.get(page.uuid) || null;
-                            const liveQuestSceneId = liveQuestPin?.sceneId ?? null;
-                            entry.hasPinOnScene = !!liveQuestSceneId;
-                            entry.pinSceneId = liveQuestSceneId || null;
-                            entry.pinSceneName = entry.pinSceneId ? (game.scenes.get(entry.pinSceneId)?.name || null) : null;
-                            if (entry.tasks && Array.isArray(entry.tasks)) {
-                                entry.tasks.forEach((task, index) => {
-                                    const liveObjPin = liveObjectivePins.get(`${page.uuid}|${index}`) || null;
-                                    task.hasPinOnScene = !!liveObjPin?.sceneId;
-                                });
-                            }
-                            const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
-                            this.data[category].push(entry);
-                            
-                            // Add only the explicit tags from the entry
-                            if (entry.tags && Array.isArray(entry.tags)) {
+
+                    if (entry) {
+                        // Volatile per refresh: quest number (user flag) and live pin state
+                        entry.questNumber = getQuestNumber(page.uuid);
+
+                        const liveQuestPin = liveQuestPins.get(page.uuid) || null;
+                        const liveQuestSceneId = liveQuestPin?.sceneId ?? null;
+                        entry.hasPinOnScene = !!liveQuestSceneId;
+                        entry.pinSceneId = liveQuestSceneId || null;
+                        entry.pinSceneName = entry.pinSceneId ? (game.scenes.get(entry.pinSceneId)?.name || null) : null;
+                        if (entry.tasks && Array.isArray(entry.tasks)) {
+                            entry.tasks.forEach((task, index) => {
+                                const liveObjPin = liveObjectivePins.get(`${page.uuid}|${index}`) || null;
+                                task.hasPinOnScene = !!liveObjPin?.sceneId;
+                            });
+                        }
+                        const category = entry.category && this.categories.includes(entry.category) ? entry.category : this.categories[0];
+                        this.data[category].push(entry);
+
+                        // Add only the explicit tags from the entry
+                        if (entry.tags && Array.isArray(entry.tags)) {
                             entry.tags.forEach(tag => this.allTags.add(tag));
-                            }
                         }
                     }
                 } catch (error) {

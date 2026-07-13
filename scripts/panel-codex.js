@@ -38,6 +38,10 @@ export class CodexPanel {
         this.selectedJournal = null;
         this.categories = new Set();
         this.data = {};
+        // Parsed-page cache keyed by page UUID: { modifiedTime, entry }.
+        // Enrich+parse is skipped for unchanged pages; ownership/pin state is
+        // recomputed on every refresh (see _refreshData).
+        this._pageParseCache = new Map();
         this.filters = {
             search: "",
             tags: [],
@@ -217,80 +221,100 @@ export class CodexPanel {
         this.selectedJournal = journalId && journalId !== 'none' ? game.journal.get(journalId) : null;
 
         if (this.selectedJournal) {
+            // Prune cache entries for pages no longer in the journal
+            const validUuids = new Set(this.selectedJournal.pages.contents.map(p => p.uuid));
+            for (const key of [...this._pageParseCache.keys()]) {
+                if (!validUuids.has(key)) this._pageParseCache.delete(key);
+            }
+
             for (const page of this.selectedJournal.pages.contents) {
                 try {
-                    let content = '';
-                    if (typeof page.text?.content === 'string') {
-                        content = page.text.content;
-                    } else if (typeof page.text === 'string') {
-                        content = page.text;
-                    } else if (page.text?.content) {
-                        content = await page.text.content;
-                    }
-                    
-                    if (content) {
-                        const TextEditor = getTextEditor();
-                        const enriched = await TextEditor.enrichHTML(content, {
-                            secrets: game.user.isGM,
-                            documents: true,
-                            links: true,
-                            rolls: true
-                        });
-                        
-                        const entry = await CodexParser.parseSinglePage(page, enriched);
-                        if (entry) {
-                            // Add ownership info for visibility icon
-                            entry.ownership = page.ownership;
+                    // Enrich+parse only when the page actually changed; any document update
+                    // (content, flags, ownership) bumps modifiedTime and invalidates.
+                    const modifiedTime = page._stats?.modifiedTime ?? 0;
+                    const cached = this._pageParseCache.get(page.uuid);
+                    let entry;
+                    if (cached && cached.modifiedTime === modifiedTime) {
+                        entry = cached.entry;
+                    } else {
+                        entry = null;
+                        let content = '';
+                        if (typeof page.text?.content === 'string') {
+                            content = page.text.content;
+                        } else if (typeof page.text === 'string') {
+                            content = page.text;
+                        } else if (page.text?.content) {
+                            content = await page.text.content;
+                        }
 
-                            // Pin state — get() now includes sceneId for placed pins (Blacksmith 13.7.6+).
-                            entry.pinId      = page.getFlag(MODULE.ID, 'pinId') ?? null;
-                            entry.pinSceneId = entry.pinId ? (getPinsApi()?.get?.(entry.pinId)?.sceneId ?? null) : null;
-                            const activeSceneId = canvas?.scene?.id;
-                            entry.hasPinOnScene = !!(entry.pinId && entry.pinSceneId);
-                            entry.pinOnActiveScene = !!(
-                                entry.pinId
-                                && entry.pinSceneId
-                                && activeSceneId
-                                && entry.pinSceneId === activeSceneId
-                            );
-                            entry.pinSceneName = entry.pinSceneId
-                                ? (game.scenes.get(entry.pinSceneId)?.name?.trim() || 'Unknown scene')
-                                : '';
-                            
-                            // Extract "Discovered By" information from the enriched content
-                            const doc = new DOMParser().parseFromString(enriched, 'text/html');
-                            const pTags = Array.from(doc.querySelectorAll('p'));
-                            
-                            // Look for "Discovered By" paragraph by finding the strong tag with that text
-                            for (const p of pTags) {
-                                const strong = p.querySelector('strong');
-                                if (strong && strong.textContent.trim() === 'Discovered By:') {
-                                    const discovererText = p.textContent.replace('Discovered By:', '').trim();
-                                    if (discovererText) {
-                                        entry.DiscoveredBy = discovererText;
+                        if (content) {
+                            const TextEditor = getTextEditor();
+                            const enriched = await TextEditor.enrichHTML(content, {
+                                secrets: game.user.isGM,
+                                documents: true,
+                                links: true,
+                                rolls: true
+                            });
+
+                            entry = await CodexParser.parseSinglePage(page, enriched);
+                            if (entry) {
+                                // Extract "Discovered By" information from the enriched content
+                                const doc = new DOMParser().parseFromString(enriched, 'text/html');
+                                const pTags = Array.from(doc.querySelectorAll('p'));
+
+                                // Look for "Discovered By" paragraph by finding the strong tag with that text
+                                for (const p of pTags) {
+                                    const strong = p.querySelector('strong');
+                                    if (strong && strong.textContent.trim() === 'Discovered By:') {
+                                        const discovererText = p.textContent.replace('Discovered By:', '').trim();
+                                        if (discovererText) {
+                                            entry.DiscoveredBy = discovererText;
+                                        }
+                                        break;
                                     }
-                                    break;
                                 }
+
+                                entry.pinId = page.getFlag(MODULE.ID, 'pinId') ?? null;
                             }
-                            
-                            // Determine category - if no category, use "No Category"
-                            let normCategory = "No Category";
-                            if (entry.category && entry.category.trim()) {
-                                normCategory = entry.category.trim();
-                            }
-                            
-                            // Add to categories set
-                            this.categories.add(normCategory);
-                            // Initialize category array if needed
-                            if (!this.data[normCategory]) {
-                                this.data[normCategory] = [];
-                            }
-                            // Add entry to category
-                            this.data[normCategory].push(entry);
-                            // Add tags
-                            if (entry.tags && Array.isArray(entry.tags)) {
-                                entry.tags.forEach(tag => this.allTags.add(tag));
-                            }
+                        }
+                        this._pageParseCache.set(page.uuid, { modifiedTime, entry });
+                    }
+
+                    if (entry) {
+                        // Volatile per refresh: ownership reference and live pin/scene state
+                        entry.ownership = page.ownership;
+
+                        // Pin state — get() now includes sceneId for placed pins (Blacksmith 13.7.6+).
+                        entry.pinSceneId = entry.pinId ? (getPinsApi()?.get?.(entry.pinId)?.sceneId ?? null) : null;
+                        const activeSceneId = canvas?.scene?.id;
+                        entry.hasPinOnScene = !!(entry.pinId && entry.pinSceneId);
+                        entry.pinOnActiveScene = !!(
+                            entry.pinId
+                            && entry.pinSceneId
+                            && activeSceneId
+                            && entry.pinSceneId === activeSceneId
+                        );
+                        entry.pinSceneName = entry.pinSceneId
+                            ? (game.scenes.get(entry.pinSceneId)?.name?.trim() || 'Unknown scene')
+                            : '';
+
+                        // Determine category - if no category, use "No Category"
+                        let normCategory = "No Category";
+                        if (entry.category && entry.category.trim()) {
+                            normCategory = entry.category.trim();
+                        }
+
+                        // Add to categories set
+                        this.categories.add(normCategory);
+                        // Initialize category array if needed
+                        if (!this.data[normCategory]) {
+                            this.data[normCategory] = [];
+                        }
+                        // Add entry to category
+                        this.data[normCategory].push(entry);
+                        // Add tags
+                        if (entry.tags && Array.isArray(entry.tags)) {
+                            entry.tags.forEach(tag => this.allTags.add(tag));
                         }
                     }
                 } catch (error) {

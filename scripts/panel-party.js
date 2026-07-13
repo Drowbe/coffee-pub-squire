@@ -557,12 +557,26 @@ export class PartyPanel {
         }
     }
 
+    /**
+     * Debounced re-render: multi-select bursts, token movement steps, and HP storms
+     * each fire one hook per event — coalesce them into a single render pass.
+     * @private
+     */
+    _scheduleRender() {
+        if (!this.element) return;
+        if (this._renderTimer) clearTrackedTimeout(this._renderTimer);
+        this._renderTimer = trackModuleTimeout(() => {
+            this._renderTimer = null;
+            if (this.element) this.render(this.element);
+        }, 100);
+    }
+
     _onTokenUpdate(token, changes) {
         // Only re-render if the element exists
         if (this.element) {
             // Re-render if token position or visibility changes
             if (foundry.utils.hasProperty(changes, "x") || foundry.utils.hasProperty(changes, "y") || foundry.utils.hasProperty(changes, "hidden")) {
-                this.render(this.element);
+                this._scheduleRender();
             }
         }
     }
@@ -572,7 +586,7 @@ export class PartyPanel {
         if (this.element) {
             // Re-render if HP changes
             if (foundry.utils.hasProperty(changes, "system.attributes.hp")) {
-                this.render(this.element);
+                this._scheduleRender();
             }
         }
     }
@@ -581,7 +595,7 @@ export class PartyPanel {
         // Only re-render if the element exists
         if (this.element) {
             // Re-render to highlight the currently selected token
-            this.render(this.element);
+            this._scheduleRender();
         }
     }
 
@@ -1472,7 +1486,13 @@ export class PartyPanel {
     destroy() {
         // Clean up transfer timers
         this._cleanupTransferTimers();
-        
+
+        // Clean up any pending debounced render
+        if (this._renderTimer) {
+            clearTrackedTimeout(this._renderTimer);
+            this._renderTimer = null;
+        }
+
         this.element = null;
     }
 

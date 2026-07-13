@@ -330,6 +330,8 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: (document, change) => {
+                // Party panel only shows player-owned tokens — ignore NPC/monster movement
+                if (!document?.actor?.hasPlayerOwner) return;
                 // Route to party panel if it exists
                 const panelManager = getPanelManager();
                 if (panelManager?.instance?.partyPanel && panelManager.instance.partyPanel._onTokenUpdate) {
@@ -344,6 +346,8 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: (document, change) => {
+                // Party panel only shows player-owned actors — ignore NPC/monster updates
+                if (!document?.hasPlayerOwner) return;
                 // Route to party panel if it exists
                 const panelManager = getPanelManager();
                 if (panelManager?.instance?.partyPanel && panelManager.instance.partyPanel._onActorUpdate) {
