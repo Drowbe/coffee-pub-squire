@@ -6,23 +6,21 @@
 |------|----------|-----|--------|
 | Migrate 5 legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | L | Open |
 | Macros: dedupe `panel-macros.css` / `window-macros.css` drop-target styles | Medium | M | Open |
+| Quest: drop write-only `sceneId` mirror flag from `_syncQuestPinMirror` | Medium | S | Open |
 | Notes tab: shared note, character note, scratchpad | Medium | L | Open |
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
 | Codex: “new” flag on added items until client refresh | Medium | S | Open |
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
-| Codex: guard `canvas.selectObjects` override (no stacked wrappers per scene) | Medium | M | Open |
-| `cleanupModule`: replace zero-delay interval sweep with tracked timers | Medium | S | Open |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
 | Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |
 | Code cleanup: remove legacy fix code | Low | M | Open |
 | Modularize `manager-panel.js` | Low | L | Open |
-| Review / reduce unnecessary `updateTray()` calls | Low | S | Open |
 | Party transfer refactor follow-up (`panel-party.js` vs `TransferUtils`) | Low | M | Open |
 | Break `HandleManager` ↔ `PanelManager` circular import | Low | M | Open |
 | Remove jQuery detection where DOM is native-only | Low | S | Open |
 | Perf: skip construction/data for disabled tray tabs | Medium | M | Open |
-| Perf: Phase 4 async in `CharacterPanel.render()` | Medium | L | Open |
+| Perf: Phase 4 async in `CharacterPanel.render()` — cache biography enrich (renders more often since AC/movement changes route here) | High | L | Open |
 | Investigate expand animation (slide vs fade regression) | Medium | S | Open |
 | Init order tests / load-condition panel behavior | Medium | L | Open |
 | Integration tests with other Coffee Pub modules | Medium | M | Open |
@@ -47,7 +45,9 @@
   - Per window: rewrite template into the zone contract (no shared tray template), convert listeners to `data-action` delegation, register via `registerWindow` + `unregisterWindow` in the `disableModule` hook, drop hand-rolled position-saving where the framework covers it. Preserve the `actor.apps` registration/cleanup behavior added in 13.3.5.
 
 ## HIGH PRIORITY
-- None
+
+### CHARACTER PANEL RENDER COST
+- [ ] **OPTIMIZE** `CharacterPanel.render()` enriches the biography HTML (`TextEditor.enrichHTML`) on every render. Bumped to High: since the 13.3.6 perf work routes AC/movement changes to a targeted character-panel render, this now runs on routine effect/condition churn. Cache the enriched biography by actor + `_stats.modifiedTime` (same pattern as the pinned-quest and journal-page caches), or move enrichment behind the element-validation checks.
 
 ## MEDIUM PRIORITY
 
@@ -59,6 +59,9 @@
   - Keep tray/popout specific selectors in `panel-macros.css`
   - Consolidate shared styles to avoid conflicts and maintenance issues
 
+### QUEST PIN FLAG HYGIENE
+- [ ] **CLEANUP** `_syncQuestPinMirror` (`panel-quest.js`) writes a `sceneId` flag on quest pages that nothing reads — quest scene resolution comes from live Blacksmith pin records (`pins.get(pinId).sceneId`), per the migration's pinId-only contract. Each write is a pointless world document update whose `updateJournalEntryPage` cascade also bumps `modifiedTime` and needlessly invalidates the page-parse cache (13.3.7) for that page. Remove the `sceneId` half (keep `pinId`); quest-side only — Notes legitimately uses its own `sceneId` flag as note metadata (`panel-notes.js`, `utility-notes-parser.js`, `window-note.js`). Existing stale `sceneId` values on quest pages are inert; optional future migration can sweep them.
+
 ### NOTES TAB
 - [ ] **ENHANCEMENT** Expand and optimize this section. It needs to have a shared note, character note, and scratchpad
 
@@ -66,9 +69,6 @@
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description
-- [ ] **BUG** Guard the `canvas.selectObjects` override (`squire.js` canvasReady hook) so we don't stack wrappers and timers every scene load; restore original during cleanup
-- [ ] **BUG** Replace `cleanupModule`'s zero-delay interval sweep (`squire.js`) with targeted tracked timers; avoid spawning the extra `setInterval(() => {}, 0)` that never clears
-- [x] ~~**BUG** Ensure quest-pin drag listeners on `document` are always removed~~ Resolved: PIXI-based quest pins removed; Blacksmith API handles pin interactions.
 
 ## LOW PRIORITY
 
@@ -102,14 +102,13 @@
 ### Code Cleanup
 - [ ] **PLANNED** Remove legacy code from our fixes
 - [ ] **PLANNED** Modularize manager-panel.js (too large, not modular enough)
-- [ ] **PLANNED** Review and clean up any remaining unnecessary `updateTray()` calls
 - [ ] **PLANNED** Revisit party transfer refactor goals (`panel-party.js`) now that `TransferUtils` handles most workflows; decide what parts of the old plan still add value
 - [ ] **PLANNED** Break the `HandleManager` ↔ `PanelManager` circular import by passing required data via constructors or shared context
 - [ ] **PLANNED** Remove jQuery detection patterns where elements are guaranteed to be native DOM (technical debt cleanup)
 
 ### Performance Optimization
 - [ ] **INVESTIGATE** Disabled tabs still load/render all data even when hidden - consider skipping panel construction for disabled tabs
-- [ ] **OPTIMIZE** Phase 4: Optimize async work in `CharacterPanel.render()` - Move expensive async operations (TextEditor.enrichHTML, renderTemplate) after element validation, or cache template results if element becomes invalid to avoid wasted computation
+- (CharacterPanel render optimization moved to HIGH PRIORITY above)
 
 ## Investigation Needed
 - [ ] Investigate why expand animation changed from sliding to fading
