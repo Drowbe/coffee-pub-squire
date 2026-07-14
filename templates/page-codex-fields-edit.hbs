@@ -36,16 +36,11 @@
             <label for="{{document.id}}-codex-link-label">Link Label</label>
             <input type="text" id="{{document.id}}-codex-link-label" name="system.link.label" value="{{system.link.label}}">
         </div>
-        <div class="form-group">
-            <label for="{{document.id}}-codex-tags">Tags <span class="codex-edit-note">(comma-separated)</span></label>
-            <input type="text" id="{{document.id}}-codex-tags" name="system.tags" value="{{tagsString}}"
-                placeholder="city, river, trade">
-        </div>
-        <div class="form-group">
-            <label for="{{document.id}}-codex-img">Image Path</label>
-            <input type="text" id="{{document.id}}-codex-img" name="system.img" value="{{system.img}}"
-                placeholder="images/example.webp">
-        </div>
+    </div>
+
+    <div class="form-group codex-edit-full">
+        <label for="{{document.id}}-codex-tags">Tags</label>
+        <string-tags id="{{document.id}}-codex-tags" name="system.tags" value="{{tagsString}}"></string-tags>
     </div>
 
     <div class="codex-edit-section-header">

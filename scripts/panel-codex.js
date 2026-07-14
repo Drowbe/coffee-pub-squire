@@ -237,7 +237,9 @@ export class CodexPanel {
                     const entry = {
                         name: page.name,
                         uuid: page.uuid,
-                        img: sys.img || '',
+                        // Explicit image wins; otherwise the first illustration in the
+                        // Expanded Details is the entry image (the pre-data-model behavior)
+                        img: sys.img || CodexParser.extractImage(page.text?.content || '') || '',
                         category: sys.category || '',
                         categoryIcon: sys.categoryIcon || '',
                         summary: sys.summary || '',
@@ -1435,11 +1437,10 @@ export class CodexPanel {
         const exportData = [];
         for (const cat of this.categories) {
             for (const entry of (this.data[cat] || [])) {
-                let img = (entry.img && typeof entry.img === 'string') ? entry.img : null;
-                if (img) {
-                    const origin = window.location.origin + '/';
-                    if (img.startsWith(origin)) img = img.slice(origin.length);
-                }
+                // Export only the EXPLICIT image (system.img) — an image derived from
+                // the first Expanded Details illustration already travels inside
+                // expandedDetails and would be duplicated if exported here too
+                let img = null;
 
                 // Expanded Details is the page's raw text content — exported raw so
                 // @UUID links and embeds survive a round trip through export → import
@@ -1448,7 +1449,12 @@ export class CodexPanel {
                     const page = await fromUuid(entry.uuid);
                     const raw = typeof page?.text?.content === 'string' ? page.text.content : '';
                     if (raw.trim()) expandedDetails = raw;
+                    img = (typeof page?.system?.img === 'string' && page.system.img) ? page.system.img : null;
                 } catch (_) { /* page unavailable — export without expanded details */ }
+                if (img) {
+                    const origin = window.location.origin + '/';
+                    if (img.startsWith(origin)) img = img.slice(origin.length);
+                }
 
                 exportData.push({
                     name: entry.name,

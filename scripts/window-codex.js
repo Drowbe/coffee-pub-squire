@@ -53,6 +53,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         this.pageUuid = opts.pageUuid || null;
         this.page = opts.page || null;
         this.isEditing = !!this.pageUuid;
+        // When the preview image was derived from the first Expanded Details
+        // illustration (no explicit system.img), remember it so saving doesn't
+        // freeze the derived value into system.img
+        this._imgDerivedFromLore = opts.imgDerivedFromLore || null;
         this.entry = foundry.utils.mergeObject(this._getDefaultEntry(), entry || {}, { inplace: false });
         this.entry.pageUuid = this.pageUuid;
         this.entry.link = this._normalizeLinkValue(this.entry.link, this.entry.linkLabel || this.entry.name || 'Link');
@@ -61,13 +65,19 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
 
     static async fromPage(page, options = {}) {
         let entry = null;
+        let imgDerivedFromLore = null;
         try {
             if (page?.type === CODEX_PAGE_TYPE) {
                 // Typed page: fields come straight from system — no parsing
                 const sys = page.system;
+                const rawContent = typeof page.text?.content === 'string' ? page.text.content : '';
+                // Explicit image wins; else preview the first Expanded Details illustration
+                if (!sys.img) {
+                    imgDerivedFromLore = CodexParser.extractImage(rawContent) || null;
+                }
                 entry = {
                     name: page.name,
-                    img: sys.img || null,
+                    img: sys.img || imgDerivedFromLore || null,
                     category: sys.category || '',
                     categoryIcon: sys.categoryIcon || '',
                     description: sys.summary || '',
@@ -76,7 +86,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     link: sys.linkData,
                     linkLabel: sys.link?.label || '',
                     tags: Array.from(sys.tags || []),
-                    expandedDetails: typeof page.text?.content === 'string' ? page.text.content : ''
+                    expandedDetails: rawContent
                 };
             } else {
                 // Legacy text page: parse the old HTML format
@@ -105,7 +115,8 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         return new CodexWindow(entry || { name: page?.name || '' }, {
             ...options,
             pageUuid: page?.uuid || options.pageUuid || null,
-            page
+            page,
+            imgDerivedFromLore
         });
     }
 
@@ -146,7 +157,31 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         this._setupDragAndDrop(root);
         this._setupFormInteractions(root);
         this._setupImageManagement(root);
+        this._mountExpandedEditor(root);
         this._updateFormFields();
+    }
+
+    /**
+     * Mount the Expanded Details ProseMirror editor. The <prose-mirror> element takes
+     * its content from a `value` config/attribute — innerHTML is discarded — so it must
+     * be created programmatically (same pattern as the note window editor).
+     * @private
+     */
+    _mountExpandedEditor(root) {
+        const host = root.querySelector('.codex-expanded-editor-host');
+        if (!host) return;
+        host.innerHTML = '';
+
+        const config = {
+            name: 'expandedDetails',
+            value: String(this.entry.expandedDetails || ''),
+            compact: true
+        };
+        if (this.pageUuid) config.documentUUID = this.pageUuid;
+
+        const editor = foundry.applications.elements.HTMLProseMirrorElement.create(config);
+        editor.classList.add('codex-expanded-editor');
+        host.appendChild(editor);
     }
 
     _getDefaultEntry() {
@@ -328,7 +363,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     ? { uuid: entry.link.uuid, label: entry.link.label || entry.linkLabel || entry.name || 'Link' }
                     : { uuid: '', label: '' },
                 tags: entry.tags || [],
-                img: entry.img || ''
+                // Don't freeze a lore-derived preview image into system.img — the entry
+                // image stays dynamic (first Expanded Details illustration) unless the
+                // user explicitly picked a different one
+                img: (entry.img && entry.img !== this._imgDerivedFromLore) ? entry.img : ''
             };
             const pageData = {
                 name: entry.name,
