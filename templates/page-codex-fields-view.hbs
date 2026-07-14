@@ -20,10 +20,12 @@
                 <span class="codex-page-value">{{system.location}}</span>
             </div>
         {{/if}}
-        {{#if linkHtml}}
+        {{#if linksHtml.length}}
             <div class="codex-page-field">
-                <span class="codex-page-label">Link</span>
-                <span class="codex-page-value">{{{linkHtml}}}</span>
+                <span class="codex-page-label">{{#if (eq linksHtml.length 1)}}Link{{else}}Links{{/if}}</span>
+                <span class="codex-page-value codex-page-links">
+                    {{#each linksHtml}}<span class="codex-page-link-item">{{{this}}}</span>{{/each}}
+                </span>
             </div>
         {{/if}}
         {{#if isGM}}

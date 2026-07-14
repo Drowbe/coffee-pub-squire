@@ -17,7 +17,6 @@
         <form class="codex-window-form" method="post">
             <input type="hidden" name="img" value="{{entry.img}}">
             <input type="hidden" name="pageUuid" value="{{entry.pageUuid}}">
-            <input type="hidden" name="linkLabel" value="{{entry.link.label}}">
 
             <section class="blacksmith-window-section codex-drag-section codex-drag-zone">
                 <div class="codex-drop-callout">
@@ -84,33 +83,33 @@
                             </div>
                         </div>
 
-                        <div class="codex-form-row codex-form-field-full">
-                            <div class="codex-form-field codex-form-row-select">
-                                <label for="location">Location</label>
-                                <select id="location" name="location">
-                                    <option value="">Select Location</option>
-                                    <option value="new">+ New Location</option>
-                                    {{#each existingLocations}}
-                                    <option value="{{this}}" {{#if (eq this ../entry.location)}}selected{{/if}}>{{this}}</option>
-                                    {{/each}}
-                                </select>
+                        <div class="codex-form-field codex-form-field-full">
+                            <label>Location</label>
+                            <div class="codex-location-path">
+                                {{#each locationLevels}}
+                                {{#unless @first}}<i class="fa-solid fa-angle-right codex-location-sep"></i>{{/unless}}
+                                <div class="codex-location-segment">
+                                    <span class="codex-location-seglabel">{{this.label}}</span>
+                                    <input type="text" name="location-{{@index}}" value="{{this.value}}"
+                                        list="{{../appId}}-loc-{{@index}}" placeholder="{{this.placeholder}}" autocomplete="off">
+                                    <datalist id="{{../appId}}-loc-{{@index}}">
+                                        {{#each this.suggestions}}<option value="{{this}}"></option>{{/each}}
+                                    </datalist>
+                                </div>
+                                {{/each}}
                             </div>
-                            <div class="codex-form-field new-location-input-field">
-                                <label for="new-location">New Location</label>
-                                <input type="text" id="new-location" name="new-location" placeholder="Enter new location">
-                            </div>
+                            <small class="codex-form-hint">Broadest to most specific — leave trailing levels blank. Pick an existing value or type a new one.</small>
                         </div>
 
                         <div class="codex-form-field codex-form-field-full">
-                            <label for="link">Link UUID <span class="codex-form-label-optional">(optional)</span></label>
-                            <input
-                                type="text"
-                                id="link"
-                                name="link"
-                                value="{{#if entry.link}}{{entry.link.uuid}}{{/if}}"
-                                placeholder="e.g. JournalEntry.abc123 or Actor.def456"
-                            >
-                            <small class="codex-form-hint">UUID of a related journal entry, actor, or item.</small>
+                            <label>Links <span class="codex-form-label-optional">(optional)</span></label>
+                            <div class="codex-links-dropzone">
+                                <div class="codex-links-list"></div>
+                                <div class="codex-links-hint">
+                                    <i class="fa-solid fa-link"></i>
+                                    Drag actors, items, journals, or pages here to link them.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -124,12 +123,12 @@
                 <div class="blacksmith-window-section-body">
                     <div class="codex-form-field">
                         <label for="description">Summary</label>
-                        <textarea id="description" name="description" rows="7" placeholder="A concise summary of what this is, where it's located, and why it matters. Deeper lore belongs in the journal page's Expanded Details section.">{{#if entry.description}}{{entry.description}}{{/if}}</textarea>
+                        <textarea id="description" name="description" rows="4" placeholder="A concise summary of what this is, where it's located, and why it matters. Deeper lore belongs in the journal page's Expanded Details section.">{{#if entry.description}}{{entry.description}}{{/if}}</textarea>
                     </div>
 
                     <div class="codex-form-field">
                         <label for="plotHook">Plot Hook</label>
-                        <textarea id="plotHook" name="plotHook" rows="5" placeholder="How does this relate to the story? What might the party need from it?">{{#if entry.plotHook}}{{entry.plotHook}}{{/if}}</textarea>
+                        <textarea id="plotHook" name="plotHook" rows="3" placeholder="How does this relate to the story? What might the party need from it?">{{#if entry.plotHook}}{{entry.plotHook}}{{/if}}</textarea>
                     </div>
                 </div>
             </section>

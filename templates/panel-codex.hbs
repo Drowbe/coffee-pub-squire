@@ -102,14 +102,11 @@
                                     {{/if}}
                                 {{/if}}
 
-                                <!-- LINK (above location per design) -->
-                                {{#if entry.linkHtml}}
+                                <!-- LINKS (above location per design) -->
+                                {{#if entry.linksHtml.length}}
                                     <div class="codex-entry-link">
-                                        <span class="codex-entry-label">Link</span> {{{entry.linkHtml}}}
-                                    </div>
-                                {{else if entry.link}}
-                                    <div class="codex-entry-link">
-                                        <span class="codex-entry-label">Link</span> <a href="#" class="codex-entry-link" data-uuid="{{entry.link.uuid}}">{{{entry.link.label}}}</a>
+                                        <span class="codex-entry-label">{{#if (eq entry.linksHtml.length 1)}}Link{{else}}Links{{/if}}</span>
+                                        {{#each entry.linksHtml}}<span class="codex-entry-link-item">{{{this}}}</span>{{/each}}
                                     </div>
                                 {{/if}}
 

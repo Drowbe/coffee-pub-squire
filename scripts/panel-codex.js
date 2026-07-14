@@ -246,7 +246,8 @@ export class CodexPanel {
                         description: sys.summary || '', // legacy alias
                         plotHook: sys.plotHook || '',
                         location: sys.location || '',
-                        link: sys.linkData,
+                        links: sys.linkList,
+                        link: sys.linkData, // legacy alias (first link)
                         tags: Array.from(sys.tags || []),
                         hasExpandedDetails: sys.hasExpandedDetails,
                         DiscoveredBy: (sys.discoveredBy || []).join(', '),
@@ -1295,16 +1296,20 @@ export class CodexPanel {
                                 let page = null;
                                 if (entry.uuid) page = this.selectedJournal.pages.find(p => p.getFlag(MODULE.ID, 'codexUuid') === entry.uuid);
                                 if (!page) page = this.selectedJournal.pages.find(p => p.name === entry.name);
-                                // Canonical field is `summary`; accept legacy `description` imports
+                                // Canonical field is `summary`; accept legacy `description` imports.
+                                // Links: accept `links` array or legacy single `link`.
                                 const summary = entry.summary ?? entry.description ?? '';
+                                const rawLinks = Array.isArray(entry.links)
+                                    ? entry.links
+                                    : (entry.link?.uuid ? [entry.link] : []);
                                 const systemData = {
                                     summary,
                                     category: entry.category || '',
                                     plotHook: entry.plotHook || '',
                                     location: entry.location || '',
-                                    link: (entry.link?.uuid)
-                                        ? { uuid: entry.link.uuid, label: entry.link.label || entry.link.uuid }
-                                        : { uuid: '', label: '' },
+                                    links: rawLinks
+                                        .filter(l => typeof l?.uuid === 'string' && l.uuid.trim())
+                                        .map(l => ({ uuid: l.uuid.trim(), label: l.label || l.uuid.trim() })),
                                     tags: Array.isArray(entry.tags) ? entry.tags : [],
                                     img: entry.img || ''
                                 };
@@ -1463,7 +1468,7 @@ export class CodexPanel {
                     summary: entry.summary || '',
                     plotHook: entry.plotHook || null,
                     location: entry.location || null,
-                    link: entry.link || null,
+                    links: entry.links || [],
                     tags: entry.tags || [],
                     uuid: entry.uuid,
                     expandedDetails
@@ -1592,12 +1597,17 @@ export class CodexPanel {
             const customCategoryIcon = entries.find(entry => String(entry.categoryIcon || '').trim())?.categoryIcon || '';
             // Enrich links for Foundry UUID handling
             for (const entry of entries) {
-                if (entry.link && entry.link.uuid && entry.link.label) {
-                    const TextEditor = getTextEditor();
-                    entry.linkHtml = await TextEditor.enrichHTML(
-                        `@UUID[${entry.link.uuid}]{${entry.link.label}}`,
-                        { documents: true, links: true }
-                    );
+                const links = entry.links || (entry.link ? [entry.link] : []);
+                entry.linksHtml = [];
+                for (const link of links) {
+                    if (!link?.uuid) continue;
+                    try {
+                        const TextEditor = getTextEditor();
+                        entry.linksHtml.push(await TextEditor.enrichHTML(
+                            `@UUID[${link.uuid}]{${link.label || link.uuid}}`,
+                            { documents: true, links: true }
+                        ));
+                    } catch (_) {}
                 }
             }
             const totalCount = entries.length;

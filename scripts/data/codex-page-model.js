@@ -24,10 +24,10 @@ export class CodexPageModel extends foundry.abstract.TypeDataModel {
             plotHook: new fields.StringField({ required: false, blank: true, initial: '' }),
             // "A > B > C" convention
             location: new fields.StringField({ required: false, blank: true, initial: '' }),
-            link: new fields.SchemaField({
+            links: new fields.ArrayField(new fields.SchemaField({
                 uuid: new fields.StringField({ required: false, blank: true, initial: '' }),
                 label: new fields.StringField({ required: false, blank: true, initial: '' })
-            }),
+            }), { initial: [] }),
             tags: new fields.ArrayField(new fields.StringField(), { initial: [] }),
             img: new fields.StringField({ required: false, blank: true, initial: '' }),
             // Character names that auto-discovery matched (replaces the old
@@ -42,10 +42,15 @@ export class CodexPageModel extends foundry.abstract.TypeDataModel {
         return typeof content === 'string' && content.trim().length > 0;
     }
 
-    /** Normalized link object for the tray ({ uuid, label } or null). */
+    /** Normalized links for the tray: array of { uuid, label }. */
+    get linkList() {
+        return (this.links || [])
+            .filter(l => typeof l?.uuid === 'string' && l.uuid.trim())
+            .map(l => ({ uuid: l.uuid.trim(), label: l.label || l.uuid.trim() }));
+    }
+
+    /** Legacy alias: the first link or null. */
     get linkData() {
-        const uuid = this.link?.uuid?.trim();
-        if (!uuid) return null;
-        return { uuid, label: this.link.label || uuid };
+        return this.linkList[0] ?? null;
     }
 }

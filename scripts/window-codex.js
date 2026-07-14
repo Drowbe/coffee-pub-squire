@@ -60,7 +60,9 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         this._imgDerivedFromLore = opts.imgDerivedFromLore || null;
         this.entry = foundry.utils.mergeObject(this._getDefaultEntry(), entry || {}, { inplace: false });
         this.entry.pageUuid = this.pageUuid;
-        this.entry.link = this._normalizeLinkValue(this.entry.link, this.entry.linkLabel || this.entry.name || 'Link');
+        this.entry.links = this._normalizeLinks(this.entry.links, this.entry.link, this.entry.linkLabel);
+        delete this.entry.link;
+        delete this.entry.linkLabel;
         this._eventHandlers = [];
     }
 
@@ -84,8 +86,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     description: sys.summary || '',
                     plotHook: sys.plotHook || '',
                     location: sys.location || '',
-                    link: sys.linkData,
-                    linkLabel: sys.link?.label || '',
+                    links: sys.linkList,
                     tags: Array.from(sys.tags || []),
                     expandedDetails: rawContent
                 };
@@ -108,6 +109,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     rolls: true
                 });
                 entry = await CodexParser.parseSinglePage(page, enriched);
+                if (entry?.link) {
+                    entry.links = [entry.link];
+                    delete entry.link;
+                }
             }
         } catch (error) {
             console.error('Coffee Pub Squire | Error parsing codex page for edit:', error);
@@ -132,8 +137,36 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             subtitle: this.isEditing ? 'Edit Codex Entry' : '',
             existingCategories: this._getExistingCategories(),
             existingLocations: this._getExistingLocations(),
+            locationLevels: this._getLocationLevels(),
             suggestedTags: this._getSuggestedTags()
         };
+    }
+
+    /**
+     * Build the segmented location path (Realm > Region > Site > Area): current
+     * values from the entry's location string plus per-depth suggestions gathered
+     * from every existing location in the codex.
+     * @private
+     */
+    _getLocationLevels() {
+        const LEVELS = [
+            { label: 'Realm', placeholder: 'Faerûn' },
+            { label: 'Region', placeholder: 'Moonsea' },
+            { label: 'Site', placeholder: 'Teshwave' },
+            { label: 'Area', placeholder: 'The Broken Anvil' }
+        ];
+        const parts = String(this.entry.location || '').split('>').map(p => p.trim());
+        const suggestions = LEVELS.map(() => new Set());
+        for (const location of this._getExistingLocations()) {
+            String(location).split('>').map(p => p.trim()).forEach((part, depth) => {
+                if (part && depth < suggestions.length) suggestions[depth].add(part);
+            });
+        }
+        return LEVELS.map((level, i) => ({
+            ...level,
+            value: parts[i] || '',
+            suggestions: Array.from(suggestions[i]).sort((a, b) => a.localeCompare(b))
+        }));
     }
 
     async _onRender(context, options) {
@@ -202,13 +235,6 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                 if (!host.isConnected) return;
                 const contentEl = host.querySelector('.editor-content');
                 const dead = !contentEl || (!contentEl.childNodes.length && value.length);
-                console.debug('SQUIRE | Codex expanded editor state', {
-                    usedChars: value.length,
-                    hasEditorContent: !!contentEl,
-                    renderedNodes: contentEl?.childNodes?.length ?? null,
-                    dead,
-                    remounting: dead && !this._expandedEditorRemounted
-                });
                 if (dead && !this._expandedEditorRemounted) {
                     this._expandedEditorRemounted = true;
                     mount();
@@ -235,12 +261,60 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             description: '',
             plotHook: '',
             location: '',
-            link: null,
-            linkLabel: '',
+            links: [],
             pageUuid: null,
             tags: [],
             expandedDetails: ''
         };
+    }
+
+    /**
+     * Normalize a links array, folding in a legacy single link if provided.
+     * @private
+     */
+    _normalizeLinks(links, legacyLink = null, legacyLabel = '') {
+        const out = [];
+        const push = (l) => {
+            const uuid = typeof l?.uuid === 'string' ? l.uuid.trim() : '';
+            if (!uuid) return;
+            if (out.some(existing => existing.uuid === uuid)) return;
+            out.push({ uuid, label: String(l.label || legacyLabel || uuid) });
+        };
+        if (Array.isArray(links)) links.forEach(push);
+        if (legacyLink) push(legacyLink);
+        return out;
+    }
+
+    /**
+     * Add a link (deduped by UUID) and refresh the list display.
+     * @private
+     */
+    _addLink(link) {
+        const uuid = typeof link?.uuid === 'string' ? link.uuid.trim() : '';
+        if (!uuid) return false;
+        if (this.entry.links.some(l => l.uuid === uuid)) return false;
+        this.entry.links.push({ uuid, label: String(link.label || uuid) });
+        this._renderLinksList(this._getRoot());
+        return true;
+    }
+
+    /**
+     * Render the current links as removable chips.
+     * @private
+     */
+    _renderLinksList(root = this._getRoot()) {
+        const list = root?.querySelector('.codex-links-list');
+        if (!list) return;
+        list.innerHTML = '';
+        for (const link of (this.entry.links || [])) {
+            const chip = document.createElement('span');
+            chip.className = 'codex-link-chip';
+            chip.dataset.uuid = link.uuid;
+            chip.innerHTML = `<i class="fa-solid fa-link"></i><span class="codex-link-chip-label"></span><i class="fa-solid fa-times codex-link-chip-remove" title="Remove link"></i>`;
+            chip.querySelector('.codex-link-chip-label').textContent = link.label || link.uuid;
+            chip.title = link.uuid;
+            list.appendChild(chip);
+        }
     }
 
     _getHeaderTitle() {
@@ -356,13 +430,21 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     _collectFormEntry(form) {
         const formData = new FormData(form);
         const entry = {};
+        const locationParts = [];
         for (const [key, value] of formData.entries()) {
+            const segmentMatch = key.match(/^location-(\d+)$/);
+            if (segmentMatch) {
+                locationParts[Number(segmentMatch[1])] = String(value).trim();
+                continue;
+            }
             if (key === 'img' && !value) continue;
-            if (key === 'location' && !value) continue;
             if (key === 'plotHook' && !value) continue;
-            if (key === 'link' && !value) continue;
             entry[key] = value;
         }
+        // Compose the hierarchical location path from the segment inputs,
+        // dropping empty levels (trailing OR interior)
+        entry.location = locationParts.filter(Boolean).join(' > ');
+
         // Read the ProseMirror element directly — its .value serializes the LIVE
         // editor state, which FormData is not guaranteed to capture
         const expandedEditor = form.querySelector('prose-mirror[name="expandedDetails"]');
@@ -375,8 +457,6 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         entry.pageUuid = this.pageUuid || entry.pageUuid || null;
         entry.category = this._normalizeCategoryValue(entry.category);
         entry.categoryIcon = String(entry.categoryIcon || '').trim();
-        entry.link = await this._resolveLinkFromForm(entry.link, entry.linkLabel, entry.name);
-        entry.linkLabel = entry.link?.label || '';
         entry.tags = this._normalizeTags(entry.tags);
         this.entry = foundry.utils.mergeObject(this.entry, entry, { inplace: false });
 
@@ -401,9 +481,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                 categoryIcon: entry.categoryIcon || '',
                 plotHook: entry.plotHook || '',
                 location: entry.location || '',
-                link: (entry.link?.uuid)
-                    ? { uuid: entry.link.uuid, label: entry.link.label || entry.linkLabel || entry.name || 'Link' }
-                    : { uuid: '', label: '' },
+                links: this._normalizeLinks(this.entry.links),
                 tags: entry.tags || [],
                 // Don't freeze a lore-derived preview image into system.img — the entry
                 // image stays dynamic (first Expanded Details illustration) unless the
@@ -502,26 +580,6 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             this._eventHandlers.push({ element: categorySelect, event: 'change', handler });
         }
 
-        const locationSelect = root.querySelector('#location');
-        const newLocationInput = root.querySelector('#new-location');
-        const newLocationInputField = root.querySelector('.new-location-input-field');
-        if (locationSelect) {
-            const handler = function() {
-                if (this.value === 'new') {
-                    if (newLocationInputField) newLocationInputField.style.display = 'flex';
-                    newLocationInput.focus();
-                    newLocationInput.setAttribute('name', 'location');
-                    locationSelect.removeAttribute('name');
-                } else {
-                    if (newLocationInputField) newLocationInputField.style.display = 'none';
-                    newLocationInput.removeAttribute('name');
-                    locationSelect.setAttribute('name', 'location');
-                }
-            };
-            locationSelect.addEventListener('change', handler);
-            this._eventHandlers.push({ element: locationSelect, event: 'change', handler });
-        }
-
         if (newCategoryInput) {
             const handler = function() {
                 if (this.value.trim()) {
@@ -533,15 +591,57 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             this._eventHandlers.push({ element: newCategoryInput, event: 'input', handler });
         }
 
-        if (newLocationInput) {
-            const handler = function() {
-                if (this.value.trim()) {
-                    locationSelect.removeAttribute('name');
-                    this.setAttribute('name', 'location');
+        // Links: remove chips (delegated) and accept drops directly on the links zone
+        const linksZone = root.querySelector('.codex-links-dropzone');
+        if (linksZone) {
+            const removeHandler = (event) => {
+                const removeBtn = event.target.closest('.codex-link-chip-remove');
+                if (!removeBtn) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const uuid = removeBtn.closest('.codex-link-chip')?.dataset?.uuid;
+                if (!uuid) return;
+                this.entry.links = (this.entry.links || []).filter(l => l.uuid !== uuid);
+                this._renderLinksList(root);
+            };
+            const overHandler = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                event.dataTransfer.dropEffect = 'link';
+                linksZone.classList.add('drag-active');
+            };
+            const leaveHandler = (event) => {
+                event.preventDefault();
+                linksZone.classList.remove('drag-active');
+            };
+            const dropHandler = async (event) => {
+                event.preventDefault();
+                // Don't let the auto-populate drop zone logic also fire
+                event.stopPropagation();
+                linksZone.classList.remove('drag-active');
+                try {
+                    const TextEditor = getTextEditor();
+                    const data = TextEditor?.getDragEventData?.(event)
+                        || JSON.parse(event.dataTransfer.getData('text/plain'));
+                    const doc = data?.uuid ? await fromUuid(data.uuid) : null;
+                    if (!doc) return;
+                    if (this._addLink({ uuid: doc.uuid, label: doc.name || doc.uuid })) {
+                        ui.notifications.info(`Linked: ${doc.name}`);
+                    }
+                } catch (error) {
+                    console.error('Coffee Pub Squire | Error linking dropped document:', error);
                 }
             };
-            newLocationInput.addEventListener('input', handler);
-            this._eventHandlers.push({ element: newLocationInput, event: 'input', handler });
+            linksZone.addEventListener('click', removeHandler);
+            linksZone.addEventListener('dragover', overHandler);
+            linksZone.addEventListener('dragleave', leaveHandler);
+            linksZone.addEventListener('drop', dropHandler);
+            this._eventHandlers.push(
+                { element: linksZone, event: 'click', handler: removeHandler },
+                { element: linksZone, event: 'dragover', handler: overHandler },
+                { element: linksZone, event: 'dragleave', handler: leaveHandler },
+                { element: linksZone, event: 'drop', handler: dropHandler }
+            );
         }
 
         const tagsInput = root.querySelector('#tags');
@@ -679,8 +779,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             'system.details.origin',
             'system.details.home'
         ]) || this.entry.location;
-        this.entry.link = this._buildDocumentLink(actor);
-        this.entry.linkLabel = this.entry.link?.label || '';
+        this._addLink(this._buildDocumentLink(actor));
         this.entry.tags = this._uniqueTags([
             'Characters',
             actor.type,
@@ -700,8 +799,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         this.entry.category = 'Items';
         this.entry.img = item.img;
         this.entry.description = this._appendPlainText(this.entry.description, this._extractDocumentDescription(item));
-        this.entry.link = this._buildDocumentLink(item);
-        this.entry.linkLabel = this.entry.link?.label || '';
+        this._addLink(this._buildDocumentLink(item));
         this.entry.tags = this._uniqueTags([
             'Items',
             item.type,
@@ -728,8 +826,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         }
 
         this.entry.name = page?.name || journal?.name || dropped.name;
-        this.entry.link = this._buildDocumentLink(page || journal || dropped);
-        this.entry.linkLabel = this.entry.link?.label || '';
+        this._addLink(this._buildDocumentLink(page || journal || dropped));
         this.entry.category = this.entry.category || 'Books';
 
         if (page) {
@@ -792,11 +889,14 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         const pageUuidInput = form.querySelector('input[name="pageUuid"]');
         if (pageUuidInput) pageUuidInput.value = this.pageUuid || '';
 
-        const linkInput = form.querySelector('input[name="link"]');
-        if (linkInput) linkInput.value = this.entry.link?.uuid || '';
+        // Location path segments
+        const locationParts = String(this.entry.location || '').split('>').map(p => p.trim());
+        form.querySelectorAll('input[name^="location-"]').forEach(input => {
+            const depth = Number(input.name.split('-')[1]);
+            input.value = locationParts[depth] || '';
+        });
 
-        const linkLabelInput = form.querySelector('input[name="linkLabel"]');
-        if (linkLabelInput) linkLabelInput.value = this.entry.link?.label || this.entry.linkLabel || '';
+        this._renderLinksList();
 
         const categoryIconInput = form.querySelector('#categoryIcon');
         if (categoryIconInput) categoryIconInput.value = this.entry.categoryIcon || '';
@@ -849,34 +949,6 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     categoryIconInput.value = '';
                 }
                 categorySelect.setAttribute('name', 'category');
-            }
-        }
-
-        const locationSelect = form.querySelector('#location');
-        const newLocationInput = form.querySelector('#new-location');
-        const newLocationInputField = form.querySelector('.new-location-input-field');
-        if (locationSelect && newLocationInput) {
-            if (this.entry.location) {
-                const existingOption = locationSelect.querySelector(`option[value="${this.entry.location}"]`);
-                if (existingOption) {
-                    locationSelect.value = this.entry.location;
-                    if (newLocationInputField) newLocationInputField.style.display = 'none';
-                    newLocationInput.value = '';
-                    newLocationInput.removeAttribute('name');
-                    locationSelect.setAttribute('name', 'location');
-                } else {
-                    locationSelect.value = 'new';
-                    if (newLocationInputField) newLocationInputField.style.display = 'flex';
-                    newLocationInput.value = this.entry.location;
-                    newLocationInput.setAttribute('name', 'location');
-                    locationSelect.removeAttribute('name');
-                }
-            } else {
-                locationSelect.value = '';
-                if (newLocationInputField) newLocationInputField.style.display = 'none';
-                newLocationInput.value = '';
-                newLocationInput.removeAttribute('name');
-                locationSelect.setAttribute('name', 'location');
             }
         }
 
@@ -942,36 +1014,6 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             uuid: document.uuid,
             label: document.name || 'Link'
         };
-    }
-
-    _normalizeLinkValue(link, fallbackLabel = 'Link') {
-        if (!link) return null;
-        if (typeof link === 'string') {
-            const uuid = link.trim();
-            if (!uuid) return null;
-            return { uuid, label: fallbackLabel || 'Link' };
-        }
-        if (typeof link === 'object') {
-            const uuid = String(link.uuid || '').trim();
-            if (!uuid) return null;
-            return {
-                uuid,
-                label: String(link.label || fallbackLabel || 'Link').trim() || 'Link'
-            };
-        }
-        return null;
-    }
-
-    async _resolveLinkFromForm(linkValue, linkLabel, fallbackLabel = 'Link') {
-        const normalized = this._normalizeLinkValue(linkValue, linkLabel || fallbackLabel);
-        if (!normalized) return null;
-        if (!linkLabel) {
-            try {
-                const document = await fromUuid(normalized.uuid);
-                if (document?.name) normalized.label = document.name;
-            } catch (_) {}
-        }
-        return normalized;
     }
 
     _pickFirstString(document, paths = []) {

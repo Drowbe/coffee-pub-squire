@@ -50,14 +50,13 @@ export class CodexPageSheet extends JournalEntryPageProseMirrorSheet {
         if (this.isView) {
             const system = this.document.system;
 
-            let linkHtml = '';
-            const link = system.linkData;
-            if (link) {
+            const linksHtml = [];
+            for (const link of system.linkList) {
                 try {
                     const TextEditor = getTextEditor();
-                    linkHtml = await TextEditor.enrichHTML(`@UUID[${link.uuid}]{${link.label}}`, { async: true });
+                    linksHtml.push(await TextEditor.enrichHTML(`@UUID[${link.uuid}]{${link.label}}`, { async: true }));
                 } catch (_) {
-                    linkHtml = link.label;
+                    linksHtml.push(link.label);
                 }
             }
 
@@ -68,7 +67,7 @@ export class CodexPageSheet extends JournalEntryPageProseMirrorSheet {
                     system,
                     isGM: game.user.isGM,
                     discoveredByString: (system.discoveredBy || []).join(', '),
-                    linkHtml
+                    linksHtml
                 }
             );
 

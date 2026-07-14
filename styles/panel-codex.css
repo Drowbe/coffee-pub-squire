@@ -372,6 +372,19 @@
     margin-bottom: 8px;
 }
 
+/* Multiple links in the entry card */
+.squire-tray[data-position="left"] .codex-entry-link-item {
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* Multiple links on the codex page view */
+.squire-codex-page-fields .codex-page-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+}
+
 /* "Read more" link at the end of the summary — opens the journal page */
 .squire-tray[data-position="left"] .codex-read-more {
     color: var(--color-border-highlight, #ff6400);

@@ -259,6 +259,142 @@
     color: rgba(172, 159, 129, 0.72);
 }
 
+/* Location hierarchy path (Realm > Region > Site > Area) */
+
+.codex-location-path {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.codex-location-segment {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.codex-location-seglabel {
+    font-size: 0.7em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(172, 159, 129, 0.85);
+}
+
+.codex-location-sep {
+    padding-bottom: 11px;
+    color: rgba(172, 159, 129, 0.6);
+}
+
+/* Links drop zone + chips */
+
+.codex-links-dropzone {
+    border: 1px dashed rgba(172, 159, 129, 0.45);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.28);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.codex-links-dropzone.drag-active {
+    border-color: rgba(255, 100, 0, 0.55);
+    background: rgba(255, 100, 0, 0.08);
+}
+
+.codex-links-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.codex-links-list:empty {
+    display: none;
+}
+
+.codex-link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(172, 159, 129, 0.4);
+    color: rgba(240, 236, 226, 0.92);
+    font-size: 0.85em;
+}
+
+.codex-link-chip i.fa-link {
+    color: rgba(172, 159, 129, 0.8);
+    font-size: 0.85em;
+}
+
+.codex-link-chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.codex-link-chip-remove {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.codex-link-chip-remove:hover {
+    opacity: 1;
+    color: rgba(255, 100, 0, 0.92);
+}
+
+.codex-links-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8em;
+    color: rgba(214, 208, 194, 0.6);
+}
+
+/* Compact image section: preview and actions side by side */
+
+.codex-window .codex-image-section .blacksmith-window-section-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.codex-window .codex-image-preview-wrapper {
+    flex: 1 1 auto;
+    flex-direction: row;
+    min-height: 64px;
+    padding: 6px 10px;
+}
+
+.codex-window .codex-image-preview {
+    width: auto;
+    max-width: 220px;
+    max-height: 84px;
+}
+
+.codex-window .codex-image-placeholder {
+    max-width: none;
+    text-align: left;
+}
+
+.codex-window .codex-remove-image {
+    top: 50%;
+    transform: translateY(-50%);
+    right: 8px;
+}
+
+.codex-window .codex-image-actions {
+    margin-top: 0;
+    flex: 0 0 auto;
+}
+
 @media (max-width: 720px) {
     .codex-form-row {
         grid-template-columns: 1fr;
