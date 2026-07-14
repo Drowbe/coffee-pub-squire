@@ -88,7 +88,16 @@
                                     <div class="codex-entry-divider"></div>
                                     <div class="codex-entry-description">
                                         <span class="codex-entry-label">Summary</span>
-                                        <p>{{{entry.summary}}}{{#if entry.hasExpandedDetails}} <a class="codex-read-more" data-uuid="{{entry.uuid}}" title="Open the journal page for expanded details">Read more&hellip;</a>{{/if}}</p>
+                                        <p>{{{entry.summary}}}</p>
+                                        {{#if entry.hasExpandedDetails}}
+                                        <div class="codex-read-more-row">
+                                            <span class="codex-read-more" data-uuid="{{entry.uuid}}" title="Open the journal page for expanded details">
+                                                <i class="fa-solid fa-book-open"></i>
+                                                <span class="codex-read-more-text">Read More</span>
+                                                <i class="fa-solid fa-angle-right codex-read-more-arrow"></i>
+                                            </span>
+                                        </div>
+                                        {{/if}}
                                     </div>
                                 {{/if}}
 

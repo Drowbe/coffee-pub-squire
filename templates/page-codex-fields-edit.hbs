@@ -29,7 +29,17 @@
         </div>
     </div>
 
-    <p class="codex-edit-hint">Links are managed in the tray's Edit Entry window — drag documents onto its Links area.</p>
+    <div class="form-group codex-edit-full">
+        <label>Links</label>
+        <div class="codex-page-links-edit">
+            {{#each linkChips}}
+            <span class="codex-link-chip" data-uuid="{{this.uuid}}">
+                <i class="fa-solid fa-link"></i><span class="codex-link-chip-label">{{this.label}}</span><i class="fa-solid fa-times codex-link-chip-remove" title="Remove link"></i>
+            </span>
+            {{/each}}
+            <span class="codex-links-hint"><i class="fa-solid fa-hand-pointer"></i> Drag actors, items, journals, or pages here to link them.</span>
+        </div>
+    </div>
 
     <div class="form-group codex-edit-full">
         <label for="{{document.id}}-codex-tags">Tags</label>

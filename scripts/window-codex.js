@@ -191,8 +191,95 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         this._setupDragAndDrop(root);
         this._setupFormInteractions(root);
         this._setupImageManagement(root);
+        this._setupLocationCombos(root);
         this._mountExpandedEditor(root);
         this._updateFormFields();
+    }
+
+    /**
+     * Custom combo dropdowns for the location path segments. Native <datalist>
+     * popups are positioned in pre-transform viewport coordinates by Chromium and
+     * render nowhere near the input inside Foundry's transformed windows.
+     * @private
+     */
+    _setupLocationCombos(root) {
+        const combos = Array.from(root.querySelectorAll('.codex-location-combo'));
+        if (!combos.length) return;
+
+        const closeAll = (except = null) => {
+            for (const combo of combos) {
+                if (combo !== except) combo.classList.remove('open');
+            }
+        };
+
+        for (const combo of combos) {
+            const input = combo.querySelector('input');
+            const toggle = combo.querySelector('.codex-location-combo-toggle');
+            const menu = combo.querySelector('.codex-location-combo-menu');
+            if (!input || !menu) continue;
+
+            const filterOptions = () => {
+                const needle = input.value.trim().toLowerCase();
+                let visible = 0;
+                menu.querySelectorAll('.codex-location-combo-option').forEach(option => {
+                    const match = !needle || option.textContent.toLowerCase().includes(needle);
+                    option.style.display = match ? '' : 'none';
+                    if (match) visible++;
+                });
+                return visible;
+            };
+
+            if (toggle) {
+                const toggleHandler = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const opening = !combo.classList.contains('open');
+                    closeAll();
+                    if (opening) {
+                        // Toggle shows the FULL list regardless of current value
+                        menu.querySelectorAll('.codex-location-combo-option').forEach(o => { o.style.display = ''; });
+                        combo.classList.add('open');
+                    }
+                };
+                toggle.addEventListener('click', toggleHandler);
+                this._eventHandlers.push({ element: toggle, event: 'click', handler: toggleHandler });
+            }
+
+            const inputHandler = () => {
+                const visible = filterOptions();
+                combo.classList.toggle('open', visible > 0 && input.value.trim().length > 0);
+            };
+            input.addEventListener('input', inputHandler);
+            this._eventHandlers.push({ element: input, event: 'input', handler: inputHandler });
+
+            const menuHandler = (event) => {
+                // "+ New …" clears the segment and focuses it for fresh input
+                const newOption = event.target.closest('.codex-location-combo-new');
+                if (newOption) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    input.value = '';
+                    combo.classList.remove('open');
+                    input.focus();
+                    return;
+                }
+                const option = event.target.closest('.codex-location-combo-option');
+                if (!option) return;
+                event.preventDefault();
+                event.stopPropagation();
+                input.value = option.textContent;
+                combo.classList.remove('open');
+            };
+            menu.addEventListener('pointerdown', menuHandler);
+            this._eventHandlers.push({ element: menu, event: 'pointerdown', handler: menuHandler });
+        }
+
+        // Any click elsewhere in the window closes open menus
+        const outsideHandler = (event) => {
+            if (!event.target.closest('.codex-location-combo')) closeAll();
+        };
+        root.addEventListener('pointerdown', outsideHandler);
+        this._eventHandlers.push({ element: root, event: 'pointerdown', handler: outsideHandler });
     }
 
     /**
@@ -423,6 +510,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         event?.preventDefault?.();
         const form = event?.target?.closest?.('form') || event?.target || this._getRoot()?.querySelector('form');
         if (!form) return;
+        // The save action invokes this programmatically, which bypasses the browser's
+        // required-field enforcement — run it explicitly so the user gets the native
+        // "please fill out this field" cues instead of a document validation error
+        if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
         const entry = this._collectFormEntry(form);
         await this._updateObject(event, entry);
     }
@@ -455,9 +546,21 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     async _updateObject(_event, formData) {
         const entry = foundry.utils.expandObject(formData);
         entry.pageUuid = this.pageUuid || entry.pageUuid || null;
+        entry.name = String(entry.name || '').trim();
         entry.category = this._normalizeCategoryValue(entry.category);
         entry.categoryIcon = String(entry.categoryIcon || '').trim();
         entry.tags = this._normalizeTags(entry.tags);
+
+        // Hard guard on mandatory fields — never hand invalid data to the document layer
+        if (!entry.name) {
+            ui.notifications.warn('A name is required to save a codex entry.');
+            return false;
+        }
+        if (!entry.category) {
+            ui.notifications.warn('A category is required to save a codex entry.');
+            return false;
+        }
+
         this.entry = foundry.utils.mergeObject(this.entry, entry, { inplace: false });
 
         const journalId = game.settings.get(MODULE.ID, 'codexJournal');
@@ -674,8 +777,8 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     _setupImageManagement(root) {
-        const browseImageButton = root.querySelector('.codex-browse-image');
-        if (browseImageButton) {
+        // Both browse triggers: the empty-state button and the on-image overlay
+        root.querySelectorAll('.codex-browse-image').forEach(browseImageButton => {
             const handler = async () => {
                 if (typeof FilePicker !== 'function') {
                     ui.notifications.warn('Image browser is unavailable.');
@@ -695,7 +798,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             };
             browseImageButton.addEventListener('click', handler);
             this._eventHandlers.push({ element: browseImageButton, event: 'click', handler });
-        }
+        });
 
         const removeImageButton = root.querySelector('.codex-remove-image');
         if (removeImageButton) {
@@ -958,6 +1061,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         const removeImageButton = form.querySelector('.codex-remove-image');
         if (imgSection) {
             imgSection.style.display = '';
+            imgSection.classList.toggle('has-image', !!this.entry.img);
         }
         if (imgPlaceholder) {
             imgPlaceholder.style.display = this.entry.img ? 'none' : '';

@@ -37,6 +37,9 @@
                     <div class="codex-image-preview-wrapper">
                         <div class="codex-image-placeholder">No image selected. Drop a document with artwork to populate this section.</div>
                         <img class="codex-image-preview" src="" alt="Preview">
+                        <button type="button" class="codex-browse-image codex-browse-overlay blacksmith-window-btn-secondary" aria-label="Browse image" title="Browse image">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </button>
                         <button type="button" class="codex-remove-image blacksmith-window-btn-critical" aria-label="Remove image">
                             <i class="fa-solid fa-times"></i>
                         </button>
@@ -90,11 +93,17 @@
                                 {{#unless @first}}<i class="fa-solid fa-angle-right codex-location-sep"></i>{{/unless}}
                                 <div class="codex-location-segment">
                                     <span class="codex-location-seglabel">{{this.label}}</span>
-                                    <input type="text" name="location-{{@index}}" value="{{this.value}}"
-                                        list="{{../appId}}-loc-{{@index}}" placeholder="{{this.placeholder}}" autocomplete="off">
-                                    <datalist id="{{../appId}}-loc-{{@index}}">
-                                        {{#each this.suggestions}}<option value="{{this}}"></option>{{/each}}
-                                    </datalist>
+                                    <div class="codex-location-combo">
+                                        <input type="text" name="location-{{@index}}" value="{{this.value}}"
+                                            placeholder="{{this.placeholder}}" autocomplete="off">
+                                        <button type="button" class="codex-location-combo-toggle" tabindex="-1" title="Show existing values">
+                                            <i class="fa-solid fa-caret-down"></i>
+                                        </button>
+                                        <div class="codex-location-combo-menu">
+                                            <div class="codex-location-combo-new"><i class="fa-solid fa-plus"></i> New {{this.label}}&hellip;</div>
+                                            {{#each this.suggestions}}<div class="codex-location-combo-option">{{this}}</div>{{/each}}
+                                        </div>
+                                    </div>
                                 </div>
                                 {{/each}}
                             </div>

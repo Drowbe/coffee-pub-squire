@@ -288,6 +288,85 @@
     color: rgba(172, 159, 129, 0.6);
 }
 
+.codex-location-combo {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.codex-location-combo input {
+    padding-right: 28px;
+}
+
+.codex-location-combo-toggle {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: rgba(172, 159, 129, 0.75);
+    cursor: pointer;
+}
+
+.codex-location-combo-toggle:hover {
+    color: rgba(255, 100, 0, 0.9);
+}
+
+.codex-location-combo-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    max-height: 180px;
+    overflow-y: auto;
+    background: #2a2a2a;
+    border: 1px solid rgba(172, 159, 129, 0.45);
+    border-radius: 4px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+}
+
+.codex-location-combo.open .codex-location-combo-menu {
+    display: block;
+}
+
+.codex-location-combo-option {
+    padding: 6px 10px;
+    cursor: pointer;
+    color: rgba(240, 236, 226, 0.92);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.codex-location-combo-option:hover {
+    background: rgba(255, 100, 0, 0.18);
+}
+
+.codex-location-combo-new {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blacksmith-window-accent-color, #ac9f81);
+    border-bottom: 1px solid rgba(172, 159, 129, 0.25);
+}
+
+.codex-location-combo-new:hover {
+    background: rgba(255, 100, 0, 0.18);
+    color: rgba(255, 100, 0, 0.95);
+}
+
 /* Links drop zone + chips */
 
 .codex-links-dropzone {
@@ -358,41 +437,50 @@
     color: rgba(214, 208, 194, 0.6);
 }
 
-/* Compact image section: preview and actions side by side */
-
-.codex-window .codex-image-section .blacksmith-window-section-body {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+/* Image section: generous left-aligned preview with overlaid browse/remove
+   buttons when an image is present; the standalone Browse button shows only
+   in the empty state */
 
 .codex-window .codex-image-preview-wrapper {
-    flex: 1 1 auto;
     flex-direction: row;
-    min-height: 64px;
-    padding: 6px 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: 72px;
+    padding: 8px;
 }
 
 .codex-window .codex-image-preview {
     width: auto;
-    max-width: 220px;
-    max-height: 84px;
+    max-width: 100%;
+    max-height: 200px;
 }
 
-.codex-window .codex-image-placeholder {
-    max-width: none;
-    text-align: left;
+.codex-window .codex-image-section.has-image .codex-image-placeholder {
+    display: none;
+}
+
+.codex-window .codex-image-section.has-image .codex-image-actions {
+    display: none;
+}
+
+.codex-window .codex-browse-overlay {
+    position: absolute;
+    top: 14px;
+    right: 52px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+}
+
+.codex-window .codex-image-section:not(.has-image) .codex-browse-overlay {
+    display: none;
 }
 
 .codex-window .codex-remove-image {
-    top: 50%;
-    transform: translateY(-50%);
-    right: 8px;
-}
-
-.codex-window .codex-image-actions {
-    margin-top: 0;
-    flex: 0 0 auto;
+    top: 14px;
+    right: 12px;
 }
 
 @media (max-width: 720px) {
@@ -413,8 +501,8 @@
 .codex-window prose-mirror.codex-expanded-editor {
     display: flex;
     flex-direction: column;
-    min-height: 280px;
-    max-height: 480px;
+    min-height: 700px;
+    max-height: 75vh;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.28);

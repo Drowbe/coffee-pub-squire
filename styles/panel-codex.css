@@ -385,16 +385,47 @@
     gap: 4px 10px;
 }
 
-/* "Read more" link at the end of the summary — opens the journal page */
+/* "Read More" pill below the summary — opens the journal page */
+.squire-tray[data-position="left"] .codex-read-more-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
 .squire-tray[data-position="left"] .codex-read-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 12px;
+    border: 1px solid rgba(255, 100, 0, 0.45);
+    border-radius: 999px;
+    background: rgba(255, 100, 0, 0.08);
     color: var(--color-border-highlight, #ff6400);
+    font-size: 0.78em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     cursor: pointer;
     white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.squire-tray[data-position="left"] .codex-read-more i {
     font-size: 0.9em;
 }
 
+.squire-tray[data-position="left"] .codex-read-more .codex-read-more-arrow {
+    transition: transform 0.15s ease;
+}
+
 .squire-tray[data-position="left"] .codex-read-more:hover {
-    text-shadow: 0 0 6px rgba(255, 100, 0, 0.4);
+    background: rgba(255, 100, 0, 0.2);
+    border-color: rgba(255, 100, 0, 0.85);
+    box-shadow: 0 0 10px rgba(255, 100, 0, 0.3);
+}
+
+.squire-tray[data-position="left"] .codex-read-more:hover .codex-read-more-arrow {
+    transform: translateX(3px);
 }
 
 .squire-tray[data-position="left"] .codex-entry-plothook {
@@ -648,4 +679,59 @@
     font-style: italic;
     opacity: 0.7;
     margin: 0 0 6px 0;
+}
+
+/* Links zone in page edit mode: chips + drop target */
+
+.squire-codex-page-edit .codex-page-links-edit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px dashed rgba(155, 142, 114, 0.45);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.12);
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.squire-codex-page-edit .codex-page-links-edit.drag-active {
+    border-color: rgba(255, 100, 0, 0.55);
+    background: rgba(255, 100, 0, 0.08);
+}
+
+.squire-codex-page-edit .codex-link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(155, 142, 114, 0.4);
+    font-size: 0.85em;
+}
+
+.squire-codex-page-edit .codex-link-chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.squire-codex-page-edit .codex-link-chip-remove {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.squire-codex-page-edit .codex-link-chip-remove:hover {
+    opacity: 1;
+}
+
+.squire-codex-page-edit .codex-links-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8em;
+    font-style: italic;
+    opacity: 0.6;
 }

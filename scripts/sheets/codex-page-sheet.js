@@ -38,8 +38,58 @@ export class CodexPageSheet extends JournalEntryPageProseMirrorSheet {
             context.document = this.document;
             context.system = this.document.system;
             context.tagsString = (this.document.system.tags || []).join(', ');
+            context.linkChips = this.document.system.linkList;
         }
         return context;
+    }
+
+    /** @inheritDoc */
+    _onRender(context, options) {
+        super._onRender?.(context, options);
+
+        // Edit mode: the links zone accepts document drops and chip removal,
+        // writing system.links directly (the document update re-renders the sheet)
+        const zone = this.element?.querySelector('.codex-page-links-edit');
+        if (!zone || zone.dataset.linksBound) return;
+        zone.dataset.linksBound = 'true';
+
+        const currentLinks = () => Array.from(this.document.system.links || [])
+            .map(l => ({ uuid: l.uuid, label: l.label }));
+
+        zone.addEventListener('click', async (event) => {
+            const removeBtn = event.target.closest('.codex-link-chip-remove');
+            if (!removeBtn) return;
+            event.preventDefault();
+            const uuid = removeBtn.closest('.codex-link-chip')?.dataset?.uuid;
+            if (!uuid) return;
+            await this.document.update({ 'system.links': currentLinks().filter(l => l.uuid !== uuid) });
+        });
+
+        zone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'link';
+            zone.classList.add('drag-active');
+        });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-active'));
+        zone.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            zone.classList.remove('drag-active');
+            try {
+                const TextEditor = getTextEditor();
+                const data = TextEditor?.getDragEventData?.(event)
+                    || JSON.parse(event.dataTransfer.getData('text/plain'));
+                const doc = data?.uuid ? await fromUuid(data.uuid) : null;
+                if (!doc) return;
+                const links = currentLinks();
+                if (links.some(l => l.uuid === doc.uuid)) return;
+                links.push({ uuid: doc.uuid, label: doc.name || doc.uuid });
+                await this.document.update({ 'system.links': links });
+                ui.notifications.info(`Linked: ${doc.name}`);
+            } catch (error) {
+                console.error('Coffee Pub Squire | Error linking dropped document:', error);
+            }
+        });
     }
 
     /** @inheritDoc */
