@@ -269,17 +269,60 @@
     }
 }
 
-/* Expanded Details editor (prose-mirror form element) */
+/* Expanded Details editor (prose-mirror form element).
+   Mirrors the note window's editor block — without the flex layout the active
+   editor's container collapses, and without the explicit color the content
+   renders near-black on the dark window (present in the DOM but invisible). */
 
-.codex-window .codex-expanded-editor {
-    display: block;
-    min-height: 260px;
-    border: 1px solid rgba(155, 142, 114, 0.35);
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.15);
+.codex-window prose-mirror.codex-expanded-editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    max-height: 480px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.28);
+    overflow: hidden;
 }
 
-.codex-window .codex-expanded-editor .editor-content {
-    min-height: 220px;
-    padding: 6px 10px;
+.codex-window prose-mirror.codex-expanded-editor .editor-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.codex-window prose-mirror.codex-expanded-editor .editor-menu,
+.codex-window prose-mirror.codex-expanded-editor .editor-toolbar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.42);
+}
+
+.codex-window prose-mirror.codex-expanded-editor .editor-menu button,
+.codex-window prose-mirror.codex-expanded-editor .editor-toolbar button {
+    color: rgba(235, 233, 225, 0.88);
+}
+
+.codex-window prose-mirror.codex-expanded-editor .editor-menu button:hover,
+.codex-window prose-mirror.codex-expanded-editor .editor-toolbar button:hover {
+    color: rgba(255, 100, 0, 0.92);
+}
+
+.codex-window prose-mirror.codex-expanded-editor .editor-content,
+.codex-window prose-mirror.codex-expanded-editor .ProseMirror,
+.codex-window prose-mirror.codex-expanded-editor .prosemirror {
+    min-height: 100%;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(240, 236, 226, 0.96);
+    line-height: 1.55;
+}
+
+.codex-window prose-mirror.codex-expanded-editor .editor-content:focus,
+.codex-window prose-mirror.codex-expanded-editor .ProseMirror:focus {
+    outline: none;
+}
+
+.codex-window prose-mirror.codex-expanded-editor img {
+    max-width: 100%;
+    height: auto;
 }

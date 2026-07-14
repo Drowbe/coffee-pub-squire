@@ -1,6 +1,7 @@
 import { MODULE } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
+import { trackModuleTimeout } from './timer-utils.js';
 import { getTextEditor } from './helpers.js';
 import { updateCodexPin as updateCodexPinForEntry } from './manager-pins.js';
 
@@ -170,18 +171,59 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     _mountExpandedEditor(root) {
         const host = root.querySelector('.codex-expanded-editor-host');
         if (!host) return;
-        host.innerHTML = '';
+        this._expandedEditorRemounted = false;
 
-        const config = {
-            name: 'expandedDetails',
-            value: String(this.entry.expandedDetails || ''),
-            compact: true
+        const mount = () => {
+            host.innerHTML = '';
+
+            let value = String(this.entry.expandedDetails || '');
+            // Resilience: if the entry somehow arrived without its lore, read it
+            // straight from the page document
+            if (!value && this.page && typeof this.page.text?.content === 'string') {
+                value = this.page.text.content;
+            }
+
+            const config = {
+                name: 'expandedDetails',
+                value,
+                compact: true
+            };
+            if (this.pageUuid) config.documentUUID = this.pageUuid;
+
+            const editor = foundry.applications.elements.HTMLProseMirrorElement.create(config);
+            editor.classList.add('codex-expanded-editor');
+            host.appendChild(editor);
+
+            // Dead-editor detector: if the element was disconnected and reconnected
+            // during window assembly, it comes back permanently empty (its internal
+            // active flag survives disconnection, so refresh and re-activation are
+            // both skipped). Detect that state and remount once with a fresh element.
+            trackModuleTimeout(() => {
+                if (!host.isConnected) return;
+                const contentEl = host.querySelector('.editor-content');
+                const dead = !contentEl || (!contentEl.childNodes.length && value.length);
+                console.debug('SQUIRE | Codex expanded editor state', {
+                    usedChars: value.length,
+                    hasEditorContent: !!contentEl,
+                    renderedNodes: contentEl?.childNodes?.length ?? null,
+                    dead,
+                    remounting: dead && !this._expandedEditorRemounted
+                });
+                if (dead && !this._expandedEditorRemounted) {
+                    this._expandedEditorRemounted = true;
+                    mount();
+                }
+            }, 300);
         };
-        if (this.pageUuid) config.documentUUID = this.pageUuid;
 
-        const editor = foundry.applications.elements.HTMLProseMirrorElement.create(config);
-        editor.classList.add('codex-expanded-editor');
-        host.appendChild(editor);
+        // Mount on the next frame: the <prose-mirror> element builds itself in
+        // connectedCallback, so it must be created AFTER the window's DOM is attached
+        // and settled — creating it while the framework is still assembling/moving
+        // nodes triggers the disconnect/reconnect trap described above.
+        requestAnimationFrame(() => {
+            if (host.isConnected) return mount();
+            requestAnimationFrame(mount);
+        });
     }
 
     _getDefaultEntry() {
