@@ -5,7 +5,7 @@
 | Item | Priority | LOE | Status |
 |------|----------|-----|--------|
 | Migrate 5 legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | L | Open |
-| v14/v15 readiness: migrate 28 V1 `Dialog`/`Dialog.confirm`/`ImagePopout` call sites to `DialogV2`/namespaced APIs | High | M | Open |
+| v14/v15 readiness: migrate remaining V1 `Dialog`/`Dialog.confirm` call sites to `DialogV2` (`ImagePopout` ✓ done — all 4 sites on AppV2 signature) | High | M | Open |
 | Codex data model: custom `JournalEntryPage` subtype, no migration — re-import converts (see `plan-codex-datamodel.md`) | High | L | Planned |
 | Macros: dedupe `panel-macros.css` / `window-macros.css` drop-target styles | Medium | M | Open |
 | Notes tab: shared note, character note, scratchpad | Medium | L | Open |
@@ -47,7 +47,7 @@
 
 ### V14/V15 READINESS (audited July 13, 2026 — world moves to v14 within weeks)
 - [x] **AUDIT** v14 removes the *v12*-deprecated globals (AudioHelper, Sound, grid/dice/canvas-source classes, etc.) — grep confirms **zero uses** in this module. helpers.js already namespaces `renderTemplate`/`TextEditor`/`ContextMenu` (v13 style, v14-safe). The codex data model, page subtype, and sheet use v13+ AppV2 APIs that carry into v14 unchanged. module.json already declares `maximum: 14`.
-- [ ] **REFACTOR** The *v13*-deprecated APIs still run in v14 with console warnings but are removed in v15/16 — this is the real deadline for: the 5 V1 `Application` windows (Critical item above) and **28 call sites** across 14 files using V1 `Dialog`/`Dialog.confirm`/`ImagePopout` (heaviest: panel-quest ×5, panel-codex ×4, panel-notes ×3, utility-journal ×3). Migrate dialogs to `foundry.applications.api.DialogV2` and `ImagePopout` to `foundry.applications.apps.ImagePopout`. Mechanical work; batch by file.
+- [ ] **REFACTOR** The *v13*-deprecated APIs still run in v14 with console warnings but are removed in v15/16 — this is the real deadline for: the 5 V1 `Application` windows (Critical item above) and the V1 `Dialog`/`Dialog.confirm` call sites across ~14 files (heaviest: panel-quest ×5, panel-codex ×4, panel-notes ×3, utility-journal ×3). Migrate dialogs to `foundry.applications.api.DialogV2`. Mechanical work; batch by file. (`ImagePopout` ✓ completed July 14, 2026 — all 4 call sites use `foundry.applications.apps.ImagePopout` with the AppV2 options signature.)
 - [ ] **VERIFY** First v14 session: watch the console for deprecation warnings from Squire paths and log any not already covered by the two items above.
 
 ### CODEX DATA MODEL (custom page subtype)

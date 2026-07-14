@@ -517,10 +517,12 @@ export class CharacterPanel {
         const portrait = nativeHtml.querySelector('.character-portrait');
         if (portrait) {
             portrait.addEventListener('click', () => {
-                const imagePopout = new ImagePopout(this.actor.img, {
-                    title: this.displayName || this.actor.name,
+                // v13 AppV2 signature: src and title live in options
+                const imagePopout = new foundry.applications.apps.ImagePopout({
+                    src: this.actor.img,
+                    uuid: this.actor.uuid,
                     shareable: true,
-                    uuid: this.actor.uuid
+                    window: { title: this.displayName || this.actor.name }
                 });
                 imagePopout.render(true);
             });

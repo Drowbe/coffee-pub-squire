@@ -92,10 +92,10 @@
                                 {{#each locationLevels}}
                                 {{#unless @first}}<i class="fa-solid fa-angle-right codex-location-sep"></i>{{/unless}}
                                 <div class="codex-location-segment">
-                                    <span class="codex-location-seglabel">{{this.label}}</span>
+                                    <span class="codex-location-seglabel" data-tooltip="{{this.tooltip}}">{{this.label}} <i class="fa-solid fa-circle-question codex-location-help"></i></span>
                                     <div class="codex-location-combo">
                                         <input type="text" name="location-{{@index}}" value="{{this.value}}"
-                                            placeholder="{{this.placeholder}}" autocomplete="off">
+                                            placeholder="{{this.placeholder}}" autocomplete="off" data-tooltip="{{this.tooltip}}">
                                         <button type="button" class="codex-location-combo-toggle" tabindex="-1" title="Show existing values">
                                             <i class="fa-solid fa-caret-down"></i>
                                         </button>

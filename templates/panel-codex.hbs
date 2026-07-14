@@ -89,17 +89,17 @@
                                     <div class="codex-entry-description">
                                         <span class="codex-entry-label">Summary</span>
                                         <p>{{{entry.summary}}}</p>
-                                        {{#if entry.hasExpandedDetails}}
-                                        <div class="codex-read-more-row">
-                                            <span class="codex-read-more" data-uuid="{{entry.uuid}}" title="Open the journal page for expanded details">
-                                                <i class="fa-solid fa-book-open"></i>
-                                                <span class="codex-read-more-text">Read More</span>
-                                                <i class="fa-solid fa-angle-right codex-read-more-arrow"></i>
-                                            </span>
-                                        </div>
-                                        {{/if}}
                                     </div>
                                 {{/if}}
+
+                                <!-- READ MORE: always available — opens the entry's journal page -->
+                                <div class="codex-read-more-row">
+                                    <span class="codex-read-more" data-uuid="{{entry.uuid}}" title="Open the journal page{{#if entry.hasExpandedDetails}} for expanded details{{/if}}">
+                                        <i class="fa-solid fa-book-open"></i>
+                                        <span class="codex-read-more-text">Read More</span>
+                                        <i class="fa-solid fa-angle-right codex-read-more-arrow"></i>
+                                    </span>
+                                </div>
 
                                 <!-- PLOT HOOK -->
                                 {{#if @root.isGM}}
@@ -115,14 +115,23 @@
                                 {{#if entry.linksHtml.length}}
                                     <div class="codex-entry-link">
                                         <span class="codex-entry-label">{{#if (eq entry.linksHtml.length 1)}}Link{{else}}Links{{/if}}</span>
-                                        {{#each entry.linksHtml}}<span class="codex-entry-link-item">{{{this}}}</span>{{/each}}
+                                        <div class="codex-entry-link-list">
+                                            {{#each entry.linksHtml}}<div class="codex-entry-link-item">{{{this}}}</div>{{/each}}
+                                        </div>
                                     </div>
                                 {{/if}}
 
                                 <!-- LOCATION -->
-                                {{#if entry.location}}
+                                {{#if entry.locationParts.length}}
                                     <div class="codex-entry-location">
-                                        <span class="codex-entry-label">Location</span> {{{entry.location}}}
+                                        <span class="codex-entry-label">Location</span>
+                                        <div class="codex-entry-location-list">
+                                            {{#each entry.locationParts}}
+                                            <div class="codex-entry-location-row">
+                                                <span class="codex-entry-location-level">{{this.label}}</span>{{this.value}}
+                                            </div>
+                                            {{/each}}
+                                        </div>
                                     </div>
                                 {{/if}}
 

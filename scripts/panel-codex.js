@@ -258,6 +258,14 @@ export class CodexPanel {
                         entry.category = entry.category.charAt(0).toUpperCase() + entry.category.slice(1).toLowerCase();
                     }
 
+                    // Split the location path into labeled hierarchy levels for display
+                    const LOCATION_LEVELS = ['Realm', 'Region', 'Site', 'Area'];
+                    entry.locationParts = entry.location
+                        .split('>')
+                        .map(p => p.trim())
+                        .filter(Boolean)
+                        .map((value, i) => ({ label: LOCATION_LEVELS[i] || `Level ${i + 1}`, value }));
+
                     if (entry) {
                         // Volatile per refresh: ownership reference and live pin/scene state
                         entry.ownership = page.ownership;
@@ -697,10 +705,12 @@ export class CodexPanel {
                     } catch (_) {}
                 }
 
-                const imagePopout = new ImagePopout(src, {
-                    title,
+                // v13 AppV2 signature: src and title live in options
+                const imagePopout = new foundry.applications.apps.ImagePopout({
+                    src,
+                    uuid,
                     shareable: true,
-                    uuid
+                    window: { title }
                 });
                 imagePopout.render(true);
             });

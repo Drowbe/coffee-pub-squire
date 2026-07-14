@@ -150,10 +150,26 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
      */
     _getLocationLevels() {
         const LEVELS = [
-            { label: 'Realm', placeholder: 'Faerûn' },
-            { label: 'Region', placeholder: 'Moonsea' },
-            { label: 'Site', placeholder: 'Teshwave' },
-            { label: 'Area', placeholder: 'The Broken Anvil' }
+            {
+                label: 'Realm',
+                placeholder: 'e.g. Faerûn',
+                tooltip: 'The broad world or plane of existence, encompassing vast continents, cultures, and histories (e.g. Faerûn, Eberron).'
+            },
+            {
+                label: 'Region',
+                placeholder: 'e.g. Moonsea',
+                tooltip: 'A defined area within a realm, such as a kingdom, territory, or geographic expanse (e.g. Moonsea, Daggerdale).'
+            },
+            {
+                label: 'Site',
+                placeholder: 'e.g. Teshwave',
+                tooltip: 'A specific location or structure within a region, like a city, mine, or stronghold (e.g. Teshwave, Dagger Fall).'
+            },
+            {
+                label: 'Area',
+                placeholder: 'e.g. Broken Anvil',
+                tooltip: 'A distinct location within a site, like a room, street, or zone (e.g. Broken Anvil, Shrine Row).'
+            }
         ];
         const parts = String(this.entry.location || '').split('>').map(p => p.trim());
         const suggestions = LEVELS.map(() => new Set());

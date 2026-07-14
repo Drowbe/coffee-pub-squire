@@ -372,10 +372,36 @@
     margin-bottom: 8px;
 }
 
-/* Multiple links in the entry card */
+/* Links in the entry card: label on its own line, one link per row below */
+.squire-tray[data-position="left"] .codex-entry-link-list {
+    margin-top: 4px;
+}
+
 .squire-tray[data-position="left"] .codex-entry-link-item {
-    display: inline-block;
-    margin-right: 8px;
+    display: block;
+    margin: 0 0 3px 0;
+}
+
+/* Location hierarchy: one labeled level per row below the LOCATION title */
+.squire-tray[data-position="left"] .codex-entry-location-list {
+    margin-top: 4px;
+}
+
+.squire-tray[data-position="left"] .codex-entry-location-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 2px 0;
+}
+
+.squire-tray[data-position="left"] .codex-entry-location-level {
+    flex: 0 0 auto;
+    min-width: 52px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.65;
 }
 
 /* Multiple links on the codex page view */
@@ -389,7 +415,7 @@
 .squire-tray[data-position="left"] .codex-read-more-row {
     display: flex;
     justify-content: flex-end;
-    margin-top: 6px;
+    margin: 10px 0px 10px 0px;
 }
 
 .squire-tray[data-position="left"] .codex-read-more {

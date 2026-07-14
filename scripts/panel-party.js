@@ -189,10 +189,12 @@ export class PartyPanel {
                 const tokenId = partyCard?.dataset.tokenId;
                 const token = canvas.tokens.placeables.find(t => t.id === tokenId);
                 if (token?.actor) {
-                    const imagePopout = new ImagePopout(token.actor.img, {
-                        title: token.actor.name,
+                    // v13 AppV2 signature: src and title live in options
+                    const imagePopout = new foundry.applications.apps.ImagePopout({
+                        src: token.actor.img,
+                        uuid: token.actor.uuid,
                         shareable: true,
-                        uuid: token.actor.uuid
+                        window: { title: token.actor.name }
                     });
                     imagePopout.render(true);
                 }

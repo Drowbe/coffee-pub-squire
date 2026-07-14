@@ -881,10 +881,12 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         const preview = root.querySelector('.quest-image-preview');
         if (preview) {
             const handler = async () => {
-                if (!this.quest.img || typeof ImagePopout !== 'function') return;
-                const popout = new ImagePopout(this.quest.img, {
-                    title: this.quest.name || 'Quest Image',
-                    uuid: this.pageUuid || undefined
+                if (!this.quest.img) return;
+                // v13 AppV2 signature: src and title live in options
+                const popout = new foundry.applications.apps.ImagePopout({
+                    src: this.quest.img,
+                    uuid: this.pageUuid || undefined,
+                    window: { title: this.quest.name || 'Quest Image' }
                 });
                 await popout.render(true);
             };
