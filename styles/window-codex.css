@@ -13,7 +13,7 @@
 .codex-window-form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 0px;
 }
 
 .codex-window .blacksmith-window-template-action-right .blacksmith-window-btn-primary,
