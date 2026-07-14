@@ -563,6 +563,76 @@
     margin: 12px 0;
 }
 
+/* Journal page EDIT mode — structured field form */
+
+.squire-codex-page-edit {
+    margin: 12px 12px 12px 12px;
+}
+
+.squire-codex-page-edit .codex-edit-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin: 12px 0 10px 0;
+    background: rgba(44, 44, 44, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.85em;
+}
+
+.squire-codex-page-edit .codex-edit-section-header:first-child {
+    margin-top: 0;
+}
+
+.squire-codex-page-edit .codex-edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+}
+
 .squire-codex-page-edit .form-group {
-    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 0 0 8px 0;
+}
+
+.squire-codex-page-edit .form-group label {
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+
+.squire-codex-page-edit .codex-edit-note {
+    font-weight: 400;
+    text-transform: none;
+    opacity: 0.7;
+}
+
+.squire-codex-page-edit input[type="text"],
+.squire-codex-page-edit textarea {
+    width: 100%;
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(44, 44, 44, 0.95);
+    background: rgba(0, 0, 0, 0.15);
+    line-height: 1.35;
+}
+
+.squire-codex-page-edit textarea {
+    resize: vertical;
+    min-height: 3em;
+}
+
+.squire-codex-page-edit .codex-edit-hint {
+    font-size: 0.85em;
+    font-style: italic;
+    opacity: 0.7;
+    margin: 0 0 6px 0;
 }

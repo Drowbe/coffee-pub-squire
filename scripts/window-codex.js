@@ -75,7 +75,8 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     location: sys.location || '',
                     link: sys.linkData,
                     linkLabel: sys.link?.label || '',
-                    tags: Array.from(sys.tags || [])
+                    tags: Array.from(sys.tags || []),
+                    expandedDetails: typeof page.text?.content === 'string' ? page.text.content : ''
                 };
             } else {
                 // Legacy text page: parse the old HTML format
@@ -160,7 +161,8 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             link: null,
             linkLabel: '',
             pageUuid: null,
-            tags: []
+            tags: [],
+            expandedDetails: ''
         };
     }
 
@@ -284,6 +286,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             if (key === 'link' && !value) continue;
             entry[key] = value;
         }
+        // Read the ProseMirror element directly — its .value serializes the LIVE
+        // editor state, which FormData is not guaranteed to capture
+        const expandedEditor = form.querySelector('prose-mirror[name="expandedDetails"]');
+        if (expandedEditor) entry.expandedDetails = expandedEditor.value ?? '';
         return entry;
     }
 
@@ -310,8 +316,8 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         }
 
         try {
-            // Structured fields live in page.system — the page's text.content
-            // (Expanded Details) is deliberately untouched by this form.
+            // Structured fields live in page.system; Expanded Details (the page's
+            // text.content) is edited via the form's ProseMirror element.
             const systemData = {
                 summary: entry.description || '',
                 category: entry.category || '',
@@ -327,7 +333,8 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
             const pageData = {
                 name: entry.name,
                 type: CODEX_PAGE_TYPE,
-                system: systemData
+                system: systemData,
+                text: { content: entry.expandedDetails ?? '' }
             };
 
             if (this.isEditing && this.pageUuid) {
@@ -340,7 +347,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                     ui.notifications.error('This is a legacy codex page — re-import your codex JSON to convert it before editing.');
                     return false;
                 }
-                await page.update({ name: pageData.name, system: pageData.system });
+                const patch = { name: pageData.name, system: pageData.system };
+                // Only write Expanded Details if the editor was present in the form
+                if (entry.expandedDetails !== undefined) patch['text.content'] = entry.expandedDetails;
+                await page.update(patch);
                 this.page = page;
                 await updateCodexPinForEntry(page.uuid, {
                     entryName: entry.name,

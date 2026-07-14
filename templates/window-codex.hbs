@@ -157,6 +157,19 @@
                     {{/if}}
                 </div>
             </section>
+
+            <section class="blacksmith-window-section">
+                <div class="blacksmith-window-section-header">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Expanded Details</span>
+                </div>
+                <div class="blacksmith-window-section-body">
+                    <div class="codex-form-field">
+                        <prose-mirror name="expandedDetails" compact class="codex-expanded-editor">{{{entry.expandedDetails}}}</prose-mirror>
+                        <small class="codex-form-hint">Free-form rich lore shown on the journal page below the summary block, reachable from the tray via "Read more".</small>
+                    </div>
+                </div>
+            </section>
         </form>
     </div>
 

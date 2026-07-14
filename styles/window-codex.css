@@ -268,3 +268,18 @@
         display: none;
     }
 }
+
+/* Expanded Details editor (prose-mirror form element) */
+
+.codex-window .codex-expanded-editor {
+    display: block;
+    min-height: 260px;
+    border: 1px solid rgba(155, 142, 114, 0.35);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.codex-window .codex-expanded-editor .editor-content {
+    min-height: 220px;
+    padding: 6px 10px;
+}
