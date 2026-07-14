@@ -12,6 +12,7 @@
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
 | Codex: “new” flag on added items until client refresh | Medium | S | Open |
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
+| Codex: auto-link entry names to assigned compendiums on import (blocked on Blacksmith API) | Medium | M | Blocked |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
 | Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |
@@ -70,6 +71,7 @@
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description
+- [ ] **ENHANCEMENT (BLOCKED — needs Blacksmith API)** Auto-link codex entry names to the assigned actor/item compendiums on import. AI emits plain-text names; the tool resolves them to `@UUID` links (like Blacksmith's own journal importer does today). The name→compendium-UUID matcher already exists in Blacksmith as `JournalTools._findEntityInCompendiums(name, type)` (`manager-journal-tools.js`), driven by the `monsterCompendium1..N` / `itemCompendium1..N` settings — but it's a private static, NOT on the public `blacksmith.api`. Blocking prerequisite: Blacksmith exposes a public wrapper (e.g. `api.resolveEntityByName(name, type)`). Then, Squire side: (1) prompt change — emit candidate names (e.g. `linkNames: []`) instead of hard-coded empty `links`; (2) import wiring — after creating each typed page, resolve names → UUIDs → write `system.links`, with a per-entry "N of M linked, K unmatched" report since name matching is fuzzy. Do NOT reach into Blacksmith's settings directly from Squire (brittle cross-module coupling) — wait for the public API.
 
 ## LOW PRIORITY
 

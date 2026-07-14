@@ -88,11 +88,18 @@ Model decisions: `img` and `link.uuid` are lenient `StringField`s (not `FilePath
 - [x] Auto-discovery merges into `system.discoveredBy` (HTML paragraph injection deleted)
 - [x] Read more opens the typed page sheet (no change needed)
 
-### Phase 3 — Verification
-- [ ] Round-trip: create typed entry via Edit window → tray card → Read more → journal sheet → export → wipe → import
-- [ ] Re-import the real campaign's exported codex JSON; re-pin a sample; verify hidden/discovered defaults, categories, tags
-- [ ] Player-permission pass: hidden entries invisible; discovered entries readable; plot hook GM-only
-- [ ] Legacy text pages in the journal: ignored cleanly with the GM notice, no errors
+### Phase 3 — Verification (in progress July 14, 2026)
+- [x] Import creates typed pages; tray card reads `system`; Read More opens the journal reading view
+- [x] Page sheet: view mode (field block + lore + TOC) and edit mode (fields, `string-tags` chips, ProseMirror lore editor)
+- [x] Edit Entry window: prefill including lore, location combos, multi-link display, mandatory-field validation
+- [ ] Export → JSON carries `summary`/`links`/`expandedDetails`; wipe → re-import round trip
+- [ ] New-entry creation from a blank Edit Entry window (post-validation save path)
+- [ ] Journal page edit form's links drop zone (drag to add, ✕ to remove)
+- [ ] Auto-discovery scan: `system.discoveredBy` written, ownership flipped, Discovered By shows on card/page
+- [ ] Player-permission pass: hidden entries invisible; discovered entries readable; plot hook GM-only; Read More works for players
+- [ ] Codex pins on typed pages: place, unplace, double-click navigation
+- [ ] New category creation with icon via Edit Entry window
+- [ ] Console clean: no codex-attributed deprecation warnings or errors during the above
 
 ## Out of scope (follow-on)
 
