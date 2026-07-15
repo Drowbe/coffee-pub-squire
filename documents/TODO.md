@@ -13,7 +13,8 @@
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
 | Codex: “new” flag on added items until client refresh | Medium | S | Open |
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
-| Codex: auto-link entry names to assigned compendiums on import (blocked on Blacksmith API) | Medium | M | Blocked |
+| Codex + Quest: resolve plain-text names to UUIDs on import via Blacksmith `api.compendiums` | Medium | M | Done (13.3.10) |
+| Pins: audit quest/note pin visibility for the same silent no-op fixed for codex | Medium | S | Open |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
 | Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |
@@ -73,7 +74,16 @@
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description
-- [ ] **ENHANCEMENT (BLOCKED — needs Blacksmith API)** Auto-link codex entry names to the assigned actor/item compendiums on import. AI emits plain-text names; the tool resolves them to `@UUID` links (like Blacksmith's own journal importer does today). The name→compendium-UUID matcher already exists in Blacksmith as `JournalTools._findEntityInCompendiums(name, type)` (`manager-journal-tools.js`), driven by the `monsterCompendium1..N` / `itemCompendium1..N` settings — but it's a private static, NOT on the public `blacksmith.api`. Blocking prerequisite: Blacksmith exposes a public wrapper (e.g. `api.resolveEntityByName(name, type)`). Then, Squire side: (1) prompt change — emit candidate names (e.g. `linkNames: []`) instead of hard-coded empty `links`; (2) import wiring — after creating each typed page, resolve names → UUIDs → write `system.links`, with a per-entry "N of M linked, K unmatched" report since name matching is fuzzy. Do NOT reach into Blacksmith's settings directly from Squire (brittle cross-module coupling) — wait for the public API.
+- [x] **ENHANCEMENT — DONE (13.3.10)** ~~Auto-link codex entry names to the assigned actor/item compendiums on import.~~ The blocking prerequisite landed: Blacksmith 13.8.4 shipped `api.compendiums` (`resolve`/`resolveMany`/`resolveLink`), which owns the mapping *and* the search semantics — a better contract than the `api.resolveEntityByName(name, type)` wrapper anticipated here, since world-first/last ordering and Spell/Feature subtype filtering live inside it rather than in each caller. Shipped as specced: prompt now emits `links: [{name, type}]` instead of a hard-coded empty array; import resolves names → UUIDs → `system.links`; the "N of M linked, K unmatched" report exists (split into asserted vs speculative misses, so a self-link that legitimately matches nothing doesn't drown the signal). Squire reads none of Blacksmith's settings — `scripts/utility-resolver.js` is the only contact point. Scope grew past codex: quest treasure (`item`) and participants (`actor`) had the same dead end and are wired too.
+  - **Caveat worth remembering**: resolution needs the GM's Blacksmith Compendium Mapping to include the *world* for the type. PCs/NPCs live in the world, so an Actor mapping with world search off resolves nothing and looks like a Squire bug. Nothing in Squire can detect this.
+
+### PINS
+- [ ] **AUDIT** Quest and note pins likely share the silent no-op fixed for codex pins in 13.3.10. Pin visibility in Squire is *derived*, never configured — and the pin's `ownership`, not `config.blacksmithVisibility`, is what actually gates players. A GM editing visibility in Blacksmith's Configure Pin therefore changes nothing for players and gets silently reverted by the next sync. Codex now warns (`_warnIfCodexPinVisibilityEdited()` in `manager-pins.js`, gated on `evt.patch.config.blacksmithVisibility` so Squire's own writes never trip it). The other three derive it differently and may each fail differently:
+  - `createQuestPin` (`manager-pins.js:528`) — derives from the page's `visible` flag; `_syncQuestPinVisibility` re-asserts it.
+  - `createObjectivePin` (`:607`) — derives from quest/objective state.
+  - `createNotePin` (`:910`) — **hardcodes `'visible'`**, ignoring even `PIN_DEFAULTS.note.config.blacksmithVisibility`. Probably the most silent of the three: nothing derives or re-asserts it, so a GM's edit may actually stick — meaning notes may want the opposite treatment (honor it) rather than a warning.
+  - Related: `pin-defaults.json` declares `config.blacksmithVisibility` for all four kinds and **no create path reads it** — only `.blacksmithAccess` is. Dead config; either wire it or delete it.
+  - Also unread: no create path reads `design.config` at all, so a GM's saved "Default for [type]" **Permissions** section (which Blacksmith *does* store — see `window-pin-configuration.js`, the `has('permissions')` branch) is discarded for every pin kind. Design/text/animation defaults are honored; permissions defaults are not. Decide whether that's intentional and document it either way.
 
 ## LOW PRIORITY
 

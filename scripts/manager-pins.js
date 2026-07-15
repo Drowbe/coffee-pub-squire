@@ -1214,6 +1214,48 @@ export async function updateCodexPinVisibility(entryUuid) {
 }
 
 /**
+ * Warn the GM when a codex pin's visibility is edited directly in Configure Pin.
+ *
+ * Codex pin visibility is DERIVED from the entry's ownership, not configured:
+ *  - the pin's `ownership` (not `blacksmithVisibility`) is what actually gates
+ *    players, so flipping this to 'visible' on a hidden entry shows them nothing;
+ *  - `updateCodexPinVisibility()` re-derives it whenever the entry is revealed or
+ *    hidden, so the edit is silently reverted later.
+ *
+ * The edit is therefore a no-op that looks like it worked. Say so, rather than
+ * let the GM believe they revealed something. Reveal the entry in the tray and
+ * the pin follows.
+ *
+ * Self-limiting: our own sync writes always patch visibility to the derived
+ * value, so they never trip the warning.
+ */
+async function _warnIfCodexPinVisibilityEdited(evt) {
+    try {
+        if (!game.user?.isGM) return;
+        // Only react when this update actually carried a visibility value.
+        const next = evt?.patch?.config?.blacksmithVisibility;
+        if (next !== 'visible' && next !== 'hidden') return;
+
+        const entryUuid = evt.pin?.config?.codexUuid;
+        if (!entryUuid) return;
+        const page = await fromUuid(entryUuid);
+        if (!page) return;
+
+        const derived = (page.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER
+            ? 'visible'
+            : 'hidden';
+        if (next === derived) return;
+
+        ui.notifications.warn(
+            `Codex pin visibility follows the codex entry, not the pin — this change won't reach players and will be overwritten. `
+            + `Use the visibility toggle on "${page.name}" in the Squire codex tray instead.`
+        );
+    } catch (e) {
+        console.warn('Coffee Pub Squire | _warnIfCodexPinVisibilityEdited:', e);
+    }
+}
+
+/**
  * Update codex pin text, image, tags, and config after entry changes.
  * @param {string} entryUuid
  * @param {{ entryName?: string, entryCategory?: string }} [opts]
@@ -2001,8 +2043,12 @@ function _registerEventHandlers(pins) {
         const noteUuid  = evt.pin?.config?.noteUuid;
         const codexUuid = evt.pin?.config?.codexUuid;
         if (noteUuid) return;
-        if (codexUuid) _scheduleCodexPanelRefresh();
-        else           _scheduleQuestPanelRefresh();
+        if (codexUuid) {
+            // Fire-and-forget: never let a diagnostic block the refresh.
+            _warnIfCodexPinVisibilityEdited(evt);
+            _scheduleCodexPanelRefresh();
+        }
+        else _scheduleQuestPanelRefresh();
     }, { moduleId: MODULE.ID, signal });
 
     // created: notes handle their own flag; codex and quest refresh.
