@@ -1,10 +1,16 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
-import { resolveCodexLinks, mergeCodexLinks, reportResolution } from './utility-resolver.js';
+import {
+    resolveCodexLinks,
+    mergeCodexLinks,
+    reportResolution,
+    normalizeCodexLink,
+    codexLinkKey
+} from './utility-resolver.js';
 import {
     getPinsApi,
     isPinsApiAvailable,
@@ -21,15 +27,39 @@ function getBlacksmith() {
 }
 
 /**
- * Normalize a name for inventory matching: lowercase, collapse interior runs of
- * whitespace, trim. "Wayfinder  Casing" and "Wayfinder Casing" are the same item.
+ * Normalize a name for matching: lowercase, collapse interior runs of
+ * whitespace, trim. "Wayfinder  Casing" and "Wayfinder Casing" are the same name.
  *
- * BOTH sides of every comparison must go through this. Inlining the expression
- * is how the codex-entry side drifted from the item side and stopped matching
- * any name containing a double space.
+ * Used for both inventory auto-discovery and codex entry references. BOTH sides
+ * of every comparison must go through this — inlining the expression is how the
+ * codex-entry side drifted from the item side and stopped matching any name
+ * containing a double space.
  */
-function normalizeItemName(name) {
+function normalizeName(name) {
     return String(name ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Index every codex entry in the journal by normalized name, for resolving
+ * `related` names and location levels to pages.
+ *
+ * Built fresh per render rather than cached: the index changes whenever ANY
+ * entry is added or renamed, so a cached one would leave "Phlan" unlinked after
+ * "Moonsea" is created. It is one O(n) pass over pages already in memory.
+ *
+ * Respects the viewer: entries a player can't observe are omitted, so their
+ * names render as plain text rather than as links to something they can't open.
+ */
+function buildCodexPageIndex(journal) {
+    const index = new Map();
+    for (const page of (journal?.pages ?? [])) {
+        if (page.type !== CODEX_PAGE_TYPE) continue;
+        if (!game.user.isGM
+            && (page.ownership?.default ?? 0) < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) continue;
+        const key = normalizeName(page.name);
+        if (key && !index.has(key)) index.set(key, { uuid: page.uuid, name: page.name });
+    }
+    return index;
 }
 
 const CODEX_WINDOW_ID = `${MODULE.ID}-codex-window`;
@@ -125,6 +155,27 @@ export class CodexPanel {
         if (progressArea) {
             progressArea.style.display = 'none';
         }
+    }
+
+    /**
+     * Render a reference to another codex entry by name.
+     *
+     * Resolved → an anchor the panel opens on click. Unresolved → the plain name,
+     * which is NOT an error: a codex is authored incrementally, so a relationship
+     * may name an entry that doesn't exist yet. It becomes a link on the next
+     * render after that entry is created — no rescan, no stored uuid to migrate.
+     *
+     * @param {string} name
+     * @param {Map<string, {uuid: string, name: string}>} index
+     * @returns {string} HTML
+     * @private
+     */
+    _renderCodexRef(name, index) {
+        const raw = String(name ?? '').trim();
+        if (!raw) return '';
+        const hit = index.get(normalizeName(raw));
+        if (!hit) return `<span class="codex-ref-unresolved">${escapeHtml(raw)}</span>`;
+        return `<a class="codex-ref" data-uuid="${escapeHtml(hit.uuid)}">${escapeHtml(raw)}</a>`;
     }
 
     /**
@@ -260,7 +311,12 @@ export class CodexPanel {
                         plotHook: sys.plotHook || '',
                         location: sys.location || '',
                         links: sys.linkList,
-                        link: sys.linkData, // legacy alias (first link)
+                        link: sys.linkData, // legacy alias (first resolved link)
+                        // Names only. Resolved to pages at render, not here: this parse
+                        // is cached per page, but the name -> page index changes whenever
+                        // ANY entry is added or renamed, so caching a resolution would
+                        // leave "Phlan" unlinked after "Moonsea" is created.
+                        related: Array.from(sys.related || []),
                         tags: Array.from(sys.tags || []),
                         hasExpandedDetails: sys.hasExpandedDetails,
                         DiscoveredBy: (sys.discoveredBy || []).join(', '),
@@ -603,6 +659,11 @@ export class CodexPanel {
                         callback: () => this._autoDiscoverFromInventories()
                     },
                     {
+                        name: 'Auto-Link Unresolved Links',
+                        icon: 'fa-solid fa-link',
+                        callback: () => this._autoLinkUnresolved()
+                    },
+                    {
                         name: 'Import Codex from JSON',
                         icon: 'fa-solid fa-file-import',
                         callback: () => this._openImportCodexDialog()
@@ -660,6 +721,20 @@ export class CodexPanel {
                 if (page?.parent) {
                     page.parent.sheet.render(true, { pageId: page.id });
                 }
+            });
+        });
+
+        // Related-entry and location references open the codex entry they name.
+        // Same target as "Read more" — these point at codex pages, not documents,
+        // so Foundry's content-link handling does not apply.
+        nativeHtml.querySelectorAll('.codex-ref[data-uuid]').forEach(ref => {
+            ref.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const uuid = event.currentTarget.dataset.uuid;
+                if (!uuid) return;
+                const page = await fromUuid(uuid);
+                if (page?.parent) page.parent.sheet.render(true, { pageId: page.id });
             });
         });
 
@@ -952,6 +1027,116 @@ export class CodexPanel {
      * Auto-discover codex entries from party inventories
      * @private
      */
+    /**
+     * Retry every unresolved codex link against Blacksmith's compendium mapping.
+     *
+     * Only `links` need this. `related` names and location levels resolve against
+     * the journal's own pages at render, so they heal on their own — this is for
+     * document links, which are a cross-module lookup too expensive to redo per
+     * render and which cannot self-heal.
+     *
+     * Manual by design: it is a bulk write to journal pages, so the GM triggers it.
+     */
+    async _autoLinkUnresolved() {
+        if (!game.user.isGM) return;
+        if (!this.selectedJournal) {
+            ui.notifications.warn('No codex journal selected.');
+            return;
+        }
+
+        const pages = (this.selectedJournal.pages?.contents ?? [])
+            .filter(p => p.type === CODEX_PAGE_TYPE);
+        const pending = pages.filter(p =>
+            (p.system?.links ?? []).some(l => !String(l?.uuid ?? '').trim() && String(l?.name ?? '').trim())
+        );
+
+        if (!pending.length) {
+            ui.notifications.info('Auto-Link: every codex link is already resolved.');
+            return;
+        }
+
+        this.isImporting = true;
+        const nativeElement = getNativeElement(this.element);
+        const button = nativeElement?.querySelector('.codex-titlebar-menu');
+        if (button) {
+            button.classList.add('working');
+            button.setAttribute('title', 'Auto-linking codex entries...');
+        }
+
+        const progressArea = nativeElement?.querySelector('.tray-progress-bar-wrapper');
+        const progressFill = nativeElement?.querySelector('.tray-progress-bar-inner');
+        const progressText = nativeElement?.querySelector('.tray-progress-bar-text');
+        if (progressArea && progressFill && progressText) {
+            progressArea.style.display = '';
+            progressFill.style.width = '0%';
+            progressText.textContent = `Auto-linking ${pending.length} entries...`;
+            await moduleDelay(300);
+        }
+
+        const reports = [];
+        let linked = 0;
+        let touched = 0;
+
+        try {
+            for (let i = 0; i < pending.length; i++) {
+                const page = pending[i];
+                const percent = (i / pending.length) * 100;
+                if (progressFill) progressFill.style.width = `${percent}%`;
+                if (progressText) progressText.textContent = `Auto-linking: ${page.name}`;
+
+                const existing = (page.system?.links ?? []).map(normalizeCodexLink);
+                // Only the unresolved ones go back to the resolver; anything already
+                // linked is left exactly as it is.
+                const unresolved = existing.filter(l => !l.uuid && l.name);
+                const { links: retried, reports: entryReports } = await resolveCodexLinks({
+                    // No name/category: a self-link was already tried at import and a
+                    // speculative retry would just re-report the same non-miss.
+                    links: unresolved.map(l => ({ name: l.name, type: l.type, label: l.label }))
+                });
+                reports.push(...entryReports);
+
+                const byKey = new Map(retried.map(l => [codexLinkKey(l), l]));
+                let changed = false;
+                const merged = existing.map(l => {
+                    if (l.uuid) return l;
+                    const hit = byKey.get(codexLinkKey(l));
+                    if (!hit?.uuid) return l;
+                    changed = true;
+                    linked++;
+                    return hit;
+                });
+
+                if (changed) {
+                    await page.update({ 'system.links': merged });
+                    touched++;
+                }
+                if (i % 5 === 0) await moduleDelay(50);
+            }
+
+            if (progressFill) progressFill.style.width = '100%';
+            if (progressText) progressText.textContent = 'Auto-Link complete!';
+
+            ui.notifications.info(
+                linked
+                    ? `Auto-Link: resolved ${linked} ${linked === 1 ? 'link' : 'links'} across ${touched} ${touched === 1 ? 'entry' : 'entries'}.`
+                    : 'Auto-Link: nothing new resolved — those documents still do not exist.'
+            );
+            reportResolution(reports, 'Auto-Link');
+        } catch (error) {
+            console.error('Coffee Pub Squire | Auto-Link failed:', error);
+            ui.notifications.error('Auto-Link failed. See console for details.');
+        } finally {
+            if (button) {
+                button.classList.remove('working');
+                button.setAttribute('title', 'Codex options');
+            }
+            this.isImporting = false;
+            trackModuleTimeout(() => this._hideProgressBar(), 2000);
+            await this._refreshData();
+            this.render(this.element);
+        }
+    }
+
     async _autoDiscoverFromInventories() {
         if (!this.selectedJournal) {
             ui.notifications.warn("No codex journal selected. Please select a journal first.");
@@ -1051,14 +1236,14 @@ export class CodexPanel {
                     
                     for (const item of items) {
                         // Normalize spaces: collapse multiple spaces into single spaces, then lowercase and trim
-                        const itemNameLower = normalizeItemName(item.name);
+                        const itemNameLower = normalizeName(item.name);
                         inventoryItems.add(itemNameLower);
                         
                         // If it's a backpack/container, check its contents
                         if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                             for (const containedItem of item.contents) {
                                 // Apply same space normalization to contained items
-                                const containedItemNameLower = normalizeItemName(containedItem.name);
+                                const containedItemNameLower = normalizeName(containedItem.name);
                                 inventoryItems.add(containedItemNameLower);
                             }
                         }
@@ -1117,7 +1302,7 @@ export class CodexPanel {
                     }
                     
                     // Check if entry name matches any inventory item
-                    const entryNameLower = normalizeItemName(entry.name);
+                    const entryNameLower = normalizeName(entry.name);
                     
                     if (inventoryItems.has(entryNameLower)) {
                         // Check if this entry is already visible
@@ -1138,7 +1323,7 @@ export class CodexPanel {
                                 
                                 for (const item of items) {
                                     // Normalize the item name the same way we did when building inventoryItems
-                                    const itemNameLower = normalizeItemName(item.name);
+                                    const itemNameLower = normalizeName(item.name);
                                     
                                     if (itemNameLower === entryNameLower) {
                                         if (!foundInThisActor) {
@@ -1151,7 +1336,7 @@ export class CodexPanel {
                                     // Check backpack contents
                                     if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                                         for (const containedItem of item.contents) {
-                                            const containedItemNameLower = normalizeItemName(containedItem.name);
+                                            const containedItemNameLower = normalizeName(containedItem.name);
                                             if (containedItemNameLower === entryNameLower) {
                                                 if (!foundInThisActor) {
                                                     discoverers.push(actor.name);
@@ -1337,6 +1522,16 @@ export class CodexPanel {
                                     tags: Array.isArray(entry.tags) ? entry.tags : [],
                                     img: entry.img || ''
                                 };
+                                // Related codex entries: plain names, resolved at render against
+                                // the journal's pages, so a name whose entry doesn't exist yet
+                                // links itself once it does. Present in the import replaces;
+                                // absent preserves (same rule as expandedDetails) — importing an
+                                // older JSON must not silently wipe the relationships.
+                                if (Array.isArray(entry.related)) {
+                                    systemData.related = entry.related
+                                        .map(r => String(r ?? '').trim())
+                                        .filter(Boolean);
+                                }
 
                                 if (page && page.type !== CODEX_PAGE_TYPE) {
                                     // Legacy text page matched — re-import IS the conversion path:
@@ -1394,6 +1589,18 @@ export class CodexPanel {
                             ui.notifications.info(message);
                             reportResolution(this._resolveReports, 'Codex import');
                             this._resolveReports = null;
+                            // Unresolved links are kept, not dropped — tell the GM the
+                            // retry exists rather than running a bulk write unasked.
+                            const stillUnresolved = (this.selectedJournal.pages?.contents ?? [])
+                                .filter(p => p.type === CODEX_PAGE_TYPE)
+                                .reduce((sum, p) => sum + (p.system?.links ?? [])
+                                    .filter(l => !String(l?.uuid ?? '').trim() && String(l?.name ?? '').trim()).length, 0);
+                            if (stillUnresolved > 0) {
+                                ui.notifications.info(
+                                    `${stillUnresolved} codex ${stillUnresolved === 1 ? 'link is' : 'links are'} still unresolved and kept as plain text. `
+                                    + `Run "Auto-Link Unresolved Links" from the codex menu once those documents exist.`
+                                );
+                            }
                             this._updateProgressBar(100, 'Import complete!');
                             await moduleDelay(2000);
                             this._hideProgressBar();
@@ -1496,6 +1703,19 @@ export class CodexPanel {
                     if (img.startsWith(origin)) img = img.slice(origin.length);
                 }
 
+                // Emit the authoring shape, not the render shape: `key`/`resolved`
+                // are computed by linkList and must not round-trip. An unresolved
+                // link exports as { name, type } — exactly what the AI prompt asks
+                // for — so export → import → Auto-Link is lossless.
+                const links = (entry.links || []).map(l => {
+                    const out = {};
+                    if (l.name) out.name = l.name;
+                    if (l.type) out.type = l.type;
+                    if (l.uuid) out.uuid = l.uuid;
+                    if (l.label && l.label !== l.name) out.label = l.label;
+                    return out;
+                }).filter(l => Object.keys(l).length > 0);
+
                 exportData.push({
                     name: entry.name,
                     img,
@@ -1503,7 +1723,8 @@ export class CodexPanel {
                     summary: entry.summary || '',
                     plotHook: entry.plotHook || null,
                     location: entry.location || null,
-                    links: entry.links || [],
+                    links,
+                    related: entry.related || [],
                     tags: entry.tags || [],
                     uuid: entry.uuid,
                     expandedDetails
@@ -1618,6 +1839,10 @@ export class CodexPanel {
             return a.localeCompare(b);
         });
         
+        // One index per render, shared by every entry's related names and location
+        // levels. Rebuilt each time so a newly created entry links itself everywhere.
+        const pageIndex = buildCodexPageIndex(this.selectedJournal);
+
         const categoriesData = await Promise.all(sortedCategories.map(async category => {
             let entries = this.data[category] || [];
             if (!game.user.isGM) {
@@ -1635,7 +1860,13 @@ export class CodexPanel {
                 const links = entry.links || (entry.link ? [entry.link] : []);
                 entry.linksHtml = [];
                 for (const link of links) {
-                    if (!link?.uuid) continue;
+                    // Unresolved link: render the plain name rather than skipping it.
+                    // The relationship was asserted by the author; Auto-Link retries it.
+                    if (!link?.uuid) {
+                        const label = link?.label || link?.name;
+                        if (label) entry.linksHtml.push(`<span class="codex-link-unresolved">${escapeHtml(label)}</span>`);
+                        continue;
+                    }
                     try {
                         const TextEditor = getTextEditor();
                         entry.linksHtml.push(await TextEditor.enrichHTML(
@@ -1644,6 +1875,17 @@ export class CodexPanel {
                         ));
                     } catch (_) {}
                 }
+
+                // Related entries and location levels both point at other codex
+                // entries, so they resolve through the same page index — cheaply,
+                // every render, which is what makes them self-healing.
+                entry.relatedHtml = (entry.related || [])
+                    .map(name => this._renderCodexRef(name, pageIndex))
+                    .filter(Boolean);
+                entry.locationParts = (entry.locationParts || []).map(part => ({
+                    ...part,
+                    valueHtml: this._renderCodexRef(part.value, pageIndex) || escapeHtml(part.value)
+                }));
             }
             const totalCount = entries.length;
             const visibleEntries = entries.filter(e => (e.ownership?.default ?? 0) >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);

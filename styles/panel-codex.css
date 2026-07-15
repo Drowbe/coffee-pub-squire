@@ -382,6 +382,41 @@
     margin: 0 0 3px 0;
 }
 
+/* Related codex entries: inline, comma-free chips of links to other entries */
+.squire-tray[data-position="left"] .codex-entry-related-list {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 8px;
+}
+
+.squire-tray[data-position="left"] .codex-entry-related-item {
+    display: inline-block;
+}
+
+/* A reference to another codex entry, resolved to a page */
+.squire-tray[data-position="left"] .codex-ref {
+    color: #e2551d;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.squire-tray[data-position="left"] .codex-ref:hover {
+    color: #ff7a3c;
+    text-decoration: underline;
+}
+
+/* A name with no entry (yet) and a link with no document (yet). Deliberately
+   quiet rather than an error state: the relationship is real, the target simply
+   does not exist, and it resolves itself once that entry/document appears. */
+.squire-tray[data-position="left"] .codex-ref-unresolved,
+.squire-tray[data-position="left"] .codex-link-unresolved {
+    opacity: 0.55;
+    font-style: italic;
+    cursor: default;
+}
+
 /* Location hierarchy: one labeled level per row below the LOCATION title */
 .squire-tray[data-position="left"] .codex-entry-location-list {
     margin-top: 4px;

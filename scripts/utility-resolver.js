@@ -55,6 +55,42 @@ export function typeForCategory(category) {
 }
 
 /**
+ * Normalize a stored link, preserving the fields Auto-Link needs to retry it.
+ *
+ * `name`/`type` are what make an unresolved link retryable; any code path that
+ * rebuilds the links array and drops them silently destroys that.
+ *
+ * Legacy links (pre-13.3.10) carry only `uuid` + `label`. The label was always
+ * the document's name, so it backfills `name` — that keeps identity stable for
+ * old data without a migration.
+ */
+export function normalizeCodexLink(link) {
+    const uuid = String(link?.uuid ?? '').trim();
+    const label = String(link?.label ?? '').trim();
+    const name = String(link?.name ?? '').trim() || (label && label !== uuid ? label : '');
+    return {
+        uuid,
+        label: label || name || uuid,
+        name,
+        type: String(link?.type ?? '').trim()
+    };
+}
+
+/**
+ * Stable identity for a codex link: the NAME the author wrote, falling back to
+ * uuid only when there is no name.
+ *
+ * Name-first is load-bearing. A uuid is the *result* of resolution, not the
+ * link's identity — keying on it would give the same link two different keys
+ * before and after Auto-Link resolves it, so a merge would emit it twice.
+ * Every site that rewrites `system.links` must use this.
+ */
+export function codexLinkKey(link) {
+    const normalized = normalizeCodexLink(link);
+    return normalized.name.toLowerCase() || normalized.uuid;
+}
+
+/**
  * Core resolver: bare names in, Blacksmith result objects out, index-aligned.
  * Unresolved entries come back as null. Never throws.
  *
@@ -154,21 +190,26 @@ export async function resolveEntries(entries, type) {
  *  - cross-reference links, each carrying its own `type`, because a category
  *    describes the entry rather than the documents it points at.
  *
- * Links that already carry a uuid pass through. Unresolved names are dropped,
- * matching the existing contract that a codex link without a uuid does not exist.
+ * Links that already carry a uuid pass through. **Unresolved names are RETAINED**
+ * with an empty uuid: a codex is authored incrementally, the source JSON is gone
+ * after import, and a name written before its document exists is a real statement
+ * we must not throw away. They render as plain text and the auto-link scan
+ * retries them.
  *
  * @param {{name?: string, category?: string, links?: Array, link?: object}} entry
- * @returns {Promise<{links: Array<{uuid: string, label: string}>, reports: object[]}>}
+ * @returns {Promise<{links: Array<{uuid: string, label: string, name: string, type: string}>, reports: object[]}>}
  */
 export async function resolveCodexLinks(entry) {
     const links = [];
     const seen = new Set();
 
-    const push = (uuid, label) => {
-        const id = String(uuid ?? '').trim();
-        if (!id || seen.has(id)) return;
-        seen.add(id);
-        links.push({ uuid: id, label: String(label || id) });
+    const push = (link) => {
+        const entryLink = normalizeCodexLink(link);
+        if (!entryLink.label) entryLink.label = entryLink.name || entryLink.uuid;
+        const key = codexLinkKey(entryLink);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        links.push(entryLink);
     };
 
     const rawLinks = Array.isArray(entry?.links)
@@ -179,12 +220,12 @@ export async function resolveCodexLinks(entry) {
     for (const link of rawLinks) {
         const uuid = typeof link?.uuid === 'string' ? link.uuid.trim() : '';
         if (uuid) {
-            push(uuid, link.label);
+            push(link);
             continue;
         }
         const name = String(link?.name ?? '').trim();
         if (!name) continue;
-        pending.push({ name, type: link.type ?? 'journal', label: link.label || name });
+        pending.push({ name, type: String(link.type ?? 'journal').trim(), label: link.label || name });
     }
 
     // resolveMany takes one canonical type per call, so batch by type.
@@ -214,14 +255,31 @@ export async function resolveCodexLinks(entry) {
     if (self) {
         self.report.speculative = true;
         reports.push(self.report);
-        if (self.results[0]) push(self.results[0].uuid, selfName);
+        // Self-links are speculation, so a miss is NOT retained: we invented the
+        // name, nobody asserted it. Only explicit links earn a placeholder.
+        if (self.results[0]) {
+            push({
+                uuid: self.results[0].uuid,
+                label: selfName,
+                name: selfName,
+                type: typeForCategory(entry?.category)
+            });
+        }
     }
 
     resolvedGroups.forEach(({ results, report }, groupIndex) => {
         reports.push(report);
         const group = groups[groupIndex][1];
         results.forEach((result, i) => {
-            if (result) push(result.uuid, group[i].label || result.matchedName);
+            const asked = group[i];
+            // Retain the miss: the name is an assertion the author made, and it is
+            // not recoverable once the import JSON is gone. Auto-Link retries it.
+            push({
+                uuid: result?.uuid ?? '',
+                label: asked.label || result?.matchedName || asked.name,
+                name: asked.name,
+                type: asked.type
+            });
         });
     });
 
@@ -249,15 +307,22 @@ export function mergeCodexLinks(existing, resolved) {
     const seen = new Set();
 
     const push = (link) => {
-        const uuid = String(link?.uuid ?? '').trim();
-        if (!uuid || seen.has(uuid)) return;
-        seen.add(uuid);
-        out.push({ uuid, label: String(link.label || uuid) });
+        const normalized = normalizeCodexLink(link);
+        if (!normalized.label) normalized.label = normalized.name || normalized.uuid;
+        // Key on uuid, falling back to name, so an unresolved link the import just
+        // produced doesn't duplicate the same one already on the page.
+        const key = codexLinkKey(normalized);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        out.push(normalized);
     };
 
     // Import order leads (the self-link first), then anything only the page has.
     (Array.isArray(resolved) ? resolved : []).forEach(push);
     (Array.isArray(existing) ? existing : []).forEach(push);
+
+    // A link the import resolved supersedes the same name still unresolved on the
+    // page — otherwise the page's stale placeholder would win on key collision.
     return out;
 }
 

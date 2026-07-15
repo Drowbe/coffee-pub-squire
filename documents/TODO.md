@@ -15,7 +15,7 @@
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
 | Codex + Quest: resolve plain-text names to UUIDs on import via Blacksmith `api.compendiums` | Medium | M | Done (13.3.10) |
 | Pins: audit quest/note pin visibility for the same silent no-op fixed for codex | Medium | S | Open |
-| Codex: `related` entries + retain-unresolved links + rescan tool (see `plan-codex-datamodel.md` Phase 4) | High | L | Designed |
+| Codex: `related` entries + retain-unresolved links + Auto-Link tool (see `plan-codex-datamodel.md` Phase 4) | High | L | Implemented (13.3.10) — needs in-game verification |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
 | Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |

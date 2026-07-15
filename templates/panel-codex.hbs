@@ -121,6 +121,16 @@
                                     </div>
                                 {{/if}}
 
+                                <!-- RELATED (other codex entries) -->
+                                {{#if entry.relatedHtml.length}}
+                                    <div class="codex-entry-related">
+                                        <span class="codex-entry-label">Related</span>
+                                        <div class="codex-entry-related-list">
+                                            {{#each entry.relatedHtml}}<span class="codex-entry-related-item">{{{this}}}</span>{{/each}}
+                                        </div>
+                                    </div>
+                                {{/if}}
+
                                 <!-- LOCATION -->
                                 {{#if entry.locationParts.length}}
                                     <div class="codex-entry-location">
@@ -128,7 +138,7 @@
                                         <div class="codex-entry-location-list">
                                             {{#each entry.locationParts}}
                                             <div class="codex-entry-location-row">
-                                                <span class="codex-entry-location-level">{{this.label}}</span>{{this.value}}
+                                                <span class="codex-entry-location-level">{{this.label}}</span>{{{this.valueHtml}}}
                                             </div>
                                             {{/each}}
                                         </div>

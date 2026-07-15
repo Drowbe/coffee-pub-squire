@@ -3,6 +3,7 @@ import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { trackModuleTimeout } from './timer-utils.js';
 import { getTextEditor } from './helpers.js';
+import { codexLinkKey, normalizeCodexLink } from './utility-resolver.js';
 import { updateCodexPin as updateCodexPinForEntry } from './manager-pins.js';
 
 function getBlacksmith() {
@@ -377,11 +378,17 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
      */
     _normalizeLinks(links, legacyLink = null, legacyLabel = '') {
         const out = [];
+        const seen = new Set();
         const push = (l) => {
-            const uuid = typeof l?.uuid === 'string' ? l.uuid.trim() : '';
-            if (!uuid) return;
-            if (out.some(existing => existing.uuid === uuid)) return;
-            out.push({ uuid, label: String(l.label || legacyLabel || uuid) });
+            // Unresolved links (name, no uuid) are KEPT. This window must not
+            // destroy a relationship the author stated just because the document
+            // doesn't exist yet — Auto-Link retries them later.
+            const normalized = normalizeCodexLink(l);
+            if (!normalized.label) normalized.label = normalized.name || legacyLabel || normalized.uuid;
+            const key = codexLinkKey(normalized);
+            if (!key || seen.has(key)) return;
+            seen.add(key);
+            out.push(normalized);
         };
         if (Array.isArray(links)) links.forEach(push);
         if (legacyLink) push(legacyLink);
@@ -393,10 +400,20 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
      * @private
      */
     _addLink(link) {
-        const uuid = typeof link?.uuid === 'string' ? link.uuid.trim() : '';
-        if (!uuid) return false;
-        if (this.entry.links.some(l => l.uuid === uuid)) return false;
-        this.entry.links.push({ uuid, label: String(link.label || uuid) });
+        const normalized = normalizeCodexLink(link);
+        if (!normalized.uuid) return false;
+        const key = codexLinkKey(normalized);
+        const existing = (this.entry.links || []).findIndex(l => codexLinkKey(l) === key);
+        if (existing >= 0) {
+            // Already resolved to the same thing — nothing to do.
+            if (this.entry.links[existing].uuid) return false;
+            // Dropping the document an unresolved link was waiting for resolves it
+            // in place; adding a second chip for the same name would be wrong.
+            this.entry.links[existing] = normalized;
+            this._renderLinksList(this._getRoot());
+            return true;
+        }
+        this.entry.links.push(normalized);
         this._renderLinksList(this._getRoot());
         return true;
     }
@@ -410,12 +427,19 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         if (!list) return;
         list.innerHTML = '';
         for (const link of (this.entry.links || [])) {
+            const normalized = normalizeCodexLink(link);
+            const resolved = !!normalized.uuid;
             const chip = document.createElement('span');
-            chip.className = 'codex-link-chip';
-            chip.dataset.uuid = link.uuid;
-            chip.innerHTML = `<i class="fa-solid fa-link"></i><span class="codex-link-chip-label"></span><i class="fa-solid fa-times codex-link-chip-remove" title="Remove link"></i>`;
-            chip.querySelector('.codex-link-chip-label').textContent = link.label || link.uuid;
-            chip.title = link.uuid;
+            chip.className = resolved ? 'codex-link-chip' : 'codex-link-chip unresolved';
+            // Key on name, not uuid: an unresolved chip has no uuid but must still
+            // be addressable for removal.
+            chip.dataset.key = codexLinkKey(normalized);
+            chip.dataset.uuid = normalized.uuid;
+            chip.innerHTML = `<i class="fa-solid ${resolved ? 'fa-link' : 'fa-link-slash'}"></i><span class="codex-link-chip-label"></span><i class="fa-solid fa-times codex-link-chip-remove" title="Remove link"></i>`;
+            chip.querySelector('.codex-link-chip-label').textContent = normalized.label || normalized.name;
+            chip.title = resolved
+                ? normalized.uuid
+                : `No document named "${normalized.name}" was found — run Auto-Link after adding it.`;
             list.appendChild(chip);
         }
     }
@@ -718,9 +742,11 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
                 if (!removeBtn) return;
                 event.preventDefault();
                 event.stopPropagation();
-                const uuid = removeBtn.closest('.codex-link-chip')?.dataset?.uuid;
-                if (!uuid) return;
-                this.entry.links = (this.entry.links || []).filter(l => l.uuid !== uuid);
+                // Key, not uuid: unresolved chips have no uuid and would otherwise
+                // be impossible to remove.
+                const key = removeBtn.closest('.codex-link-chip')?.dataset?.key;
+                if (!key) return;
+                this.entry.links = (this.entry.links || []).filter(l => codexLinkKey(l) !== key);
                 this._renderLinksList(root);
             };
             const overHandler = (event) => {

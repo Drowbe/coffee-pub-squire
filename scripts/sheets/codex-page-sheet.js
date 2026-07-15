@@ -1,5 +1,6 @@
 import { MODULE } from '../const.js';
-import { renderTemplate, getTextEditor } from '../helpers.js';
+import { renderTemplate, getTextEditor, escapeHtml } from '../helpers.js';
+import { codexLinkKey, normalizeCodexLink } from '../utility-resolver.js';
 
 // The CONCRETE text page sheet. (JournalEntryPageTextSheet is abstract and defines
 // NO parts — extending it renders neither the view content nor the lore editor.)
@@ -53,16 +54,19 @@ export class CodexPageSheet extends JournalEntryPageProseMirrorSheet {
         if (!zone || zone.dataset.linksBound) return;
         zone.dataset.linksBound = 'true';
 
-        const currentLinks = () => Array.from(this.document.system.links || [])
-            .map(l => ({ uuid: l.uuid, label: l.label }));
+        // Preserve name/type: they are what let the auto-link scan retry an
+        // unresolved link later. Rebuilding the array without them destroys that.
+        const currentLinks = () => Array.from(this.document.system.links || []).map(normalizeCodexLink);
 
         zone.addEventListener('click', async (event) => {
             const removeBtn = event.target.closest('.codex-link-chip-remove');
             if (!removeBtn) return;
             event.preventDefault();
-            const uuid = removeBtn.closest('.codex-link-chip')?.dataset?.uuid;
-            if (!uuid) return;
-            await this.document.update({ 'system.links': currentLinks().filter(l => l.uuid !== uuid) });
+            const key = removeBtn.closest('.codex-link-chip')?.dataset?.key;
+            if (!key) return;
+            await this.document.update({
+                'system.links': currentLinks().filter(l => codexLinkKey(l) !== key)
+            });
         });
 
         zone.addEventListener('dragover', (event) => {
@@ -83,7 +87,12 @@ export class CodexPageSheet extends JournalEntryPageProseMirrorSheet {
                 if (!doc) return;
                 const links = currentLinks();
                 if (links.some(l => l.uuid === doc.uuid)) return;
-                links.push({ uuid: doc.uuid, label: doc.name || doc.uuid });
+                links.push({
+                    uuid: doc.uuid,
+                    label: doc.name || doc.uuid,
+                    name: doc.name || '',
+                    type: String(doc.documentName || '').toLowerCase()
+                });
                 await this.document.update({ 'system.links': links });
                 ui.notifications.info(`Linked: ${doc.name}`);
             } catch (error) {
@@ -102,6 +111,12 @@ export class CodexPageSheet extends JournalEntryPageProseMirrorSheet {
 
             const linksHtml = [];
             for (const link of system.linkList) {
+                // Unresolved links have no uuid — render the plain name rather than
+                // an empty @UUID[]{} enricher. The auto-link scan can fill it in later.
+                if (!link.resolved) {
+                    linksHtml.push(`<span class="codex-link-unresolved">${escapeHtml(link.label)}</span>`);
+                    continue;
+                }
                 try {
                     const TextEditor = getTextEditor();
                     linksHtml.push(await TextEditor.enrichHTML(`@UUID[${link.uuid}]{${link.label}}`, { async: true }));

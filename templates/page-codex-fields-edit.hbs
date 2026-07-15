@@ -33,8 +33,8 @@
         <label>Links</label>
         <div class="codex-page-links-edit">
             {{#each linkChips}}
-            <span class="codex-link-chip" data-uuid="{{this.uuid}}">
-                <i class="fa-solid fa-link"></i><span class="codex-link-chip-label">{{this.label}}</span><i class="fa-solid fa-times codex-link-chip-remove" title="Remove link"></i>
+            <span class="codex-link-chip{{#unless this.resolved}} unresolved{{/unless}}" data-key="{{this.key}}" data-uuid="{{this.uuid}}">
+                <i class="fa-solid {{#if this.resolved}}fa-link{{else}}fa-link-slash{{/if}}"></i><span class="codex-link-chip-label" {{#unless this.resolved}}title="No document by this name yet — run Auto-Link after adding it"{{/unless}}>{{this.label}}</span><i class="fa-solid fa-times codex-link-chip-remove" title="Remove link"></i>
             </span>
             {{/each}}
             <span class="codex-links-hint"><i class="fa-solid fa-hand-pointer"></i> Drag actors, items, journals, or pages here to link them.</span>

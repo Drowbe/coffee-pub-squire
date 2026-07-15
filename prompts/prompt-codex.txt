@@ -22,7 +22,7 @@ Each link is an object with a "name" (spelled exactly as it appears on the docum
 
 Do NOT invent UUIDs. Write the plain name; the importer resolves it against the GM's configured compendiums.
 
-Only link what you are confident exists as an actual document. A name that does not resolve is discarded and reported to the GM as a failure, so a speculative link is worse than no link.
+Only link what you are confident exists as an actual document. A name that does not resolve is kept as plain text and reported to the GM, who can link it later once the document exists — so a name is never lost, but a speculative link still creates noise the GM has to sort through. Prefer no link over a guess.
 
 A long "links" array is a reliable sign you are linking *concepts* instead of *documents*. If you find yourself adding more than about three, stop and re-read this section.
 

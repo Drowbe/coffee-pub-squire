@@ -101,7 +101,7 @@ Model decisions: `img` and `link.uuid` are lenient `StringField`s (not `FilePath
 - [ ] New category creation with icon via Edit Entry window
 - [ ] Console clean: no codex-attributed deprecation warnings or errors during the above
 
-## Phase 4 — Related entries + resolve-later links (designed July 15, 2026; not built)
+## Phase 4 — Related entries + resolve-later links **(implemented July 15, 2026 — pending in-game verification)**
 
 13.3.10 wired codex `links` to Blacksmith's `api.compendiums` resolver (plain-text name → UUID at import). Feeding it a real AI-authored codex surfaced two things.
 
@@ -134,10 +134,22 @@ Manual GM action. Crawls the codex and re-resolves unresolved `links` (corpus B 
 
 **Trigger: manual, prompted.** After an import, notify the GM that auto-linking is available and how many names are unresolved. Running it automatically is a future *option* — deliberately not the default, so the GM stays in control of a bulk write to journal pages. First step toward broader codex automation.
 
+### What shipped
+
+- `codex-page-model.js` — `related: [String]`; `links` gains `name`/`type`; `linkList` no longer filters uuid-less links and exposes `key` + `resolved`; new `resolvedLinkList`.
+- `utility-resolver.js` — `normalizeCodexLink()` and `codexLinkKey()` (**name-first identity**, see below); `resolveCodexLinks()` retains misses instead of dropping them.
+- `panel-codex.js` — `buildCodexPageIndex()` per render; `_renderCodexRef()`; `related` + location levels resolve at render; `_autoLinkUnresolved()` GM tool; post-import prompt reporting the unresolved count; export emits `related` and the authoring link shape.
+- Five sites rewrote `system.links` and would each have destroyed the retained `name`/`type`: the import merge, the page-sheet drop and remove handlers, and the Edit window's `_normalizeLinks`/`_addLink`. All now go through the shared normalizer.
+
+**Identity is name-first, and that is load-bearing.** `codexLinkKey()` keys on the *name*, falling back to uuid. A uuid is the *result* of resolution, not the link's identity — keying on it gives one link two different keys before and after Auto-Link resolves it, so any merge emits it twice. Legacy links (uuid + label, no name) backfill `name` from `label`, which keeps old data stable without a migration.
+
+**`window-codex` needs no `related` handling**: it writes `page.update({system: ...})`, which merges, so a field absent from its `systemData` survives. `discoveredBy` has always relied on the same property.
+
 ### Open questions
 
-- **Backlinks**: symmetric or one-way? If Phlan lists Moonsea, Moonsea could gain Phlan for free — valuable, because the AI will not be consistent in both directions. Cheap under design A (the index is already bidirectional in memory — it can be a render-time union rather than a stored mutation), which is another argument for not storing `related`.
-- **Prompt shape**: `related` as plain names; `links` restricted to documents that genuinely exist (actor/item/spell/feature/rolltable); `journal` demoted to rare. The current wording — *"`journal` for lore pages and locations"* — is what produced the 19 dead links and should be corrected regardless of when this phase lands.
+- **Backlinks**: symmetric or one-way? If Phlan lists Moonsea, Moonsea could gain Phlan for free — valuable, because the AI will not be consistent in both directions. Cheap now that `related` is unstored: the index is already bidirectional in memory, so this is a render-time union, not a stored mutation of an entry the import wasn't given.
+- **Auto-run**: the post-import prompt is deliberately a notification, not an action — Auto-Link is a bulk write to journal pages and the GM triggers it. A setting could opt into running it automatically.
+- **`journal` link type** is now nearly vestigial (Expanded Details carries lore, `related` carries entry→entry). It may be worth dropping from the prompt's type list entirely.
 
 ## Out of scope (follow-on)
 

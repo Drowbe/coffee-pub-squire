@@ -31,6 +31,22 @@ export function getPartyActors() {
 }
 
 /**
+ * Escape text for safe interpolation into an HTML string.
+ *
+ * Needed wherever we hand-build markup that a template renders through a
+ * triple-stash: Handlebars won't escape it, and codex/quest names are
+ * user-authored.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = String(text ?? '');
+  return div.innerHTML;
+}
+
+/**
  * v13: Convert jQuery object to native DOM element, or return native DOM as-is
  * @param {jQuery|HTMLElement} element - jQuery object or native DOM element
  * @returns {HTMLElement|null} Native DOM element
