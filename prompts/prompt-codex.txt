@@ -10,7 +10,45 @@ I want you to build a JSON array that will be used for a codex feature in my fou
 **TAGS** - a list of tags that would help filter this entry when looking it up. These will be used for filtering, so characteristics and identifying attributes like type, location, faction, etc., would be useful. There should never be tags for words like "the" and there should never be single-letter tags like "a". The first tag should always be the category. Add no more than 5 tags. Having spaces in the tag is okay, but do not divide words with special characters like underscores. You should always add the location as a tag, but the location should be specific. Something like "Phlan - Thorne Island - Aquatic Crypt" would be three tags. Also, be mindful of when a particular tag might need to be a second, less specific tag. For instance, "black cult of the dragon" is a particular tag, but we should add a second tag for "cult" which would be another proper tag. They should be formatted to be json-friendly and will be an array formatted like: "npc", "inn", "drinking game", "informant", "phlan". A tag would be something that would likely be applied to more than one entry. For example, "arena beast" is unnecessary... it should be "arena" and "beast". They should not be niche or overly specific phrases. Remember, these are used to group like things based on characteristics of the entry.
 **EXPANDEDDETAILS** - OPTIONAL rich lore for the entry, rendered on the full journal page below the summary and field block. Use simple HTML: <h2> or <h3> section headings (for example Geography, Government, History for a location, or Appearance, Motivations, Relationships for a character), and <p> paragraphs. Do not add a heading named "Expanded Details" — the page already labels this section. Do not include <img> tags or scripts. Escape the HTML so it is JSON-friendly (single-line string, double quotes escaped). If there is not enough source material for deeper detail, set this to null rather than padding it.
 
-**LINKS** - OPTIONAL cross-references from this entry to other documents that exist in the world or in the campaign's compendiums. Each link is an object with a "name" (the document's plain name, spelled exactly as it appears on the document) and a "type" (one of: "actor" for creatures and NPCs, "item" for objects, gear, and artifacts, "spell", "feature", "journal" for lore pages and locations, or "rolltable"). Do NOT invent UUIDs — write the plain name and the importer resolves it against the GM's configured compendiums. Only add a link when you are confident a document by that name actually exists; a name that does not resolve is dropped and reported to the GM. Use this for things the entry references — the faction an NPC belongs to, an artifact a location houses, the NPC who runs an establishment. You do not need to link the entry to itself: the importer already resolves the entry's own name using its category.
+**LINKS** - OPTIONAL. Links from this entry to **game documents that already exist** in the world or in the campaign's compendiums. This is a narrow field. Most entries need **zero to three links, and many need none at all.**
+
+Each link is an object with a "name" (spelled exactly as it appears on the document) and a "type":
+  - "actor" - a creature or NPC that exists as an actor
+  - "item" - an object, weapon, or artifact that exists as an item
+  - "spell" / "feature" / "rolltable" - as named
+  - "journal" - RARE. Only for a standalone journal *document*. Not a page inside a journal, and never a codex entry.
+
+**Do NOT link other codex entries.** This is the most common mistake. Codex entries are *pages inside a single journal*, not documents — a link to one is impossible to resolve and will be discarded. So do not link places, regions, cities, districts, sites, factions, organizations, orders, guilds, events, or any other lore concept that is itself a codex entry. If a "Phlan" entry mentions Moonsea, Valjevo Castle, and the Black Fist, and those are codex entries, then **none of them belong in "links"**. Entry-to-entry relationships are not expressed in this JSON.
+
+Do NOT invent UUIDs. Write the plain name; the importer resolves it against the GM's configured compendiums.
+
+Only link what you are confident exists as an actual document. A name that does not resolve is discarded and reported to the GM as a failure, so a speculative link is worse than no link.
+
+A long "links" array is a reliable sign you are linking *concepts* instead of *documents*. If you find yourself adding more than about three, stop and re-read this section.
+
+You do not need to link the entry to itself: the importer already resolves the entry's own name using its category.
+
+**RELATED** - OPTIONAL. Other **codex entries** this entry is meaningfully connected to, as plain names in an array of strings. No "type" and no UUID — they are all codex entries. **This is where everything excluded from "links" belongs**: the places, districts, sites, factions, organizations, orders, guilds, and events this entry is bound up with.
+
+Do NOT repeat this entry's own location path. Phlan's location is already "Faerûn > Moonsea > Phlan", and each level of that hierarchy is rendered from the location field — listing "Faerûn" or "Moonsea" in "related" just duplicates it. Related is for connections the hierarchy does not already carry.
+
+A name with no codex entry yet is fine and is NOT an error. The relationship is kept as written and links itself if that entry is created later, so record a real connection even when the other entry does not exist yet.
+
+Be meaningful rather than exhaustive: the entries a reader would actually want to jump to, not every proper noun in the text. Usually a handful; a big location hub may justify more.
+
+An example for a "Phlan" entry (note that Faerûn and Moonsea are absent — they are its location path):
+
+    "related": [
+      "Valjevo Castle",
+      "Black Fist",
+      "Mantor's Library",
+      "Sokol Keep",
+      "Madame Freona's Tea Kettle",
+      "Harpers",
+      "Goblin Caves"
+    ]
+
+If the entry has no meaningful connections, use an empty array: "related": []
 
 Replace the above items in their matching placeholder below. Be sure the text is JSON-friendly. Do not change any of the code, replace the placeholders. This JSON  will be cut and pasted into an importer. Here is the template to use to build the JSON. It is an array, so be sure the JSON is valid, creates proper arrays, and has no linter errors:
 
@@ -23,20 +61,35 @@ Replace the above items in their matching placeholder below. Be sure the text is
     "plotHook": "**PLOTHOOK**",
     "location": "**LOCATION**",
     "links": [ **LINKS** ],
+    "related": [ **RELATED** ],
     "tags": [ **TAGS** ],
     "expandedDetails": "**EXPANDEDDETAILS**"
   }
 ]
 
-An example of a populated "links" array:
+CORRECT - an establishment entry linking the NPC who runs it and an artifact kept there. Both exist as documents:
 
     "links": [
       { "name": "Mira Vex", "type": "actor" },
-      { "name": "Arcanic Wayfinder Part 2: Casing", "type": "item" },
-      { "name": "Black Cult of the Dragon", "type": "journal" }
+      { "name": "Arcanic Wayfinder Part 2: Casing", "type": "item" }
     ]
 
-If the entry has no confident cross-references, use an empty array: "links": []
+WRONG - every one of these is a place, faction, or lore concept, which means it is a codex entry, not a document. None of them can resolve as links. Do not produce this:
+
+    "links": [
+      { "name": "Moonsea", "type": "journal" },
+      { "name": "Valjevo Castle", "type": "journal" },
+      { "name": "Black Fist", "type": "journal" },
+      { "name": "Mantor's Library", "type": "journal" },
+      { "name": "Harpers", "type": "journal" }
+    ]
+
+Those names are not worthless — they are simply in the wrong field. **Do not discard them; move them to "related"**, minus the location path:
+
+    "links": [ { "name": "Spanky", "type": "actor" } ],
+    "related": [ "Valjevo Castle", "Black Fist", "Mantor's Library", "Harpers" ]
+
+If the entry has no links to real documents — which is common, and correct — use an empty array: "links": []
 
 Here are the specific instructions I want you to use to build the above JSON array:
 
