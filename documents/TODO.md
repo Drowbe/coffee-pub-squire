@@ -15,6 +15,7 @@
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
 | Codex + Quest: resolve plain-text names to UUIDs on import via Blacksmith `api.compendiums` | Medium | M | Done (13.3.10) |
 | Pins: audit quest/note pin visibility for the same silent no-op fixed for codex | Medium | S | Open |
+| Codex: `related` entries + retain-unresolved links + rescan tool (see `plan-codex-datamodel.md` Phase 4) | High | L | Designed |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
 | Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |
@@ -71,6 +72,7 @@
 - [x] **CLEANUP** Notes tray is list-only with hover preview tooltips (no card view / card theme).
 
 ### CODEX TAB
+- [ ] **ENHANCEMENT (Designed — `plan-codex-datamodel.md` Phase 4)** `related` codex-to-codex entries, retain-unresolved links, and a rescan tool. Three connected pieces: (1) `links` keeps `{name, type, uuid?}` and renders unresolved names as plain text instead of discarding them — a codex is authored incrementally, so "Moonsea" may not exist *yet*, and today the relationship is destroyed at import; (2) a `related` field for entry→entry relations, resolved against pages in the codex journal (Squire's own lookup — a corpus `api.compendiums` doesn't model — in a second pass after all pages exist); (3) a GM rescan that crawls the codex and links whatever has since become linkable, reusing the inventory auto-discovery progress bar. Discovered by feeding the 13.3.10 resolver a real AI-authored codex: 19 of 22 links on one entry pointed at other codex entries and were structurally unresolvable (`type: "journal"` finds `JournalEntry` documents; codex entries are `JournalEntryPage`s). The AI wasn't over-linking — it was describing a graph the schema can't hold.
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description

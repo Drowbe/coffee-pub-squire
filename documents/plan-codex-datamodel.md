@@ -101,6 +101,44 @@ Model decisions: `img` and `link.uuid` are lenient `StringField`s (not `FilePath
 - [ ] New category creation with icon via Edit Entry window
 - [ ] Console clean: no codex-attributed deprecation warnings or errors during the above
 
+## Phase 4 — Related entries + resolve-later links (designed July 15, 2026; not built)
+
+13.3.10 wired codex `links` to Blacksmith's `api.compendiums` resolver (plain-text name → UUID at import). Feeding it a real AI-authored codex surfaced two things.
+
+**1. The AI's "mistake" is the feature.** Asked to link a "Phlan" entry, it emitted 22 links — 19 of which pointed at *other codex entries* (Moonsea, Valjevo Castle, Black Fist, Mantor's Library…). Every one of those is structurally unresolvable: `type: "journal"` resolves against `game.journal`, i.e. **JournalEntry documents**, while codex entries are `JournalEntryPage`s living inside one journal (`compendium-types.js:174` — `JournalEntry: () => game.journal`). The model wasn't over-linking; it was describing a **relationship graph** the schema has no field for. Phlan→Moonsea is the most valuable link in the entry and the one we can't express.
+
+**2. Dropping unresolved names is wrong.** A codex is authored incrementally: "Moonsea" may not exist *yet*. Today an unresolved link is discarded at import (`resolveCodexLinks`) and at render (`panel-codex.js:1613`, `if (!link?.uuid) continue;`), so the stated relationship is destroyed and can never be recovered — the JSON is gone by then. Quest treasure already does the right thing (falls back to plain text); codex links are the outlier.
+
+### Design
+
+Two corpora, resolved at different times. Keeping them apart is what keeps this small.
+
+**A. Codex-internal (`related` + `location` segments) — resolved at RENDER, nothing stored.**
+
+- Build a `Map<normalizedName, pageUuid>` once per `_refreshData()` from `selectedJournal.pages`. The panel already caches parsed pages by uuid + `_stats.modifiedTime`, so one O(n) index pass is noise.
+- **`related` is plain strings**: `"related": ["Moonsea", "Black Fist"]`. No `type` (they're all codex entries), no stored `uuid`. Renders as its own **Related** section — kept distinct from `links` ("documents this entry references") because it means "entries near this one in the story".
+- **Location segments link through the same index.** Phlan's `location` is `"Faerûn > Moonsea > Phlan"` and the card already renders REALM/REGION/SITE/AREA rows; each segment becomes a link when a codex entry by that name exists. This is the precondition for the next bullet.
+- **`related` is non-hierarchical only.** Because location now carries the hierarchy *as links*, Related must not repeat it — otherwise every entry duplicates its own path. Related is for Black Fist, Mantor's Library, Spanky, Goblin Caves.
+- **Self-healing, and that's the whole trick.** A name with no page yet is a Map miss → renders as plain text → becomes a link the moment that entry is added. This satisfies "plain-text what isn't present but don't lose the relationship" **by not storing the answer**: no second pass, no import-ordering problem (Phlan may reference Moonsea before Moonsea exists), and no rescan for this corpus.
+- Legitimately Squire's lookup: pages inside one journal are a corpus `api.compendiums` does not model and should not. Does not contradict the 13.3.10 rule (never search *compendiums* ourselves). Page UUIDs are ordinary links: `@UUID[JournalEntry.abc.JournalEntryPage.xyz]{Moonsea}`.
+
+**B. Compendium documents (`links`) — resolved at IMPORT + RESCAN, uuid stored.**
+
+- **Retain, don't drop**: `links` keeps `{ name, type, uuid? }` — `name`/`type` always, `uuid` once resolved. Resolved → enriched link; unresolved → plain text, same contract as quest treasure. Requires `linkList` (`codex-page-model.js:46`) to stop filtering uuid-less entries and the render guard at `panel-codex.js:1613` to render text instead of skipping.
+- Can't resolve at render: it's a Blacksmith call across configured packs, far too expensive per-render, and it can't self-heal — hence the rescan.
+- **`journal` links are now nearly vestigial.** Expanded Details carries the lore inline and `related` carries entry→entry, so a `journal` link only makes sense for a genuine standalone `JournalEntry` document. It is the type that produced all 19 dead links; the prompt should treat it as rare, not as the default for "lore and locations".
+
+### Rescan tool ("auto-link")
+
+Manual GM action. Crawls the codex and re-resolves unresolved `links` (corpus B only — A self-heals). Reuses the inventory auto-discovery progress-bar pattern (`panel-codex.js` — progress area, `_updateProgressBar`, `moduleDelay(100)` every 5 entries) and import's asserted/speculative miss reporting.
+
+**Trigger: manual, prompted.** After an import, notify the GM that auto-linking is available and how many names are unresolved. Running it automatically is a future *option* — deliberately not the default, so the GM stays in control of a bulk write to journal pages. First step toward broader codex automation.
+
+### Open questions
+
+- **Backlinks**: symmetric or one-way? If Phlan lists Moonsea, Moonsea could gain Phlan for free — valuable, because the AI will not be consistent in both directions. Cheap under design A (the index is already bidirectional in memory — it can be a render-time union rather than a stored mutation), which is another argument for not storing `related`.
+- **Prompt shape**: `related` as plain names; `links` restricted to documents that genuinely exist (actor/item/spell/feature/rolltable); `journal` demoted to rare. The current wording — *"`journal` for lore pages and locations"* — is what produced the 19 dead links and should be corrected regardless of when this phase lands.
+
 ## Out of scope (follow-on)
 
 - **Notes** and **Quest** panels have the same HTML-as-database disease. Notes is the natural second adopter (similar field shape). Quest is last and largest (task states/progress live in HTML and are *edited* by rewriting it) — do it only once the codex pattern is proven.
