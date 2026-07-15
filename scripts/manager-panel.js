@@ -1358,16 +1358,6 @@ export class PanelManager {
         }
     }
 
-    // Helper method to get the appropriate UUID format
-    _getItemUUID(item, data) {
-        // For compendium items
-        if (data.pack) {
-            return `@UUID[Compendium.${data.pack}.Item.${item._id}]{${item.name}}`;
-        }
-        // For regular items
-        return `@UUID[Item.${item._id}]{${item.name}}`;
-    }
-
     // Helper method to get the appropriate title based on item type
     _getDropTitle(type) {
         switch(type) {

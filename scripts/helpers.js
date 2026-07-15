@@ -9,6 +9,28 @@ export function getBlacksmith() {
 }
 
 /**
+ * The campaign's party roster, as Actor documents in the GM's configured order.
+ *
+ * Blacksmith owns the party; do not rebuild this from game.actors. Worlds that
+ * have not configured one fall back to the historical heuristic so the roster
+ * never silently empties. Token actors are excluded — the roster is the
+ * campaign's player characters, not whatever synthetic actors exist right now.
+ *
+ * This is the configured party, NOT "tokens on the canvas" and NOT "actors I
+ * own"; those are different concepts with their own call sites.
+ *
+ * @returns {Actor[]}
+ */
+export function getPartyActors() {
+  const members = getBlacksmith()?.campaign?.getParty?.()?.members;
+  if (Array.isArray(members) && members.length) {
+    const actors = members.map(member => game.actors.get(member.id)).filter(Boolean);
+    if (actors.length) return actors;
+  }
+  return game.actors.filter(actor => actor?.type === 'character' && actor?.hasPlayerOwner && !actor?.isToken);
+}
+
+/**
  * v13: Convert jQuery object to native DOM element, or return native DOM as-is
  * @param {jQuery|HTMLElement} element - jQuery object or native DOM element
  * @returns {HTMLElement|null} Native DOM element

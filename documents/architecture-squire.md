@@ -128,6 +128,15 @@ The tray has a collapsible handle (left edge) and main content:
 
 ## Blacksmith Integration
 
+### API Documentation
+
+Do not vendor copies of Blacksmith's API docs into this repo — they go stale silently and get followed anyway.
+
+- **Source of truth**: `documentation/api/*.md` in the [coffee-pub-blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith) repo.
+- **Convenience mirror**: the [wiki](https://github.com/Drowbe/coffee-pub-blacksmith/wiki). It lives in a separate repo and does **not** auto-update. Where the two disagree, the repo wins.
+
+Blacksmith owns compendium mapping and plain-text → UUID resolution (`api.compendiums`), and campaign/party/party-leader context (`api.campaign`). Squire should never read Blacksmith's settings directly, iterate `BLACKSMITH.arrSelected*Compendiums`, or write its own name → document search. See `api-compendiums.md` and `api-campaign.md`.
+
 ### Registration
 
 ```javascript

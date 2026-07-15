@@ -1155,52 +1155,6 @@ export const registerSettings = function() {
 
 
 
-	// -- Search World Items First --
-	game.settings.register(MODULE.ID, 'searchWorldItemsFirst', {
-		name: 'Search World Items First',
-		hint: 'When enabled, will search for items in the world before looking in compendiums. When disabled, will only search in the selected compendiums.',
-		type: Boolean,
-		config: true,
-		scope: 'world',
-		default: false,
-	});
-
-	// -- Item Lookup Compendiums (up to 5) --
-
-    for (let i = 1; i <= 5; i++) {
-        game.settings.register(MODULE.ID, `itemCompendium${i}`, {
-          name: `Item Lookup ${i}`,
-          hint: `The #${i} compendium to use for item linking. Searched in order. Set to 'None' to skip.`,
-          scope: "world",
-          config: true,
-          requiresReload: false,
-          default: "none",
-          choices: (() => {
-                               
-            // Helper function to safely get Blacksmith API
-            function getBlacksmith() {
-              return game.modules.get('coffee-pub-blacksmith')?.api;
-            }
-            
-            const blacksmith = getBlacksmith();
-            const choices = blacksmith?.BLACKSMITH?.arrCompendiumChoices;
-
-            if (choices && Object.keys(choices).length > 0) return { ...choices };
-            return { "none": "No compendiums found. Try reloading Foundry after all modules are enabled." };
-          })()
-        });
-      }
-
-
-    // -- Search World Items First --
-    game.settings.register(MODULE.ID, 'searchWorldItemsFirst', {
-        name: 'Search World Items First',
-        hint: 'When enabled, will search for items in the world before looking in compendiums. When disabled, will only search in the selected compendiums.',
-        type: Boolean,
-        config: true,
-        scope: 'world',
-        default: false,
-    });
 
 
 

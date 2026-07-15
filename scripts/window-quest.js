@@ -1,6 +1,6 @@
 import { MODULE } from './const.js';
 import { QuestParser, getQuestStatusDisplayLabel } from './utility-quest-parser.js';
-import { getTextEditor } from './helpers.js';
+import { getTextEditor, getPartyActors } from './helpers.js';
 
 function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
@@ -259,8 +259,8 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     _getPartyActors() {
-        return game.actors
-            .filter(actor => actor?.type === 'character' && actor?.hasPlayerOwner)
+        // Sorted by name for the picker; the helper returns configured order.
+        return getPartyActors()
             .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
     }
 

@@ -14,9 +14,10 @@ import {
     findLiveObjectivePin,
     reconcileQuestPins
 } from './manager-pins.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
+import { resolveEntries, reportResolution } from './utility-resolver.js';
 
 const QUEST_PIN_BACKGROUND     = '#682008';
 const OBJECTIVE_PIN_BACKGROUND = '#8c2d0d';
@@ -1068,6 +1069,8 @@ export class QuestPanel {
         }
         this._updateProgressBar(20, `Processing ${quests.length} quests...`);
         let imported = 0, updated = 0, duplicatesMerged = 0;
+        // Filled by the content builders as they resolve names; reported once below.
+        this._resolveReports = [];
         const totalQuests = quests.length;
         for (let i = 0; i < quests.length; i++) {
             const quest = quests[i];
@@ -1087,7 +1090,7 @@ export class QuestPanel {
                 let existingContent = '';
                 if (typeof existingPage.text?.content === 'string') existingContent = existingPage.text.content;
                 else if (existingPage.text?.content) existingContent = await existingPage.text.content;
-                const updatedContent = this._mergeJournalContent(existingContent, quest);
+                const updatedContent = await this._mergeJournalContent(existingContent, quest);
                 await existingPage.update({ text: { content: updatedContent } });
                 if (quest.visible !== undefined) await existingPage.setFlag(MODULE.ID, 'visible', quest.visible !== false);
                 const uuid = quest.uuid || existingPage.getFlag(MODULE.ID, 'questUuid') || foundry.utils.randomID();
@@ -1103,7 +1106,7 @@ export class QuestPanel {
                 const pageData = {
                     name: quest.name,
                     type: 'text',
-                    text: { content: this._generateJournalContentFromImport(quest) },
+                    text: { content: await this._generateJournalContentFromImport(quest) },
                     flags: { [MODULE.ID]: { questUuid: uuid } }
                 };
                 const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
@@ -1129,6 +1132,8 @@ export class QuestPanel {
         let message = `Quest import complete: ${imported} added, ${updated} updated.`;
         if (duplicatesMerged > 0) message += ` ${duplicatesMerged} duplicates were merged.`;
         ui.notifications.info(message);
+        reportResolution(this._resolveReports, 'Quest import');
+        this._resolveReports = null;
         this._updateProgressBar(100, 'Import complete!');
         await moduleDelay(2000);
         this._hideProgressBar();
@@ -2976,6 +2981,8 @@ export class QuestPanel {
                                 let imported = 0;
                                 let updated = 0;
                                 let duplicatesMerged = 0;
+                                // Filled by the content builders as they resolve names; reported once below.
+                                this._resolveReports = [];
                                 const totalQuests = quests.length;
                                 
                                 for (let i = 0; i < quests.length; i++) {
@@ -3006,7 +3013,7 @@ export class QuestPanel {
                                     if (existingPage) {
                                         // Update existing quest - PRESERVE EXISTING STATE
                                         const existingContent = existingPage.text.content;
-                                        const updatedContent = this._mergeJournalContent(existingContent, quest);
+                                        const updatedContent = await this._mergeJournalContent(existingContent, quest);
                                         
                                         await existingPage.update({
                                             text: {
@@ -3045,7 +3052,7 @@ export class QuestPanel {
                                             name: quest.name,
                                             type: 'text',
                                             text: {
-                                                content: this._generateJournalContentFromImport(quest)
+                                                content: await this._generateJournalContentFromImport(quest)
                                             },
                                             flags: {
                                                 [MODULE.ID]: {
@@ -3092,6 +3099,8 @@ export class QuestPanel {
                                     message += ` ${duplicatesMerged} duplicates were merged.`;
                                 }
                                 ui.notifications.info(message);
+                                reportResolution(this._resolveReports, 'Quest import');
+                                this._resolveReports = null;
                                 
                                 // Show completion message in progress bar
                                 this._updateProgressBar(100, 'Import complete!');
@@ -4127,7 +4136,7 @@ export class QuestPanel {
      * @param {Object} importedQuest - Quest data from import
      * @returns {string} Merged content with state preserved
      */
-    _mergeJournalContent(existingContent, importedQuest) {
+    async _mergeJournalContent(existingContent, importedQuest) {
         // Parse existing content to extract current state
         const existingState = this._extractExistingState(existingContent);
         
@@ -4195,11 +4204,24 @@ export class QuestPanel {
             if (importedQuest.reward.xp) content += `<p><strong>XP:</strong> ${importedQuest.reward.xp}</p>\n\n`;
             if (Array.isArray(importedQuest.reward.treasure) && importedQuest.reward.treasure.length > 0) {
                 content += `<p><strong>Treasure:</strong></p>\n<ul>\n`;
-                importedQuest.reward.treasure.forEach(t => {
-                    if (t.uuid) {
-                        content += `<li>@UUID[${t.uuid}]{${t.name || 'Item'}}</li>\n`;
-                    } else if (t.name) {
-                        content += `<li>${t.name}</li>\n`;
+                // The import decides WHICH treasure; the existing journal keeps the
+                // LINK for anything it already had. A uuid the GM dropped in by hand
+                // outranks whatever the resolver would pick for the same name.
+                const preserved = new Map(
+                    existingState.treasure
+                        .filter(t => t.uuid && t.name)
+                        .map(t => [t.name.toLowerCase(), t.uuid])
+                );
+                const merged = importedQuest.reward.treasure.map(t => {
+                    if (t.uuid || !t.name) return t;
+                    const uuid = preserved.get(String(t.name).toLowerCase());
+                    return uuid ? { ...t, uuid } : t;
+                });
+                const { links, report } = await resolveEntries(merged, 'item');
+                this._resolveReports?.push(report);
+                importedQuest.reward.treasure.forEach((t, index) => {
+                    if (links[index]) {
+                        content += `<li>${links[index]}</li>\n`;
                     } else if (t.text) {
                         content += `<li>${t.text}</li>\n`;
                     }
@@ -4224,7 +4246,7 @@ export class QuestPanel {
         
         // Auto-add party members if setting is enabled
         if (game.settings.get(MODULE.ID, 'autoAddPartyMembers')) {
-            const partyActors = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
+            const partyActors = getPartyActors();
             for (const actor of partyActors) {
                 const alreadyPresent = participantsToUse.some(p => {
                     if (typeof p === 'string') return p === actor.name;
@@ -4241,11 +4263,10 @@ export class QuestPanel {
         }
         
         if (participantsToUse && participantsToUse.length) {
-            const participantList = participantsToUse.map(p => {
-                if (typeof p === 'string') return p;
-                if (p.uuid) return `@UUID[${p.uuid}]{${p.name || 'Actor'}}`;
-                return p.name || '';
-            }).filter(p => p).join(', ');
+            const normalized = participantsToUse.map(p => (typeof p === 'string' ? { name: p } : p));
+            const { links, report } = await resolveEntries(normalized, 'actor');
+            this._resolveReports?.push(report);
+            const participantList = links.filter(p => p).join(', ');
             content += `<p><strong>Participants:</strong> ${participantList}</p>\n\n`;
         }
         
@@ -4266,10 +4287,34 @@ export class QuestPanel {
         const state = {
             tasks: [],
             status: 'Not Started',
-            participants: []
+            participants: [],
+            treasure: []
         };
-        
+
         try {
+            // Extract treasure links. A link the GM dropped in by hand is not
+            // recoverable from the import JSON, so it has to survive re-import.
+            const treasureMatch = content.match(/<strong>Treasure:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
+            if (treasureMatch) {
+                const treasureDoc = new DOMParser().parseFromString(`<ul>${treasureMatch[1]}</ul>`, 'text/html');
+                treasureDoc.querySelectorAll('li').forEach(li => {
+                    // Stored content is raw, so @UUID[...] is the common case;
+                    // <a data-uuid> shows up if enriched HTML was ever saved back.
+                    const inline = li.innerHTML.match(/@UUID\[([^\]]+)\]\{([^}]+)\}/);
+                    if (inline) {
+                        state.treasure.push({ uuid: inline[1], name: inline[2].trim() });
+                        return;
+                    }
+                    const anchor = li.querySelector('a[data-uuid]');
+                    if (anchor) {
+                        state.treasure.push({
+                            uuid: anchor.getAttribute('data-uuid'),
+                            name: anchor.textContent.trim()
+                        });
+                    }
+                });
+            }
+
             // Extract task states
             const tasksMatch = content.match(/<strong>Tasks:<\/strong><\/p>\s*<ul>([\s\S]*?)<\/ul>/);
             if (tasksMatch) {
@@ -4346,7 +4391,7 @@ export class QuestPanel {
     /**
      * Generate journal content from imported quest object (for new quests only)
      */
-    _generateJournalContentFromImport(quest) {
+    async _generateJournalContentFromImport(quest) {
         let content = "";
         if (quest.img) {
             content += `<img src="${quest.img}" alt="${quest.name}">\n\n`;
@@ -4390,11 +4435,11 @@ export class QuestPanel {
             if (quest.reward.xp) content += `<p><strong>XP:</strong> ${quest.reward.xp}</p>\n\n`;
             if (Array.isArray(quest.reward.treasure) && quest.reward.treasure.length > 0) {
                 content += `<p><strong>Treasure:</strong></p>\n<ul>\n`;
-                quest.reward.treasure.forEach(t => {
-                    if (t.uuid) {
-                        content += `<li>@UUID[${t.uuid}]{${t.name || 'Item'}}</li>\n`;
-                    } else if (t.name) {
-                        content += `<li>${t.name}</li>\n`;
+                const { links, report } = await resolveEntries(quest.reward.treasure, 'item');
+                this._resolveReports?.push(report);
+                quest.reward.treasure.forEach((t, index) => {
+                    if (links[index]) {
+                        content += `<li>${links[index]}</li>\n`;
                     } else if (t.text) {
                         content += `<li>${t.text}</li>\n`;
                     }
@@ -4419,7 +4464,7 @@ export class QuestPanel {
             if (!Array.isArray(quest.participants)) quest.participants = [quest.participants];
             
             // Get all party members (actors of type 'character' with a player owner)
-            const partyActors = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
+            const partyActors = getPartyActors();
             for (const actor of partyActors) {
                 // Only add if not already present by uuid or name
                 const alreadyPresent = quest.participants.some(p => {
@@ -4437,11 +4482,10 @@ export class QuestPanel {
         }
         
         if (quest.participants && quest.participants.length) {
-            const participantList = quest.participants.map(p => {
-                if (typeof p === 'string') return p;
-                if (p.uuid) return `@UUID[${p.uuid}]{${p.name || 'Actor'}}`;
-                return p.name || '';
-            }).filter(p => p).join(', ');
+            const normalized = quest.participants.map(p => (typeof p === 'string' ? { name: p } : p));
+            const { links, report } = await resolveEntries(normalized, 'actor');
+            this._resolveReports?.push(report);
+            const participantList = links.filter(p => p).join(', ');
             content += `<p><strong>Participants:</strong> ${participantList}</p>\n\n`;
         }
         if (quest.tags && quest.tags.length) {

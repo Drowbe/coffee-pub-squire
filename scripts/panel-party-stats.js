@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate, getNativeElement } from './helpers.js';
+import { renderTemplate, getNativeElement, getPartyActors } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 function getBlacksmith() {
@@ -44,7 +44,7 @@ export class PartyStatsPanel {
 
         payload.hasBlacksmith = true;
 
-        const playerActors = game.actors.filter((actor) => actor.type === 'character' && actor.hasPlayerOwner && !actor.isToken);
+        const playerActors = getPartyActors();
 
         // Fetch all members' stats concurrently instead of one sequential await per actor
         const entries = await Promise.all(playerActors.map(async (actor) => {

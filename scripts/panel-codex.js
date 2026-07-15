@@ -4,6 +4,7 @@ import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
+import { resolveCodexLinks, reportResolution } from './utility-resolver.js';
 import {
     getPinsApi,
     isPinsApiAvailable,
@@ -17,6 +18,18 @@ import {
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
+}
+
+/**
+ * Normalize a name for inventory matching: lowercase, collapse interior runs of
+ * whitespace, trim. "Wayfinder  Casing" and "Wayfinder Casing" are the same item.
+ *
+ * BOTH sides of every comparison must go through this. Inlining the expression
+ * is how the codex-entry side drifted from the item side and stopped matching
+ * any name containing a double space.
+ */
+function normalizeItemName(name) {
+    return String(name ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 const CODEX_WINDOW_ID = `${MODULE.ID}-codex-window`;
@@ -1038,14 +1051,14 @@ export class CodexPanel {
                     
                     for (const item of items) {
                         // Normalize spaces: collapse multiple spaces into single spaces, then lowercase and trim
-                        const itemNameLower = item.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                        const itemNameLower = normalizeItemName(item.name);
                         inventoryItems.add(itemNameLower);
                         
                         // If it's a backpack/container, check its contents
                         if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                             for (const containedItem of item.contents) {
                                 // Apply same space normalization to contained items
-                                const containedItemNameLower = containedItem.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                                const containedItemNameLower = normalizeItemName(containedItem.name);
                                 inventoryItems.add(containedItemNameLower);
                             }
                         }
@@ -1104,7 +1117,7 @@ export class CodexPanel {
                     }
                     
                     // Check if entry name matches any inventory item
-                    const entryNameLower = entry.name.toLowerCase().trim();
+                    const entryNameLower = normalizeItemName(entry.name);
                     
                     if (inventoryItems.has(entryNameLower)) {
                         // Check if this entry is already visible
@@ -1125,7 +1138,7 @@ export class CodexPanel {
                                 
                                 for (const item of items) {
                                     // Normalize the item name the same way we did when building inventoryItems
-                                    const itemNameLower = item.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                                    const itemNameLower = normalizeItemName(item.name);
                                     
                                     if (itemNameLower === entryNameLower) {
                                         if (!foundInThisActor) {
@@ -1138,7 +1151,7 @@ export class CodexPanel {
                                     // Check backpack contents
                                     if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
                                         for (const containedItem of item.contents) {
-                                            const containedItemNameLower = containedItem.name.toLowerCase().replace(/\s+/g, ' ').trim();
+                                            const containedItemNameLower = normalizeItemName(containedItem.name);
                                             if (containedItemNameLower === entryNameLower) {
                                                 if (!foundInThisActor) {
                                                     discoverers.push(actor.name);
@@ -1298,6 +1311,8 @@ export class CodexPanel {
                             });
                             if (duplicateNames.length > 0) ui.notifications.warn(`Warning: Import data contains duplicate entry names: ${duplicateNames.join(', ')}. These will be merged with existing entries.`);
                             this._updateProgressBar(20, `Processing ${data.length} entries...`);
+                            // Filled as entries resolve their links; reported once below.
+                            this._resolveReports = [];
                             const totalEntries = data.length;
                             for (let i = 0; i < data.length; i++) {
                                 const entry = data[i];
@@ -1307,19 +1322,18 @@ export class CodexPanel {
                                 if (entry.uuid) page = this.selectedJournal.pages.find(p => p.getFlag(MODULE.ID, 'codexUuid') === entry.uuid);
                                 if (!page) page = this.selectedJournal.pages.find(p => p.name === entry.name);
                                 // Canonical field is `summary`; accept legacy `description` imports.
-                                // Links: accept `links` array or legacy single `link`.
                                 const summary = entry.summary ?? entry.description ?? '';
-                                const rawLinks = Array.isArray(entry.links)
-                                    ? entry.links
-                                    : (entry.link?.uuid ? [entry.link] : []);
+                                // Links: uuid-bearing links pass through, bare names resolve via
+                                // Blacksmith (entry's own name typed by category, cross-references
+                                // by their own `type`). Legacy single `link` is folded in by the helper.
+                                const { links: resolvedLinks, reports } = await resolveCodexLinks(entry);
+                                this._resolveReports?.push(...reports);
                                 const systemData = {
                                     summary,
                                     category: entry.category || '',
                                     plotHook: entry.plotHook || '',
                                     location: entry.location || '',
-                                    links: rawLinks
-                                        .filter(l => typeof l?.uuid === 'string' && l.uuid.trim())
-                                        .map(l => ({ uuid: l.uuid.trim(), label: l.label || l.uuid.trim() })),
+                                    links: resolvedLinks,
                                     tags: Array.isArray(entry.tags) ? entry.tags : [],
                                     img: entry.img || ''
                                 };
@@ -1369,6 +1383,8 @@ export class CodexPanel {
                             let message = `Codex import complete: ${added} added, ${updated} updated.`;
                             if (duplicatesMerged > 0) message += ` ${duplicatesMerged} duplicates were merged.`;
                             ui.notifications.info(message);
+                            reportResolution(this._resolveReports, 'Codex import');
+                            this._resolveReports = null;
                             this._updateProgressBar(100, 'Import complete!');
                             await moduleDelay(2000);
                             this._hideProgressBar();
