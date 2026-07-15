@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.11]
+
+### Changed
+- **Notes tray is list-only**: Removed the card / list view toggle and dark / light card themes. The Notes tab always uses the compact list rows (title, visibility, pin/edit actions). Inline tray editing was never shipped, so the card layout was mostly chrome without a job.
+
+### Added
+- **Notes list hover preview**: Hovering a note title shows a Foundry `data-tooltip` with a plain-text excerpt of the note body (stripped HTML, truncated). Opening the note window still shows the full enriched content.
+
+### Fixed
+- **Notes tray refresh cost**: `_refreshData()` no longer runs `enrichHTML` for every changed note just to paint cards. The list builds from flags + raw page text; enrichment stays in the note window.
+
+### Removed
+- **Notes card view UI**: Card templates, card CSS (including light theme variants), and user flags `notesViewMode` / `notesCardTheme`. Existing flag values become inert.
+
 ## [13.3.10]
 
 ### Added

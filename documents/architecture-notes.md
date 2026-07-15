@@ -101,11 +101,11 @@ Main UI for listing and filtering notes.
 ```
 
 **Key methods**
-- `_refreshData()`: Loads pages from `notesJournal`; for each page with `noteType === 'sticky'`, enriches HTML, parses with `NotesParser.parseSinglePage()`, filters by visibility (private only for author), pushes to `this.notes`, collects tags and scenes.
-- `render(element)`: Finds `[data-panel="panel-notes"]`; runs `_refreshData()`; renders `TEMPLATES.PANEL_NOTES` with notes, filters, tags, scenes, cardTheme, viewMode; restores scroll; calls `activateListeners()`.
+- `_refreshData()`: Loads pages from `notesJournal`; for each page with `noteType === 'sticky'`, reads raw HTML (no tray enrich), parses with `NotesParser.parseSinglePage()`, filters by visibility (private only for author), pushes to `this.notes`, collects tags and scenes. List titles get a plain-text hover preview at render time.
+- `render(element)`: Finds `[data-panel="panel-notes"]`; runs `_refreshData()`; renders `TEMPLATES.PANEL_NOTES` with notes, filters, tags, scenes; restores scroll; calls `activateListeners()`.
 
 **Listeners**
-- Search, tag filter, scene filter, visibility filter; new note (opens NotesForm); edit/view/delete per note; set journal, open journal; card theme and view mode toggles; pin placement (register note pin handlers); “Place on canvas” creates pin and updates page flags.
+- Search, tag filter, scene filter, visibility filter; new note (opens NotesForm); edit/view/delete per note; set journal, open journal; pin placement (register note pin handlers); “Place on canvas” creates pin and updates page flags.
 
 **Pin helpers (in panel-notes.js)**
 - Pin creation/update/removal via Blacksmith `pins.create`, `pins.update`, etc.; payload includes `config.noteUuid`, ownership from `getNotePinOwnershipForPage(page)`; pin appearance from page flags or `getDefaultNotePinDesign()`.
@@ -126,8 +126,7 @@ Main UI for listing and filtering notes.
 | Notes window position | `notesWindowPosition` | user | Last position/size of NotesForm |
 
 **User flags**
-- `notesCardTheme` – Card theme (e.g. 'dark').
-- `notesViewMode` – View mode (e.g. 'cards').
+- `notesSortMode` – Sort mode (`date` or `alpha`).
 
 ## Hooks Integration
 
@@ -154,7 +153,7 @@ Main UI for listing and filtering notes.
 
 ## Template Structure
 
-- **Panel** (`panel-notes.hbs`): Toolbar (new note, refresh, set journal, open journal), filters (search, tags, scene, visibility), notes content (cards or list by viewMode).
+- **Panel** (`panel-notes.hbs`): Toolbar (new note, options menu), filters (search, tags, scene, visibility), notes list rows (title hover tooltip preview).
 - **Form** (`window-note.hbs`): Title, ProseMirror editor (or static content in view mode), metadata (tags, visibility, icon), actions (save, cancel, place on canvas, etc.). Uses `window-note-*` CSS classes.
 
 ## Technical Requirements

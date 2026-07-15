@@ -1888,11 +1888,11 @@ function _registerEventHandlers(pins) {
             if (pm.notesPanel?.render && pm.element) await pm.notesPanel.render(pm.element);
         }
         const tryFocus = () => {
-            const card = document.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
-            if (!card) return false;
-            card.classList.add('note-card-highlight');
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            trackModuleTimeout(() => card.classList.remove('note-card-highlight'), 3200);
+            const row = document.querySelector(`.note-row[data-note-uuid="${noteUuid}"]`);
+            if (!row) return false;
+            row.classList.add('note-row-highlight');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            trackModuleTimeout(() => row.classList.remove('note-row-highlight'), 3200);
             return true;
         };
         tryFocus();

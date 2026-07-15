@@ -16,15 +16,32 @@ import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
 import {
     PERMISSION_LEVELS,
-    userCanAccessPage,
-    showJournalPicker,
-    showPagePicker,
-    renderJournalContent,
-    getJournalPageContent,
-    enrichJournalContent
+    showJournalPicker
 } from './utility-journal.js';
 import { NotesParser } from './utility-notes-parser.js';
 import { UsersWindow } from './window-users.js';
+
+/** Plain-text preview for Foundry `data-tooltip` (no enrich). */
+const NOTE_PREVIEW_MAX_CHARS = 350;
+
+function stripNotePlainText(value) {
+    return String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function buildNotePreviewText(html, maxChars = NOTE_PREVIEW_MAX_CHARS) {
+    const text = stripNotePlainText(html);
+    if (!text) return '';
+    if (text.length <= maxChars) return text;
+    const sliced = text.slice(0, maxChars);
+    const boundary = sliced.lastIndexOf(' ');
+    return `${(boundary > maxChars * 0.6 ? sliced.slice(0, boundary) : sliced).trimEnd()}…`;
+}
+
+async function getNotePageRawContent(page) {
+    let content = page?.text?.content ?? '';
+    if (content instanceof Promise) content = await content;
+    return typeof content === 'string' ? content : '';
+}
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -271,19 +288,6 @@ export function resolveNoteIconHtmlFromContent(content, imgClass = '') {
     return buildNoteIconHtml(null, imgClass);
 }
 
-function focusNoteCardInDom(noteUuid) {
-    const card = document.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
-    if (!card) {
-        return false;
-    }
-    card.classList.add('note-card-highlight');
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    trackModuleTimeout(() => {
-        card.classList.remove('note-card-highlight');
-    }, 3200);
-    return true;
-}
-
 function createPinPreviewElement(iconHtml, pinSize, pinStyle, pinShape, dropShadow) {
     const size = normalizePinSize(pinSize) || { w: 60, h: 60 };
     const style = mergeNotePinStyle(pinStyle);
@@ -366,8 +370,8 @@ export class NotesPanel {
         this.element = null;
         this.notes = [];
         // Parsed-page cache keyed by page UUID: { modifiedTime, note }.
-        // Enrich+parse is skipped for unchanged pages; live pin/scene state is
-        // recomputed on every refresh (see _refreshData).
+        // Flag/content parse is skipped for unchanged pages; live pin/scene
+        // state is recomputed on every refresh (see _refreshData).
         this._pageParseCache = new Map();
         this.filters = {
             search: '',
@@ -427,23 +431,25 @@ export class NotesPanel {
         }
 
         // Render template with notes data
-        const cardTheme = (await game.user?.getFlag(MODULE.ID, 'notesCardTheme')) || 'dark';
-        const viewMode = (await game.user?.getFlag(MODULE.ID, 'notesViewMode')) || 'cards';
-        const stripHtml = (value) => String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
         const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
             hasJournal: !!journal && canViewJournal,
             journal: journal,
             journalName: journal?.name || 'No Journal Selected',
-            notes: this.notes.map(note => ({
-                ...note,
-                tags: note.tags || [], // Ensure tags is always an array
-                tagsCsv: (note.tags || []).map(tag => String(tag).toUpperCase()).join(','),
-                searchText: [
-                    note.name,
-                    stripHtml(note.content),
-                    (note.tags || []).join(' ')
-                ].filter(Boolean).join(' ')
-            })),
+            notes: this.notes.map(note => {
+                const plain = stripNotePlainText(note.content);
+                const previewText = buildNotePreviewText(note.content);
+                return {
+                    ...note,
+                    tags: note.tags || [],
+                    tagsCsv: (note.tags || []).map(tag => String(tag).toUpperCase()).join(','),
+                    previewText,
+                    searchText: [
+                        note.name,
+                        plain,
+                        (note.tags || []).join(' ')
+                    ].filter(Boolean).join(' ')
+                };
+            }),
             allTags: Array.from(this.allTags).sort(),
             scenes: Array.from(this.scenes).sort(),
             filters: this.filters,
@@ -451,8 +457,6 @@ export class NotesPanel {
             sortMode: this.sortMode,
             isGM: game.user.isGM,
             currentUserId: game.user.id,
-            cardTheme,
-            viewMode,
             position: "left"
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
@@ -510,27 +514,16 @@ export class NotesPanel {
                     }
                 }
 
-                // Enrich+parse only when the page actually changed; any document update
-                // (content, flags, ownership) bumps modifiedTime and invalidates.
+                // Parse flags + raw body only when the page actually changed.
+                // Tray list uses plain-text preview tooltips — no enrichHTML pass.
                 const modifiedTime = page._stats?.modifiedTime ?? 0;
                 const cached = this._pageParseCache.get(page.uuid);
                 let note;
                 if (cached && cached.modifiedTime === modifiedTime) {
                     note = cached.note;
                 } else {
-                    // Get page content
-                    const content = await getJournalPageContent(page);
-
-                    // Enrich content
-                    const enriched = await enrichJournalContent(content, {
-                        secrets: game.user.isGM,
-                        documents: true,
-                        links: true,
-                        rolls: true
-                    });
-
-                    // Parse the note
-                    note = await NotesParser.parseSinglePage(page, enriched);
+                    const content = await getNotePageRawContent(page);
+                    note = await NotesParser.parseSinglePage(page, content);
 
                     if (note) {
                         if (!note.sceneId) {
@@ -567,7 +560,7 @@ export class NotesPanel {
                 }
 
                 if (note) {
-                    // Volatile per refresh: live pin state and editor avatars
+                    // Volatile per refresh: live pin state, edit lock, and editor avatars
                     note.sceneId = note._baseSceneId;
                     note.sceneName = note._baseSceneName;
                     // get() now includes sceneId for placed pins (Blacksmith 13.7.6+).
@@ -577,6 +570,7 @@ export class NotesPanel {
                         note.sceneId = livePinSceneId;
                         note.sceneName = game.scenes?.get(livePinSceneId)?.name || note.sceneName || null;
                     }
+                    note.editLock = getNoteEditLockInfo(page);
 
                     const editorIds = [...new Set(note.editorIds.length ? note.editorIds : (note.authorId ? [note.authorId] : []))];
                     note.editorAvatars = editorIds.map(id => {
@@ -613,19 +607,19 @@ export class NotesPanel {
         }
     }
 
-    _updateNoteCardPinState(page) {
+    _updateNoteRowPinState(page) {
         if (!page) return;
         const root = this.element;
         if (!root) return;
-        const card = root.querySelector(`[data-note-uuid="${page.uuid}"]`);
-        if (!card) return;
+        const row = root.querySelector(`.note-row[data-note-uuid="${page.uuid}"]`);
+        if (!row) return;
 
         const pinId = page.getFlag(MODULE.ID, 'pinId') || null;
         const sceneId = pinId ? (getPinsApi()?.get?.(pinId)?.sceneId ?? null) : null;
         const sceneName = sceneId ? (game.scenes?.get(sceneId)?.name || 'none') : null;
-        card.dataset.scene = sceneName || 'none';
+        row.dataset.scene = sceneName || 'none';
 
-        const pinButton = card.querySelector('.note-pin, .note-unpin');
+        const pinButton = row.querySelector('.note-pin, .note-unpin');
         if (!pinButton) return;
 
         if (sceneId) {
@@ -638,28 +632,6 @@ export class NotesPanel {
             pinButton.classList.add('note-pin');
             pinButton.title = 'Pin to Canvas';
             pinButton.innerHTML = '<i class="fa-solid fa-location-dot note-pin-icon note-pin-dim"></i>';
-        }
-
-        const locationEl = card.querySelector('.note-location-section');
-        if (sceneId) {
-            const label = sceneName || 'Scene';
-            if (locationEl) {
-                if (pinId) locationEl.dataset.pinId = pinId;
-                locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${label}`;
-            } else {
-                const footer = card.querySelector('.note-footer');
-                const newLocation = document.createElement('div');
-                newLocation.classList.add('note-location-section');
-                if (pinId) newLocation.dataset.pinId = pinId;
-                newLocation.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${label}`;
-                if (footer?.parentNode) {
-                    footer.parentNode.insertBefore(newLocation, footer.nextSibling);
-                } else {
-                    card.appendChild(newLocation);
-                }
-            }
-        } else if (locationEl) {
-            locationEl.remove();
         }
     }
 
@@ -807,8 +779,6 @@ export class NotesPanel {
             newMenuBtn.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                const cardTheme = game.user?.getFlag(MODULE.ID, 'notesCardTheme') || 'dark';
-                const viewMode = game.user?.getFlag(MODULE.ID, 'notesViewMode') || 'cards';
                 const coreItems = [
                     {
                         name: 'Refresh',
@@ -817,24 +787,6 @@ export class NotesPanel {
                             await this._refreshData();
                             this.render(this.element);
                             ui.notifications.info('Notes refreshed.');
-                        }
-                    },
-                    {
-                        name: cardTheme === 'light' ? 'Dark theme' : 'Light theme',
-                        icon: cardTheme === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun',
-                        callback: async () => {
-                            const next = cardTheme === 'light' ? 'dark' : 'light';
-                            await game.user?.setFlag(MODULE.ID, 'notesCardTheme', next);
-                            this.render(this.element);
-                        }
-                    },
-                    {
-                        name: viewMode === 'list' ? 'Card view' : 'List view',
-                        icon: viewMode === 'list' ? 'fa-solid fa-address-card' : 'fa-solid fa-list',
-                        callback: async () => {
-                            const next = viewMode === 'list' ? 'cards' : 'list';
-                            await game.user?.setFlag(MODULE.ID, 'notesViewMode', next);
-                            this.render(this.element);
                         }
                     }
                 ];
@@ -1351,7 +1303,7 @@ export class NotesPanel {
         try {
             await unplaceNotePin(page);
         } catch (error) {}
-        this._updateNoteCardPinState(page);
+        this._updateNoteRowPinState(page);
         // unplaced hook → _scheduleNotesPanelRefresh(). No explicit render needed.
     }
 
@@ -1388,26 +1340,26 @@ export class NotesPanel {
     scrollToNote(noteUuid, panelElement = null) {
         const root = panelElement ? getNativeElement(panelElement) : this.element;
         const notesContainer = root?.querySelector('[data-panel="panel-notes"]');
-        let card = notesContainer?.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`) || null;
+        let row = notesContainer?.querySelector(`.note-row[data-note-uuid="${noteUuid}"]`) || null;
 
-        if (!card) {
-            card = document.querySelector(`.note-card[data-note-uuid="${noteUuid}"]`);
+        if (!row) {
+            row = document.querySelector(`.note-row[data-note-uuid="${noteUuid}"]`);
         }
 
-        if (!card) {
+        if (!row) {
             return false;
         }
 
-        card.classList.add('note-card-highlight');
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.classList.add('note-row-highlight');
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         trackModuleTimeout(() => {
-            card.classList.remove('note-card-highlight');
+            row.classList.remove('note-row-highlight');
         }, 2000);
         return true;
     }
 
     /**
-     * Apply filters to note cards (DOM-based filtering)
+     * Apply filters to note rows (DOM-based filtering)
      * @private
      */
     /**
@@ -1437,12 +1389,12 @@ export class NotesPanel {
         const selectedScene = this.filters.scene || 'all';
         const selectedVisibility = this.filters.visibility || 'all';
 
-        html.querySelectorAll('.note-card, .note-row').forEach(card => {
+        html.querySelectorAll('.note-row').forEach(row => {
             let visible = true;
 
             // Search filter
             if (search) {
-                const text = (card.dataset.search || card.textContent || '').toLowerCase();
+                const text = (row.dataset.search || row.textContent || '').toLowerCase();
                 if (!text.includes(search)) {
                     visible = false;
                 }
@@ -1450,9 +1402,9 @@ export class NotesPanel {
 
             // Tag filter
             if (selectedTags.length > 0) {
-                const cardTagsStr = card.dataset.tags || '';
-                const cardTags = cardTagsStr ? cardTagsStr.split(',').map(t => t.trim().toUpperCase()) : [];
-                const hasTag = selectedTags.some(tag => cardTags.includes(tag));
+                const rowTagsStr = row.dataset.tags || '';
+                const rowTags = rowTagsStr ? rowTagsStr.split(',').map(t => t.trim().toUpperCase()) : [];
+                const hasTag = selectedTags.some(tag => rowTags.includes(tag));
                 if (!hasTag) {
                     visible = false;
                 }
@@ -1460,22 +1412,21 @@ export class NotesPanel {
 
             // Scene filter
             if (selectedScene !== 'all') {
-                const cardScene = card.dataset.scene || 'none';
-                if (cardScene !== selectedScene) {
+                const rowScene = row.dataset.scene || 'none';
+                if (rowScene !== selectedScene) {
                     visible = false;
                 }
             }
 
             // Visibility filter
             if (selectedVisibility !== 'all') {
-                const cardVisibility = card.dataset.visibility || 'private';
-                if (cardVisibility !== selectedVisibility) {
+                const rowVisibility = row.dataset.visibility || 'private';
+                if (rowVisibility !== selectedVisibility) {
                     visible = false;
                 }
             }
 
-            // Show/hide card
-            card.style.display = visible ? '' : 'none';
+            row.style.display = visible ? '' : 'none';
         });
 
         // Update tag active states

@@ -67,9 +67,8 @@
         <!-- Notes Container -->
         <div class="notes-content">
             {{#if notes.length}}
-                <div class="notes-list {{#if (eq cardTheme 'light')}}notes-theme--light{{else}}notes-theme--dark{{/if}} {{#if (eq viewMode 'list')}}notes-view--list{{else}}notes-view--cards{{/if}}">
+                <div class="notes-list notes-view--list">
                     {{#each notes}}
-                    {{#if (eq ../viewMode 'list')}}
                     <div class="note-row" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}" data-search="{{searchText}}">
                         <span class="note-row-icon">
                             {{#if iconHtml}}
@@ -85,7 +84,7 @@
                             <i class="fa-solid fa-lock"></i>
                             {{/if}}
                         </span>
-                        <span class="note-row-title note-open-title" data-uuid="{{uuid}}">{{name}}</span>
+                        <span class="note-row-title note-open-title" data-uuid="{{uuid}}"{{#if previewText}} data-tooltip="{{previewText}}"{{/if}}>{{name}}</span>
                         {{#if editLock}}
                         <span class="note-row-editing" title="{{#if (eq editLock.userId ../currentUserId)}}You are editing{{else}}{{editLock.userName}} is editing{{/if}}">
                             <i class="fa-solid fa-pen-to-square"></i>
@@ -125,131 +124,6 @@
                             </button>
                         </div>
                     </div>
-                    {{else}}
-                    <div class="note-card" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}" data-search="{{searchText}}">
-                        <!-- Note Header: badge | title | actions -->
-                        <div class="note-header">
-                            <span class="note-icon">
-                                {{#if iconHtml}}
-                                    {{{iconHtml}}}
-                                {{else}}
-                                    <i class="fa-solid fa-note-sticky"></i>
-                                {{/if}}
-                            </span>
-                            <div class="note-title note-open-title" data-uuid="{{uuid}}">{{name}}</div>
-                            {{#if editLock}}
-                            <span class="note-card-editing" title="{{#if (eq editLock.userId ../currentUserId)}}You are editing{{else}}{{editLock.userName}} is editing{{/if}}">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                                <span>{{#if (eq editLock.userId ../currentUserId)}}Editing{{else}}Editing: {{editLock.userName}}{{/if}}</span>
-                            </span>
-                            {{/if}}
-                            <div class="note-actions">
-                                {{#if (eq visibility 'private')}}
-                                {{#if ../isGM}}
-                                <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
-                                    <i class="fa-solid fa-share"></i>
-                                </button>
-                                {{else}}
-                                {{#if (eq authorId ../currentUserId)}}
-                                <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
-                                    <i class="fa-solid fa-share"></i>
-                                </button>
-                                {{/if}}
-                                {{/if}}
-                                {{/if}}
-                                <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
-                                    <i class="fa-solid fa-edit"></i>
-                                </button>
-                                {{#if sceneId}}
-                                <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
-                                    <i class="fa-solid fa-location-dot note-pin-icon note-pin-active"></i>
-                                </button>
-                                {{else}}
-                                <button class="note-pin" data-uuid="{{uuid}}" title="Pin to Canvas">
-                                    <i class="fa-solid fa-location-dot note-pin-icon note-pin-dim"></i>
-                                </button>
-                                {{/if}}
-                                <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-
-
-
-
-                        <!-- Note Content -->
-                        <div class="note-content">
-                            {{{content}}}
-                        </div>
-
-                        <div class="note-footer-container">
-
-                            <!-- Note Footer: author (left) | timestamp (right) -->
-                            <div class="note-footer">
-                                <span class="note-footer-left">
-                                    <span class="note-visibility-badge {{visibility}}">
-                                        {{#if (eq visibility 'party')}}
-                                        <i class="fa-solid fa-users"></i>
-                                        {{else}}
-                                        <i class="fa-solid fa-lock"></i>
-                                        {{/if}}
-                                    </span>
-                                    <span class="note-author">
-                                        {{#if editorAvatars.length}}
-                                        <span class="note-editor-avatars">
-                                            {{#each editorAvatars}}
-                                            <img class="note-editor-avatar" src="{{img}}" title="{{name}}" alt="{{name}}">
-                                            {{/each}}
-                                        </span>
-                                        {{else}}
-                                        <i class="fa-solid fa-user"></i> {{#if authorName}}{{authorName}}{{else}}Unknown{{/if}}
-                                        {{/if}}
-                                    </span>
-                                </span>
-
-
-
-                                {{#if timestamp}}
-                                <span class="note-date"><i class="fa-solid fa-clock"></i> {{formatTimestamp timestamp}}</span>
-                                {{/if}}
-                            </div>
-
-
-
-                            <!-- Note Tags Section -->
-                            {{#if tags}}
-                            {{#if (isArray tags)}}
-                            {{#if tags.length}}
-                            <div class="note-tags-section">
-                                <div class="note-tags">
-                                    {{#each tags}}
-                                    <span class="note-tag" data-tag="{{toUpperCase this}}">{{toUpperCase this}}</span>
-                                    {{/each}}
-                                </div>
-                            </div>
-                            {{/if}}
-                            {{else}}
-                            <div class="note-tags-section">
-                                <div class="note-tags">
-                                    <span class="note-tag">{{tags}}</span>
-                                </div>
-                            </div>
-                            {{/if}}
-                            {{/if}}
-
-
-
-                            <!-- Note Location -->
-                            {{#if sceneName}}
-                            <div class="note-location-section" data-pin-id="{{pinId}}">
-                                <i class="fa-solid fa-location-dot"></i> {{sceneName}}
-                            </div>
-                            {{/if}}
-                        </div>
-
-                    </div>
-                    {{/if}}
                     {{/each}}
                 </div>
             {{else}}

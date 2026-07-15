@@ -8,7 +8,8 @@
 | v14/v15 readiness: migrate remaining V1 `Dialog`/`Dialog.confirm` call sites to `DialogV2` (`ImagePopout` ✓ done — all 4 sites on AppV2 signature) | High | M | Open |
 | Codex data model: custom `JournalEntryPage` subtype, no migration — re-import converts (see `plan-codex-datamodel.md`) | High | L | Planned |
 | Macros: dedupe `panel-macros.css` / `window-macros.css` drop-target styles | Medium | M | Open |
-| Notes tab: shared note, character note, scratchpad | Medium | L | Open |
+| Notes tab: shared note + character note (scratchpad scrapped) | Medium | L | Open |
+| Notes tray: drop card view; list + hover tooltip preview | Medium | M | Done (13.3.11) |
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
 | Codex: “new” flag on added items until client refresh | Medium | S | Open |
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
@@ -65,7 +66,8 @@
   - Consolidate shared styles to avoid conflicts and maintenance issues
 
 ### NOTES TAB
-- [ ] **ENHANCEMENT** Expand and optimize this section. It needs to have a shared note, character note, and scratchpad
+- [ ] **ENHANCEMENT** Expand and optimize this section with shared party note and per-character note support (scratchpad idea dropped).
+- [x] **CLEANUP** Notes tray is list-only with hover preview tooltips (no card view / card theme).
 
 ### CODEX TAB
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag

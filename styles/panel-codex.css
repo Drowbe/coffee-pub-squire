@@ -551,7 +551,7 @@
     opacity: 1;
 }
 
-/* Codex entry highlight flash on pin double-click (mirrors note-card-highlight) */
+/* Codex entry highlight flash on pin double-click (mirrors note-row-highlight) */
 .squire-tray[data-position="left"] .codex-entry.codex-highlighted {
     border: 1px solid rgba(244, 221, 104, 0.2);
     outline: 1px solid rgba(244, 221, 104, 0.7);
