@@ -4,7 +4,7 @@ import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
-import { resolveCodexLinks, reportResolution } from './utility-resolver.js';
+import { resolveCodexLinks, mergeCodexLinks, reportResolution } from './utility-resolver.js';
 import {
     getPinsApi,
     isPinsApiAvailable,
@@ -1355,7 +1355,16 @@ export class CodexPanel {
                                     if (entry.uuid) await newPage.setFlag(MODULE.ID, 'codexUuid', entry.uuid);
                                     updated++;
                                 } else if (page) {
-                                    const patch = { system: systemData };
+                                    // Links already on the page that this import doesn't produce were
+                                    // put there by hand (dragging was the only way to add one before
+                                    // 13.3.10) and aren't recoverable from the JSON, so keep them.
+                                    // Foundry replaces arrays wholesale, so this has to be explicit.
+                                    const patch = {
+                                        system: {
+                                            ...systemData,
+                                            links: mergeCodexLinks(page.system?.links, resolvedLinks)
+                                        }
+                                    };
                                     // expandedDetails present in the import (even '') replaces; absent/null preserves
                                     if (entry.expandedDetails !== undefined && entry.expandedDetails !== null) {
                                         patch['text.content'] = entry.expandedDetails;

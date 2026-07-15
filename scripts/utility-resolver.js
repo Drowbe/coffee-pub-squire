@@ -22,6 +22,23 @@ function emptyReport(type) {
 }
 
 /**
+ * Label for a link whose document is known but whose name is not, e.g. a bare
+ * `{ uuid }` treasure entry. Showing the raw uuid as the clickable text is worse
+ * than a generic word.
+ */
+function fallbackLabel(type) {
+    switch (String(type ?? '').toLowerCase()) {
+        case 'actor': return 'Actor';
+        case 'item': return 'Item';
+        case 'spell': return 'Spell';
+        case 'feature': return 'Feature';
+        case 'journal': return 'Journal';
+        case 'rolltable': return 'Roll Table';
+        default: return 'Document';
+    }
+}
+
+/**
  * Codex categories describe the entry itself, not the documents it links to,
  * so a category may only type an entry's OWN name. Cross-reference links carry
  * their own type. Categories absent here resolve as journals, which covers the
@@ -105,19 +122,21 @@ export async function resolveEntries(entries, type) {
     list.forEach((entry, index) => {
         const name = String(entry?.name ?? '').trim();
         if (entry?.uuid) {
-            links[index] = `@UUID[${entry.uuid}]{${name || entry.uuid}}`;
+            links[index] = `@UUID[${entry.uuid}]{${name || fallbackLabel(type)}}`;
             return;
         }
         if (name) pending.push({ index, name });
     });
 
-    if (!pending.length) return { links, report: emptyReport(type) };
-
-    const { results, report } = await resolveNames(pending.map(p => p.name), type);
+    const report = emptyReport(type);
     report.passedThrough = list.length - pending.length;
+    if (!pending.length) return { links, report };
+
+    const resolution = await resolveNames(pending.map(p => p.name), type);
+    Object.assign(report, resolution.report, { passedThrough: report.passedThrough });
 
     pending.forEach(({ index, name }, i) => {
-        const result = results[i];
+        const result = resolution.results[i];
         links[index] = result
             ? (result.link ?? `@UUID[${result.uuid}]{${result.matchedName ?? name}}`)
             : name;
@@ -142,7 +161,6 @@ export async function resolveEntries(entries, type) {
  * @returns {Promise<{links: Array<{uuid: string, label: string}>, reports: object[]}>}
  */
 export async function resolveCodexLinks(entry) {
-    const reports = [];
     const links = [];
     const seen = new Set();
 
@@ -150,27 +168,14 @@ export async function resolveCodexLinks(entry) {
         const id = String(uuid ?? '').trim();
         if (!id || seen.has(id)) return;
         seen.add(id);
-        links.push({ id, label: String(label || id) });
+        links.push({ uuid: id, label: String(label || id) });
     };
 
     const rawLinks = Array.isArray(entry?.links)
         ? entry.links
         : (entry?.link ? [entry.link] : []);
 
-    // The entry's own document, typed by category. Resolved on its own so its
-    // misses can be marked speculative: we are guessing a document shares this
-    // entry's name, and most Locations/Factions/Events legitimately have none.
-    // A miss here is not news; a miss on an explicit link below is.
-    const selfName = String(entry?.name ?? '').trim();
-    if (selfName) {
-        const { results, report } = await resolveNames([selfName], typeForCategory(entry?.category));
-        report.speculative = true;
-        reports.push(report);
-        if (results[0]) push(results[0].uuid, selfName);
-    }
-
     const pending = [];
-
     for (const link of rawLinks) {
         const uuid = typeof link?.uuid === 'string' ? link.uuid.trim() : '';
         if (uuid) {
@@ -189,15 +194,71 @@ export async function resolveCodexLinks(entry) {
         byType.get(item.type).push(item);
     });
 
-    for (const [type, group] of byType) {
-        const { results, report } = await resolveNames(group.map(g => g.name), type);
+    // The entry's own document is resolved separately from the cross-references
+    // so its misses can be marked speculative: we are guessing a document shares
+    // this entry's name, and most Locations/Factions/Events legitimately have
+    // none. A miss here is not news; a miss on an explicit link is.
+    const selfName = String(entry?.name ?? '').trim();
+    const groups = [...byType.entries()];
+
+    // Independent lookups — run them together rather than one await at a time.
+    const [self, ...resolvedGroups] = await Promise.all([
+        selfName
+            ? resolveNames([selfName], typeForCategory(entry?.category))
+            : Promise.resolve(null),
+        ...groups.map(([type, group]) => resolveNames(group.map(g => g.name), type))
+    ]);
+
+    const reports = [];
+
+    if (self) {
+        self.report.speculative = true;
+        reports.push(self.report);
+        if (self.results[0]) push(self.results[0].uuid, selfName);
+    }
+
+    resolvedGroups.forEach(({ results, report }, groupIndex) => {
         reports.push(report);
+        const group = groups[groupIndex][1];
         results.forEach((result, i) => {
             if (result) push(result.uuid, group[i].label || result.matchedName);
         });
-    }
+    });
 
-    return { links: links.map(l => ({ uuid: l.id, label: l.label })), reports };
+    return { links, reports };
+}
+
+/**
+ * Merge freshly resolved codex links with the links already on the page.
+ *
+ * Links on the page that the import doesn't produce are KEPT. Until 13.3.10 the
+ * only way to add a codex link was to drag a document onto the entry, so a link
+ * absent from the JSON is almost certainly hand-curated — and it is not
+ * recoverable once dropped, because it never existed in the JSON to begin with.
+ *
+ * The trade-off: a link cannot be removed by re-importing. Remove it in the Edit
+ * Entry window instead. Silently destroying a GM's manual work is the worse of
+ * the two failures.
+ *
+ * @param {Array<{uuid: string, label?: string}>} existing page's current links
+ * @param {Array<{uuid: string, label?: string}>} resolved links from this import
+ * @returns {Array<{uuid: string, label: string}>}
+ */
+export function mergeCodexLinks(existing, resolved) {
+    const out = [];
+    const seen = new Set();
+
+    const push = (link) => {
+        const uuid = String(link?.uuid ?? '').trim();
+        if (!uuid || seen.has(uuid)) return;
+        seen.add(uuid);
+        out.push({ uuid, label: String(link.label || uuid) });
+    };
+
+    // Import order leads (the self-link first), then anything only the page has.
+    (Array.isArray(resolved) ? resolved : []).forEach(push);
+    (Array.isArray(existing) ? existing : []).forEach(push);
+    return out;
 }
 
 /**
@@ -220,15 +281,17 @@ export function reportResolution(reports, context) {
     const speculativeMisses = all.filter(r => r.speculative).flatMap(r => r.missed);
     const uncertain = all.flatMap(r => r.uncertain);
     const resolved = all.reduce((sum, r) => sum + r.resolved, 0);
-    const attempted = resolved + missed.length;
 
-    if (attempted === 0 && uncertain.length === 0) return;
+    if (resolved === 0 && missed.length === 0 && uncertain.length === 0) return;
 
+    // Two independent counts, deliberately not phrased as "N of M": the numerator
+    // would include speculative wins while the denominator excluded speculative
+    // losses, and no total in the sentence would reconcile with the debug payload.
+    let message = `${context}: linked ${resolved} ${resolved === 1 ? 'reference' : 'references'}.`;
     if (missed.length) {
-        ui.notifications.info(`${context}: linked ${resolved} of ${attempted} names. ${missed.length} did not resolve.`);
-    } else if (resolved > 0) {
-        ui.notifications.info(`${context}: linked ${resolved} of ${attempted} names.`);
+        message += ` ${missed.length} named ${missed.length === 1 ? 'reference' : 'references'} did not resolve.`;
     }
+    ui.notifications.info(message);
 
     if (uncertain.length) {
         const detail = uncertain
