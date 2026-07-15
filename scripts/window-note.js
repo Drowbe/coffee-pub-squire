@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { getTextEditor } from './helpers.js';
 import {
     buildNoteIconHtml,
     normalizeNoteIconFlag,
@@ -399,12 +400,25 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
 
         const editorContent = this._getEditorContent(content);
 
+        // View mode must enrich @UUID / @Compendium / inline rolls; edit mode keeps raw HTML for ProseMirror.
+        let viewContent = content;
+        if (!this.isEditMode) {
+            const TextEditor = getTextEditor();
+            viewContent = await TextEditor.enrichHTML(content || '', {
+                secrets: game.user.isGM,
+                documents: true,
+                links: true,
+                rolls: true,
+                async: true
+            });
+        }
+
         return {
             appId: this.id,
             note: {
                 ...this.note,
                 tagsText: this.note.tags.join(', '),
-                content,
+                content: this.isEditMode ? content : viewContent,
                 editorContent,
                 iconHtml,
                 sceneName: this.note.pinId ? (getPinsApi()?.get?.(this.note.pinId)?.sceneId ? game.scenes.get(getPinsApi().get(this.note.pinId).sceneId)?.name || null : null) : null,

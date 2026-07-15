@@ -67,7 +67,7 @@
         <!-- Notes Container -->
         <div class="notes-content">
             {{#if notes.length}}
-                <div class="notes-list notes-view--list">
+                <div class="notes-list notes-view--list {{#if (eq listTheme 'light')}}notes-theme--light{{else}}notes-theme--dark{{/if}}">
                     {{#each notes}}
                     <div class="note-row" data-note-uuid="{{uuid}}" data-scene="{{#if sceneName}}{{sceneName}}{{else}}none{{/if}}" data-visibility="{{visibility}}" data-tags="{{tagsCsv}}" data-search="{{searchText}}">
                         <span class="note-row-icon">

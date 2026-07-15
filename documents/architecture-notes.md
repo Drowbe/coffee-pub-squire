@@ -127,6 +127,7 @@ Main UI for listing and filtering notes.
 
 **User flags**
 - `notesSortMode` – Sort mode (`date` or `alpha`).
+- `notesCardTheme` – List row theme (`dark` or `light`); name kept for existing prefs.
 
 ## Hooks Integration
 

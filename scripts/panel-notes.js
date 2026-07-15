@@ -431,6 +431,7 @@ export class NotesPanel {
         }
 
         // Render template with notes data
+        const listTheme = (await game.user?.getFlag(MODULE.ID, 'notesCardTheme')) || 'dark';
         const html = await renderTemplate(TEMPLATES.PANEL_NOTES, { 
             hasJournal: !!journal && canViewJournal,
             journal: journal,
@@ -457,6 +458,7 @@ export class NotesPanel {
             sortMode: this.sortMode,
             isGM: game.user.isGM,
             currentUserId: game.user.id,
+            listTheme: listTheme === 'light' ? 'light' : 'dark',
             position: "left"
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
@@ -779,6 +781,7 @@ export class NotesPanel {
             newMenuBtn.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
+                const listTheme = game.user?.getFlag(MODULE.ID, 'notesCardTheme') || 'dark';
                 const coreItems = [
                     {
                         name: 'Refresh',
@@ -787,6 +790,15 @@ export class NotesPanel {
                             await this._refreshData();
                             this.render(this.element);
                             ui.notifications.info('Notes refreshed.');
+                        }
+                    },
+                    {
+                        name: listTheme === 'light' ? 'Dark theme' : 'Light theme',
+                        icon: listTheme === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun',
+                        callback: async () => {
+                            const next = listTheme === 'light' ? 'dark' : 'light';
+                            await game.user?.setFlag(MODULE.ID, 'notesCardTheme', next);
+                            this.render(this.element);
                         }
                     }
                 ];
