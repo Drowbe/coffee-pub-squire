@@ -1,7 +1,7 @@
 import { MODULE, SQUIRE, TEMPLATES } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml, getPartyActors } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
 import {
@@ -1316,15 +1316,14 @@ export class CodexPanel {
             // Show initial notification
             ui.notifications.info("Starting auto-discovery scan...");
 
-            // Get all tokens on the canvas
-            const tokens = canvas.tokens.placeables.filter(token => 
-                token.actor && 
-                token.actor.type === 'character' && 
-                token.actor.hasPlayerOwner
-            );
+            // The campaign's party, not whoever happens to be standing on the open
+            // scene. Discovery is about what the party OWNS — an item in a PC's
+            // backpack reveals its codex entry whether or not that PC is deployed,
+            // and scanning the canvas silently skipped anyone who wasn't.
+            const partyActors = getPartyActors();
 
-            if (tokens.length === 0) {
-                ui.notifications.warn("No player character tokens found on the canvas.");
+            if (partyActors.length === 0) {
+                ui.notifications.warn("No party members found. Configure the party in Blacksmith's campaign settings.");
                 // Clean up progress bar before returning
                 if (progressArea && progressFill && progressText) {
                     progressText.textContent = 'No players found';
@@ -1340,7 +1339,7 @@ export class CodexPanel {
             // Collect all inventory items from party members
             const inventoryItems = new Set();
             const characterNames = [];
-            const totalPlayers = tokens.length;
+            const totalPlayers = partyActors.length;
             let processedPlayers = 0;
             
             // Update progress for character scanning phase
@@ -1351,8 +1350,7 @@ export class CodexPanel {
                 progressFill.style.width = '0%';
             }
             
-            for (const token of tokens) {
-                const actor = token.actor;
+            for (const actor of partyActors) {
                 characterNames.push(actor.name);
                 processedPlayers++;
                 
@@ -1454,9 +1452,8 @@ export class CodexPanel {
                             
                             // Log what we're looking for
                             
-                            for (const token of tokens) {
-                                const actor = token.actor;
-                                const items = actor.items.contents.filter(item => 
+                            for (const actor of partyActors) {
+                                const items = actor.items.contents.filter(item =>
                                     ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
                                 );
                                 
