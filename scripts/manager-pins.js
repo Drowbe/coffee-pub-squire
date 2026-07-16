@@ -1967,6 +1967,10 @@ function _registerEventHandlers(pins) {
         if (pm.setViewMode) await pm.setViewMode('codex');
         if (pm.codexPanel?.render && pm.element) await pm.codexPanel.render(pm.element);
         const tryFocus = () => {
+            // Prefer the panel's own focus: it records the expansion, so the entry
+            // stays open across the next re-render. The raw-DOM fallback below only
+            // sets a class, which any render would immediately undo.
+            if (pm.codexPanel?._focusEntry) return pm.codexPanel._focusEntry(codexUuid);
             const entry = document.querySelector(`.codex-entry[data-uuid="${codexUuid}"]`);
             if (!entry) return false;
             const section = entry.closest('.codex-section');

@@ -40,7 +40,7 @@
                 </div>
                 <div class="codex-entries">
                     {{#each cat.entries as |entry|}}
-                        <div class="codex-entry collapsed"
+                        <div class="codex-entry{{#unless entry.isExpanded}} collapsed{{/unless}}"
                              data-uuid="{{entry.uuid}}"
                              data-ownership-default="{{entry.ownership.default}}"
                              data-pin-id="{{entry.pinId}}"
@@ -78,6 +78,7 @@
 
                                 <!-- IMAGE -->
                                 {{#if entry.img}}
+                                    <div class="codex-entry-divider"></div>
                                     <div class="codex-entry-image">
                                         <img src="{{entry.img}}" alt="{{entry.name}}">
                                     </div>

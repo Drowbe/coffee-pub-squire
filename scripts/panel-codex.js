@@ -91,6 +91,13 @@ export class CodexPanel {
         };
         this.allTags = new Set();
         this.isImporting = false;
+        // Entry uuids the user has expanded. Entries default to collapsed, so this
+        // tracks the exceptions. Held here rather than only as a DOM class: the
+        // template renders every card collapsed, so ANY re-render (pinning,
+        // toggling visibility, an Auto-Link pass) used to slam every open entry
+        // shut under the user. Hydrated lazily from the user flag on first use —
+        // the constructor can run before `game.user` exists.
+        this._expandedEntries = null;
         this._setupHooks();
         // Pin events registered centrally by manager-pins.js initPinManager().
     }
@@ -155,6 +162,151 @@ export class CodexPanel {
         if (progressArea) {
             progressArea.style.display = 'none';
         }
+    }
+
+    /**
+     * Expanded entry uuids, hydrated once from the user flag.
+     *
+     * Persisted the same way category collapse is (`codexCollapsedCategories`),
+     * so the tray comes back the way the user left it.
+     *
+     * @returns {Set<string>}
+     * @private
+     */
+    _getExpandedEntries() {
+        if (!this._expandedEntries) {
+            const stored = game.user?.getFlag(MODULE.ID, 'codexExpandedEntries');
+            this._expandedEntries = new Set(Array.isArray(stored) ? stored : []);
+        }
+        return this._expandedEntries;
+    }
+
+    /**
+     * Persist expansion across reloads.
+     *
+     * Prunes uuids whose page no longer exists: re-import replaces pages with new
+     * ones, so without this the flag would accumulate dead ids forever. Skipped
+     * when no journal is selected — an empty page list there means "unknown",
+     * not "everything was deleted".
+     *
+     * @private
+     */
+    _persistExpandedEntries() {
+        const set = this._getExpandedEntries();
+        if (this.selectedJournal?.pages) {
+            const live = new Set(this.selectedJournal.pages.contents.map(p => p.uuid));
+            for (const uuid of set) if (!live.has(uuid)) set.delete(uuid);
+        }
+        game.user?.setFlag(MODULE.ID, 'codexExpandedEntries', Array.from(set));
+    }
+
+    /**
+     * Record a category's collapsed state.
+     *
+     * Category collapse is driven by the `codexCollapsedCategories` flag at render
+     * time, so expanding a section in the DOM alone is undone by the next render.
+     * Anything that opens a section must come through here.
+     *
+     * @param {string|undefined} category
+     * @param {boolean} collapsed
+     * @private
+     */
+    _setCategoryCollapsed(category, collapsed) {
+        if (!category) return;
+        const flags = game.user?.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
+        if (!!flags[category] === !!collapsed) return; // no-op; skip the write
+        flags[category] = !!collapsed;
+        game.user?.setFlag(MODULE.ID, 'codexCollapsedCategories', flags);
+    }
+
+    /**
+     * Purge malformed keys from `codexCollapsedCategories`, once per session.
+     *
+     * Older versions derived the key from rendered element text instead of the
+     * `data-category` attribute, so the flag accumulated entries like
+     * `" Locations\n "`, `" Artifacts\n \n Browse\n \n \n "`, and HTML-escaped
+     * `"Crafting &amp; gathering"`. A junk key is one that isn't identical to its
+     * own trimmed form, or that contains markup/newlines.
+     *
+     * Harmless now that collapse is read by exact key, but they're removed so the
+     * flag stops growing and so any future trim-style matching can't resurrect
+     * this bug. The clean key always wins — junk never overwrites a real value.
+     *
+     * @private
+     */
+    _pruneCategoryFlags() {
+        if (this._categoryFlagsPruned) return;
+        this._categoryFlagsPruned = true;
+        const flags = game.user?.getFlag(MODULE.ID, 'codexCollapsedCategories');
+        if (!flags || typeof flags !== 'object') return;
+
+        const clean = {};
+        let dropped = 0;
+        for (const [key, value] of Object.entries(flags)) {
+            const isJunk = key !== key.trim() || /[\n\r<>&]/.test(key);
+            if (isJunk) { dropped++; continue; }
+            clean[key] = !!value;
+        }
+        if (!dropped) return;
+
+        game.user?.setFlag(MODULE.ID, 'codexCollapsedCategories', clean);
+        getBlacksmith()?.utils?.postConsoleAndNotification(
+            MODULE.NAME,
+            `Codex: pruned ${dropped} malformed category-collapse key(s)`,
+            { dropped, kept: Object.keys(clean) },
+            false,
+            false
+        );
+    }
+
+    /**
+     * Toggle a card's collapsed state, recording it so it survives re-render
+     * and reload.
+     * @param {HTMLElement|null} card
+     * @private
+     */
+    _toggleEntryCollapsed(card) {
+        if (!card) return;
+        const uuid = card.dataset?.uuid;
+        const collapsed = card.classList.toggle('collapsed');
+        if (!uuid) return;
+        const set = this._getExpandedEntries();
+        if (collapsed) set.delete(uuid);
+        else set.add(uuid);
+        this._persistExpandedEntries();
+    }
+
+    /**
+     * Open a codex entry IN THE TRAY: expand it, reveal its category, scroll to
+     * it, and flash it.
+     *
+     * This is what `related` names and location levels point at — a codex entry,
+     * not the journal page behind it. Same destination as double-clicking a codex
+     * pin, so a reference and a pin behave identically. (Document `links` are
+     * different: those are real documents and open their own sheets.)
+     *
+     * @param {string} uuid
+     * @returns {boolean} false if the entry isn't currently rendered
+     * @private
+     */
+    _focusEntry(uuid) {
+        const card = this.element?.querySelector(`.codex-entry[data-uuid="${uuid}"]`);
+        if (!card) return false;
+        const section = card.closest('.codex-section');
+        if (section) {
+            section.classList.remove('collapsed');
+            // Persist it. Expanding the section in the DOM alone lasts until the
+            // next render, which then snaps it shut — that is what made pinning an
+            // entry look like it collapsed the whole category.
+            this._setCategoryCollapsed(section.dataset?.category, false);
+        }
+        card.classList.remove('collapsed');
+        this._getExpandedEntries().add(uuid);
+        this._persistExpandedEntries();
+        card.classList.add('codex-highlighted');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        trackModuleTimeout(() => card.classList.remove('codex-highlighted'), 2000);
+        return true;
     }
 
     /**
@@ -724,17 +876,24 @@ export class CodexPanel {
             });
         });
 
-        // Related-entry and location references open the codex entry they name.
-        // Same target as "Read more" — these point at codex pages, not documents,
-        // so Foundry's content-link handling does not apply.
+        // Related-entry and location references jump to that entry IN THE TRAY —
+        // the same destination as double-clicking its codex pin. These name codex
+        // entries, not documents; opening the journal behind one would be a
+        // different (and more disruptive) thing than the user asked for.
+        // Document `links` are unaffected: those are real documents and keep
+        // Foundry's own content-link behavior.
         nativeHtml.querySelectorAll('.codex-ref[data-uuid]').forEach(ref => {
-            ref.addEventListener('click', async (event) => {
+            ref.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
                 const uuid = event.currentTarget.dataset.uuid;
                 if (!uuid) return;
-                const page = await fromUuid(uuid);
-                if (page?.parent) page.parent.sheet.render(true, { pageId: page.id });
+                if (this._focusEntry(uuid)) return;
+                // Rendered out by an active tag filter — say so rather than
+                // silently doing nothing.
+                ui.notifications.info(
+                    `"${event.currentTarget.textContent}" is filtered out of the current view.`
+                );
             });
         });
 
@@ -946,11 +1105,8 @@ export class CodexPanel {
         // Entry collapse/expand
         // v13: Use nativeHtml instead of html
         nativeHtml.querySelectorAll('.codex-entry-toggle').forEach(toggle => {
-            toggle.addEventListener('click', function(e) {
-                const card = e.currentTarget.closest('.codex-entry');
-                if (card) {
-                    card.classList.toggle('collapsed');
-                }
+            toggle.addEventListener('click', (e) => {
+                this._toggleEntryCollapsed(e.currentTarget.closest('.codex-entry'));
                 e.stopPropagation();
             });
         });
@@ -958,11 +1114,8 @@ export class CodexPanel {
         nativeHtml.querySelectorAll('.codex-entry-name').forEach(title => {
             const newTitle = title.cloneNode(true);
             title.parentNode?.replaceChild(newTitle, title);
-            newTitle.addEventListener('click', function(e) {
-                const card = e.currentTarget.closest('.codex-entry');
-                if (card) {
-                    card.classList.toggle('collapsed');
-                }
+            newTitle.addEventListener('click', (e) => {
+                this._toggleEntryCollapsed(e.currentTarget.closest('.codex-entry'));
                 e.preventDefault();
                 e.stopPropagation();
             });
@@ -971,17 +1124,11 @@ export class CodexPanel {
         // Category collapse/expand
         // v13: Use nativeHtml instead of html
         nativeHtml.querySelectorAll('.codex-category .fa-chevron-down').forEach(chevron => {
-            chevron.addEventListener('click', function(e) {
+            chevron.addEventListener('click', (e) => {
                 const section = e.currentTarget.closest('.codex-section');
                 if (!section) return;
-                section.classList.toggle('collapsed');
-                
-                const category = section.dataset.category;
-                const collapsed = section.classList.contains('collapsed');
-                const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
-                collapsedCategories[category] = collapsed;
-                game.user.setFlag(MODULE.ID, 'codexCollapsedCategories', collapsedCategories);
-                
+                const collapsed = section.classList.toggle('collapsed');
+                this._setCategoryCollapsed(section.dataset.category, collapsed);
                 e.stopPropagation();
             });
         });
@@ -989,17 +1136,11 @@ export class CodexPanel {
         nativeHtml.querySelectorAll('.codex-category h3').forEach(title => {
             const newTitle = title.cloneNode(true);
             title.parentNode?.replaceChild(newTitle, title);
-            newTitle.addEventListener('click', function(e) {
+            newTitle.addEventListener('click', (e) => {
                 const section = e.currentTarget.closest('.codex-section');
                 if (!section) return;
-                section.classList.toggle('collapsed');
-
-                const category = section.dataset.category;
-                const collapsed = section.classList.contains('collapsed');
-                const collapsedCategories = game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {};
-                collapsedCategories[category] = collapsed;
-                game.user.setFlag(MODULE.ID, 'codexCollapsedCategories', collapsedCategories);
-
+                const collapsed = section.classList.toggle('collapsed');
+                this._setCategoryCollapsed(section.dataset.category, collapsed);
                 e.preventDefault();
                 e.stopPropagation();
             });
@@ -1828,6 +1969,7 @@ export class CodexPanel {
         await this._refreshData();
 
         // Get collapsed states
+        this._pruneCategoryFlags();
         const collapsedCategories = this.filters.tags.length > 0 ? {} : (game.user.getFlag(MODULE.ID, 'codexCollapsedCategories') || {});
         const isTagCloudCollapsed = game.user.getFlag(MODULE.ID, 'codexTagCloudCollapsed') || false;
 
@@ -1879,6 +2021,10 @@ export class CodexPanel {
                 // Related entries and location levels both point at other codex
                 // entries, so they resolve through the same page index — cheaply,
                 // every render, which is what makes them self-healing.
+                // Survives re-render AND reload: without this, pinning or revealing
+                // an entry collapses every open card.
+                entry.isExpanded = this._getExpandedEntries().has(entry.uuid);
+
                 entry.relatedHtml = (entry.related || [])
                     .map(name => this._renderCodexRef(name, pageIndex))
                     .filter(Boolean);
@@ -1950,27 +2096,34 @@ export class CodexPanel {
         // Deep clone to break references and ensure only primitives are passed
         const safeTemplateData = JSON.parse(JSON.stringify(templateData));
         const html = await renderTemplate(TEMPLATES.PANEL_CODEX, safeTemplateData);
+        // Preserve the scroll position across the re-render. Replacing innerHTML destroys
+        // the .codex-content scroll container and recreates it at scrollTop 0, so actions
+        // like placing/unplacing a pin or toggling visibility would otherwise jump the GM
+        // back to the top and force them to scroll back down to find their place.
+        // (Same fix the quest and notes panels already carry.)
+        const prevScrollTop = codexContainer.querySelector('.codex-content')?.scrollTop ?? 0;
+
         // v13: Use native DOM innerHTML instead of jQuery html()
         codexContainer.innerHTML = html;
 
         // Activate listeners
         this._activateListeners(codexContainer);
 
-        // Restore collapsed states
-        // v13: Use safer selector approach to handle values with newlines/whitespace
-        for (const [category, collapsed] of Object.entries(collapsedCategories)) {
-            if (collapsed) {
-                // Use querySelectorAll and filter to handle values with special characters
-                const sections = codexContainer.querySelectorAll('.codex-section[data-category]');
-                const section = Array.from(sections).find(s => {
-                    const attrValue = s.getAttribute('data-category');
-                    return attrValue && attrValue.trim() === category.trim();
-                });
-                if (section) {
-                    section.classList.add('collapsed');
-                }
-            }
-        }
+        // Restored last, after listeners: _activateListeners schedules a pass that
+        // sets entry/section display, which changes layout and would otherwise
+        // land the restore on a stale height.
+        const scrollContent = codexContainer.querySelector('.codex-content');
+        if (scrollContent) scrollContent.scrollTop = prevScrollTop;
+
+        // NOTE: collapsed state is applied by the template (`cat.collapsed`, an
+        // exact key lookup). There used to be a second pass here that re-applied
+        // it by iterating every flag key and matching with `.trim()`. It was both
+        // redundant and actively wrong: older versions derived keys from rendered
+        // element text, so the flag holds junk like `" Locations\n "` and
+        // `" Artifacts\n \n Browse\n \n \n "`. Trim-matching made a junk key
+        // saying "collapsed" override the real key saying "expanded", on every
+        // single render — which is why pinning an entry appeared to collapse its
+        // category. Exact keys only; junk keys are inert and pruned below.
     }
 }
 
