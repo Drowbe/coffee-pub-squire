@@ -20,6 +20,7 @@
 | `module.json`: declare a Blacksmith `13.8.4` minimum — link resolution silently no-ops below it | Medium | S | Open |
 | Blacksmith (other repo): `JournalSheet` global is a hard break in v15 (`ui-journal-encounter.js:378`) | Medium | S | Open |
 | Keep a link-resolution test fixture in the repo (this capability broke silently once already) | Low | S | Open |
+| Perf: delete pointless clone-and-rebind in panel `_activateListeners` (14 codex / 19 quest sites) | High | S | Open |
 | Codex: `related` entries + retain-unresolved links + Auto-Link tool (see `plan-codex-datamodel.md` Phase 4) | High | L | Implemented (13.3.10) — needs in-game verification |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
@@ -83,6 +84,19 @@
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description
 - [x] **ENHANCEMENT — DONE (13.3.10)** ~~Auto-link codex entry names to the assigned actor/item compendiums on import.~~ The blocking prerequisite landed: Blacksmith 13.8.4 shipped `api.compendiums` (`resolve`/`resolveMany`/`resolveLink`), which owns the mapping *and* the search semantics — a better contract than the `api.resolveEntityByName(name, type)` wrapper anticipated here, since world-first/last ordering and Spell/Feature subtype filtering live inside it rather than in each caller. Shipped as specced: prompt now emits `links: [{name, type}]` instead of a hard-coded empty array; import resolves names → UUIDs → `system.links`; the "N of M linked, K unmatched" report exists (split into asserted vs speculative misses, so a self-link that legitimately matches nothing doesn't drown the signal). Squire reads none of Blacksmith's settings — `scripts/utility-resolver.js` is the only contact point. Scope grew past codex: quest treasure (`item`) and participants (`actor`) had the same dead end and are wired too.
   - **Caveat worth remembering**: resolution needs the GM's Blacksmith Compendium Mapping to include the *world* for the type. PCs/NPCs live in the world, so an Actor mapping with world search off resolves nothing and looks like a Squire bug. Nothing in Squire can detect this.
+
+### PERFORMANCE: clone-and-rebind is dead weight (found July 15, 2026)
+
+- [ ] **PERF (High, S)** Panel `_activateListeners()` clones and replaces every node before binding to it — **14 sites in `panel-codex.js`, 19 in `panel-quest.js`**, ~7 of codex's running *per entry*:
+  ```js
+  const newBtn = pinBtn.cloneNode(true);
+  pinBtn.parentNode?.replaceChild(newBtn, pinBtn);
+  newBtn.addEventListener('click', ...);
+  ```
+  The clone-and-replace idiom exists to strip **pre-existing** listeners when re-binding to live nodes. But `_activateListeners` has exactly **one call site in each panel, immediately after `container.innerHTML = html`** — every node it touches was created microseconds earlier and has no listeners to strip. The whole dance is a no-op with a cost: a 100-entry codex pays ~700 deep subtree clones plus ~700 `replaceChild` (each invalidating layout) on **every** render — every pin toggle, visibility flip, and import step. `.codex-entry-image img` is cloned too, which can force image re-decode.
+  - Fix: delete the clone/replace; `addEventListener` on the original node. Mechanical and safe **so long as the one-call-site-after-innerHTML invariant holds** — verify per panel before touching it (confirmed for codex and quest; `panel-notes.js` has 17 clone sites but a different call structure and needs its own check).
+  - Better still, per the handle: **delegate**. 13.3.6 fixed this exact pattern on `HandleManager` — it "cloned the whole `.tray-handle` (plus ~10 individual buttons) and re-attached ~15 listeners on every `updateHandle()`"; handlers are now bound once to the stable parent. Panels never got the same treatment.
+  - Related, and the bigger prize: `render()` rebuilds the entire panel via `innerHTML` for any change at all. Delegation is a prerequisite for ever rendering incrementally.
 
 ### DUPLICATION TAX (found while fixing 13.3.10)
 
