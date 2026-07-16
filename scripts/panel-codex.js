@@ -1693,7 +1693,7 @@ export class CodexPanel {
                                 } else if (page) {
                                     // Links already on the page that this import doesn't produce were
                                     // put there by hand (dragging was the only way to add one before
-                                    // 13.3.10) and aren't recoverable from the JSON, so keep them.
+                                    // 13.3.12) and aren't recoverable from the JSON, so keep them.
                                     // Foundry replaces arrays wholesale, so this has to be explicit.
                                     const patch = {
                                         system: {

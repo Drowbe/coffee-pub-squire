@@ -60,7 +60,7 @@ export function typeForCategory(category) {
  * `name`/`type` are what make an unresolved link retryable; any code path that
  * rebuilds the links array and drops them silently destroys that.
  *
- * Legacy links (pre-13.3.10) carry only `uuid` + `label`. The label was always
+ * Legacy links (pre-13.3.12) carry only `uuid` + `label`. The label was always
  * the document's name, so it backfills `name` — that keeps identity stable for
  * old data without a migration.
  */
@@ -289,7 +289,7 @@ export async function resolveCodexLinks(entry) {
 /**
  * Merge freshly resolved codex links with the links already on the page.
  *
- * Links on the page that the import doesn't produce are KEPT. Until 13.3.10 the
+ * Links on the page that the import doesn't produce are KEPT. Until 13.3.12 the
  * only way to add a codex link was to drag a document onto the entry, so a link
  * absent from the JSON is almost certainly hand-curated — and it is not
  * recoverable once dropped, because it never existed in the JSON to begin with.

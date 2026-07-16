@@ -103,7 +103,7 @@ Model decisions: `img` and `link.uuid` are lenient `StringField`s (not `FilePath
 
 ## Phase 4 — Related entries + resolve-later links **(implemented July 15, 2026 — pending in-game verification)**
 
-13.3.10 wired codex `links` to Blacksmith's `api.compendiums` resolver (plain-text name → UUID at import). Feeding it a real AI-authored codex surfaced two things.
+13.3.12 wired codex `links` to Blacksmith's `api.compendiums` resolver (plain-text name → UUID at import). Feeding it a real AI-authored codex surfaced two things.
 
 **1. The AI's "mistake" is the feature.** Asked to link a "Phlan" entry, it emitted 22 links — 19 of which pointed at *other codex entries* (Moonsea, Valjevo Castle, Black Fist, Mantor's Library…). Every one of those is structurally unresolvable: `type: "journal"` resolves against `game.journal`, i.e. **JournalEntry documents**, while codex entries are `JournalEntryPage`s living inside one journal (`compendium-types.js:174` — `JournalEntry: () => game.journal`). The model wasn't over-linking; it was describing a **relationship graph** the schema has no field for. Phlan→Moonsea is the most valuable link in the entry and the one we can't express.
 
@@ -120,7 +120,7 @@ Two corpora, resolved at different times. Keeping them apart is what keeps this 
 - **Location segments link through the same index.** Phlan's `location` is `"Faerûn > Moonsea > Phlan"` and the card already renders REALM/REGION/SITE/AREA rows; each segment becomes a link when a codex entry by that name exists. This is the precondition for the next bullet.
 - **`related` is non-hierarchical only.** Because location now carries the hierarchy *as links*, Related must not repeat it — otherwise every entry duplicates its own path. Related is for Black Fist, Mantor's Library, Spanky, Goblin Caves.
 - **Self-healing, and that's the whole trick.** A name with no page yet is a Map miss → renders as plain text → becomes a link the moment that entry is added. This satisfies "plain-text what isn't present but don't lose the relationship" **by not storing the answer**: no second pass, no import-ordering problem (Phlan may reference Moonsea before Moonsea exists), and no rescan for this corpus.
-- Legitimately Squire's lookup: pages inside one journal are a corpus `api.compendiums` does not model and should not. Does not contradict the 13.3.10 rule (never search *compendiums* ourselves). Page UUIDs are ordinary links: `@UUID[JournalEntry.abc.JournalEntryPage.xyz]{Moonsea}`.
+- Legitimately Squire's lookup: pages inside one journal are a corpus `api.compendiums` does not model and should not. Does not contradict the 13.3.12 rule (never search *compendiums* ourselves). Page UUIDs are ordinary links: `@UUID[JournalEntry.abc.JournalEntryPage.xyz]{Moonsea}`.
 
 **B. Compendium documents (`links`) — resolved at IMPORT + RESCAN, uuid stored.**
 
