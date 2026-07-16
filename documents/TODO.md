@@ -15,6 +15,11 @@
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
 | Codex + Quest: resolve plain-text names to UUIDs on import via Blacksmith `api.compendiums` | Medium | M | Done (13.3.10) |
 | Pins: audit quest/note pin visibility for the same silent no-op fixed for codex | Medium | S | Open |
+| Quest: same latent trim-match collapse bug that was live in codex (`panel-quest.js:4117`) | Medium | S | Open |
+| Codex: applying a tag filter permanently wipes `codexCollapsedCategories` (`panel-codex.js:717`) | Medium | S | Open |
+| `module.json`: declare a Blacksmith `13.8.4` minimum — link resolution silently no-ops below it | Medium | S | Open |
+| Blacksmith (other repo): `JournalSheet` global is a hard break in v15 (`ui-journal-encounter.js:378`) | Medium | S | Open |
+| Keep a link-resolution test fixture in the repo (this capability broke silently once already) | Low | S | Open |
 | Codex: `related` entries + retain-unresolved links + Auto-Link tool (see `plan-codex-datamodel.md` Phase 4) | High | L | Implemented (13.3.10) — needs in-game verification |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
@@ -79,6 +84,19 @@
 - [x] **ENHANCEMENT — DONE (13.3.10)** ~~Auto-link codex entry names to the assigned actor/item compendiums on import.~~ The blocking prerequisite landed: Blacksmith 13.8.4 shipped `api.compendiums` (`resolve`/`resolveMany`/`resolveLink`), which owns the mapping *and* the search semantics — a better contract than the `api.resolveEntityByName(name, type)` wrapper anticipated here, since world-first/last ordering and Spell/Feature subtype filtering live inside it rather than in each caller. Shipped as specced: prompt now emits `links: [{name, type}]` instead of a hard-coded empty array; import resolves names → UUIDs → `system.links`; the "N of M linked, K unmatched" report exists (split into asserted vs speculative misses, so a self-link that legitimately matches nothing doesn't drown the signal). Squire reads none of Blacksmith's settings — `scripts/utility-resolver.js` is the only contact point. Scope grew past codex: quest treasure (`item`) and participants (`actor`) had the same dead end and are wired too.
   - **Caveat worth remembering**: resolution needs the GM's Blacksmith Compendium Mapping to include the *world* for the type. PCs/NPCs live in the world, so an Actor mapping with world search off resolves nothing and looks like a Squire bug. Nothing in Squire can detect this.
 
+### DUPLICATION TAX (found while fixing 13.3.10)
+
+These are all the *same* defect wearing different hats, and each exists because Notes/Codex/Quest each carry their own copy of the panel shell (8,328 lines across three files: `_refreshData` + cache, scroll preservation, collapse persistence, progress bar, import/export, filtering). See "Base panel class" below.
+
+- [ ] **BUG (Medium)** `panel-quest.js:4117` has the identical post-render collapse restore that was live in codex until 13.3.10: it iterates every key in `questCollapsedCategories` and matches sections with `.trim()`, on top of the template already applying collapse by exact key. It is **latent, not live**, only because quest's keys come from a fixed status set (`Active`/`Complete`/…) rather than user-authored category names, so they never got polluted. Codex's did — the flag held junk like `" Locations\n "` and `" Artifacts\n \n Browse\n \n \n "` from an older version that derived keys from rendered element text, and trim-matching let a junk key saying *collapsed* override the real key saying *expanded* on every single render. Delete the redundant pass (the template is correct); the same trim-match also sits at `:2043` and `:2200`.
+- [ ] **BUG (Medium)** `panel-codex.js:717` — applying a tag filter does `setFlag('codexCollapsedCategories', {})`. The comment says "temporarily clear ... while filtering", but nothing restores it: filter by any tag once and every category is permanently expanded. Needs the pre-filter state stashed somewhere rather than destroyed. Quest likely has the same shape.
+- [ ] **CHORE (Low)** Keep a link-resolution test fixture in the repo (a quest JSON with a known-good name **and a guaranteed-miss control**; a codex JSON exercising self-link, typed links, and a speculative miss). Name resolution silently did nothing for years and nobody noticed — "it linked" alone can't distinguish a working resolver from indiscriminate linking. The control is the test.
+
+### RELEASE / COMPATIBILITY
+
+- [ ] **CHORE (Medium)** `module.json` declares `requires: coffee-pub-blacksmith` with **no version constraint**. 13.3.10's link resolution needs `api.compendiums` (Blacksmith **13.8.4+**); below that, `getCompendiums()` returns null and every name silently falls back to plain text with no error — exactly the failure mode 13.3.10 was written to delete. Add `"compatibility": { "minimum": "13.8.4" }` so Foundry refuses to enable Squire against a Blacksmith too old to serve it.
+- [ ] **BUG (Medium — other repo: coffee-pub-blacksmith)** `ui-journal-encounter.js:378` reads the bare `JournalSheet` global (`Object.values(ui.windows).find(w => w instanceof JournalSheet && ...)`). Deprecated since v13, **removed in v15** — it becomes a hard `ReferenceError` inside a hook that fires on every journal-page write, which Squire triggers constantly (imports, pin flags). Needs `foundry.appv1.sheets.JournalSheet`, and `ui.windows` on the same line is also v13-deprecated in favour of `foundry.applications.instances`.
+
 ### PINS
 - [ ] **AUDIT** Quest and note pins likely share the silent no-op fixed for codex pins in 13.3.10. Pin visibility in Squire is *derived*, never configured — and the pin's `ownership`, not `config.blacksmithVisibility`, is what actually gates players. A GM editing visibility in Blacksmith's Configure Pin therefore changes nothing for players and gets silently reverted by the next sync. Codex now warns (`_warnIfCodexPinVisibilityEdited()` in `manager-pins.js`, gated on `evt.patch.config.blacksmithVisibility` so Squire's own writes never trip it). The other three derive it differently and may each fail differently:
   - `createQuestPin` (`manager-pins.js:528`) — derives from the page's `visible` flag; `_syncQuestPinVisibility` re-asserts it.
@@ -115,6 +133,13 @@
   - Common methods: `constructor`, `_refreshData()`, `_activateListeners(html)`, `_setupSearchFilter(html)`, `_setupTagFilter(html)`
   - Refactor `CodexPanel`, `NotesPanel`, `QuestPanel` to extend `BasePanel`
   - Lower priority - deferred until needed (~6-8 hours)
+
+**Evidence from 13.3.10 that "Low" is the wrong priority** — three of that release's fixes were pure duplication tax:
+  - *Scroll preservation on re-render*: quest and notes both already had it, with a comment describing the exact symptom. Codex didn't, so pinning an entry threw the GM to the top of the list. The same bug, already solved twice, shipped a third time.
+  - *Trim-match collapse restore*: live in codex, latent in quest (see DUPLICATION TAX above). One bug, two copies, one of them lucky.
+  - *State destroyed on rebuild*: hit five separate sites for codex links alone (import merge, page-sheet drop + remove, Edit window `_normalizeLinks` + `_addLink`).
+
+**Suggested change of approach**: a base class over 8,328 lines is a big-bang refactor of three panels at once, which is why this has sat at Low and will keep sitting there. Extract the duplicated **concerns** one at a time instead — scroll preservation, collapse persistence, progress bar, refresh-cache — each independently shippable, each permanently deleting one bug class across all three panels. That is exactly what `manager-pins.js` did for the four pin systems, and it worked. Best first candidates (both small, both would have prevented a real 13.3.10 bug): a shared `preserveScroll()` and a shared collapse-state helper.
 
 ### Code Cleanup
 - [ ] **PLANNED** Remove legacy code from our fixes
