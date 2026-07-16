@@ -30,6 +30,14 @@ export function getPartyActors() {
   return game.actors.filter(actor => actor?.type === 'character' && actor?.hasPlayerOwner && !actor?.isToken);
 }
 
+const HTML_ESCAPES = Object.freeze({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+});
+
 /**
  * Escape text for safe interpolation into an HTML string.
  *
@@ -37,13 +45,18 @@ export function getPartyActors() {
  * triple-stash: Handlebars won't escape it, and codex/quest names are
  * user-authored.
  *
+ * Regex rather than a `createElement`/`textContent`/`innerHTML` round-trip.
+ * This runs per related name and per location level on every codex render — a
+ * real 314-entry codex is thousands of calls per render, and building a DOM
+ * node for each is orders of magnitude more expensive than a replace. The DOM
+ * approach also leaves `"` and `'` unescaped, which is wrong for the attribute
+ * contexts this is used in.
+ *
  * @param {string} text
  * @returns {string}
  */
 export function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = String(text ?? '');
-  return div.innerHTML;
+  return String(text ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
 }
 
 /**
