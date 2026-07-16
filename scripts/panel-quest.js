@@ -2134,7 +2134,7 @@ export class QuestPanel {
                                         ui.notifications.info(`Journal for Quests ${journalId === 'none' ? 'cleared' : 'selected'}.`);
                                     },
                                     reRender: () => this.render(this.element),
-                                    infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> Each entry in this journal will be treated as a separate quest.</p>'
+                                    hint: 'Each page in this journal is one quest.'
                                 });
                             }
                         },

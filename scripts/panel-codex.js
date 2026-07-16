@@ -776,14 +776,6 @@ export class CodexPanel {
                         callback: () => {
                             showJournalPicker({
                                 title: 'Select Codex Journal',
-                                mode: 'select',
-                                choices: (() => {
-                                    const choices = { 'none': '- Select Journal -' };
-                                    game.journal.contents.forEach(j => {
-                                        choices[j.id] = j.name;
-                                    });
-                                    return choices;
-                                })(),
                                 selectedId: game.settings.get(MODULE.ID, 'codexJournal'),
                                 onSelect: async (journalId) => {
                                     await game.settings.set(MODULE.ID, 'codexJournal', journalId);

@@ -766,8 +766,7 @@ export class NotesPanel {
                             }
                         },
                         reRender: () => this.render(this.element),
-                        infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> This journal will be used for all player notes. Players can create notes if they have Observer access or better.</p><p style="color: #ddd;">Make sure the journal has "All Players = Observer" ownership to allow players to create notes.</p>',
-                        showRefreshButton: true
+                        hint: 'Players need Observer ownership on this journal to create notes.'
                     });
                 }
             });
@@ -827,7 +826,7 @@ export class NotesPanel {
                                     }
                                 },
                                 reRender: () => this.render(this.element),
-                                infoHtml: '<p style="margin-bottom: 5px; color: #ddd;"><i class="fa-solid fa-info-circle" style="color: #88f;"></i> This journal will be used for all player notes. Players can create notes if they have Observer access or better.</p><p style="color: #ddd;">Make sure the journal has "All Players = Observer" ownership to allow players to create notes.</p>',
+                                hint: 'Players need Observer ownership on this journal to create notes.',
                                 showRefreshButton: true
                             });
                         }

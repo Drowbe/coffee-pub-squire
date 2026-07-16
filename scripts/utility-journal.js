@@ -3,7 +3,7 @@
  * Extracted from panel-notes, panel-codex, and panel-quest.
  */
 
-import { getNativeElement, getTextEditor } from './helpers.js';
+import { getNativeElement, getTextEditor, escapeHtml } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 
 /** Permission levels matching Foundry CONST.DOCUMENT_OWNERSHIP_LEVELS */
@@ -437,125 +437,78 @@ export async function renderJournalContent(container, page, options = {}) {
 }
 
 /**
- * Show a journal picker dialog.
- * @param {Object} options - Configurable picker behavior
- * @param {string} options.title - Dialog title
- * @param {string} [options.mode='grid'] - 'grid' | 'select'
- * @param {() => string} options.getCurrentId - Current selected journal ID
- * @param {(journalId: string) => Promise<void>} options.onSelect - Called when user selects a journal
- * @param {() => void} options.reRender - Called after selection to refresh panel
- * @param {(journalId: string, journal: JournalEntry) => Promise<void>} [options.afterSelect] - Optional, e.g. show page picker
- * @param {string} [options.infoHtml] - Extra info HTML
- * @param {boolean} [options.showRefreshButton] - Show refresh list button
- * @param {Object} [options.choices] - For mode 'select': { id: name }
- * @param {string} [options.selectedId] - For mode 'select': pre-selected id
+ * Show a journal picker dialog: a single, alphabetically-sorted dropdown.
+ *
+ * There used to be a second "grid" mode — a wall of book cards with a gold
+ * thumbtack on the current selection — and it was the DEFAULT, so quest and
+ * notes got it simply by never passing `mode`. Only codex opted into the
+ * dropdown. The grid is gone: one picker, one behaviour, sorted everywhere.
+ *
+ * @param {Object} options
+ * @param {string} [options.title] - Dialog title
+ * @param {Object} [options.choices] - { id: name }; built from world journals when omitted
+ * @param {string} [options.selectedId] - Pre-selected id
+ * @param {() => string} [options.getCurrentId] - Legacy alias for selectedId
+ * @param {(journalId: string) => Promise<void>} options.onSelect - Called on save
+ * @param {() => void} [options.reRender] - Called after selection to refresh the panel
+ * @param {string} [options.hint] - Short plain-text hint, rendered in Foundry's native hint style
  */
 export function showJournalPicker(options) {
     const {
         title = 'Select Journal',
-        mode = 'grid',
-        getCurrentId = () => 'none',
+        choices = null,
+        selectedId = null,
+        getCurrentId,
         onSelect,
         reRender,
-        afterSelect,
-        infoHtml = '',
-        showRefreshButton = false,
-        choices = {},
-        selectedId = 'none'
+        hint = ''
     } = options;
 
-    if (mode === 'select') {
-        const opts = Object.entries(choices).map(([id, name]) =>
-            `<option value="${id}" ${id === selectedId ? 'selected' : ''}>${name}</option>`
-        ).join('');
-        new Dialog({
-            title,
-            width: 600,
-            content: `<form><div class="form-group"><label>Journal:</label><select name="journal">${opts}</select></div></form>`,
-            buttons: {
-                save: { icon: '<i class="fa-solid fa-save"></i>', label: 'Save', callback: async (html) => {
+    const currentId = selectedId
+        ?? (typeof getCurrentId === 'function' ? getCurrentId() : getCurrentId)
+        ?? 'none';
+
+    // Alphabetical, with the clear option pinned first.
+    const entries = (() => {
+        const byLabel = (a, b) => String(a[1]).localeCompare(String(b[1]));
+        if (choices) {
+            const list = Object.entries(choices);
+            return [
+                ...list.filter(([id]) => id === 'none'),
+                ...list.filter(([id]) => id !== 'none').sort(byLabel)
+            ];
+        }
+        return [
+            ['none', '- Select Journal -'],
+            ...game.journal.contents.map(j => [j.id, j.name]).sort(byLabel)
+        ];
+    })();
+
+    const optionsHtml = entries.map(([id, name]) =>
+        `<option value="${escapeHtml(id)}"${id === currentId ? ' selected' : ''}>${escapeHtml(name)}</option>`
+    ).join('');
+
+    new Dialog({
+        title,
+        width: 600,
+        content: `<form>${hint ? `<p class="notes">${escapeHtml(hint)}</p>` : ''}<div class="form-group"><label>Journal:</label><select name="journal">${optionsHtml}</select></div></form>`,
+        buttons: {
+            save: {
+                icon: '<i class="fa-solid fa-save"></i>',
+                label: 'Save',
+                callback: async (html) => {
                     const el = getNativeElement(html);
-                    const sel = el?.querySelector?.('select[name="journal"]');
-                    const id = sel?.value ?? null;
+                    const id = el?.querySelector?.('select[name="journal"]')?.value ?? null;
                     if (onSelect && id != null) await onSelect(id);
                     if (reRender) reRender();
-                }},
-                cancel: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel' }
+                }
             },
-            default: 'save'
-        }).render(true);
-        return;
-    }
-
-    const journals = game.journal.contents.map(j => ({
-        id: j.id,
-        name: j.name,
-        img: j.thumbnail || j.img || 'icons/svg/book.svg',
-        pages: j.pages.size
-    }));
-    journals.sort((a, b) => a.name.localeCompare(b.name));
-    const currentId = typeof getCurrentId === 'function' ? getCurrentId() : getCurrentId;
-
-    const gridHtml = journals.length === 0
-        ? `<div class="no-journals-message" style="text-align: center; padding: 20px;">
-            <i class="fa-solid fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
-            <p>No journals found in your world.</p>
-            <p>You need to create at least one journal in the Journals tab first.</p>
-          </div>`
-        : `<div class="journal-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;">
-            <div class="journal-item" data-id="none" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
-                <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-times-circle" style="font-size: 3em; color: #aa0000;"></i></div>
-                <div class="journal-name" style="margin-top: 5px; font-weight: bold;">None</div>
-            </div>
-            ${journals.map(j => `
-            <div class="journal-item" data-id="${j.id}" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
-                <div class="journal-image" style="height: 100px; display: flex; align-items: center; justify-content: center; background-size: contain; background-position: center; background-repeat: no-repeat; background-image: url('${j.img}');">
-                    ${!j.img ? '<i class="fa-solid fa-book" style="font-size: 3em; color: #666;"></i>' : ''}
-                    ${j.id === currentId ? '<i class="fa-solid fa-thumbtack" style="position: absolute; top: 10px; right: 10px; color: gold; font-size: 1.2em;" title="Pinned for players"></i>' : ''}
-                </div>
-                <div class="journal-name" style="margin-top: 5px; font-weight: bold;">${j.name}</div>
-                <div class="journal-pages" style="font-size: 0.8em; color: #999;">${j.pages} page${j.pages !== 1 ? 's' : ''}</div>
-            </div>
-            `).join('')}
-          </div>`;
-
-    const buttonsHtml = showRefreshButton
-        ? '<div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;"><button class="cancel-button" style="flex: 1; margin-right: 5px;">Cancel</button><button class="refresh-button" style="flex: 1; margin-left: 5px;">Refresh List</button></div>'
-        : '<div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;"><button class="cancel-button" style="flex: 1;">Cancel</button></div>';
-
-    const content = `<h2 style="text-align: center; margin-bottom: 15px;">${title}</h2>${gridHtml}${infoHtml ? `<div style="margin-bottom: 10px; padding: 10px; background: rgba(50, 50, 80, 0.3); border-radius: 5px;">${infoHtml}</div>` : ''}${buttonsHtml}`;
-
-    const dialog = new Dialog({
-        title,
-        content,
-        buttons: {},
-        render: html => {
-            const dlg = getNativeElement(html);
-            dlg.querySelectorAll('.journal-item').forEach(item => {
-                item.addEventListener('click', async () => {
-                    const journalId = item.dataset.id;
-                    if (onSelect) await onSelect(journalId);
-                    dialog.close();
-                    if (journalId !== 'none') {
-                        const journal = game.journal.get(journalId);
-                        if (journal?.pages.size > 0 && afterSelect) {
-                            await afterSelect(journalId, journal);
-                            return;
-                        }
-                    }
-                    if (reRender) reRender();
-                });
-            });
-            const cancelBtn = dlg.querySelector('.cancel-button');
-            if (cancelBtn) cancelBtn.addEventListener('click', () => dialog.close());
-            const refreshBtn = dlg.querySelector('.refresh-button');
-            if (refreshBtn) refreshBtn.addEventListener('click', () => { dialog.close(); showJournalPicker(options); });
+            cancel: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel' }
         },
-        default: '',
-        close: () => {}
-    });
-    dialog.render(true);
+        default: 'save'
+    }).render(true);
 }
+
 
 /**
  * Show a page picker dialog for a journal.
