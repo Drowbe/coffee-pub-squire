@@ -1,4 +1,4 @@
-import { MODULE, SQUIRE, TEMPLATES } from './const.js';
+import { MODULE, SQUIRE, TEMPLATES, getCodexCategoryIcon } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml, getPartyActors } from './helpers.js';
@@ -408,20 +408,10 @@ export class CodexPanel {
     getCategoryIcon(category, customIcon = '') {
         const normalizedCustomIcon = String(customIcon || '').trim();
         if (normalizedCustomIcon) return normalizedCustomIcon;
-        const map = {
-            'No Category': 'fa-solid fa-question-circle',
-            'Artifacts': 'fa-solid fa-gem',
-            'Characters': 'fa-solid fa-user',
-            'Establishments': 'fa-solid fa-shop',
-            'Events': 'fa-solid fa-calendar-star',
-            'Factions': 'fa-solid fa-shield-cross',
-            'Items': 'fa-solid fa-box',
-            'Landmarks': 'fa-solid fa-monument',
-            'Locations': 'fa-solid fa-location-pin',
-            'Maps': 'fa-solid fa-map'
-            // Add more mappings as needed
-        };
-        return map[category] || 'fa-solid fa-book';
+        // Shared with the canvas pin (const.js). Keeping a second copy here is
+        // what let the two drift — 13.3.9 added Establishments/Landmarks to this
+        // map and not the pin's, so those pins fell back to fa-book.
+        return `fa-solid ${getCodexCategoryIcon(category)}`;
     }
 
     /**

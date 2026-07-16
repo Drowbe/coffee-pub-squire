@@ -11,7 +11,7 @@
  * Position (x, y, sceneId) and design are owned by Blacksmith — never cached in page flags.
  */
 
-import { MODULE } from './const.js';
+import { MODULE, getCodexCategoryIcon } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
@@ -116,17 +116,9 @@ function _codexCategoryToTag(category) {
 }
 
 /** Codex category → FontAwesome icon class. */
-const CODEX_CATEGORY_ICON_MAP = {
-    'No Category': 'fa-question-circle',
-    'Artifacts':   'fa-gem',
-    'Books':       'fa-book',
-    'Characters':  'fa-user',
-    'Events':      'fa-calendar-star',
-    'Factions':    'fa-shield-cross',
-    'Items':       'fa-box',
-    'Locations':   'fa-location-pin',
-    'Maps':        'fa-map'
-};
+// Category → icon lives in const.js (CODEX_CATEGORY_ICONS). This file used to
+// keep its own copy, which drifted from the tray's and silently gave
+// Establishments/Landmarks the fa-book fallback on the canvas.
 
 /** Quest category display name → taxonomy tag key. */
 const QUEST_CATEGORY_TAG_MAP = {
@@ -394,10 +386,20 @@ function _codexCategoryToPinTags(category) {
     return tag ? [tag] : [];
 }
 
-/** Map codex category → Font Awesome icon HTML. */
-function _codexCategoryToImage(category) {
-    const icon = CODEX_CATEGORY_ICON_MAP[category] || 'fa-book';
-    return `<i class="fa-solid ${icon}"></i>`;
+/**
+ * Codex category → Font Awesome icon HTML for the canvas pin.
+ *
+ * `customIcon` is the entry's own `system.categoryIcon` when the GM set one. The
+ * tray has always honoured it; the pin did not, so a custom category icon showed
+ * on the card and not on the map.
+ *
+ * @param {string} category
+ * @param {string} [customIcon] full class string, e.g. 'fa-solid fa-dragon'
+ */
+function _codexCategoryToImage(category, customIcon = '') {
+    const custom = String(customIcon || '').trim();
+    if (custom) return custom.startsWith('<i') ? custom : `<i class="${custom}"></i>`;
+    return `<i class="fa-solid ${getCodexCategoryIcon(category)}"></i>`;
 }
 
 /**
@@ -1076,7 +1078,7 @@ export async function createCodexPin(opts) {
     const design     = _buildMergedDesign(pins, 'codex');
     const ownership  = _calculateCodexPinOwnership(page);
     const tags       = _codexCategoryToPinTags(entryCategory);
-    const image      = _codexCategoryToImage(entryCategory);
+    const image      = _codexCategoryToImage(entryCategory, page.system?.categoryIcon);
 
     const pinData = {
         id:              crypto.randomUUID(),
@@ -1273,7 +1275,7 @@ export async function updateCodexPin(entryUuid, opts = {}) {
 
     const patch = {
         text:  entryName || page?.name || '',
-        image: _codexCategoryToImage(entryCategory),
+        image: _codexCategoryToImage(entryCategory, page.system?.categoryIcon),
         tags:  _codexCategoryToPinTags(entryCategory),
         config: { codexUuid: entryUuid, codexCategory: entryCategory }
     };
