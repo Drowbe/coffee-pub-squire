@@ -513,7 +513,7 @@ export class HandleManager {
             try {
                 // Try to get the condition data from CONFIG.DND5E.conditionTypes
                 // dnd5e 4+ renamed `label` to `name` (pre-localized at i18nInit)
-                let description = "No description available.";
+                let description = "<p>No description available.</p>";
                 const conditionData = Object.values(CONFIG.DND5E.conditionTypes).find(
                     condition => (condition.name ?? condition.label) === conditionName
                 );
@@ -532,7 +532,12 @@ export class HandleManager {
                         if (journal) {
                             const page = journal.pages.get(pageId);
                             if (page) {
-                                description = page.text.content;
+                                // Rule pages carry a short summary in system.tooltip; prefer it
+                                // over the full article — for pseudo-conditions like Diseased
+                                // the article is DM lore, not a stat blurb. Enrich either way
+                                // so &Reference[...] / @UUID[...] render instead of showing raw.
+                                const raw = page.system?.tooltip || page.text.content;
+                                description = await getTextEditor().enrichHTML(raw, { relativeTo: page });
                             }
                         }
                     }
@@ -547,9 +552,7 @@ export class HandleManager {
                         </div>
                         
                         <div class="squire-description-content">
-                            ${description.split('\n').filter(line => line.trim()).map(line => 
-                                `<p>${line.trim()}</p>`
-                            ).join('')}
+                            ${description}
                             ${game.user.isGM ? '<p class="gm-note"><i>Right-click to remove this condition.</i></p>' : ''}
                         </div>
                     </div>
