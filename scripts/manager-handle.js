@@ -184,7 +184,7 @@ export class HandleManager {
             isGM: game.user.isGM,
             effects: this.actor?.effects?.map(e => ({
                 name: e.name,
-                icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
+                icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.img || 'icons/svg/aura.svg'
             })) || [],
             pinnedQuest,
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
@@ -512,13 +512,15 @@ export class HandleManager {
             // Show condition description dialog
             try {
                 // Try to get the condition data from CONFIG.DND5E.conditionTypes
+                // dnd5e 4+ renamed `label` to `name` (pre-localized at i18nInit)
                 let description = "No description available.";
                 const conditionData = Object.values(CONFIG.DND5E.conditionTypes).find(
-                    condition => condition.label === conditionName
+                    condition => (condition.name ?? condition.label) === conditionName
                 );
 
-                // Get the icon path from the clicked element
-                const iconPath = event.currentTarget.src;
+                // Delegated listener: currentTarget is the handle container, not the
+                // clicked icon — read the src off the <img> itself
+                const iconPath = conditionIcon.src;
 
                 if (conditionData?.reference) {
                     // Parse the reference string: "Compendium.dnd5e.rules.JournalEntry.w7eitkpD7QQTB6j0.JournalEntryPage.0b8N4FymGGfbZGpJ"
@@ -541,7 +543,7 @@ export class HandleManager {
                     <div class="squire-description-window">
                         <div class="squire-description-header">
                             <img src="${iconPath}"/>
-                            <h1>${conditionData?.label || conditionName}</h1>
+                            <h1>${conditionData?.name || conditionName}</h1>
                         </div>
                         
                         <div class="squire-description-content">
@@ -561,7 +563,7 @@ export class HandleManager {
                     </style>`;
                 
                 new Dialog({
-                    title: conditionData?.label || conditionName,
+                    title: conditionData?.name || conditionName,
                     content: content,
                     buttons: {
                         close: {
