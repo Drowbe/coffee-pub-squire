@@ -1292,12 +1292,14 @@ export async function updateCodexPin(entryUuid, opts = {}) {
  * Shared by every kind — note, codex, quest objective. Panels must not reach for
  * `pins.panTo` themselves; this file is the only place that touches the pins API.
  *
- * Callers are expected to have established that the pin is on the scene the user
- * is actually looking at — panning to a pin on another scene moves the viewport
- * to coordinates that mean nothing there.
+ * Verifies the pin is on the scene being viewed rather than trusting the caller.
+ * Callers gate their button on `pinOnActiveScene`, but that is computed when the
+ * panel last refreshed — change scene without a refresh and the button goes stale.
+ * Acting on it would pan the CURRENT canvas to another scene's coordinates: a
+ * viewport jump to nothing, with a ping on empty ground.
  *
  * @param {string} pinId
- * @returns {Promise<boolean>} false when the API or the pin is unavailable
+ * @returns {Promise<boolean>} false when the pin is unavailable or elsewhere
  */
 export async function panToPin(pinId) {
     if (!pinId) return false;
@@ -1306,6 +1308,22 @@ export async function panToPin(pinId) {
         ui.notifications.warn('Canvas pins are not available.');
         return false;
     }
+
+    const pin = pins.get?.(pinId) ?? null;
+    if (!pin) {
+        ui.notifications.warn('That pin no longer exists.');
+        return false;
+    }
+    if (!pin.sceneId) {
+        ui.notifications.info('That pin is not placed on any scene.');
+        return false;
+    }
+    if (pin.sceneId !== canvas?.scene?.id) {
+        const sceneName = game.scenes?.get(pin.sceneId)?.name || 'another scene';
+        ui.notifications.info(`Pinned on ${sceneName} — open that scene to see it.`);
+        return false;
+    }
+
     try {
         await pins.panTo(pinId, { ping: { animation: 'ping', sound: 'interface-ping-01' } });
         return true;

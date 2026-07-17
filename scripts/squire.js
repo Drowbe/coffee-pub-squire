@@ -193,6 +193,18 @@ Hooks.once('ready', async () => {
                 if (pm?.instance?.characterPanel && pm.element) {
                     await pm.instance.characterPanel.render(pm.element);
                 }
+
+                // Codex and notes cards carry per-scene pin state — the "Show on Canvas"
+                // button, the pin icon's active/dim state, the "pinned on <scene>" tooltip.
+                // All of it is computed in _refreshData(), so after a scene change it
+                // describes the PREVIOUS scene until something else happens to refresh.
+                // reinitializeTrayForCanvas() above returns early whenever the current
+                // actor has a token on the new scene, which is the common case, so the
+                // tray rebuild cannot be relied on to do this.
+                // Only panels that have actually rendered — respects the lazy tabs.
+                for (const panel of [pm?.instance?.codexPanel, pm?.instance?.notesPanel]) {
+                    if (panel?._hasRenderedOnce && pm.element) await panel.render(pm.element);
+                }
             }
         });
 
