@@ -6,10 +6,10 @@
 {{/inline}}
 
 {{#*inline "feature-item"}}
-<div class="panel-item" data-item-id="{{id}}" data-item-type="feat" data-category-id="{{categoryId}}">
+<div draggable="true" class="panel-item" data-item-id="{{id}}" data-item-type="feat" data-category-id="{{categoryId}}">
     <div class="panel-item-row">
         <div class="panel-item-image-container">
-            <img class="panel-item-image" src="{{img}}" alt="{{name}}"/>
+            <img draggable="false" class="panel-item-image" src="{{img}}" alt="{{name}}"/>
             <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
         </div>
         <div class="panel-item-name">

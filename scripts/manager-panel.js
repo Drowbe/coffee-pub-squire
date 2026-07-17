@@ -712,6 +712,35 @@ export class PanelManager {
             });
         }
 
+        // Drag items out of the tray — to chat, a journal, a note, the hotbar, another
+        // sheet, or any of Squire's own drop zones. Nothing in Foundry drags unless it
+        // is wired to: the row carries draggable="true" (in the templates, so it
+        // survives a re-render for free) and this supplies the payload.
+        //
+        // Delegated and bound once, deliberately. Every panel rebuilds its items on
+        // each render, so a per-item listener would need re-binding every time — the
+        // pattern that has repeatedly left handlers pointing at markup that no longer
+        // exists. One listener on the stable tray root outlives all of it.
+        if (!nativeTray.dataset.itemDragBound) {
+            nativeTray.dataset.itemDragBound = 'true';
+            nativeTray.addEventListener('dragstart', (event) => {
+                const row = event.target.closest?.('.panel-item[data-item-id]');
+                if (!row || !nativeTray.contains(row)) return;
+
+                const item = PanelManager.currentActor?.items?.get(row.dataset.itemId);
+                if (!item) return;
+
+                // toDragData() is the canonical payload every Foundry drop target
+                // understands — {type, uuid, data}. Hand-rolling {type:'Item', uuid}
+                // would work today and rot the moment core changes the shape.
+                event.dataTransfer.setData('text/plain', JSON.stringify(item.toDragData()));
+                event.dataTransfer.effectAllowed = 'copyLink';
+
+                const img = row.querySelector('.panel-item-image');
+                if (img) event.dataTransfer.setDragImage(img, 16, 16);
+            });
+        }
+
         // View tab buttons
         const tabButtons = nativeTray.querySelectorAll('.tray-tab-button');
         tabButtons.forEach(button => {

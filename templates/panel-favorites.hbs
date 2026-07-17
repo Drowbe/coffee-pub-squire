@@ -18,11 +18,11 @@
     <div class="favorites-list">
         {{#if favorites}}
         {{#each favorites}}
-        <div class="panel-item" 
+        <div draggable="true" class="panel-item" 
              data-item-id="{{this.id}}" data-item-type="{{this.type}}">
             <div class="panel-item-row">
                 <div class="panel-item-image-container">
-                    <img class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
+                    <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
                     <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
                 </div>
                 <div class="panel-item-name">{{this.name}}</div>

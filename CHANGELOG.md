@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.3.14]
 
+### Added
+- **Drag items out of the character tray**: inventory, weapons, spells, features, and favorites are now draggable — to chat, a journal page, a Squire note, the hotbar, another actor's sheet, or any of Squire's own drop zones (codex links, quest participants and treasure, favorites). Nothing in Foundry drags unless it is explicitly wired to, and the tray never was: no `draggable` attribute, no `dragstart` handler. The payload is `item.toDragData()` — the canonical `{type, uuid, data}` shape every Foundry drop target already understands, rather than a hand-rolled object that would rot the moment core changed. The row carries `draggable="true"` in the template so it survives a re-render for free, and a single delegated `dragstart` on the stable tray root supplies the payload — bound once rather than per item per render, which is the pattern that keeps leaving handlers attached to markup that no longer exists.
+
 ### Changed
 - **Notes rows: a `...` menu instead of five buttons**: Give, Edit, and Delete move into a per-note `...` menu (the same Blacksmith context menu the codex entries and titlebars use), leaving the row as `[Show on Canvas] [Pin/Unpin] [...]`. Pin/Unpin is a single toggle again, exactly as before. "Give Note To..." only appears for a private note you author (or any private note, if you're the GM) — the same rule the old inline button used, now computed once in the note data instead of nested in the template, so the control and the menu can't disagree.
 
