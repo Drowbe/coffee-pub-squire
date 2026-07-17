@@ -749,6 +749,63 @@ Hooks.once('ready', async () => {
             }
         });
         
+        // Ownership changes must reach the character switcher.
+        //
+        // This needs its own registration because every other updateActor hook is
+        // scoped to something that is false in exactly this case: the party and
+        // party-stats hooks bail on `hasPlayerOwner`, and the global hook bails
+        // unless the changed actor IS the one being viewed. Granting a player a new
+        // actor while they were looking at a different one therefore reached nothing,
+        // and the chips only appeared after a reload.
+        //
+        // The switcher is built from `game.actors.filter(a => a.isOwner)` in the TRAY
+        // render data, so refreshing it means re-rendering the tray, not a panel.
+        const ownershipHookId = getBlacksmithHookManager().registerHook({
+            name: "updateActor",
+            description: "Coffee Pub Squire: Refresh the character switcher when actor ownership changes",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (actor, changes) => {
+                // Ownership only — every other field is another hook's business.
+                if (!changes?.ownership) return;
+                // The switcher is player-only; getOwnedCharacters() returns null for a GM.
+                if (game.user.isGM) return;
+
+                // Only if THIS user's access actually moved. The hook fires on every
+                // client for every actor, so without this a GM bulk-editing permissions
+                // would rebuild every player's tray once per actor. Foundry sends a diff,
+                // so the keys are the tell: `default` reaches everyone, our own id reaches
+                // us, and `-=<id>` is a removal.
+                const ownership = changes.ownership;
+                const affectsMe = ('default' in ownership)
+                    || (game.user.id in ownership)
+                    || (`-=${game.user.id}` in ownership);
+                if (!affectsMe) return;
+
+                const panelManager = getPanelManager();
+                if (!panelManager?.instance?.element) return;
+
+                const current = panelManager.currentActor;
+                if (current && !current.isOwner) {
+                    // We are looking at an actor we no longer own. Leaving the tray on it
+                    // would show a sheet the user can't open, so fall back the same way
+                    // the switcher ranks them: assigned character, then any character,
+                    // then anything else owned. initialize(null) is the no-character state.
+                    const owned = game.actors.filter(a => a.isOwner);
+                    const next = owned.find(a => a.id === game.user.character?.id)
+                        ?? owned.find(a => a.type === 'character')
+                        ?? owned[0]
+                        ?? null;
+                    if (next) await panelManager.switchToCharacter(next.id);
+                    else await panelManager.initialize(null, { force: true });
+                    return;
+                }
+
+                // Gained or lost some OTHER actor: the tray keeps its actor, the chips change.
+                await panelManager.instance.updateTray();
+            }
+        });
+
         const globalDeleteTokenHookId = getBlacksmithHookManager().registerHook({
             name: "deleteToken",
             description: "Coffee Pub Squire: Handle global token deletion",
