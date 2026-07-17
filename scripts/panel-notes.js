@@ -10,7 +10,8 @@ import {
     deleteNotePin,
     unplaceNotePin,
     updateNotePin,
-    syncNoteOwnership
+    syncNoteOwnership,
+    panToPin
 } from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
@@ -675,13 +676,7 @@ export class NotesPanel {
      * @private
      */
     async _panToNotePin(pinId) {
-        if (!pinId) return;
-        const pins = getPinsApi();
-        if (!pins?.panTo) {
-            ui.notifications.warn('Canvas pins are not available.');
-            return;
-        }
-        await pins.panTo(pinId, { ping: { animation: 'ping', sound: 'interface-ping-01' } });
+        await panToPin(pinId);
     }
 
     async _syncPinnedNotesOwnership() {

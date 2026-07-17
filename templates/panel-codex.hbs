@@ -52,6 +52,14 @@
                                     {{entry.name}}
                                 </div>
                                 <div class="codex-toolbar">
+                                    {{!-- Outside the GM block on purpose: the panel only shows an entry to a
+                                          player who can observe it, and the pin inherits that ownership — so if
+                                          they can see the card, they can see the pin and may as well find it. --}}
+                                    {{#if entry.pinOnActiveScene}}
+                                        <i class="fa-solid fa-crosshairs codex-entry-locate"
+                                           data-pin-id="{{entry.pinId}}"
+                                           title="Show on Canvas"></i>
+                                    {{/if}}
                                     {{#if @root.isGM}}
                                         <i class="fa-solid fa-location-dot codex-entry-pin quest-pin-icon {{#if entry.hasPinOnScene}}quest-pin-active{{else}}quest-pin-dim{{/if}}"
                                            data-uuid="{{entry.uuid}}"

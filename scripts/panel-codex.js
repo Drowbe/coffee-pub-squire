@@ -18,7 +18,8 @@ import {
     deleteCodexPin,
     beginCodexPinPlacement,
     unplaceCodexPin,
-    updateCodexPinVisibility
+    updateCodexPinVisibility,
+    panToPin
 } from './manager-pins.js';
 
 // Helper function to safely get Blacksmith API
@@ -873,6 +874,16 @@ export class CodexPanel {
                 if (page?.parent) {
                     page.parent.sheet.render(true, { pageId: page.id });
                 }
+            });
+        });
+
+        // Pan the canvas to this entry's pin. Only rendered when the pin is on the
+        // scene being viewed, which is the only time panning can land anywhere.
+        nativeHtml.querySelectorAll('.codex-entry-locate').forEach(btn => {
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                panToPin(event.currentTarget.dataset.pinId);
             });
         });
 

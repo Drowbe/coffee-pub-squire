@@ -1287,6 +1287,35 @@ export async function updateCodexPin(entryUuid, opts = {}) {
 }
 
 /**
+ * Pan the canvas to a pin and ping it.
+ *
+ * Shared by every kind — note, codex, quest objective. Panels must not reach for
+ * `pins.panTo` themselves; this file is the only place that touches the pins API.
+ *
+ * Callers are expected to have established that the pin is on the scene the user
+ * is actually looking at — panning to a pin on another scene moves the viewport
+ * to coordinates that mean nothing there.
+ *
+ * @param {string} pinId
+ * @returns {Promise<boolean>} false when the API or the pin is unavailable
+ */
+export async function panToPin(pinId) {
+    if (!pinId) return false;
+    const pins = getPinsApi();
+    if (!isPinsApiAvailable(pins) || typeof pins.panTo !== 'function') {
+        ui.notifications.warn('Canvas pins are not available.');
+        return false;
+    }
+    try {
+        await pins.panTo(pinId, { ping: { animation: 'ping', sound: 'interface-ping-01' } });
+        return true;
+    } catch (error) {
+        console.warn('Coffee Pub Squire | panToPin:', error);
+        return false;
+    }
+}
+
+/**
  * Reconcile codex page pinId flags against live Blacksmith data. GM only.
  * Clears pinId when the referenced pin no longer exists.
  */
