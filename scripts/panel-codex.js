@@ -40,6 +40,24 @@ function normalizeName(name) {
 }
 
 /**
+ * Item types the codex inventory scan considers "something the party owns".
+ *
+ * `container` is the dnd5e 5.x type for backpacks/pouches; `backpack` is its
+ * pre-migration name (dnd5e rewrites `backpack` → `container` on load, so a
+ * modern world has none — it is kept here only so an unmigrated world still
+ * works). Their absence is why containers were invisible to the scan.
+ *
+ * NOTE: this does NOT need to recurse. dnd5e keeps a contained item as an
+ * ordinary embedded item on the actor, tagged with `system.container` — it is
+ * never nested inside the container document. `Container#contents` is itself
+ * derived by filtering `actor.items`, so `actor.items` already holds everything
+ * in every container, at any depth.
+ */
+const CODEX_SCAN_ITEM_TYPES = Object.freeze([
+    'equipment', 'consumable', 'tool', 'loot', 'weapon', 'container', 'backpack'
+]);
+
+/**
  * Index every codex entry in the journal by normalized name, for resolving
  * `related` names and location levels to pages.
  *
@@ -1352,22 +1370,12 @@ export class CodexPanel {
                 if (actor.items && actor.items.contents) {
                     // Filter items by type (same as inventory panel)
                     const items = actor.items.contents.filter(item => 
-                        ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
+                        CODEX_SCAN_ITEM_TYPES.includes(item.type)
                     );
                     
                     for (const item of items) {
-                        // Normalize spaces: collapse multiple spaces into single spaces, then lowercase and trim
-                        const itemNameLower = normalizeName(item.name);
-                        inventoryItems.add(itemNameLower);
-                        
-                        // If it's a backpack/container, check its contents
-                        if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
-                            for (const containedItem of item.contents) {
-                                // Apply same space normalization to contained items
-                                const containedItemNameLower = normalizeName(containedItem.name);
-                                inventoryItems.add(containedItemNameLower);
-                            }
-                        }
+                        // Contained items are already in `items` — see CODEX_SCAN_ITEM_TYPES.
+                        inventoryItems.add(normalizeName(item.name));
                     }
                 }
             }
@@ -1435,38 +1443,14 @@ export class CodexPanel {
                             // Log what we're looking for
                             
                             for (const actor of partyActors) {
-                                const items = actor.items.contents.filter(item =>
-                                    ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
+                                // Same list, same normalizer as the pass that built
+                                // `inventoryItems` — the two must agree or an entry
+                                // matches with nobody credited for finding it.
+                                const owns = actor.items.contents.some(item =>
+                                    CODEX_SCAN_ITEM_TYPES.includes(item.type)
+                                    && normalizeName(item.name) === entryNameLower
                                 );
-                                
-                                let foundInThisActor = false;
-                                
-                                for (const item of items) {
-                                    // Normalize the item name the same way we did when building inventoryItems
-                                    const itemNameLower = normalizeName(item.name);
-                                    
-                                    if (itemNameLower === entryNameLower) {
-                                        if (!foundInThisActor) {
-                                            discoverers.push(actor.name);
-                                            foundInThisActor = true;
-                                        }
-                                        // Don't break - continue checking other items in case there are duplicates
-                                    }
-                                    
-                                    // Check backpack contents
-                                    if (item.type === 'backpack' && item.contents && Array.isArray(item.contents)) {
-                                        for (const containedItem of item.contents) {
-                                            const containedItemNameLower = normalizeName(containedItem.name);
-                                            if (containedItemNameLower === entryNameLower) {
-                                                if (!foundInThisActor) {
-                                                    discoverers.push(actor.name);
-                                                    foundInThisActor = true;
-                                                }
-                                                // Don't break - continue checking other contained items
-                                            }
-                                        }
-                                    }
-                                }
+                                if (owns) discoverers.push(actor.name);
                             }
                             
                             // Log what we found

@@ -151,6 +151,36 @@ Manual GM action. Crawls the codex and re-resolves unresolved `links` (corpus B 
 - **Auto-run**: the post-import prompt is deliberately a notification, not an action — Auto-Link is a bulk write to journal pages and the GM triggers it. A setting could opt into running it automatically.
 - **`journal` link type** is now nearly vestigial (Expanded Details carries lore, `related` carries entry→entry). It may be worth dropping from the prompt's type list entirely.
 
+## Phase 5 — Suggested discoveries (designed July 15, 2026; not built)
+
+Auto-discovery matches an owned item to a codex entry by **exact name** (case-insensitive, interior whitespace collapsed, `Set.has()`). Finding *"Map of Phlan"* reveals the **Map of Phlan** entry and nothing else — it says nothing about **Phlan**, even though a party holding a map of a city plainly knows the city exists.
+
+### The rule that stays
+
+**Discovery never auto-reveals on a partial match.** It writes to the world — flipping `ownership.default` to OBSERVER reveals a page to players — and a false positive spoils something permanently and invisibly. Substring matching is especially hazardous on the *entry* side, not the item side: `Lore` (4 entries) would hit any item containing "lore", `The Ride` any item containing "the ride", `Old Town` an "Old Town Key". An item-type heuristic (only maps/books/sketches) filters the wrong end of the comparison and doesn't address this.
+
+### Design: suggest, don't unlock
+
+A **review step**, not an auto-unlock — same shape as the Auto-Link prompt and the pin-visibility warning. The scan already reports what it revealed; it gains a second, GM-only list of *candidates* that reveal nothing until ticked.
+
+Two signals, ranked, and **labelled as different kinds of claim** (the asserted-vs-speculative split that made Auto-Link's reporting readable):
+
+1. **`related` cascade — authored, high confidence.** A discovered entry's own `related` names are candidates. `Map of Phlan` already carries `related: ["Phlan"]`, so the relationship is *stated*, not inferred. This also catches what substring never can (`Aquatic Crypt` from a "Sokol Keep Cellar Key").
+   - **One hop only, always GM-confirmed.** Discovering `Phlan` itself would otherwise cascade to its 13 related entries and reveal half the Moonsea in one click. Do not transitively close.
+2. **Name-containment — coincidental, low confidence.** An entry whose name appears inside an owned item's name. Only survivable *because* a human reviews it. Guard with **whole-word** matching and a **minimum length** (~5 chars) or the short-name cases above flood the list.
+
+Suggestions must be **dismissible and stay dismissed**, or the same candidates resurface on every scan and the list becomes noise the GM learns to skip — the failure mode the speculative/asserted split was invented to avoid.
+
+### Why not fold this into matching
+
+Keeping exact-match as the only *automatic* rule preserves a clean contract: discovery answers "does the party physically hold this thing", nothing more. Everything looser is a suggestion for a human. That also keeps this distinct from Blacksmith's compendium resolver (exact → `startsWith` → opt-in `includes`), which resolves *a name an author wrote* — a different question that earns a different ladder.
+
+### Open questions
+
+- **Where does the review UI live?** A dialog after the scan, or a persistent "suggested" state on the card (like the tracked "new entry" flag idea)? The latter survives a reload and doesn't demand an answer mid-scan.
+- **Does a GM-confirmed suggestion cascade again** (reveal `Phlan`, now offer Phlan's 13)? Almost certainly not by default — one hop per scan.
+- **Should dismissals be per-entry or per-pair?** Dismissing "Phlan from Map of Phlan" is not the same as dismissing Phlan forever.
+
 ## Out of scope (follow-on)
 
 - **Notes** and **Quest** panels have the same HTML-as-database disease. Notes is the natural second adopter (similar field shape). Quest is last and largest (task states/progress live in HTML and are *edited* by rewriting it) — do it only once the codex pattern is proven.

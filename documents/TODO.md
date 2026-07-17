@@ -24,6 +24,7 @@
 | Perf: delete pointless clone-and-rebind in panel `_activateListeners` (~2,200 needless DOM clones/render at 314 entries) | High | S | Open |
 | Perf: cache codex link enrichment — ~314 sequential `enrichHTML` awaits on every render | High | S | Open |
 | Codex: `related` entries + retain-unresolved links + Auto-Link tool (see `plan-codex-datamodel.md` Phase 4) | High | L | Implemented (13.3.12) — needs in-game verification |
+| Codex: suggested discoveries — GM-reviewed `related`/name-containment candidates (see `plan-codex-datamodel.md` Phase 5) | Medium | M | Designed |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
 | Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
 | Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |
@@ -82,6 +83,7 @@
 
 ### CODEX TAB
 - [ ] **ENHANCEMENT (Designed — `plan-codex-datamodel.md` Phase 4)** `related` codex-to-codex entries, retain-unresolved links, and a rescan tool. Three connected pieces: (1) `links` keeps `{name, type, uuid?}` and renders unresolved names as plain text instead of discarding them — a codex is authored incrementally, so "Moonsea" may not exist *yet*, and today the relationship is destroyed at import; (2) a `related` field for entry→entry relations, resolved against pages in the codex journal (Squire's own lookup — a corpus `api.compendiums` doesn't model — in a second pass after all pages exist); (3) a GM rescan that crawls the codex and links whatever has since become linkable, reusing the inventory auto-discovery progress bar. Discovered by feeding the 13.3.12 resolver a real AI-authored codex: 19 of 22 links on one entry pointed at other codex entries and were structurally unresolvable (`type: "journal"` finds `JournalEntry` documents; codex entries are `JournalEntryPage`s). The AI wasn't over-linking — it was describing a graph the schema can't hold.
+- [ ] **ENHANCEMENT (Designed — `plan-codex-datamodel.md` Phase 5)** Suggested discoveries. Auto-discovery matches an owned item to a codex entry by exact name, so finding "Map of Phlan" reveals **Map of Phlan** but never **Phlan**. Rather than loosen the match — discovery writes to the world, and a false positive spoils something permanently — surface *candidates* for GM review: the discovered entry's own `related` names (authored, high confidence, one hop only), plus name-containment hits (coincidental, low confidence, whole-word + min-length guarded). Nothing reveals until ticked. See the plan for why substring auto-unlock is hazardous on the entry side (`Lore`, `The Ride`, `Old Town`) and why an item-type heuristic doesn't fix it.
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description
