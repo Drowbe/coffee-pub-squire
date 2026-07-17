@@ -568,6 +568,15 @@ export class NotesPanel {
                     // get() now includes sceneId for placed pins (Blacksmith 13.7.6+).
                     const livePinSceneId = note.pinId ? (getPinsApi()?.get?.(note.pinId)?.sceneId ?? null) : null;
                     note.hasPinOnScene = !!(note.pinId && livePinSceneId);
+                    // Panning only works on the scene you're looking at, so the pin
+                    // control has to know whether this pin is on it (same distinction
+                    // the codex panel makes).
+                    note.pinOnActiveScene = !!(livePinSceneId && canvas?.scene?.id && livePinSceneId === canvas.scene.id);
+                    // Volatile: depends on who is viewing, so it must not live in the
+                    // modifiedTime-keyed parse cache. Only a private note can be handed
+                    // over, and only by its author or a GM.
+                    note.canGive = note.visibility === 'private'
+                        && (game.user.isGM || note.authorId === game.user.id);
                     if (livePinSceneId) {
                         note.sceneId = livePinSceneId;
                         note.sceneName = game.scenes?.get(livePinSceneId)?.name || note.sceneName || null;
@@ -635,6 +644,44 @@ export class NotesPanel {
             pinButton.title = 'Pin to Canvas';
             pinButton.innerHTML = '<i class="fa-solid fa-location-dot note-pin-icon note-pin-dim"></i>';
         }
+
+        // Keep the locate button honest in the same beat. This is optimistic UI
+        // ahead of the hook-driven render; without this an unpinned note keeps a
+        // "Show on Canvas" button aimed at a pin that no longer exists.
+        const onActiveScene = !!(sceneId && canvas?.scene?.id && sceneId === canvas.scene.id);
+        const locateButton = row.querySelector('.note-locate');
+        if (onActiveScene && !locateButton) {
+            const btn = document.createElement('button');
+            btn.className = 'note-locate';
+            btn.dataset.pinId = pinId;
+            btn.title = 'Show on Canvas';
+            btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this._panToNotePin(btn.dataset.pinId);
+            });
+            pinButton.parentNode?.insertBefore(btn, pinButton);
+        } else if (!onActiveScene && locateButton) {
+            locateButton.remove();
+        } else if (locateButton) {
+            locateButton.dataset.pinId = pinId;
+        }
+    }
+
+    /**
+     * Pan and ping the canvas to a note's pin.
+     * @param {string} pinId
+     * @private
+     */
+    async _panToNotePin(pinId) {
+        if (!pinId) return;
+        const pins = getPinsApi();
+        if (!pins?.panTo) {
+            ui.notifications.warn('Canvas pins are not available.');
+            return;
+        }
+        await pins.panTo(pinId, { ping: { animation: 'ping', sound: 'interface-ping-01' } });
     }
 
     async _syncPinnedNotesOwnership() {
@@ -996,56 +1043,45 @@ export class NotesPanel {
         });
 
         // Note actions
-        nativeHtml.querySelectorAll('.note-edit').forEach(button => {
-            const newButton = button.cloneNode(true);
-            button.parentNode?.replaceChild(newButton, button);
-            newButton.addEventListener('click', async (event) => {
+        // Per-note "..." menu: give / edit / delete. These were three separate
+        // always-visible buttons crowding the row next to pin and unpin.
+        nativeHtml.querySelectorAll('.note-menu').forEach(menuBtn => {
+            menuBtn.addEventListener('click', (event) => {
                 event.preventDefault();
+                event.stopPropagation();
                 const uuid = event.currentTarget.dataset.uuid;
-                try {
-                    const page = await foundry.utils.fromUuid(uuid);
-                    if (!page) {
-                        ui.notifications.error('Note not found.');
-                        return;
-                    }
-                    
-                    const noteData = buildNoteDataFromPage(page);
-                    if (!noteData) return;
+                if (!uuid) return;
 
-                    await openNoteWindow({ note: noteData, page, pageUuid: page.uuid, pageId: page.id, viewMode: false });
-                } catch (error) {
-                    console.error('Error opening note for editing:', error);
-                    ui.notifications.error(`Failed to open note: ${error.message}`);
+                const ctxMenu = getBlacksmith()?.uiContextMenu;
+                if (!ctxMenu?.show) return;
+
+                const items = [];
+                if (event.currentTarget.dataset.canGive === 'true') {
+                    items.push({
+                        name: 'Give Note To...',
+                        icon: 'fa-solid fa-share',
+                        callback: () => this._giveNote(uuid)
+                    });
                 }
+                items.push({
+                    name: 'Edit Note',
+                    icon: 'fa-solid fa-pen',
+                    callback: () => this._editNote(uuid)
+                });
+                items.push({
+                    name: 'Delete Note',
+                    icon: 'fa-solid fa-trash',
+                    callback: () => this._deleteNote(uuid)
+                });
+
+                ctxMenu.show({
+                    id: `${MODULE.ID}-note-row-menu`,
+                    x: event.clientX,
+                    y: event.clientY,
+                    zones: { core: items }
+                });
             });
         });
-
-        nativeHtml.querySelectorAll('.note-delete').forEach(button => {
-            const newButton = button.cloneNode(true);
-            button.parentNode?.replaceChild(newButton, button);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const uuid = event.currentTarget.dataset.uuid;
-                const confirmed = await Dialog.confirm({
-                    title: 'Delete Note',
-                    content: '<p>Are you sure you want to delete this note?</p>',
-                    yes: () => true,
-                    no: () => false,
-                    defaultYes: false
-                });
-                    if (confirmed) {
-                        const page = await foundry.utils.fromUuid(uuid);
-                        if (page) {
-                            await deleteNotePin(page);
-                            await page.delete();
-                            if (this.element) {
-                                await this._refreshData();
-                                this.render(this.element);
-                            }
-                        }
-                    }
-                });
-            });
 
         nativeHtml.querySelectorAll('.note-pin, .note-unpin').forEach(button => {
             const newButton = button.cloneNode(true);
@@ -1098,46 +1134,6 @@ export class NotesPanel {
             });
         });
 
-        nativeHtml.querySelectorAll('.note-give').forEach(giveButton => {
-            const newButton = giveButton.cloneNode(true);
-            giveButton.parentNode?.replaceChild(newButton, giveButton);
-            newButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const noteUuid = newButton.dataset.uuid;
-                if (!noteUuid) return;
-
-                const page = await foundry.utils.fromUuid(noteUuid);
-                if (!page) {
-                    ui.notifications.error('Note not found.');
-                    return;
-                }
-
-                const authorId = page.getFlag(MODULE.ID, 'authorId');
-                if (!game.user.isGM && authorId !== game.user.id) {
-                    ui.notifications.warn('You do not own this note.');
-                    return;
-                }
-                const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
-                if (visibility !== 'private') {
-                    ui.notifications.warn('Only private notes can be given to another player.');
-                    return;
-                }
-
-                    const picker = new UsersWindow({
-                        onUserSelected: async (user) => {
-                            if (!user) return;
-                            await page.setFlag(MODULE.ID, 'authorId', user.id);
-                            await page.setFlag(MODULE.ID, 'editorIds', [user.id]);
-                            await syncNoteOwnership(page, visibility, user.id);
-                            await updateNotePin(page);
-                            ui.notifications.info(`Note shared with ${user.name}.`);
-                            this.render(this.element);
-                        }
-                    });
-                picker.render(true);
-            });
-        });
-
         nativeHtml.querySelectorAll('.note-tag').forEach(tag => {
             const newTag = tag.cloneNode(true);
             tag.parentNode?.replaceChild(newTag, tag);
@@ -1151,31 +1147,112 @@ export class NotesPanel {
             });
         });
 
-        nativeHtml.querySelectorAll('.note-location-section').forEach(location => {
-            const newLocation = location.cloneNode(true);
-            location.parentNode?.replaceChild(newLocation, location);
-            newLocation.addEventListener('click', async (event) => {
+        // Pan to a note's pin. This handler used to hang off `.note-location-section`,
+        // an element the card view owned — dropping the card view in 13.3.11 deleted
+        // the only trigger and left the handler bound to nothing, so there was no way
+        // to find a pinned note on the map.
+        // Pan to a note's pin. This used to hang off `.note-location-section`, an
+        // element the card view owned — dropping the card view in 13.3.11 deleted the
+        // only trigger and left the handler bound to a selector matching nothing, so
+        // the capability silently vanished. The button only renders when the pin is
+        // on the scene you're looking at, which is the only time panning can work.
+        nativeHtml.querySelectorAll('.note-locate').forEach(btn => {
+            btn.addEventListener('click', (event) => {
                 event.preventDefault();
-                const pinId = event.currentTarget.dataset.pinId;
-                if (!pinId) {
-                    return;
-                }
-                const pins = getPinsApi();
-                if (!pins?.panTo) {
-                    return;
-                }
-                const success = await pins.panTo(pinId, {
-                    ping: {
-                        animation: 'ping',
-                        sound: 'interface-ping-01'
-                    }
-                });
+                event.stopPropagation();
+                this._panToNotePin(event.currentTarget.dataset.pinId);
             });
         });
 
         // Apply initial filters
         this._applyFilters(nativeHtml);
         this._updateClearSearchState(nativeHtml);
+    }
+
+    /**
+     * Open a note for editing. Menu action.
+     * @param {string} uuid
+     * @private
+     */
+    async _editNote(uuid) {
+        try {
+            const page = await foundry.utils.fromUuid(uuid);
+            if (!page) {
+                ui.notifications.error('Note not found.');
+                return;
+            }
+            const noteData = buildNoteDataFromPage(page);
+            if (!noteData) return;
+            await openNoteWindow({ note: noteData, page, pageUuid: page.uuid, pageId: page.id, viewMode: false });
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error opening note for editing:', error);
+            ui.notifications.error(`Failed to open note: ${error.message}`);
+        }
+    }
+
+    /**
+     * Delete a note and its pin, after confirmation. Menu action.
+     * @param {string} uuid
+     * @private
+     */
+    async _deleteNote(uuid) {
+        const confirmed = await Dialog.confirm({
+            title: 'Delete Note',
+            content: '<p>Are you sure you want to delete this note?</p>',
+            yes: () => true,
+            no: () => false,
+            defaultYes: false
+        });
+        if (!confirmed) return;
+        const page = await foundry.utils.fromUuid(uuid);
+        if (!page) return;
+        await deleteNotePin(page);
+        await page.delete();
+        if (this.element) {
+            await this._refreshData();
+            this.render(this.element);
+        }
+    }
+
+    /**
+     * Hand a private note to another player. Menu action.
+     *
+     * The permission checks are re-asserted here rather than trusted from the
+     * menu's visibility: `canGive` decides whether the item is *offered*, this
+     * decides whether it is *allowed*.
+     *
+     * @param {string} uuid
+     * @private
+     */
+    async _giveNote(uuid) {
+        const page = await foundry.utils.fromUuid(uuid);
+        if (!page) {
+            ui.notifications.error('Note not found.');
+            return;
+        }
+
+        const authorId = page.getFlag(MODULE.ID, 'authorId');
+        if (!game.user.isGM && authorId !== game.user.id) {
+            ui.notifications.warn('You do not own this note.');
+            return;
+        }
+        const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
+        if (visibility !== 'private') {
+            ui.notifications.warn('Only private notes can be given to another player.');
+            return;
+        }
+
+        new UsersWindow({
+            onUserSelected: async (user) => {
+                if (!user) return;
+                await page.setFlag(MODULE.ID, 'authorId', user.id);
+                await page.setFlag(MODULE.ID, 'editorIds', [user.id]);
+                await syncNoteOwnership(page, visibility, user.id);
+                await updateNotePin(page);
+                ui.notifications.info(`Note shared with ${user.name}.`);
+                this.render(this.element);
+            }
+        }).render(true);
     }
 
     async _beginNotePinPlacement(page) {
@@ -1311,11 +1388,37 @@ export class NotesPanel {
     }
 
     async _unpinNote(page) {
+        // DELETE, not unplace. Notes have no UI that can re-place an unplaced pin,
+        // so unplacing only ever stranded one in Blacksmith's unplaced store with
+        // our `pinId` flag still pointing at it. That caused two visible faults:
+        //
+        //  1. `_syncPinnedNotesOwnership()` runs on every GM refresh and calls
+        //     `pins.update()` for any note with a pinId — against an orphan that
+        //     logged "Pin not found — it may have been deleted externally".
+        //  2. Re-pinning made `createNotePin` delete the pin *while unplaced*, and
+        //     Blacksmith's delete only calls `PinRenderer.removePin()` on its
+        //     scene path — the unplaced branch skips it (as does unplace()'s own
+        //     GM branch). The canvas element was never torn down, so every
+        //     `loadScenePins` logged "No pin data" for it and the freshly placed
+        //     pin flickered out.
+        //
+        // Deleting here happens while the pin is still ON the scene, which is the
+        // one path that cleans the renderer, and the `deleted` hook clears the
+        // pinId flag for us — so no orphan and no stale flag.
         try {
-            await unplaceNotePin(page);
-        } catch (error) {}
+            await deleteNotePin(page);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Failed to unpin note:', error);
+            ui.notifications.error(`Failed to unpin note: ${error?.message || error}`);
+            return;
+        }
+        // Belt and braces: the deleted hook clears this, but it is async and only
+        // runs for the owner. A stale flag is what starts the whole failure above.
+        if (page.getFlag(MODULE.ID, 'pinId')) {
+            try { await page.setFlag(MODULE.ID, 'pinId', null); } catch (_) {}
+        }
         this._updateNoteRowPinState(page);
-        // unplaced hook → _scheduleNotesPanelRefresh(). No explicit render needed.
+        // deleted hook → _scheduleNotesPanelRefresh(). No explicit render needed.
     }
 
     async showNote(noteUuid) {

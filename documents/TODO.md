@@ -19,6 +19,7 @@
 | Codex: applying a tag filter permanently wipes `codexCollapsedCategories` (`panel-codex.js:717`) | Medium | S | Open |
 | `module.json`: declare a Blacksmith `13.8.4` minimum — link resolution silently no-ops below it | Medium | S | Open |
 | Blacksmith (other repo): `JournalSheet` global is a hard break in v15 (`ui-journal-encounter.js:378`) | Medium | S | Open |
+| Blacksmith (other repo): pin renderer leaks elements — `unplace()` GM path and `delete()` unplaced path never call `PinRenderer.removePin()` | Medium | S | Open |
 | Keep a link-resolution test fixture in the repo (this capability broke silently once already) | Low | S | Open |
 | Perf: delete pointless clone-and-rebind in panel `_activateListeners` (~2,200 needless DOM clones/render at 314 entries) | High | S | Open |
 | Perf: cache codex link enrichment — ~314 sequential `enrichHTML` awaits on every render | High | S | Open |
@@ -117,6 +118,10 @@ These are all the *same* defect wearing different hats, and each exists because 
 ### RELEASE / COMPATIBILITY
 
 - [ ] **CHORE (Medium)** `module.json` declares `requires: coffee-pub-blacksmith` with **no version constraint**. 13.3.12's link resolution needs `api.compendiums` (Blacksmith **13.8.4+**); below that, `getCompendiums()` returns null and every name silently falls back to plain text with no error — exactly the failure mode 13.3.12 was written to delete. Add `"compatibility": { "minimum": "13.8.4" }` so Foundry refuses to enable Squire against a Blacksmith too old to serve it.
+- [ ] **BUG (Medium — other repo: coffee-pub-blacksmith, 13.9.1) — root cause UNCONFIRMED.** Symptom, reproduced in a live world: after a note pin/unpin/re-pin cycle as GM, `PinRenderer._pins` holds a DOM element for a pin id that exists in **neither** the scene's flag list **nor** the unplaced store, so every `loadScenePins` logs `updateAllPositions: No pin data for <id>` forever, and the freshly placed pin flickers and disappears. Verified with console dumps taken before and after: the scene list is byte-identical and every id in it resolves — the leak is renderer-side only.
+  - **One provable gap** (`manager-pins.js:2267`): `delete()`'s `loc.location === 'unplaced'` branch removes the data and clears tags but never calls `PinRenderer.removePin()`, unlike the scene branch at `:2275`. Whether that is *this* symptom's cause is unproven — `unplace()` (`:2181`) does remove the element on both the GM and non-GM paths, so by delete-time there should be nothing left to leak. Worth closing regardless as a defensive fix.
+  - **The real puzzle**: the newly created pin's scene entry vanishes without its element being removed — i.e. something drops a pin from the scene flag list on a path that doesn't go through `delete()`. Suspect a read-modify-write race on `scene.setFlag(FLAG_KEY, …)` (both `unplace()` and `delete()` read the list, filter, and write it back — a stale read would clobber a concurrently-added pin).
+  - Squire 13.3.13 sidesteps the whole area (notes unpin now deletes instead of unplacing), so this is no longer blocking us; it likely still affects any consumer that unplaces.
 - [ ] **BUG (Medium — other repo: coffee-pub-blacksmith)** `ui-journal-encounter.js:378` reads the bare `JournalSheet` global (`Object.values(ui.windows).find(w => w instanceof JournalSheet && ...)`). Deprecated since v13, **removed in v15** — it becomes a hard `ReferenceError` inside a hook that fires on every journal-page write, which Squire triggers constantly (imports, pin flags). Needs `foundry.appv1.sheets.JournalSheet`, and `ui.windows` on the same line is also v13-deprecated in favour of `foundry.applications.instances`.
 
 ### PINS

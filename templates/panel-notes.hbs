@@ -94,24 +94,13 @@
                         </span>
                         {{/if}}
                         <div class="note-row-actions">
-                            {{#if (eq visibility 'private')}}
-                            {{#if ../isGM}}
-                            <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
-                                <i class="fa-solid fa-share"></i>
-                            </button>
-                            {{else}}
-                            {{#if (eq authorId ../currentUserId)}}
-                            <button class="note-give" data-uuid="{{uuid}}" title="Give Note To...">
-                                <i class="fa-solid fa-share"></i>
+                            {{#if pinOnActiveScene}}
+                            <button class="note-locate" data-pin-id="{{pinId}}" title="Show on Canvas">
+                                <i class="fa-solid fa-crosshairs"></i>
                             </button>
                             {{/if}}
-                            {{/if}}
-                            {{/if}}
-                            <button class="note-edit" data-uuid="{{uuid}}" title="Edit Note">
-                                <i class="fa-solid fa-edit"></i>
-                            </button>
                             {{#if hasPinOnScene}}
-                            <button class="note-unpin" data-uuid="{{uuid}}" title="Unpin from Canvas">
+                            <button class="note-unpin" data-uuid="{{uuid}}" title="{{#if pinOnActiveScene}}Unpin from Canvas{{else}}Pinned on {{sceneName}} — click to unpin{{/if}}">
                                 <i class="fa-solid fa-location-dot note-pin-icon note-pin-active"></i>
                             </button>
                             {{else}}
@@ -119,8 +108,8 @@
                                 <i class="fa-solid fa-location-dot note-pin-icon note-pin-dim"></i>
                             </button>
                             {{/if}}
-                            <button class="note-delete" data-uuid="{{uuid}}" title="Delete Note">
-                                <i class="fa-solid fa-trash"></i>
+                            <button class="note-menu" data-uuid="{{uuid}}" data-can-give="{{canGive}}" title="Note options">
+                                <i class="fa-solid fa-ellipsis-h"></i>
                             </button>
                         </div>
                     </div>

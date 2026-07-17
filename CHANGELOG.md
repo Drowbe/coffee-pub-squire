@@ -6,10 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.14]
+
+### Changed
+- **Notes rows: a `...` menu instead of five buttons**: Give, Edit, and Delete move into a per-note `...` menu (the same Blacksmith context menu the codex entries and titlebars use), leaving the row as `[Show on Canvas] [Pin/Unpin] [...]`. Pin/Unpin is a single toggle again, exactly as before. "Give Note To..." only appears for a private note you author (or any private note, if you're the GM) — the same rule the old inline button used, now computed once in the note data instead of nested in the template, so the control and the menu can't disagree.
+
+### Fixed
+- **Notes: unpin no longer strands an orphan pin**: unpin used `pins.unplace()`, which moves a pin into Blacksmith's *unplaced* store rather than deleting it. Notes have no UI that can ever re-place an unplaced pin, so every unpin left an orphan there with the page's `pinId` flag still pointing at it — and the GM's every-refresh ownership sync calls `pins.update()` for any note carrying a `pinId`, which is the source of the repeated *"Pin not found — it may have been deleted externally"* in the console. Unpin now **deletes** the pin, which is what the button has always claimed to do; the `deleted` hook clears the flag, so no orphan and no stale flag. Deleting also happens while the pin is still on the scene — the path that tears the canvas element down properly.
+- **Notes: you can find a pinned note on the map again**: dropping the card view in 13.3.11 removed `.note-location-section` — the element whose click handler panned the canvas to a note's pin. The handler survived the refactor and kept binding to a selector that no longer matched anything, so the capability silently vanished with no error and no replacement control. A pinned note on the current scene now shows a **Show on Canvas** crosshair button that pans and pings the pin. It appears only when the pin is on the scene you're looking at, which is the only time panning can do anything.
+
 ## [13.3.13]
 
 ### Changed
 - **One journal picker, sorted, everywhere**: `showJournalPicker()` had two UIs — a clean dropdown and a wall of book cards — and the **grid was the default**, so Quests and Notes got it purely because they never passed `mode: 'select'`. Only Codex opted into the dropdown. The grid is deleted (121 lines → 73), along with the gold thumbtack it drew on the current selection (tooltip: "Pinned for players" — it did nothing) and the "Refresh List" button, which existed because the grid was built once and went stale. Every picker is now the same dropdown, **sorted alphabetically** with the clear option pinned first — Codex's list was unsorted because the caller hand-built its own `choices` in `game.journal` order; the helper now builds and sorts them, so that call site loses its inline copy too. Journal names are escaped on the way into the `<option>`. The hint above the control is plain text in Foundry's native `.notes` style instead of a hand-styled panel of `<p>` tags with inline colours, and it no longer restates the dialog title: Notes says *"Players need Observer ownership on this journal to create notes."*, Quests says *"Each page in this journal is one quest."*
+
 
 ### Fixed
 - **Codex pins use their category's icon again**: the tray card and the canvas pin each kept their own category→icon map, and they drifted — 13.3.9 added `Establishments` (fa-shop) and `Landmarks` (fa-monument) to the tray's map only, so pinning either produced the `fa-book` fallback, and `Lore` was in neither. The pin also ignored an entry's custom `system.categoryIcon`, which the tray has always honoured, so a custom icon appeared on the card but not on the map. There is now one map (`CODEX_CATEGORY_ICONS` in `const.js`) used by both surfaces, plus `Lore` (fa-scroll); adding a category in one place now covers card and pin together. Existing pins keep their old image until re-pinned or until their entry is edited (`updateCodexPin` refreshes it).
