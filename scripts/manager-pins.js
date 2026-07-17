@@ -1948,6 +1948,40 @@ export async function focusQuestInPanel(questUuid, objectiveIndex = null, questS
     trackModuleTimeout(tryFocus, 1000);
 }
 
+/**
+ * Open the codex panel (tray expanded, codex tab) and scroll to / highlight an
+ * entry. Shared by the codex pin doubleClick handler and the menubar notification
+ * click handlers in manager-notifications.js.
+ * @param {string} codexUuid - The codex journal page UUID
+ */
+export async function focusCodexInPanel(codexUuid) {
+    if (!codexUuid) return;
+    const pm = _getPanelManager();
+    if (!pm) return;
+    if (pm.element && !pm.element.classList.contains('expanded')) pm.element.classList.add('expanded');
+    if (pm.setViewMode) await pm.setViewMode('codex');
+    if (pm.codexPanel?.render && pm.element) await pm.codexPanel.render(pm.element);
+    const tryFocus = () => {
+        // Prefer the panel's own focus: it records the expansion, so the entry
+        // stays open across the next re-render. The raw-DOM fallback below only
+        // sets a class, which any render would immediately undo.
+        if (pm.codexPanel?._focusEntry) return pm.codexPanel._focusEntry(codexUuid);
+        const entry = document.querySelector(`.codex-entry[data-uuid="${codexUuid}"]`);
+        if (!entry) return false;
+        const section = entry.closest('.codex-section');
+        if (section) section.classList.remove('collapsed');
+        entry.classList.remove('collapsed');
+        entry.classList.add('codex-highlighted');
+        entry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        trackModuleTimeout(() => entry.classList.remove('codex-highlighted'), 2000);
+        return true;
+    };
+    tryFocus();
+    trackModuleTimeout(tryFocus, 200);
+    trackModuleTimeout(tryFocus, 500);
+    trackModuleTimeout(tryFocus, 1000);
+}
+
 function _registerEventHandlers(pins) {
     if (!pins?.on) return;
     const signal = _pinManagerController.signal;
@@ -2021,30 +2055,7 @@ function _registerEventHandlers(pins) {
         if (pin.moduleId != null && pin.moduleId !== MODULE.ID) return;
         const codexUuid = pin.config?.codexUuid;
         if (!codexUuid) return;
-        const pm = _getPanelManager();
-        if (!pm) return;
-        if (pm.element && !pm.element.classList.contains('expanded')) pm.element.classList.add('expanded');
-        if (pm.setViewMode) await pm.setViewMode('codex');
-        if (pm.codexPanel?.render && pm.element) await pm.codexPanel.render(pm.element);
-        const tryFocus = () => {
-            // Prefer the panel's own focus: it records the expansion, so the entry
-            // stays open across the next re-render. The raw-DOM fallback below only
-            // sets a class, which any render would immediately undo.
-            if (pm.codexPanel?._focusEntry) return pm.codexPanel._focusEntry(codexUuid);
-            const entry = document.querySelector(`.codex-entry[data-uuid="${codexUuid}"]`);
-            if (!entry) return false;
-            const section = entry.closest('.codex-section');
-            if (section) section.classList.remove('collapsed');
-            entry.classList.remove('collapsed');
-            entry.classList.add('codex-highlighted');
-            entry.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            trackModuleTimeout(() => entry.classList.remove('codex-highlighted'), 2000);
-            return true;
-        };
-        tryFocus();
-        trackModuleTimeout(tryFocus, 200);
-        trackModuleTimeout(tryFocus, 500);
-        trackModuleTimeout(tryFocus, 1000);
+        await focusCodexInPanel(codexUuid);
     }, { moduleId: MODULE.ID, signal });
 
     // ---- Lifecycle events -------------------------------------------------------

@@ -19,6 +19,12 @@ import {
     updateQuestPinText
 } from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
+import {
+    initTransientNotifications,
+    recordCreatedPageBaseline,
+    routeTransientJournalUpdate,
+    notifyEffectApplied
+} from './manager-notifications.js';
 import { CodexPageModel, CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { CodexPageSheet } from './sheets/codex-page-sheet.js';
 // HookManager import removed - using Blacksmith HookManager instead
@@ -145,6 +151,7 @@ Hooks.once('ready', async () => {
         await initPinManager();
         await migrateSquireNotePinTypes();
         await migrateSquirePinStyles();
+        initTransientNotifications();
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
         registerNativeHook('userDisconnected', async (user) => {
@@ -252,7 +259,8 @@ Hooks.once('ready', async () => {
                     _routeToCodexPanel(page, changes, options, userId),
                     _routeToQuestPanel(page, changes, options, userId),
                     _routeToNotesPanel(page, changes, options, userId),
-                    _routeToQuestPins(page, changes, options, userId)
+                    _routeToQuestPins(page, changes, options, userId),
+                    routeTransientJournalUpdate(page, changes, options, userId)
                 ]);
             }
         });
@@ -264,6 +272,9 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (page, options, userId) => {
+                // New pages enter the notification baselines silently — creation
+                // is not a status change, so nothing to toast about yet.
+                recordCreatedPageBaseline(page);
                 // Route to notes panel when a new page is created
                 await _routeToNotesPanel(page, {}, options, userId);
             }
@@ -665,21 +676,25 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (effect, options, userId) => {
+                // Toast an owning player when a status/effect lands on their actor —
+                // before the currentActor gate, which only serves the handle update.
+                notifyEffectApplied(effect, userId);
+
                 const panelManager = getPanelManager();
                 // Only process if this effect belongs to the actor currently being managed by Squire
                 if (panelManager?.currentActor?.id !== effect.parent?.id) {
                     return;
                 }
-                
+
                 // Only process if PanelManager instance exists
                 if (!panelManager?.instance) {
                     return;
                 }
-                
+
                 await panelManager.instance.updateHandle();
             }
         });
-        
+
         const globalDeleteActiveEffectHookId = getBlacksmithHookManager().registerHook({
             name: "deleteActiveEffect",
             description: "Coffee Pub Squire: Handle global active effect deletion for handle updates",
