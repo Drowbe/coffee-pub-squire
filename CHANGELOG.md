@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [13.3.15]
 
 ### Added
 - **Quest menubar notifications are clickable**: Blacksmith 13.9.3 lets menubar notifications carry an `onClick`, and every quest notification now uses it. Clicking the persistent pinned-quest or active-objective notification opens the quest panel and scrolls to that quest — highlighting the specific objective for the objective tracker; the transient "objective completed" / "quest completed" toasts jump to their quest too, and quest-completed pulses for attention. The navigation is the same flow the canvas pin double-click has always used, now extracted into `focusQuestInPanel()` in `manager-pins.js` so both callers share one implementation (filter fallback, expand, scroll, highlight) instead of growing a second copy. The persistent notifications' handlers are set once at creation and deliberately **not** passed to `updateNotification` — instead they resolve the pinned quest / active objective from user flags at click time, so the text-only updates that swap which quest is tracked can never leave the handler pointing at the old one. Clicking removes the notification (Blacksmith behavior), and dismissal via timeout or the × now fires `onDismiss` — both paths null the stored static notification ID, which fixes a small pre-existing wart: closing the tracker with the × left a stale ID that the next update call had to trip over (a warning-and-recreate path) before recovering. Requires Blacksmith 13.9.3; on older builds the extra options argument is simply ignored and everything behaves as before.

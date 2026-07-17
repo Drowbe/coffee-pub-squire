@@ -18,8 +18,8 @@ coffee-pub-squire/
 │   ├── manager-handle.js      # HandleManager: handle content per view mode
 │   ├── timer-utils.js         # Tracked timeouts/intervals for cleanup
 │   ├── transfer-utils.js      # Party transfer workflows
-│   ├── utility-quest-pins.js  # Quest pin creation, update, ownership
-│   ├── quest-pin-events.js    # Pin click handler, context menu
+│   ├── manager-pins.js        # Unified Blacksmith Pins gateway (CRUD, events, menus, panel navigation)
+│   ├── manager-notifications.js # Transient menubar notifications for party-visible events
 │   ├── panel-*.js             # Panel classes (see Panels below)
 │   ├── window-*.js            # Window classes (Notes, Quest, Codex, etc.)
 │   ├── utility-*-parser.js    # Parsers (codex, notes, quest, base)
@@ -116,7 +116,8 @@ coffee-pub-squire/
 - **Print**: `utility-print-character.js`
 - **Transfer**: `transfer-utils.js`
 - **Timers**: `timer-utils.js` (for cleanup)
-- **Quest Pins**: `utility-quest-pins.js`, `quest-pin-events.js`
+- **Pins**: `manager-pins.js` (single gateway to the Blacksmith Pins API; also exports the shared panel-navigation helpers `focusQuestInPanel` / `focusCodexInPanel`)
+- **Notifications**: `manager-notifications.js` (transient menubar toasts for quest/objective status changes, codex unlocks, applied effects, and party note edits; skips the initiating user)
 
 ## Tray Layout
 
@@ -155,7 +156,12 @@ BlacksmithModuleManager.registerModule(MODULE.ID, {
 ### Pins
 
 - **Notes**: Notes stored as JournalEntry pages; pins via Blacksmith Pin API; `blacksmith.pins.resolveOwnership`, `pins.created`, `pins.updated`
-- **Quests**: Quest pins via Blacksmith API; `utility-quest-pins.js`, `quest-pin-events.js`
+- **Quests**: Quest pins via Blacksmith API; all pin access goes through `manager-pins.js`
+
+### Menubar Notifications
+
+- **Persistent trackers** (panel-quest.js): pinned quest and active objective, clickable (Blacksmith 13.9.3+ `addNotification` options) — click navigates via `focusQuestInPanel`, × dismissal suppresses re-notifies for the session, and the GM mirrors both trackers to player user flags (received by an `updateUser` hook).
+- **Transient events** (manager-notifications.js): quest/objective status changes, codex unlocks, effects applied to owned actors, party note edits — 5s toasts on every client except the initiator. See `documents/architecture-quests.md` → Notifications for the full design.
 
 ### Utility Usage
 

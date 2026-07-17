@@ -230,6 +230,7 @@ Leverages FoundryVTT's native ownership system:
 - GMs see all entries with visibility toggle
 - Players only see entries they have permission to view
 - Visibility icon shows current permission level
+- **Unlock notification**: raising an entry's default ownership to Observer fires a transient menubar toast on every other client ("Codex unlocked: X", linked to the entry via `focusCodexInPanel`); a burst of unlocks (e.g. Auto-Discover) collapses into one "*N* codex entries unlocked" toast (`manager-notifications.js`)
 
 ### 5. **Event Listener Management**
 
@@ -284,7 +285,7 @@ The form template provides:
 ## Hooks Integration
 
 **Blacksmith HookManager (squire.js):**
-- **Journal:** `updateJournalEntryPage` (and create/delete journal page hooks) route to `_routeToCodexPanel(page, changes, options, userId)` when the page is in the selected codex journal and `codexPanel._isCodexEntry(page)` is true. If not `isImporting`, panel runs `_refreshData()` and `codexPanel.render(panelManager.element)`.
+- **Journal:** `updateJournalEntryPage` (and create/delete journal page hooks) route to `_routeToCodexPanel(page, changes, options, userId)` when the page is in the selected codex journal and `codexPanel._isCodexEntry(page)` is true. If not `isImporting`, panel runs `_refreshData()` and `codexPanel.render(panelManager.element)`. The same update hook also routes into `manager-notifications.js`, which diffs codex visibility against its ready-time baseline to emit "Codex unlocked" toasts.
 
 ## Import/Export and Auto-Discover
 

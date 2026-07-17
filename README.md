@@ -101,6 +101,10 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
   - Scene pin preservation
   - Progress state maintenance
   - Rich data preservation (GM notes, treasure, etc.)
+- **Menubar notifications** (via Coffee Pub Blacksmith) with:
+  - Persistent pinned-quest and active-objective trackers — click to jump to the quest, dismiss to silence for the session
+  - GM-directed pins and active objectives synced to every player
+  - Transient alerts for quest and objective status changes, codex unlocks, applied effects, and party note updates — clickable where there's somewhere to go
 
 ### **Codex & World Building**
 - **Enhanced codex system** with:

@@ -134,6 +134,7 @@ Main UI for listing and filtering notes.
 **Blacksmith HookManager (squire.js)**
 - **Journal:** `updateJournalEntryPage`, `createJournalEntryPage`, `deleteJournalEntryPage` route to `_routeToNotesPanel(page, …)` when the page is in the selected notes journal and has `noteType === 'sticky'`. Guarded by `suppressNotesPanelRoute` during pin sync. Panel runs `_refreshData()` and `codexPanel.render(panelManager.element)` (conceptually same for notes panel).
 - **Blacksmith pins:** `blacksmith.pins.resolveOwnership`, `blacksmith.pins.created`, `blacksmith.pins.updated` as above.
+- **Notifications:** the same `updateJournalEntryPage` hook routes into `manager-notifications.js`: editing a party-visible note (visibility `party` or `all`, content/title changes only — flag-only updates are ignored) shows a transient "Note updated" menubar toast on every client except the editor, linked to the note via `notesPanel.showNote()`. Private notes never notify.
 
 ## Data Flow
 
@@ -147,6 +148,7 @@ Main UI for listing and filtering notes.
 1. User clicks edit on a note card → NotesForm opens with `note` (pageUuid/pageId).
 2. Form loads `this.page`; getData() configures collaborative ProseMirror (`document: page`, `fieldName: 'text.content'`).
 3. On save: `page.update({ 'text.content', name, flags })`; pin updated if present; ownership synced.
+4. Other clients: if the note is party-visible, a transient "Note updated" menubar toast appears (linked via `showNote`); the editor's own client is skipped.
 
 ### Pin creation/update
 - “Place on canvas”: user picks position; `createNotePinForPage(page, sceneId, x, y)` builds payload (ownership, icon, appearance from page/defaults), calls Blacksmith `pins.create`; pin IDs and position stored in page flags.

@@ -8,11 +8,11 @@ The Quest system provides structured adventure and task management for FoundryVT
 
 | File | Class/Purpose |
 |------|---------------|
-| `scripts/panel-quest.js` | `QuestPanel` – Main panel UI, filtering, organization, Pin to Scene |
+| `scripts/panel-quest.js` | `QuestPanel` – Main panel UI, filtering, organization, Pin to Scene, menubar quest trackers |
 | `scripts/window-quest.js` | `QuestWindow` – Blacksmith Application V2 window for quest create/edit |
 | `scripts/utility-quest-parser.js` | `QuestParser` – Parses HTML journal content to JS objects |
-| `scripts/utility-quest-pins.js` | Quest pin utilities – create, update, delete, ownership, colors |
-| `scripts/quest-pin-events.js` | Click handler, context menu registration for quest pins |
+| `scripts/manager-pins.js` | Unified Blacksmith Pins gateway – pin CRUD, events, context menus, panel navigation (`focusQuestInPanel`, `focusCodexInPanel`) |
+| `scripts/manager-notifications.js` | Transient menubar notifications for party-visible events (quest/objective status, codex unlocks, effects, notes) |
 | `templates/panel-quest.hbs` | Panel template |
 | `templates/window-quest.hbs` | Blacksmith V2 quest window template |
 | `templates/handle-quest.hbs` | Handle content for quest view (tray handle) |
@@ -184,7 +184,7 @@ Visual representation of quests and objectives on the canvas via `pins.create()`
 3. Updates quest status if all tasks completed
 4. Journal update triggers `updateJournalEntryPage` hook → `_routeToQuestPins` → `updateQuestPinStylesForPage`
 5. Panel re-renders; pin style (color) syncs via `pins.update()`
-6. Notification sent (if enabled)
+6. The acting client shows its local notification; every *other* client gets a transient toast from `manager-notifications.js` (see Notifications below)
 
 ### Pin Creation
 1. GM clicks "Pin to Scene" icon on quest or objective in panel
@@ -192,6 +192,37 @@ Visual representation of quests and objectives on the canvas via `pins.create()`
 3. GM clicks canvas at desired position
 4. `createQuestPin` or `createObjectivePin` calls `pins.create()` then `pins.place()`
 5. Blacksmith persists position; pin persists across scene changes
+
+## Notifications
+
+Quest state surfaces in the Blacksmith menubar two ways: two **persistent trackers** owned by `QuestPanel`, and **transient event toasts** owned by `manager-notifications.js`. All of them use Blacksmith `addNotification()` options (Blacksmith 13.9.3+): `onClick` navigates, `onDismiss` handles the ×, `pulse` draws attention. On older Blacksmith builds the options argument is ignored and notifications degrade to display-only.
+
+### Persistent trackers (pinned quest, active objective)
+
+- One notification each, deduped via static IDs (`QuestPanel.questNotificationId`, `QuestPanel.activeObjectiveNotificationId`); update-or-recreate on change, `duration: 0`.
+- **Click** opens the quest panel and scrolls to the quest/objective via `focusQuestInPanel()` (manager-pins.js — the same flow as pin double-click). Handlers are set once at creation and resolve the pinned quest / active objective **from user flags at click time**, so text-only `updateNotification` refreshes can never leave them pointing at a stale quest. Blacksmith removes a clicked notification, so `onClick` also nulls the stored ID; the next update recreates cleanly.
+- **× dismissal sticks for the session**: `onDismiss` sets `QuestPanel.questNotificationDismissed` / `activeObjectiveNotificationDismissed`, which the notify paths check before recreating. Only a deliberate act lifts suppression — repinning a quest, or setting an active objective. Clicking the body is navigation, not dismissal, and does not suppress. A reload clears both flags.
+
+### GM → player sync
+
+The pinned quest and active objective are party-wide state stored in per-user flags (`pinnedQuests`, `activeObjectives`). Two halves keep clients in agreement:
+
+1. **Broadcast**: GM pin/active/clear actions mirror the flag onto every player's User document (`QuestPanel._mirrorTrackerFlagToPlayers`). Players' own pin actions stay local.
+2. **Receive**: an `updateUser` hook (squire.js) fires on a player's client when *their* user document is changed by *someone else*. It lifts the ×-dismissal suppression for whichever tracker changed, explicitly clears an emptied tracker, re-renders the quest panel (or drives `_checkAndNotifyPinnedQuest` / `_checkAndNotifyActiveObjective` directly if the tab is still lazy), and refreshes the handle. Diff keys are matched operator-stripped (`==`/`-=` prefixes, flattened paths) — same caution as the actor-ownership hook.
+
+### Transient event toasts (`manager-notifications.js`)
+
+Short-lived (5s) toasts for party-visible events, shown on every client **except the initiator** (the acting client already has its local notification):
+
+| Event | Toast | Link |
+|-------|-------|------|
+| Quest status → In Progress / Not Started / Complete / Failed | "Quest active/available/completed (pulses)/failed" | `focusQuestInPanel(uuid)` |
+| Objective completed / failed / reopened / revealed | "Objective completed: …", hidden→active reads "New objective" | `focusQuestInPanel(uuid, index)` |
+| Codex entry unlocked (ownership → Observer) | "Codex unlocked: X"; bursts within 1.5s collapse to "*N* codex entries unlocked" | `focusCodexInPanel(uuid)` |
+| Active effect applied to an owned actor | "Actor: Effect" (non-GM owners only) | none |
+| Party note updated (visibility `party`/`all`, content/title edits only) | "Note updated: X" | `notesPanel.showNote(uuid)` |
+
+Change detection needs a before-state that update hooks don't carry, so `initTransientNotifications()` (ready) snapshots quest statuses/objective states and codex visibility; each update diffs against the snapshot and replaces it. Pages first seen later enter the baseline silently. Guards: no toasts for quests flagged invisible (players), objectives becoming hidden, private notes, or objective lists whose length changed (index diff would mislabel shifted tasks).
 
 ## Export/Import System
 
@@ -255,7 +286,8 @@ The quest system supports full JSON export/import including scene pins.
 ## Hooks Integration
 
 **Blacksmith HookManager (squire.js):**
-- **Journal:** `updateJournalEntryPage`, `createJournalEntryPage`, `deleteJournalEntryPage` – route to quest panel refresh and/or quest pin updates (`_routeToQuestPanel`, `_routeToQuestPins`). On visibility or content change, `_routeToQuestPins` calls `updateQuestPinVisibility` and `updateQuestPinStylesForPage`.
+- **Journal:** `updateJournalEntryPage`, `createJournalEntryPage`, `deleteJournalEntryPage` – route to quest panel refresh and/or quest pin updates (`_routeToQuestPanel`, `_routeToQuestPins`), plus `routeTransientJournalUpdate` / `recordCreatedPageBaseline` for the transient notifications. On visibility or content change, `_routeToQuestPins` calls `updateQuestPinVisibility` and `updateQuestPinStylesForPage`.
+- **User:** `updateUser` – receiving half of the GM → player tracker sync (see Notifications above); reacts only when the client's own user document is changed by someone else.
 - **Panel:** After render, `QuestPanel` calls `Hooks.call('renderQuestPanel')`. Blacksmith handles pin visibility; `showQuestPinText` and `hideQuestPins` apply via `pins.reload({ moduleId })` when settings change.
 - **Scene/canvas:** `canvasReady` runs `registerQuestPinEvents()`. Blacksmith manages pin lifecycle; no PIXI containers.
 
