@@ -12,7 +12,8 @@ import {
     listAllQuestPins,
     findLiveQuestPin,
     findLiveObjectivePin,
-    reconcileQuestPins
+    reconcileQuestPins,
+    focusQuestInPanel
 } from './manager-pins.js';
 import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
@@ -119,32 +120,37 @@ function resolveQuestIconHtmlFromPage(page, imgClass = '') {
 
 // Quest notification functions - moved to QuestPanel class methods
 
-export function notifyObjectiveCompleted(objectiveText) {
+export function notifyObjectiveCompleted(objectiveText, questUuid = null, objectiveIndex = null) {
     try {
         const blacksmith = getBlacksmith();
         if (!blacksmith?.addNotification) return;
-        
+
         blacksmith.addNotification(
             `${objectiveText} completed!`,
             "fa-solid fa-check-circle",
             5, // 5 seconds
-            MODULE.ID
+            MODULE.ID,
+            questUuid ? { onClick: () => focusQuestInPanel(questUuid, objectiveIndex) } : undefined
         );
     } catch (error) {
         console.error('Coffee Pub Squire | Error sending objective completed notification:', error);
     }
 }
 
-export function notifyQuestCompleted(questName) {
+export function notifyQuestCompleted(questName, questUuid = null) {
     try {
         const blacksmith = getBlacksmith();
         if (!blacksmith?.addNotification) return;
-        
+
         blacksmith.addNotification(
             `Quest '${questName}' completed!`,
             "fa-solid fa-trophy",
             5, // 5 seconds
-            MODULE.ID
+            MODULE.ID,
+            {
+                pulse: true,
+                ...(questUuid ? { onClick: () => focusQuestInPanel(questUuid) } : {})
+            }
         );
     } catch (error) {
         console.error('Coffee Pub Squire | Error sending quest completed notification:', error);
@@ -157,6 +163,11 @@ export class QuestPanel {
     // Global notification IDs to prevent duplicates across QuestPanel instances
     static questNotificationId = null;
     static activeObjectiveNotificationId = null;
+    // Session-scoped: true after the user closes the notification with the ×.
+    // Render-driven re-notifies stay quiet until a deliberate action (repinning /
+    // setting an active objective) resets these. Reload clears them.
+    static questNotificationDismissed = false;
+    static activeObjectiveNotificationDismissed = false;
     
     constructor() {
         this.element = null;
@@ -204,6 +215,8 @@ export class QuestPanel {
     
     _doNotifyQuestPinned(questName, questCategory) {
         try {
+            // User closed the tracker with the × this session — stay quiet until they repin
+            if (QuestPanel.questNotificationDismissed) return;
             const blacksmith = getBlacksmith();
             if (!blacksmith?.addNotification) return;
             
@@ -233,12 +246,30 @@ export class QuestPanel {
                 }
             }
             
-            // Create new notification and store ID
+            // Create new notification and store ID. Handlers are set once at creation:
+            // the updateNotification path above only touches text/icon/duration, which
+            // leaves them intact. onClick therefore resolves the pinned quest at click
+            // time, so it stays correct after updates swap which quest is pinned.
             QuestPanel.questNotificationId = blacksmith.addNotification(
                 questName,
                 icon,
                 0, // 0 = persistent until manually removed
-                MODULE.ID
+                MODULE.ID,
+                {
+                    onClick: () => {
+                        // Blacksmith removes the notification after a click
+                        QuestPanel.questNotificationId = null;
+                        const pinnedQuests = game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+                        const uuid = Object.values(pinnedQuests).find(u => u !== null);
+                        if (uuid) focusQuestInPanel(uuid);
+                    },
+                    onDismiss: () => {
+                        // Duration is 0, so this only fires on the user's ×: stop
+                        // tracking the ID and suppress re-notifies until a repin
+                        QuestPanel.questNotificationId = null;
+                        QuestPanel.questNotificationDismissed = true;
+                    }
+                }
             );
         } catch (error) {
             console.error('Coffee Pub Squire | Error sending quest pinned notification:', error);
@@ -281,6 +312,9 @@ export class QuestPanel {
     
     _doNotifyActiveObjective(questName, objectiveText, objectiveNumber) {
         try {
+            // User closed the tracker with the × this session — stay quiet until they
+            // deliberately set an active objective again
+            if (QuestPanel.activeObjectiveNotificationDismissed) return;
             const blacksmith = getBlacksmith();
             if (!blacksmith?.addNotification) {
                 return;
@@ -312,12 +346,32 @@ export class QuestPanel {
                 }
             }
             
-            // Create new notification and store ID
+            // Create new notification and store ID. Handlers are set once at creation:
+            // the updateNotification path above only touches text/icon/duration, which
+            // leaves them intact. onClick therefore resolves the active objective at
+            // click time, so it stays correct after updates swap the objective.
             QuestPanel.activeObjectiveNotificationId = blacksmith.addNotification(
                 notificationText,
                 icon,
                 0, // 0 = persistent until manually removed
-                MODULE.ID
+                MODULE.ID,
+                {
+                    onClick: () => {
+                        // Blacksmith removes the notification after a click
+                        QuestPanel.activeObjectiveNotificationId = null;
+                        const activeData = (game.user.getFlag(MODULE.ID, 'activeObjectives') || {}).active;
+                        if (typeof activeData !== 'string') return;
+                        const [uuid, indexStr] = activeData.split('|');
+                        if (uuid) focusQuestInPanel(uuid, indexStr ?? null);
+                    },
+                    onDismiss: () => {
+                        // Duration is 0, so this only fires on the user's ×: stop
+                        // tracking the ID and suppress re-notifies until the user
+                        // sets an active objective again
+                        QuestPanel.activeObjectiveNotificationId = null;
+                        QuestPanel.activeObjectiveNotificationDismissed = true;
+                    }
+                }
             );
         } catch (error) {
             console.error('Coffee Pub Squire | Error sending active objective notification:', error);
@@ -374,6 +428,72 @@ export class QuestPanel {
     }
 
     /**
+     * Show the active-objective notification from the current user flag, or clear it
+     * if no objective is active. Needs this.data populated for the objective text.
+     * Called from the render path and from the remote tracker-update hook in squire.js.
+     * @private
+     */
+    async _checkAndNotifyActiveObjective() {
+        const activeData = (game.user.getFlag(MODULE.ID, 'activeObjectives') || {}).active;
+        let activeQuestUuid = null;
+        let activeObjectiveIndex = null;
+        if (activeData && typeof activeData === 'string') {
+            const [storedUuid, indexStr] = activeData.split('|');
+            activeQuestUuid = storedUuid;
+            activeObjectiveIndex = parseInt(indexStr);
+        }
+
+        if (activeQuestUuid && activeObjectiveIndex !== null) {
+            try {
+                const questPage = await fromUuid(activeQuestUuid);
+                if (questPage) {
+                    const questName = questPage.name || 'Unknown Quest';
+
+                    // Find the quest in our panel data
+                    let questEntry = null;
+                    for (const category of this.categories) {
+                        questEntry = this.data[category]?.find(entry => entry.uuid === activeQuestUuid);
+                        if (questEntry) break;
+                    }
+
+                    if (questEntry?.tasks && questEntry.tasks[activeObjectiveIndex]) {
+                        const objectiveText = questEntry.tasks[activeObjectiveIndex].text || 'Unknown Objective';
+                        const objectiveNumber = activeObjectiveIndex + 1;
+                        this.notifyActiveObjective(questName, objectiveText, objectiveNumber);
+                    }
+                }
+            } catch (error) {
+                console.error('Coffee Pub Squire | Error loading active objective notification:', error);
+            }
+        } else {
+            // Clear notification if no active objective
+            this.clearActiveObjectiveNotification();
+        }
+    }
+
+    /**
+     * Mirror a quest tracker flag (pinnedQuests / activeObjectives) onto every
+     * player's User document. The pinned quest and active objective are GM-directed,
+     * party-wide state, but they are stored as per-user flags — without this a GM's
+     * pin only ever lands on the GM's own user and no player tray, handle, or
+     * menubar tracker changes. Players' clients react in the updateUser hook
+     * registered in squire.js.
+     * @param {string} key - 'pinnedQuests' or 'activeObjectives'
+     * @param {Object} value - The flag value to mirror
+     * @private
+     */
+    async _mirrorTrackerFlagToPlayers(key, value) {
+        if (!game.user.isGM) return;
+        try {
+            for (const user of game.users.filter(u => !u.isGM)) {
+                await user.setFlag(MODULE.ID, key, foundry.utils.deepClone(value));
+            }
+        } catch (error) {
+            console.error(`Coffee Pub Squire | Error mirroring ${key} to players:`, error);
+        }
+    }
+
+    /**
      * Get the active objective index for a quest
      * @param {string} questUuid - The quest UUID
      * @returns {number|null} The active objective index or null if none
@@ -418,6 +538,10 @@ export class QuestPanel {
             // Set the new active objective using a simple key
             activeObjectives.active = `${questUuid}|${objectiveIndex}`;
             await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
+            await this._mirrorTrackerFlagToPlayers('activeObjectives', activeObjectives);
+
+            // Deliberate action: lift any ×-dismissal suppression so the notify below lands
+            QuestPanel.activeObjectiveNotificationDismissed = false;
             
             // Get quest and objective details for notification from panel data
             const questPage = await fromUuid(questUuid);
@@ -461,7 +585,8 @@ export class QuestPanel {
                 if (storedUuid === questUuid) {
                     activeObjectives.active = null;
                     await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
-                    
+                    await this._mirrorTrackerFlagToPlayers('activeObjectives', activeObjectives);
+
                     // Clear the active objective notification
                     this.clearActiveObjectiveNotification();
                 }
@@ -480,7 +605,8 @@ export class QuestPanel {
             const activeObjectives = await game.user.getFlag(MODULE.ID, 'activeObjectives') || {};
             activeObjectives.active = null;
             await game.user.setFlag(MODULE.ID, 'activeObjectives', activeObjectives);
-            
+            await this._mirrorTrackerFlagToPlayers('activeObjectives', activeObjectives);
+
             // Clear the active objective notification
             this.clearActiveObjectiveNotification();
         } catch (error) {
@@ -522,7 +648,7 @@ export class QuestPanel {
 
         if (state === 'completed') {
             li.innerHTML = `<s>${rawInner}</s>`;
-            notifyObjectiveCompleted(li.textContent.trim());
+            notifyObjectiveCompleted(li.textContent.trim(), questUuid, taskIndex);
         } else if (state === 'failed') {
             li.innerHTML = `<code>${rawInner}</code>`;
         } else if (state === 'hidden') {
@@ -554,7 +680,7 @@ export class QuestPanel {
                 await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
             }
             const questName = page.name || 'Unknown Quest';
-            notifyQuestCompleted(questName);
+            notifyQuestCompleted(questName, questUuid);
         } else if (!allCompleted && currentStatus === 'Complete') {
             newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
             if (currentCategory === 'Completed') {
@@ -2519,7 +2645,7 @@ export class QuestPanel {
                     
                     // Send objective completed notification
                     const objectiveText = taskLi.textContent.trim();
-                    notifyObjectiveCompleted(objectiveText);
+                    notifyObjectiveCompleted(objectiveText, questUuid, taskIndex);
                 }
                 const newTasksHtml = ul.innerHTML;
                 let newContent = content.replace(tasksMatch[1], newTasksHtml);
@@ -2550,7 +2676,7 @@ export class QuestPanel {
                         
                         // Send quest completed notification
                         const questName = page.name || 'Unknown Quest';
-                        notifyQuestCompleted(questName);
+                        notifyQuestCompleted(questName, questUuid);
                         
                         // Remove automatic category change to Completed
                     }
@@ -2688,14 +2814,16 @@ export class QuestPanel {
                     // Get quest name for notification
                     const questPage = await fromUuid(uuid);
                     const questName = questPage?.name || 'Unknown Quest';
-                    
-                    // Send quest pinned notification
+
+                    // Deliberate pin: lift any ×-dismissal suppression and notify
+                    QuestPanel.questNotificationDismissed = false;
                     this.notifyQuestPinned(questName, category);
                 }
                 
                 await game.user.setFlag(MODULE.ID, 'pinnedQuests', pinnedQuests);
+                await this._mirrorTrackerFlagToPlayers('pinnedQuests', pinnedQuests);
                 this.render(this.element);
-                
+
                 // Update the handle to reflect the pinned quest change
                 if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
                     await game.modules.get('coffee-pub-squire').api.PanelManager.instance.updateHandle();
@@ -3910,33 +4038,8 @@ export class QuestPanel {
             activeObjectiveIndex = parseInt(indexStr);
         }
         
-        // Show active objective notification if there's an active objective
-        if (activeQuestUuid && activeObjectiveIndex !== null) {
-            try {
-                const questPage = await fromUuid(activeQuestUuid);
-                if (questPage) {
-                    const questName = questPage.name || 'Unknown Quest';
-                    
-                    // Find the quest in our panel data
-                    let questEntry = null;
-                    for (const category of this.categories) {
-                        questEntry = this.data[category]?.find(entry => entry.uuid === activeQuestUuid);
-                        if (questEntry) break;
-                    }
-                    
-                    if (questEntry?.tasks && questEntry.tasks[activeObjectiveIndex]) {
-                        const objectiveText = questEntry.tasks[activeObjectiveIndex].text || 'Unknown Objective';
-                        const objectiveNumber = activeObjectiveIndex + 1;
-                        this.notifyActiveObjective(questName, objectiveText, objectiveNumber);
-                    }
-                }
-            } catch (error) {
-                console.error('Coffee Pub Squire | Error loading active objective notification:', error);
-            }
-        } else {
-            // Clear notification if no active objective
-            this.clearActiveObjectiveNotification();
-        }
+        // Show or clear the active objective notification
+        await this._checkAndNotifyActiveObjective();
 
         // Prepare template data
         let allTags;

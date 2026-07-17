@@ -1916,6 +1916,38 @@ function _registerContextMenuItems(pins) {
     );
 }
 
+/**
+ * Open the quest panel (tray expanded, quest tab) and scroll to / highlight a quest,
+ * optionally highlighting one objective. Shared by the pin doubleClick handler and
+ * the menubar notification click handlers in panel-quest.js.
+ * @param {string} questUuid - The quest journal page UUID
+ * @param {number|string|null} objectiveIndex - Objective index to highlight, if any
+ * @param {string|null} questStatus - Quest status hint used to pick the right status filter
+ */
+export async function focusQuestInPanel(questUuid, objectiveIndex = null, questStatus = null) {
+    if (!questUuid) return;
+    const pm = _getPanelManager();
+    if (!pm) return;
+    if (pm.setViewMode) await pm.setViewMode('quest');
+    if (pm.element && !pm.element.classList.contains('expanded')) pm.element.classList.add('expanded');
+    if (pm.questPanel?.render && pm.element) await pm.questPanel.render(pm.element);
+
+    const pinFilter = _mapQuestStatusToFilter(questStatus);
+    let targetFilter = pm.questPanel?.resolveStatusFilterForQuestUuid?.(questUuid) ?? pinFilter ?? 'active';
+    if (typeof pm.questPanel?.applyQuestStatusFilter === 'function') pm.questPanel.applyQuestStatusFilter(targetFilter);
+    if (!_hasQuestEntryInDom(questUuid)) {
+        for (const f of [...new Set([pinFilter, 'active', 'available', 'complete'].filter(Boolean))]) {
+            if (_hasQuestEntryInDom(questUuid)) break;
+            pm.questPanel?.applyQuestStatusFilter?.(f);
+        }
+    }
+    const tryFocus = () => _focusQuestEntryInDom(questUuid, objectiveIndex);
+    tryFocus();
+    trackModuleTimeout(tryFocus, 200);
+    trackModuleTimeout(tryFocus, 500);
+    trackModuleTimeout(tryFocus, 1000);
+}
+
 function _registerEventHandlers(pins) {
     if (!pins?.on) return;
     const signal = _pinManagerController.signal;
@@ -1941,28 +1973,7 @@ function _registerEventHandlers(pins) {
         if (!isQuestPin) return;
         const questUuid = config.questUuid;
         if (!questUuid) return;
-        const objectiveIndex = config.objectiveIndex;
-
-        const pm = _getPanelManager();
-        if (!pm) return;
-        if (pm.setViewMode) await pm.setViewMode('quest');
-        if (pm.element && !pm.element.classList.contains('expanded')) pm.element.classList.add('expanded');
-        if (pm.questPanel?.render && pm.element) await pm.questPanel.render(pm.element);
-
-        const pinFilter = _mapQuestStatusToFilter(config.questStatus);
-        let targetFilter = pm.questPanel?.resolveStatusFilterForQuestUuid?.(questUuid) ?? pinFilter ?? 'active';
-        if (typeof pm.questPanel?.applyQuestStatusFilter === 'function') pm.questPanel.applyQuestStatusFilter(targetFilter);
-        if (!_hasQuestEntryInDom(questUuid)) {
-            for (const f of [...new Set([pinFilter, 'active', 'available', 'complete'].filter(Boolean))]) {
-                if (_hasQuestEntryInDom(questUuid)) break;
-                pm.questPanel?.applyQuestStatusFilter?.(f);
-            }
-        }
-        const tryFocus = () => _focusQuestEntryInDom(questUuid, objectiveIndex);
-        tryFocus();
-        trackModuleTimeout(tryFocus, 200);
-        trackModuleTimeout(tryFocus, 500);
-        trackModuleTimeout(tryFocus, 1000);
+        await focusQuestInPanel(questUuid, config.objectiveIndex, config.questStatus);
     }, { moduleId: MODULE.ID, signal });
 
     // Note — click opens note card; doubleClick opens note window

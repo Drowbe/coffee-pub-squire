@@ -827,6 +827,75 @@ Hooks.once('ready', async () => {
             }
         });
 
+        // GM pin / active-objective changes must reach player trays and menubar trackers.
+        //
+        // The pinned quest and active objective are stored as per-user flags. The GM
+        // mirrors them onto each player's User document (QuestPanel._mirrorTrackerFlagToPlayers);
+        // this hook is the receiving half. It fires on the player's client when THEIR
+        // user document is changed by someone else, lifts the ×-dismissal suppression
+        // (a GM broadcast is as deliberate as a local repin), and re-runs the notify
+        // and render paths so the tray, handle, and menubar tracker all agree.
+        const questTrackerSyncHookId = getBlacksmithHookManager().registerHook({
+            name: "updateUser",
+            description: "Coffee Pub Squire: Sync quest tracker when the GM updates this player's pinned quest / active objective",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (userDoc, changes, options, changedByUserId) => {
+                // Only MY flags, only when changed by SOMEONE ELSE — local pin/active
+                // actions already notify and render on this client.
+                if (userDoc.id !== game.user.id || changedByUserId === game.user.id) return;
+
+                // Same diff-key caution as the ownership hook above: keys may carry
+                // `==`/`-=` operator prefixes or arrive as flattened paths, so strip
+                // and split before matching. Collect which tracker flags were touched.
+                const flagChanges = changes?.flags ?? changes?.['==flags'];
+                if (!flagChanges || typeof flagChanges !== 'object') return;
+                const touched = [];
+                for (const [key, value] of Object.entries(flagChanges)) {
+                    const parts = key.replace(/^(==|-=|\+=)/, '').split('.');
+                    if (parts[0] !== MODULE.ID) continue;
+                    if (parts.length > 1) {
+                        touched.push(parts[1]);
+                    } else if (value && typeof value === 'object') {
+                        touched.push(...Object.keys(value).map(k => k.replace(/^(==|-=|\+=)/, '').split('.')[0]));
+                    }
+                }
+                const pinChanged = touched.includes('pinnedQuests');
+                const activeChanged = touched.includes('activeObjectives');
+                if (!pinChanged && !activeChanged) return;
+
+                // A GM broadcast is deliberate: lift the ×-dismissal suppression for
+                // whichever tracker actually changed, leaving the other one alone.
+                if (pinChanged) QuestPanel.questNotificationDismissed = false;
+                if (activeChanged) QuestPanel.activeObjectiveNotificationDismissed = false;
+
+                const panelManager = getPanelManager();
+                const questPanel = panelManager?.instance?.questPanel;
+                if (!questPanel) return;
+
+                // An emptied tracker needs an explicit clear — the notify paths only
+                // ever create or update, and _checkAndNotifyPinnedQuest does nothing
+                // when no quest is pinned.
+                const pinnedQuests = game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+                if (!Object.values(pinnedQuests).some(uuid => uuid)) {
+                    questPanel.clearQuestNotifications();
+                }
+
+                if (questPanel.element) {
+                    // Rendered: the render path re-runs both notification checks and
+                    // refreshes the pin/star states in the quest list.
+                    await questPanel.render(questPanel.element);
+                } else {
+                    // Lazy tab never rendered: drive the notifications directly.
+                    // _refreshData populates this.data, which supplies the objective text.
+                    await questPanel._refreshData?.();
+                    await questPanel._checkAndNotifyPinnedQuest?.();
+                    await questPanel._checkAndNotifyActiveObjective?.();
+                }
+                await panelManager?.instance?.updateHandle?.();
+            }
+        });
+
         const globalDeleteTokenHookId = getBlacksmithHookManager().registerHook({
             name: "deleteToken",
             description: "Coffee Pub Squire: Handle global token deletion",
