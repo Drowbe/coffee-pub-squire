@@ -766,24 +766,33 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (actor, changes) => {
-                // Ownership only — every other field is another hook's business.
-                if (!changes?.ownership) return;
                 // The switcher is player-only; getOwnedCharacters() returns null for a GM.
                 if (game.user.isGM) return;
 
-                // Only if THIS user's access actually moved. The hook fires on every
-                // client for every actor, so without this a GM bulk-editing permissions
-                // would rebuild every player's tray once per actor. Foundry sends a diff,
-                // so the keys are the tell: `default` reaches everyone, our own id reaches
-                // us, and `-=<id>` is a removal.
-                const ownership = changes.ownership;
-                const affectsMe = ('default' in ownership)
-                    || (game.user.id in ownership)
-                    || (`-=${game.user.id}` in ownership);
-                if (!affectsMe) return;
+                // Cheap gate to stay off the hot path — updateActor also fires for every
+                // HP tick and effect.
+                //
+                // The key is NOT `ownership`. Foundry prefixes diff keys with operators:
+                // `==` replaces an object wholesale, `-=` deletes, and paths may be
+                // flattened (`ownership.<userId>`). A permission change arrives as
+                //   { "==ownership": { default: 0, "<userId>": 3 }, _stats, _id }
+                // so `changes.ownership` is undefined and any check for it silently
+                // rejects every grant. Strip the operators and match the path root.
+                const touchesOwnership = Object.keys(changes ?? {})
+                    .some(k => k.replace(/^(==|-=|\+=)/, '').split('.')[0] === 'ownership');
+                if (!touchesOwnership) return;
 
                 const panelManager = getPanelManager();
                 if (!panelManager?.instance?.element) return;
+
+                // Ask the world, not the diff: did the set of actors I own actually change?
+                // The diff says what changed on ONE actor; `isOwner` folds in default
+                // permission, per-user grants and removals, and GM status without us having
+                // to re-derive any of it. This also collapses a GM's bulk permission edit
+                // into a single rebuild instead of one per actor.
+                const signature = game.actors.filter(a => a.isOwner).map(a => a.id).sort().join(',');
+                if (signature === PanelManager._ownedActorSignature) return;
+                PanelManager._ownedActorSignature = signature;
 
                 const current = panelManager.currentActor;
                 if (current && !current.isOwner) {

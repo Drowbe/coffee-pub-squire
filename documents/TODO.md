@@ -23,6 +23,8 @@
 | Keep a link-resolution test fixture in the repo (this capability broke silently once already) | Low | S | Open |
 | Perf: delete pointless clone-and-rebind in panel `_activateListeners` (~2,200 needless DOM clones/render at 314 entries) | High | S | Open |
 | Perf: cache codex link enrichment — ~314 sequential `enrichHTML` awaits on every render | High | S | Open |
+| Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
+| `PanelManager`: static-vs-instance state is unresolved; it's what let `element` go unassigned | Medium | M | Open |
 | Codex: `related` entries + retain-unresolved links + Auto-Link tool (see `plan-codex-datamodel.md` Phase 4) | High | L | Implemented (13.3.12) — needs in-game verification |
 | Codex: suggested discoveries — GM-reviewed `related`/name-containment candidates (see `plan-codex-datamodel.md` Phase 5) | Medium | M | Designed |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
@@ -109,6 +111,17 @@ Real vault: **314 entries** — Characters 120, Books 47, Locations 40, Artifact
   - Better still, per the handle: **delegate**. 13.3.6 fixed this exact pattern on `HandleManager` — it "cloned the whole `.tray-handle` (plus ~10 individual buttons) and re-attached ~15 listeners on every `updateHandle()`"; handlers are now bound once to the stable parent. Panels never got the same treatment.
   - Related, and the bigger prize: `render()` rebuilds the entire panel via `innerHTML` for any change at all. Delegation is a prerequisite for ever rendering incrementally.
 
+### FALLOUT FROM THE `instance.element` FIX (13.3.14)
+
+`PanelManager.instance.element` was permanently `null` — the field was declared in the constructor to match the convention every panel class follows (`this.element = html` in `render()`) and then never assigned, because `createTray`/`updateTray` only ever wrote the **static** `PanelManager.element`. Ten call sites read it. All failed silently: passing `null` to a `render()` is a no-op, and `&& instance.element` is just false. Nothing ever threw. 13.3.14 makes `element` a getter onto the static, which **revives ten code paths that have never executed in production**. Two need eyes:
+
+- [ ] **WATCH (High, S)** `squire.js:727-731` — the global `updateActor` hook's AC/movement branch now re-renders the character and stats panels. Its own comment says AC and movement *"recompute constantly (active effects, conditions, mounts)"*, which is what the 13.3.6 perf pass was built around — but those two renders were dead, so that optimisation was never actually load-bearing. **This is new work in combat.** If the tray feels heavier, start here. (`updateHandle()` in the same branch was NOT gated and has always run.) Measure before assuming it's wrong — it may just be the intended behaviour finally working.
+- [ ] **VERIFY (Medium, S)** `panel-party.js:506` — item transfer re-renders the inventory panel. Should simply be correct now, but it has never run.
+- Already handled in the same change: a redundant `updateTray()` immediately after `initialize()` in `initializeSquireAfterSettings` (comment: "force a complete tray refresh") was a no-op while the field was null. Reviving the field would have made it rebuild the entire tray a second time on every startup. Removed.
+- **Lesson for the base-panel work**: a declared-but-never-assigned field fails *silently* here, because both things that consume it (`render(el)` and `if (el)`) no-op on `null`. Worth an assert or a guard when panel lifecycle gets refactored — this bug was invisible for as long as it existed.
+
+- [ ] **REFACTOR (Medium, M)** `PanelManager` keeps its state static (`element`, `currentActor`, `instance`, `viewMode`) while also being instantiated and carrying instance fields. That unresolved "singleton or object?" ambiguity is exactly what let `element` be declared on the instance and only ever assigned on the class. The getter bridges the two spellings; it does not settle the question. Settle it as part of **Modularize `manager-panel.js`** — pick one home for tray state and delete the other.
+
 ### DUPLICATION TAX (found while fixing 13.3.12)
 
 These are all the *same* defect wearing different hats, and each exists because Notes/Codex/Quest each carry their own copy of the panel shell (8,328 lines across three files: `_refreshData` + cache, scroll preservation, collapse persistence, progress bar, import/export, filtering). See "Base panel class" below.
@@ -167,6 +180,8 @@ These are all the *same* defect wearing different hats, and each exists because 
   - *Scroll preservation on re-render*: quest and notes both already had it, with a comment describing the exact symptom. Codex didn't, so pinning an entry threw the GM to the top of the list. The same bug, already solved twice, shipped a third time.
   - *Trim-match collapse restore*: live in codex, latent in quest (see DUPLICATION TAX above). One bug, two copies, one of them lucky.
   - *State destroyed on rebuild*: hit five separate sites for codex links alone (import merge, page-sheet drop + remove, Edit window `_normalizeLinks` + `_addLink`).
+
+Also see **FALLOUT FROM THE `instance.element` FIX** above: `PanelManager` declared `this.element` to match the very convention this base class would formalise, then never assigned it — and nothing caught that for as long as it existed, because `render(null)` and `if (null)` both no-op. A base class that owns the element lifecycle is the natural place to make that impossible rather than merely fixed.
 
 **Suggested change of approach**: a base class over 8,328 lines is a big-bang refactor of three panels at once, which is why this has sat at Low and will keep sitting there. Extract the duplicated **concerns** one at a time instead — scroll preservation, collapse persistence, progress bar, refresh-cache — each independently shippable, each permanently deleting one bug class across all three panels. That is exactly what `manager-pins.js` did for the four pin systems, and it worked. Best first candidates (both small, both would have prevented a real 13.3.12 bug): a shared `preserveScroll()` and a shared collapse-state helper.
 

@@ -39,6 +39,13 @@ function getBlacksmith() {
 export class PanelManager {
     static instance = null;
     static currentActor = null;
+    /**
+     * Comma-joined ids of the actors this user owns, as of the last time the
+     * character switcher was refreshed. Compared against a freshly computed one on
+     * ownership changes so the tray rebuilds only when the chip list really moved.
+     * @type {string|null}
+     */
+    static _ownedActorSignature = null;
     static isPinned = false;
     static viewMode = 'player';
     static element = null;
@@ -57,9 +64,27 @@ export class PanelManager {
         biographyHtml: ''
     };
 
+    /**
+     * The live tray element.
+     *
+     * A getter onto the static, NOT an own field. Every panel class sets
+     * `this.element` in its own render(); PanelManager declared the same field to
+     * match that convention and then never assigned it — `createTray`/`updateTray`
+     * only ever wrote `PanelManager.element`. So `instance.element` was permanently
+     * null while ~10 call sites across squire.js, panel-party.js and this file read
+     * it to decide whether to render, or passed it straight into render(). All of
+     * them silently did nothing: `updateTray()` could never run at all, and the
+     * global updateActor hook's stats branch was gated behind `&& instance.element`.
+     *
+     * A getter rather than a mirrored assignment so the two can never drift again.
+     * @returns {HTMLElement|null}
+     */
+    get element() {
+        return PanelManager.element;
+    }
+
     constructor(actor) {
         this.actor = actor;
-        this.element = null;
         this.gmPanel = null;
         if (actor) {
             this.characterPanel = new CharacterPanel(actor);
@@ -443,12 +468,17 @@ export class PanelManager {
     }
 
     async updateTray() {
-        if (!this.element) return;
-        
+        // The live tray is the STATIC element. `this.element` is assigned null in the
+        // constructor and never set again — createTray/updateTray only ever write
+        // `PanelManager.element` — so guarding on the instance field made this whole
+        // method unreachable. It has never run.
+        const tray = PanelManager.element;
+        if (!tray) return;
+
         // Store current state
         // v13: Use native classList instead of jQuery hasClass
-        const wasExpanded = this.element.classList.contains('expanded');
-        const wasPinned = this.element.classList.contains('pinned');
+        const wasExpanded = tray.classList.contains('expanded');
+        const wasPinned = tray.classList.contains('pinned');
         
         // Create new tray element
         const viewMode = PanelManager.viewMode;
@@ -1238,19 +1268,19 @@ export class PanelManager {
                                 // Re-render the appropriate panel
                                 switch (targetPanel) {
                                     case 'favorites':
-                                        if (this.favoritesPanel) await this.favoritesPanel.render(this.element);
+                                        if (this.favoritesPanel) await this.favoritesPanel.render(PanelManager.element);
                                         break;
                                     case 'weapons':
-                                        if (this.weaponsPanel) await this.weaponsPanel.render(this.element);
+                                        if (this.weaponsPanel) await this.weaponsPanel.render(PanelManager.element);
                                         break;
                                     case 'spells':
-                                        if (this.spellsPanel) await this.spellsPanel.render(this.element);
+                                        if (this.spellsPanel) await this.spellsPanel.render(PanelManager.element);
                                         break;
                                     case 'features':
-                                        if (this.featuresPanel) await this.featuresPanel.render(this.element);
+                                        if (this.featuresPanel) await this.featuresPanel.render(PanelManager.element);
                                         break;
                                     case 'inventory':
-                                        if (this.inventoryPanel) await this.inventoryPanel.render(this.element);
+                                        if (this.inventoryPanel) await this.inventoryPanel.render(PanelManager.element);
                                         break;
                                 }
                                 this.controlPanel?.reapplySearch();
@@ -2096,13 +2126,13 @@ async function initializeSquireAfterSettings() {
             PanelManager.element.classList.remove('expanded');
         }
         
+        // initialize() ends in createTray(), which builds the tray from scratch — there
+        // is nothing left to refresh. This used to be followed by an updateTray() call
+        // ("force a complete tray refresh") that was a silent no-op for as long as
+        // instance.element was null; now that the getter makes updateTray() reachable,
+        // keeping it would rebuild the whole tray a second time on every startup.
         await PanelManager.initialize(initialActor);
-        
-        // Force a complete tray refresh
-        if (PanelManager.instance) {
-            await PanelManager.instance.updateTray();
-        }
-        
+
         // Play tray open sound
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         if (blacksmith) {
