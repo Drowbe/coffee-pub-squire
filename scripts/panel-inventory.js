@@ -186,9 +186,15 @@ export class InventoryPanel {
         // v13: Use native DOM instead of jQuery
         const nativeElement = getNativeElement(this.element);
         if (!nativeElement) return;
-        
+
+        // Scope to this panel: the same item also renders a heart in the favorites
+        // list, which sits earlier in the tray DOM and would steal a tray-wide
+        // querySelector's first match — leaving this panel's icon stale.
+        const panel = nativeElement.querySelector('[data-panel="inventory"]');
+        if (!panel) return;
+
         this.items.all.forEach(item => {
-            const heartIcon = nativeElement.querySelector(`[data-item-id="${item.id}"] .fa-heart`);
+            const heartIcon = panel.querySelector(`[data-item-id="${item.id}"] .fa-heart`);
             if (heartIcon) {
                 if (item.isFavorite) {
                     heartIcon.classList.remove('faded');
@@ -210,11 +216,15 @@ export class InventoryPanel {
         // v13: Use native DOM instead of jQuery
         const nativeElement = getNativeElement(html);
         if (!nativeElement) return;
-        
+
+        // Scope to this panel — same first-match hazard as _updateHeartIcons: a
+        // favorited light source renders a lightbulb in the favorites list too.
+        const panel = nativeElement.querySelector('[data-panel="inventory"]') || nativeElement;
+
         this.items.all.forEach(item => {
             if (!item.isLightSource) return;
-            
-            const lightIcon = nativeElement.querySelector(`[data-item-id="${item.id}"] .fa-lightbulb`);
+
+            const lightIcon = panel.querySelector(`[data-item-id="${item.id}"] .fa-lightbulb`);
             if (lightIcon) {
                 if (item.isLightActive) {
                     lightIcon.classList.remove('faded');

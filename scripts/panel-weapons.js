@@ -189,9 +189,15 @@ export class WeaponsPanel {
         // v13: Use native DOM instead of jQuery
         const nativeElement = getNativeElement(this.element);
         if (!nativeElement) return;
-        
+
+        // Scope to this panel: the same item also renders a heart in the favorites
+        // list, which sits earlier in the tray DOM and would steal a tray-wide
+        // querySelector's first match — leaving this panel's icon stale.
+        const panel = nativeElement.querySelector('[data-panel="weapons"]');
+        if (!panel) return;
+
         this.weapons.all.forEach(weapon => {
-            const heartIcon = nativeElement.querySelector(`[data-item-id="${weapon.id}"] .fa-heart`);
+            const heartIcon = panel.querySelector(`[data-item-id="${weapon.id}"] .fa-heart`);
             if (heartIcon) {
                 if (weapon.isFavorite) {
                     heartIcon.classList.remove('faded');
@@ -213,11 +219,15 @@ export class WeaponsPanel {
         // v13: Use native DOM instead of jQuery
         const nativeElement = getNativeElement(html);
         if (!nativeElement) return;
-        
+
+        // Scope to this panel — same first-match hazard as _updateHeartIcons: a
+        // favorited light source renders a lightbulb in the favorites list too.
+        const panel = nativeElement.querySelector('[data-panel="weapons"]') || nativeElement;
+
         this.weapons.all.forEach(weapon => {
             if (!weapon.isLightSource) return;
-            
-            const lightIcon = nativeElement.querySelector(`[data-item-id="${weapon.id}"] .fa-lightbulb`);
+
+            const lightIcon = panel.querySelector(`[data-item-id="${weapon.id}"] .fa-lightbulb`);
             if (lightIcon) {
                 if (weapon.isLightActive) {
                     lightIcon.classList.remove('faded');

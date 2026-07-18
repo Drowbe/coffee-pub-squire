@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.16]
+
+### Fixed
+- **Favorite hearts (and the other row icons) click reliably again**: making the tray rows draggable in 13.3.14 quietly broke clicking the icons inside them. With `draggable="true"` on the row, Chromium commits the gesture to a drag after only a few pixels of mouse travel — and once a drag starts, the `click` event is never dispatched. A quick click on a small icon almost always includes that much travel, so the heart (and shield, lightbulb, share, feather) read as dead. A delegated `mousedown` on the tray root now turns the row's draggability off whenever a press begins inside `.tray-buttons`, so the action icons can never start a row drag; every fresh mousedown recomputes the flag and re-renders restore the template's `draggable="true"`, so dragging by the item image or name is unaffected.
+- **The heart you click now repaints — the update was landing on the wrong heart**: a pre-existing bug the dead clicks had been masking. `_updateHeartIcons()` in the inventory, weapons, spells, and features panels searched the *entire tray* with `querySelector`, which returns the first match in DOM order — and the favorites panel sits above all four in the tray. Since `manageFavorite()` re-renders the favorites list *before* updating the hearts, the just-added favorites row stole the match: the class toggle landed on the favorites panel's always-solid heart while the icon actually clicked stayed stale until the next full render (the flag itself was always saved correctly, which is why a refresh showed the right state). Each panel now scopes the lookup to its own `[data-panel]` container. The same first-match hazard existed in `_updateLightIcons()` for inventory and weapons — a favorited torch renders a lightbulb in the favorites list too — and is scoped the same way.
+
 ## [13.3.15]
 
 ### Added

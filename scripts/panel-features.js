@@ -165,9 +165,15 @@ export class FeaturesPanel {
         // v13: Use native DOM instead of jQuery
         const nativeElement = getNativeElement(this.element);
         if (!nativeElement) return;
-        
+
+        // Scope to this panel: the same item also renders a heart in the favorites
+        // list, which sits earlier in the tray DOM and would steal a tray-wide
+        // querySelector's first match — leaving this panel's icon stale.
+        const panel = nativeElement.querySelector('[data-panel="features"]');
+        if (!panel) return;
+
         this.features.all.forEach(feature => {
-            const heartIcon = nativeElement.querySelector(`[data-item-id="${feature.id}"] .fa-heart`);
+            const heartIcon = panel.querySelector(`[data-item-id="${feature.id}"] .fa-heart`);
             if (heartIcon) {
                 if (feature.isFavorite) {
                     heartIcon.classList.remove('faded');

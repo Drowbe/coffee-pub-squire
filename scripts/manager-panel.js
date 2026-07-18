@@ -753,6 +753,19 @@ export class PanelManager {
         // exists. One listener on the stable tray root outlives all of it.
         if (!nativeTray.dataset.itemDragBound) {
             nativeTray.dataset.itemDragBound = 'true';
+
+            // A press that begins on one of the row's action icons (heart, shield,
+            // lightbulb, share, feather) must never start a row drag: Chromium's drag
+            // threshold is only a few pixels, so a quick click on a small icon often
+            // registers as an aborted drag instead — and the click never fires. Gate
+            // draggability per-press; every mousedown recomputes it, and re-renders
+            // restore the template's draggable="true" anyway.
+            nativeTray.addEventListener('mousedown', (event) => {
+                const row = event.target.closest?.('.panel-item[data-item-id]');
+                if (!row || !nativeTray.contains(row)) return;
+                row.draggable = !event.target.closest('.tray-buttons');
+            });
+
             nativeTray.addEventListener('dragstart', (event) => {
                 const row = event.target.closest?.('.panel-item[data-item-id]');
                 if (!row || !nativeTray.contains(row)) return;

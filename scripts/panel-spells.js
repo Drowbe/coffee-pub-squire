@@ -208,9 +208,15 @@ export class SpellsPanel {
         // v13: Use native DOM instead of jQuery
         const nativeElement = getNativeElement(this.element);
         if (!nativeElement) return;
-        
+
+        // Scope to this panel: the same item also renders a heart in the favorites
+        // list, which sits earlier in the tray DOM and would steal a tray-wide
+        // querySelector's first match — leaving this panel's icon stale.
+        const panel = nativeElement.querySelector('[data-panel="spells"]');
+        if (!panel) return;
+
         this.spells.forEach(spell => {
-            const heartIcon = nativeElement.querySelector(`[data-item-id="${spell.id}"] .fa-heart`);
+            const heartIcon = panel.querySelector(`[data-item-id="${spell.id}"] .fa-heart`);
             if (heartIcon) {
                 if (spell.isFavorite) {
                     heartIcon.classList.remove('faded');
