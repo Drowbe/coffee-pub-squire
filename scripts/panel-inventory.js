@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { CharactersWindow } from './window-characters.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 
@@ -18,12 +18,8 @@ export class InventoryPanel {
     }
 
     _getActionType(item) {
-        // In D&D5E 4.0+, we use the new activities system (plural)
-        const activities = item.system.activities;
-        if (!activities) return null;
-        
-        // Get the first activity (usually there's only one)
-        const activity = Object.values(activities)[0];
+        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
+        const activity = getActivityList(item)[0];
         if (!activity?.activation?.type) return null;
         
         // Check the activation type

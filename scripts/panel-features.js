@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -70,12 +70,8 @@ export class FeaturesPanel {
     }
 
     _getActionType(feature) {
-        // In D&D5E 4.0+, we use the new activities system (plural)
-        const activities = feature.system.activities;
-        if (!activities) return null;
-        
-        // Get the first activity (usually there's only one)
-        const activity = Object.values(activities)[0];
+        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
+        const activity = getActivityList(feature)[0];
         if (!activity?.activation?.type) return null;
         
         // Check the activation type

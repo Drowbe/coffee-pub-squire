@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 import { CharactersWindow } from './window-characters.js';
 import { LightUtility } from './utility-lights.js';
 
@@ -90,24 +90,18 @@ export class WeaponsPanel {
     }
 
     _getActionType(weapon) {
-        // In D&D5E 4.0+, we use the new activities system (plural)
-        const activities = weapon.system.activities;
-        if (activities) {
-            // Get the first activity (usually there's only one)
-            const activity = Object.values(activities)[0];
-            if (activity?.activation?.type) {
-                switch (activity.activation.type) {
-                    case 'action': return 'action';
-                    case 'bonus': return 'bonus';
-                    case 'reaction': return 'reaction';
-                    case 'special': return 'special';
-                    default: return null;
-                }
-            }
-        }
-
+        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
+        const activity = getActivityList(weapon)[0];
+        const type = activity?.activation?.type;
         // Default to action for most weapons if no specific type is set
-        return 'action';
+        if (!type) return 'action';
+        switch (type) {
+            case 'action': return 'action';
+            case 'bonus': return 'bonus';
+            case 'reaction': return 'reaction';
+            case 'special': return 'special';
+            default: return null;
+        }
     }
 
     async render(html) {

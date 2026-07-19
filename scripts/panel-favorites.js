@@ -1,12 +1,30 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu } from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
+
+// Universal actions every creature can take — the core-rules set plus common
+// table extras. When an actions compendium drops these onto NPC sheets they
+// all carry usable activities, which would flood auto-favorites with rules
+// reminders (see: 25 hearts on one CR 9 caster). Matched by lowercased name.
+const GENERIC_ACTIONS = new Set([
+    'attack', 'cast a spell', 'check cover', 'climb', 'crawl', 'dash',
+    'disengage', 'dodge', 'drop prone', 'escape', 'fall', 'grapple', 'help',
+    'hide', 'improvise', 'influence', 'interact', 'magic', 'opportunity attack',
+    'overrun', 'ready', 'ready action', 'ready spell', 'search', 'shove',
+    'squeeze', 'stand up', 'study', 'tumble', 'two-weapon fighting',
+    'underwater', 'use an object', 'utilize'
+]);
+
+// The generic actions worth quick access in play — these still auto-favorite.
+const GENERIC_ACTIONS_FAVORITED = new Set([
+    'dash', 'disengage', 'grapple', 'ready', 'ready action', 'ready spell', 'shove'
+]);
 
 export class FavoritesPanel {
     static getPanelFavorites(actor) {
@@ -264,36 +282,69 @@ export class FavoritesPanel {
             // If panel favorites already exist, don't override them
             if (currentPanelFavorites.length > 0) return false;
             
-            // Get all items from the actor
-            const newPanelFavorites = [];
-            
-            // Add equipped weapons to panel favorites
-            const weapons = actor.items.filter(item => 
-                item.type === "weapon" && 
-                item.system.equipped === true
+            // Weapons: anything already equipped, plus anything with an attack
+            // activity — a weapon with an attack is part of the statblock's action
+            // list whether or not the importer remembered to equip it.
+            //
+            // Deliberately read-only: favorites are Squire's own metadata, but
+            // `system.equipped` is the actor's data — Squire acts on what the
+            // token has and never writes to it. Fixing an unequipped statblock
+            // weapon is a content problem for the sheet/import side.
+            const hasAttackActivity = (item) =>
+                getActivityList(item).some(a => a?.type === "attack");
+            const weapons = actor.items.filter(item =>
+                item.type === "weapon" &&
+                (item.system.equipped === true || hasAttackActivity(item))
             );
-            // Add prepared spells to panel favorites
-            const spells = actor.items.filter(item => 
-                item.type === "spell" && 
-                item.system.prepared === true
+
+            // Spells: dnd5e 5.x `prepared` is a number (0 unprepared / 1 prepared /
+            // 2 always), and statblock spells may instead be at-will, innate, or
+            // pact — favorite anything the actor can actually cast.
+            const spells = actor.items.filter(item =>
+                item.type === "spell" &&
+                (item.system.prepared > 0 ||
+                 ["atwill", "innate", "pact"].includes(item.system.method))
             );
-            // Add monster features that are actions
-            const monsterFeatures = actor.items.filter(item => 
-                (item.type === "feat" || item.type === "feature") &&
-                item.system.featureType === "Monster Feature" &&
-                !!item.system.activation?.type
-            );
+
+            // Features: any feat with an activation-typed activity. Requiring an
+            // activation keeps actions, bonus actions, and reactions while leaving
+            // passive traits (Amphibious, Keen Senses) out — a text-only feat with
+            // no activities is indistinguishable from a passive trait in the data.
+            // Deliberately NOT gated on `system.type.value === "monster"`: dnd5e only
+            // stamps that on feats created directly on an NPC, so hand-built pets and
+            // drag-copied abilities never carry it. On an NPC, usable = statblock
+            // content. 2024-style statblocks express attacks as these feat items
+            // rather than weapon items, so this filter carries most modern monsters.
+            const isGenericAction = (item) => GENERIC_ACTIONS.has(item.name.toLowerCase().trim());
+            const feats = actor.items.filter(item => {
+                if (item.type !== "feat") return false;
+                if (!getActivityList(item).some(a => a?.activation?.type)) return false;
+                // Generic actions: only the curated few make the cut; real
+                // statblock features (Multiattack, breath weapons) pass through.
+                if (isGenericAction(item)) {
+                    return GENERIC_ACTIONS_FAVORITED.has(item.name.toLowerCase().trim());
+                }
+                return true;
+            });
+            // Statblock features are what the creature IS; generic actions are
+            // rules reminders — they sort to the bottom of the favorites list.
+            const statblockFeatures = feats.filter(f => !isGenericAction(f));
+            const genericActions = feats.filter(isGenericAction);
+
             // Get the IDs of all items to favorite
-            const itemsToFavorite = [...weapons, ...spells, ...monsterFeatures].map(item => item.id);
-            
+            const itemsToFavorite = [...weapons, ...spells, ...statblockFeatures, ...genericActions].map(item => item.id);
+
             // If no items to favorite, don't do anything
             if (itemsToFavorite.length === 0) return false;
-            
+
             // Save the new panel favorites
             await actor.setFlag(MODULE.ID, 'favoritePanel', itemsToFavorite);
-            
-            // Also add these items to handle favorites for quick access
-            await actor.setFlag(MODULE.ID, 'favoriteHandle', itemsToFavorite);
+
+            // Also add these items to handle favorites for quick access — minus
+            // the generic actions: handle slots are scarce, and Dash/Disengage
+            // belong to every creature, not this one's kit.
+            const handleFavorites = [...weapons, ...spells, ...statblockFeatures].map(item => item.id);
+            await actor.setFlag(MODULE.ID, 'favoriteHandle', handleFavorites);
             
 
             

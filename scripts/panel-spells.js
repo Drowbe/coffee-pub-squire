@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 
 export class SpellsPanel {
     constructor(actor) {
@@ -46,24 +46,15 @@ export class SpellsPanel {
     }
 
     _getActionType(spell) {
-        // In D&D5E 4.0+, we use the new activities system (plural)
-        const activities = spell.system.activities;
-        if (activities) {
-            // Get the first activity (usually there's only one)
-            const activity = Object.values(activities)[0];
-            if (activity?.activation?.type) {
-                switch (activity.activation.type) {
-                    case 'action': return 'action';
-                    case 'bonus': return 'bonus';
-                    case 'reaction': return 'reaction';
-                    case 'special': return 'special';
-                    default: return 'action'; // Most spells use an action
-                }
-            }
+        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
+        const activity = getActivityList(spell)[0];
+        switch (activity?.activation?.type) {
+            case 'bonus': return 'bonus';
+            case 'reaction': return 'reaction';
+            case 'special': return 'special';
+            // Default to action for most spells
+            default: return 'action';
         }
-
-        // Default to action for most spells
-        return 'action';
     }
 
     async render(html) {

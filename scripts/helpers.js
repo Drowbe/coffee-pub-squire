@@ -116,23 +116,32 @@ export function getTokenDisplayName(token, actor) {
     return '';
 }
 
+// dnd5e 4+ initializes `system.activities` as an ActivityCollection — a Map
+// subclass — so `Object.values()` on it returns [] and any code written against
+// the old plain-object shape silently sees "no activities". Normalize to an
+// array here; the collection is already sorted by the activity sort order.
+export function getActivityList(item) {
+    const activities = item?.system?.activities;
+    if (!activities) return [];
+    if (activities instanceof Map) return Array.from(activities.values());
+    return Object.values(activities);
+}
+
 // Helper function to determine weapon type using activities system
 function getWeaponType(weapon) {
     if (!weapon || weapon.type !== 'weapon') return null;
-    
-    // In D&D5E 4.0+, we use the new activities system
-    const activities = weapon.system.activities;
-    if (activities) {
-        // Get the first activity (usually there's only one)
-        const activity = Object.values(activities)[0];
-        if (activity?.type === 'rwak') return 'ranged';
-        if (activity?.type === 'mwak') return 'melee';
-    }
-    
+
+    // dnd5e 4+: attack activities carry `attack.type.value` ('melee'/'ranged');
+    // blank means "derive from the weapon", so fall through to the properties.
+    const attack = getActivityList(weapon).find(a => a?.type === 'attack');
+    const attackType = attack?.attack?.type?.value;
+    if (attackType === 'ranged') return 'ranged';
+    if (attackType === 'melee') return 'melee';
+
     // If no activities, try to determine from weapon properties
     if (weapon.system.properties?.thr) return 'ranged';  // Has thrown property
     if (weapon.system.properties?.rch) return 'melee';   // Has reach property
-    
+
     // Default based on weapon range
     return weapon.system.range?.value > 5 ? 'ranged' : 'melee';
 }
@@ -140,21 +149,21 @@ function getWeaponType(weapon) {
 // Helper function to get damage information using activities system
 function getDamageInfo(item) {
     if (!item) return null;
-    
-    // In D&D5E 4.0+, damage is part of the activities system
-    const activities = item.system.activities;
-    if (activities) {
-        // Get the first activity (usually there's only one)
-        const activity = Object.values(activities)[0];
-        if (activity?.damage?.parts?.length) {
-            return {
-                formula: activity.damage.parts[0][0],
-                type: activity.damage.parts[0][1],
-                scaling: activity.damage.parts[0].scaling || null // Get scaling from damage part
-            };
-        }
+
+    // dnd5e 4+: damage parts are DamageData objects (`formula` getter, `types`
+    // Set, `scaling` schema), not the old [formula, type] tuples.
+    for (const activity of getActivityList(item)) {
+        const part = activity?.damage?.parts?.[0];
+        if (!part) continue;
+        const formula = typeof part.formula === 'string' ? part.formula : '';
+        if (!formula) continue;
+        return {
+            formula,
+            type: Array.from(part.types ?? [])[0] ?? '',
+            scaling: part.scaling?.mode || null
+        };
     }
-    
+
     return null;
 }
 
