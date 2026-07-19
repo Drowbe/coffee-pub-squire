@@ -773,6 +773,12 @@ export class PanelManager {
                 const item = PanelManager.currentActor?.items?.get(row.dataset.itemId);
                 if (!item) return;
 
+                // The tray is itself a drop zone (item transfer). A drag that
+                // starts here must not light it up or accept the drop — the
+                // actor already owns the item, so a self-drop just duplicates
+                // it. The transfer zone checks this flag; cleared on dragend.
+                PanelManager._trayItemDragActive = true;
+
                 // toDragData() is the canonical payload every Foundry drop target
                 // understands — {type, uuid, data}. Hand-rolling {type:'Item', uuid}
                 // would work today and rot the moment core changes the shape.
@@ -781,6 +787,12 @@ export class PanelManager {
 
                 const img = row.querySelector('.panel-item-image');
                 if (img) event.dataTransfer.setDragImage(img, 16, 16);
+            });
+
+            // dragend fires on the source element (bubbling here) whether the
+            // drop landed, was cancelled, or went nowhere.
+            nativeTray.addEventListener('dragend', () => {
+                PanelManager._trayItemDragActive = false;
             });
         }
 
@@ -915,6 +927,10 @@ export class PanelManager {
             
             // v13: Add new drag event listeners with native DOM
             newStackedContainer.addEventListener('dragenter', (event) => {
+                // A drag that started in the tray must not treat the tray as a
+                // drop target — the actor already owns the item (self-drop
+                // would duplicate it). No highlight, no sound, no preventDefault.
+                if (PanelManager._trayItemDragActive) return;
                 event.preventDefault();
                 // Add drop hover styles for any drag operation
                 event.currentTarget.classList.add('drop-target');
@@ -938,13 +954,17 @@ export class PanelManager {
             });
 
             newStackedContainer.addEventListener('dragover', (event) => {
+                // Without preventDefault the browser refuses the drop here —
+                // exactly what we want for a drag that started in the tray.
+                if (PanelManager._trayItemDragActive) return;
                 event.preventDefault();
                 event.dataTransfer.dropEffect = 'copy';
             });
 
             newStackedContainer.addEventListener('drop', async (event) => {
+                if (PanelManager._trayItemDragActive) return;
                 event.preventDefault();
-                
+
                 // Get the container and remove hover state
                 const container = event.currentTarget;
                 container.classList.remove('drop-target');
@@ -999,6 +1019,12 @@ export class PanelManager {
                                 ui.notifications.warn("Could not determine the source actor or item.");
                                 return;
                             }
+
+                            // Same-actor drop is a no-op: transferring an item to
+                            // its own owner just duplicates it. Belt-and-braces
+                            // behind the _trayItemDragActive gate — this also
+                            // catches a drag from this actor's own sheet.
+                            if (sourceActor.id === actor.id) return;
                             
                             // Get the item from the source actor
                             const sourceItem = sourceActor.items.get(itemId);
