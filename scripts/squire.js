@@ -1940,6 +1940,22 @@ Hooks.once('ready', async function() {
         console.error('Coffee Pub Squire | Failed to register Quest window:', error);
     }
 
+    try {
+        const {
+            registerStatusEffectsWindow,
+            openStatusEffectsWindow,
+            StatusEffectsWindow,
+            STATUS_EFFECTS_WINDOW_ID
+        } = await import('./window-status-effects.js');
+        registerStatusEffectsWindow();
+        game.modules.get(MODULE.ID).api.openStatusEffectsWindow = openStatusEffectsWindow;
+        game.modules.get(MODULE.ID).api.StatusEffectsWindow = StatusEffectsWindow;
+        game.modules.get(MODULE.ID).api.STATUS_EFFECTS_WINDOW_ID = STATUS_EFFECTS_WINDOW_ID;
+        window.StatusEffectsWindow = StatusEffectsWindow;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register Status Effects window:', error);
+    }
+
     // Pin type names and taxonomy registered by manager-pins.js initPinManager().
 
     // Register socket handler for GM ownership sync on notes

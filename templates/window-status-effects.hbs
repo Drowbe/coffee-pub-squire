@@ -1,0 +1,61 @@
+<div class="blacksmith-window-template-root status-effects-window" data-app-id="{{appId}}">
+    <header class="blacksmith-window-template-header">
+        <div class="blacksmith-window-template-header-content">
+            <div class="blacksmith-window-template-header-icon status-effects-window-portrait">
+                <img src="{{actorImg}}" alt="{{actorName}}">
+            </div>
+            <div class="blacksmith-window-template-header-title-block">
+                <div class="blacksmith-window-template-header-title">Status Effects</div>
+                <div class="blacksmith-window-template-header-subtitle">{{actorName}}</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="blacksmith-window-template-body">
+        <section class="blacksmith-window-section">
+            <div class="blacksmith-window-section-header">
+                <i class="fa-solid fa-sparkles"></i>
+                <span>Conditions</span>
+            </div>
+            <div class="blacksmith-window-section-body">
+                <div class="status-effects-grid">
+                    {{#each conditions}}
+                        <button
+                            type="button"
+                            class="status-effect-option {{#if isActive}}active{{/if}}"
+                            data-action="toggleEffect"
+                            data-condition-id="{{id}}"
+                            aria-pressed="{{#if isActive}}true{{else}}false{{/if}}"
+                            {{#unless ../canManage}}disabled{{/unless}}
+                        >
+                            <span class="status-effect-icon">
+                                <img src="{{icon}}" alt="" onerror="this.src='icons/svg/unknown.svg'; this.onerror=null;">
+                                {{#if isActive}}<i class="fa-solid fa-check status-effect-check"></i>{{/if}}
+                            </span>
+                            <span class="status-effect-name">{{name}}</span>
+                        </button>
+                    {{/each}}
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="blacksmith-window-template-buttons">
+        <div class="blacksmith-window-template-action-bar">
+            <div class="blacksmith-window-template-action-left">
+                <button
+                    type="button"
+                    class="blacksmith-window-btn-critical"
+                    data-action="removeAll"
+                    {{#unless canRemoveAll}}disabled{{/unless}}
+                >
+                    <i class="fa-solid fa-trash-can"></i>
+                    Remove All
+                </button>
+            </div>
+            <div class="blacksmith-window-template-action-right">
+                <button type="button" class="blacksmith-window-btn-secondary" data-action="close">Close</button>
+            </div>
+        </div>
+    </section>
+</div>

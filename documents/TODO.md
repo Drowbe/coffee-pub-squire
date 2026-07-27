@@ -51,8 +51,9 @@
 ## CURRENT ISSUES (Fix First)
 
 ### LEGACY V1 WINDOW MIGRATION → BLACKSMITH WINDOW FRAMEWORK
+- [x] **Status Effects**: Migrated the inline `manager-handle.js` Add Effect dialog to the registered Blacksmith `StatusEffectsWindow` (`window-status-effects.js`).
 - [ ] **REFACTOR (Critical)** Migrate the five remaining legacy `Application` (V1) windows to the Blacksmith window framework (`registerWindow`/`openWindow`, base `HandlebarsApplicationMixin(ApplicationV2)`, five-zone layout — see https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Window). The notes/codex/quest windows are already on the framework; these are the holdouts:
-  - `window-health.js` (`HealthWindow`) — **do first**; used mid-combat. Carries a `_activateCoreListeners()` override hack to suppress a V1 form-handling crash, hand-rolled position persistence (`healthWindowPosition` setting), and shares `panel-health.hbs` with the in-tray panel via `position`/`isHealthPopped` branching — the migration should split the window template out (body zone = the one scroll region, which structurally prevents the nested-scrollbox class of bug patched in CSS for 13.3.6).
+  - `window-health.js` (`HealthWindow`) — used mid-combat. Carries a `_activateCoreListeners()` override hack to suppress a V1 form-handling crash, hand-rolled position persistence (`healthWindowPosition` setting), and shares `panel-health.hbs` with the in-tray panel via `position`/`isHealthPopped` branching — the migration should split the window template out (body zone = the one scroll region, which structurally prevents the nested-scrollbox class of bug patched in CSS for 13.3.6).
   - `window-dicetray.js` (`DiceTrayWindow`)
   - `window-macros.js` (`MacrosWindow`)
   - `window-characters.js` (`CharactersWindow`)
