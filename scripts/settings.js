@@ -379,15 +379,12 @@ export const registerSettings = function() {
     });
 
     game.settings.register(MODULE.ID, 'showMacrosPanel', {
-        name: 'Show Macros Panel',
-        hint: 'Display macros panel for quick access to macros',
+        name: 'Legacy Macros Panel Visibility',
+        hint: 'Retained for settings compatibility; Macros now opens as a standalone window.',
         scope: 'user',
-        config: true,
+        config: false,
         type: Boolean,
-        default: false,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
+        default: false
     });
 
 
@@ -713,13 +710,6 @@ export const registerSettings = function() {
     });
 
     game.settings.register(MODULE.ID, 'isGmPanelCollapsed', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
-    game.settings.register(MODULE.ID, 'isMacrosPanelCollapsed', {
         scope: 'client',
         config: false,
         type: Boolean,

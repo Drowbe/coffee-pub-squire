@@ -3,7 +3,6 @@ import { showQuestTooltip, hideQuestTooltip, getObjectiveTooltipData } from './h
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { DiceTrayPanel } from './panel-dicetray.js';
-import { MacrosPanel } from './panel-macros.js';
 import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
@@ -197,7 +196,6 @@ export class HandleManager {
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-            isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
             favoriteMacros,
@@ -568,8 +566,8 @@ export class HandleManager {
             if (!event.target.closest('#macros-button')) return;
             event.preventDefault();
             event.stopPropagation();
-            if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isPoppedOut) {
-                await PanelManager.instance.macrosPanel._onPopOut();
+            if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isWindowOpen) {
+                await PanelManager.instance.macrosPanel.openWindow();
             }
         });
 

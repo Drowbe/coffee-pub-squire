@@ -266,6 +266,8 @@ export class PanelManager {
             const hadHealthWindow = oldHealthPanel?.isPoppedOut && oldHealthPanel?.window;
             const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
             const hadDiceTrayWindow = oldDiceTrayPanel?.isWindowOpen && oldDiceTrayPanel?.window;
+            const oldMacrosPanel = PanelManager.instance?.macrosPanel;
+            const hadMacrosWindow = oldMacrosPanel?.isWindowOpen && oldMacrosPanel?.window;
 
             // Clean up old instance before creating new one to prevent memory leaks
             if (PanelManager.instance) {
@@ -346,10 +348,16 @@ export class PanelManager {
             // Abort if instance was cleared by another hook (e.g. deleteToken) during await
             if (!PanelManager.instance) return;
 
-            // Restore macros window state if it was open
-            if (savedWindowStates.macros && PanelManager.instance?.macrosPanel) {
-                // Restore from saved state
-                await PanelManager.instance.macrosPanel._onPopOut();
+            // Keep an open Macros window attached across actor switches.
+            if (hadMacrosWindow && PanelManager.instance.macrosPanel) {
+                PanelManager.instance.macrosPanel.isWindowOpen = true;
+                PanelManager.instance.macrosPanel.window = oldMacrosPanel.window;
+                PanelManager.instance.macrosPanel.window.panel = PanelManager.instance.macrosPanel;
+                MacrosPanel.isWindowOpen = true;
+                MacrosPanel.activeWindow = PanelManager.instance.macrosPanel.window;
+                PanelManager.instance.macrosPanel.updateActor(actor);
+            } else if (savedWindowStates.macros && PanelManager.instance?.macrosPanel) {
+                await PanelManager.instance.macrosPanel.openWindow();
             }
 
             // Abort if instance was cleared by another hook (e.g. deleteToken) during await
@@ -420,7 +428,6 @@ export class PanelManager {
                 showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
-                showMacrosPanel: game.settings.get(MODULE.ID, 'showMacrosPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode,
@@ -429,7 +436,6 @@ export class PanelManager {
             showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
             showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-            isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
@@ -504,7 +510,6 @@ export class PanelManager {
                 showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
-                showMacrosPanel: game.settings.get(MODULE.ID, 'showMacrosPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode,
@@ -512,7 +517,6 @@ export class PanelManager {
             showTabNotes: game.settings.get(MODULE.ID, 'showTabNotes'),
             showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
             showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
-            isMacrosPopped: MacrosPanel.isWindowOpen,
             isHealthPopped: HealthPanel.isWindowOpen,
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName')
         });
@@ -564,12 +568,8 @@ export class PanelManager {
         // Dice Tray is a standalone tool window; keep its controller available for launchers.
         this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
 
-        // Only create macros panel if not popped out and enabled in settings
-        if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
-            this.macrosPanel = new MacrosPanel({ actor: this.actor });
-        } else {
-            this.macrosPanel = null;
-        }
+        // Macros is a standalone tool window; keep its controller available for launchers.
+        this.macrosPanel = new MacrosPanel({ actor: this.actor });
 
         this.statsPanel = new StatsPanel(this.actor);
         this.abilitiesPanel = new AbilitiesPanel(this.actor);
@@ -591,9 +591,6 @@ export class PanelManager {
         this.experiencePanel.element = PanelManager.element;
         if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             this.healthPanel.element = PanelManager.element;
-        }
-        if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
-            this.macrosPanel.element = PanelManager.element;
         }
         this.statsPanel.element = PanelManager.element;
         this.abilitiesPanel.element = PanelManager.element;
@@ -695,13 +692,6 @@ export class PanelManager {
             }
         } else {
             PanelManager.removePanelDom(this.partyStatsPanel);
-        }
-        if (game.settings.get(MODULE.ID, 'showMacrosPanel')) {
-            if (this.macrosPanel && !this.macrosPanel.isPoppedOut) {
-                this.macrosPanel.render(element);
-            }
-        } else {
-            PanelManager.removePanelDom(this.macrosPanel);
         }
     }
 

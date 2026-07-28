@@ -169,7 +169,7 @@ export class MacrosWindow extends Application {
     }
 
     get appId() {
-        return `squire-macros-window-${this.panel.actor?.id || 'no-actor'}`;
+        return 'squire-macros-window';
     }
 
     setPosition(options={}) {
@@ -224,7 +224,7 @@ export class MacrosWindow extends Application {
             delete this.panel.actor.apps[this.appId];
         }
         if (this.panel) {
-            await this.panel.returnToTray();
+            await this.panel.onWindowClosed();
         }
         return super.close(options);
     }
