@@ -39,6 +39,45 @@
                 </div>
             </div>
         </section>
+
+        <section class="blacksmith-window-section status-effects-other-section">
+            <div class="blacksmith-window-section-header">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Other Effects</span>
+            </div>
+            <div class="blacksmith-window-section-body">
+                {{#if hasOtherEffects}}
+                    <div class="status-effects-list">
+                        {{#each otherEffects}}
+                            <div class="status-effects-list-row {{#if isDisabled}}is-disabled{{/if}} {{#if isSuppressed}}is-suppressed{{/if}}">
+                                <img class="status-effects-list-icon" src="{{icon}}" alt="">
+                                <div class="status-effects-list-details">
+                                    <span class="status-effects-list-name">{{name}}</span>
+                                    <span class="status-effects-list-meta">
+                                        {{#if duration}}<span>{{duration}}</span>{{/if}}
+                                        {{#if isDisabled}}<span>Disabled</span>{{/if}}
+                                        {{#if isSuppressed}}<span>Suppressed</span>{{/if}}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="status-effects-remove-effect blacksmith-window-btn-critical"
+                                    data-action="removeEffect"
+                                    data-effect-id="{{id}}"
+                                    aria-label="Remove {{name}}"
+                                    data-tooltip="Remove {{name}}"
+                                    {{#unless ../canManage}}disabled{{/unless}}
+                                >
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        {{/each}}
+                    </div>
+                {{else}}
+                    <div class="status-effects-empty">No other effects.</div>
+                {{/if}}
+            </div>
+        </section>
     </div>
 
     <section class="blacksmith-window-template-buttons">

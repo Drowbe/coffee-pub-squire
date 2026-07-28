@@ -64,6 +64,7 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         this.actor = opts.actor || null;
         this._effectHookIds = [];
         this._pendingConditionIds = new Set();
+        this._pendingEffectIds = new Set();
     }
 
     async _resolveActor() {
@@ -75,7 +76,7 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
     async getData() {
         await this._resolveActor();
         const exhaustionLevel = Number(this.actor?.system?.attributes?.exhaustion || 0);
-        const conditions = (CONFIG.statusEffects || [])
+        const configuredStatuses = (CONFIG.statusEffects || [])
             .map(status => {
                 const id = status?.id;
                 const name = getStatusName(id, status);
@@ -92,6 +93,28 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
             })
             .filter(condition => condition.id && condition.name)
             .sort((a, b) => a.name.localeCompare(b.name));
+        const canonicalStatusKeys = new Set(
+            configuredStatuses.map(status => `${status.id}:${status.name.toLocaleLowerCase()}`)
+        );
+        const otherEffects = (this.actor?.effects || [])
+            .filter(effect => {
+                const effectName = String(effect.name || effect.label || '').toLocaleLowerCase();
+                const statuses = effect.statuses instanceof Set
+                    ? effect.statuses
+                    : new Set(effect.statuses || []);
+                return !Array.from(statuses).some(
+                    statusId => canonicalStatusKeys.has(`${statusId}:${effectName}`)
+                );
+            })
+            .map(effect => ({
+                id: effect.id,
+                name: effect.name || effect.label || 'Unnamed Effect',
+                icon: effect.img || 'icons/svg/aura.svg',
+                duration: effect.duration?.type === 'none' ? '' : (effect.duration?.label || ''),
+                isDisabled: !!effect.disabled,
+                isSuppressed: !!effect.isSuppressed
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name));
 
         const canManage = !!this.actor?.isOwner;
         return {
@@ -99,8 +122,10 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
             actorName: this.actor?.name || 'Unknown Actor',
             actorImg: this.actor?.img || 'icons/svg/mystery-man.svg',
             canManage,
-            canRemoveAll: canManage && conditions.some(condition => condition.isActive),
-            conditions
+            canRemoveAll: canManage && configuredStatuses.some(condition => condition.isActive),
+            conditions: configuredStatuses,
+            otherEffects,
+            hasOtherEffects: otherEffects.length > 0
         };
     }
 
@@ -196,6 +221,35 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         }
     }
 
+    async _removeEffect(effectId) {
+        await this._resolveActor();
+        if (!this.actor) {
+            ui.notifications.error('The actor for this status-effects window is no longer available.');
+            return;
+        }
+        if (!this.actor.isOwner) {
+            ui.notifications.warn('You do not have permission to change effects on this actor.');
+            return;
+        }
+        if (!effectId || this._pendingEffectIds.has(effectId)) return;
+
+        const effect = this.actor.effects.get(effectId);
+        if (!effect) return;
+
+        this._pendingEffectIds.add(effectId);
+        try {
+            const name = effect.name || effect.label || 'Effect';
+            await effect.delete();
+            ui.notifications.info(`Removed ${name} from ${this.actor.name}`);
+            await game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.handleManager?.updateHandle?.();
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error removing ActiveEffect:', error);
+            ui.notifications.error(`Could not remove ${effect.name || effect.label || 'effect'}`);
+        } finally {
+            this._pendingEffectIds.delete(effectId);
+        }
+    }
+
     async close(options = {}) {
         this._unregisterEffectHooks();
         return super.close(options);
@@ -218,11 +272,19 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         event?.preventDefault?.();
         await StatusEffectsWindow._ref?._removeAllConditions();
     }
+
+    static async _actionRemoveEffect(event, target) {
+        event?.preventDefault?.();
+        const effectId = target?.dataset?.effectId;
+        if (!effectId) return;
+        await StatusEffectsWindow._ref?._removeEffect(effectId);
+    }
 }
 
 StatusEffectsWindow.ACTION_HANDLERS = {
     toggleEffect: StatusEffectsWindow._actionToggleEffect,
     removeAll: StatusEffectsWindow._actionRemoveAll,
+    removeEffect: StatusEffectsWindow._actionRemoveEffect,
     close: StatusEffectsWindow._actionClose
 };
 

@@ -182,7 +182,9 @@ export class HandleManager {
             })() : null,
             actorDisplayName: actorDisplayName || this.actor?.name || '',
             isGM: game.user.isGM,
+            canManageEffects: !!this.actor?.isOwner,
             effects: this.actor?.effects?.map(e => ({
+                id: e.id,
                 name: e.name,
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.img || 'icons/svg/aura.svg'
             })) || [],
@@ -595,19 +597,15 @@ export class HandleManager {
             event.preventDefault();
             event.stopPropagation();
             
-            // Only GMs can remove effects
-            if (!game.user.isGM) {
-                ui.notifications.warn("Only GMs can remove effects.");
+            if (!this.actor?.isOwner) {
+                ui.notifications.warn("You do not have permission to change effects on this actor.");
                 return;
             }
             
-            const conditionName = conditionIcon.dataset.tooltip;
-            if (!conditionName) {
-                return;
-            }
+            const effectId = conditionIcon.dataset.effectId;
+            if (!effectId) return;
             
-            // Remove condition
-            const effect = this.actor.effects.find(e => e.name === conditionName);
+            const effect = this.actor.effects.get(effectId);
             if (effect) {
                 await effect.delete();
                 await this.updateHandle();
