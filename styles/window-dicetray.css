@@ -18,3 +18,9 @@
     box-sizing: border-box;
     overflow: hidden;
 }
+
+.squire-dicetray-tool-window #dicetray-content.recent-rolls-hidden {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    height: auto;
+}

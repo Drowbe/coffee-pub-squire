@@ -32,7 +32,7 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
             windowSizeConstraints: {
                 minWidth: 300,
                 maxWidth: 520,
-                minHeight: 280,
+                minHeight: 150,
                 maxHeight: 280
             },
             toolTitlebar: 'micro',
@@ -43,11 +43,13 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
 
     constructor({ panel, ...options } = {}) {
         const opts = foundry.utils.mergeObject({}, options);
+        const showRecentRolls = game.settings.get(MODULE.ID, 'diceTrayShowRecentRolls');
         opts.id = opts.id ?? DiceTrayWindow.DEFAULT_OPTIONS.id;
         opts.position = foundry.utils.mergeObject(
             foundry.utils.mergeObject({}, DiceTrayWindow.DEFAULT_OPTIONS.position ?? {}),
             opts.position || {}
         );
+        opts.position.height = showRecentRolls ? 280 : 150;
         opts.window = foundry.utils.mergeObject(
             foundry.utils.mergeObject({}, DiceTrayWindow.DEFAULT_OPTIONS.window ?? {}),
             opts.window || {}
@@ -55,6 +57,7 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
         super(opts);
         this.panel = panel;
         this.actor = panel?.actor || null;
+        this.showRecentRolls = showRecentRolls;
         this._registeredActor = null;
         this._registerActor(this.actor);
     }
@@ -69,9 +72,55 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
         options.window.title = this.title;
     }
 
+    getToolHeaderActions() {
+        return [
+            ...(super.getToolHeaderActions?.() ?? []),
+            {
+                id: 'toggle-recent-rolls',
+                icon: 'fa-solid fa-clock-rotate-left',
+                label: this.showRecentRolls ? 'Hide Recent Rolls' : 'Show Recent Rolls',
+                active: this.showRecentRolls,
+                onClick: () => this._toggleRecentRolls()
+            }
+        ];
+    }
+
+    async _toggleRecentRolls() {
+        this.showRecentRolls = !this.showRecentRolls;
+        await game.settings.set(MODULE.ID, 'diceTrayShowRecentRolls', this.showRecentRolls);
+        await this.render(false);
+        if (this.showRecentRolls) {
+            this.setPosition({ height: 280 });
+            return;
+        }
+
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        this._fitHiddenHistoryHeight();
+    }
+
+    _fitHiddenHistoryHeight() {
+        if (this.showRecentRolls || !this.element) return;
+        const body = this.element?.querySelector?.('.blacksmith-window-tool-body');
+        const content = this.element?.querySelector?.('#dicetray-content');
+        const frameHeight = this.element?.getBoundingClientRect?.().height || 0;
+        const bodyHeight = body?.getBoundingClientRect?.().height || 0;
+        const contentRect = content?.getBoundingClientRect?.();
+        const contentStyle = content ? getComputedStyle(content) : null;
+        const lastChild = content?.lastElementChild;
+        const lastChildBottom = lastChild?.getBoundingClientRect?.().bottom;
+        const paddingBottom = parseFloat(contentStyle?.paddingBottom || '0') || 0;
+        const contentHeight = contentRect && Number.isFinite(lastChildBottom)
+            ? Math.ceil(lastChildBottom - contentRect.top + paddingBottom)
+            : (contentRect?.height || 0);
+        const chromeHeight = Math.max(0, frameHeight - bodyHeight);
+        this.setPosition({ height: Math.ceil(chromeHeight + contentHeight) });
+    }
+
     async getData() {
         const content = await renderTemplate(TEMPLATES.WINDOW_DICETRAY, {
-            actor: this.actor
+            actor: this.actor,
+            showRecentRolls: this.showRecentRolls,
+            rollHistory: this.panel?.rollHistory || []
         });
 
         return {
@@ -83,6 +132,9 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
     _onRender(context, options) {
         super._onRender?.(context, options);
         this.panel?.updateElement(this.element);
+        if (!this.showRecentRolls) {
+            requestAnimationFrame(() => this._fitHiddenHistoryHeight());
+        }
     }
 
     _registerActor(actor) {

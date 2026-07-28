@@ -1,4 +1,4 @@
-<div id="dicetray-content" class="tray-panel-content">
+<div id="dicetray-content" class="tray-panel-content{{#unless showRecentRolls}} recent-rolls-hidden{{/unless}}">
     <div class="squire-dice-formula">
         <div class="squire-input-wrapper">
             <input type="text" class="squire-formula-input" placeholder="Enter dice formula">
@@ -31,15 +31,26 @@
         <i class="fa-solid fa-circle-minus squire-modifier-icon" data-mod="penalty" title="Add Penalty: Subtracts from the final result. Click once for -1, click again to increase the penalty"></i>
     </div>
 
-    <div class="squire-dice-history">
-        <div class="history-header">
-            <div class="tray-title-small">Recent Rolls</div>
-            <div class="history-controls">
-                <i class="fa-solid fa-circle-xmark history-clear" title="Clear History"></i>
+    {{#if showRecentRolls}}
+        <div class="squire-dice-history">
+            <div class="history-header">
+                <div class="tray-title-small">Recent Rolls</div>
+                <div class="history-controls">
+                    <i class="fa-solid fa-circle-xmark history-clear" title="Clear History"></i>
+                </div>
+            </div>
+            <div class="squire-history-list">
+                {{#if rollHistory}}
+                    {{#each rollHistory as |roll|}}
+                        <div class="history-entry" data-formula="{{roll.formula}}">
+                            <span class="history-formula">{{roll.formula}} = {{roll.result}}</span>
+                            <i class="fa-solid fa-dice reroll-button" title="Re-roll this formula"></i>
+                        </div>
+                    {{/each}}
+                {{else}}
+                    <div class="history-entry empty-message">No recent rolls</div>
+                {{/if}}
             </div>
         </div>
-        <div class="squire-history-list">
-            <div class="history-entry empty-message">No recent rolls</div>
-        </div>
-    </div>
+    {{/if}}
 </div>

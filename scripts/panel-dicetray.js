@@ -40,6 +40,7 @@ export class DiceTrayPanel {
         this.currentFormula = "";
         this.element = null;
         this.actor = options.actor || null;
+        this.rollHistory = [];
         this.window = DiceTrayPanel.activeWindow;
         this.isWindowOpen = DiceTrayPanel.isWindowOpen;
 
@@ -122,24 +123,12 @@ export class DiceTrayPanel {
             });
         }
 
-        // History toggle
-        const historyHeader = panel.querySelector('.history-header');
-        if (historyHeader) {
-            historyHeader.addEventListener('click', () => {
-                const historyList = panel.querySelector('.squire-history-list');
-                const toggle = panel.querySelector('.history-toggle');
-                if (historyList && toggle) {
-                    historyList.classList.toggle('collapsed');
-                    toggle.style.transform = historyList.classList.contains('collapsed') ? 'rotate(0deg)' : 'rotate(180deg)';
-                }
-            });
-        }
-
         // Clear history button
         const historyClear = panel.querySelector('.history-clear');
         if (historyClear) {
             historyClear.addEventListener('click', (ev) => {
-                ev.stopPropagation(); // Prevent triggering the collapse/expand
+                ev.stopPropagation();
+                this.rollHistory = [];
                 const historyList = panel.querySelector('.squire-history-list');
                 if (historyList) {
                     historyList.innerHTML = '';
@@ -149,6 +138,18 @@ export class DiceTrayPanel {
                 }
             });
         }
+
+        panel.querySelectorAll('.history-entry[data-formula] .reroll-button').forEach((button) => {
+            button.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                const formula = button.closest('.history-entry')?.dataset.formula;
+                if (!formula) return;
+                this.currentFormula = formula;
+                const input = panel.querySelector('.squire-formula-input');
+                if (input) input.value = formula;
+                this._onRollClick(panel);
+            });
+        });
     }
 
     _onDieClick(event, panel) {
@@ -448,6 +449,9 @@ export class DiceTrayPanel {
     }
 
     _addToHistory(formula, result) {
+        this.rollHistory.unshift({ formula, result });
+        this.rollHistory = this.rollHistory.slice(0, 10);
+
         // v13: Use native DOM instead of jQuery
         let panelElement;
         if (this.isWindowOpen && this.window?.element) {
@@ -470,24 +474,23 @@ export class DiceTrayPanel {
         
         const historyEntry = document.createElement('div');
         historyEntry.classList.add('history-entry');
-        historyEntry.innerHTML = `
-            <span class="history-formula">${formula} = ${result}</span>
-            <i class="fa-solid fa-dice reroll-button" title="Re-roll this formula"></i>
-        `;
+        historyEntry.dataset.formula = formula;
+        const historyFormula = document.createElement('span');
+        historyFormula.classList.add('history-formula');
+        historyFormula.textContent = `${formula} = ${result}`;
+        const rerollButton = document.createElement('i');
+        rerollButton.className = 'fa-solid fa-dice reroll-button';
+        rerollButton.title = 'Re-roll this formula';
+        historyEntry.append(historyFormula, rerollButton);
 
         // Add click handler for the re-roll button
-        const rerollButton = historyEntry.querySelector('.reroll-button');
-        if (rerollButton) {
-            rerollButton.addEventListener('click', (ev) => {
-                ev.stopPropagation(); // Prevent triggering the collapse/expand
-                this.currentFormula = formula;
-                const input = panelElement.querySelector('.squire-formula-input');
-                if (input) {
-                    input.value = formula;
-                }
-                this._onRollClick(panelElement);
-            });
-        }
+        rerollButton.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            this.currentFormula = formula;
+            const input = panelElement.querySelector('.squire-formula-input');
+            if (input) input.value = formula;
+            this._onRollClick(panelElement);
+        });
         
         // Add to the top of the list
         historyList.insertBefore(historyEntry, historyList.firstChild);

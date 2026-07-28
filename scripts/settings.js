@@ -454,6 +454,13 @@ export const registerSettings = function() {
         default: 1
     });
 
+    game.settings.register(MODULE.ID, 'diceTrayShowRecentRolls', {
+        scope: 'client',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
     // ---------- Handle Dice Tray ----------
     game.settings.register(MODULE.ID, 'showHandleDiceTray', {
         name: 'Show Dice Tray Icon in Handle',
