@@ -367,10 +367,10 @@ export const registerSettings = function() {
     });
 
     game.settings.register(MODULE.ID, 'showDiceTrayPanel', {
-        name: 'Show Dice Tray Panel',
-        hint: 'Display dice rolling panel',
+        name: 'Legacy Dice Tray Panel Visibility',
+        hint: 'Retained for settings compatibility; Dice Tray now opens only as a window.',
         scope: 'user',
-        config: true,
+        config: false,
         type: Boolean,
         default: false,
         onChange: () => {
@@ -713,13 +713,6 @@ export const registerSettings = function() {
     });
 
     game.settings.register(MODULE.ID, 'isGmPanelCollapsed', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
-    game.settings.register(MODULE.ID, 'isDiceTrayPanelCollapsed', {
         scope: 'client',
         config: false,
         type: Boolean,

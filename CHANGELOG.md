@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.18]
+
+### Changed
+- **Dice Tray standalone-window phase 1**: Removed Dice Tray from the character tray while preserving its existing V1 window and rolling behavior. Handle and menubar launchers now use an explicit `openWindow()` lifecycle; closing clears window state instead of attempting to rebuild tray markup, actor switches stay connected to the open window, and obsolete popout/collapse/placeholder code was removed.
+
 ## [13.3.17]
 
 ### Added

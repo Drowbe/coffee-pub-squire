@@ -415,8 +415,8 @@ export class HandleManager {
             if (!event.target.closest('#dice-tray-button')) return;
             event.preventDefault();
             event.stopPropagation();
-            if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isPoppedOut) {
-                await PanelManager.instance.dicetrayPanel._onPopOut();
+            if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isWindowOpen) {
+                await PanelManager.instance.dicetrayPanel.openWindow();
             }
         });
 

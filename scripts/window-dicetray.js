@@ -17,15 +17,16 @@ export class DiceTrayWindow extends Application {
     constructor(options = {}) {
         super(options);
         this.panel = options.panel;
+        this.actor = this.panel?.actor || null;
         
         // Register for actor updates
-        if (this.panel?.actor) {
-            this.panel.actor.apps[this.appId] = this;
+        if (this.actor) {
+            this.actor.apps[this.appId] = this;
         }
     }
 
     get appId() {
-        return `squire-dicetray-window-${this.panel.actor?.id || 'no-actor'}`;
+        return 'squire-dicetray-window';
     }
 
     static get defaultOptions() {
@@ -136,13 +137,11 @@ export class DiceTrayWindow extends Application {
 
     async close(options={}) {
         // Unregister from actor updates
-        if (this.panel?.actor) {
-            delete this.panel.actor.apps[this.appId];
+        if (this.actor) {
+            delete this.actor.apps[this.appId];
         }
         
-        if (this.panel) {
-            await this.panel.returnToTray();
-        }
+        if (this.panel) await this.panel.onWindowClosed();
         return super.close(options);
     }
 
@@ -182,14 +181,15 @@ export class DiceTrayWindow extends Application {
     // Update the panel reference and re-register for updates when the actor changes
     updateActor(actor) {
         // Unregister from old actor
-        if (this.panel?.actor) {
-            delete this.panel.actor.apps[this.appId];
+        if (this.actor) {
+            delete this.actor.apps[this.appId];
         }
         
         // Update panel's actor
         if (this.panel) {
             this.panel.actor = actor;
         }
+        this.actor = actor || null;
         
         // Register with new actor
         if (actor) {

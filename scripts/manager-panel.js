@@ -265,7 +265,7 @@ export class PanelManager {
             const oldHealthPanel = PanelManager.instance?.healthPanel;
             const hadHealthWindow = oldHealthPanel?.isPoppedOut && oldHealthPanel?.window;
             const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
-            const hadDiceTrayWindow = oldDiceTrayPanel?.isPoppedOut && oldDiceTrayPanel?.window;
+            const hadDiceTrayWindow = oldDiceTrayPanel?.isWindowOpen && oldDiceTrayPanel?.window;
 
             // Clean up old instance before creating new one to prevent memory leaks
             if (PanelManager.instance) {
@@ -331,7 +331,7 @@ export class PanelManager {
 
             // Restore dice tray window state if it was open
             if (hadDiceTrayWindow && PanelManager.instance.dicetrayPanel) {
-                PanelManager.instance.dicetrayPanel.isPoppedOut = true;
+                PanelManager.instance.dicetrayPanel.isWindowOpen = true;
                 PanelManager.instance.dicetrayPanel.window = oldDiceTrayPanel.window;
                 PanelManager.instance.dicetrayPanel.window.panel = PanelManager.instance.dicetrayPanel;
                 DiceTrayPanel.isWindowOpen = true;
@@ -340,7 +340,7 @@ export class PanelManager {
                 PanelManager.instance.dicetrayPanel.updateActor(actor);
             } else if (savedWindowStates.diceTray && PanelManager.instance?.dicetrayPanel) {
                 // Restore from saved state
-                await PanelManager.instance.dicetrayPanel._onPopOut();
+                await PanelManager.instance.dicetrayPanel.openWindow();
             }
 
             // Abort if instance was cleared by another hook (e.g. deleteToken) during await
@@ -561,12 +561,8 @@ export class PanelManager {
             this.healthPanel = null;
         }
 
-        // Only create dice tray panel if not popped out and enabled in settings
-        if (!DiceTrayPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
-            this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
-        } else {
-            this.dicetrayPanel = null;
-        }
+        // Dice Tray is a standalone tool window; keep its controller available for launchers.
+        this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
 
         // Only create macros panel if not popped out and enabled in settings
         if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
@@ -595,9 +591,6 @@ export class PanelManager {
         this.experiencePanel.element = PanelManager.element;
         if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
             this.healthPanel.element = PanelManager.element;
-        }
-        if (!DiceTrayPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
-            this.dicetrayPanel.element = PanelManager.element;
         }
         if (!MacrosPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showMacrosPanel')) {
             this.macrosPanel.element = PanelManager.element;
@@ -638,14 +631,7 @@ export class PanelManager {
             this.featuresPanel?.render(element);
             this.controlPanel?.reapplySearch();
 
-            // Only render panels if they are enabled in settings
-            if (game.settings.get(MODULE.ID, 'showDiceTrayPanel')) {
-                if (this.dicetrayPanel && !this.dicetrayPanel.isPoppedOut) {
-                    this.dicetrayPanel.render(element);
-                }
-            } else {
-                PanelManager.removePanelDom(this.dicetrayPanel);
-            }
+            // Dice Tray is window-only and has no tray render path.
             if (game.settings.get(MODULE.ID, 'showExperiencePanel')) {
                 this.experiencePanel?.render(element);
             } else {

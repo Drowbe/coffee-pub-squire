@@ -25,14 +25,13 @@ export async function openDiceTray() {
       PanelManager.instance.dicetrayPanel = dicetrayPanel;
     }
     
-    // If already popped out, just focus the window
-    if (dicetrayPanel.isPoppedOut && dicetrayPanel.window) {
+    // If already open, just focus the window
+    if (dicetrayPanel.isWindowOpen && dicetrayPanel.window) {
       dicetrayPanel.window.bringToTop();
       return;
     }
     
-    // Pop out the dice tray
-    await dicetrayPanel._onPopOut();
+    await dicetrayPanel.openWindow();
     
   } catch (error) {
     console.error('Coffee Pub Squire | Error opening dice tray:', error);
@@ -49,9 +48,8 @@ export class DiceTrayPanel {
         this.rollHistory = [];
         this.element = null;
         this.actor = options.actor || null;
-        // Check if there's an active window and restore state
         this.window = DiceTrayPanel.activeWindow;
-        this.isPoppedOut = DiceTrayPanel.isWindowOpen;
+        this.isWindowOpen = DiceTrayPanel.isWindowOpen;
 
         // Only register for actor updates if we have an actor
         if (this.actor) {
@@ -80,71 +78,7 @@ export class DiceTrayPanel {
     }
 
     async render(html) {
-        // Always render into the panel container inside the placeholder if not popped out
-        if (!this.isPoppedOut) {
-            // v13: Use native DOM instead of jQuery
-            const placeholder = document.querySelector('#dicetray-panel-placeholder');
-            if (placeholder) {
-                let container = placeholder.querySelector('.panel-container[data-panel="dicetray"]');
-                if (!container) {
-                    // Create the panel container if it doesn't exist
-                    container = document.createElement('div');
-                    container.className = 'panel-container';
-                    container.setAttribute('data-panel', 'dicetray');
-                    placeholder.appendChild(container);
-                }
-                this.element = container;
-            }
-        } else if (html) {
-            this.element = html;
-        }
-        if (!this.element || this.isPoppedOut) {
-            return;
-        }
-
-        const templateData = {
-            actor: this.actor,
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
-            isDiceTrayPopped: this.isPoppedOut
-        };
-
-        // If popped out, only update the window content and don't render in tray
-        if (this.isPoppedOut) {
-            if (this.window?.element) {
-                const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-                const nativeElement = getNativeElement(this.window.element);
-                const windowContent = nativeElement?.querySelector('.window-content');
-                if (windowContent) {
-                    windowContent.innerHTML = content;
-                }
-                this._activateListeners(this.window.element);
-            }
-            return; // Don't render in tray if popped out
-        }
-
-        // Only render in tray if not popped out
-        const content = await renderTemplate(TEMPLATES.PANEL_DICETRAY, templateData);
-        const nativeElement = getNativeElement(this.element);
-        if (nativeElement) {
-            nativeElement.innerHTML = content;
-        }
-        this._activateListeners(this.element);
-
-        // Apply saved collapsed state
-        const panel = getNativeElement(this.element);
-        if (panel) {
-            const isCollapsed = game.settings.get(MODULE.ID, 'isDiceTrayPanelCollapsed');
-            if (isCollapsed) {
-                const dicetrayContent = panel.querySelector('#dicetray-content');
-                const toggle = panel.querySelector('#dicetray-toggle');
-                if (dicetrayContent) {
-                    dicetrayContent.classList.add('collapsed');
-                }
-                if (toggle) {
-                    toggle.style.transform = 'rotate(-90deg)';
-                }
-            }
-        }
+        if (html) this.updateElement(html);
     }
 
     _activateListeners(html) {
@@ -153,30 +87,6 @@ export class DiceTrayPanel {
         // v13: Convert jQuery to native DOM if needed
         const panel = getNativeElement(html);
         if (!panel) return;
-
-        // Add dice tray toggle handler
-        const trayTitle = panel.querySelector('.tray-title-small');
-        if (trayTitle) {
-            // Clone to remove existing listeners
-            const newTitle = trayTitle.cloneNode(true);
-            trayTitle.parentNode?.replaceChild(newTitle, trayTitle);
-            newTitle.addEventListener('click', () => {
-                const dicetrayContent = panel.querySelector('#dicetray-content');
-                const toggle = panel.querySelector('#dicetray-toggle');
-                if (dicetrayContent && toggle) {
-                    dicetrayContent.classList.toggle('collapsed');
-                    toggle.style.transform = dicetrayContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
-                    // Save collapsed state
-                    game.settings.set(MODULE.ID, 'isDiceTrayPanelCollapsed', dicetrayContent.classList.contains('collapsed'));
-                }
-            });
-        }
-
-        // Add pop-out button handler
-        const popOutButton = panel.querySelector('.pop-out-button');
-        if (popOutButton) {
-            popOutButton.addEventListener('click', () => this._onPopOut());
-        }
 
         // Dice icons with right-click support
         const diceIcons = panel.querySelectorAll('.squire-dice-icon');
@@ -270,7 +180,7 @@ export class DiceTrayPanel {
                     historyList.innerHTML = '<div class="history-entry empty-message">No recent rolls</div>';
 
                     // If we're in a window, trigger a resize
-                    if (this.isPoppedOut && this.window) {
+                    if (this.isWindowOpen && this.window) {
                         this.window.setPosition({height: "auto"});
                     }
                 }
@@ -577,7 +487,7 @@ export class DiceTrayPanel {
     _addToHistory(formula, result) {
         // v13: Use native DOM instead of jQuery
         let panelElement;
-        if (this.isPoppedOut && this.window?.element) {
+        if (this.isWindowOpen && this.window?.element) {
             const nativeWindowElement = getNativeElement(this.window.element);
             panelElement = nativeWindowElement?.querySelector('[data-panel="dicetray"]');
         } else if (this.element) {
@@ -676,59 +586,28 @@ export class DiceTrayPanel {
         }
     }
 
-    async _onPopOut() {
-        if (this.window || this.isPoppedOut) return;
-
-        // Remove the panel container from the placeholder
-        // v13: Use native DOM instead of jQuery
-        const placeholder = document.querySelector('#dicetray-panel-placeholder');
-        if (placeholder) {
-            const container = placeholder.querySelector('.panel-container[data-panel="dicetray"]');
-            if (container) {
-                container.remove();
-            }
+    async openWindow() {
+        if (this.window || this.isWindowOpen) {
+            this.window?.bringToTop?.();
+            return this.window;
         }
-
-        // Set state before creating window
         DiceTrayPanel.isWindowOpen = true;
-        this.isPoppedOut = true;
+        this.isWindowOpen = true;
         await this._saveWindowState(true);
 
-        // Create and render the window
         this.window = new DiceTrayWindow({ panel: this });
         DiceTrayPanel.activeWindow = this.window;
         await this.window.render(true);
+        return this.window;
     }
 
-    async returnToTray() {
-        if (!this.isPoppedOut) return;
-
-        // Reset state
+    async onWindowClosed() {
         DiceTrayPanel.isWindowOpen = false;
-        this.isPoppedOut = false;
+        this.isWindowOpen = false;
         DiceTrayPanel.activeWindow = null;
         this.window = null;
+        this.element = null;
         await this._saveWindowState(false);
-
-        // Check if dice tray panel is enabled in settings
-        const isDiceTrayEnabled = game.settings.get(MODULE.ID, 'showDiceTrayPanel');
-        if (!isDiceTrayEnabled) return;
-
-        // (Re)create the panel container inside the placeholder if missing
-        // v13: Use native DOM instead of jQuery
-        const placeholder = document.querySelector('#dicetray-panel-placeholder');
-        if (placeholder) {
-            let container = placeholder.querySelector('.panel-container[data-panel="dicetray"]');
-            if (!container) {
-                container = document.createElement('div');
-                container.className = 'panel-container';
-                container.setAttribute('data-panel', 'dicetray');
-                placeholder.appendChild(container);
-            }
-            this.element = container;
-        }
-        // Re-render into the panel container
-        await this.render();
     }
 
     // Update the element reference - new method
@@ -753,12 +632,9 @@ export class DiceTrayPanel {
         }
         
         // Update window if popped out
-        if (this.isPoppedOut && this.window) {
+        if (this.isWindowOpen && this.window) {
             this.window.actor = this.actor;
             this.window.updateActor(this.actor);
-        } else {
-            // Re-render in tray if not popped out
-            this.render();
         }
     }
 

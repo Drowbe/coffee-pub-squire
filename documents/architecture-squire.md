@@ -105,7 +105,7 @@ coffee-pub-squire/
 | Characters | window-characters.js | Character picker |
 | Users | window-users.js | User picker |
 | Health | window-health.js | Health popout |
-| Dice Tray | window-dicetray.js | Dice tray popout |
+| Dice Tray | window-dicetray.js | Standalone dice tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
 | Macros | window-macros.js | Macros popout |
 | Transfer | (panel-party.js, transfer-utils.js) | Transfer dialog (window-transfer.hbs) |
 
