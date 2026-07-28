@@ -146,7 +146,6 @@ export class DiceTrayPanel {
                     
                     // Add the "No recent rolls" message
                     historyList.innerHTML = '<div class="history-entry empty-message">No recent rolls</div>';
-
                 }
             });
         }
@@ -453,7 +452,7 @@ export class DiceTrayPanel {
         let panelElement;
         if (this.isWindowOpen && this.window?.element) {
             const nativeWindowElement = getNativeElement(this.window.element);
-            panelElement = nativeWindowElement?.querySelector('[data-panel="dicetray"]');
+            panelElement = nativeWindowElement?.querySelector('#dicetray-content');
         } else if (this.element) {
             panelElement = getNativeElement(this.element);
         }
@@ -498,6 +497,7 @@ export class DiceTrayPanel {
         if (entries.length > 10) {
             entries[entries.length - 1].remove();
         }
+
     }
 
     _onAdvantageClick(isAdvantage, panel) {

@@ -22,7 +22,7 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
             classes: ['squire-dicetray-tool-window'],
             position: {
                 width: 400,
-                height: 'auto'
+                height: 280
             },
             window: {
                 title: 'Dice Tray',
@@ -32,10 +32,12 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
             windowSizeConstraints: {
                 minWidth: 300,
                 maxWidth: 520,
-                maxHeight: 'calc(100vh - 16px)'
+                minHeight: 280,
+                maxHeight: 280
             },
+            toolTitlebar: 'micro',
             rememberPosition: true,
-            windowPositionKey: 'squire-dice-tray-tool-position'
+            windowPositionKey: 'squire-dice-tray-micro-position'
         }
     );
 
@@ -74,15 +76,7 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
 
         return {
             appId: this.id,
-            bodyContent: `
-                <div class="squire-popout" data-position="left">
-                    <div class="tray-content">
-                        <div class="panel-container" data-panel="dicetray">
-                            ${content}
-                        </div>
-                    </div>
-                </div>
-            `
+            bodyContent: content
         };
     }
 
