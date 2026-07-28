@@ -14,27 +14,31 @@
 .squire-health-tool-window .bars {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 }
 
 .squire-health-tool-window .health-row {
     display: grid;
-    grid-template-columns: 30px minmax(0, 1fr);
-    gap: 5px;
+    grid-template-columns: 26px minmax(0, 1fr) max-content;
+    gap: 4px;
     min-width: 0;
+    padding: 3px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: rgba(112, 85, 49, 0.10);
+    cursor: pointer;
 }
 
 .squire-health-tool-window .health-row-aggregate {
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
+    background: rgba(112, 85, 49, 0.15);
 }
 
 .squire-health-tool-window .health-portrait {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     overflow: hidden;
     box-sizing: border-box;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
@@ -53,19 +57,91 @@
     font-size: 1.05em;
 }
 
+.squire-health-tool-window .health-conditions {
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.squire-health-tool-window .health-aggregate-stat {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
+    border-radius: 4px;
+    background: rgba(112, 85, 49, 0.12);
+    color: rgba(74, 56, 40, 0.88);
+    font-family: "Signika", sans-serif;
+    font-size: 0.78em;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.squire-health-tool-window .health-conditions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
+    border-radius: 4px;
+    background: rgba(112, 85, 49, 0.12);
+    color: rgba(74, 56, 40, 0.88);
+    line-height: 1;
+}
+
+.squire-health-tool-window .health-conditions:hover {
+    border-color: rgba(183, 118, 50, 0.72);
+    color: rgba(193, 87, 1, 1);
+}
+
+.squire-health-tool-window .health-condition-count {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    background: rgba(193, 42, 34, 1);
+    color: rgba(255, 255, 255, 1);
+    font-family: "Signika", sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow:
+        -1px -1px 1px rgba(0, 0, 0, 0.95),
+        1px -1px 1px rgba(0, 0, 0, 0.95),
+        -1px 1px 1px rgba(0, 0, 0, 0.95),
+        1px 1px 1px rgba(0, 0, 0, 0.95);
+}
+
 .squire-health-tool-window .hp-bar {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     min-width: 0;
-    height: 30px;
-    padding: 0 8px;
+    height: 26px;
+    padding: 0 6px;
     box-sizing: border-box;
     overflow: hidden;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     border-radius: 4px;
-    background: rgba(112, 85, 49, 0.12);
+    background: rgba(47, 36, 26, 0.28);
     font-family: "Signika", sans-serif;
 }
 
@@ -85,7 +161,7 @@
     gap: 4px;
     min-width: 0;
     color: rgba(248, 240, 223, 0.96);
-    font-size: 0.82em;
+    font-size: 0.78em;
     font-weight: 900;
     line-height: 1;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
@@ -113,6 +189,30 @@
     min-height: 30px;
     color: rgba(74, 56, 40, 0.65);
     font-style: italic;
+}
+
+.squire-health-tool-window .health-row:hover .health-portrait,
+.squire-health-tool-window .health-row:hover .hp-bar,
+.squire-health-tool-window .health-row:hover .health-conditions,
+.squire-health-tool-window .health-row:hover .health-aggregate-stat {
+    border-color: rgba(183, 118, 50, 0.72);
+}
+
+.squire-health-tool-window .health-row:hover {
+    background: rgba(183, 118, 50, 0.16);
+}
+
+.squire-health-tool-window .health-row.selected .health-portrait,
+.squire-health-tool-window .health-row.selected .hp-bar,
+.squire-health-tool-window .health-row.selected .health-conditions,
+.squire-health-tool-window .health-row.selected .health-aggregate-stat {
+    border-color: rgba(193, 87, 1, 1.0);
+}
+
+.squire-health-tool-window .health-row.selected {
+    border-color: rgba(193, 87, 1, 0.85);
+    background: rgba(193, 87, 1, 0.28);
+    box-shadow: inset 0 0 0 1px rgba(193, 87, 1, 0.18);
 }
 
 .squire-health-tool-window .hp-controls {

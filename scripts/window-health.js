@@ -79,33 +79,57 @@ export class HealthWindow extends BlacksmithToolWindowBaseV2 {
         const individualEntries = this.actors.map((actor, index) => {
             const token = tokens[index];
             const hp = actor.system?.attributes?.hp;
+            const effectCount = actor.effects?.size ?? actor.effects?.length ?? 0;
             return {
                 name: actor.handleDisplayName || token?.name || actor.name,
                 img: actor.img,
                 current: hp?.value || 0,
                 max: hp?.max || 0,
                 healthbarStatus: getHealthbarStatusClass(hp),
+                target: `actor:${actor.id}`,
+                actorUuid: actor.uuid,
+                effectCount,
+                showEffectCount: effectCount > 1,
+                isSelected: this.panel?.selectedHealthTarget === `actor:${actor.id}`,
                 isAggregate: false
             };
         });
 
         const aggregateEntries = [];
-        if (individualEntries.length > 1) {
+        const showSceneDefaults = individualEntries.length === 0;
+        if (showSceneDefaults || individualEntries.length > 1) {
+            let combatAssessment = null;
+            try {
+                const blacksmith = getBlacksmith();
+                if (typeof blacksmith?.getCombatAssessment === 'function') {
+                    combatAssessment = await blacksmith.getCombatAssessment({});
+                }
+            } catch {
+                // Actor counts below remain available when the optional CR API cannot resolve.
+            }
+
+            const aggregateActors = showSceneDefaults
+                ? canvas.tokens.placeables
+                    .filter((token) => token.actor?.system?.attributes?.hp)
+                    .map((token) => token.actor)
+                : this.actors;
             const groups = [
                 {
                     name: 'Party',
-                    icon: 'fa-solid fa-users',
-                    actors: this.actors.filter((actor) => actor.hasPlayerOwner)
+                    icon: 'fas fa-helmet-battle',
+                    actors: aggregateActors.filter((actor) => actor.hasPlayerOwner),
+                    cr: combatAssessment?.partyCRDisplay
                 },
                 {
                     name: 'NPCs',
-                    icon: 'fa-solid fa-people-group',
-                    actors: this.actors.filter((actor) => !actor.hasPlayerOwner)
+                    icon: 'fas fa-dragon',
+                    actors: aggregateActors.filter((actor) => !actor.hasPlayerOwner),
+                    cr: combatAssessment?.monsterCRDisplay
                 }
             ];
 
             for (const group of groups) {
-                if (!group.actors.length) continue;
+                if (!showSceneDefaults && !group.actors.length) continue;
                 const current = group.actors.reduce(
                     (total, actor) => total + (Number(actor.system?.attributes?.hp?.value) || 0),
                     0
@@ -120,6 +144,12 @@ export class HealthWindow extends BlacksmithToolWindowBaseV2 {
                     current,
                     max,
                     healthbarStatus: getHealthbarStatusClass({ value: current, max }),
+                    target: group.name.toLowerCase(),
+                    aggregateStat: group.cr != null ? String(group.cr) : String(group.actors.length),
+                    aggregateStatLabel: group.cr != null
+                        ? `${group.name} challenge rating ${group.cr}`
+                        : `${group.actors.length} ${group.name}`,
+                    isSelected: this.panel?.selectedHealthTarget === group.name.toLowerCase(),
                     isAggregate: true
                 });
             }
@@ -154,7 +184,12 @@ export class HealthWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     _registerCurrentActors() {
-        this._registerActors(this.actors);
+        const actors = this.actors.length
+            ? this.actors
+            : canvas.tokens.placeables
+                .filter((token) => token.actor?.system?.attributes?.hp)
+                .map((token) => token.actor);
+        this._registerActors(actors);
     }
 
     _unregisterActors() {

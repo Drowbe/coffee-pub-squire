@@ -11,6 +11,7 @@ export class HealthPanel {
         this.element = null;
         this.window = HealthPanel.activeWindow;
         this.isWindowOpen = HealthPanel.isWindowOpen;
+        this.selectedHealthTarget = null;
 
         // If actor provided, find its token and store it
         if (actor) {
@@ -65,6 +66,7 @@ export class HealthPanel {
         }
         
         const nextTokens = tokens || [];
+        this._validateSelectedHealthTarget(nextTokens);
 
         // Let the open window unregister from the old selection before changing panel state.
         if (this.isWindowOpen && this.window) {
@@ -88,6 +90,18 @@ export class HealthPanel {
             });
         }
         
+    }
+
+    _validateSelectedHealthTarget(tokens) {
+        const target = this.selectedHealthTarget;
+        if (!target) return;
+        if (target === 'party' && tokens.length > 1 && tokens.some((token) => token.actor?.hasPlayerOwner)) return;
+        if (target === 'npcs' && tokens.length > 1 && tokens.some((token) => !token.actor?.hasPlayerOwner)) return;
+        if (target.startsWith('actor:')) {
+            const actorId = target.slice('actor:'.length);
+            if (tokens.some((token) => token.actor?.id === actorId)) return;
+        }
+        this.selectedHealthTarget = null;
     }
 
     async render() {
@@ -135,6 +149,40 @@ export class HealthPanel {
                 await game.settings.set(MODULE.ID, 'healthAdjustmentAmount', amount);
             });
         }
+
+        panel.querySelectorAll('.health-conditions[data-actor-uuid]').forEach((button) => {
+            button.addEventListener('click', async (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const actorUuid = button.dataset.actorUuid;
+                const actor = actorUuid ? await foundry.utils.fromUuid(actorUuid) : null;
+                if (!actor) {
+                    ui.notifications.warn('That character is no longer available.');
+                    return;
+                }
+
+                const blacksmith = globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api;
+                if (typeof blacksmith?.openWindow !== 'function') {
+                    ui.notifications.error('The Blacksmith Window API is unavailable.');
+                    return;
+                }
+
+                await blacksmith.openWindow(`${MODULE.ID}-status-effects-window`, {
+                    actor,
+                    actorUuid
+                });
+            });
+        });
+
+        panel.querySelectorAll('.health-row[data-health-target]').forEach((row) => {
+            row.addEventListener('click', async (ev) => {
+                ev.preventDefault();
+                const target = row.dataset.healthTarget;
+                this.selectedHealthTarget = this.selectedHealthTarget === target ? null : target;
+                await this.window?.render(false);
+            });
+        });
     }
 
     async openWindow() {
@@ -192,20 +240,27 @@ export class HealthPanel {
             void game.settings.set(MODULE.ID, 'healthAdjustmentAmount', Math.max(1, amount));
         }
         
-        // Handle bulk operations if multiple tokens
-        if (this.tokens.length > 1) {
-            for (const token of this.tokens) {
-                const hp = token.actor.system.attributes.hp;
-                const newValue = Math.clamp(hp.value + (amount * direction), 0, hp.max);
-                await token.actor.update({'system.attributes.hp.value': newValue});
-            }
-        } else if (this.tokens[0]) {
-            // Single token operation
-            const token = this.tokens[0];
+        for (const token of this._getOperationTokens()) {
             const hp = token.actor.system.attributes.hp;
             const newValue = Math.clamp(hp.value + (amount * direction), 0, hp.max);
             await token.actor.update({'system.attributes.hp.value': newValue});
         }
+    }
+
+    _getOperationTokens() {
+        const selectedTokens = this.tokens || [];
+        const tokens = selectedTokens.length
+            ? selectedTokens
+            : canvas.tokens.placeables.filter((token) => token.actor?.system?.attributes?.hp);
+        const target = this.selectedHealthTarget;
+        if (!target) return tokens;
+        if (target === 'party') return tokens.filter((token) => token.actor?.hasPlayerOwner);
+        if (target === 'npcs') return tokens.filter((token) => !token.actor?.hasPlayerOwner);
+        if (target.startsWith('actor:')) {
+            const actorId = target.slice('actor:'.length);
+            return tokens.filter((token) => token.actor?.id === actorId);
+        }
+        return tokens;
     }
 
     _selectTokenGroup(selectParty) {
@@ -226,31 +281,15 @@ export class HealthPanel {
     }
 
     async _onFullHeal() {
-        // Handle bulk operations if multiple tokens
-        if (this.tokens.length > 1) {
-            for (const token of this.tokens) {
-                const hp = token.actor.system.attributes.hp;
-                await token.actor.update({'system.attributes.hp.value': hp.max});
-            }
-        } else if (this.tokens[0]) {
-            // Single token operation
-            const token = this.tokens[0];
+        for (const token of this._getOperationTokens()) {
             const hp = token.actor.system.attributes.hp;
             await token.actor.update({'system.attributes.hp.value': hp.max});
         }
     }
 
     async _onDeathToggle() {
-        // Handle bulk operations if multiple tokens
-        if (this.tokens.length > 1) {
-            for (const token of this.tokens) {
-                const actor = token.actor;
-                await actor.update({'system.attributes.hp.value': 0});
-            }
-        } else if (this.tokens[0]) {
-            // Single token operation
-            const actor = this.tokens[0].actor;
-            await actor.update({'system.attributes.hp.value': 0});
+        for (const token of this._getOperationTokens()) {
+            await token.actor.update({'system.attributes.hp.value': 0});
         }
     }
 
