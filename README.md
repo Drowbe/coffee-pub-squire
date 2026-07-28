@@ -78,7 +78,7 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
 
 ### **Tools & Utilities**
 - **Standalone Blacksmith Micro dice tool** with fixed controls and a compact, independently scrolling recent-roll history
-- **Health management** with real-time HP tracking and healing tools
+- **Standalone Blacksmith Micro health tool** with real-time HP tracking, healing controls, and multi-token operations
 - **Condition management** with visual indicators and quick application
 - **Standalone Blacksmith Micro macro tool** with execution, favorites, reordering, and drag-and-drop assignment
 - **Experience tracking** with level progression monitoring

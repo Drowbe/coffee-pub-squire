@@ -1929,6 +1929,19 @@ Hooks.once('ready', async function() {
     }
 
     try {
+        const {
+            registerHealthWindow,
+            HealthWindow,
+            HEALTH_WINDOW_ID
+        } = await import('./window-health.js');
+        registerHealthWindow();
+        game.modules.get(MODULE.ID).api.HealthWindow = HealthWindow;
+        game.modules.get(MODULE.ID).api.HEALTH_WINDOW_ID = HEALTH_WINDOW_ID;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register Health window:', error);
+    }
+
+    try {
         const { registerNoteWindow, openNotesWindow, NoteWindow, NotesForm, NOTE_WINDOW_ID } = await import('./window-note.js');
         registerNoteWindow();
         game.modules.get(MODULE.ID).api.openNotesWindow = openNotesWindow;

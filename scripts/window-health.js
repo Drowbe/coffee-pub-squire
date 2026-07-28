@@ -1,291 +1,180 @@
-import { MODULE } from './const.js';
+import { MODULE, TEMPLATES } from './const.js';
 import { renderTemplate } from './helpers.js';
 
-export class HealthWindow extends Application {
-    /**
-     * Override to prevent FoundryVTT core from trying to access form elements we don't have
-     * @override
-     */
-    _activateCoreListeners(html) {
-        // Override FoundryVTT's core _activateCoreListeners to prevent it from
-        // trying to find form elements that don't exist in this simple window.
-        // This prevents the "parentElement" error.
-        // We handle our own listeners in activateListeners.
-        return;
-    }
+function getBlacksmith() {
+    return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
+}
 
-    constructor(options = {}) {
-        super(options);
-        this.panel = options.panel;
+const BlacksmithToolWindowBaseV2 = getBlacksmith()?.BlacksmithToolWindowBaseV2
+    || getBlacksmith()?.getToolWindowBaseV2?.();
+
+if (!BlacksmithToolWindowBaseV2) {
+    throw new Error('Coffee Pub Squire | BlacksmithToolWindowBaseV2 is unavailable for HealthWindow');
+}
+
+export const HEALTH_WINDOW_ID = `${MODULE.ID}-health-window`;
+
+export class HealthWindow extends BlacksmithToolWindowBaseV2 {
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(
+        foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
+        {
+            id: 'squire-health-window',
+            classes: ['squire-health-tool-window'],
+            position: {
+                width: 400,
+                height: 'auto'
+            },
+            window: {
+                title: 'Health',
+                resizable: false,
+                minimizable: true
+            },
+            windowSizeConstraints: {
+                minWidth: 300,
+                maxWidth: 520,
+                maxHeight: 'calc(100vh - 16px)'
+            },
+            toolTitlebar: 'micro',
+            rememberPosition: true,
+            windowPositionKey: 'squire-health-tool-position'
+        }
+    );
+
+    constructor({ panel, ...options } = {}) {
+        const opts = foundry.utils.mergeObject({}, options);
+        opts.id = opts.id ?? HealthWindow.DEFAULT_OPTIONS.id;
+        opts.position = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, HealthWindow.DEFAULT_OPTIONS.position ?? {}),
+            opts.position || {}
+        );
+        opts.window = foundry.utils.mergeObject(
+            foundry.utils.mergeObject({}, HealthWindow.DEFAULT_OPTIONS.window ?? {}),
+            opts.window || {}
+        );
+        super(opts);
+        this.panel = panel;
         this._registeredActors = new Set();
-        const actors = this.panel?.tokens?.length
-            ? this.panel.tokens.map(token => token.actor)
-            : [this.panel?.actor];
-        this._registerActors(actors);
+        this._registerCurrentActors();
     }
 
-    async render(force = false, options = {}) {
-        const result = await super.render(force, options);
-        
-        const actors = this.panel?.tokens?.length
-            ? this.panel.tokens.map(token => token.actor)
-            : [this.panel?.actor];
-        this._registerActors(actors);
-        
-        return result;
+    get actors() {
+        if (this.panel?.actors) return this.panel.actors.filter(Boolean);
+        return (this.panel?.tokens || []).map((token) => token.actor).filter(Boolean);
     }
 
-    get appId() {
-        return 'squire-health-window';
+    get title() {
+        const actors = this.actors;
+        if (actors.length > 1) return `Health: ${actors.length} Selected`;
+        return `Health: ${this.panel?.actor?.name || 'None Selected'}`;
+    }
+
+    _configureRenderOptions(options) {
+        super._configureRenderOptions(options);
+        options.window ??= {};
+        options.window.title = this.title;
+    }
+
+    async getData() {
+        const content = await renderTemplate(TEMPLATES.WINDOW_HEALTH, {
+            actor: this.panel?.actor || null,
+            actors: this.actors,
+            isGM: game.user.isGM
+        });
+
+        return {
+            appId: this.id,
+            bodyContent: content
+        };
+    }
+
+    _onRender(context, options) {
+        super._onRender?.(context, options);
+        this._registerCurrentActors();
+        this.panel?.updateElement(this.element);
     }
 
     _registerActors(actors = []) {
         for (const actor of actors.filter(Boolean)) {
-            actor.apps[this.appId] = this;
+            actor.apps[this.id] = this;
             this._registeredActors.add(actor);
         }
     }
 
+    _registerCurrentActors() {
+        this._registerActors(this.actors);
+    }
+
     _unregisterActors() {
         for (const actor of this._registeredActors) {
-            delete actor.apps[this.appId];
+            delete actor.apps[this.id];
         }
         this._registeredActors.clear();
     }
 
-    static get defaultOptions() {
-        // Try to load saved position
-        let saved = {};
-        try {
-            saved = game.settings.get(MODULE.ID, 'healthWindowPosition') || {};
-        } catch (e) {
-            saved = {};
-        }
-        const width = 400;
-        const height = 'auto';
-        const top = (typeof saved.top === 'number') ? saved.top : Math.max(0, (window.innerHeight - 300) / 2);
-        const left = (typeof saved.left === 'number') ? saved.left : Math.max(0, (window.innerWidth - width) / 2);
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: "squire-health-window",
-            template: "modules/coffee-pub-squire/templates/panel-health.hbs",
-            title: "Health Panel",
-            width,
-            height,
-            top,
-            left,
-            minimizable: true,
-            resizable: false,
-            popOut: true,
-            classes: ["squire-window"]
-        });
+    async _onUpdateActor() {
+        await this.render(false);
     }
 
-    getData() {
-        // Handle both old actors array and new tokens array
-        let actors = this.panel.actors;
-        if (!actors && this.panel.tokens) {
-            actors = this.panel.tokens.map(t => t.actor);
-        }
-        
-        const data = {
-            actor: this.panel.actor,
-            actors: actors, // Pass all actors for bulk operations
-            position: "left",
-            isGM: game.user.isGM,
-            isHealthPopped: true
-        };
-        // Update window title with actor name or multiple selection
-        if (actors && actors.length > 1) {
-            this.options.title = `Health: ${actors.length} Selected`;
-        } else {
-            this.options.title = `Health: ${this.panel.actor?.name || 'None Selected'}`;
-        }
-        return data;
-    }
-
-    async _renderInner(data) {
-        // First render the template
-        const content = await renderTemplate(this.options.template, data);
-        
-        // Create the wrapper structure with window namespace
-        // v13: Return native DOM element instead of jQuery
-        const wrapper = document.createElement('div');
-        wrapper.className = 'squire-popout squire-window-health';
-        wrapper.setAttribute('data-position', 'left');
-        
-        const trayContent = document.createElement('div');
-        trayContent.className = 'tray-content';
-        
-        const panelContainer = document.createElement('div');
-        panelContainer.className = 'panel-container';
-        panelContainer.setAttribute('data-panel', 'health');
-        panelContainer.innerHTML = content;
-        
-        trayContent.appendChild(panelContainer);
-        wrapper.appendChild(trayContent);
-        
-        return wrapper;
-    }
-
-    /**
-     * Get native DOM element from this.element (handles jQuery conversion)
-     * @returns {HTMLElement|null} Native DOM element
-     */
-    _getNativeElement() {
-        if (!this.element) return null;
-        // v13: Detect and convert jQuery to native DOM if needed
-        if (this.element.jquery || typeof this.element.find === 'function') {
-            return this.element[0] || this.element.get?.(0) || this.element;
-        }
-        return this.element;
-    }
-
-    activateListeners(html) {
-        // v13: Call super first, but wrap in try-catch since our window doesn't have forms
-        // FoundryVTT's _activateCoreListeners expects form elements that we don't have
-        // (We've overridden _activateCoreListeners to prevent this, but keeping try-catch for safety)
-        try {
-            super.activateListeners(html);
-        } catch (error) {
-            // FoundryVTT core may fail if it expects form elements we don't have
-            // This is safe to ignore since we handle all our own listeners below
-            console.debug('HealthWindow: super.activateListeners error (expected for non-form windows):', error);
-        }
-        
-        // v13: Detect and convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-        
-        // Find the panel container within the window content
-        const panelElement = nativeHtml.querySelector('[data-panel="health"]');
-        const panelContainer = panelElement?.closest('.panel-container');
-        
-        if (this.panel && panelContainer) {
-            // Update the panel's element reference with the panel container
-            this.panel.updateElement(panelContainer);
-        }
-
-        // Add close button handler
-        const appElement = nativeHtml.closest('.app');
-        const closeButton = appElement?.querySelector('.close');
-        if (closeButton) {
-            closeButton.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                this.close();
-            });
-        }
-    }
-
-    async _onToggleMinimize(ev) {
-        ev?.preventDefault();
-        if (!this.rendered) return;
-        this._minimized = !this._minimized;
-        
-        // v13: Use native classList instead of jQuery toggleClass
-        const element = this._getNativeElement();
-        if (element) {
-            element.classList.toggle("minimized");
-        }
-    }
-
-    async close(options={}) {
+    async updateActor(actor) {
         this._unregisterActors();
-        
         if (this.panel) {
-            await this.panel.onWindowClosed();
-        }
-        return super.close(options);
-    }
-
-    // Handler for actor updates
-    async _onUpdateActor(actor, changes) {
-        // Always re-render when the actor updates to ensure we catch all changes
-        this.render(false);
-    }
-
-    // Override setPosition to ensure window stays in place when re-rendering
-    setPosition(options={}) {
-        // Validate position is within viewport
-        if (options.top !== undefined || options.left !== undefined) {
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            const windowWidth = options.width || this.position.width || 400;
-            const windowHeight = options.height || this.position.height || 300;
-            
-            // Ensure window doesn't go off-screen
-            if (options.left !== undefined) {
-                options.left = Math.max(0, Math.min(options.left, viewportWidth - windowWidth));
-            }
-            if (options.top !== undefined) {
-                options.top = Math.max(0, Math.min(options.top, viewportHeight - windowHeight));
-            }
-        }
-        
-        const pos = super.setPosition(options);
-        // Save position to settings
-        if (this.rendered) {
-            const { top, left } = this.position;
-            game.settings.set(MODULE.ID, 'healthWindowPosition', { top, left });
-        }
-        return pos;
-    }
-
-    // Update the panel reference and re-register for updates when the actor changes
-    updateActor(actor) {
-        this._unregisterActors();
-        
-        // Update panel's actor
-        if (this.panel) {
-            this.panel.actor = actor;
+            this.panel.actor = actor || null;
             this.panel.actors = actor ? [actor] : [];
             this.panel.tokens = [];
         }
-        
-        // Register with new actor
         this._registerActors([actor]);
-        
-        // Re-render with new actor data
-        this.render(false);
+        await this.render(false);
     }
 
-    // Update the panel with tokens for bulk operations (new method)
-    updateTokens(tokens) {
-        // Convert tokens to actors for the window
-        const actors = tokens?.map(t => t.actor) || [];
-        
+    async updateTokens(tokens) {
+        const nextTokens = tokens || [];
+        const actors = nextTokens.map((token) => token.actor).filter(Boolean);
+
         this._unregisterActors();
-        
-        // Update panel's actors directly (avoid recursive call)
         if (this.panel) {
             this.panel.actors = actors;
-            this.panel.actor = actors?.[0] || null;
-            this.panel.tokens = tokens || [];
+            this.panel.actor = actors[0] || null;
+            this.panel.tokens = nextTokens;
         }
-        
         this._registerActors(actors);
-        
-        // Re-render with new actor data
-        this.render(false);
+        await this.render(false);
     }
 
-    // Update the panel with multiple actors for bulk operations
-    updateActors(actors) {
+    async updateActors(actors) {
+        const nextActors = (actors || []).filter(Boolean);
+
         this._unregisterActors();
-        
-        // Update panel's actors directly (avoid recursive call)
         if (this.panel) {
-            this.panel.actors = actors || [];
-            this.panel.actor = actors?.[0] || null;
+            this.panel.actors = nextActors;
+            this.panel.actor = nextActors[0] || null;
             this.panel.tokens = [];
         }
-        
-        // Register with ALL actors in the selection for updates
-        this._registerActors(actors);
-        
-        // Re-render with new actor data
-        this.render(false);
+        this._registerActors(nextActors);
+        await this.render(false);
     }
-} 
 
+    _onClose(options) {
+        this._unregisterActors();
+        super._onClose?.(options);
+        void this.panel?.onWindowClosed();
+    }
+}
+
+export function registerHealthWindow() {
+    const blacksmith = getBlacksmith();
+    if (!blacksmith?.registerWindow) return false;
+
+    return blacksmith.registerWindow(HEALTH_WINDOW_ID, {
+        moduleId: MODULE.ID,
+        title: 'Health',
+        open: async () => {
+            const { PanelManager } = await import('./manager-panel.js');
+            const panel = PanelManager.instance?.healthPanel;
+            if (!panel) {
+                ui.notifications.warn('Coffee Pub Squire health tool is not available.');
+                return null;
+            }
+            return panel.openWindow();
+        }
+    });
+}

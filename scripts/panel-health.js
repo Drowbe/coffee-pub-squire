@@ -1,5 +1,4 @@
 import { MODULE } from './const.js';
-import { HealthWindow } from './window-health.js';
 import { getTokenDisplayName, getNativeElement } from './helpers.js';
 
 export class HealthPanel {
@@ -151,17 +150,21 @@ export class HealthPanel {
 
     async openWindow() {
         if (this.window && this.isWindowOpen) {
-            this.window.bringToTop();
-            return;
+            this.window.bringToFront();
+            return this.window;
         }
 
         HealthPanel.isWindowOpen = true;
         this.isWindowOpen = true;
         await this._saveWindowState(true);
 
+        // Load the V2 subclass only after Foundry and Blacksmith have initialized
+        // their module APIs. panel-health.js itself is loaded earlier from the manifest.
+        const { HealthWindow } = await import('./window-health.js');
         this.window = new HealthWindow({ panel: this });
         HealthPanel.activeWindow = this.window;
         await this.window.render(true);
+        return this.window;
     }
 
     async onWindowClosed() {
