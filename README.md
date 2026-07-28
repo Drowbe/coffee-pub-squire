@@ -78,10 +78,10 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
 
 ### **Tools & Utilities**
 - **Standalone Blacksmith Micro dice tool** with fixed controls and a compact, independently scrolling recent-roll history
-- **Standalone Blacksmith Micro health tool** with real-time HP tracking, healing controls, and multi-token operations
+- **Standalone Blacksmith Micro health tool** with real-time HP tracking, healing controls, multi-token operations, Light/Dark/Glass themes, and an optional menubar launcher
 - **Condition management** with visual indicators and quick application
 - **Standalone Blacksmith Micro macro tool** with execution, favorites, reordering, and drag-and-drop assignment
-- **Experience tracking** with level progression monitoring
+- **Character Summary panel** combining labeled combat stats, interactive ability checks/saves, and level progression in one compact card
 
 ### **Quest & Adventure Management**
 - **Comprehensive quest system** with:
@@ -168,26 +168,27 @@ After installation and enabling the module:
 
 ### **Character Management**
 5. **Combat Tools**: Access spells, weapons, and inventory through dedicated panels
-6. **Health & Status**: Monitor HP, conditions, and character stats in real-time
+6. **Health & Status**: Monitor HP and conditions in real-time from the handle or optional Health menubar tool
 7. **Favorites System**: Bookmark frequently used items, spells, and features
 8. **Dice Tray**: Open the compact Blacksmith Micro dice tool from the handle or menubar; its recent-roll history scrolls independently
+9. **Character Summary**: Optionally show one compact tray card for level, initiative, speed, armor, proficiency, abilities, and experience
 
 ### **Quest & Adventure**
-9. **Quest Management**: Create, edit, and organize quests with task tracking
-10. **Scene Pins**: Place quest pins on canvas for visual quest management
-11. **Progress Tracking**: Monitor quest completion and participant progress
-12. **Import/Export**: Transfer quests between worlds with full data preservation
+10. **Quest Management**: Create, edit, and organize quests with task tracking
+11. **Scene Pins**: Place quest pins on canvas for visual quest management
+12. **Progress Tracking**: Monitor quest completion and participant progress
+13. **Import/Export**: Transfer quests between worlds with full data preservation
 
 ### **World Building**
-13. **Codex System**: Create and manage world entities with drag & drop
-14. **Journal Integration**: Access notes and journal entries through the tray
-15. **Party Management**: Coordinate with other players and manage group activities
-16. **Item Transfers**: Facilitate item exchanges between characters
+14. **Codex System**: Create and manage world entities with drag & drop
+15. **Journal Integration**: Access notes and journal entries through the tray
+16. **Party Management**: Coordinate with other players and manage group activities
+17. **Item Transfers**: Facilitate item exchanges between characters
 
 ### **Customization**
-17. **Theme Selection**: Choose from Dark, Light, or Custom themes
-18. **Layout Options**: Customize tray position and behavior
-19. **User Preferences**: Set individual settings for your playstyle
+18. **Theme Selection**: Choose from Dark, Light, or Custom themes
+19. **Layout Options**: Customize tray position and behavior
+20. **User Preferences**: Set individual settings for your playstyle
 20. **Integration**: Configure Coffee Pub Blacksmith API settings
 
 ## Settings

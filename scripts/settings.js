@@ -306,13 +306,13 @@ export const registerSettings = function() {
 
     // Panel Visibility Settings
 
-    game.settings.register(MODULE.ID, 'showExperiencePanel', {
-        name: 'Show Experience Panel',
-        hint: 'Display experience and level progress panel',
+    game.settings.register(MODULE.ID, 'showCharacterSummaryPanel', {
+        name: 'Show Character Summary Panel',
+        hint: 'Display one compact panel with experience, core statistics, abilities, and skills.',
         scope: 'user',
         config: true,
         type: Boolean,
-        default: false,
+        default: true,
         onChange: () => {
             if (ui.squire) ui.squire.render();
         }
@@ -337,30 +337,6 @@ export const registerSettings = function() {
         config: false,
         type: Boolean,
         default: false
-    });
-
-    game.settings.register(MODULE.ID, 'showAbilitiesPanel', {
-        name: 'Show Abilities Panel',
-        hint: 'Display ability scores and modifiers panel',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: false,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
-    });
-
-    game.settings.register(MODULE.ID, 'showStatsPanel', {
-        name: 'Show Stats Panel',
-        hint: 'Display character stats panel',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: false,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
     });
 
     game.settings.register(MODULE.ID, 'showDiceTrayPanel', {
@@ -459,6 +435,18 @@ export const registerSettings = function() {
         config: false,
         type: Boolean,
         default: true
+    });
+
+    game.settings.register(MODULE.ID, 'showHealthMenubarTool', {
+        name: 'Show Health Tool in Menubar',
+        hint: 'Display a Health window icon beside the Dice Tray icon in the Blacksmith menubar.',
+        scope: 'user',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            game.modules.get('coffee-pub-blacksmith')?.api?.renderMenubar?.(true);
+        }
     });
 
     // ---------- Handle Dice Tray ----------
@@ -692,21 +680,7 @@ export const registerSettings = function() {
     });
 
     // Remember panel collapsed states
-    game.settings.register(MODULE.ID, 'isExperiencePanelCollapsed', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
-    game.settings.register(MODULE.ID, 'isAbilitiesPanelCollapsed', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
-    game.settings.register(MODULE.ID, 'isStatsPanelCollapsed', {
+    game.settings.register(MODULE.ID, 'isCharacterSummaryPanelCollapsed', {
         scope: 'client',
         config: false,
         type: Boolean,

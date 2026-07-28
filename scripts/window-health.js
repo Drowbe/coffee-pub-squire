@@ -257,6 +257,11 @@ export function registerHealthWindow() {
         title: 'Health',
         open: async () => {
             const { PanelManager } = await import('./manager-panel.js');
+            const ready = await PanelManager.ensureReadyForMenubar();
+            if (!ready) {
+                ui.notifications.warn('Coffee Pub Squire health tool is not available.');
+                return null;
+            }
             const panel = PanelManager.instance?.healthPanel;
             if (!panel) {
                 ui.notifications.warn('Coffee Pub Squire health tool is not available.');

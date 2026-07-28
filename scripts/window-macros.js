@@ -31,7 +31,6 @@ export class MacrosWindow extends BlacksmithToolWindowBaseV2 {
             },
             windowSizeConstraints: {
                 minWidth: null,
-                minHeight: 66,
                 maxWidth: 2400,
                 maxHeight: null
             },

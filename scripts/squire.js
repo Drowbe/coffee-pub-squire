@@ -742,7 +742,11 @@ Hooks.once('ready', async () => {
                 // AC and movement recompute constantly (active effects, conditions, mounts) —
                 // they only need the character/stats displays and the handle, not a full rebuild
                 const needsStatsUpdate = changes.system?.attributes?.ac ||
-                                         changes.system?.attributes?.movement;
+                                         changes.system?.attributes?.movement ||
+                                         changes.system?.attributes?.init ||
+                                         changes.system?.abilities ||
+                                         changes.system?.skills ||
+                                         changes.system?.details?.xp;
 
                 if (needsFullUpdate) {
                     await panelManager.initialize(actor);
@@ -754,8 +758,8 @@ Hooks.once('ready', async () => {
                     if (panelManager.instance.characterPanel && panelManager.instance.element) {
                         await panelManager.instance.characterPanel.render(panelManager.instance.element);
                     }
-                    if (panelManager.instance.statsPanel && panelManager.instance.element) {
-                        await panelManager.instance.statsPanel.render(panelManager.instance.element);
+                    if (panelManager.instance.characterSummaryPanel && panelManager.instance.element) {
+                        await panelManager.instance.characterSummaryPanel.render(panelManager.instance.element);
                     }
                     await panelManager.instance.updateHandle();
                 }
@@ -2105,6 +2109,34 @@ Hooks.once('ready', async function() {
     }
 
     try {
+        const healthOk = blacksmith.registerMenubarTool('squire-health', {
+            icon: "fa-solid fa-heart-pulse",
+            name: "squire-health",
+            title: null,
+            tooltip: "Health",
+            onClick: () => blacksmith.openWindow(`${MODULE.ID}-health-window`),
+            zone: "left",
+            group: "general",
+            groupOrder: 999,
+            order: 201,
+            moduleId: MODULE.ID,
+            gmOnly: false,
+            leaderOnly: false,
+            visible: () => game.settings.get(MODULE.ID, 'showHealthMenubarTool'),
+            toggleable: false,
+            active: false,
+            iconColor: null,
+            buttonNormalTint: null,
+            buttonSelectedTint: null
+        });
+        if (!healthOk) {
+            console.error('Coffee Pub Squire | Failed to register health with Blacksmith menubar');
+        }
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error registering health with Blacksmith menubar:', error);
+    }
+
+    try {
         const macrosOk = blacksmith.registerMenubarTool('squire-macros', {
             icon: "fa-solid fa-code",
             name: "squire-macros",
@@ -2114,7 +2146,7 @@ Hooks.once('ready', async function() {
             zone: "left",
             group: "general",
             groupOrder: 999,
-            order: 201,
+            order: 202,
             moduleId: MODULE.ID,
             gmOnly: false,
             leaderOnly: false,
@@ -2151,7 +2183,7 @@ Hooks.once('ready', async function() {
             zone: "left",
             group: "general",
             groupOrder: 999,
-            order: 202,
+            order: 203,
             moduleId: MODULE.ID,
             gmOnly: false,
             leaderOnly: false,

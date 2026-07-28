@@ -73,7 +73,7 @@
     "scripts/panel-weapons.js",
     "scripts/panel-favorites.js",
     "scripts/panel-dicetray.js",
-    "scripts/panel-abilities.js",
+    "scripts/panel-character-summary.js",
     "scripts/panel-party.js",
     "scripts/panel-party-stats.js",
     "scripts/window-note.js",

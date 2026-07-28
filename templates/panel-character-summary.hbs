@@ -1,0 +1,131 @@
+<div class="character-summary-panel">
+    <div class="section-header character-summary-header">
+        <div class="header-left">
+            <i class="fa-solid fa-id-card"></i> Character Summary
+        </div>
+        <div class="header-right">
+            <i class="character-summary-toggle fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}" title="Toggle Character Summary"></i>
+        </div>
+    </div>
+
+    <div class="character-summary-content{{#if isCollapsed}} collapsed{{/if}}">
+        {{#if actor.system.details.xp.max}}
+            <div class="character-summary-xp">
+                <div class="character-summary-xp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
+                <div class="character-summary-xp-label">
+                    <span>Experience</span>
+                    <span>{{actor.system.details.xp.value}} / {{actor.system.details.xp.max}}</span>
+                </div>
+            </div>
+        {{/if}}
+
+        <div class="character-summary-columns">
+            <section class="character-summary-column">
+                <div class="category-header" data-category-id="category-character-core">Core</div>
+                <div class="character-summary-list">
+                    <div class="panel-item" data-category-id="category-character-core">
+                        <div class="panel-item-row">
+                            <span class="character-summary-row-icon"><i class="fa-solid fa-helmet-battle"></i></span>
+                            <span class="panel-item-name">{{#if (eq actor.type "npc")}}Challenge Rating{{else}}Level{{/if}}</span>
+                            <strong class="character-summary-value">{{#if (eq actor.type "npc")}}{{actor.system.details.cr}}{{else}}{{actor.system.details.level}}{{/if}}</strong>
+                        </div>
+                    </div>
+                    <div class="panel-item" data-category-id="category-character-core">
+                        <div class="panel-item-row">
+                            <span class="character-summary-row-icon"><i class="fa-solid fa-bolt"></i></span>
+                            <span class="panel-item-name">Initiative</span>
+                            <strong class="character-summary-value">{{numberFormat actor.system.attributes.init.total sign=true}}</strong>
+                        </div>
+                    </div>
+                    <div class="panel-item" data-category-id="category-character-core">
+                        <div class="panel-item-row">
+                            <span class="character-summary-row-icon"><i class="fa-solid fa-person-running"></i></span>
+                            <span class="panel-item-name">Speed</span>
+                            <strong class="character-summary-value">{{actor.system.attributes.movement.walk}}</strong>
+                        </div>
+                    </div>
+                    <div class="panel-item" data-category-id="category-character-core">
+                        <div class="panel-item-row">
+                            <span class="character-summary-row-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                            <span class="panel-item-name">Armor Class</span>
+                            <strong class="character-summary-value">{{actor.system.attributes.ac.value}}</strong>
+                        </div>
+                    </div>
+                    <div class="panel-item" data-category-id="category-character-core">
+                        <div class="panel-item-row">
+                            <span class="character-summary-row-icon"><i class="fa-solid fa-award"></i></span>
+                            <span class="panel-item-name">Proficiency</span>
+                            <strong class="character-summary-value">{{numberFormat actor.system.attributes.prof sign=true}}</strong>
+                        </div>
+                    </div>
+                    <div class="panel-item" data-category-id="category-character-core">
+                        <div class="panel-item-row">
+                            <span class="character-summary-row-icon"><i class="fa-solid fa-eye"></i></span>
+                            <span class="panel-item-name">Passive Perception</span>
+                            <strong class="character-summary-value">{{passivePerception}}</strong>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section class="character-summary-column">
+                <div class="category-header" data-category-id="category-character-abilities">Abilities</div>
+                <div class="character-summary-list">
+                    {{#each abilities as |ability|}}
+                        <div
+                            class="panel-item character-summary-ability"
+                            data-ability="{{ability.key}}"
+                            data-category-id="category-character-abilities"
+                        >
+                            <div class="panel-item-row">
+                                <div
+                                    class="panel-item-image-container character-summary-ability-roll"
+                                    title="{{toUpperCase ability.key}}: click for an ability check; right-click for a saving throw"
+                                >
+                                    <span class="character-summary-ability-key">{{toUpperCase ability.key}}</span>
+                                    <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
+                                </div>
+                                <span class="panel-item-name">{{ability.label}}</span>
+                                <strong class="character-summary-value">{{numberFormat ability.mod sign=true}}</strong>
+                                <span class="panel-item-context">
+                                    <span class="panel-item-badge context-count" title="Ability score">{{ability.value}}</span>
+                                </span>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            </section>
+
+            <section class="character-summary-column">
+                <div class="category-header" data-category-id="category-character-skills">Skills</div>
+                <div class="character-summary-list">
+                    {{#each skills as |skill|}}
+                        <div
+                            class="panel-item character-summary-skill"
+                            data-skill="{{skill.key}}"
+                            data-category-id="category-character-skills"
+                        >
+                            <div class="panel-item-row">
+                                <div
+                                    class="panel-item-image-container character-summary-skill-roll"
+                                    title="{{skill.label}}: click to roll"
+                                >
+                                    <span class="character-summary-skill-key">{{skill.shortLabel}}</span>
+                                    <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
+                                </div>
+                                <span class="panel-item-name">{{skill.label}}</span>
+                                {{#if skill.proficient}}
+                                    <span class="panel-item-context">
+                                        <span class="panel-item-badge character-summary-proficiency" title="Proficient">P</span>
+                                    </span>
+                                {{/if}}
+                                <strong class="character-summary-value">{{numberFormat skill.mod sign=true}}</strong>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

@@ -9,10 +9,8 @@ import { FavoritesPanel } from './panel-favorites.js';
 import { ControlPanel } from './panel-control.js';
 import { FeaturesPanel } from './panel-features.js';
 import { DiceTrayPanel } from './panel-dicetray.js';
-import { ExperiencePanel } from './panel-experience.js';
 import { HealthPanel } from './panel-health.js';
-import { StatsPanel } from './panel-stats.js';
-import { AbilitiesPanel } from './panel-abilities.js';
+import { CharacterSummaryPanel } from './panel-character-summary.js';
 import { PartyPanel } from './panel-party.js';
 import { PartyStatsPanel } from './panel-party-stats.js';
 import { NotesPanel } from './panel-notes.js';
@@ -97,9 +95,7 @@ export class PanelManager {
             this.weaponsPanel = new WeaponsPanel(actor);
             this.inventoryPanel = new InventoryPanel(actor);
             this.featuresPanel = new FeaturesPanel(actor);
-            this.experiencePanel = new ExperiencePanel(actor);
-            this.statsPanel = new StatsPanel(actor);
-            this.abilitiesPanel = new AbilitiesPanel(actor);
+            this.characterSummaryPanel = new CharacterSummaryPanel(actor);
         }
         // Always create these panels regardless of actor (for handle icons and multi-select functionality)
         this.dicetrayPanel = new DiceTrayPanel({ actor });
@@ -421,9 +417,7 @@ export class PanelManager {
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
             })) || [],
             settings: {
-                showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
-                showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
-                showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
+                showCharacterSummaryPanel: game.settings.get(MODULE.ID, 'showCharacterSummaryPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
@@ -501,9 +495,7 @@ export class PanelManager {
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
             })) || [],
             settings: {
-                showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
-                showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
-                showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
+                showCharacterSummaryPanel: game.settings.get(MODULE.ID, 'showCharacterSummaryPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
@@ -544,7 +536,7 @@ export class PanelManager {
         this.weaponsPanel = new WeaponsPanel(this.actor);
         this.inventoryPanel = new InventoryPanel(this.actor);
         this.featuresPanel = new FeaturesPanel(this.actor);
-        this.experiencePanel = new ExperiencePanel(this.actor);
+        this.characterSummaryPanel = new CharacterSummaryPanel(this.actor);
 
         // Health is a standalone tool window; keep its controller available for launchers.
         this.healthPanel = new HealthPanel(this.actor);
@@ -559,8 +551,6 @@ export class PanelManager {
         // Macros is a standalone tool window; keep its controller available for launchers.
         this.macrosPanel = new MacrosPanel({ actor: this.actor });
 
-        this.statsPanel = new StatsPanel(this.actor);
-        this.abilitiesPanel = new AbilitiesPanel(this.actor);
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
@@ -576,9 +566,7 @@ export class PanelManager {
         this.weaponsPanel.element = PanelManager.element;
         this.inventoryPanel.element = PanelManager.element;
         this.featuresPanel.element = PanelManager.element;
-        this.experiencePanel.element = PanelManager.element;
-        this.statsPanel.element = PanelManager.element;
-        this.abilitiesPanel.element = PanelManager.element;
+        this.characterSummaryPanel.element = PanelManager.element;
 
         // Render all panels
         await this.renderPanels(PanelManager.element);
@@ -614,20 +602,10 @@ export class PanelManager {
             this.controlPanel?.reapplySearch();
 
             // Dice Tray is window-only and has no tray render path.
-            if (game.settings.get(MODULE.ID, 'showExperiencePanel')) {
-                this.experiencePanel?.render(element);
+            if (game.settings.get(MODULE.ID, 'showCharacterSummaryPanel')) {
+                this.characterSummaryPanel?.render(element);
             } else {
-                PanelManager.removePanelDom(this.experiencePanel);
-            }
-            if (game.settings.get(MODULE.ID, 'showStatsPanel')) {
-                this.statsPanel?.render(element);
-            } else {
-                PanelManager.removePanelDom(this.statsPanel);
-            }
-            if (game.settings.get(MODULE.ID, 'showAbilitiesPanel')) {
-                this.abilitiesPanel?.render(element);
-            } else {
-                PanelManager.removePanelDom(this.abilitiesPanel);
+                PanelManager.removePanelDom(this.characterSummaryPanel);
             }
         }
     }
@@ -1851,14 +1829,8 @@ export class PanelManager {
         if (PanelManager.instance.featuresPanel && typeof PanelManager.instance.featuresPanel.destroy === 'function') {
             PanelManager.instance.featuresPanel.destroy();
         }
-        if (PanelManager.instance.experiencePanel && typeof PanelManager.instance.experiencePanel.destroy === 'function') {
-            PanelManager.instance.experiencePanel.destroy();
-        }
-        if (PanelManager.instance.statsPanel && typeof PanelManager.instance.statsPanel.destroy === 'function') {
-            PanelManager.instance.statsPanel.destroy();
-        }
-        if (PanelManager.instance.abilitiesPanel && typeof PanelManager.instance.abilitiesPanel.destroy === 'function') {
-            PanelManager.instance.abilitiesPanel.destroy();
+        if (PanelManager.instance.characterSummaryPanel && typeof PanelManager.instance.characterSummaryPanel.destroy === 'function') {
+            PanelManager.instance.characterSummaryPanel.destroy();
         }
         if (PanelManager.instance.healthPanel && typeof PanelManager.instance.healthPanel.destroy === 'function') {
             PanelManager.instance.healthPanel.destroy();
@@ -2216,9 +2188,7 @@ export async function _updateHealthPanelFromSelection() {
             if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = actorToUse;
             if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = actorToUse;
             if (PanelManager.instance.featuresPanel) PanelManager.instance.featuresPanel.actor = actorToUse;
-            if (PanelManager.instance.experiencePanel) PanelManager.instance.experiencePanel.actor = actorToUse;
-            if (PanelManager.instance.statsPanel) PanelManager.instance.statsPanel.actor = actorToUse;
-            if (PanelManager.instance.abilitiesPanel) PanelManager.instance.abilitiesPanel.actor = actorToUse;
+            if (PanelManager.instance.characterSummaryPanel) PanelManager.instance.characterSummaryPanel.actor = actorToUse;
             if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.updateActor(actorToUse);
             if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.updateActor(actorToUse);
             

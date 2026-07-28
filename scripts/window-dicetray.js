@@ -32,7 +32,6 @@ export class DiceTrayWindow extends BlacksmithToolWindowBaseV2 {
             windowSizeConstraints: {
                 minWidth: 300,
                 maxWidth: 520,
-                minHeight: 150,
                 maxHeight: 280
             },
             toolTitlebar: 'micro',

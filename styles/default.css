@@ -38,16 +38,14 @@
 
 @import "panel-macros.css";
 
-@import "panel-experience.css"; 
+@import "panel-character-summary.css";
 
 @import "panel-favorites.css"; 
 
 @import "panel-spells.css"; 
 
 
-@import "panel-stats.css"; 
 
-@import "panel-abilities.css"; 
 
 @import "panel-party.css"; 
 
