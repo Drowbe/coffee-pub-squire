@@ -496,98 +496,25 @@ export class HandleManager {
             }
         });
 
-        // Handle condition icon clicks
-        // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
+        // Open the Status Effects window directly to the clicked effect's real description.
         handleElement.addEventListener('click', async (event) => {
-            const conditionIcon = event.target.closest('.handle-condition-icon');
-            if (!conditionIcon) return;
-            
+            const effectIcon = event.target.closest('.handle-condition-icon');
+            if (!effectIcon) return;
+
             event.preventDefault();
             event.stopPropagation();
-            
-            const conditionName = conditionIcon.dataset.tooltip;
-            
-            if (!conditionName) {
-                return;
-            }
-            
-            // Show condition description dialog
-            try {
-                // Try to get the condition data from CONFIG.DND5E.conditionTypes
-                // dnd5e 4+ renamed `label` to `name` (pre-localized at i18nInit)
-                let description = "<p>No description available.</p>";
-                const conditionData = Object.values(CONFIG.DND5E.conditionTypes).find(
-                    condition => (condition.name ?? condition.label) === conditionName
-                );
 
-                // Delegated listener: currentTarget is the handle container, not the
-                // clicked icon — read the src off the <img> itself
-                const iconPath = conditionIcon.src;
+            const effectId = effectIcon.dataset.effectId;
+            const blacksmith = getBlacksmith();
+            if (!effectId || typeof blacksmith?.openWindow !== 'function') return;
 
-                if (conditionData?.reference) {
-                    // Parse the reference string: "Compendium.dnd5e.rules.JournalEntry.w7eitkpD7QQTB6j0.JournalEntryPage.0b8N4FymGGfbZGpJ"
-                    const [, system, packName, type, journalId, , pageId] = conditionData.reference.split(".");
-                    const pack = game.packs.get(`${system}.${packName}`);
-                    
-                    if (pack) {
-                        const journal = await pack.getDocument(journalId);
-                        if (journal) {
-                            const page = journal.pages.get(pageId);
-                            if (page) {
-                                // Rule pages carry a short summary in system.tooltip; prefer it
-                                // over the full article — for pseudo-conditions like Diseased
-                                // the article is DM lore, not a stat blurb. Enrich either way
-                                // so &Reference[...] / @UUID[...] render instead of showing raw.
-                                const raw = page.system?.tooltip || page.text.content;
-                                description = await getTextEditor().enrichHTML(raw, { relativeTo: page });
-                            }
-                        }
-                    }
-                }
-
-                // Create a dialog showing the condition details
-                const content = `
-                    <div class="squire-description-window">
-                        <div class="squire-description-header">
-                            <img src="${iconPath}"/>
-                            <h1>${conditionData?.name || conditionName}</h1>
-                        </div>
-                        
-                        <div class="squire-description-content">
-                            ${description}
-                            ${game.user.isGM ? '<p class="gm-note"><i>Right-click to remove this condition.</i></p>' : ''}
-                        </div>
-                    </div>
-                    <style>
-                        .gm-note {
-                            margin-top: 1em;
-                            font-size: 0.9em;
-                            color: var(--color-text-dark-secondary);
-                            font-style: italic;
-                        }
-                    </style>`;
-                
-                new Dialog({
-                    title: conditionData?.name || conditionName,
-                    content: content,
-                    buttons: {
-                        close: {
-                            icon: '<i class="fa-solid fa-times"></i>',
-                            label: "Close"
-                        }
-                    },
-                    default: "close"
-                }, {
-                    classes: ["dnd5e", "dialog", "window-app", "squire-description-dialog"],
-                    width: 400,
-                    height: "auto"
-                }).render(true);
-            } catch (error) {
-                console.error('Error getting condition description:', error);
-                ui.notifications.warn("Could not load condition description.");
-            }
+            await blacksmith.openWindow(`${MODULE.ID}-status-effects-window`, {
+                actor: this.actor,
+                actorUuid: this.actor?.uuid,
+                descriptionEffectId: effectId
+            });
         });
-        
+
         // Handle condition icon right-click (contextmenu) - separate handler
         // v13: Use handleElement (the cloned handle that's actually in the DOM)
         handleElement.addEventListener('contextmenu', async (event) => {

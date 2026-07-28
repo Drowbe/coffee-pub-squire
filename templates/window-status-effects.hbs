@@ -20,21 +20,33 @@
             <div class="blacksmith-window-section-body">
                 <div class="status-effects-grid">
                     {{#each conditions}}
-                        <button
-                            type="button"
-                            class="status-effect-option {{#if isActive}}active{{/if}}"
-                            data-action="toggleEffect"
-                            data-condition-id="{{id}}"
-                            aria-pressed="{{#if isActive}}true{{else}}false{{/if}}"
-                            {{#unless ../canManage}}disabled{{/unless}}
-                        >
-                            <span class="status-effect-icon">
-                                <img src="{{icon}}" alt="" onerror="this.src='icons/svg/unknown.svg'; this.onerror=null;">
-                                {{#if isActive}}<i class="fa-solid fa-check status-effect-check"></i>{{/if}}
-                            </span>
-                            <span class="status-effect-name">{{name}}</span>
-                            {{#if levelLabel}}<span class="status-effect-level">{{levelLabel}}</span>{{/if}}
-                        </button>
+                        <div class="status-effect-option-wrap">
+                            <button
+                                type="button"
+                                class="status-effect-option {{#if isActive}}active{{/if}}"
+                                data-action="toggleEffect"
+                                data-condition-id="{{id}}"
+                                aria-pressed="{{#if isActive}}true{{else}}false{{/if}}"
+                                {{#unless ../canManage}}disabled{{/unless}}
+                            >
+                                <span class="status-effect-icon">
+                                    <img src="{{icon}}" alt="" onerror="this.src='icons/svg/unknown.svg'; this.onerror=null;">
+                                    {{#if isActive}}<i class="fa-solid fa-check status-effect-check"></i>{{/if}}
+                                </span>
+                                <span class="status-effect-name">{{name}}</span>
+                                {{#if levelLabel}}<span class="status-effect-level">{{levelLabel}}</span>{{/if}}
+                            </button>
+                            <button
+                                type="button"
+                                class="status-effect-description-button"
+                                data-action="showDescription"
+                                data-condition-id="{{id}}"
+                                aria-label="Show {{name}} description"
+                                data-tooltip="Show description"
+                            >
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>
+                        </div>
                     {{/each}}
                 </div>
             </div>
@@ -51,14 +63,20 @@
                         {{#each otherEffects}}
                             <div class="status-effects-list-row {{#if isDisabled}}is-disabled{{/if}} {{#if isSuppressed}}is-suppressed{{/if}}">
                                 <img class="status-effects-list-icon" src="{{icon}}" alt="">
-                                <div class="status-effects-list-details">
+                                <button
+                                    type="button"
+                                    class="status-effects-list-details"
+                                    data-action="showDescription"
+                                    data-effect-id="{{id}}"
+                                    aria-label="Show {{name}} description"
+                                >
                                     <span class="status-effects-list-name">{{name}}</span>
                                     <span class="status-effects-list-meta">
                                         {{#if duration}}<span>{{duration}}</span>{{/if}}
                                         {{#if isDisabled}}<span>Disabled</span>{{/if}}
                                         {{#if isSuppressed}}<span>Suppressed</span>{{/if}}
                                     </span>
-                                </div>
+                                </button>
                                 <button
                                     type="button"
                                     class="status-effects-remove-effect blacksmith-window-btn-critical"
@@ -78,6 +96,18 @@
                 {{/if}}
             </div>
         </section>
+
+        {{#if selectedDescription}}
+            <section class="blacksmith-window-section status-effects-description-section">
+                <div class="blacksmith-window-section-header">
+                    <img src="{{selectedDescription.icon}}" alt="">
+                    <span>{{selectedDescription.name}}</span>
+                </div>
+                <div class="blacksmith-window-section-body status-effects-description-content">
+                    {{{selectedDescription.html}}}
+                </div>
+            </section>
+        {{/if}}
     </div>
 
     <section class="blacksmith-window-template-buttons">

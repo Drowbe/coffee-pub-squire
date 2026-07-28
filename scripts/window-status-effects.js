@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { getTextEditor } from './helpers.js';
 
 function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
@@ -65,6 +66,8 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         this._effectHookIds = [];
         this._pendingConditionIds = new Set();
         this._pendingEffectIds = new Set();
+        this.descriptionEffectId = opts.descriptionEffectId || null;
+        this.descriptionStatusId = opts.descriptionStatusId || null;
     }
 
     async _resolveActor() {
@@ -115,6 +118,7 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
                 isSuppressed: !!effect.isSuppressed
             }))
             .sort((a, b) => a.name.localeCompare(b.name));
+        const selectedDescription = await this._getSelectedDescription(configuredStatuses);
 
         const canManage = !!this.actor?.isOwner;
         return {
@@ -125,8 +129,78 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
             canRemoveAll: canManage && configuredStatuses.some(condition => condition.isActive),
             conditions: configuredStatuses,
             otherEffects,
-            hasOtherEffects: otherEffects.length > 0
+            hasOtherEffects: otherEffects.length > 0,
+            selectedDescription
         };
+    }
+
+    async _getSelectedDescription(configuredStatuses) {
+        let effect = this.descriptionEffectId
+            ? this.actor?.effects?.get?.(this.descriptionEffectId)
+            : null;
+        let statusId = this.descriptionStatusId;
+
+        if (effect && !statusId) {
+            const configuredIds = new Set(configuredStatuses.map(status => status.id));
+            statusId = Array.from(effect.statuses || []).find(id => configuredIds.has(id)) || null;
+        }
+        if (!effect && statusId) {
+            const statusName = configuredStatuses
+                .find(status => status.id === statusId)
+                ?.name
+                ?.toLocaleLowerCase();
+            effect = this.actor?.effects?.find?.(candidate => {
+                const statuses = candidate.statuses instanceof Set
+                    ? candidate.statuses
+                    : new Set(candidate.statuses || []);
+                const name = String(candidate.name || candidate.label || '').toLocaleLowerCase();
+                return statuses.has(statusId) && (!statusName || name === statusName);
+            }) || null;
+        }
+
+        const configuredStatus = configuredStatuses.find(status => status.id === statusId);
+        if (!effect && !configuredStatus) return null;
+
+        let rawDescription = effect?.description || '';
+        let relativeTo = effect || this.actor;
+        if (!rawDescription && statusId) {
+            const condition = CONFIG.DND5E?.conditionTypes?.[statusId];
+            rawDescription = condition?.description || '';
+            if (!rawDescription && condition?.reference) {
+                rawDescription = `@Embed[${condition.reference} inline]`;
+            }
+        }
+
+        let html = '<p>No description is available for this effect.</p>';
+        if (rawDescription) {
+            try {
+                if (game.i18n?.has?.(rawDescription)) {
+                    rawDescription = game.i18n.localize(rawDescription);
+                }
+                const TextEditorImpl = getTextEditor();
+                html = await TextEditorImpl.enrichHTML(rawDescription, {
+                    relativeTo,
+                    rollData: this.actor?.getRollData?.() || {}
+                });
+            } catch (error) {
+                console.warn('Coffee Pub Squire | Could not enrich ActiveEffect description:', error);
+                html = rawDescription;
+            }
+        }
+
+        return {
+            name: effect?.name || effect?.label || configuredStatus?.name || 'Effect',
+            icon: effect?.img || configuredStatus?.icon || 'icons/svg/aura.svg',
+            html
+        };
+    }
+
+    async _showDescription({ effectId = null, statusId = null } = {}) {
+        const sameSelection = (effectId && effectId === this.descriptionEffectId)
+            || (statusId && statusId === this.descriptionStatusId);
+        this.descriptionEffectId = sameSelection ? null : effectId;
+        this.descriptionStatusId = sameSelection ? null : statusId;
+        await this.render({ force: true });
     }
 
     async _onRender(context, options) {
@@ -279,12 +353,22 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         if (!effectId) return;
         await StatusEffectsWindow._ref?._removeEffect(effectId);
     }
+
+    static async _actionShowDescription(event, target) {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        await StatusEffectsWindow._ref?._showDescription({
+            effectId: target?.dataset?.effectId || null,
+            statusId: target?.dataset?.conditionId || null
+        });
+    }
 }
 
 StatusEffectsWindow.ACTION_HANDLERS = {
     toggleEffect: StatusEffectsWindow._actionToggleEffect,
     removeAll: StatusEffectsWindow._actionRemoveAll,
     removeEffect: StatusEffectsWindow._actionRemoveEffect,
+    showDescription: StatusEffectsWindow._actionShowDescription,
     close: StatusEffectsWindow._actionClose
 };
 
@@ -298,6 +382,10 @@ export async function openStatusEffectsWindow(options = {}) {
 
     const existing = StatusEffectsWindow._ref;
     if (existing?.actorUuid === actor.uuid) {
+        if (options.descriptionEffectId || options.descriptionStatusId) {
+            existing.descriptionEffectId = options.descriptionEffectId || null;
+            existing.descriptionStatusId = options.descriptionStatusId || null;
+        }
         await existing.render({ force: true });
         return existing;
     }
