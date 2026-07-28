@@ -6,10 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [13.3.16]
+## [13.3.17]
 
 ### Added
-- **Status Effects window – Blacksmith Application V2 migration**: Replaced the inline legacy Add Effect dialog with a registered Blacksmith Window API window. The window now enumerates only core-toggleable statuses from `CONFIG.statusEffects`, uses `Actor#toggleStatusEffect` so dnd5e creates and removes its canonical condition effects, gates changes on actor ownership, displays the current Exhaustion level, and includes a Remove All action for official statuses. A second removal-only Other Effects section lists the actor's remaining ActiveEffects—including disabled and suppressed effects—without duplicating canonical conditions from the picker. Condition and effect details render their real enriched descriptions—including dnd5e `@Embed` rules content—in a persistent, independently scrolling right-hand detail pane; clicking a handle effect opens that pane directly to the effect. The old V1 description dialog, manual compendium parsing, inline HTML/CSS, and dedicated legacy stylesheet were removed.
+- **Status Effects window – Blacksmith Application V2 migration and effect management**: Replaced the inline legacy Add Effect dialog with a registered Blacksmith Window API window. The window enumerates only core-toggleable statuses from `CONFIG.statusEffects` and uses `Actor#toggleStatusEffect`, ensuring dnd5e creates and removes canonical condition effects instead of Squire manufacturing lookalikes. Changes are gated by actor ownership, active state comes from `actor.statuses`, Exhaustion displays its current level, duplicate operations are guarded, and Remove All clears official statuses through the core API.
+- **Other Effects management**: Added a removal-only section for the actor's remaining ActiveEffects, including temporary, custom, disabled, and suppressed effects without duplicating canonical conditions. Effects are removed by stable document ID, and the handle's existing right-click removal was updated to use the same ID-safe lookup and ownership rules.
+- **Real effect descriptions in a master/detail layout**: Official conditions and Other Effects now show their real, enriched descriptions—including dnd5e `@Embed` rules content—in a persistent, independently scrolling right-hand pane. Handle effect clicks open the window directly to the relevant description. The two-column layout keeps condition/effect controls visible, uses a narrower detail pane, highlights the current selection, clamps long condition names, and aligns the applied and information indicators.
+
+### Removed
+- **Legacy status-effect UI and description code**: Removed the V1 Add Effect and condition-description dialogs, hand-built official ActiveEffects, pseudo-condition toggles, manual compendium/journal parsing, generated dialog markup and inline CSS, and the obsolete `window-descriptions.css` stylesheet.
+
+## [13.3.16]
 
 ### Fixed
 - **Dragging a tray item over the tray no longer offers (or performs) a self-transfer**: the drag-out feature made every tray row draggable, but the tray is also the item-transfer drop zone — so starting a drag immediately lit the tray up as a drop target, and dropping there ran the transfer flow with the same actor as both source and target, duplicating the item (drag a shortsword two inches, get two shortswords). A `_trayItemDragActive` flag set on tray `dragstart` (cleared on `dragend`) now makes the transfer zone ignore the whole gesture: no highlight, no hover sound, and no `preventDefault` on dragover, so the browser itself refuses the drop. Belt-and-braces, the drop handler also early-returns whenever source and target resolve to the same actor — which additionally covers dragging an item from this actor's own character sheet onto the tray, a second route to the same duplicate.

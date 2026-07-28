@@ -100,6 +100,7 @@ coffee-pub-squire/
 | Window | Script | Description |
 |--------|--------|-------------|
 | Notes | window-note.js | NotesForm – note editor, pin creation |
+| Status Effects | window-status-effects.js | Blacksmith V2 condition toggles, other-effect removal, enriched description pane |
 | Quest | window-quest.js | QuestWindow – Blacksmith V2 quest create/edit |
 | Characters | window-characters.js | Character picker |
 | Users | window-users.js | User picker |
