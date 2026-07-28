@@ -5,7 +5,7 @@ import { QuestParser } from './utility-quest-parser.js';
 import { DiceTrayPanel } from './panel-dicetray.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
+import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
@@ -76,13 +76,10 @@ export class HandleManager {
             const maxHP = actor.system.attributes.hp.max;
             const percentage = maxHP > 0 ? (currentHP / maxHP) * 100 : 0;
             
-            let status = 'dead';
-            if (percentage > 90) status = 'healthy';
-            else if (percentage > 40) status = 'injured';
-            else if (percentage > 25) status = 'bloodied';
-            else if (percentage > 0) status = 'critical';
+            const statusClass = getHealthbarStatusClass(actor.system.attributes.hp);
+            const status = statusClass.replace('squire-tray-healthbar-', '');
             
-            return { status, percentage };
+            return { status, statusClass, percentage };
         };
 
         // Build favorite macros array
@@ -128,6 +125,7 @@ export class HandleManager {
         if (currentActor) {
             const healthData = calculateHealthStatus(currentActor);
             currentActor.healthStatus = healthData.status;
+            currentActor.healthbarStatusClass = healthData.statusClass;
             currentActor.healthPercentage = healthData.percentage;
             const currentToken = tokens.find(t => t.actor?.id === currentActor.id) || this._resolveTokenForActor(currentActor);
             currentActor.handleDisplayName = this._getDisplayName(currentToken, currentActor);
@@ -146,6 +144,7 @@ export class HandleManager {
                     system: memberActor.system,
                     isOwner: memberActor.isOwner,
                     healthStatus: healthData.status,
+                    healthbarStatusClass: healthData.statusClass,
                     healthPercentage: healthData.percentage
                 };
             });
@@ -174,6 +173,7 @@ export class HandleManager {
                 const healthData = calculateHealthStatus(this.actor);
                 // Add health properties to the original actor object without spreading
                 this.actor.healthStatus = healthData.status;
+                this.actor.healthbarStatusClass = healthData.statusClass;
                 this.actor.healthPercentage = healthData.percentage;
                 this.actor.handleDisplayName = actorDisplayName || this.actor.name;
                 return this.actor;
@@ -206,6 +206,7 @@ export class HandleManager {
                 const healthData = calculateHealthStatus(currentActor);
                 // Add health properties to the original actor object without spreading
                 currentActor.healthStatus = healthData.status;
+                currentActor.healthbarStatusClass = healthData.statusClass;
                 currentActor.healthPercentage = healthData.percentage;
                 currentActor.handleDisplayName = currentActor.handleDisplayName || this._getDisplayName(this._resolveTokenForActor(currentActor), currentActor) || currentActor.name;
                 return currentActor;

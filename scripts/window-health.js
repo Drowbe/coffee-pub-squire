@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate } from './helpers.js';
+import { getHealthbarStatusClass, renderTemplate } from './helpers.js';
 
 function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
@@ -75,9 +75,14 @@ export class HealthWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     async getData() {
+        const healthEntries = this.actors.map((actor) => ({
+            actor,
+            healthbarStatus: getHealthbarStatusClass(actor.system?.attributes?.hp)
+        }));
         const content = await renderTemplate(TEMPLATES.WINDOW_HEALTH, {
             actor: this.panel?.actor || null,
             actors: this.actors,
+            healthEntries,
             isGM: game.user.isGM
         });
 

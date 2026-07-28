@@ -619,34 +619,9 @@
     display: none;
 }
 
-/* Health Statuses*/
-
-/* Healthy */
-.squire-tray[data-position="left"] .handle-healthbar-fill.healthy {
-    background: rgba(29, 69, 33, 0.9);
-}
-
-/* Injured*/
-.squire-tray[data-position="left"] .handle-healthbar-fill.injured{
-    background: rgba(115, 153, 0, 0.9);
-}
-
-/* Bloodied*/
-.squire-tray[data-position="left"] .handle-healthbar-fill.bloodied {
-    background: rgba(157, 116, 35, 0.9);
-}
-
-/* Critical*/
-.squire-tray[data-position="left"] .handle-healthbar-fill.critical{
-    background: rgba(117, 5, 7, 0.9);
-    animation: handle-healthbar-animation-pulse 1.0s infinite alternate;
-}
-
-/* Dead*/
-.squire-tray[data-position="left"] .handle-healthbar-fill.dead {
+/* Dead handle fills occupy the full vertical track; color and pulse are shared. */
+.squire-tray[data-position="left"] .handle-healthbar-fill.squire-tray-healthbar-dead {
     min-height: 100%;
-    background: rgba(117, 5, 7, 0.9);
-    animation: handle-healthbar-animation-pulse 5.0s infinite alternate;
 }
 .squire-tray[data-position="left"] .handle-healthbar-value.dead {
     display: none;
@@ -654,14 +629,6 @@
 .squire-tray[data-position="left"] .handle-healthbar-icon.dead i {
     display: block;
 }
-
-/* Health Status Animations */
-
-@keyframes handle-healthbar-animation-pulse {
-    from { opacity: 0.5; } to { opacity: 1.0; }
-}
-
-
 
 /* QUEST PROGRESS HANDLE */
 

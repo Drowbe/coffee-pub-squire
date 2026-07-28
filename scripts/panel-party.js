@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -70,21 +70,10 @@ export class PartyPanel {
             return total + (hp?.max || 0);
         }, 0);
 
-        // Calculate party health status for unified colors
-        let partyHealthbarStatus = 'squire-tray-healthbar-healthy';
-        if (partyTotalHP > 0) {
-            const partyHPPercentage = (partyRemainingHP / partyTotalHP) * 100;
-            
-            if (partyRemainingHP <= 0) {
-                partyHealthbarStatus = 'squire-tray-healthbar-dead';
-            } else if (partyHPPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
-                partyHealthbarStatus = 'squire-tray-healthbar-critical';
-            } else if (partyHPPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
-                partyHealthbarStatus = 'squire-tray-healthbar-bloodied';
-            } else if (partyHPPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
-                partyHealthbarStatus = 'squire-tray-healthbar-injured';
-            }
-        }
+        const partyHealthbarStatus = getHealthbarStatusClass({
+            value: partyRemainingHP,
+            max: partyTotalHP
+        });
 
         // Prepare other party members data for the handle
         const currentActor = game.actors.get(controlledTokenIds[0]);
@@ -607,23 +596,7 @@ export class PartyPanel {
      * @returns {string} - CSS class name for healthbar status
      */
     _calculateHealthbarStatus(hp) {
-        let healthbarStatus = 'squire-tray-healthbar-healthy';
-        
-        if (hp.max > 0) {
-            const hpPercentage = (hp.value / hp.max) * 100;
-            
-            if (hp.value <= 0) {
-                healthbarStatus = 'squire-tray-healthbar-dead';
-            } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) {
-                healthbarStatus = 'squire-tray-healthbar-critical';
-            } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) {
-                healthbarStatus = 'squire-tray-healthbar-bloodied';
-            } else if (hpPercentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) {
-                healthbarStatus = 'squire-tray-healthbar-injured';
-            }
-        }
-        
-        return healthbarStatus;
+        return getHealthbarStatusClass(hp);
     }
 
     /**

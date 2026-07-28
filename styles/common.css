@@ -141,7 +141,7 @@
 /* GLOBAL HEALTH PROGRESS BARS */
 
 .squire-tray-healthbar-healthy  {
-    background-color: rgba(29, 69, 33, 0.9) !important; /* healthy  */
+    background-color: rgba(42, 100, 48, 1.0) !important; /* healthy */
 }
 .squire-tray-healthbar-injured {
     background-color: rgba(115, 153, 0, 0.9) !important; /* injured*/

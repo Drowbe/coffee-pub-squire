@@ -1,19 +1,19 @@
 <div id="health-content">
     <div class="bars">
-        {{#if actors}}
-            {{#each actors as |actor|}}
+        {{#if healthEntries}}
+            {{#each healthEntries as |entry|}}
                 <div class="bar-section {{#if (gt ../actors.length 1)}}multi-token{{/if}}">
                     <div class="hp-bar">
                         {{#if (gt ../actors.length 1)}}
-                            <div class="token-name-overlay">{{default actor.handleDisplayName actor.name}}</div>
+                            <div class="token-name-overlay">{{default entry.actor.handleDisplayName entry.actor.name}}</div>
                         {{/if}}
                         <div class="hp-current">
                             <span class="hp-label">REMAINING</span>
-                            <span class="hp-value">{{actor.system.attributes.hp.value}}</span>
+                            <span class="hp-value">{{entry.actor.system.attributes.hp.value}}</span>
                         </div>
-                        <div class="hp-fill" style="width: {{multiply (divide actor.system.attributes.hp.value actor.system.attributes.hp.max) 100}}%"></div>
+                        <div class="hp-fill {{entry.healthbarStatus}}" style="width: {{multiply (divide entry.actor.system.attributes.hp.value entry.actor.system.attributes.hp.max) 100}}%"></div>
                         <div class="hp-max">
-                            <span class="hp-value">{{actor.system.attributes.hp.max}}</span>
+                            <span class="hp-value">{{entry.actor.system.attributes.hp.max}}</span>
                             <span class="hp-label">MAX</span>
                         </div>
                     </div>

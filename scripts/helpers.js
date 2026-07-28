@@ -9,6 +9,29 @@ export function getBlacksmith() {
 }
 
 /**
+ * Resolve the shared semantic health-bar color class.
+ * Party, handle, and Health tool surfaces all consume this same scale.
+ *
+ * @param {{value?: number, max?: number}|null|undefined} hp
+ * @returns {string}
+ */
+export function getHealthbarStatusClass(hp) {
+  const value = Number(hp?.value) || 0;
+  const max = Number(hp?.max) || 0;
+  let status = 'squire-tray-healthbar-healthy';
+
+  if (max > 0) {
+    const percentage = (value / max) * 100;
+    if (value <= 0) status = 'squire-tray-healthbar-dead';
+    else if (percentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) status = 'squire-tray-healthbar-critical';
+    else if (percentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) status = 'squire-tray-healthbar-bloodied';
+    else if (percentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) status = 'squire-tray-healthbar-injured';
+  }
+
+  return status;
+}
+
+/**
  * The campaign's party roster, as Actor documents in the GM's configured order.
  *
  * Blacksmith owns the party; do not rebuild this from game.actors. Worlds that
