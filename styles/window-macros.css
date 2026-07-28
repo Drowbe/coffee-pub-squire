@@ -1,230 +1,45 @@
-/* ------------------------------------ */
-/* -- LAYOUT                 ---------- */
-/* ------------------------------------ */
-
-/* ----- VARIABLES ----- */
-:root {
-  --macros-min-width: 40px;
-  --container-padding: 8px;
-  --border-color: #444;
-  --accent-color: #9f9275;
-  --background-color: rgba(0, 0, 0, 0.95);
+.squire-macros-tool-window .blacksmith-window-tool-body {
+    display: flex;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
 }
 
-/* ----- WINDOW STRUCTURE ----- */
-
-#squire-macros-window {
-  background: rgba(0, 0, 0, 0.9) !important;
-  border: 2px solid var(--border-color) !important;
-  border-radius: 6px !important;
-  box-shadow: 0 0 20px #000 !important;
-  min-width: var(--macros-min-width) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  /* height: 100% !important;  <-- REMOVE THIS LINE */
+.squire-macros-tool-window #macros-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 4px;
+    box-sizing: border-box;
+    overflow: auto;
 }
 
-.squire-popout {
-  width: 100% !important;
-  height: 100% !important;
-}
-#squire-macros-window .window-content{
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  height: 100% !important;
-  padding: 0px !important;
-  width: 100% !important;
-  overflow: visible !important;
-}
-#squire-macros-window .window-content [data-panel="macros"]{
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  height: 100% !important;
-  padding: 0px !important;
-  width: 100% !important;
-  overflow: visible !important;
+.squire-macros-tool-window .macros-grid {
+    flex: 0 0 auto;
+    align-content: flex-start;
+    align-items: flex-start;
+    margin: 0;
 }
 
-#squire-macros-window .window-content [data-panel="macros"] > * {
-  width: 100% !important;
-  min-width: 100% !important;
+.squire-macros-tool-window.macro-drop-target {
+    position: relative;
 }
 
-#squire-macros-window .window-content > * {
-  width: 100% !important;
-  min-width: 100% !important;
-  background: rgba(0, 0, 0, 0.9) !important;
-  padding: 0px;
+.squire-macros-tool-window.macro-drop-target::before,
+.squire-macros-tool-window #macros-content.macro-drop-target::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+    border: 3px dashed #48a000;
+    border-radius: 6px;
+    box-shadow: 0 0 15px rgba(72, 160, 0, 0.6);
+    pointer-events: none;
 }
 
-/* ----- HEADER ----- */
-
-#squire-macros-window .window-header {
-  background: rgba(0, 0, 0, 0.9) !important;
-  border-bottom: 0px solid var(--border-color) !important;
-  color: var(--accent-color) !important;
-  font-family: "Signika", sans-serif !important;
+.squire-macros-tool-window #macros-content.macro-drop-target {
+    position: relative;
 }
-
-#squire-macros-window .window-header .window-title {
-  color: var(--accent-color) !important;
-  text-transform: uppercase !important;
-  font-weight: bold !important;
-  font-size: 1.1em !important;
-}
-
-#squire-macros-window .window-header .header-button {
-  color: var(--accent-color) !important;
-  border: none !important;
-  background: none !important;
-}
-
-#squire-macros-window .window-header .header-button:hover {
-  color: #fff !important;
-  text-shadow: 0 0 8px var(--accent-color) !important;
-}
-
-/* ----- PANEL CONTAINER ----- */
-
-#squire-macros-window .window-content .panel-container {
-  flex: 1 1 auto !important;  /* <- Grow to fill remaining space */
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  margin: 0 !important;
-}
-
-
-#squire-macros-window .window-content [data-panel="macros"] {
-  flex: 1 1 auto !important; /* <-- Makes macro panel fill space */
-  width: 100% !important;
-  min-width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  border-left: 0 !important;
-  border-right: 0 !important;
-  border-bottom: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: var(--container-padding) !important;
-  padding: var(--container-padding) !important;
-}
-
-
-
-#squire-macros-window.collapsed .window-content {
-  display: flex !important;
-}
-
-/* Ensure the tray-content and panel-container stretch fully */
-#squire-macros-window .tray-content {
-  flex: 1 1 auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  min-height: 100% !important;
-  overflow: hidden !important;
-}
-
-#squire-macros-window .tray-content .panel-container {
-  flex: 1 1 auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  min-height: 100% !important;
-  overflow: hidden !important;
-}
-
-/* Make macros-content fill the panel-container */
-#squire-macros-window .panel-container #macros-content {
-  flex: 1 1 auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100% !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
-/* Make the macros grid expand to fill available space */
-#squire-macros-window .macros-content .macros-grid {
-  flex: 1 1 auto !important;
-  align-content: flex-start !important;
-  align-items: flex-start !important;
-}
-
-
-/* ----- RESIZABLE HANDLE ----- */
-
-#squire-macros-window .window-resizable-handle {
-  background: var(--border-color) !important;
-  border-radius: 0 0 3px 0 !important;
-  opacity: 0.5 !important;
-}
-
-#squire-macros-window .window-resizable-handle:hover {
-  background: var(--accent-color) !important;
-  opacity: 1 !important;
-}
-
-/* Prevent collapse on double-click */
-#squire-macros-window.collapsed {
-  min-height: 60px !important;
-}
-
-/* ----- DROP TARGET VISUAL FEEDBACK ----- */
-
-/* Window drop target - green dotted border overlay when dragging external macro */
-#squire-macros-window.macro-drop-target {
-  position: relative !important;
-}
-
-#squire-macros-window.macro-drop-target::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  border: 3px dashed #48a000 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 0 15px rgba(72, 160, 0, 0.6) !important;
-  pointer-events: none !important;
-  z-index: 1000 !important;
-}
-
-/* Panel container drop target for tray view */
-[data-panel="macros"].macro-drop-target {
-  position: relative !important;
-}
-
-[data-panel="macros"].macro-drop-target::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  border: 3px dashed #48a000 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 0 15px rgba(72, 160, 0, 0.6) !important;
-  pointer-events: none !important;
-  z-index: 1000 !important;
-}
-
-/* Last slot highlight when dragging external macro - green glow */
-.macro-slot.drop-target-slot {
-  border: 3px solid #48a000 !important;
-  box-shadow: 0 0 15px rgba(72, 160, 0, 0.9) !important;
-  background: rgba(72, 160, 0, 0.25) !important;
-  transform: scale(1.1) !important;
-  z-index: 10 !important;
-}
-
-
-
-

@@ -1,5 +1,4 @@
 import { MODULE } from './const.js';
-import { MacrosWindow } from './window-macros.js';
 import { PanelManager } from './manager-panel.js';
 import { trackModuleTimeout } from './timer-utils.js';
 import { getNativeElement } from './helpers.js';
@@ -40,11 +39,11 @@ export async function openMacros() {
     }
     
     if (macrosPanel.isWindowOpen && macrosPanel.window) {
-      macrosPanel.window.bringToTop();
-      return;
+      macrosPanel.window.bringToFront();
+      return macrosPanel.window;
     }
     
-    await macrosPanel.openWindow();
+    return await macrosPanel.openWindow();
     
   } catch (error) {
     console.error('Coffee Pub Squire | Error opening macros:', error);
@@ -108,7 +107,10 @@ export class MacrosPanel {
 
         // Add drag and drop handlers to the panel container and macros grid
         // v13: Use native DOM event listeners
-        const panelContainer = panel.closest('[data-panel="macros"]') || panel.closest('.panel-container');
+        const panelContainer = panel.querySelector('#macros-content')
+            || panel.closest('[data-panel="macros"]')
+            || panel.closest('.panel-container')
+            || panel;
         const macrosGrid = panel.querySelector('.macros-grid');
         
         // Track if we're currently dragging internally (from a macro slot)
@@ -512,15 +514,22 @@ export class MacrosPanel {
     }
 
     async openWindow() {
-        if (this.window || this.isWindowOpen) return;
+        if (this.window || this.isWindowOpen) {
+            this.window?.bringToFront?.();
+            return this.window;
+        }
 
         MacrosPanel.isWindowOpen = true;
         this.isWindowOpen = true;
         await this._saveWindowState(true);
 
+        // Load the V2 subclass only after Foundry and Blacksmith have initialized
+        // their module APIs. panel-macros.js itself is loaded earlier from the manifest.
+        const { MacrosWindow } = await import('./window-macros.js');
         this.window = new MacrosWindow({ panel: this, macros: this.getCurrentMacros() });
         MacrosPanel.activeWindow = this.window;
         await this.window.render(true);
+        return this.window;
     }
 
     async onWindowClosed() {

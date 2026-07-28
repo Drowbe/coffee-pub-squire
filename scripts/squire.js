@@ -1916,6 +1916,19 @@ Hooks.once('ready', async function() {
     }
 
     try {
+        const {
+            registerMacrosWindow,
+            MacrosWindow,
+            MACROS_WINDOW_ID
+        } = await import('./window-macros.js');
+        registerMacrosWindow();
+        game.modules.get(MODULE.ID).api.MacrosWindow = MacrosWindow;
+        game.modules.get(MODULE.ID).api.MACROS_WINDOW_ID = MACROS_WINDOW_ID;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register Macros window:', error);
+    }
+
+    try {
         const { registerNoteWindow, openNotesWindow, NoteWindow, NotesForm, NOTE_WINDOW_ID } = await import('./window-note.js');
         registerNoteWindow();
         game.modules.get(MODULE.ID).api.openNotesWindow = openNotesWindow;
@@ -2079,14 +2092,12 @@ Hooks.once('ready', async function() {
     }
 
     try {
-        const { openMacros } = await import('./panel-macros.js');
-
         const macrosOk = blacksmith.registerMenubarTool('squire-macros', {
             icon: "fa-solid fa-code",
             name: "squire-macros",
             title: null,
             tooltip: "Macro window",
-            onClick: openMacros,
+            onClick: () => blacksmith.openWindow(`${MODULE.ID}-macros-window`),
             zone: "left",
             group: "general",
             groupOrder: 999,

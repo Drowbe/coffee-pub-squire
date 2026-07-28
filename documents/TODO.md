@@ -4,10 +4,9 @@
 
 | Item | Priority | LOE | Status |
 |------|----------|-----|--------|
-| Migrate 5 legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | L | Open |
+| Migrate 3 remaining legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | L | Open |
 | v14/v15 readiness: migrate remaining V1 `Dialog`/`Dialog.confirm` call sites to `DialogV2` (`ImagePopout` ✓ done — all 4 sites on AppV2 signature) | High | M | Open |
 | Codex data model: custom `JournalEntryPage` subtype, no migration — re-import converts (see `plan-codex-datamodel.md`) | High | L | Planned |
-| Macros: dedupe `panel-macros.css` / `window-macros.css` drop-target styles | Medium | M | Open |
 | Notes tab: shared note + character note (scratchpad scrapped) | Medium | L | Open |
 | Notes tray: drop card view; list + hover tooltip preview | Medium | M | Done (13.3.11) |
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
@@ -52,12 +51,11 @@
 
 ### LEGACY V1 WINDOW MIGRATION → BLACKSMITH WINDOW FRAMEWORK
 - [x] **Dice Tray undocking and V2 migration (13.3.18)**: Removed the tray slot, legacy tray wrappers, and docking lifecycle, then migrated the standalone tool to `BlacksmithToolWindowBaseV2` with the Micro title bar, Window API registration, and Blacksmith-owned position persistence. The fixed compact body keeps its controls stationary and makes only the recent-roll list scroll.
-- [x] **Macros undocking (13.3.18 phase 1)**: Removed the tray slot and docking lifecycle while retaining the working V1 window and macro behavior. Ready for a later Blacksmith tool-window migration.
+- [x] **Macros undocking and V2 migration (13.3.18)**: Removed the tray slot and docking lifecycle, then migrated the standalone tool to `BlacksmithToolWindowBaseV2` with the Micro title bar, Window API registration, a dedicated body template, and Blacksmith-owned position persistence. Macro execution, favorites, reordering, external drops, slot removal, and the Macros Folder action are preserved.
 - [x] **Health undocking (13.3.18 phase 1)**: Removed the tray slot and docking lifecycle while retaining the working V1 window, HP controls, and multi-token behavior. Open windows now follow selection changes reliably. Ready for a later Blacksmith tool-window migration.
 - [x] **Status Effects (13.3.17)**: Migrated the inline Add Effect and condition-description dialogs from `manager-handle.js` to the registered Blacksmith `StatusEffectsWindow` (`window-status-effects.js`). Uses core `CONFIG.statusEffects` / `Actor#toggleStatusEffect`, manages other ActiveEffects by ID, enriches real effect and dnd5e `@Embed` descriptions, and uses a persistent master/detail layout. Removed the legacy dialog markup, compendium parsing, and `window-descriptions.css`.
-- [ ] **REFACTOR (Critical)** Migrate the four remaining legacy `Application` (V1) windows to the Blacksmith window framework (`registerWindow`/`openWindow`; standard or compact tool base as appropriate — see https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window). Notes, Codex, Quest, Status Effects, and Dice Tray are already on the framework; these are the holdouts:
+- [ ] **REFACTOR (Critical)** Migrate the three remaining legacy `Application` (V1) windows to the Blacksmith window framework (`registerWindow`/`openWindow`; standard or compact tool base as appropriate — see https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window). Notes, Codex, Quest, Status Effects, Dice Tray, and Macros are already on the framework; these are the holdouts:
   - `window-health.js` (`HealthWindow`) — used mid-combat. Carries a `_activateCoreListeners()` override hack to suppress a V1 form-handling crash, hand-rolled position persistence (`healthWindowPosition` setting), and shares `panel-health.hbs` with the in-tray panel via `position`/`isHealthPopped` branching — the migration should split the window template out (body zone = the one scroll region, which structurally prevents the nested-scrollbox class of bug patched in CSS for 13.3.6).
-  - `window-macros.js` (`MacrosWindow`)
   - `window-characters.js` (`CharactersWindow`)
   - `window-users.js` (`UsersWindow`)
   - Why critical: V1 `Application` is deprecated and on Foundry's removal path — this becomes forced breakage at a future core update; migrating now is on our schedule, later is on Foundry's. Also unifies Squire on one window stack (framework handles positioning, sizing constraints, theming, `data-action` delegation) and lets us delete the V1 workaround code.
@@ -67,21 +65,13 @@
 
 ### V14/V15 READINESS (audited July 13, 2026 — world moves to v14 within weeks)
 - [x] **AUDIT** v14 removes the *v12*-deprecated globals (AudioHelper, Sound, grid/dice/canvas-source classes, etc.) — grep confirms **zero uses** in this module. helpers.js already namespaces `renderTemplate`/`TextEditor`/`ContextMenu` (v13 style, v14-safe). The codex data model, page subtype, and sheet use v13+ AppV2 APIs that carry into v14 unchanged. module.json already declares `maximum: 14`.
-- [ ] **REFACTOR** The *v13*-deprecated APIs still run in v14 with console warnings but are removed in v15/16 — this is the real deadline for: the 4 remaining V1 `Application` windows (Critical item above) and the remaining V1 `Dialog`/`Dialog.confirm` call sites (heaviest: panel-quest ×5, panel-codex ×4, panel-notes ×3, utility-journal ×3). Migrate dialogs to `foundry.applications.api.DialogV2`. Mechanical work; batch by file. (`ImagePopout` ✓ completed July 14, 2026; the two status-effect dialogs in `manager-handle.js` ✓ removed in 13.3.17; Dice Tray ✓ migrated in 13.3.18.)
+- [ ] **REFACTOR** The *v13*-deprecated APIs still run in v14 with console warnings but are removed in v15/16 — this is the real deadline for: the 3 remaining V1 `Application` windows (Critical item above) and the remaining V1 `Dialog`/`Dialog.confirm` call sites (heaviest: panel-quest ×5, panel-codex ×4, panel-notes ×3, utility-journal ×3). Migrate dialogs to `foundry.applications.api.DialogV2`. Mechanical work; batch by file. (`ImagePopout` ✓ completed July 14, 2026; the two status-effect dialogs in `manager-handle.js` ✓ removed in 13.3.17; Dice Tray and Macros ✓ migrated in 13.3.18.)
 - [ ] **VERIFY** First v14 session: watch the console for deprecation warnings from Squire paths and log any not already covered by the two items above.
 
 ### CODEX DATA MODEL (custom page subtype)
 - [ ] **REFACTOR** Replace HTML-parsing of codex journal pages with a module-defined `JournalEntryPage` subtype (`coffee-pub-squire.codex`): structured fields in `page.system` via a `TypeDataModel` (schema validation, no parsing), Expanded Details in native `page.text.content`, custom page sheet for view/edit. **No migration** — content will be re-imported and re-pinned; import replaces legacy text pages with typed pages, making re-import the conversion path. Full design and phased plan in `documents/plan-codex-datamodel.md`. Notes and Quest panels adopt the same pattern afterward, in that order.
 
 ## MEDIUM PRIORITY
-
-### MACROS CSS DUPLICATION
-- [ ] **CLEANUP** Remove duplicate CSS definitions for drop target styles between `panel-macros.css` and `window-macros.css`:
-  - `.macro-slot.drop-target-slot` is duplicated identically in both files (should be in `panel-macros.css` only)
-  - `[data-panel="macros"].macro-drop-target` in `window-macros.css` is too general and conflicts with specific selectors in `panel-macros.css`
-  - Keep window-specific `#squire-macros-window.macro-drop-target` in `window-macros.css`
-  - Keep tray/popout specific selectors in `panel-macros.css`
-  - Consolidate shared styles to avoid conflicts and maintenance issues
 
 ### NOTES TAB
 - [ ] **ENHANCEMENT** Expand and optimize this section with shared party note and per-character note support (scratchpad idea dropped).

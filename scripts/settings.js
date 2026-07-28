@@ -1228,13 +1228,6 @@ export const registerSettings = function() {
 
 
 
-    game.settings.register(MODULE.ID, 'macrosWindowPosition', {
-        scope: 'client',
-        config: false,
-        type: Object,
-        default: {}
-    });
-
     game.settings.register(MODULE.ID, 'healthWindowPosition', {
         scope: 'client',
         config: false,

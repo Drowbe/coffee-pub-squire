@@ -1,23 +1,11 @@
-{{#if (eq position "left")}}
-{{#unless isMacrosPopped}}
-<div class="tray-title-small">
-    {{#if actor}}Macros: {{default actor.handleDisplayName actor.name}}{{else}}Macros: No Character{{/if}}
-    <div class="macros-controls">
-        <i class="fa-solid fa-folder-open open-macro-folder" data-tooltip="<div class='squire-data-tooltip-label'>Macros</div><div class='squire-data-tooltip-text'>Open macor folder and then drag macros to the macro window.</div>"></i>
-        <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
-        <i id="macros-toggle" class="fa-solid fa-chevron-down" title="Toggle Macros Panel"></i>
-    </div>
-</div>
-{{/unless}}
-
-<div id="macros-content" class="tray-panel-content">
+<div id="macros-content">
     <div class="macros-grid">
         {{#each macros as |macro idx|}}
             <div class="macro-slot {{#unless macro.id}}empty{{/unless}}" data-slot="{{idx}}" draggable="false" {{#if macro.id}}data-tooltip="<div class='squire-data-tooltip-label'>{{macro.name}}</div><div class='squire-data-tooltip-text'>Left-Click: Execute Macro<br>Right-Click: Favorite Macro<br>Middle-Click or Shift-Click: Remove Macro or Empty Slot</div>"{{/if}}>
                 {{#if macro.id}}
                     <img src="{{macro.img}}" data-tooltip="{{macro.name}}" draggable="false" />
                     {{#if (includes ../favoriteMacroIds macro.id)}}
-                      <i class="fa-solid fa-heart macro-favorite" data-tooltip="Favorited"></i>
+                        <i class="fa-solid fa-heart macro-favorite" data-tooltip="Favorited"></i>
                     {{/if}}
                 {{else}}
                     <div class="macro-placeholder"><i class="fa-solid fa-plus"></i></div>
@@ -31,4 +19,3 @@
         {{/if}}
     </div>
 </div>
-{{/if}} 
