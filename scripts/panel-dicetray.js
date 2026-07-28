@@ -1,12 +1,6 @@
-import { MODULE, TEMPLATES } from './const.js';
-import { DiceTrayWindow } from './window-dicetray.js';
+import { MODULE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { renderTemplate, getNativeElement } from './helpers.js';
-
-// Helper function to safely get Blacksmith API
-function getBlacksmith() {
-  return game.modules.get('coffee-pub-blacksmith')?.api;
-}
+import { getNativeElement } from './helpers.js';
 
 // Function to open dice tray from menubar
 export async function openDiceTray() {
@@ -25,13 +19,12 @@ export async function openDiceTray() {
       PanelManager.instance.dicetrayPanel = dicetrayPanel;
     }
     
-    // If already open, just focus the window
     if (dicetrayPanel.isWindowOpen && dicetrayPanel.window) {
-      dicetrayPanel.window.bringToTop();
-      return;
+      dicetrayPanel.window.bringToFront();
+      return dicetrayPanel.window;
     }
     
-    await dicetrayPanel.openWindow();
+    return await dicetrayPanel.openWindow();
     
   } catch (error) {
     console.error('Coffee Pub Squire | Error opening dice tray:', error);
@@ -45,40 +38,15 @@ export class DiceTrayPanel {
 
     constructor(options = {}) {
         this.currentFormula = "";
-        this.rollHistory = [];
         this.element = null;
         this.actor = options.actor || null;
         this.window = DiceTrayPanel.activeWindow;
         this.isWindowOpen = DiceTrayPanel.isWindowOpen;
 
-        // Only register for actor updates if we have an actor
-        if (this.actor) {
-            this.actor.apps[this.id] = this;
-        }
-    }
-
-    get id() {
-        return `squire-dicetray-${this.actor?.id || 'no-actor'}`;
     }
 
     destroy() {
-        // Unregister from actor.apps so Foundry stops rendering this panel after teardown
-        if (this.actor) {
-            delete this.actor.apps[this.id];
-        }
         this.element = null;
-    }
-
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: "squire-dicetray",
-            template: TEMPLATES.PANEL_DICETRAY,
-            popOut: false,
-        });
-    }
-
-    async render(html) {
-        if (html) this.updateElement(html);
     }
 
     _activateListeners(html) {
@@ -179,10 +147,6 @@ export class DiceTrayPanel {
                     // Add the "No recent rolls" message
                     historyList.innerHTML = '<div class="history-entry empty-message">No recent rolls</div>';
 
-                    // If we're in a window, trigger a resize
-                    if (this.isWindowOpen && this.window) {
-                        this.window.setPosition({height: "auto"});
-                    }
                 }
             });
         }
@@ -588,13 +552,16 @@ export class DiceTrayPanel {
 
     async openWindow() {
         if (this.window || this.isWindowOpen) {
-            this.window?.bringToTop?.();
+            this.window?.bringToFront?.();
             return this.window;
         }
         DiceTrayPanel.isWindowOpen = true;
         this.isWindowOpen = true;
         await this._saveWindowState(true);
 
+        // Load the V2 subclass only after Foundry and Blacksmith have initialized
+        // their module APIs. panel-dicetray.js itself is loaded earlier from the manifest.
+        const { DiceTrayWindow } = await import('./window-dicetray.js');
         this.window = new DiceTrayWindow({ panel: this });
         DiceTrayPanel.activeWindow = this.window;
         await this.window.render(true);
@@ -618,22 +585,9 @@ export class DiceTrayPanel {
 
     // Update actor reference and window if needed
     updateActor(actor) {
-        // Unregister from old actor
-        if (this.actor) {
-            delete this.actor.apps[this.id];
-        }
-
-        // Update actor reference
         this.actor = actor || null;
-        
-        // Register with new actor
-        if (this.actor) {
-            this.actor.apps[this.id] = this;
-        }
-        
-        // Update window if popped out
+
         if (this.isWindowOpen && this.window) {
-            this.window.actor = this.actor;
             this.window.updateActor(this.actor);
         }
     }

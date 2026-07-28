@@ -122,7 +122,7 @@ export const TEMPLATES = {
     PANEL_INVENTORY: `modules/${MODULE.ID}/templates/panel-inventory.hbs`,
     PANEL_FAVORITES: `modules/${MODULE.ID}/templates/panel-favorites.hbs`,
     PANEL_FEATURES: `modules/${MODULE.ID}/templates/panel-features.hbs`,
-    PANEL_DICETRAY: `modules/${MODULE.ID}/templates/panel-dicetray.hbs`,
+    WINDOW_DICETRAY: `modules/${MODULE.ID}/templates/window-dicetray.hbs`,
     PANEL_MACROS: `modules/${MODULE.ID}/templates/panel-macros.hbs`,
     PANEL_EXPERIENCE: `modules/${MODULE.ID}/templates/panel-experience.hbs`,
     PANEL_HEALTH: `modules/${MODULE.ID}/templates/panel-health.hbs`,

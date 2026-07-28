@@ -51,13 +51,12 @@
 ## CURRENT ISSUES (Fix First)
 
 ### LEGACY V1 WINDOW MIGRATION → BLACKSMITH WINDOW FRAMEWORK
-- [x] **Dice Tray undocking (13.3.18 phase 1)**: Removed the tray slot and docking lifecycle while retaining the working V1 window. Ready for a later Blacksmith tool-window migration.
+- [x] **Dice Tray undocking and V2 migration (13.3.18)**: Removed the tray slot and docking lifecycle, then migrated the standalone tool to `BlacksmithToolWindowBaseV2` with Window API registration and Blacksmith-owned position persistence.
 - [x] **Macros undocking (13.3.18 phase 1)**: Removed the tray slot and docking lifecycle while retaining the working V1 window and macro behavior. Ready for a later Blacksmith tool-window migration.
 - [x] **Health undocking (13.3.18 phase 1)**: Removed the tray slot and docking lifecycle while retaining the working V1 window, HP controls, and multi-token behavior. Open windows now follow selection changes reliably. Ready for a later Blacksmith tool-window migration.
 - [x] **Status Effects (13.3.17)**: Migrated the inline Add Effect and condition-description dialogs from `manager-handle.js` to the registered Blacksmith `StatusEffectsWindow` (`window-status-effects.js`). Uses core `CONFIG.statusEffects` / `Actor#toggleStatusEffect`, manages other ActiveEffects by ID, enriches real effect and dnd5e `@Embed` descriptions, and uses a persistent master/detail layout. Removed the legacy dialog markup, compendium parsing, and `window-descriptions.css`.
-- [ ] **REFACTOR (Critical)** Migrate the five remaining legacy `Application` (V1) windows to the Blacksmith window framework (`registerWindow`/`openWindow`, base `HandlebarsApplicationMixin(ApplicationV2)`, five-zone layout — see https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Window). The notes/codex/quest windows are already on the framework; these are the holdouts:
+- [ ] **REFACTOR (Critical)** Migrate the four remaining legacy `Application` (V1) windows to the Blacksmith window framework (`registerWindow`/`openWindow`; standard or compact tool base as appropriate — see https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window). Notes, Codex, Quest, Status Effects, and Dice Tray are already on the framework; these are the holdouts:
   - `window-health.js` (`HealthWindow`) — used mid-combat. Carries a `_activateCoreListeners()` override hack to suppress a V1 form-handling crash, hand-rolled position persistence (`healthWindowPosition` setting), and shares `panel-health.hbs` with the in-tray panel via `position`/`isHealthPopped` branching — the migration should split the window template out (body zone = the one scroll region, which structurally prevents the nested-scrollbox class of bug patched in CSS for 13.3.6).
-  - `window-dicetray.js` (`DiceTrayWindow`)
   - `window-macros.js` (`MacrosWindow`)
   - `window-characters.js` (`CharactersWindow`)
   - `window-users.js` (`UsersWindow`)
@@ -68,7 +67,7 @@
 
 ### V14/V15 READINESS (audited July 13, 2026 — world moves to v14 within weeks)
 - [x] **AUDIT** v14 removes the *v12*-deprecated globals (AudioHelper, Sound, grid/dice/canvas-source classes, etc.) — grep confirms **zero uses** in this module. helpers.js already namespaces `renderTemplate`/`TextEditor`/`ContextMenu` (v13 style, v14-safe). The codex data model, page subtype, and sheet use v13+ AppV2 APIs that carry into v14 unchanged. module.json already declares `maximum: 14`.
-- [ ] **REFACTOR** The *v13*-deprecated APIs still run in v14 with console warnings but are removed in v15/16 — this is the real deadline for: the 5 V1 `Application` windows (Critical item above) and the remaining V1 `Dialog`/`Dialog.confirm` call sites (heaviest: panel-quest ×5, panel-codex ×4, panel-notes ×3, utility-journal ×3). Migrate dialogs to `foundry.applications.api.DialogV2`. Mechanical work; batch by file. (`ImagePopout` ✓ completed July 14, 2026; the two status-effect dialogs in `manager-handle.js` ✓ removed in 13.3.17.)
+- [ ] **REFACTOR** The *v13*-deprecated APIs still run in v14 with console warnings but are removed in v15/16 — this is the real deadline for: the 4 remaining V1 `Application` windows (Critical item above) and the remaining V1 `Dialog`/`Dialog.confirm` call sites (heaviest: panel-quest ×5, panel-codex ×4, panel-notes ×3, utility-journal ×3). Migrate dialogs to `foundry.applications.api.DialogV2`. Mechanical work; batch by file. (`ImagePopout` ✓ completed July 14, 2026; the two status-effect dialogs in `manager-handle.js` ✓ removed in 13.3.17; Dice Tray ✓ migrated in 13.3.18.)
 - [ ] **VERIFY** First v14 session: watch the console for deprecation warnings from Squire paths and log any not already covered by the two items above.
 
 ### CODEX DATA MODEL (custom page subtype)

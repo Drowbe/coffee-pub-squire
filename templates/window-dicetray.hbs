@@ -1,14 +1,3 @@
-{{#if (eq position "left")}}
-{{#unless isDiceTrayPopped}}
-<div class="tray-title-small">
-    {{#if actor}}Dice Tray: {{default actor.handleDisplayName actor.name}}{{else}}Dice Tray: No Character{{/if}}
-    <div class="dicetray-controls">
-        <i class="fa-solid fa-up-right-from-square pop-out-button" title="Pop out to window"></i>
-        <i id="dicetray-toggle" class="fa-solid fa-chevron-down" title="Toggle Dice Tray"></i>
-    </div>
-</div>
-{{/unless}}
-
 <div id="dicetray-content" class="tray-panel-content">
     <div class="squire-dice-formula">
         <div class="squire-input-wrapper">
@@ -54,4 +43,3 @@
         </div>
     </div>
 </div>
-{{/if}} 

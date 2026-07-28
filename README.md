@@ -77,7 +77,7 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
   - Drag & drop functionality
 
 ### **Tools & Utilities**
-- **Integrated dice tray** for quick rolls and calculations
+- **Standalone Blacksmith dice tool** for quick rolls and calculations
 - **Health management** with real-time HP tracking and healing tools
 - **Condition management** with visual indicators and quick application
 - **Macro management** with customizable quick-access buttons
@@ -170,7 +170,7 @@ After installation and enabling the module:
 5. **Combat Tools**: Access spells, weapons, and inventory through dedicated panels
 6. **Health & Status**: Monitor HP, conditions, and character stats in real-time
 7. **Favorites System**: Bookmark frequently used items, spells, and features
-8. **Dice Tray**: Use the integrated dice tray for quick rolls and calculations
+8. **Dice Tray**: Open the compact standalone dice tool from the handle or menubar
 
 ### **Quest & Adventure**
 9. **Quest Management**: Create, edit, and organize quests with task tracking
@@ -234,4 +234,4 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed list of all version updates and 
 
 ## Development Status
 
-The module is actively maintained and regularly updated. See [TODO.md](TODO.md) for current development priorities and [ROADMAP.md](ROADMAP.md) for planned features. 
+The module is actively maintained and regularly updated. See [TODO.md](TODO.md) for current development priorities and [ROADMAP.md](ROADMAP.md) for planned features.

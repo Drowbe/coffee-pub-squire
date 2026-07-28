@@ -1,193 +1,65 @@
-/* ------------------------------------ */
-/* -- LAYOUT                 ---------- */
-/* ------------------------------------ */
-
-/* --- Window Styles ------------------- */
-
-/* ----- VARIABLES ----- */
-:root {
-    --dice-tray-min-width: 300px;
-    --container-padding: 8px;
-    --border-color: #444;
-    --accent-color: #9f9275;
-    --background-color: rgba(0, 0, 0, 0.95);
+.application.blacksmith-window-tool.squire-dicetray-tool-window {
+    --dice-tray-border-color: #444;
+    --dice-tray-accent-color: #9f9275;
 }
 
-/* ----- WINDOW STRUCTURE ----- */
-
-/* Window Container */
-#squire-dicetray-window {
-    background: var(--background-color) !important;
-    border: 2px solid var(--border-color) !important;
-    border-radius: 6px !important;
-    box-shadow: 0 0 20px #000 !important;
-    min-width: var(--dice-tray-min-width) !important;
+.squire-dicetray-tool-window .blacksmith-window-tool-body {
+    padding: 0;
+    overflow: auto;
 }
 
-/* Ensure popout takes full size of its container */
-.squire-popout {
-    width: 100% !important;
+.squire-dicetray-tool-window .squire-popout,
+.squire-dicetray-tool-window .tray-content,
+.squire-dicetray-tool-window .panel-container,
+.squire-dicetray-tool-window [data-panel="dicetray"] {
+    width: 100%;
+    min-width: 0;
 }
 
-/* Window-specific overrides */
-#squire-dicetray-window .window-content {
-    padding: 0px !important;
+.squire-dicetray-tool-window .squire-popout {
+    max-width: none;
+    max-height: none;
+    background: transparent;
+    box-shadow: none;
 }
 
-/* ----- HEADER ----- */
-
-#squire-dicetray-window .window-header {
-    background: rgba(0, 0, 0, 0.9) !important;
-    border-bottom: 2px solid var(--border-color) !important;
-    color: var(--accent-color) !important;
-    font-family: "Signika", sans-serif !important;
+.squire-dicetray-tool-window [data-panel="dicetray"] {
+    border: 0;
+    border-radius: 0;
+    box-sizing: border-box;
 }
 
-#squire-dicetray-window .window-header .window-title {
-    color: var(--accent-color) !important;
-    text-transform: uppercase !important;
-    font-weight: bold !important;
-    font-size: 1.2em !important;
+.squire-dicetray-tool-window .squire-popout[data-position="left"] [data-panel="dicetray"] .squire-dice-history {
+    display: flex;
+    flex-direction: column;
+    color: var(--blacksmith-tool-text, #2f241a);
 }
 
-#squire-dicetray-window .window-header .header-button {
-    color: var(--accent-color) !important;
-    border: none !important;
-    background: none !important;
+.squire-dicetray-tool-window .squire-popout[data-position="left"] [data-panel="dicetray"] .history-entry {
+    color: var(--blacksmith-tool-text, #2f241a);
 }
 
-#squire-dicetray-window .window-header .header-button:hover {
-    color: #fff !important;
-    text-shadow: 0 0 8px var(--accent-color) !important;
+.squire-dicetray-tool-window .squire-history-list {
+    max-height: 120px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 8px;
 }
 
-/* ----- CONTENT ----- */
-
-#squire-dicetray-window .window-content {
-    background: none !important;
-    color: #fff !important;
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 0 !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    overflow: visible !important;
+.squire-dicetray-tool-window .squire-history-list::-webkit-scrollbar {
+    width: 6px;
 }
 
-#squire-dicetray-window .window-content > * {
-    width: 100% !important;
-    min-width: 100% !important;
+.squire-dicetray-tool-window .squire-history-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
 }
 
-/* ----- PANEL CONTAINER ----- */
-
-#squire-dicetray-window .window-content .panel-container {
-    flex: 0 0 auto !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    margin: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
+.squire-dicetray-tool-window .squire-history-list::-webkit-scrollbar-thumb {
+    background: var(--dice-tray-accent-color);
+    border-radius: 3px;
 }
 
-/* ----- DICE TRAY PANEL ----- */
-
-#squire-dicetray-window .window-content [data-panel="dicetray"] {
-    width: 100% !important;
-    min-width: 100% !important;
-    height: 100% !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    border-left: 0 !important;
-    border-right: 0 !important;
-    border-bottom: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: var(--container-padding) !important;
-    padding: var(--container-padding) !important;
+.squire-dicetray-tool-window .squire-history-list::-webkit-scrollbar-thumb:hover {
+    background: #db9f1e;
 }
-
-#squire-dicetray-window .window-content [data-panel="dicetray"] > * {
-    width: 100% !important;
-    min-width: 100% !important;
-}
-
-/* ----- HISTORY SECTION ----- */
-
-#squire-dicetray-window .window-content [data-panel="dicetray"] .squire-dice-history {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 0 0 auto !important;
-}
-
-#squire-dicetray-window .window-content [data-panel="dicetray"] .squire-history-list {
-    flex: 0 0 auto !important;
-    max-height: 120px !important; /* Approximately 4 entries worth of height */
-    overflow-y: auto !important;
-    margin: 0 !important;
-    padding: var(--container-padding) !important;
-}
-
-/* Scrollbar styles only for history list */
-#squire-dicetray-window .squire-history-list::-webkit-scrollbar {
-    width: 6px !important;
-}
-
-#squire-dicetray-window .squire-history-list::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border-radius: 3px !important;
-}
-
-#squire-dicetray-window .squire-history-list::-webkit-scrollbar-thumb {
-    background: var(--accent-color) !important;
-    border-radius: 3px !important;
-}
-
-#squire-dicetray-window .squire-history-list::-webkit-scrollbar-thumb:hover {
-    background: #db9f1e !important;
-}
-
-/* Remove general scrollbar styles */
-#squire-dicetray-window ::-webkit-scrollbar,
-#squire-dicetray-window ::-webkit-scrollbar-track,
-#squire-dicetray-window ::-webkit-scrollbar-thumb,
-#squire-dicetray-window ::-webkit-scrollbar-thumb:hover {
-    display: none !important;
-}
-
-/* But allow them for the history list */
-#squire-dicetray-window .squire-history-list::-webkit-scrollbar {
-    display: block !important;
-}
-
-/* ----- RESIZABLE HANDLE ----- */
-
-#squire-dicetray-window .window-resizable-handle {
-    background: var(--border-color) !important;
-    border-radius: 0 0 3px 0 !important;
-    opacity: 0.5 !important;
-}
-
-#squire-dicetray-window .window-resizable-handle:hover {
-    background: var(--accent-color) !important;
-    opacity: 1 !important;
-}
-
-/* Prevent collapse on double-click */
-#squire-dicetray-window.collapsed {
-    min-height: var(--dice-tray-min-height) !important;
-}
-
-#squire-dicetray-window.collapsed .window-content {
-    display: flex !important;
-}
-
-/* Target the app element itself */
-.app.window-app#squire-dicetray-window {
-    min-width: 300px !important;
-}
-
-/* Target the window wrapper */
-.app.window-app#squire-dicetray-window > .window-content {
-    min-width: 300px !important;
-} 

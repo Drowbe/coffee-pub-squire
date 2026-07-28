@@ -7,7 +7,7 @@ The Character tab is the **Player** view of the Squire tray. It shows the curren
 ## Placement in the Tray
 
 - **View**: Player tab (`viewMode === 'player'`).
-- **Order**: First panel when `actor` exists: Character → GM (if GM) → Health → Experience → Abilities → Stats → Dice Tray → Macros → Control → Favorites/Weapons/Spells/Features/Inventory.
+- **Order**: First panel when `actor` exists: Character → GM (if GM) → Experience → Abilities → Stats → Control → Favorites/Weapons/Spells/Features/Inventory. Health, Dice Tray, and Macros are standalone tools launched from the handle or menubar rather than tray panels.
 - **Container**: `templates/tray.hbs` includes `<div class="panel-container" data-panel="character" data-clickable="true"></div>`; `PanelManager` injects the character panel HTML there.
 
 ## Project Files

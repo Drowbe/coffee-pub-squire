@@ -1903,6 +1903,19 @@ Hooks.once('ready', async function() {
     registerSettings();
 
     try {
+        const {
+            registerDiceTrayWindow,
+            DiceTrayWindow,
+            DICE_TRAY_WINDOW_ID
+        } = await import('./window-dicetray.js');
+        registerDiceTrayWindow();
+        game.modules.get(MODULE.ID).api.DiceTrayWindow = DiceTrayWindow;
+        game.modules.get(MODULE.ID).api.DICE_TRAY_WINDOW_ID = DICE_TRAY_WINDOW_ID;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register Dice Tray window:', error);
+    }
+
+    try {
         const { registerNoteWindow, openNotesWindow, NoteWindow, NotesForm, NOTE_WINDOW_ID } = await import('./window-note.js');
         registerNoteWindow();
         game.modules.get(MODULE.ID).api.openNotesWindow = openNotesWindow;
@@ -2038,14 +2051,12 @@ Hooks.once('ready', async function() {
 
     // Menubar tools (require tray / PanelManager — register only for non-excluded users)
     try {
-        const { openDiceTray } = await import('./panel-dicetray.js');
-
         const diceOk = blacksmith.registerMenubarTool('squire-dice-tray', {
             icon: "fa-solid fa-dice-d20",
             name: "squire-dice-tray",
             title: null,
             tooltip: "Dice Tray",
-            onClick: openDiceTray,
+            onClick: () => blacksmith.openWindow(`${MODULE.ID}-dice-tray-window`),
             zone: "left",
             group: "general",
             groupOrder: 999,

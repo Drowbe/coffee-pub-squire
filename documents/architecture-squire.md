@@ -82,7 +82,7 @@ coffee-pub-squire/
 | Experience | panel-experience.js | XP progress |
 | Abilities | panel-abilities.js | Ability scores |
 | Stats | panel-stats.js | AC, speed, senses |
-| Dice Tray | panel-dicetray.js | Dice roller, popout |
+| Dice Tray | panel-dicetray.js | Dice rolling controller for the Blacksmith tool window |
 | Macros | panel-macros.js | Standalone macro-window controller |
 | Favorites | panel-favorites.js | Pinned items |
 | Weapons | panel-weapons.js | Weapon attacks |
@@ -105,7 +105,7 @@ coffee-pub-squire/
 | Characters | window-characters.js | Character picker |
 | Users | window-users.js | User picker |
 | Health | window-health.js | Standalone health tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
-| Dice Tray | window-dicetray.js | Standalone dice tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
+| Dice Tray | window-dicetray.js | Blacksmith compact Application V2 tool window, registered through the Window API |
 | Macros | window-macros.js | Standalone macros tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
 | Transfer | (panel-party.js, transfer-utils.js) | Transfer dialog (window-transfer.hbs) |
 
@@ -126,7 +126,7 @@ The tray has a collapsible handle (left edge) and main content:
 
 - **Handle**: Pin, toggle, view-cycle buttons; handle content (player portrait, party list, notes icon, etc.)
 - **Content**: View tabs (Player, Party, Notes, Codex, Quest) and stacked panel containers
-- **Player view**: Character, GM (if GM), Health, Experience, Abilities, Stats, Dice Tray, Macros, Control, Favorites/Weapons/Spells/Features/Inventory
+- **Player view**: Character, GM (if GM), Experience, Abilities, Stats, Control, Favorites/Weapons/Spells/Features/Inventory. Health, Dice Tray, and Macros launch as standalone tools.
 
 ## Blacksmith Integration
 
