@@ -51,7 +51,7 @@
 ## CURRENT ISSUES (Fix First)
 
 ### LEGACY V1 WINDOW MIGRATION → BLACKSMITH WINDOW FRAMEWORK
-- [x] **Dice Tray undocking and V2 migration (13.3.18)**: Removed the tray slot and docking lifecycle, then migrated the standalone tool to `BlacksmithToolWindowBaseV2` with Window API registration and Blacksmith-owned position persistence.
+- [x] **Dice Tray undocking and V2 migration (13.3.18)**: Removed the tray slot, legacy tray wrappers, and docking lifecycle, then migrated the standalone tool to `BlacksmithToolWindowBaseV2` with the Micro title bar, Window API registration, and Blacksmith-owned position persistence. The fixed compact body keeps its controls stationary and makes only the recent-roll list scroll.
 - [x] **Macros undocking (13.3.18 phase 1)**: Removed the tray slot and docking lifecycle while retaining the working V1 window and macro behavior. Ready for a later Blacksmith tool-window migration.
 - [x] **Health undocking (13.3.18 phase 1)**: Removed the tray slot and docking lifecycle while retaining the working V1 window, HP controls, and multi-token behavior. Open windows now follow selection changes reliably. Ready for a later Blacksmith tool-window migration.
 - [x] **Status Effects (13.3.17)**: Migrated the inline Add Effect and condition-description dialogs from `manager-handle.js` to the registered Blacksmith `StatusEffectsWindow` (`window-status-effects.js`). Uses core `CONFIG.statusEffects` / `Actor#toggleStatusEffect`, manages other ActiveEffects by ID, enriches real effect and dnd5e `@Embed` descriptions, and uses a persistent master/detail layout. Removed the legacy dialog markup, compendium parsing, and `window-descriptions.css`.

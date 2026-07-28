@@ -105,7 +105,7 @@ coffee-pub-squire/
 | Characters | window-characters.js | Character picker |
 | Users | window-users.js | User picker |
 | Health | window-health.js | Standalone health tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
-| Dice Tray | window-dicetray.js | Blacksmith compact Application V2 tool window, registered through the Window API |
+| Dice Tray | window-dicetray.js | Blacksmith Application V2 Micro tool window with a fixed compact body and history-only scrolling, registered through the Window API |
 | Macros | window-macros.js | Standalone macros tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
 | Transfer | (panel-party.js, transfer-utils.js) | Transfer dialog (window-transfer.hbs) |
 
