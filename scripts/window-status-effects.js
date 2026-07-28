@@ -13,16 +13,16 @@ if (!BlacksmithWindowBaseV2) {
 
 export const STATUS_EFFECTS_WINDOW_ID = `${MODULE.ID}-status-effects-window`;
 
-function getConditionName(id, condition) {
-    const label = condition?.label || condition?.name || id;
+function getStatusName(id, status) {
+    const label = status?.name || status?.label || id;
     return game.i18n?.has?.(label) ? game.i18n.localize(label) : label;
 }
 
-function getConditionIcon(id, condition) {
-    return condition?.icon
-        || condition?.img
-        || condition?.image
-        || `modules/dnd5e/icons/conditions/${id}.svg`;
+function getStatusIcon(status) {
+    return status?.img
+        || status?.icon
+        || status?.image
+        || 'icons/svg/unknown.svg';
 }
 
 export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
@@ -63,6 +63,7 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         this.actorUuid = opts.actorUuid || opts.actor?.uuid || null;
         this.actor = opts.actor || null;
         this._effectHookIds = [];
+        this._pendingConditionIds = new Set();
     }
 
     async _resolveActor() {
@@ -71,36 +72,34 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         return this.actor;
     }
 
-    _isConditionActive(id, name) {
-        return this.actor?.effects?.some(effect => {
-            const statuses = effect.statuses instanceof Set
-                ? effect.statuses
-                : new Set(effect.statuses || []);
-            return statuses.has(id) || effect.name === name || effect.label === name;
-        }) ?? false;
-    }
-
     async getData() {
         await this._resolveActor();
-        const conditions = Object.entries(CONFIG.DND5E?.conditionTypes || {})
-            .map(([id, condition]) => {
-                const name = getConditionName(id, condition);
+        const exhaustionLevel = Number(this.actor?.system?.attributes?.exhaustion || 0);
+        const conditions = (CONFIG.statusEffects || [])
+            .map(status => {
+                const id = status?.id;
+                const name = getStatusName(id, status);
+                const isExhaustion = id === 'exhaustion';
                 return {
                     id,
                     name,
-                    icon: getConditionIcon(id, condition),
-                    isActive: this._isConditionActive(id, name)
+                    icon: getStatusIcon(status),
+                    isActive: this.actor?.statuses?.has?.(id) ?? false,
+                    levelLabel: isExhaustion && exhaustionLevel > 0
+                        ? `Level ${exhaustionLevel}`
+                        : ''
                 };
             })
-            .filter(condition => condition.name)
+            .filter(condition => condition.id && condition.name)
             .sort((a, b) => a.name.localeCompare(b.name));
 
+        const canManage = !!this.actor?.isOwner;
         return {
             appId: this.id,
             actorName: this.actor?.name || 'Unknown Actor',
             actorImg: this.actor?.img || 'icons/svg/mystery-man.svg',
-            canManage: !!game.user?.isGM,
-            canRemoveAll: !!game.user?.isGM && conditions.some(condition => condition.isActive),
+            canManage,
+            canRemoveAll: canManage && conditions.some(condition => condition.isActive),
             conditions
         };
     }
@@ -112,14 +111,21 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
 
     _registerEffectHooks() {
         if (this._effectHookIds.length) return;
-        const refresh = (effect) => {
+        const refreshEffect = (effect) => {
             if (effect?.parent?.uuid !== this.actorUuid) return;
             this.render({ force: true });
         };
+        const refreshActor = (actor, changes) => {
+            const exhaustionChanged = foundry.utils.hasProperty(changes, 'system.attributes.exhaustion')
+                || Object.hasOwn(changes || {}, 'system.attributes.exhaustion');
+            if (actor?.uuid !== this.actorUuid || !exhaustionChanged) return;
+            this.render({ force: true });
+        };
         this._effectHookIds.push(
-            ['createActiveEffect', Hooks.on('createActiveEffect', refresh)],
-            ['deleteActiveEffect', Hooks.on('deleteActiveEffect', refresh)],
-            ['updateActiveEffect', Hooks.on('updateActiveEffect', refresh)]
+            ['createActiveEffect', Hooks.on('createActiveEffect', refreshEffect)],
+            ['deleteActiveEffect', Hooks.on('deleteActiveEffect', refreshEffect)],
+            ['updateActiveEffect', Hooks.on('updateActiveEffect', refreshEffect)],
+            ['updateActor', Hooks.on('updateActor', refreshActor)]
         );
     }
 
@@ -129,83 +135,59 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _toggleCondition(conditionId) {
-        if (!game.user?.isGM) {
-            ui.notifications.warn('Only GMs can add or remove effects.');
-            return;
-        }
-
         await this._resolveActor();
         if (!this.actor) {
             ui.notifications.error('The actor for this status-effects window is no longer available.');
             return;
         }
+        if (!this.actor.isOwner) {
+            ui.notifications.warn('You do not have permission to change effects on this actor.');
+            return;
+        }
+        if (this._pendingConditionIds.has(conditionId)) return;
 
-        const condition = CONFIG.DND5E?.conditionTypes?.[conditionId];
-        if (!condition) {
+        const status = CONFIG.statusEffects?.find(entry => entry.id === conditionId);
+        if (!status) {
             ui.notifications.error('That condition is no longer available.');
             return;
         }
 
-        const name = getConditionName(conditionId, condition);
-        const existing = this.actor.effects.find(effect => {
-            const statuses = effect.statuses instanceof Set
-                ? effect.statuses
-                : new Set(effect.statuses || []);
-            return statuses.has(conditionId) || effect.name === name || effect.label === name;
-        });
+        const name = getStatusName(conditionId, status);
+        const isActive = this.actor.statuses?.has?.(conditionId) ?? false;
 
+        this._pendingConditionIds.add(conditionId);
         try {
-            if (existing) {
-                await existing.delete();
-                ui.notifications.info(`Removed ${name} from ${this.actor.name}`);
-            } else {
-                await this.actor.createEmbeddedDocuments('ActiveEffect', [{
-                    name,
-                    img: getConditionIcon(conditionId, condition),
-                    origin: this.actor.uuid,
-                    disabled: false,
-                    statuses: [conditionId]
-                }]);
-                ui.notifications.info(`Added ${name} to ${this.actor.name}`);
-            }
-
+            await this.actor.toggleStatusEffect(conditionId, { active: !isActive });
+            ui.notifications.info(`${isActive ? 'Removed' : 'Added'} ${name} ${isActive ? 'from' : 'to'} ${this.actor.name}`);
             await game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.handleManager?.updateHandle?.();
         } catch (error) {
             console.error('Coffee Pub Squire | Error managing status effect:', error);
-            ui.notifications.error(`Could not ${existing ? 'remove' : 'add'} ${name}`);
+            ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${name}`);
+        } finally {
+            this._pendingConditionIds.delete(conditionId);
         }
     }
 
     async _removeAllConditions() {
-        if (!game.user?.isGM) {
-            ui.notifications.warn('Only GMs can remove effects.');
-            return;
-        }
-
         await this._resolveActor();
         if (!this.actor) {
             ui.notifications.error('The actor for this status-effects window is no longer available.');
             return;
         }
+        if (!this.actor.isOwner) {
+            ui.notifications.warn('You do not have permission to change effects on this actor.');
+            return;
+        }
 
-        const conditionEntries = Object.entries(CONFIG.DND5E?.conditionTypes || {});
-        const conditionIds = new Set(conditionEntries.map(([id]) => id));
-        const conditionNames = new Set(
-            conditionEntries.map(([id, condition]) => getConditionName(id, condition))
-        );
-        const effects = this.actor.effects.filter(effect => {
-            const statuses = effect.statuses instanceof Set
-                ? effect.statuses
-                : new Set(effect.statuses || []);
-            return Array.from(statuses).some(status => conditionIds.has(status))
-                || conditionNames.has(effect.name)
-                || conditionNames.has(effect.label);
-        });
-
-        if (!effects.length) return;
+        const activeStatusIds = (CONFIG.statusEffects || [])
+            .map(status => status?.id)
+            .filter(id => id && this.actor.statuses?.has?.(id));
+        if (!activeStatusIds.length) return;
 
         try {
-            await this.actor.deleteEmbeddedDocuments('ActiveEffect', effects.map(effect => effect.id));
+            for (const statusId of activeStatusIds) {
+                await this.actor.toggleStatusEffect(statusId, { active: false });
+            }
             ui.notifications.info(`Removed all conditions from ${this.actor.name}`);
             await game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.handleManager?.updateHandle?.();
         } catch (error) {

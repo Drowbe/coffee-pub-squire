@@ -81,3 +81,10 @@
     line-height: 1.2;
     text-align: center;
 }
+
+.status-effect-level {
+    color: #e1b4b4;
+    font-size: 0.72rem;
+    line-height: 1;
+    text-align: center;
+}

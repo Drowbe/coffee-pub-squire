@@ -621,9 +621,9 @@ export class HandleManager {
             event.preventDefault();
             event.stopPropagation();
             
-            // Only GMs can add effects
-            if (!game.user.isGM) {
-                ui.notifications.warn("Only GMs can add effects.");
+            // Foundry's status API requires ownership of the actor.
+            if (!this.actor?.isOwner) {
+                ui.notifications.warn("You do not have permission to change effects on this actor.");
                 return;
             }
 
