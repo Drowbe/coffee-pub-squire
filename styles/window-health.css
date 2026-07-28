@@ -17,8 +17,40 @@
     gap: 4px;
 }
 
-.squire-health-tool-window .bar-section {
+.squire-health-tool-window .health-row {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 5px;
     min-width: 0;
+}
+
+.squire-health-tool-window .health-row-aggregate {
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
+}
+
+.squire-health-tool-window .health-portrait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
+    border-radius: 4px;
+    background: rgba(112, 85, 49, 0.12);
+    color: rgba(74, 56, 40, 0.78);
+}
+
+.squire-health-tool-window .health-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.squire-health-tool-window .health-portrait i {
+    font-size: 1.05em;
 }
 
 .squire-health-tool-window .hp-bar {
@@ -26,6 +58,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-width: 0;
     height: 30px;
     padding: 0 8px;
     box-sizing: border-box;
@@ -33,6 +66,7 @@
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     border-radius: 4px;
     background: rgba(112, 85, 49, 0.12);
+    font-family: "Signika", sans-serif;
 }
 
 .squire-health-tool-window .hp-fill {
@@ -42,69 +76,50 @@
     min-width: 0;
 }
 
-.squire-health-tool-window .hp-current,
+.squire-health-tool-window .hp-primary,
 .squire-health-tool-window .hp-max {
     position: relative;
     z-index: 2;
     display: flex;
     align-items: center;
     gap: 4px;
-    color: #2f241a;
-    text-shadow: 0 1px rgba(255, 255, 255, 0.35);
-}
-
-.squire-health-tool-window .hp-max {
-    flex-direction: row-reverse;
-}
-
-.squire-health-tool-window .hp-label {
-    font-size: 0.72em;
-    font-weight: 700;
-    letter-spacing: 0.35px;
+    min-width: 0;
+    color: rgba(248, 240, 223, 0.96);
+    font-size: 0.82em;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
     text-transform: uppercase;
+}
+
+.squire-health-tool-window .hp-primary {
+    flex: 1 1 auto;
+}
+
+.squire-health-tool-window .health-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .squire-health-tool-window .hp-value {
-    font-weight: 700;
+    flex: 0 0 auto;
 }
 
-.squire-health-tool-window .token-name-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    z-index: 3;
-    max-width: 55%;
-    overflow: hidden;
-    color: #f8f0df;
-    font-size: 0.72em;
-    font-weight: 700;
-    letter-spacing: 0.35px;
-    text-align: center;
-    text-overflow: ellipsis;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
-    text-transform: uppercase;
-    white-space: nowrap;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-}
-
-.squire-health-tool-window .bar-section.multi-token .hp-bar {
-    height: 27px;
-}
-
-.squire-health-tool-window .bar-section.multi-token .hp-label {
-    font-size: 0.62em;
-}
-
-.squire-health-tool-window .bar-section.multi-token .hp-value {
-    font-size: 0.78em;
+.squire-health-tool-window .health-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    color: rgba(74, 56, 40, 0.65);
+    font-style: italic;
 }
 
 .squire-health-tool-window .hp-controls {
     display: grid;
-    grid-template-columns: 34px 34px minmax(52px, 1fr) 34px 34px;
+    grid-template-columns: repeat(4, 30px) minmax(48px, 1fr) repeat(4, 30px);
     gap: 4px;
-    margin-top: 5px;
+    margin-top: 6px;
 }
 
 .squire-health-tool-window .hp-btn,
@@ -122,7 +137,7 @@
     padding: 4px;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     background: rgba(112, 85, 49, 0.12);
-    color: #4a3828;
+    color: rgba(74, 56, 40, 0.88);
 }
 
 .squire-health-tool-window .hp-btn:hover {
@@ -134,28 +149,31 @@
     padding: 4px 6px;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     background: rgba(255, 250, 239, 0.42);
-    color: #2f241a;
+    color: rgba(47, 36, 26, 1.0);
+    font-family: "Signika", sans-serif;
+    font-weight: 700;
     text-align: center;
 }
 
-.squire-health-tool-window .death-toggle {
-    color: #9c2f27;
+.squire-health-tool-window .select-party,
+.squire-health-tool-window .select-npcs {
+    color: rgba(72, 91, 119, 1.0);
 }
 
-.squire-health-tool-window .hp-full {
-    color: #3d702f;
+.squire-health-tool-window .death-toggle,
+.squire-health-tool-window .hp-down,
+.squire-health-tool-window .hp-down-ten {
+    color: rgba(156, 47, 39, 1.0);
 }
 
-.squire-health-tool-window .hp-controls.disabled {
+.squire-health-tool-window .hp-full,
+.squire-health-tool-window .hp-up,
+.squire-health-tool-window .hp-up-ten {
+    color: rgba(61, 112, 47, 1.0);
+}
+
+.squire-health-tool-window .hp-controls.disabled,
+.squire-health-tool-window .hp-btn:disabled,
+.squire-health-tool-window .hp-amount:disabled {
     opacity: 0.5;
-}
-
-.squire-health-tool-window .hp-no-actor {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    color: rgba(74, 56, 40, 0.65);
-    background: transparent;
-    font-style: italic;
 }

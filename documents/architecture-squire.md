@@ -104,7 +104,7 @@ coffee-pub-squire/
 | Quest | window-quest.js | QuestWindow – Blacksmith V2 quest create/edit |
 | Characters | window-characters.js | Character picker |
 | Users | window-users.js | User picker |
-| Health | window-health.js | Blacksmith Application V2 Micro tool window with a dedicated body template, multi-token controls, registration against every displayed Actor, and shared party/handle/tool health-status colors |
+| Health | window-health.js | Blacksmith Application V2 Micro tool with portrait bars, Party/NPC aggregate rows and selection actions, persistent adjustment amount, multi-token controls, registration against every displayed Actor, and shared party/handle/tool health-status colors |
 | Dice Tray | window-dicetray.js | Blacksmith Application V2 Micro tool window with a fixed compact body and history-only scrolling, registered through the Window API |
 | Macros | window-macros.js | Blacksmith Application V2 Micro tool window with a dedicated body template and preserved macro drag/drop behavior, registered through the Window API |
 | Transfer | (panel-party.js, transfer-utils.js) | Transfer dialog (window-transfer.hbs) |

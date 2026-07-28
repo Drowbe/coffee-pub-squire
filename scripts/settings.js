@@ -447,6 +447,13 @@ export const registerSettings = function() {
         default: true
     });
 
+    game.settings.register(MODULE.ID, 'healthAdjustmentAmount', {
+        scope: 'client',
+        config: false,
+        type: Number,
+        default: 1
+    });
+
     // ---------- Handle Dice Tray ----------
     game.settings.register(MODULE.ID, 'showHandleDiceTray', {
         name: 'Show Dice Tray Icon in Handle',

@@ -75,14 +75,62 @@ export class HealthWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     async getData() {
-        const healthEntries = this.actors.map((actor) => ({
-            actor,
-            healthbarStatus: getHealthbarStatusClass(actor.system?.attributes?.hp)
-        }));
+        const tokens = this.panel?.tokens || [];
+        const individualEntries = this.actors.map((actor, index) => {
+            const token = tokens[index];
+            const hp = actor.system?.attributes?.hp;
+            return {
+                name: actor.handleDisplayName || token?.name || actor.name,
+                img: actor.img,
+                current: hp?.value || 0,
+                max: hp?.max || 0,
+                healthbarStatus: getHealthbarStatusClass(hp),
+                isAggregate: false
+            };
+        });
+
+        const aggregateEntries = [];
+        if (individualEntries.length > 1) {
+            const groups = [
+                {
+                    name: 'Party',
+                    icon: 'fa-solid fa-users',
+                    actors: this.actors.filter((actor) => actor.hasPlayerOwner)
+                },
+                {
+                    name: 'NPCs',
+                    icon: 'fa-solid fa-people-group',
+                    actors: this.actors.filter((actor) => !actor.hasPlayerOwner)
+                }
+            ];
+
+            for (const group of groups) {
+                if (!group.actors.length) continue;
+                const current = group.actors.reduce(
+                    (total, actor) => total + (Number(actor.system?.attributes?.hp?.value) || 0),
+                    0
+                );
+                const max = group.actors.reduce(
+                    (total, actor) => total + (Number(actor.system?.attributes?.hp?.max) || 0),
+                    0
+                );
+                aggregateEntries.push({
+                    name: group.name,
+                    icon: group.icon,
+                    current,
+                    max,
+                    healthbarStatus: getHealthbarStatusClass({ value: current, max }),
+                    isAggregate: true
+                });
+            }
+        }
+
+        const healthEntries = [...aggregateEntries, ...individualEntries];
         const content = await renderTemplate(TEMPLATES.WINDOW_HEALTH, {
             actor: this.panel?.actor || null,
             actors: this.actors,
             healthEntries,
+            healthAdjustmentAmount: game.settings.get(MODULE.ID, 'healthAdjustmentAmount') || 1,
             isGM: game.user.isGM
         });
 
