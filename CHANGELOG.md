@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Dice Tray standalone-window phase 1**: Removed Dice Tray from the character tray while preserving its existing V1 window and rolling behavior. Handle and menubar launchers now use an explicit `openWindow()` lifecycle; closing clears window state instead of attempting to rebuild tray markup, actor switches stay connected to the open window, and obsolete popout/collapse/placeholder code was removed.
 - **Macros standalone-window phase 1**: Removed Macros from the character tray while preserving its existing V1 window, macro execution, favorites, and drag/drop behavior. Handle and menubar launchers now open the standalone window directly; closing clears window state, actor switches remain connected to an open window, and obsolete docking, placeholder, collapse-state, and popout code was removed.
+- **Health standalone-window phase 1**: Removed Health from the character tray while preserving its existing V1 window, HP controls, and multi-token operations. Handle launchers now open or focus the standalone window directly; token selection and actor switches rebind the open window before releasing the old actor registrations, and obsolete docking, placeholder, collapse-state, and popout code was removed.
 
 ## [13.3.17]
 

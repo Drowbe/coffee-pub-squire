@@ -331,15 +331,12 @@ export const registerSettings = function() {
     });
 
     game.settings.register(MODULE.ID, 'showHealthPanel', {
-        name: 'Show Health Panel',
-        hint: 'Display health tracking panel',
+        name: 'Legacy Health Panel Visibility',
+        hint: 'Retained for settings compatibility; Health now opens as a standalone window.',
         scope: 'user',
-        config: true,
+        config: false,
         type: Boolean,
-        default: false,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
+        default: false
     });
 
     game.settings.register(MODULE.ID, 'showAbilitiesPanel', {
@@ -682,13 +679,6 @@ export const registerSettings = function() {
 
     // Remember panel collapsed states
     game.settings.register(MODULE.ID, 'isExperiencePanelCollapsed', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
-    game.settings.register(MODULE.ID, 'isHealthPanelCollapsed', {
         scope: 'client',
         config: false,
         type: Boolean,

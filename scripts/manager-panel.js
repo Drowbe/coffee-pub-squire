@@ -263,7 +263,7 @@ export class PanelManager {
 
             // Preserve window states from old instance
             const oldHealthPanel = PanelManager.instance?.healthPanel;
-            const hadHealthWindow = oldHealthPanel?.isPoppedOut && oldHealthPanel?.window;
+            const hadHealthWindow = oldHealthPanel?.isWindowOpen && oldHealthPanel?.window;
             const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
             const hadDiceTrayWindow = oldDiceTrayPanel?.isWindowOpen && oldDiceTrayPanel?.window;
             const oldMacrosPanel = PanelManager.instance?.macrosPanel;
@@ -313,19 +313,17 @@ export class PanelManager {
             
             // Restore health window state if it was open
             if (hadHealthWindow && PanelManager.instance.healthPanel) {
-                PanelManager.instance.healthPanel.isPoppedOut = true;
+                PanelManager.instance.healthPanel.isWindowOpen = true;
                 PanelManager.instance.healthPanel.window = oldHealthPanel.window;
                 PanelManager.instance.healthPanel.window.panel = PanelManager.instance.healthPanel;
                 HealthPanel.isWindowOpen = true;
                 HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
-                // Update the panel and window with the new actor's token
-                const token = canvas.tokens.placeables.find(t => t.actor?.id === actor?.id);
-                if (token) {
-                    PanelManager.instance.healthPanel.updateTokens([token]);
-                }
+                const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+                const actorToken = canvas.tokens.placeables.find(t => t.actor?.id === actor?.id);
+                const healthTokens = controlledTokens.length ? controlledTokens : (actorToken ? [actorToken] : []);
+                PanelManager.instance.healthPanel.updateTokens(healthTokens, { force: true });
             } else if (savedWindowStates.health && PanelManager.instance?.healthPanel) {
-                // Restore from saved state
-                await PanelManager.instance.healthPanel._onPopOut();
+                await PanelManager.instance.healthPanel.openWindow();
             }
 
             // Abort if instance was cleared by another hook (e.g. deleteToken) during await
@@ -424,7 +422,6 @@ export class PanelManager {
             })) || [],
             settings: {
                 showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
-                showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
                 showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
@@ -436,7 +433,6 @@ export class PanelManager {
             showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
             showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-            isHealthPopped: HealthPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
             favoriteMacros
@@ -506,7 +502,6 @@ export class PanelManager {
             })) || [],
             settings: {
                 showExperiencePanel: game.settings.get(MODULE.ID, 'showExperiencePanel'),
-                showHealthPanel: game.settings.get(MODULE.ID, 'showHealthPanel'),
                 showAbilitiesPanel: game.settings.get(MODULE.ID, 'showAbilitiesPanel'),
                 showStatsPanel: game.settings.get(MODULE.ID, 'showStatsPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
@@ -517,7 +512,6 @@ export class PanelManager {
             showTabNotes: game.settings.get(MODULE.ID, 'showTabNotes'),
             showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
             showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
-            isHealthPopped: HealthPanel.isWindowOpen,
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName')
         });
         // v13: Create native DOM element instead of jQuery
@@ -552,17 +546,11 @@ export class PanelManager {
         this.featuresPanel = new FeaturesPanel(this.actor);
         this.experiencePanel = new ExperiencePanel(this.actor);
 
-        // Only create health panel if not popped out and enabled in settings
-        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
-            this.healthPanel = new HealthPanel(this.actor);
-            
-            // Update health panel with all controlled tokens for bulk operations
-            const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-            if (controlledTokens.length > 0) {
-                this.healthPanel.updateTokens(controlledTokens);
-            }
-        } else {
-            this.healthPanel = null;
+        // Health is a standalone tool window; keep its controller available for launchers.
+        this.healthPanel = new HealthPanel(this.actor);
+        const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
+        if (controlledTokens.length > 0) {
+            this.healthPanel.updateTokens(controlledTokens);
         }
 
         // Dice Tray is a standalone tool window; keep its controller available for launchers.
@@ -589,9 +577,6 @@ export class PanelManager {
         this.inventoryPanel.element = PanelManager.element;
         this.featuresPanel.element = PanelManager.element;
         this.experiencePanel.element = PanelManager.element;
-        if (!HealthPanel.isWindowOpen && game.settings.get(MODULE.ID, 'showHealthPanel')) {
-            this.healthPanel.element = PanelManager.element;
-        }
         this.statsPanel.element = PanelManager.element;
         this.abilitiesPanel.element = PanelManager.element;
 
@@ -633,13 +618,6 @@ export class PanelManager {
                 this.experiencePanel?.render(element);
             } else {
                 PanelManager.removePanelDom(this.experiencePanel);
-            }
-            if (game.settings.get(MODULE.ID, 'showHealthPanel')) {
-                if (this.healthPanel && !this.healthPanel.isPoppedOut) {
-                    this.healthPanel.render(element);
-                }
-            } else {
-                PanelManager.removePanelDom(this.healthPanel);
             }
             if (game.settings.get(MODULE.ID, 'showStatsPanel')) {
                 this.statsPanel?.render(element);
@@ -2261,10 +2239,6 @@ export async function _updateHealthPanelFromSelection() {
         // Only update if the tokens have actually changed
         if (!tokensUnchanged) {
             PanelManager.instance.healthPanel.updateTokens(controlledTokens);
-            // Only render if not popped out and health panel is enabled
-            if (!PanelManager.instance.healthPanel.isPoppedOut && game.settings.get(MODULE.ID, 'showHealthPanel')) {
-                await PanelManager.instance.healthPanel.render(PanelManager.instance.element);
-            }
         }
     }
     

@@ -17,46 +17,40 @@ export class HealthWindow extends Application {
     constructor(options = {}) {
         super(options);
         this.panel = options.panel;
-        
-        // Register for actor updates from all actors in the selection
-        // Handle both old actors array and new tokens array
-        if (this.panel?.actors && this.panel.actors.length > 0) {
-            this.panel.actors.forEach(actor => {
-                if (actor) {
-                    actor.apps[this.appId] = this;
-                }
-            });
-        } else if (this.panel?.tokens && this.panel.tokens.length > 0) {
-            // New token-based approach
-            this.panel.tokens.forEach(token => {
-                if (token.actor) {
-                    token.actor.apps[this.appId] = this;
-                }
-            });
-        } else if (this.panel?.actor) {
-            this.panel.actor.apps[this.appId] = this;
-        }
+        this._registeredActors = new Set();
+        const actors = this.panel?.tokens?.length
+            ? this.panel.tokens.map(token => token.actor)
+            : [this.panel?.actor];
+        this._registerActors(actors);
     }
 
     async render(force = false, options = {}) {
         const result = await super.render(force, options);
         
-        // Ensure we're registered for actor updates after rendering
-        if (this.panel?.actors && this.panel.actors.length > 0) {
-            this.panel.actors.forEach(actor => {
-                if (actor && !actor.apps[this.appId]) {
-                    actor.apps[this.appId] = this;
-                }
-            });
-        } else if (this.panel?.actor && !this.panel.actor.apps[this.appId]) {
-            this.panel.actor.apps[this.appId] = this;
-        }
+        const actors = this.panel?.tokens?.length
+            ? this.panel.tokens.map(token => token.actor)
+            : [this.panel?.actor];
+        this._registerActors(actors);
         
         return result;
     }
 
     get appId() {
-        return `squire-health-window-${this.panel.actor?.id || 'no-actor'}`;
+        return 'squire-health-window';
+    }
+
+    _registerActors(actors = []) {
+        for (const actor of actors.filter(Boolean)) {
+            actor.apps[this.appId] = this;
+            this._registeredActors.add(actor);
+        }
+    }
+
+    _unregisterActors() {
+        for (const actor of this._registeredActors) {
+            delete actor.apps[this.appId];
+        }
+        this._registeredActors.clear();
     }
 
     static get defaultOptions() {
@@ -197,19 +191,10 @@ export class HealthWindow extends Application {
     }
 
     async close(options={}) {
-        // Unregister from actor updates from all actors
-        if (this.panel?.actors && this.panel.actors.length > 0) {
-            this.panel.actors.forEach(actor => {
-                if (actor) {
-                    delete actor.apps[this.appId];
-                }
-            });
-        } else if (this.panel?.actor) {
-            delete this.panel.actor.apps[this.appId];
-        }
+        this._unregisterActors();
         
         if (this.panel) {
-            await this.panel.returnToTray();
+            await this.panel.onWindowClosed();
         }
         return super.close(options);
     }
@@ -249,27 +234,17 @@ export class HealthWindow extends Application {
 
     // Update the panel reference and re-register for updates when the actor changes
     updateActor(actor) {
-        // Unregister from all actors
-        if (this.panel?.actors && this.panel.actors.length > 0) {
-            this.panel.actors.forEach(a => {
-                if (a) {
-                    delete a.apps[this.appId];
-                }
-            });
-        } else if (this.panel?.actor) {
-            delete this.panel.actor.apps[this.appId];
-        }
+        this._unregisterActors();
         
         // Update panel's actor
         if (this.panel) {
             this.panel.actor = actor;
             this.panel.actors = actor ? [actor] : [];
+            this.panel.tokens = [];
         }
         
         // Register with new actor
-        if (actor) {
-            actor.apps[this.appId] = this;
-        }
+        this._registerActors([actor]);
         
         // Re-render with new actor data
         this.render(false);
@@ -280,31 +255,16 @@ export class HealthWindow extends Application {
         // Convert tokens to actors for the window
         const actors = tokens?.map(t => t.actor) || [];
         
-        // Unregister from old actors
-        if (this.panel?.actors && this.panel.actors.length > 0) {
-            this.panel.actors.forEach(a => {
-                if (a) {
-                    delete a.apps[this.appId];
-                }
-            });
-        } else if (this.panel?.actor) {
-            delete this.panel.actor.apps[this.appId];
-        }
+        this._unregisterActors();
         
         // Update panel's actors directly (avoid recursive call)
         if (this.panel) {
             this.panel.actors = actors;
             this.panel.actor = actors?.[0] || null;
+            this.panel.tokens = tokens || [];
         }
         
-        // Register with ALL actors in the selection for updates
-        if (actors && actors.length > 0) {
-            actors.forEach(actor => {
-                if (actor) {
-                    actor.apps[this.appId] = this;
-                }
-            });
-        }
+        this._registerActors(actors);
         
         // Re-render with new actor data
         this.render(false);
@@ -312,25 +272,17 @@ export class HealthWindow extends Application {
 
     // Update the panel with multiple actors for bulk operations
     updateActors(actors) {
-        // Unregister from old actor
-        if (this.panel?.actor) {
-            delete this.panel.actor.apps[this.appId];
-        }
+        this._unregisterActors();
         
         // Update panel's actors directly (avoid recursive call)
         if (this.panel) {
             this.panel.actors = actors || [];
             this.panel.actor = actors?.[0] || null;
+            this.panel.tokens = [];
         }
         
         // Register with ALL actors in the selection for updates
-        if (actors && actors.length > 0) {
-            actors.forEach(actor => {
-                if (actor) {
-                    actor.apps[this.appId] = this;
-                }
-            });
-        }
+        this._registerActors(actors);
         
         // Re-render with new actor data
         this.render(false);

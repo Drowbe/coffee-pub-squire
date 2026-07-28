@@ -3,7 +3,6 @@ import { showQuestTooltip, hideQuestTooltip, getObjectiveTooltipData } from './h
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { DiceTrayPanel } from './panel-dicetray.js';
-import { HealthPanel } from './panel-health.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { getBlacksmith, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
@@ -196,7 +195,6 @@ export class HandleManager {
             showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-            isHealthPopped: HealthPanel.isWindowOpen,
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
             favoriteMacros,
             handleFavorites
@@ -449,8 +447,8 @@ export class HandleManager {
             
             event.preventDefault();
             event.stopPropagation();
-            if (PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
-                await PanelManager.instance.healthPanel._onPopOut();
+            if (PanelManager.instance?.healthPanel) {
+                await PanelManager.instance.healthPanel.openWindow();
             }
         });
 
@@ -459,8 +457,8 @@ export class HandleManager {
             if (!event.target.closest('#health-tray-button')) return;
             event.preventDefault();
             event.stopPropagation();
-            if (game.user.isGM && PanelManager.instance?.healthPanel && !PanelManager.instance.healthPanel.isPoppedOut) {
-                await PanelManager.instance.healthPanel._onPopOut();
+            if (game.user.isGM && PanelManager.instance?.healthPanel) {
+                await PanelManager.instance.healthPanel.openWindow();
             }
         });
 
@@ -631,13 +629,7 @@ export class HandleManager {
                     // Update the health panel with the party member's token
                     PanelManager.instance.healthPanel.updateTokens([token]);
 
-                    // If health panel is already popped out, update the window directly
-                    if (PanelManager.instance.healthPanel.isPoppedOut && PanelManager.instance.healthPanel.window) {
-                        PanelManager.instance.healthPanel.window.updateTokens([token]);
-                    } else {
-                        // Pop out the health panel
-                        await PanelManager.instance.healthPanel._onPopOut();
-                    }
+                    await PanelManager.instance.healthPanel.openWindow();
                 }
             }
         });

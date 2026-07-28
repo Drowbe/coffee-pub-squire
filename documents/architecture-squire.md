@@ -78,7 +78,7 @@ coffee-pub-squire/
 | Character | panel-character.js | Portrait, name, class/level, speeds, quick actions |
 | GM | panel-gm.js | GM-only actor details |
 | Control | panel-control.js | Favorites/Weapons/Spells/Features/Inventory tabs |
-| Health | panel-health.js | HP bar, popout window |
+| Health | panel-health.js | Standalone health-window controller and token selection |
 | Experience | panel-experience.js | XP progress |
 | Abilities | panel-abilities.js | Ability scores |
 | Stats | panel-stats.js | AC, speed, senses |
@@ -104,7 +104,7 @@ coffee-pub-squire/
 | Quest | window-quest.js | QuestWindow – Blacksmith V2 quest create/edit |
 | Characters | window-characters.js | Character picker |
 | Users | window-users.js | User picker |
-| Health | window-health.js | Health popout |
+| Health | window-health.js | Standalone health tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
 | Dice Tray | window-dicetray.js | Standalone dice tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
 | Macros | window-macros.js | Standalone macros tool window (no tray docking; V1 pending Blacksmith tool-window migration) |
 | Transfer | (panel-party.js, transfer-utils.js) | Transfer dialog (window-transfer.hbs) |

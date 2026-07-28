@@ -1,12 +1,6 @@
-import { MODULE, TEMPLATES } from './const.js';
+import { MODULE } from './const.js';
 import { HealthWindow } from './window-health.js';
-import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName, renderTemplate, getNativeElement } from './helpers.js';
-
-// Helper function to safely get Blacksmith API
-function getBlacksmith() {
-  return game.modules.get('coffee-pub-blacksmith')?.api;
-}
+import { getTokenDisplayName, getNativeElement } from './helpers.js';
 
 export class HealthPanel {
     static isWindowOpen = false;
@@ -16,10 +10,8 @@ export class HealthPanel {
         this.actor = actor;
         this.tokens = []; // Store tokens instead of actors for proper targeting
         this.element = null;
-        // Check if there's an active window and restore state
         this.window = HealthPanel.activeWindow;
-        this.isPoppedOut = HealthPanel.isWindowOpen;
-        this.previousSibling = null; // Store reference for position
+        this.isWindowOpen = HealthPanel.isWindowOpen;
 
         // If actor provided, find its token and store it
         if (actor) {
@@ -55,12 +47,12 @@ export class HealthPanel {
     }
 
     // Method to update tokens for bulk operations
-    updateTokens(tokens) {
+    updateTokens(tokens, { force = false } = {}) {
         // Prevent infinite loops by checking if tokens have actually changed
         const currentTokenIds = (this.tokens || []).map(t => t.id).sort();
         const newTokenIds = (tokens || []).map(t => t.id).sort();
         
-        if (JSON.stringify(currentTokenIds) === JSON.stringify(newTokenIds)) {
+        if (!force && JSON.stringify(currentTokenIds) === JSON.stringify(newTokenIds)) {
             return; // No change, don't update
         }
         
@@ -73,8 +65,15 @@ export class HealthPanel {
             });
         }
         
-        this.tokens = tokens || [];
-        this.actor = tokens?.[0]?.actor || null; // Keep first actor as primary for compatibility
+        const nextTokens = tokens || [];
+
+        // Let the open window unregister from the old selection before changing panel state.
+        if (this.isWindowOpen && this.window) {
+            this.window.updateTokens(nextTokens);
+        }
+
+        this.tokens = nextTokens;
+        this.actor = nextTokens[0]?.actor || null; // Keep first actor as primary for compatibility
         if (this.actor) {
             const primaryToken = this.tokens[0];
             this.actor.handleDisplayName = getTokenDisplayName(primaryToken, this.actor);
@@ -90,82 +89,11 @@ export class HealthPanel {
             });
         }
         
-        // Update window if popped out
-        if (this.isPoppedOut && this.window) {
-            this.window.updateTokens(tokens);
-        }
     }
 
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: "squire-health",
-            template: TEMPLATES.PANEL_HEALTH,
-            popOut: false,
-        });
-    }
-
-    async render(html) {
-        // Always render into the panel container inside the placeholder if not popped out
-        if (!this.isPoppedOut) {
-            // v13: Use native DOM instead of jQuery
-            const placeholder = document.querySelector('#health-panel-placeholder');
-            if (!placeholder) return;
-            let container = placeholder.querySelector('.panel-container[data-panel="health"]');
-            if (!container) {
-                // Create the panel container if it doesn't exist
-                container = document.createElement('div');
-                container.className = 'panel-container';
-                container.setAttribute('data-panel', 'health');
-                placeholder.appendChild(container);
-            }
-            this.element = container;
-        } else if (html) {
-            // v13: Convert jQuery to native DOM if needed
-            this.element = getNativeElement(html);
-        }
-        if (!this.element || this.isPoppedOut) {
-            return;
-        }
-
-        // Determine if we are in player view mode
-        const isPlayerView = PanelManager.viewMode === 'player';
-        let templateData;
-        if (isPlayerView) {
-            // Only show the tray's character, never multiple
-            templateData = {
-                actor: this.actor,
-                actors: this.actor ? [this.actor] : [],
-                position: game.settings.get(MODULE.ID, 'trayPosition'),
-                isGM: game.user.isGM,
-                isHealthPopped: this.isPoppedOut
-            };
-        } else {
-            // Allow multi-token health - convert tokens to actors for template
-            templateData = {
-                actor: this.actor,
-                actors: this.tokens.map(t => t.actor),
-                position: game.settings.get(MODULE.ID, 'trayPosition'),
-                isGM: game.user.isGM,
-                isHealthPopped: this.isPoppedOut
-            };
-        }
-
-        // HealthPanel render data logged
-
-        const content = await renderTemplate(TEMPLATES.PANEL_HEALTH, templateData);
-        // v13: Use native DOM innerHTML instead of jQuery html()
-        this.element.innerHTML = content;
-        this._activateListeners(this.element);
-
-        // Apply saved collapsed state
-        const panel = this.element;
-        const isCollapsed = game.settings.get(MODULE.ID, 'isHealthPanelCollapsed');
-        if (isCollapsed) {
-            // v13: Use native DOM instead of jQuery
-            const healthContent = panel.querySelector('.health-content');
-            const toggle = panel.querySelector('.health-toggle');
-            if (healthContent) healthContent.classList.add('collapsed');
-            if (toggle) toggle.style.transform = 'rotate(-90deg)';
+    async render() {
+        if (this.window?.rendered) {
+            await this.window.render(false);
         }
     }
 
@@ -175,38 +103,6 @@ export class HealthPanel {
         // v13: Convert jQuery to native DOM if needed
         const panel = getNativeElement(html);
         if (!panel) return;
-
-        // Health toggle
-        // v13: Use native DOM event delegation
-        const trayTitle = panel.querySelector('.tray-title-small');
-        if (trayTitle) {
-            const newTitle = trayTitle.cloneNode(true);
-            trayTitle.parentNode?.replaceChild(newTitle, trayTitle);
-            newTitle.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                const healthContent = panel.querySelector('#health-content');
-                const toggle = panel.querySelector('#health-toggle');
-                if (healthContent && toggle) {
-                    const isCollapsed = healthContent.classList.contains('collapsed');
-                    healthContent.classList.toggle('collapsed');
-                    toggle.style.transform = healthContent.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
-                    // Save collapsed state
-                    game.settings.set(MODULE.ID, 'isHealthPanelCollapsed', healthContent.classList.contains('collapsed'));
-                }
-            });
-        }
-
-        // Add pop-out button handler
-        // v13: Use native DOM event delegation
-        const popOutButton = panel.querySelector('.pop-out-button');
-        if (popOutButton) {
-            const newButton = popOutButton.cloneNode(true);
-            popOutButton.parentNode?.replaceChild(newButton, popOutButton);
-            newButton.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                this._onPopOut();
-            });
-        }
 
         // HP Controls for GM
         if (game.user.isGM) {
@@ -253,58 +149,27 @@ export class HealthPanel {
         }
     }
 
-    async _onPopOut() {
-        if (this.window || this.isPoppedOut) return;
-
-        // Remove the panel container from the placeholder
-        // v13: Use native DOM instead of jQuery
-        const placeholder = document.querySelector('#health-panel-placeholder');
-        if (placeholder) {
-            const container = placeholder.querySelector('.panel-container[data-panel="health"]');
-            if (container) {
-                container.remove();
-            }
+    async openWindow() {
+        if (this.window && this.isWindowOpen) {
+            this.window.bringToTop();
+            return;
         }
 
-        // Set state before creating window
         HealthPanel.isWindowOpen = true;
-        this.isPoppedOut = true;
+        this.isWindowOpen = true;
         await this._saveWindowState(true);
 
-        // Create and render the window
         this.window = new HealthWindow({ panel: this });
         HealthPanel.activeWindow = this.window;
         await this.window.render(true);
     }
 
-    async returnToTray() {
-        if (!this.isPoppedOut) return;
-
-        // Reset state
+    async onWindowClosed() {
         HealthPanel.isWindowOpen = false;
-        this.isPoppedOut = false;
+        this.isWindowOpen = false;
         HealthPanel.activeWindow = null;
         this.window = null;
         await this._saveWindowState(false);
-
-        // Check if health panel is enabled in settings
-        const isHealthEnabled = game.settings.get(MODULE.ID, 'showHealthPanel');
-        if (!isHealthEnabled) return;
-
-        // (Re)create the panel container inside the placeholder if missing
-        // v13: Use native DOM instead of jQuery
-        const placeholder = document.querySelector('#health-panel-placeholder');
-        if (!placeholder) return;
-        let container = placeholder.querySelector('.panel-container[data-panel="health"]');
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'panel-container';
-            container.setAttribute('data-panel', 'health');
-            placeholder.appendChild(container);
-        }
-        this.element = container;
-        // Re-render into the panel container
-        await this.render();
     }
 
     // Update the element reference - new method
@@ -380,10 +245,8 @@ export class HealthPanel {
     // Handler for actor updates
     async _onUpdateActor(actor, changes) {
         if (changes.system?.attributes?.hp) {
-            if (this.isPoppedOut && this.window) {
+            if (this.isWindowOpen && this.window) {
                 this.window.render(false);
-            } else {
-                this.render();
             }
         }
     }
