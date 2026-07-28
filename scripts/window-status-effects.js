@@ -34,9 +34,9 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         {
             id: STATUS_EFFECTS_WINDOW_ID,
             classes: ['status-effects-window', 'squire-window'],
-            position: { width: 560, height: 680 },
+            position: { width: 900, height: 680 },
             window: { title: 'Status Effects', resizable: true, minimizable: true },
-            windowSizeConstraints: { minWidth: 400, minHeight: 420 }
+            windowSizeConstraints: { minWidth: 780, minHeight: 420 }
         }
     );
 
@@ -118,6 +118,18 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
                 isSuppressed: !!effect.isSuppressed
             }))
             .sort((a, b) => a.name.localeCompare(b.name));
+        if (!this.descriptionEffectId && !this.descriptionStatusId) {
+            const defaultCondition = configuredStatuses.find(status => status.isActive)
+                || configuredStatuses[0];
+            if (defaultCondition) this.descriptionStatusId = defaultCondition.id;
+            else if (otherEffects[0]) this.descriptionEffectId = otherEffects[0].id;
+        }
+        for (const status of configuredStatuses) {
+            status.isSelected = status.id === this.descriptionStatusId;
+        }
+        for (const effect of otherEffects) {
+            effect.isSelected = effect.id === this.descriptionEffectId;
+        }
         const selectedDescription = await this._getSelectedDescription(configuredStatuses);
 
         const canManage = !!this.actor?.isOwner;
@@ -196,10 +208,8 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _showDescription({ effectId = null, statusId = null } = {}) {
-        const sameSelection = (effectId && effectId === this.descriptionEffectId)
-            || (statusId && statusId === this.descriptionStatusId);
-        this.descriptionEffectId = sameSelection ? null : effectId;
-        this.descriptionStatusId = sameSelection ? null : statusId;
+        this.descriptionEffectId = effectId;
+        this.descriptionStatusId = statusId;
         await this.render({ force: true });
     }
 
@@ -313,6 +323,7 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         this._pendingEffectIds.add(effectId);
         try {
             const name = effect.name || effect.label || 'Effect';
+            if (this.descriptionEffectId === effectId) this.descriptionEffectId = null;
             await effect.delete();
             ui.notifications.info(`Removed ${name} from ${this.actor.name}`);
             await game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.handleManager?.updateHandle?.();

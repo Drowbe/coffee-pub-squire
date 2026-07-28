@@ -1,5 +1,34 @@
 .status-effects-window .blacksmith-window-template-body {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.status-effects-window-layout {
+    display: grid;
+    grid-template-columns: minmax(480px, 3fr) minmax(260px, 1fr);
+    gap: 12px;
+    height: 100%;
+    min-height: 0;
+    padding: 14px;
+    box-sizing: border-box;
+}
+
+.status-effects-window-master {
+    min-width: 0;
+    min-height: 0;
+    padding-right: 4px;
     overflow-y: auto;
+}
+
+.status-effects-window-detail {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.22);
+    overflow: hidden;
 }
 
 .status-effects-window-portrait img {
@@ -19,6 +48,11 @@
 .status-effect-option-wrap {
     position: relative;
     min-width: 0;
+}
+
+.status-effect-option-wrap.is-selected .status-effect-option {
+    outline: 1px solid rgba(255, 255, 255, 0.55);
+    outline-offset: -2px;
 }
 
 .status-effect-option {
@@ -68,24 +102,33 @@
 
 .status-effect-check {
     position: absolute;
-    top: -7px;
-    right: -10px;
+    z-index: 2;
+    top: 4px;
+    right: 4px;
     display: grid;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     place-items: center;
     border: 2px solid #fff;
     border-radius: 50%;
     background: #c62828;
     color: #fff;
     font-size: 11px;
+    pointer-events: none;
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.65);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
 }
 
 .status-effect-name {
+    display: -webkit-box;
+    max-width: 100%;
+    max-height: 2.4em;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     line-height: 1.2;
     text-align: center;
+    text-overflow: ellipsis;
 }
 
 .status-effect-level {
@@ -99,16 +142,16 @@
     position: absolute;
     right: 4px;
     bottom: 4px;
-    width: 20px;
-    min-width: 20px;
-    height: 20px;
-    min-height: 20px;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    min-height: 22px;
     padding: 0;
     border: 0;
     background: transparent;
     color: #9e9e9e;
-    font-size: 11px;
-    line-height: 20px;
+    font-size: 14px;
+    line-height: 22px;
 }
 
 .status-effect-description-button:hover {
@@ -142,6 +185,11 @@
 .status-effects-list-row.is-disabled,
 .status-effects-list-row.is-suppressed {
     opacity: 0.62;
+}
+
+.status-effects-list-row.is-selected {
+    border-color: var(--blacksmith-window-accent-color, #ac9f81);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .status-effects-list-icon {
@@ -200,19 +248,52 @@
     font-style: italic;
 }
 
-.status-effects-description-section {
-    margin-top: 10px;
+.status-effects-detail-header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 58px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.28);
 }
 
-.status-effects-description-section .blacksmith-window-section-header img {
-    width: 24px;
-    height: 24px;
+.status-effects-detail-header > img {
+    width: 38px;
+    height: 38px;
     border: 0;
     object-fit: contain;
 }
 
+.status-effects-detail-header > i {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    color: #888;
+    font-size: 24px;
+}
+
+.status-effects-detail-label {
+    display: block;
+    color: var(--blacksmith-window-accent-color, #ac9f81);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.status-effects-detail-header h2 {
+    margin: 2px 0 0;
+    color: #eee;
+    font-size: 1.05rem;
+}
+
 .status-effects-description-content {
-    max-height: 320px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px;
     overflow-y: auto;
     line-height: 1.4;
 }
@@ -223,4 +304,14 @@
 
 .status-effects-description-content > :last-child {
     margin-bottom: 0;
+}
+
+.status-effects-description-empty {
+    display: grid;
+    min-height: 140px;
+    place-items: center;
+    color: var(--color-text-light-6, #888);
+    font-style: italic;
+    line-height: 1.5;
+    text-align: center;
 }
