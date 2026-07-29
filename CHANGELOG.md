@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.3.19]
+
+### Changed
+- **Quest kind and status normalization**: Quest categories are now the two supported kinds—Main Quest and Side Quest. Main quests use the flag icon and Side Quests use the map-signs icon in both the tray and Blacksmith quest pins, while `main`/`side` taxonomy tags remain intact. Quest statuses are Available, Active, Succeeded, or Failed; the tray groups the two terminal statuses beneath its Complete filter, and the status context menu lists Active, Available, Succeeded, then Failed. Legacy `Not Started`, `In Progress`, `Complete`, and obsolete completion-category data are normalized on read. A repeat-safe GM migration API and pasteable `macros/migrate-quest-journal.js` macro rewrite the configured journal and remove obsolete category/outcome flags.
+
 ## [13.3.18]
 
 ### Fixed
