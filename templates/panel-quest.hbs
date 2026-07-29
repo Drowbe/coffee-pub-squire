@@ -48,7 +48,7 @@
     <div class="quest-content">
         {{#if hasJournal}}
             <!-- Active (In Progress) Section - no titlebar, always expanded -->
-            <div class="quest-section quest-section--no-titlebar" data-status="In Progress">
+            <div class="quest-section quest-section--no-titlebar" data-status="Active">
                 <div class="quest-entries">
                     {{#each statusGroups.inProgress as |entry|}}
                         {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}
@@ -57,7 +57,7 @@
             </div>
 
             <!-- Available (Not Started) Section - no titlebar, always expanded -->
-            <div class="quest-section quest-section--no-titlebar" data-status="Not Started">
+            <div class="quest-section quest-section--no-titlebar" data-status="Available">
                 <div class="quest-entries">
                     {{#each statusGroups.notStarted as |entry|}}
                         {{> quest-entry entry=entry isGM=@root.isGM filters=@root.filters}}

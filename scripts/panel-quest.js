@@ -1,5 +1,10 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { QuestParser, getQuestStatusDisplayLabel } from './utility-quest-parser.js';
+import {
+    QuestParser,
+    QUEST_CATEGORIES,
+    normalizeQuestCategory,
+    normalizeQuestStatus
+} from './utility-quest-parser.js';
 import {
     getPinsApi,
     isPinsApiAvailable,
@@ -112,10 +117,10 @@ function buildQuestIconHtml(iconData, imgClass = '') {
     return `<img src="${href}"${classAttr}>`;
 }
 
-function resolveQuestIconHtmlFromPage(page, imgClass = '') {
+function resolveQuestIconHtmlFromPage(page, imgClass = '', category = 'Side Quest') {
     const iconFlag = normalizeQuestIconFlag(page?.getFlag(MODULE.ID, 'questIcon'));
     if (iconFlag) return buildQuestIconHtml(iconFlag, imgClass);
-    return buildQuestIconHtml(null, imgClass);
+    return `<i class="fa-solid ${category === 'Main Quest' ? 'fa-flag' : 'fa-map-signs'}"></i>`;
 }
 
 // Quest notification functions - moved to QuestPanel class methods
@@ -171,7 +176,7 @@ export class QuestPanel {
     
     constructor() {
         this.element = null;
-        this.categories = game.settings.get(MODULE.ID, 'questCategories') || ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"];
+        this.categories = [...QUEST_CATEGORIES];
         this.data = {};
         // Parsed-page cache keyed by page UUID: { modifiedTime, entry }.
         // Enrich+parse is skipped for unchanged pages; quest number and live pin
@@ -668,11 +673,11 @@ export class QuestPanel {
         const categoryMatch = newContent.match(/<strong>Category:<\/strong>\s*([^<]*)/);
         const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
 
-        if (allCompleted && currentStatus !== 'Complete') {
+        if (allCompleted && !['Complete', 'Succeeded'].includes(currentStatus)) {
             if (statusMatch) {
-                newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Complete');
+                newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Succeeded');
             } else {
-                newContent += `<p><strong>Status:</strong> Complete</p>`;
+                newContent += `<p><strong>Status:</strong> Succeeded</p>`;
             }
             let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
             if (!originalCategory && currentCategory && currentCategory !== 'Completed') {
@@ -681,8 +686,8 @@ export class QuestPanel {
             }
             const questName = page.name || 'Unknown Quest';
             notifyQuestCompleted(questName, questUuid);
-        } else if (!allCompleted && currentStatus === 'Complete') {
-            newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
+        } else if (!allCompleted && ['Complete', 'Succeeded'].includes(currentStatus)) {
+            newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Active');
             if (currentCategory === 'Completed') {
                 const originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
                 if (originalCategory && categoryMatch) {
@@ -707,21 +712,8 @@ export class QuestPanel {
      * @private
      */
     _verifyAndUpdateCategories() {
-        const requiredCategories = ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"];
         const storedCategories = game.settings.get(MODULE.ID, 'questCategories') || [];
-        
-        // Create a new array with required categories at their specific positions
-        let updatedCategories = [...requiredCategories]; // Start with the required categories
-        
-        // Add any custom categories that aren't in the required list
-        storedCategories.forEach(cat => {
-            if (!requiredCategories.includes(cat)) {
-                updatedCategories.push(cat);
-            }
-        });
-        
-        // Remove duplicates while preserving order
-        updatedCategories = [...new Set(updatedCategories)];
+        const updatedCategories = [...QUEST_CATEGORIES];
         
         // Update settings if there's a change
         const currentCategories = JSON.stringify(storedCategories);
@@ -732,7 +724,7 @@ export class QuestPanel {
         }
         
         // Update this instance's categories
-        this.categories = updatedCategories;
+        this.categories = [...QUEST_CATEGORIES];
     }
 
     /**
@@ -947,7 +939,7 @@ export class QuestPanel {
                             }
                             let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
                             let changed = false;
-                            for (const cat of ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]) {
+                            for (const cat of QUEST_CATEGORIES) {
                                 if (!categories.includes(cat)) { categories.push(cat); changed = true; }
                             }
                             if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
@@ -1075,7 +1067,7 @@ export class QuestPanel {
             category: q.category || "Side Quest",
             description: q.description || "",
             plotHook: q.plotHook || "",
-            status: q.status || "Not Started",
+                        status: normalizeQuestStatus(q.status),
             visible: q.visible !== false,
             timeframe: q.timeframe || { duration: "" },
             tasks: (q.tasks || []).map(t => ({
@@ -1299,38 +1291,20 @@ export class QuestPanel {
         const page = await fromUuid(uuid);
         if (!page) return;
 
+        const status = normalizeQuestStatus(newStatus);
         let content = '';
         if (typeof page.text?.content === 'string') content = page.text.content;
         else if (page.text?.content) content = await page.text.content;
         const statusMatch = content.match(/<strong>Status:<\/strong>\s*([^<]*)/);
-        const categoryMatch = content.match(/<strong>Category:<\/strong>\s*([^<]*)/);
-        const currentCategory = categoryMatch ? categoryMatch[1].trim() : '';
 
         if (statusMatch) {
-            content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, `$1${newStatus}`);
+            content = content.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, `$1${status}`);
         } else {
-            content += `<p><strong>Status:</strong> ${newStatus}</p>`;
+            content += `<p><strong>Status:</strong> ${status}</p>`;
         }
 
-        let originalCategory = await page.getFlag(MODULE.ID, 'originalCategory');
-        if (!originalCategory && currentCategory && !['Completed', 'Failed'].includes(currentCategory)) {
-            originalCategory = currentCategory;
-            await page.setFlag(MODULE.ID, 'originalCategory', originalCategory);
-        }
-
-        if (newStatus === 'Complete' && currentCategory !== 'Completed') {
-            if (!originalCategory && currentCategory) {
-                await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
-            }
-        } else if (newStatus === 'Failed' && currentCategory !== 'Failed') {
-            if (!originalCategory && currentCategory) {
-                await page.setFlag(MODULE.ID, 'originalCategory', currentCategory);
-            }
-        } else if (['Not Started', 'In Progress'].includes(newStatus) && ['Completed', 'Failed'].includes(currentCategory) && originalCategory) {
-            if (categoryMatch) {
-                content = content.replace(/(<strong>Category:<\/strong>\s*)[^<]*/, `$1${originalCategory}`);
-            }
-        }
+        content = content.replace(/<p><strong>Outcome:<\/strong>\s*[^<]*<\/p>\s*/i, '');
+        await page.unsetFlag?.(MODULE.ID, 'questOutcome');
 
         await page.update({ text: { content } });
     }
@@ -1946,7 +1920,7 @@ export class QuestPanel {
                                     });
                                 }
 
-                                entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image');
+                                entry.iconHtml = resolveQuestIconHtmlFromPage(page, 'quest-icon-image', entry.category);
                             }
                         }
                         this._pageParseCache.set(page.uuid, { modifiedTime, entry });
@@ -1989,8 +1963,8 @@ export class QuestPanel {
      */
     _statusFilterToDataStatus(filterValue) {
         const map = {
-            active: 'In Progress',
-            available: 'Not Started',
+            active: 'Active',
+            available: 'Available',
             complete: 'Complete'
         };
         return map[filterValue] ?? null;
@@ -2040,9 +2014,9 @@ export class QuestPanel {
         for (const category of this.categories) {
             const entry = (this.data[category] || []).find(e => e?.uuid === questUuid);
             if (!entry) continue;
-            const status = entry.status || 'Not Started';
-            if (status === 'Complete' || status === 'Failed') return 'complete';
-            if (status === 'In Progress') return 'active';
+            const status = normalizeQuestStatus(entry.status);
+            if (status === 'Succeeded' || status === 'Failed') return 'complete';
+            if (status === 'Active') return 'active';
             return 'available';
         }
         return null;
@@ -2664,11 +2638,11 @@ export class QuestPanel {
                 
                 if (allCompleted) {
                     // Change status to Complete
-                    if (currentStatus !== 'Complete') {
+                    if (!['Complete', 'Succeeded'].includes(currentStatus)) {
                         if (statusMatch) {
-                            newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Complete');
+                            newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Succeeded');
                         } else {
-                            newContent += `<p><strong>Status:</strong> Complete</p>`;
+                            newContent += `<p><strong>Status:</strong> Succeeded</p>`;
                         }
                         
                         // Get or store original category
@@ -2686,8 +2660,8 @@ export class QuestPanel {
                     }
                 } else {
                     // If status is Complete and not all tasks are completed, set to In Progress
-                    if (currentStatus === 'Complete') {
-                        newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1In Progress');
+                    if (['Complete', 'Succeeded'].includes(currentStatus)) {
+                        newContent = newContent.replace(/(<strong>Status:<\/strong>\s*)[^<]*/, '$1Active');
                         
                         // Restore original category if quest is in Completed
                         if (currentCategory === 'Completed') {
@@ -3073,7 +3047,7 @@ export class QuestPanel {
                                 // Ensure categories include all required categories
                                 let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
                                 let changed = false;
-                                for (const cat of ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]) {
+                                for (const cat of QUEST_CATEGORIES) {
                                     if (!categories.includes(cat)) { categories.push(cat); changed = true; }
                                 }
                                 if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
@@ -3603,9 +3577,9 @@ export class QuestPanel {
                                 name: 'Change Status',
                                 icon: 'fa-solid fa-pen',
                                 submenu: [
-                                    { name: 'Available', icon: 'fa-solid fa-circle', callback: () => this._applyQuestStatus(uuid, 'Not Started') },
-                                    { name: 'Active', icon: 'fa-solid fa-spinner', callback: () => this._applyQuestStatus(uuid, 'In Progress') },
-                                    { name: 'Succeeded', icon: 'fa-solid fa-check', callback: () => this._applyQuestStatus(uuid, 'Complete') },
+                                    { name: 'Active', icon: 'fa-solid fa-spinner', callback: () => this._applyQuestStatus(uuid, 'Active') },
+                                    { name: 'Available', icon: 'fa-solid fa-circle', callback: () => this._applyQuestStatus(uuid, 'Available') },
+                                    { name: 'Succeeded', icon: 'fa-solid fa-check', callback: () => this._applyQuestStatus(uuid, 'Succeeded') },
                                     { name: 'Failed', icon: 'fa-solid fa-xmark', callback: () => this._applyQuestStatus(uuid, 'Failed') }
                                 ]
                             }
@@ -4115,8 +4089,9 @@ export class QuestPanel {
                 entry.tags = entry.tags || [];
                 entry.timeframe = entry.timeframe || { duration: '' };
                 entry.progress = entry.progress || 0;
-                entry.status = entry.status || 'Not Started';
-                entry.statusLabel = getQuestStatusDisplayLabel(entry.status);
+                entry.category = normalizeQuestCategory(entry.category);
+                entry.status = normalizeQuestStatus(entry.status);
+                entry.statusLabel = entry.status;
 
                 // Add active objective data to tasks
                 if (entry.tasks.length > 0) {
@@ -4144,11 +4119,11 @@ export class QuestPanel {
                 }
 
                 // Add to the appropriate status group
-                if (entry.status === "Complete") {
-                    templateData.statusGroups.completed.push(entry);
-                } else if (entry.status === "Failed") {
+                if (entry.status === "Failed") {
                     templateData.statusGroups.failed.push(entry);
-                } else if (entry.status === "In Progress") {
+                } else if (entry.status === "Succeeded") {
+                    templateData.statusGroups.completed.push(entry);
+                } else if (entry.status === "Active") {
                     templateData.statusGroups.inProgress.push(entry);
                 } else {
                     // Default to Not Started
@@ -4203,7 +4178,7 @@ export class QuestPanel {
         // Auto-expand pinned quests
         if (pinnedQuestUuid) {
             // Make sure the In Progress section is expanded
-            const inProgressSection = questContainer.querySelector('.quest-section[data-status="In Progress"]');
+            const inProgressSection = questContainer.querySelector('.quest-section[data-status="Active"]');
             if (inProgressSection) inProgressSection.classList.remove('collapsed');
             // Expand the pinned quest (v13: :has() selector not supported, manually filter)
             const questEntries = questContainer.querySelectorAll('.quest-entry');
@@ -4555,7 +4530,7 @@ export class QuestPanel {
             content += `<p><strong>Duration:</strong> ${quest.timeframe.duration}</p>\n\n`;
         }
         if (quest.status) {
-            content += `<p><strong>Status:</strong> ${getQuestStatusDisplayLabel(quest.status)}</p>\n\n`;
+            content += `<p><strong>Status:</strong> ${normalizeQuestStatus(quest.status)}</p>\n\n`;
         }
         
         // --- AUTO ADD PARTY MEMBERS (JSON Import Only) ---

@@ -1,5 +1,10 @@
 import { MODULE } from './const.js';
-import { QuestParser, getQuestStatusDisplayLabel } from './utility-quest-parser.js';
+import {
+    QuestParser,
+    QUEST_CATEGORIES,
+    normalizeQuestCategory,
+    normalizeQuestStatus
+} from './utility-quest-parser.js';
 import { getTextEditor, getPartyActors } from './helpers.js';
 
 function getBlacksmith() {
@@ -175,7 +180,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
                 treasure: []
             },
             participants: [],
-            status: 'Not Started',
+            status: 'Available',
             tags: [],
             visible: false,
             questUuid: '',
@@ -185,21 +190,18 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     _getDefaultCategory() {
-        const categories = this._getExistingCategories().filter(category => category !== 'Pinned');
-        if (categories.includes('Main Quest')) return 'Main Quest';
-        if (categories.includes('Side Quest')) return 'Side Quest';
-        return categories[0] || '';
+        return 'Side Quest';
     }
 
     _normalizeQuest(quest) {
         const normalized = foundry.utils.mergeObject(this._getDefaultQuest(), quest || {}, { inplace: false });
         normalized.name = String(normalized.name || '').trim();
         normalized.img = normalized.img ? String(normalized.img).trim() : null;
-        normalized.category = String(normalized.category || '').trim();
+        normalized.category = normalizeQuestCategory(normalized.category);
         normalized.description = String(normalized.description || '').trim();
         normalized.plotHook = String(normalized.plotHook || '').trim();
         normalized.location = String(normalized.location || '').trim();
-        normalized.status = this._normalizeStatus(normalized.status);
+        normalized.status = normalizeQuestStatus(normalized.status);
         normalized.tags = this._normalizeTags(normalized.tags);
         normalized.tasks = this._normalizeTaskArray(normalized.tasks);
         normalized.participants = this._normalizeParticipants(normalized.participants);
@@ -224,9 +226,9 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
 
     _getStatusOptions() {
         return [
-            { value: 'Not Started', label: 'Available' },
-            { value: 'In Progress', label: 'Active' },
-            { value: 'Complete', label: 'Succeeded' },
+            { value: 'Available', label: 'Available' },
+            { value: 'Active', label: 'Active' },
+            { value: 'Succeeded', label: 'Succeeded' },
             { value: 'Failed', label: 'Failed' }
         ];
     }
@@ -341,22 +343,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     _getExistingCategories() {
-        const storedCategories = game.settings.get(MODULE.ID, 'questCategories') || [];
-        const categories = [];
-        for (const category of storedCategories) {
-            const normalized = this._decodeHtmlEntities(category);
-            if (!normalized || normalized === 'Pinned') continue;
-            if (!categories.some(existing => existing.toLowerCase() === normalized.toLowerCase())) {
-                categories.push(normalized);
-            }
-        }
-
-        const currentCategory = String(this.quest?.category || '').trim();
-        if (currentCategory && !categories.some(category => category.toLowerCase() === currentCategory.toLowerCase())) {
-            categories.push(currentCategory);
-        }
-
-        return categories;
+        return [...QUEST_CATEGORIES];
     }
 
     _getExistingLocations() {
@@ -413,11 +400,11 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         quest.pageUuid = this.pageUuid || quest.pageUuid || null;
         quest.visible = quest.visible === true;
         quest.questUuid = String(quest.questUuid || this.quest.questUuid || foundry.utils.randomID()).trim();
-        quest.category = String(quest.category || '').trim();
+        quest.category = normalizeQuestCategory(quest.category);
         quest.location = String(quest.location || '').trim();
         quest.description = String(quest.description || '').trim();
         quest.plotHook = String(quest.plotHook || '').trim();
-        quest.status = this._normalizeStatus(quest.status);
+        quest.status = normalizeQuestStatus(quest.status);
         quest.tags = this._normalizeTags(quest.tags);
         quest.tasks = Array.isArray(quest.tasks)
             ? this._normalizeTaskArray(quest.tasks)
@@ -493,6 +480,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
                 await page.setFlag(MODULE.ID, 'questUuid', this.quest.questUuid);
             }
             await page.setFlag(MODULE.ID, 'visible', this.quest.visible !== false);
+            await page.unsetFlag?.(MODULE.ID, 'questOutcome');
 
             if (this.quest.originalCategory) {
                 await page.setFlag(MODULE.ID, 'originalCategory', this.quest.originalCategory);
@@ -518,18 +506,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     _resolveOriginalCategoryForSave(quest) {
-        const originalFlag = this.page?.getFlag?.(MODULE.ID, 'originalCategory') || this.quest.originalCategory || '';
-        const category = String(quest.category || '').trim();
-        if (quest.status === 'Complete' || quest.status === 'Failed') {
-            if (category && !['Completed', 'Failed'].includes(category)) {
-                return category;
-            }
-            return originalFlag;
-        }
-        if (category && !['Completed', 'Failed'].includes(category)) {
-            return '';
-        }
-        return originalFlag;
+        return '';
     }
 
     _generateJournalContent(quest) {
@@ -581,7 +558,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
         if (quest.timeframe?.duration) {
             content += `<p><strong>Duration:</strong> ${this._renderInlineText(quest.timeframe.duration)}</p>\n\n`;
         }
-            content += `<p><strong>Status:</strong> ${this._renderInlineText(getQuestStatusDisplayLabel(quest.status || 'Not Started'))}</p>\n\n`;
+        content += `<p><strong>Status:</strong> ${this._renderInlineText(quest.status || 'Available')}</p>\n\n`;
         if (quest.tags?.length) {
             content += `<p><strong>Tags:</strong> ${this._renderInlineText(quest.tags.join(', '))}</p>\n\n`;
         }
@@ -1114,7 +1091,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
                     this.quest.plotHook = this._appendPlainText(this.quest.plotHook, parsed.plotHook);
                     this.quest.location = this.quest.location || parsed.location || '';
                     this.quest.timeframe.duration = this.quest.timeframe.duration || parsed.timeframe?.duration || '';
-                    if (this.quest.status === 'Not Started' && parsed.status) {
+                    if (this.quest.status === 'Available' && parsed.status) {
                         this.quest.status = this._normalizeStatus(parsed.status);
                     }
                     this.quest.tasks = this._mergeTasks(this.quest.tasks, parsed.tasks);
@@ -1256,9 +1233,7 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     _normalizeStatus(status) {
-        const normalized = String(status || '').trim();
-        const values = this._getStatusOptions().map(o => o.value);
-        return values.includes(normalized) ? normalized : 'Not Started';
+        return normalizeQuestStatus(status);
     }
 
     _normalizeTags(tags) {
@@ -1523,16 +1498,11 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _ensureCategoryRegistered(category) {
-        const normalized = String(category || '').trim();
-        if (!normalized) return;
-
+        const normalized = normalizeQuestCategory(category);
         const categories = game.settings.get(MODULE.ID, 'questCategories') || [];
-        if (categories.some(existing => String(existing || '').trim().toLowerCase() === normalized.toLowerCase())) {
-            return;
+        if (categories.length !== QUEST_CATEGORIES.length || QUEST_CATEGORIES.some(value => !categories.includes(value))) {
+            await game.settings.set(MODULE.ID, 'questCategories', [...QUEST_CATEGORIES]);
         }
-
-        const updated = [...categories, normalized];
-        await game.settings.set(MODULE.ID, 'questCategories', updated);
     }
 
     _renderLinkableLine(entry) {

@@ -1211,7 +1211,7 @@ export const registerSettings = function() {
         scope: "world",
         config: false,
         type: Array,
-        default: ["Pinned", "Main Quest", "Side Quest", "Completed", "Failed"]
+        default: ["Main Quest", "Side Quest"]
     });
 
 

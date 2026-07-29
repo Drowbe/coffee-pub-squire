@@ -4,7 +4,7 @@ import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
 import { registerHelpers, renderTemplate } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
-import { QuestParser } from './utility-quest-parser.js';
+import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
 // import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 
@@ -1859,6 +1859,7 @@ Hooks.once('init', async function() {
     // Set up API to expose PanelManager and window open helpers to other modules
     game.modules.get(MODULE.ID).api = {
         PanelManager,
+        migrateQuestJournalData,
         openCodexWindow: (options = {}) => {
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
             if (typeof blacksmith?.openWindow !== 'function') {

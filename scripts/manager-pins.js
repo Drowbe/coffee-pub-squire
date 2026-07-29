@@ -128,7 +128,6 @@ const QUEST_CATEGORY_TAG_MAP = {
     'Backstory':  'backstory'
 };
 
-const QUEST_ICON     = '<i class="fa-solid fa-flag"></i>';
 const OBJECTIVE_ICON = '<i class="fa-solid fa-sign-post"></i>';
 const NOTE_PIN_ICON  = 'fa-note-sticky';
 
@@ -406,10 +405,13 @@ function _codexCategoryToImage(category, customIcon = '') {
  * Resolve quest pin image from the quest page's `questIcon` flag.
  * Falls back to the default quest flag icon.
  */
-function _getQuestPinImage(page) {
-    if (!page) return QUEST_ICON;
+function _getQuestPinImage(page, category = 'Side Quest') {
+    const categoryIcon = category === 'Main Quest'
+        ? '<i class="fa-solid fa-flag"></i>'
+        : '<i class="fa-solid fa-map-signs"></i>';
+    if (!page) return categoryIcon;
     const iconFlag = page.getFlag(MODULE.ID, 'questIcon');
-    if (!iconFlag) return QUEST_ICON;
+    if (!iconFlag) return categoryIcon;
     if (typeof iconFlag === 'object') {
         if (iconFlag.type === 'fa' && iconFlag.value) {
             const v = String(iconFlag.value).trim();
@@ -423,7 +425,7 @@ function _getQuestPinImage(page) {
         if (t.includes('fa-')) return `<i class="${t}"></i>`;
         return t;
     }
-    return QUEST_ICON;
+    return categoryIcon;
 }
 
 /** Stable quest number derived from UUID. */
@@ -498,7 +500,7 @@ export async function createQuestPin(opts) {
     const ownership  = calculateQuestPinOwnership(page);
     const questNum   = typeof questIndex === 'number' ? questIndex : _getQuestNumber(questUuid);
     const design     = _buildMergedDesign(pins, 'quest');
-    const image      = _getQuestPinImage(page);
+    const image      = _getQuestPinImage(page, questCategory);
     const questTitle = (page?.name || 'Quest').trim();
     const pinTitle   = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
     const taxTags    = _getModuleTaxonomyTags('quest');
@@ -772,6 +774,7 @@ export async function updateQuestPinText(page, sceneId) {
         if (typeof pin.config?.objectiveIndex !== 'number') {
             // Quest-level pin: update title and tags
             patch.text = `Quest ${questNum}: ${questTitle}${questTitle.endsWith('.') ? '' : '.'}`;
+            patch.image = _getQuestPinImage(page, quest.category);
             patch.tags = _questCategoryToPinTags('quest', pin.config?.questCategory, questTaxTags);
             patch.config = { ...(pin.config || {}), questState: page.getFlag(MODULE.ID, 'visible') !== false ? 'visible' : 'hidden' };
         } else {
