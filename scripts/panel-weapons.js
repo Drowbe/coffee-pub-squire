@@ -487,17 +487,14 @@ export class WeaponsPanel {
             onCharacterSelected: async (...args) => {
                 this._transferDialogOpen = false;
                 await this._handleCharacterSelected(...args);
+            },
+            onClose: () => {
+                this._transferDialogOpen = false;
             }
         });
         
         // Render the window
         await characterWindow.render(true);
-        // Reset flag when character window closes (if quantity dialog wasn't shown)
-        if (!hasQuantity || maxQuantity <= 1) {
-            characterWindow.app.onClose = () => {
-                this._transferDialogOpen = false;
-            };
-        }
     }
 
     async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId, selectedQuantity, hasQuantity) {

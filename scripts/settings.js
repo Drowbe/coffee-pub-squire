@@ -1216,20 +1216,6 @@ export const registerSettings = function() {
 
 
 
-    game.settings.register(MODULE.ID, 'charactersWindowPosition', {
-        scope: 'client',
-        config: false,
-        type: Object,
-        default: {}
-    });
-
-    game.settings.register(MODULE.ID, 'usersWindowPosition', {
-        scope: 'client',
-        config: false,
-        type: Object,
-        default: {}
-    });
-
     game.settings.register(MODULE.ID, 'notesWindowPosition', {
         scope: 'client',
         config: false,

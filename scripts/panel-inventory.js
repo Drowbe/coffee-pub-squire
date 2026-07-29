@@ -467,10 +467,9 @@ export class InventoryPanel {
                 this._transferDialogOpen = false;
                 await this._handleCharacterSelected(...args);
             },
-            // Reset flag when character window closes (if quantity dialog wasn't shown)
-            onClose: (!hasQuantity || maxQuantity <= 1) ? () => {
+            onClose: () => {
                 this._transferDialogOpen = false;
-            } : undefined
+            }
         });
         
         // Render the window

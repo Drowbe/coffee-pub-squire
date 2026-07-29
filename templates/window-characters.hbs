@@ -3,6 +3,7 @@
         {{#each characters as |character|}}
             <div class="character-slot {{character.type}} {{#unless character.clickable}}current-character{{/unless}}" 
                  data-character-id="{{character.id}}" 
+                 data-actor-uuid="{{character.uuid}}"
                  data-clickable="{{character.clickable}}"
                  {{#if character.clickable}}data-tooltip="{{character.name}}"{{else}}data-tooltip="Cannot send to yourself"{{/if}}>
                 <img src="{{character.img}}" alt="{{character.name}}" />

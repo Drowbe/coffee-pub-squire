@@ -137,8 +137,6 @@ export const TEMPLATES = {
     HANDLE_CODEX: `modules/${MODULE.ID}/templates/handle-codex.hbs`,
     HANDLE_QUEST: `modules/${MODULE.ID}/templates/handle-quest.hbs`,
     TRANSFER_DIALOG: `modules/${MODULE.ID}/templates/window-transfer.hbs`,
-    WINDOW_CHARACTERS: `modules/${MODULE.ID}/templates/window-characters.hbs`,
-    WINDOW_USERS: `modules/${MODULE.ID}/templates/window-users.hbs`,
     WINDOW_NOTE: `modules/${MODULE.ID}/templates/window-note.hbs`,
     CHAT_CARD: `modules/${MODULE.ID}/templates/chat-cards.hbs`,
     PRINT_CHARACTER: `modules/${MODULE.ID}/templates/print-character.hbs`,
