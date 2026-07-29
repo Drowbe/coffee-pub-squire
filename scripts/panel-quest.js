@@ -1997,6 +1997,20 @@ export class QuestPanel {
     }
 
     /**
+     * Find a quest section by status without inserting external text into a CSS selector.
+     * @private
+     */
+    _findQuestSectionByStatus(html, status) {
+        const nativeHtml = getNativeElement(html);
+        const normalizedStatus = String(status ?? '').trim();
+        if (!nativeHtml || !normalizedStatus) return null;
+
+        return Array.from(nativeHtml.querySelectorAll('.quest-section[data-status]')).find(section => {
+            return String(section.getAttribute('data-status') ?? '').trim() === normalizedStatus;
+        }) || null;
+    }
+
+    /**
      * Apply status filter to show/hide quest sections
      * @param {HTMLElement} html - The quest container element
      * @private
@@ -2162,12 +2176,7 @@ export class QuestPanel {
                     const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
                     for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                         if (collapsed) {
-                            // v13: Use safer selector approach to handle values with newlines/whitespace
-                            const sections = nativeHtml.querySelectorAll('.quest-section[data-status]');
-                            const section = Array.from(sections).find(s => {
-                                const attrValue = s.getAttribute('data-status');
-                                return attrValue && attrValue.trim() === category.trim();
-                            });
+                            const section = this._findQuestSectionByStatus(nativeHtml, category);
                             if (section && !section.classList.contains('quest-section--no-titlebar')) {
                                 section.classList.add('collapsed');
                             }
@@ -2319,12 +2328,7 @@ export class QuestPanel {
                     const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
                     for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                         if (collapsed) {
-                            // v13: Use safer selector approach to handle values with newlines/whitespace
-                            const sections = nativeHtml.querySelectorAll('.quest-section[data-status]');
-                            const section = Array.from(sections).find(s => {
-                                const attrValue = s.getAttribute('data-status');
-                                return attrValue && attrValue.trim() === category.trim();
-                            });
+                            const section = this._findQuestSectionByStatus(nativeHtml, category);
                             if (section && !section.classList.contains('quest-section--no-titlebar')) {
                                 section.classList.add('collapsed');
                             }
@@ -2366,7 +2370,7 @@ export class QuestPanel {
                 const collapsedCategories = game.user.getFlag(MODULE.ID, 'questCollapsedCategories') || {};
                 for (const [category, collapsed] of Object.entries(collapsedCategories)) {
                     if (collapsed) {
-                        const section = nativeHtml.querySelector(`.quest-section[data-status="${category}"]`);
+                        const section = this._findQuestSectionByStatus(nativeHtml, category);
                         if (section && !section.classList.contains('quest-section--no-titlebar')) {
                             section.classList.add('collapsed');
                         }
@@ -4213,12 +4217,7 @@ export class QuestPanel {
         // v13: Use safer selector approach to handle values with newlines/whitespace
         for (const [status, collapsed] of Object.entries(collapsedCategories)) {
             if (collapsed) {
-                // Use querySelectorAll and filter to handle values with special characters
-                const sections = questContainer.querySelectorAll('.quest-section[data-status]');
-                const section = Array.from(sections).find(s => {
-                    const attrValue = s.getAttribute('data-status');
-                    return attrValue && attrValue.trim() === status.trim();
-                });
+                const section = this._findQuestSectionByStatus(questContainer, status);
                 if (section && !section.classList.contains('quest-section--no-titlebar')) {
                     section.classList.add('collapsed');
                 }
@@ -4791,4 +4790,3 @@ export class QuestPanel {
         }
     }
 } 
-
