@@ -1,7 +1,7 @@
 {
   "id": "coffee-pub-squire",
   "title": "Coffee Pub Squire",
-  "description": "A sleek, customizable character tray for quick access to your character's abilities and items.",
+  "description": "A sleek, customizable character tray for quick access to your character's abilities and items, manage quests, notes, and more.",
   "version": "13.3.18",
 
   "manifest": "https://github.com/Drowbe/coffee-pub-squire/releases/latest/download/module.json",
