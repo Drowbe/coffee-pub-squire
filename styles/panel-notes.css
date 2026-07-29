@@ -586,50 +586,26 @@ body.squire-notes-pin-placement * {
     line-height: 1;
 }
 
-/* -- LIST THEME: DARK -- */
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row {
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row {
     background: rgba(0, 0, 0, 0.1);
     border-color: rgba(0, 0, 0, 0.1);
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row-title {
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-title {
     color: rgba(180, 169, 144, 0.95);
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row-title:hover {
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-title:hover {
     color: rgba(255, 255, 255, 0.9);
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row-visibility {
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-visibility {
     background: rgba(0, 0, 0, 0.35);
     color: #d8c9a3;
 }
 
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--dark .note-row-actions button {
+.squire-tray[data-position="left"] .notes-list.notes-view--list .note-row-actions button {
     color: rgba(159, 146, 117, 0.9);
-}
-
-/* -- LIST THEME: LIGHT -- */
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row {
-    background: rgba(245, 240, 230, 0.9);
-    border-color: rgba(122, 101, 72, 0.35);
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-title {
-    color: #2a231c;
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-title:hover {
-    color: #000;
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-visibility {
-    background: rgba(220, 208, 186, 0.8);
-    color: #2a231c;
-}
-
-.squire-tray[data-position="left"] .notes-list.notes-view--list.notes-theme--light .note-row-actions button {
-    color: rgba(95, 88, 71, 0.8);
 }
 
 .squire-tray[data-position="left"] .note-row.note-row-highlight {

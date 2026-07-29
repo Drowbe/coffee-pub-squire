@@ -448,7 +448,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 .squire-tray[data-position="left"] .quest-entry {
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.0);
     border-radius: 4px;
     margin: 0 0 4px 0;
     padding: 6px;
@@ -467,7 +467,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 .squire-tray[data-position="left"] .quest-entry-header-wrapper {
     background: rgba(0, 0, 0, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.0);
     border-radius: 4px;
     margin: -6px -6px -6px -6px ;
     padding: 2px 8px 2px 8px;
@@ -513,20 +513,20 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* QUEST ICON */  
 
 .squire-tray[data-position="left"] .quest-entry-name .quest-icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    background: rgba(104, 32, 8, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(104, 32, 8, 0.0);
+    border: 0px solid rgba(255, 255, 255, 0.15);
     flex-shrink: 0;
 }
 
 .squire-tray[data-position="left"] .quest-entry-name .quest-icon i {
     color: inherit;
-    font-size: 0.75em;
+    font-size: 100%;
 }
 
 .squire-tray[data-position="left"] .quest-entry-name .quest-icon img {
@@ -535,7 +535,6 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     border-radius: 6px;
     object-fit: cover;
 }
-
 
 
 
@@ -575,7 +574,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     height: auto;
     object-fit: cover;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .quest-entry-label {
