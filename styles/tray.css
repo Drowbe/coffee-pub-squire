@@ -257,6 +257,7 @@
 .squire-tray[data-position="left"] [data-panel="abilities"],
 .squire-tray[data-position="left"] [data-panel="stats"],
 .squire-tray[data-position="left"] [data-panel="gm"],
+.squire-tray[data-position="left"] [data-panel="character-summary"],
 .squire-tray[data-position="left"] [data-panel="control"],
 .squire-tray[data-position="left"] [data-panel="dicetray"],
 .squire-tray[data-position="left"] [data-panel="macros"] {

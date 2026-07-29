@@ -47,18 +47,30 @@ export class CharacterSummaryPanel {
             isCollapsed: game.settings.get(MODULE.ID, 'isCharacterSummaryPanelCollapsed')
         });
         panel.innerHTML = content;
+        this._applyCollapsedState(
+            panel,
+            game.settings.get(MODULE.ID, 'isCharacterSummaryPanelCollapsed')
+        );
         this._activateListeners(panel);
+    }
+
+    _applyCollapsedState(panel, collapsed) {
+        const content = panel.querySelector('#character-summary-content');
+        const toggle = panel.querySelector('#character-summary-toggle');
+        if (!content || !toggle) return;
+
+        content.classList.toggle('collapsed', collapsed);
+        toggle.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
     }
 
     _activateListeners(panel) {
         const header = panel.querySelector('.character-summary-header');
         header?.addEventListener('click', async () => {
-            const content = panel.querySelector('.character-summary-content');
-            const toggle = panel.querySelector('.character-summary-toggle');
+            const content = panel.querySelector('#character-summary-content');
+            const toggle = panel.querySelector('#character-summary-toggle');
             if (!content || !toggle) return;
             const collapsed = content.classList.toggle('collapsed');
-            toggle.classList.toggle('fa-chevron-right', collapsed);
-            toggle.classList.toggle('fa-chevron-down', !collapsed);
+            toggle.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
             await game.settings.set(MODULE.ID, 'isCharacterSummaryPanelCollapsed', collapsed);
         });
 

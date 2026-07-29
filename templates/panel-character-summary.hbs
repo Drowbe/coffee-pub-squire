@@ -1,14 +1,16 @@
 <div class="character-summary-panel">
-    <div class="section-header character-summary-header">
-        <div class="header-left">
-            <i class="fa-solid fa-id-card"></i> Character Summary
-        </div>
-        <div class="header-right">
-            <i class="character-summary-toggle fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}" title="Toggle Character Summary"></i>
+    <div class="tray-title-small character-summary-header">
+        <span>Character Summary</span>
+        <div class="character-summary-controls">
+            <i
+                id="character-summary-toggle"
+                class="character-summary-toggle fa-solid fa-chevron-down"
+                title="Toggle Character Summary"
+            ></i>
         </div>
     </div>
 
-    <div class="character-summary-content{{#if isCollapsed}} collapsed{{/if}}">
+    <div id="character-summary-content" class="tray-panel-content character-summary-content">
         {{#if actor.system.details.xp.max}}
             <div class="character-summary-xp">
                 <div class="character-summary-xp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
