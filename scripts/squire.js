@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
-import { registerHelpers, renderTemplate } from './helpers.js';
+import { registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
@@ -2387,14 +2387,26 @@ async function handleTransferRequest(transferData) {
             if (response) {
                 // Transfer processing is now handled by the socket handler executeItemTransfer
                 // This legacy code path is no longer needed
-                ui.notifications.info(`Transfer request processed.`);
+                showSquireToast('Transfer Accepted', {
+                    subtitle: `${transferData.selectedQuantity || transferData.quantity || 1} × ${sourceItem.name} accepted.`,
+                    image: sourceItem.img,
+                    color: '#5f8f3f'
+                });
             }
         } else {
             // No socketlib - notify the user to coordinate manually
             if (response) {
-                ui.notifications.info(`You've accepted the transfer, but without socketlib module, the GM needs to manually execute the transfer.`);
+                showSquireToast('Transfer Accepted', {
+                    subtitle: 'Socketlib is unavailable; the GM must complete the transfer manually.',
+                    image: sourceItem.img,
+                    color: '#b78325'
+                });
             } else {
-                ui.notifications.info(`You've declined the transfer.`);
+                showSquireToast('Transfer Declined', {
+                    subtitle: `${sourceItem.name} was not transferred.`,
+                    image: sourceItem.img,
+                    color: '#9f3434'
+                });
             }
         }
         
@@ -2441,9 +2453,17 @@ async function processTransferResponse(responseData) {
     const targetActorName = game.actors.get(transferData.targetActorId)?.name || transferData.targetActorName;
     
     if (accepted) {
-        ui.notifications.info(`${targetActorName} accepted your item transfer.`);
+        showSquireToast('Transfer Accepted', {
+            subtitle: `${targetActorName} accepted ${transferData.itemName || 'the item'}.`,
+            icon: 'fa-solid fa-right-left',
+            color: '#5f8f3f'
+        });
     } else {
-        ui.notifications.warn(`${targetActorName} declined your item transfer.`);
+        showSquireToast('Transfer Declined', {
+            subtitle: `${targetActorName} declined ${transferData.itemName || 'the item'}.`,
+            icon: 'fa-solid fa-xmark',
+            color: '#9f3434'
+        });
     }
 }
 

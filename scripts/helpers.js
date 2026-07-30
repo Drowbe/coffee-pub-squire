@@ -15,6 +15,30 @@ export function getBlacksmithDialog() {
 }
 
 /**
+ * Show routine Squire success/status feedback through Blacksmith's themed
+ * toast surface rather than Foundry's core notification queue.
+ */
+export function showSquireToast(title, options = {}) {
+  const toast = getBlacksmith()?.toast;
+  if (typeof toast?.show !== 'function') {
+    console.warn('Coffee Pub Squire | Blacksmith api.toast is unavailable:', title);
+    return null;
+  }
+
+  return toast.show({
+    title: String(title || ''),
+    subtitle: options.subtitle ? String(options.subtitle) : undefined,
+    icon: options.icon,
+    image: options.image,
+    duration: options.duration ?? 6,
+    color: options.color,
+    backgroundColor: options.backgroundColor,
+    stackKey: options.stackKey,
+    moduleId: MODULE.ID
+  });
+}
+
+/**
  * Adapt Squire's two remaining complex JSON-import surfaces to Blacksmith's
  * DialogV2 wait contract while their eventual importer replacement is blocked
  * on the public Blacksmith Importer API.

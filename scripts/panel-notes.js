@@ -14,7 +14,7 @@ import {
     panToPin
 } from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getNativeElement, renderTemplate, showSquireToast } from './helpers.js';
 import {
     PERMISSION_LEVELS,
     showJournalPicker
@@ -1235,7 +1235,13 @@ export class NotesPanel {
                 await livePage.setFlag(MODULE.ID, 'editorIds', [targetUser.id]);
                 await syncNoteOwnership(livePage, visibility, targetUser.id);
                 await updateNotePin(livePage);
-                ui.notifications.info(`Note shared with ${targetUser.name}.`);
+                showSquireToast('Note Given', {
+                    subtitle: `${livePage.name || 'Private note'} was given to ${targetUser.name}.`,
+                    image: targetUser.avatar,
+                    icon: 'fa-solid fa-note-sticky',
+                    color: '#5f8f3f',
+                    stackKey: `${MODULE.ID}-note-given`
+                });
                 this.render(this.element);
             }
         });
