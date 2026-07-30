@@ -471,9 +471,10 @@ It does not require the later entity-picker, quantity-control, or action-delegat
 2. **Implemented, verify live:** Blacksmith `api.entityList` single-select behavior.
 3. **Implemented, verify live:** Blacksmith `api.entityList` multi-select behavior.
 4. **Harness ready, verify live:** Entity List inside a Tool window cycling Light, Dark, and Glass.
-5. **Contribution ready:** Squire's quantity/split markup, CSS, controller, and verification contract are under `contributions/blacksmith/`; Blacksmith integrates and documents them.
-6. Squire builds its ephemeral Transfer tool with per-instance listeners, no registration, and no position persistence.
-7. Squire live-tests simultaneous sender and approval instances plus a large recipient list.
-8. Squire migrates simple legacy dialogs to `api.dialog`.
-9. Squire removes duplicate Quest import/export paths and moves JSON imports to Blacksmith's robust importer.
-10. Reconsider a dialog-opening picker helper or shared workflow shell only if multiple real consumers still duplicate meaningful code after these steps.
+5. **Implemented upstream, verify live:** Blacksmith integrated Squire's quantity/split interaction as generated markup alongside `api.entityList`, retained the contributed layout and Tool-theme CSS, and added `aria-valuetext`, integer clamping, a consistent controller return, and silent initial attachment. Keep `contributions/blacksmith/` until Blacksmith's quantity harness passes, then delete the local duplicate.
+6. **Verify live:** Run Blacksmith's combined harness: 11 headless checks across Entity List, per-instance delegation, and Quantity Split, followed by the Entity List and Quantity Split interactive Tool-theme checks.
+7. Squire builds its ephemeral Transfer tool with per-instance listeners, no registration, and no position persistence.
+8. Squire live-tests simultaneous sender and approval instances plus a large recipient list.
+9. Squire migrates simple legacy dialogs to `api.dialog`.
+10. Squire removes duplicate Quest import/export paths and moves JSON imports to Blacksmith's robust importer.
+11. Reconsider a dialog-opening picker helper or shared workflow shell only if multiple real consumers still duplicate meaningful code after these steps.
