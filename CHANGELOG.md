@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [13.3.19]
+## [13.4.0]
 
 ### Fixed
 - **Instance-safe Application V2 actions**: Codex, Note, and Quest editors now bind Save, Cancel, Delete, and Save & Place actions to the window that rendered them instead of resolving Blacksmith's class-static `_ref`. Opening multiple editors can no longer redirect an action to the most recently rendered window, discard edits from an older window, or leave its controls inactive after another closes. Status Effects now uses the same per-instance action binding while retaining its intentional singleton opener through an explicit Squire-owned reference.
