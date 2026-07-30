@@ -13,6 +13,7 @@ if (!BlacksmithWindowBaseV2) {
 }
 
 export const STATUS_EFFECTS_WINDOW_ID = `${MODULE.ID}-status-effects-window`;
+let statusEffectsWindowInstance = null;
 
 function getStatusName(id, status) {
     const label = status?.name || status?.label || id;
@@ -68,6 +69,9 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         this._pendingEffectIds = new Set();
         this.descriptionEffectId = opts.descriptionEffectId || null;
         this.descriptionStatusId = opts.descriptionStatusId || null;
+        this._actionRoot = null;
+        this._actionHandler = null;
+        statusEffectsWindowInstance = this;
     }
 
     async _resolveActor() {
@@ -215,7 +219,44 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
 
     async _onRender(context, options) {
         await super._onRender?.(context, options);
+        this._attachActionListeners();
         this._registerEffectHooks();
+    }
+
+    _attachActionListeners() {
+        const root = this.element?.querySelector?.('.status-effects-window[data-app-id]');
+        if (!root || root === this._actionRoot) return;
+        if (this._actionRoot && this._actionHandler) {
+            this._actionRoot.removeEventListener('click', this._actionHandler, true);
+        }
+
+        this._actionRoot = root;
+        this._actionHandler = async (event) => {
+            const target = event.target?.closest?.('[data-action]');
+            if (!target || !root.contains(target)) return;
+            const action = target.dataset.action;
+            if (!['toggleEffect', 'removeAll', 'removeEffect', 'showDescription', 'close'].includes(action)) return;
+            event.preventDefault();
+
+            if (action === 'toggleEffect') {
+                const conditionId = target.dataset.conditionId;
+                if (conditionId) await this._toggleCondition(conditionId);
+            } else if (action === 'removeAll') {
+                await this._removeAllConditions();
+            } else if (action === 'removeEffect') {
+                const effectId = target.dataset.effectId;
+                if (effectId) await this._removeEffect(effectId);
+            } else if (action === 'showDescription') {
+                event.stopPropagation();
+                await this._showDescription({
+                    effectId: target.dataset.effectId || null,
+                    statusId: target.dataset.conditionId || null
+                });
+            } else {
+                await this.close();
+            }
+        };
+        root.addEventListener('click', this._actionHandler, true);
     }
 
     _registerEffectHooks() {
@@ -337,51 +378,15 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
 
     async close(options = {}) {
         this._unregisterEffectHooks();
+        if (this._actionRoot && this._actionHandler) {
+            this._actionRoot.removeEventListener('click', this._actionHandler, true);
+        }
+        this._actionRoot = null;
+        this._actionHandler = null;
+        if (statusEffectsWindowInstance === this) statusEffectsWindowInstance = null;
         return super.close(options);
     }
-
-    static async _actionToggleEffect(event, target) {
-        event?.preventDefault?.();
-        const instance = StatusEffectsWindow._ref;
-        const conditionId = target?.dataset?.conditionId;
-        if (!instance || !conditionId) return;
-        await instance._toggleCondition(conditionId);
-    }
-
-    static async _actionClose(event) {
-        event?.preventDefault?.();
-        await StatusEffectsWindow._ref?.close();
-    }
-
-    static async _actionRemoveAll(event) {
-        event?.preventDefault?.();
-        await StatusEffectsWindow._ref?._removeAllConditions();
-    }
-
-    static async _actionRemoveEffect(event, target) {
-        event?.preventDefault?.();
-        const effectId = target?.dataset?.effectId;
-        if (!effectId) return;
-        await StatusEffectsWindow._ref?._removeEffect(effectId);
-    }
-
-    static async _actionShowDescription(event, target) {
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        await StatusEffectsWindow._ref?._showDescription({
-            effectId: target?.dataset?.effectId || null,
-            statusId: target?.dataset?.conditionId || null
-        });
-    }
 }
-
-StatusEffectsWindow.ACTION_HANDLERS = {
-    toggleEffect: StatusEffectsWindow._actionToggleEffect,
-    removeAll: StatusEffectsWindow._actionRemoveAll,
-    removeEffect: StatusEffectsWindow._actionRemoveEffect,
-    showDescription: StatusEffectsWindow._actionShowDescription,
-    close: StatusEffectsWindow._actionClose
-};
 
 export async function openStatusEffectsWindow(options = {}) {
     const actor = options.actor
@@ -391,7 +396,7 @@ export async function openStatusEffectsWindow(options = {}) {
         return null;
     }
 
-    const existing = StatusEffectsWindow._ref;
+    const existing = statusEffectsWindowInstance;
     if (existing?.actorUuid === actor.uuid) {
         if (options.descriptionEffectId || options.descriptionStatusId) {
             existing.descriptionEffectId = options.descriptionEffectId || null;

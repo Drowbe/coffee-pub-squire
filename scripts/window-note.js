@@ -602,6 +602,23 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
     }
 
     _attachLocalListeners(root) {
+        const actionHandler = async (event) => {
+            const target = event.target?.closest?.('[data-action]');
+            if (!target || !root.contains(target)) return;
+            const action = target.dataset.action;
+            if (!['save', 'savePlace', 'cancel'].includes(action)) return;
+            event.preventDefault();
+            if (action === 'save') {
+                await this._handleFormSubmit(event, { placePin: false });
+            } else if (action === 'savePlace') {
+                await this._handleFormSubmit(event, { placePin: true });
+            } else {
+                await this.close();
+            }
+        };
+        root.addEventListener('click', actionHandler, true);
+        this._eventHandlers.push({ element: root, event: 'click', handler: actionHandler, options: true });
+
         const form = this._getForm(root);
         if (form) {
             const submitHandler = (event) => {
@@ -1073,9 +1090,9 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
     }
 
     _clearEventHandlers() {
-        for (const { element, event, handler } of this._eventHandlers) {
+        for (const { element, event, handler, options } of this._eventHandlers) {
             try {
-                element?.removeEventListener?.(event, handler);
+                element?.removeEventListener?.(event, handler, options);
             } catch (_) {}
         }
         this._eventHandlers = [];
@@ -1098,33 +1115,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
         return super.close(options);
     }
 
-    static async _actionSave(event, _target) {
-        const instance = NoteWindow._ref;
-        if (!instance) return;
-        event?.preventDefault?.();
-        await instance._handleFormSubmit(event, { placePin: false });
-    }
-
-    static async _actionSavePlace(event, _target) {
-        const instance = NoteWindow._ref;
-        if (!instance) return;
-        event?.preventDefault?.();
-        await instance._handleFormSubmit(event, { placePin: true });
-    }
-
-    static async _actionCancel(event, _target) {
-        const instance = NoteWindow._ref;
-        if (!instance) return;
-        event?.preventDefault?.();
-        await instance.close();
-    }
 }
-
-NoteWindow.ACTION_HANDLERS = {
-    save: NoteWindow._actionSave,
-    savePlace: NoteWindow._actionSavePlace,
-    cancel: NoteWindow._actionCancel
-};
 
 export const NotesForm = NoteWindow;
 

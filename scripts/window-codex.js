@@ -195,6 +195,24 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     _attachLocalListeners(root) {
+        const actionHandler = async (event) => {
+            const target = event.target?.closest?.('[data-action]');
+            if (!target || !root.contains(target)) return;
+            const action = target.dataset.action;
+            if (action !== 'save' && action !== 'cancel') return;
+            event.preventDefault();
+            if (action === 'save') {
+                await this._handleFormSubmit({
+                    preventDefault() {},
+                    target: this._getRoot()?.querySelector('form')
+                });
+            } else {
+                await this.close();
+            }
+        };
+        root.addEventListener('click', actionHandler, true);
+        this._eventHandlers.push({ element: root, event: 'click', handler: actionHandler, options: true });
+
         const form = root.querySelector('form');
         if (form) {
             const handler = (event) => {
@@ -1209,9 +1227,9 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     _clearEventHandlers() {
-        for (const { element, event, handler } of this._eventHandlers) {
+        for (const { element, event, handler, options } of this._eventHandlers) {
             try {
-                element?.removeEventListener?.(event, handler);
+                element?.removeEventListener?.(event, handler, options);
             } catch (_) {}
         }
         this._eventHandlers = [];
@@ -1222,25 +1240,7 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
         return super.close(options);
     }
 
-    static async _actionSave(event, _target) {
-        const instance = CodexWindow._ref;
-        if (!instance) return;
-        event?.preventDefault?.();
-        await instance._handleFormSubmit({ preventDefault() {}, target: instance._getRoot()?.querySelector('form') });
-    }
-
-    static async _actionCancel(event, _target) {
-        const instance = CodexWindow._ref;
-        if (!instance) return;
-        event?.preventDefault?.();
-        await instance.close();
-    }
 }
-
-CodexWindow.ACTION_HANDLERS = {
-    save: CodexWindow._actionSave,
-    cancel: CodexWindow._actionCancel
-};
 
 export async function openCodexWindow(options = {}) {
     let windowInstance;

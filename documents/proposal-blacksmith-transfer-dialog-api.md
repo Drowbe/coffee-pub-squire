@@ -1,100 +1,185 @@
-# Proposal to Blacksmith: Reusable Transfer/Share Window and DialogV2 API
+# Resolved Proposal: Blacksmith Dialog and Form Components for Squire Transfers
 
-## Summary
+> **Base class confirmed:** The final Transfer experience extends `BlacksmithToolWindowBaseV2`. Ephemeral, non-menubar Tool windows are supported through direct construction and render; Window API registration is optional and is not appropriate for this action-launched tool.
 
-Coffee Pub modules need two related UI primitives:
+## Decision
 
-1. A reusable, themed **Transfer/Share workflow window** for sending, giving, transferring, or sharing something with a recipient.
-2. A small, consistent **DialogV2 API** for confirmations, choices, and short prompts that should remain dialogs.
+Blacksmith accepted the proposed DialogV2 helpers and rejected the proposed hub-owned Transfer/Share workflow window. The agreed architecture is smaller and cleaner:
 
-Squire currently implements an item transfer as three separate experiences:
+1. Blacksmith provides `api.dialog`.
+2. Blacksmith provides a shared selectable-entity component.
+3. Blacksmith provides a shared quantity/split control.
+4. Squire builds and owns its Transfer tool on `BlacksmithToolWindowBaseV2`.
+5. Squire owns both sides of recipient approval and connects them through its sockets.
+6. Squire JSON imports migrate independently to Blacksmith's existing robust importer.
 
-1. Select a quantity.
-2. Select a recipient.
-3. Ask the recipient to approve or reject the transfer.
-
-The quantity selector is already a strong interaction and should not be visually or functionally degraded. The problem is architectural: the flow is split across legacy dialogs, a module-specific picker window, duplicated quantity code, and socket handling. Notes use a separate recipient picker to give a private note to another user.
-
-The proposed Blacksmith APIs would provide a consistent shell and lifecycle while leaving domain rules with the consuming module.
+The earlier proposal for `transfer.open`, workflow modes, approval orchestration, and a separate transfer-flow registry is superseded. A shared workflow window should be reconsidered only if real duplication remains across multiple consumer modules after the smaller components are in use.
 
 ---
 
-## 1. Transfer/Share Workflow Window
+## 1. Blacksmith `api.dialog`
 
-### Goal
+### Purpose
 
-Provide a generic Blacksmith Application V2 window that can support:
+Provide a consistent wrapper over `foundry.applications.api.DialogV2` for confirmations, choices, prompts, and short custom interactions.
 
-- Send an item
-- Transfer an item or quantity from a stack
-- Give a private note
-- Share a document
-- Assign something to a user or Actor
-- Request recipient approval
+Blacksmith already has many raw DialogV2 call sites but no shared dialog presentation. This is framework infrastructure: presentation and promise semantics without consumer domain logic or cross-client state.
 
-The API should not know Foundry item-transfer rules, Squire note ownership, or any other module's business logic. It owns presentation, navigation, validation, themes, and workflow state. The consumer owns the data and operation.
+### API
 
-### Proposed Layout
-
-```text
-[ HEADER ]
-
-[ ACTION / SUBJECT DETAILS                           ]
-[ icon ] [ name                                      ]
-[        [ description, source, or contextual details ]
-
-[ CONFIGURATION — optional                          ]
-[ module-provided fields, e.g. quantity slider       ]
-
-[ RECIPIENT                                          ]
-[ actor/user/token/custom recipient selection         ]
-
-[ Cancel                              Primary Action ]
+```js
+await blacksmith.dialog.confirm(options);
+await blacksmith.dialog.choose(options);
+await blacksmith.dialog.prompt(options);
+await blacksmith.dialog.wait(options);
 ```
 
-The window should use Blacksmith's normal Application V2 frame, themes, sizing, position persistence, and responsive layout.
+### Global dismissal contract
 
-### Required Capabilities
+User dismissal must never reject:
 
-#### Header
+- Pressing Escape resolves the configured `closeValue`.
+- Clicking the title-bar close button resolves `closeValue`.
+- Clicking an explicit Cancel button resolves `cancelValue`.
+- If a helper does not distinguish close from cancel, both resolve the same documented fallback.
+- Exceptions thrown by consumer callbacks or framework failures may still reject.
 
-- Title
-- Optional icon
-- Optional subtitle
-- Optional action verb such as Send, Transfer, Give, Share, or Assign
+Every helper should set or internally enforce the equivalent of `rejectClose: false`.
 
-#### Subject details
+The shared result vocabulary should be used where an object result is appropriate:
 
-- Image or icon
-- Name
-- Optional description
-- Optional source label
-- Optional metadata rows or badges
-- Consumer-provided enriched HTML when needed
+```js
+{ action: 'submit', value, result }
+{ action: 'cancel', value: cancelValue }
+{ action: 'close', value: closeValue }
+```
 
-#### Configuration
+Simple `confirm` calls may continue to resolve a boolean if Blacksmith prefers compatibility with `DialogV2.confirm`.
 
-- Entire section is optional.
-- Consumer may supply fields or a rendered template.
-- Supports initial values, live validation, and value collection.
-- Must support the existing Squire quantity interaction:
-  - Give/keep values
-  - Slider
-  - Clear minimum and maximum
-  - Singular/plural display
-  - Keyboard-accessible controls
+### Content contract
 
-#### Recipient selection
+`content` should accept:
 
-Built-in providers should eventually support:
+```ts
+string | HTMLElement | Promise<string | HTMLElement>
+```
 
-- Foundry Users
-- Actors
-- Canvas Tokens
-- Blacksmith campaign party members
-- Custom consumer-supplied recipients
+Consumers render their own Handlebars templates before calling the helper. The dialog API should not own template loading.
 
-Each recipient should support:
+Accepting DOM is required for content that must remain literal rather than being interpreted as markup.
+
+### `confirm`
+
+```js
+const confirmed = await blacksmith.dialog.confirm({
+  title: 'Delete Note',
+  content: '<p>Delete this note?</p>',
+  confirmLabel: 'Delete',
+  confirmIcon: 'fa-solid fa-trash',
+  destructive: true,
+  defaultAction: 'cancel',
+  closeValue: false
+});
+```
+
+### `choose`
+
+`choose` is the genuinely new surface and needs the clearest contract.
+
+```js
+const result = await blacksmith.dialog.choose({
+  title: 'Delete Note Pins',
+  content: '<p>Choose which pins to delete.</p>',
+  choices: [
+    { id: 'scene', label: 'Current Scene', icon: 'fa-solid fa-map' },
+    { id: 'all', label: 'All Scenes', icon: 'fa-solid fa-globe', destructive: true }
+  ],
+  cancelValue: null,
+  closeValue: null
+});
+```
+
+Each choice may provide:
+
+```js
+{
+  id,
+  label,
+  icon,
+  description,
+  disabled,
+  destructive,
+  callback
+}
+```
+
+### `prompt`
+
+```js
+const result = await blacksmith.dialog.prompt({
+  title: 'Choose Journal',
+  content: renderedContent,
+  getValue: root => root.querySelector('[name="journal"]').value,
+  validate: value => value ? null : 'Choose a journal.',
+  cancelValue: null,
+  closeValue: null
+});
+```
+
+### `wait`
+
+```js
+const result = await blacksmith.dialog.wait({
+  title,
+  content,
+  buttons,
+  onRender,
+  cancelValue: null,
+  closeValue: null
+});
+```
+
+### Shared behavior
+
+All helpers should:
+
+- Use Foundry `DialogV2`.
+- Never reject for ordinary dismissal.
+- Support async callbacks.
+- Disable submitted actions while callbacks run.
+- Prevent duplicate submission.
+- Support destructive button treatment.
+- Support inline validation.
+- Accept HTML strings or DOM.
+- Use Blacksmith dialog styles and action conventions.
+- Restore focus appropriately after closing.
+
+### Blacksmith verification
+
+The same Blacksmith change should:
+
+1. Add `styles/dialog.css`.
+2. Import it from Blacksmith's `default.css`.
+3. Convert the twelve-dialog cluster in `window-pin-layers.js`.
+
+That proves semantics, styling, and real-world use before Squire adopts the API.
+
+---
+
+## 2. Shared Selectable-Entity Component
+
+### Purpose
+
+Provide reusable single- and multi-select entity presentation without owning the workflow that consumes the selection.
+
+Known consumers already exist:
+
+- Blacksmith multi-user selection in `window-toast-send.js`.
+- Blacksmith single actor/owner selection in `MenuBar.showLeaderDialog`.
+- Squire character selection for item transfers.
+- Squire user selection for giving private notes.
+
+### Entity descriptor
 
 ```js
 {
@@ -110,338 +195,288 @@ Each recipient should support:
 }
 ```
 
-The consumer must be able to filter recipients and prevent invalid choices such as transferring an item back to its current owner.
+### Capabilities
 
-#### Actions
+- Single-select and multi-select.
+- Portrait/image plus name.
+- Optional type treatment.
+- Optional badges and metadata.
+- Disabled entries with an accessible explanation.
+- Keyboard navigation.
+- Selected-state styling.
+- Consumer filtering.
+- Empty-state presentation.
+- Configurable compact/list/grid variants if Blacksmith's existing consumers require them.
 
-- Configurable primary action label and icon
-- Cancel action
-- Optional secondary actions
-- Async callback support
-- Disable actions while processing
-- Prevent duplicate submission
-- Inline validation errors
-- Preserve the window when the operation fails
-- Close only after a successful result unless the consumer explicitly requests otherwise
+### Providers
 
-### Workflow Modes
+Blacksmith may provide convenience adapters for:
 
-The same component should support both single-window and distributed workflows.
+- Users
+- Actors
+- Canvas Tokens
+- Blacksmith campaign party members
 
-#### Immediate
+Consumers must also be able to provide descriptor arrays directly.
 
-The initiating user selects configuration and recipient, then the consumer executes immediately.
+### Embedded component contract
 
-#### Approval required
+The embedded entity component does not submit, cancel, close, or return a workflow result. It reports selection changes and lets its host read or set the current selection:
 
-The initiating user submits a request. The recipient receives the same workflow window in an approval state:
+```js
+onSelectionChange: ({ selected, changed, sourceEvent }) => {}
+getSelection: () => selectedEntities
+setSelection: (ids) => {}
+```
+
+For single-select mode, `selected` contains zero or one entity. For multi-select mode, it may contain many.
+
+The `{ action: 'submit' | 'cancel' | 'close' }` vocabulary belongs only to something that owns an open/close lifecycle, such as `api.dialog` or a possible future dialog-opening picker helper. That helper should be considered only after a second real consumer requires it; it is not part of the embedded component.
+
+The component itself should not open or close a window, submit a form, open sockets, transfer documents, change ownership, or send notifications.
+
+### Blacksmith verification
+
+Verify both selection modes:
+
+1. Convert `MenuBar.showLeaderDialog` from its bare `<select>` in a raw DialogV2 to `api.dialog` plus the entity component in single-select mode. This proves the mode Squire's transfer workflow needs and improves a real Blacksmith interaction.
+2. Convert the user checkbox list in `window-toast-send.js` to the entity component in multi-select mode.
+3. Render the entity component in a scratch `BlacksmithToolWindowBaseV2` under Light, Dark, and Glass. Its surfaces must inherit the `--blacksmith-tool-*` variables rather than hard-coding an opaque background. The DialogV2 and standard-window targets do not exercise translucent Glass presentation.
+
+Do not use `window-skillcheck.js` as an initial validation target. Its large actor rows, four filters, and roughly 2,700-line implementation make that a skill-check-window refactor rather than a focused component test. It can adopt the component later when that work is independently justified.
+
+---
+
+## 3. Shared Quantity/Split Control
+
+### Purpose
+
+Upstream Squire's existing quantity selector as a Blacksmith form component instead of recreating it from a description.
+
+The current Squire interaction is the acceptance baseline:
+
+- Clear Give and Keep values.
+- Slider between valid bounds.
+- Immediate visual updates.
+- Correct singular/plural behavior.
+- Keyboard accessibility.
+- Compact layout.
+- No loss of clarity or speed.
+
+### Ownership
+
+Blacksmith owns:
+
+- Shared markup contract.
+- Shared CSS in `window-form-controls.css`.
+- Value/update behavior if supplied as a component helper.
+- Documentation in `design-components.md`.
+- Light, Dark, and Glass presentation inherited from Tool variables when hosted in a Tool window, while remaining usable in DialogV2 and standard-window consumers.
+
+Consumers own:
+
+- Minimum, maximum, and initial values.
+- Labels.
+- Domain validation.
+- What the resulting number means.
+
+### Illustrative markup
+
+Final naming belongs to Blacksmith, but the shared component needs the equivalent of:
+
+```html
+<div class="blacksmith-quantity-split"
+     data-min="1"
+     data-max="7"
+     data-value="1">
+  <div class="blacksmith-quantity-value">
+    <strong data-quantity-give>1</strong>
+    <span>Give</span>
+  </div>
+  <input class="blacksmith-slider"
+         type="range"
+         min="1"
+         max="7"
+         value="1">
+  <div class="blacksmith-quantity-value">
+    <strong data-quantity-keep>6</strong>
+    <span>Keep</span>
+  </div>
+</div>
+```
+
+### Blacksmith verification
+
+Reproduce Squire's current quantity interaction with the contributed markup and styling before Squire removes its local version.
+
+---
+
+## 4. Squire-Owned Transfer Window
+
+### Architecture
+
+Squire will build one reusable Transfer tool on:
+
+- `BlacksmithToolWindowBaseV2`
+- Blacksmith's selectable-entity component
+- Blacksmith's quantity/split control
+- Blacksmith's standard fields, badges, sliders, inputs, and action buttons
+
+Blacksmith does not need a transfer-specific API, mode enumeration, registry, socket behavior, or approval orchestration.
+
+### Layout
 
 ```text
-[ HEADER: Transfer Request ]
-[ subject and sender details ]
-[ quantity/configuration summary ]
-[ recipient summary ]
-[ Reject ] [ Accept ]
+[ HEADER ]
+
+[ DETAILS ]
+[ item/note image, name, source, and action context ]
+
+[ CONFIGURATION — optional ]
+[ quantity/split control for stack transfers ]
+
+[ RECIPIENT ]
+[ shared selectable-entity component ]
+
+[ Cancel                                  Transfer ]
 ```
 
-Blacksmith should manage only the UI state. The consumer remains responsible for sockets, authorization, revalidation, and document changes.
+The configuration section does not render when it is unnecessary.
 
-### Suggested API Shape
+### Launch and lifecycle
 
-Names are illustrative.
+The Transfer tool is ephemeral and action-launched:
 
 ```js
-const result = await blacksmith.transfer.open({
-  id: 'coffee-pub-squire-item-transfer',
-  mode: 'transfer',
-  title: 'Transfer Item',
-  actionLabel: 'Transfer',
-
-  subject: {
-    id: item.id,
-    uuid: item.uuid,
-    name: item.name,
-    img: item.img,
-    description: `${sourceActor.name} is giving ${item.name}`,
-    metadata: [
-      { label: 'Source', value: sourceActor.name }
-    ]
-  },
-
-  configuration: {
-    template: 'modules/coffee-pub-squire/templates/transfer-quantity.hbs',
-    data: {
-      quantity: 1,
-      maximum: item.system.quantity
-    },
-    getValue: root => ({
-      quantity: Number(root.querySelector('[name="quantity"]').value)
-    }),
-    validate: values => {
-      if (values.quantity < 1) return 'Choose at least one item.';
-      if (values.quantity > item.system.quantity) return 'Not enough items are available.';
-      return null;
-    }
-  },
-
-  recipients: {
-    type: 'actor',
-    items: eligibleActors,
-    selectedId: null
-  },
-
-  onSubmit: async ({ recipient, values }) => {
-    return requestItemTransfer({
-      itemUuid: item.uuid,
-      targetActorUuid: recipient.uuid,
-      quantity: values.quantity
-    });
-  }
-});
+const transfer = new TransferTool(options);
+await transfer.render(true);
 ```
 
-For simpler use cases:
+- Do not register it with the Window API.
+- Do not add a menubar launcher.
+- Set `rememberPosition: false`; multiple simultaneous instances must not compete over the class-name position key.
+- Theme persistence remains available because Tool theme keys are stored separately from position persistence.
+- Application options are frozen. Runtime theme changes must use `setToolTheme()` rather than mutating `this.options`.
+- Constrain the recipient area and verify a large party against the Tool maximum height (`calc(100vh - 16px)`); the recipient list is the primary growth axis.
 
-```js
-await blacksmith.transfer.open({
-  mode: 'give',
-  title: 'Give Note',
-  subject: {
-    name: note.name,
-    img: note.img,
-    description: 'Choose the player who should own this private note.'
-  },
-  recipients: {
-    type: 'user',
-    items: eligibleUsers
-  },
-  actionLabel: 'Give Note',
-  onSubmit: ({ recipient }) => giveNoteToUser(note, recipient)
-});
-```
+### Multi-instance event safety
 
-### Return Contract
+The sender tool and an incoming approval tool may be open at the same time. Blacksmith's current `ACTION_HANDLERS` delegation uses per-class static `_ref` and `_delegationAttached` state, so two instances of the same class can route actions to the most recently rendered instance. Closing that instance can also leave the older instance's buttons inert.
 
-The returned promise should resolve predictably:
+For `TransferTool`:
 
-```js
-{ action: 'submit', recipient, values, result }
-{ action: 'cancel' }
-{ action: 'close' }
-```
+- Do not define or use static `ACTION_HANDLERS`.
+- Bind listeners per instance against `this.element` in `_onRender`.
+- Remove or naturally discard those listeners with the instance DOM.
+- Never resolve a button action through class-static instance state.
+- Live-test two simultaneous TransferTool instances and confirm each instance mutates only its own transfer state.
 
-It should not reject for ordinary cancellation. It may reject for configuration or framework errors.
+### Squire use cases
 
-### Extension and Ownership Boundary
+One Squire implementation should cover:
 
-Blacksmith should own:
+- Tray drop item transfer.
+- Inventory item transfer.
+- Party-panel item transfer.
+- Weapon transfer.
+- Character recipient selection.
+- Giving a private note to another user.
 
-- Window frame and Application V2 lifecycle
-- Light, Dark, and Glass themes
-- Standard layout and responsive behavior
-- Recipient-selection presentation
-- Configuration slot rendering
-- Action state and validation presentation
-- Loading, success, and error states
-- Focus management and keyboard accessibility
-- Optional approval-state presentation
+### Recipient approval
 
-Consumers should own:
+Approval remains a Squire pattern:
 
-- Eligible recipient calculation
-- Permission checks
-- Subject data
-- Configuration fields and validation rules
-- Socket messages
-- Approval authorization
-- Revalidation at execution time
-- Creation, update, deletion, or ownership changes
-- Notifications specific to the operation
+1. Sender opens Squire's Transfer window.
+2. Sender submits the transfer request.
+3. Squire sends its socket message.
+4. The recipient client opens a separate Squire Transfer window in approval presentation.
+5. Squire revalidates authorization and document state.
+6. Squire applies or rejects the transfer.
 
-Blacksmith must not perform an item transfer or document ownership change merely because the generic window was submitted.
+The two windows share Squire presentation and data, but Blacksmith does not coordinate them.
 
-### Registration
+### Squire ownership
 
-If the workflow uses the existing Window API, consumers should be able to register a named configuration/factory:
+Squire owns:
 
-```js
-blacksmith.registerTransferFlow({
-  id: 'coffee-pub-squire.item-transfer',
-  moduleId: 'coffee-pub-squire',
-  create: options => buildSquireItemTransfer(options)
-});
+- Item and note domain rules.
+- Subject details.
+- Recipient eligibility.
+- Permission checks.
+- Quantity validation.
+- Socket messages.
+- Recipient filtering.
+- Revalidation.
+- Document mutations.
+- Ownership changes.
+- Transfer notifications.
+- Sender and recipient window states.
 
-await blacksmith.openTransferFlow('coffee-pub-squire.item-transfer', options);
-```
+### Acceptance criteria
 
-Direct, unregistered use should also be supported for ephemeral workflows.
+- Four duplicated quantity dialogs collapse into one Squire implementation.
+- The existing quantity-selector experience is preserved or improved.
+- Synthetic-token Actors resolve correctly.
+- A sender cannot select the current owner as recipient.
+- Disabled recipients explain why they are unavailable.
+- A single item skips or simplifies quantity configuration.
+- Giving a note does not show an empty quantity section.
+- Submission cannot run twice.
+- Failure leaves the window open with a useful error.
+- Closing or cancelling always clears Squire's transfer lock.
+- Recipient approval uses the same subject/configuration presentation.
+- Light, Dark, and Glass remain readable without Squire frame overrides.
+- The entity list inherits Tool theme variables and remains legible on translucent Glass.
+- Two simultaneous instances route every action to the correct instance.
+- Position persistence is disabled so simultaneous instances do not overwrite one shared position key.
+- Runtime theme changes use `setToolTheme()` and never mutate frozen options.
+- A large recipient list scrolls within the viewport-constrained Tool window.
 
 ---
 
-## 2. Blacksmith DialogV2 API
+## 5. Other Squire Migrations
 
-### Goal
+### Keep as dialogs
 
-Not every legacy dialog should become a persistent window. Destructive confirmations, small choices, and exceptional prompts are better as dialogs. Blacksmith should expose a consistent wrapper around `foundry.applications.api.DialogV2` so Coffee Pub modules do not each recreate:
+After Blacksmith ships `api.dialog`, Squire should migrate these to the helpers:
 
-- Button conventions
-- Destructive styling
-- Icons
-- Theming
-- Promise results
-- Focus behavior
-- Error handling
-- Compatibility details
+- Delete note confirmation.
+- Delete note from canvas pin.
+- Delete codex entry confirmation.
+- Delete quest confirmation.
+- Clean up missing note pins.
+- Confirm note-pin deletion.
+- Manual clipboard-copy fallback.
+- Small scope choices that do not justify a persistent tool.
 
-### Suggested API
+### Potential Squire windows
 
-```js
-await blacksmith.dialog.confirm({
-  title: 'Delete Note',
-  content: '<p>Delete this note?</p>',
-  confirmLabel: 'Delete',
-  confirmIcon: 'fa-solid fa-trash',
-  destructive: true,
-  defaultAction: 'cancel'
-});
-```
+These are larger than simple dialogs and may warrant focused Squire windows:
 
-```js
-const choice = await blacksmith.dialog.choose({
-  title: 'Delete Note Pins',
-  content: '<p>Choose which pins to delete.</p>',
-  choices: [
-    { id: 'scene', label: 'Current Scene', icon: 'fa-solid fa-map' },
-    { id: 'all', label: 'All Scenes', icon: 'fa-solid fa-globe', destructive: true }
-  ],
-  cancelValue: null
-});
-```
+- Journal and journal-page picker.
+- JSON/data export preview.
+- Notes or Quest pin maintenance, only if their action set grows.
 
-```js
-const value = await blacksmith.dialog.prompt({
-  title: 'Choose Journal',
-  content: renderedHtml,
-  getValue: root => root.querySelector('[name="journal"]').value,
-  validate: value => value ? null : 'Choose a journal.'
-});
-```
+### JSON import
 
-```js
-const result = await blacksmith.dialog.wait({
-  title,
-  content,
-  buttons,
-  onRender,
-  closeValue: null
-});
-```
+All Squire JSON imports should migrate to Blacksmith's existing robust importer:
 
-### Recommended Helpers
+- `window-json-import.js`
+- `registry-json-import-*.js`
 
-- `blacksmith.dialog.confirm(options)`
-- `blacksmith.dialog.choose(options)`
-- `blacksmith.dialog.prompt(options)`
-- `blacksmith.dialog.wait(options)`
-
-All helpers should:
-
-- Return promises
-- Resolve cancellation consistently
-- Support async callbacks
-- Support destructive actions
-- Support consumer HTML or templates
-- Support validation
-- Disable buttons while awaiting callbacks
-- Use Blacksmith's visual language
-- Be built on Foundry's `DialogV2`, not legacy `Dialog`
+This is independent of the dialog and component work and can proceed immediately.
 
 ---
 
-## 3. Squire Migration Targets
+## Delivery Sequence
 
-### Transfer/Share window
-
-The following Squire paths should converge on the proposed Transfer/Share workflow:
-
-- Tray drop transfer quantity
-- Inventory transfer quantity
-- Party-panel transfer quantity
-- Weapon transfer quantity
-- Character recipient selection
-- Recipient approval/rejection
-- Give private note to another user
-
-The current quantity selector is the visual and interaction baseline. Consolidation is worthwhile only if the shared workflow preserves or improves it.
-
-### DialogV2 helpers
-
-These should remain dialogs:
-
-- Delete note confirmation
-- Delete codex entry confirmation
-- Delete quest confirmation
-- Clean up missing note pins confirmation
-- Confirm note-pin deletion
-- Delete note from canvas pin
-- Manual clipboard-copy fallback
-
-These may remain dialogs or later become focused maintenance windows if their scope grows:
-
-- Note-pin deletion scope
-- Quest-pin clearing scope
-
-### Separate reusable windows
-
-These are larger workflows and should not be forced into simple dialogs:
-
-- Journal and journal-page picker
-- JSON/data export preview
-
-All Squire JSON imports should migrate to Blacksmith's robust importer rather than being rebuilt on the proposed DialogV2 wrapper.
-
----
-
-## 4. Recommended Delivery Phases
-
-### Phase 1: DialogV2 helpers
-
-Implement `confirm`, `choose`, `prompt`, and `wait` as thin, stable wrappers. This immediately gives Coffee Pub modules a supported replacement for legacy Foundry dialogs.
-
-### Phase 2: Transfer/Share window foundation
-
-Implement:
-
-- Subject details
-- Optional configuration slot
-- Recipient provider
-- Primary/cancel actions
-- Async validation and submission
-- Theme support
-
-Validate it by reproducing Squire's existing quantity selector without regression.
-
-### Phase 3: Approval state
-
-Add the recipient approval presentation and allow Squire to connect it to its existing socket and transfer authorization logic.
-
-### Phase 4: Broader providers and registration
-
-Add standard party/token/user providers and optional registration through the Window API after the core interaction is proven.
-
----
-
-## Acceptance Criteria
-
-- Squire can replace all four duplicated quantity dialogs with one shared workflow.
-- The quantity interaction is at least as clear and efficient as the current Squire dialog.
-- The same window can give a private note without displaying an empty configuration section.
-- Recipient entries can be disabled with an explanation.
-- Async submission cannot run twice.
-- Failed operations leave the window open with a useful error.
-- Recipient approval can reuse the same subject/configuration presentation.
-- Consumers retain all authority over permissions, sockets, and document mutations.
-- Simple confirmations require only a small Blacksmith helper call.
-- Blacksmith's dialog helpers use Foundry `DialogV2` and return consistent promise results.
-- Light, Dark, and Glass presentation is readable without consumer frame overrides.
-
+1. Blacksmith implements and verifies `api.dialog` against `window-pin-layers.js`.
+2. Blacksmith verifies the selectable-entity component in single-select mode through `MenuBar.showLeaderDialog` using `api.dialog`.
+3. Blacksmith verifies the same component in multi-select mode through `window-toast-send.js`.
+4. Blacksmith verifies the entity component inside a scratch Tool window in Light, Dark, and Glass.
+5. Squire contributes its quantity/split markup and CSS upstream; Blacksmith documents and verifies it.
+6. Squire builds its ephemeral Transfer tool with per-instance listeners, no registration, and no position persistence.
+7. Squire live-tests simultaneous sender and approval instances plus a large recipient list.
+8. Squire migrates simple legacy dialogs to `api.dialog`.
+9. Squire removes duplicate Quest import/export paths and moves JSON imports to Blacksmith's robust importer.
+10. Reconsider a dialog-opening picker helper or shared workflow shell only if multiple real consumers still duplicate meaningful code after these steps.
