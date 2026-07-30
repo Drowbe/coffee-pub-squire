@@ -1898,9 +1898,21 @@ Hooks.once('init', async function() {
 });
 
 Hooks.once('ready', async function() {
+    // Foundry invokes ready-hook callbacks without awaiting other modules' async
+    // callbacks. This registration block must perform its own Blacksmith wait;
+    // Squire's earlier ready callback can still be waiting concurrently.
+    await waitForBlacksmithWhenActive();
+
     const blacksmith = getBlacksmith();
     if (!blacksmith) {
         console.error('Required dependency coffee-pub-blacksmith not found:', { blacksmith });
+        return;
+    }
+    if (!blacksmith.BlacksmithWindowBaseV2 || !blacksmith.BlacksmithToolWindowBaseV2) {
+        console.error('Coffee Pub Squire | Required Blacksmith Window V2 APIs are unavailable after Blacksmith became ready.', {
+            BlacksmithWindowBaseV2: Boolean(blacksmith.BlacksmithWindowBaseV2),
+            BlacksmithToolWindowBaseV2: Boolean(blacksmith.BlacksmithToolWindowBaseV2)
+        });
         return;
     }
 
