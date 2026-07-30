@@ -31,8 +31,12 @@ const {
     showPagePicker
 } = await import(`${MODULE_PATH}/utility-journal.js`);
 const { openDataExportWindow } = await import(`${MODULE_PATH}/window-data-export.js`);
-const { CharactersWindow } = await import(`${MODULE_PATH}/window-characters.js`);
-const { UsersWindow } = await import(`${MODULE_PATH}/window-users.js`);
+const {
+    openItemTransferTool,
+    openNoteTransferTool,
+    selectTransferQuantityWithTool,
+    showTransferApprovalTool
+} = await import(`${MODULE_PATH}/window-transfer-tool.js`);
 const { normalizeQuestCategory, normalizeQuestStatus } = await import(`${MODULE_PATH}/utility-quest-parser.js`);
 
 const DialogV2 = foundry.applications.api.DialogV2;
@@ -48,7 +52,8 @@ const SOURCE_FILES = [
     'panel-weapons.js',
     'squire.js',
     'utility-journal.js',
-    'window-quest.js'
+    'window-quest.js',
+    'window-transfer-tool.js'
 ];
 
 function subjectToken() {
@@ -305,49 +310,10 @@ const SCENARIOS = [
             if (!actor) return;
             const item = actorItems(actor).find(entry => Number(entry.system?.quantity) > 1) || actorItems(actor)[0];
             if (!item) return ui.notifications.warn(`${actor.name} has no suitable item.`);
-            const max = Math.max(2, Number(item.system?.quantity) || 5);
-            const timestamp = Date.now();
-            const content = await foundry.applications.handlebars.renderTemplate(
-                `modules/${SQUIRE_ID}/templates/window-transfer.hbs`,
-                {
-                    sourceItem: item,
-                    sourceActor: actor,
-                    targetActor: actor,
-                    maxQuantity: max,
-                    timestamp,
-                    canAdjustQuantity: true,
-                    isReceiveRequest: false,
-                    hasQuantity: true
-                }
-            );
-            const result = await blacksmith.dialog.wait({
-                title: 'Harness: Transfer Quantity',
-                content,
-                classes: ['transfer-item'],
-                buttons: [
-                    { action: 'cancel', label: 'Cancel', icon: 'fa-solid fa-xmark' },
-                    {
-                        action: 'inspect',
-                        label: 'Inspect Only',
-                        icon: 'fa-solid fa-magnifying-glass',
-                        default: true,
-                        callback: form => Number(form.elements[`quantity_${timestamp}`]?.value) || 1
-                    }
-                ],
-                onRender: root => {
-                    const input = root.querySelector(`[name="quantity_${timestamp}"]`);
-                    const selected = root.querySelector('.quantity-label');
-                    const remaining = root.querySelector('.range-value');
-                    const update = () => {
-                        const value = Number(input?.value) || 1;
-                        if (selected) selected.textContent = value;
-                        if (remaining) remaining.textContent = Math.max(0, max - value);
-                    };
-                    input?.addEventListener('input', update);
-                    update();
-                }
-            });
-            logResult('Quantity control', `resolved ${JSON.stringify(result)}; no item moved`);
+            const target = canvas.tokens.placeables.map(token => token.actor).find(candidate => candidate && candidate.id !== actor.id);
+            if (!target) return ui.notifications.warn('Place another Actor token on the scene for the fixed-recipient preview.');
+            const result = await selectTransferQuantityWithTool({ sourceActor: actor, targetActor: target, item });
+            logResult('Quantity control', `resolved ${result}; no item moved`);
         }
     },
     {
@@ -358,27 +324,25 @@ const SCENARIOS = [
             if (!actor) return;
             const item = actorItems(actor)[0];
             if (!item) return ui.notifications.warn(`${actor.name} has no item to preview.`);
-            const picker = new CharactersWindow({
+            await openItemTransferTool({
                 item,
                 sourceActor: actor,
-                sourceItemId: item.id,
-                selectedQuantity: 1,
-                hasQuantity: item.system?.quantity != null,
-                onCharacterSelected: async target => logResult('Recipient picker', `selected ${target.name}; no transfer executed`),
-                onClose: () => {}
+                onSubmit: async ({ targetActor, quantity }) => {
+                    logResult('Recipient picker', `selected ${targetActor.name}, quantity ${quantity}; no transfer executed`);
+                }
             });
-            await picker.render(true);
         }
     },
     {
         tab: 'transfers',
         label: 'Player picker preview',
         run: async () => {
-            const picker = new UsersWindow({
-                onUserSelected: async user => logResult('Player picker', `selected ${user.name}; no note sent`),
-                onClose: () => {}
+            await openNoteTransferTool({
+                note: { name: 'Harness Private Note', img: 'icons/svg/book.svg' },
+                onSubmit: async ({ targetUser }) => {
+                    logResult('Player picker', `selected ${targetUser.name}; no note sent`);
+                }
             });
-            await picker.render(true);
         }
     },
     {
@@ -389,26 +353,11 @@ const SCENARIOS = [
             if (!actor) return;
             const item = actorItems(actor)[0];
             if (!item) return ui.notifications.warn(`${actor.name} has no item to preview.`);
-            const content = await foundry.applications.handlebars.renderTemplate(
-                `modules/${SQUIRE_ID}/templates/window-transfer.hbs`,
-                {
-                    sourceItem: item,
-                    sourceActor: actor,
-                    targetActor: actor,
-                    selectedQuantity: 1,
-                    canAdjustQuantity: false,
-                    isReceiveRequest: true,
-                    hasQuantity: item.system?.quantity != null
-                }
-            );
-            const accepted = await blacksmith.dialog.confirm({
-                title: 'Harness: Item Transfer Request',
-                content,
-                classes: ['transfer-item'],
-                confirmLabel: 'Accept Preview',
-                confirmIcon: 'fa-solid fa-check',
-                cancelLabel: 'Decline Preview',
-                cancelIcon: 'fa-solid fa-xmark'
+            const accepted = await showTransferApprovalTool({
+                sourceActor: actor,
+                targetActor: actor,
+                item,
+                requestedQuantity: 1
             });
             logResult('Approval preview', `${accepted ? 'accepted' : 'declined/dismissed'}; no socket message sent`);
         }

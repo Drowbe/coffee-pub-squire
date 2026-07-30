@@ -1,0 +1,112 @@
+.squire-transfer-tool-window .blacksmith-window-tool-body {
+    min-height: 0;
+    overflow: auto;
+}
+
+.squire-transfer-tool-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px;
+}
+
+.squire-transfer-section {
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--blacksmith-tool-background) 78%, transparent);
+}
+
+.squire-transfer-section > h3 {
+    margin: 0 0 7px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--blacksmith-tool-divider);
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.squire-transfer-subject {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.squire-transfer-subject-image,
+.squire-transfer-fixed-recipient > img {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    overflow: hidden;
+    border: 1px solid var(--blacksmith-tool-border);
+    border-radius: 4px;
+}
+
+.squire-transfer-subject-image img,
+.squire-transfer-fixed-recipient > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.squire-transfer-subject-copy {
+    min-width: 0;
+}
+
+.squire-transfer-kicker {
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.squire-transfer-subject-name {
+    overflow: hidden;
+    font-size: 1rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.squire-transfer-description {
+    margin-top: 2px;
+    opacity: 0.75;
+    font-size: 0.78rem;
+}
+
+.squire-transfer-fixed-recipient {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 5px;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 4px;
+}
+
+.squire-transfer-fixed-recipient > img {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+}
+
+.squire-transfer-fixed-recipient strong,
+.squire-transfer-fixed-recipient span {
+    display: block;
+}
+
+.squire-transfer-fixed-recipient span {
+    margin-top: 2px;
+    opacity: 0.7;
+    font-size: 0.72rem;
+}
+
+.squire-transfer-tool-window.squire-transfer-busy {
+    cursor: progress;
+}
+
+.squire-transfer-tool-window.squire-transfer-busy .blacksmith-window-tool-body {
+    pointer-events: none;
+    opacity: 0.72;
+}

@@ -114,7 +114,10 @@
         {
           "id": "coffee-pub-blacksmith",
           "type": "module",
-          "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json"
+          "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json",
+          "compatibility": {
+            "minimum": "13.12.2"
+          }
         },
         {
           "id": "socketlib",

@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, renderTemplate, showBlacksmithWait } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -620,70 +620,12 @@ export class PartyPanel {
      * @returns {Promise<number>} - Selected quantity (0 if cancelled)
      */
     async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
-        const timestamp = Date.now();
-        
-        // Prepare template data for sender's dialog
-        const senderTemplateData = {
-            sourceItem,
+        const { selectTransferQuantityWithTool } = await import('./window-transfer-tool.js');
+        return selectTransferQuantityWithTool({
             sourceActor,
             targetActor,
-            maxQuantity,
-            timestamp,
-            canAdjustQuantity: hasQuantity && maxQuantity > 1,
-            isReceiveRequest: false,
-            hasQuantity
-        };
-        
-        // Render the transfer dialog template for the sender
-        const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
-        
-        // Initiate the transfer process
-        const selectedQuantity = await new Promise(resolve => {
-            void showBlacksmithWait({
-                title: "Transfer Item",
-                content: senderContent,
-                buttons: {
-                    transfer: {
-                        icon: '<i class="fa-solid fa-exchange-alt"></i>',
-                        label: "Transfer",
-                        callback: html => {
-                            // v13: Convert jQuery to native DOM if needed
-                            let nativeHtml = html;
-                            if (html && (html.jquery || typeof html.find === 'function')) {
-                                nativeHtml = html[0] || html.get?.(0) || html;
-                            }
-                            
-                            if (hasQuantity && maxQuantity > 1) {
-                                // v13: Use native DOM querySelector and value
-                                const input = nativeHtml.querySelector(`input[name="quantity_${timestamp}"]`);
-                                const quantity = Math.clamp(
-                                    parseInt(input?.value || '1'),
-                                    1,
-                                    maxQuantity
-                                );
-                                resolve(quantity);
-                            } else {
-                                resolve(1);
-                            }
-                        }
-                    },
-                    cancel: {
-                        icon: '<i class="fa-solid fa-times"></i>',
-                        label: "Cancel",
-                        callback: () => resolve(0)
-                    }
-                },
-                default: "transfer",
-                close: () => resolve(0)
-            }, {
-                classes: ["transfer-item"],
-                id: `transfer-item-${timestamp}`,
-                width: 320,
-                height: "auto"
-            });
+            item: sourceItem
         });
-        
-        return selectedQuantity;
     }
 
     /**

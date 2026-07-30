@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
-import { getNativeElement, renderTemplate, getActivityList, showBlacksmithWait } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 
 export class WeaponsPanel {
@@ -452,138 +452,33 @@ export class WeaponsPanel {
     }
 
     async _openCharacterSelection(item) {
-        // Prevent multiple dialogs from opening
         if (this._transferDialogOpen) return;
-        
-        // Check if item has quantity and show quantity selection dialog first
-        const hasQuantity = item.system.quantity !== undefined && item.system.quantity > 1;
-        const maxQuantity = hasQuantity ? item.system.quantity : 1;
-        
-        let selectedQuantity = 1;
-        
-        if (hasQuantity && maxQuantity > 1) {
-            // Show quantity selection dialog
-            this._transferDialogOpen = true;
-            try {
-                selectedQuantity = await this._showTransferQuantityDialog(item, this.actor, null, maxQuantity, hasQuantity);
-                if (selectedQuantity <= 0) {
-                    this._transferDialogOpen = false;
-                    return; // User cancelled
-                }
-            } catch (error) {
-                this._transferDialogOpen = false;
-                throw error;
-            }
-        }
-        
-        // Create character selection window with the selected quantity
-        const { CharactersWindow } = await import('./window-characters.js');
-        const characterWindow = new CharactersWindow({
-            item: item,
-            sourceActor: this.actor,
-            sourceItemId: item.id,
-            selectedQuantity: selectedQuantity,
-            hasQuantity: hasQuantity,
-            onCharacterSelected: async (...args) => {
-                this._transferDialogOpen = false;
-                await this._handleCharacterSelected(...args);
-            },
-            onClose: () => {
-                this._transferDialogOpen = false;
-            }
-        });
-        
-        // Render the window
-        await characterWindow.render(true);
-    }
+        this._transferDialogOpen = true;
 
-    async _handleCharacterSelected(targetActor, item, sourceActor, sourceItemId, selectedQuantity, hasQuantity) {
-        // Use the shared transfer utility with the selected quantity
-        await TransferUtils.executeTransfer({
-            sourceActor: sourceActor,
-            targetActor: targetActor,
-            item: item,
-            sourceItemId: sourceItemId,
-            quantity: selectedQuantity,
-            hasQuantity: hasQuantity
-        });
-        
-        // Panel refresh is handled automatically by the deleteItem hook
-    }
-
-    async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
-        const timestamp = Date.now();
-
-        // Prepare template data for sender's dialog
-        const senderTemplateData = {
-            sourceItem,
-            sourceActor,
-            targetActor,
-            maxQuantity,
-            timestamp,
-            canAdjustQuantity: hasQuantity && maxQuantity > 1,
-            isReceiveRequest: false,
-            hasQuantity
-        };
-        
-        // Render the transfer dialog template for the sender
-        const senderContent = await renderTemplate(TEMPLATES.TRANSFER_DIALOG, senderTemplateData);
-        
-        // Initiate the transfer process
-        const selectedQuantity = await new Promise(resolve => {
-            void showBlacksmithWait({
-                title: "Transfer Item",
-                content: senderContent,
-                buttons: {
-                    transfer: {
-                        icon: '<i class="fa-solid fa-exchange-alt"></i>',
-                        label: "Transfer",
-                        callback: html => {
-                            // v13: Convert jQuery to native DOM if needed
-                            let nativeHtml = html;
-                            if (html && (html.jquery || typeof html.find === 'function')) {
-                                nativeHtml = html[0] || html.get?.(0) || html;
-                            }
-                            
-                            if (hasQuantity && maxQuantity > 1) {
-                                // v13: Use native DOM querySelector and value
-                                const input = nativeHtml.querySelector(`input[name="quantity_${timestamp}"]`);
-                                const quantity = Math.clamp(
-                                    parseInt(input?.value || '1'),
-                                    1,
-                                    maxQuantity
-                                );
-                                this._transferDialogOpen = false;
-                                resolve(quantity);
-                            } else {
-                                this._transferDialogOpen = false;
-                                resolve(1);
-                            }
-                        }
-                    },
-                    cancel: {
-                        icon: '<i class="fa-solid fa-times"></i>',
-                        label: "Cancel",
-                        callback: () => {
-                            this._transferDialogOpen = false;
-                            resolve(0);
-                        }
-                    }
+        try {
+            const { openItemTransferTool } = await import('./window-transfer-tool.js');
+            await openItemTransferTool({
+                item,
+                sourceActor: this.actor,
+                onSubmit: async ({ targetActor, quantity }) => {
+                    const liveItem = this.actor?.items?.get(item.id);
+                    if (!liveItem) throw new Error(`${item.name} is no longer available.`);
+                    await TransferUtils.executeTransfer({
+                        sourceActor: this.actor,
+                        targetActor,
+                        item: liveItem,
+                        quantity,
+                        hasQuantity: liveItem.system.quantity !== undefined && liveItem.system.quantity > 1
+                    });
                 },
-                default: "transfer",
-                close: () => {
+                onClose: () => {
                     this._transferDialogOpen = false;
-                    resolve(0);
                 }
-            }, {
-                classes: ["transfer-item"],
-                id: `transfer-item-${timestamp}`,
-                width: 320,
-                height: "auto"
             });
-        });
-        
-        return selectedQuantity;
+        } catch (error) {
+            this._transferDialogOpen = false;
+            throw error;
+        }
     }
 }
 

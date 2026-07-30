@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
-import { registerHelpers, renderTemplate, showBlacksmithWait } from './helpers.js';
+import { registerHelpers, renderTemplate } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
@@ -2352,24 +2352,7 @@ async function handleTransferRequest(transferData) {
             return;
         }
         
-        // Create the request dialog
         const timestamp = transferData.timestamp;
-        
-        // Prepare template data for receiver's dialog
-        const receiverTemplateData = {
-            sourceItem,
-            sourceActor,
-            targetActor,
-            maxQuantity: transferData.hasQuantity ? sourceItem.system.quantity : 1,
-            timestamp,
-            selectedQuantity: transferData.selectedQuantity,
-            canAdjustQuantity: false,
-            isReceiveRequest: true,
-            hasQuantity: transferData.hasQuantity
-        };
-        
-        // Render the transfer dialog template for the receiver
-        const receiverContent = await renderTemplate(`modules/${MODULE.ID}/templates/window-transfer.hbs`, receiverTemplateData);
         
         // Play notification sound
         const blacksmith = getBlacksmith();
@@ -2377,34 +2360,12 @@ async function handleTransferRequest(transferData) {
             blacksmith.utils.playSound('notification', 0.7, false, false);
         }
         
-        // Create a dialog to approve/reject the transfer
-        let response = await new Promise(resolve => {
-            void showBlacksmithWait({
-                title: "Item Transfer Request",
-                content: receiverContent,
-                buttons: {
-                    accept: {
-                        icon: '<i class="fa-solid fa-check"></i>',
-                        label: "Accept",
-                        cssClass: "accept",
-                        callback: () => resolve(true)
-                    },
-                    decline: {
-                        icon: '<i class="fa-solid fa-times"></i>',
-                        label: "Decline",
-                        cssClass: "decline",
-                        destructive: true,
-                        callback: () => resolve(false)
-                    }
-                },
-                default: "accept",
-                close: () => resolve(false)
-            }, {
-                classes: ["transfer-item"],
-                id: `transfer-item-request-${timestamp}`,
-                width: 320,
-                height: "auto"
-            });
+        const { showTransferApprovalTool } = await import('./window-transfer-tool.js');
+        const response = await showTransferApprovalTool({
+            sourceActor,
+            targetActor,
+            item: sourceItem,
+            requestedQuantity: transferData.selectedQuantity || transferData.quantity || 1
         });
         
         // Send response back through socketlib

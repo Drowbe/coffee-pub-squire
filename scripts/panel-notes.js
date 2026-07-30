@@ -1223,18 +1223,22 @@ export class NotesPanel {
             return;
         }
 
-        const { UsersWindow } = await import('./window-users.js');
-        new UsersWindow({
-            onUserSelected: async (user) => {
-                if (!user) return;
-                await page.setFlag(MODULE.ID, 'authorId', user.id);
-                await page.setFlag(MODULE.ID, 'editorIds', [user.id]);
-                await syncNoteOwnership(page, visibility, user.id);
-                await updateNotePin(page);
-                ui.notifications.info(`Note shared with ${user.name}.`);
+        const { openNoteTransferTool } = await import('./window-transfer-tool.js');
+        await openNoteTransferTool({
+            note: page,
+            onSubmit: async ({ targetUser }) => {
+                if (!targetUser) throw new Error('Select a recipient.');
+                const livePage = await foundry.utils.fromUuid(uuid);
+                if (!livePage) throw new Error('The note is no longer available.');
+
+                await livePage.setFlag(MODULE.ID, 'authorId', targetUser.id);
+                await livePage.setFlag(MODULE.ID, 'editorIds', [targetUser.id]);
+                await syncNoteOwnership(livePage, visibility, targetUser.id);
+                await updateNotePin(livePage);
+                ui.notifications.info(`Note shared with ${targetUser.name}.`);
                 this.render(this.element);
             }
-        }).render(true);
+        });
     }
 
     async _beginNotePinPlacement(page) {

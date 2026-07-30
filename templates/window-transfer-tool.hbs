@@ -1,0 +1,49 @@
+<div class="squire-transfer-tool-content">
+    <section class="squire-transfer-section squire-transfer-subject">
+        <div class="squire-transfer-subject-image">
+            <img src="{{subjectImg}}" alt="">
+        </div>
+        <div class="squire-transfer-subject-copy">
+            <div class="squire-transfer-kicker">{{#if isNote}}Note{{else}}Item{{/if}}</div>
+            <div class="squire-transfer-subject-name">{{subjectName}}</div>
+            <div class="squire-transfer-description">
+                {{#if isApproval}}
+                    {{sourceName}} wants to transfer this item.
+                {{else if isNote}}
+                    Give this private note to another user.
+                {{else}}
+                    Transfer from {{sourceName}}.
+                {{/if}}
+            </div>
+        </div>
+    </section>
+
+    {{#if quantityHtml}}
+        <section class="squire-transfer-section">
+            <h3><i class="fa-solid fa-layer-group"></i> Quantity</h3>
+            {{{quantityHtml}}}
+        </section>
+    {{/if}}
+
+    {{#if isApproval}}
+        <section class="squire-transfer-section squire-transfer-request-summary">
+            <h3><i class="fa-solid fa-right-left"></i> Request</h3>
+            <p><strong>{{sourceName}}</strong> wants to give <strong>{{requestedQuantity}} × {{subjectName}}</strong> to <strong>{{fixedRecipient.name}}</strong>.</p>
+        </section>
+    {{/if}}
+
+    <section class="squire-transfer-section squire-transfer-recipient">
+        <h3><i class="fa-solid fa-user-check"></i> Recipient</h3>
+        {{#if fixedRecipient}}
+            <div class="squire-transfer-fixed-recipient">
+                <img src="{{fixedRecipient.img}}" alt="">
+                <div>
+                    <strong>{{fixedRecipient.name}}</strong>
+                    <span>{{fixedRecipient.type}}</span>
+                </div>
+            </div>
+        {{else}}
+            {{{entityListHtml}}}
+        {{/if}}
+    </section>
+</div>
